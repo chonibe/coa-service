@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -16,7 +16,7 @@ export async function GET() {
     // Check if the tag exists and is claimed
     const { data: tag, error: tagError } = await supabase
       .from("nfc_tags")
-      .select("*, order_line_items(*)")
+      .select("*, order_line_items_v2(*)")
       .eq("tag_id", tagId)
       .maybeSingle()
 

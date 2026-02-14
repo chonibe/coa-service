@@ -41,7 +41,7 @@ export default function BulkCertificatesPage() {
     try {
       // Fetch all line items for this product from the database
       const { data, error: queryError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("*")
         .eq("product_id", productId)
         .eq("status", "active") // Only get active line items

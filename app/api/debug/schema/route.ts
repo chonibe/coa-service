@@ -25,7 +25,7 @@ export async function GET() {
 
     // Get order_line_items table schema
     const { data: lineItemsSchema, error: lineItemsSchemaError } = await supabase
-      .from('order_line_items')
+      .from('order_line_items_v2')
       .select('*')
       .limit(0);
 
@@ -50,7 +50,7 @@ export async function GET() {
     }
 
     const { data: sampleLineItems, error: sampleLineItemsError } = await supabase
-      .from('order_line_items')
+      .from('order_line_items_v2')
       .select('*')
       .limit(5);
 

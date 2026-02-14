@@ -32,7 +32,7 @@ export async function POST() {
 
     // Check if the line item exists and has a certificate
     const { data: lineItem, error: lineItemError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("line_item_id", line_item_id)
       .eq("status", "active")

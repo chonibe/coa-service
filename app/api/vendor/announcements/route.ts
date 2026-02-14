@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       case "all": {
         // Get all collectors who purchased from this vendor
         const { count } = await supabase
-          .from("order_line_items")
+          .from("order_line_items_v2")
           .select("id", { count: "exact", head: true })
           .eq("products.vendor_name", vendorName)
         
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           targetName = product.name
           
           const { count } = await supabase
-            .from("order_line_items")
+            .from("order_line_items_v2")
             .select("id", { count: "exact", head: true })
             .eq("product_id", targetId)
           
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
               const internalProductIds = products.map(p => p.id)
               
               const { count } = await supabase
-                .from("order_line_items")
+                .from("order_line_items_v2")
                 .select("id", { count: "exact", head: true })
                 .in("product_id", internalProductIds)
               

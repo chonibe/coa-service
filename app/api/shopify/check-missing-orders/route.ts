@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Get all order IDs from Supabase for the same period
     const { data: supabaseOrders, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("order_id, order_name")
       .gte("created_at", startDate.toISOString())
 

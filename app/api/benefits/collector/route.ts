@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     if (lineItemId) {
       const { data: lineItem, error: lineItemError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("product_id")
         .eq("line_item_id", lineItemId)
         .single()

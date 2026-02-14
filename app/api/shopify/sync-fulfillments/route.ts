@@ -124,7 +124,7 @@ export async function POST() {
         if (fulfillment.line_items && fulfillment.line_items.length > 0) {
           for (const lineItem of fulfillment.line_items) {
             const { error: lineItemError } = await db
-              .from("order_line_items")
+              .from("order_line_items_v2")
               .update({
                 fulfillment_status: fulfillment.status,
                 tracking_number: fulfillment.tracking_number,

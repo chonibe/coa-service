@@ -209,7 +209,7 @@ export async function validatePayout(
   if (options.orderIds && options.orderIds.length > 0 && options.vendorName) {
     try {
       const { data, error } = await client
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("line_item_id, fulfillment_status")
         .in("order_id", options.orderIds)
         .eq("vendor_name", options.vendorName)
@@ -263,7 +263,7 @@ export async function ensureDataIntegrity(
   try {
     // Check that all line items exist and are active
     const { data, error } = await client
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("line_item_id, status, vendor_name")
       .in("line_item_id", lineItemIds)
 

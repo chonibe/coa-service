@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -61,7 +61,7 @@ export async function GET() {
 
     // Fetch certificate information from Supabase
     const { data: certificates, error: certError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .in("order_id", orderIds)
       .in(

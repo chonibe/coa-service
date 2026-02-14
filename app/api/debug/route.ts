@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
     // Check order_line_items table
     const { data: lineItems, error: lineItemsError } = await supabase
-      .from('order_line_items')
+      .from('order_line_items_v2')
       .select('*')
       .eq('order_id', orderId);
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       .limit(0);
 
     const { data: lineItemsSchema, error: lineItemsSchemaError } = await supabase
-      .from('order_line_items')
+      .from('order_line_items_v2')
       .select('*')
       .limit(0);
 

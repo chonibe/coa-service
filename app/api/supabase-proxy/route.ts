@@ -41,7 +41,7 @@ async function getEditionInfo(supabaseAdmin: any, params: any) {
   }
 
   const { data, error } = await supabaseAdmin
-    .from("order_line_items")
+    .from("order_line_items_v2")
     .select("*")
     .eq("order_id", orderId)
     .eq("line_item_id", lineItemId)
@@ -122,7 +122,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
 
   // Get all active line items for this product, ordered by creation date
   const { data: activeItems, error } = await supabaseAdmin
-    .from("order_line_items")
+    .from("order_line_items_v2")
     .select("*")
     .eq("product_id", productId)
     .eq("status", "active")
@@ -147,7 +147,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
 
   for (const item of activeItems) {
     const { error: updateError } = await supabaseAdmin
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update({
         edition_number: editionCounter,
         updated_at: new Date().toISOString(),
@@ -163,7 +163,7 @@ async function resequenceEditionNumbers(supabaseAdmin: any, params: any) {
 
   // Get count of removed items
   const { count: removedCount } = await supabaseAdmin
-    .from("order_line_items")
+    .from("order_line_items_v2")
     .select("*", { count: "exact" })
     .eq("product_id", productId)
     .eq("status", "removed")
@@ -182,7 +182,7 @@ async function fetchOrderLineItems(supabaseAdmin: any, params: any) {
   const { limit = 20 } = params
 
   const { data, error, count } = await supabaseAdmin
-    .from("order_line_items")
+    .from("order_line_items_v2")
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
     .limit(limit)

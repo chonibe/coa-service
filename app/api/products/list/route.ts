@@ -9,7 +9,7 @@ export async function GET() {
   try {
     // First, get unique product IDs from the database
     const { data: productIds, error: productIdsError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("product_id")
       .is("product_id", "not.null")
       .order("product_id")

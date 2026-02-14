@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -37,7 +37,7 @@ export async function GET() {
     let certificateInfo = null
     if (nfcTag.line_item_id && nfcTag.order_id) {
       const { data: lineItem, error: lineItemError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("*")
         .eq("line_item_id", nfcTag.line_item_id)
         .eq("order_id", nfcTag.order_id)

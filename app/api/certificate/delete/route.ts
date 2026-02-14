@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -15,7 +15,7 @@ export async function POST() {
 
     // Update the line item to remove certificate fields
     const { error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update({
         certificate_url: null,
         certificate_token: null,

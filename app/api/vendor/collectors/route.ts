@@ -17,7 +17,7 @@ export async function GET() {
 
     // Get all orders for this vendor's products
     const { data: orders, error: ordersError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select(`
         id,
         order_number,
