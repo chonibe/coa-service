@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProducts } from '@/lib/shopify/storefront-client'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * Artists/Vendors List API
  * 
- * Returns all unique vendors/artists from Shopify products.
+ * Returns all unique vendors/artists from Shopify products,
+ * enriched with Supabase vendor profile data (profile images, bios).
  */
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch all products to get unique vendors
-    const { products } = await getProducts({ first: 250 })
+    // Fetch Shopify products and Supabase vendors in parallel
+    const [shopifyResult, vendorProfiles] = await Promise.all([
+      getProducts({ first: 250 }),
+      fetchVendorProfiles(),
+    ])
+
+    const { products } = shopifyResult
     
     // Group products by vendor
-    const vendorMap = new Map<string, { count: number; image?: string }>()
+    const vendorMap = new Map<string, { count: number; shopifyImage?: string }>()
     
     products.forEach((product) => {
       if (product.vendor) {
@@ -25,21 +32,33 @@ export async function GET(request: NextRequest) {
         } else {
           vendorMap.set(product.vendor, {
             count: 1,
-            // Use first product's image as vendor image (could be improved with actual vendor images)
-            image: product.featuredImage?.url,
+            shopifyImage: product.featuredImage?.url,
           })
         }
       }
     })
+
+    // Build a lookup map for vendor profiles (case-insensitive)
+    const profileLookup = new Map<string, typeof vendorProfiles[number]>()
+    vendorProfiles.forEach((v) => {
+      profileLookup.set(v.vendor_name.toLowerCase(), v)
+    })
     
-    // Convert to array and sort by name
+    // Merge Shopify vendor list with Supabase profile data
     const artists = Array.from(vendorMap.entries())
-      .map(([name, data]) => ({
-        name,
-        slug: name.toLowerCase().replace(/\s+/g, '-'),
-        productCount: data.count,
-        image: data.image,
-      }))
+      .map(([name, data]) => {
+        const profile = profileLookup.get(name.toLowerCase())
+        return {
+          name,
+          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          productCount: data.count,
+          // Supabase profile image takes priority over Shopify product image
+          image: profile?.profile_picture_url || profile?.profile_image || data.shopifyImage,
+          bio: profile?.bio || profile?.artist_bio || undefined,
+          instagramUrl: profile?.instagram_url || undefined,
+          hasProfile: !!profile,
+        }
+      })
       .sort((a, b) => a.name.localeCompare(b.name))
     
     return NextResponse.json({ artists })
@@ -49,5 +68,35 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch artists', artists: [] },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Fetch all active vendor profiles from Supabase
+ */
+async function fetchVendorProfiles() {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('vendors')
+      .select(`
+        vendor_name,
+        bio,
+        artist_bio,
+        instagram_url,
+        profile_image,
+        profile_picture_url
+      `)
+      .eq('status', 'active')
+
+    if (error) {
+      console.error('[Artists API] Supabase vendor profiles error:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('[Artists API] Supabase error:', error)
+    return []
   }
 }

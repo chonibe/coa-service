@@ -54,6 +54,10 @@ const defaultNavigation = [
       { label: 'Featured Artists', href: '/shop/artists?featured=true' },
     ]
   },
+  {
+    label: 'Series',
+    href: '/shop/series',
+  },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
@@ -63,7 +67,9 @@ const defaultNavigation = [
 const shopNavigation = defaultNavigation
 
 // Use synced footer sections from Shopify, with fallback to default
-const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0) ? syncedFooterSections : [
+const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0)
+  ? syncedFooterSections.map((s: any) => ({ ...s, links: s?.links ?? [] }))
+  : [
   {
     title: 'Street Collector',
     links: [
