@@ -176,7 +176,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                         {section.title}
                     </h3>
                     <ul className="space-y-2.5">
-                      {section.links.map((link) => (
+                      {(section.links ?? []).map((link) => (
                         <li key={link.href}>
                           <Link
                             href={link.href}
