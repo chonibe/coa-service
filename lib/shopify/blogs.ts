@@ -177,7 +177,7 @@ export async function getBlogs(): Promise<Array<{ id: string; handle: string; ti
       }
     }>(GET_BLOGS_QUERY, { first: 10 })
     
-    return data.blogs.edges.map(edge => edge.node)
+    return data.blogs?.edges?.map(edge => edge.node) || []
   } catch (error) {
     console.error('Error fetching blogs:', error)
     return []
@@ -242,8 +242,8 @@ export async function getAllArticles(options: {
     }>(GET_ALL_ARTICLES_QUERY, { first, after })
     
     return {
-      articles: data.articles.edges.map(edge => edge.node),
-      pageInfo: data.articles.pageInfo,
+      articles: data.articles?.edges?.map(edge => edge.node) || [],
+      pageInfo: data.articles?.pageInfo || { hasNextPage: false, endCursor: null },
     }
   } catch (error) {
     console.error('Error fetching all articles:', error)

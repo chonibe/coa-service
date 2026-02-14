@@ -105,7 +105,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
     // Fetch collections for filter dropdown
     const collectionsResult = await getCollections({ first: 50 })
-    collections = collectionsResult.collections.map(c => ({ handle: c.handle, title: c.title }))
+    collections = (collectionsResult.collections || []).map(c => ({ handle: c.handle, title: c.title }))
   } catch (error: any) {
     console.error('Error fetching shop data:', error)
     apiError = error.message || 'Failed to load products. Please check your Storefront API configuration.'

@@ -134,7 +134,7 @@ export async function listMetaobjects(
       }
     }>(query, { type, first })
 
-    return data.metaobjects.edges.map(edge => edge.node)
+    return data.metaobjects?.edges?.map(edge => edge.node) || []
   } catch (error) {
     console.error(`[Metaobjects] Failed to list metaobjects of type "${type}":`, error)
     return []

@@ -667,8 +667,8 @@ export async function getCollections(options: {
   }>(query, { first, after })
 
   return {
-    collections: data.collections.edges.map(edge => edge.node),
-    pageInfo: data.collections.pageInfo,
+    collections: data.collections?.edges?.map(edge => edge.node) || [],
+    pageInfo: data.collections?.pageInfo || { hasNextPage: false, endCursor: null },
   }
 }
 

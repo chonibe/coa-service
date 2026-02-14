@@ -122,8 +122,8 @@ export async function getPages(options: {
   try {
     const data = await storefrontQuery<{ pages: PagesConnection }>(GET_PAGES_QUERY, { first, after })
     return {
-      pages: data.pages.edges.map(edge => edge.node),
-      pageInfo: data.pages.pageInfo,
+      pages: data.pages?.edges?.map(edge => edge.node) || [],
+      pageInfo: data.pages?.pageInfo || { hasNextPage: false, endCursor: null },
     }
   } catch (error) {
     console.error('Error fetching pages:', error)

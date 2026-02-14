@@ -109,7 +109,7 @@ export default async function ShopHomeV2Page() {
           handle: artist.handle,
           name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
           location: artist.location,
-          imageUrl: collection?.image?.url || collection?.products.edges[0]?.node.featuredImage?.url,
+          imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
         }
       } catch {
         return {
