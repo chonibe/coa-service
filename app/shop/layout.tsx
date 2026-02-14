@@ -310,15 +310,12 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       <LocalCartDrawer
         isOpen={cart.isOpen}
         onClose={() => cart.toggleCart(false)}
-        cart={cartForDrawer as any}
+        items={cart.items}
+        subtotal={cart.subtotal}
+        total={cart.total}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
-        loading={cartLoading}
-        orderNotes={cart.orderNotes}
-        onOrderNotesChange={cart.setOrderNotes}
-        recommendedProducts={recommendedProducts}
-        onAddRecommendedToCart={onAddRecommendedToCart}
       />
       
       {/* Wishlist Drawer */}
