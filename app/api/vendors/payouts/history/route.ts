@@ -10,15 +10,24 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createClient()
-  
-  try {
 
-    // Get all payout history
-    const { data: payouts, error } = await supabase
+  try {
+    const { searchParams } = request.nextUrl
+    const vendorName = searchParams.get("vendorName")
+    const limit = parseInt(searchParams.get("limit") || "200")
+
+    // Build query with optional vendor filter
+    let query = supabase
       .from("vendor_payouts")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(100)
+      .limit(Math.min(limit, 500)) // Cap at 500
+
+    if (vendorName) {
+      query = query.eq("vendor_name", vendorName)
+    }
+
+    const { data: payouts, error } = await query
 
     if (error) {
       console.error("Error fetching payout history:", error)

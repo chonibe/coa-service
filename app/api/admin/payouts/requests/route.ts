@@ -44,7 +44,13 @@ export async function GET(request: NextRequest) {
 
     // Get ledger balances for all requesting vendors
     const vendorNames = [...new Set((requests || []).map((req: any) => req.vendor_name))]
-    const balances = await calculateMultipleVendorBalances(vendorNames, supabase)
+    let balances: Map<string, any>;
+    try {
+      balances = await calculateMultipleVendorBalances(vendorNames, supabase);
+    } catch (balanceErr: any) {
+      console.error("Balance calculation failed for requests:", balanceErr.message);
+      balances = new Map();
+    }
 
     // Format the response
     const formattedRequests = (requests || []).map((req: any) => {

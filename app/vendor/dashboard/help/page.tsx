@@ -101,7 +101,6 @@ const keyboardShortcuts = [
   { key: "g + p", description: "Go to Products" },
   { key: "g + a", description: "Go to Analytics" },
   { key: "g + y", description: "Go to Payouts" },
-  { key: "g + b", description: "Go to Benefits" },
   { key: "g + m", description: "Go to Messages" },
   { key: "g + s", description: "Go to Settings" },
   { key: "/", description: "Focus search" },

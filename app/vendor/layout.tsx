@@ -34,7 +34,6 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       const session = await getUnifiedSession()
 
       if (!session || !sessionHasAnyRole(session, ['vendor', 'admin'])) {
-        console.log('[vendor/layout] Unified auth: no vendor/admin role, redirecting to login')
         redirect("/login")
       }
 
