@@ -17,3 +17,9 @@ export type { ContentCardProps, ContentCardHeaderProps } from './ContentCard'
 
 export { CreateActionSheet } from './CreateActionSheet'
 export type { CreateActionSheetProps, CreateOption } from './CreateActionSheet'
+
+export { ProgressRing } from './ProgressRing'
+export type { ProgressRingProps } from './ProgressRing'
+
+export { ActivityFeed } from './ActivityFeed'
+export type { ActivityFeedProps, ActivityEvent, ActivityEventType } from './ActivityFeed'

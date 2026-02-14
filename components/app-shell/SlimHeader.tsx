@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Search, Bell, ShoppingBag } from 'lucide-react'
+import { Search, Bell, ShoppingBag, Gem } from 'lucide-react'
 
 // ============================================================================
 // App Shell Slim Header
@@ -23,12 +23,16 @@ export interface SlimHeaderProps {
   cartCount?: number
   /** Notification count */
   notificationCount?: number
+  /** Credit balance to display (collector gamification) */
+  creditBalance?: number | null
   /** Callback when search icon is tapped */
   onSearchClick?: () => void
   /** Callback when bell icon is tapped */
   onNotificationClick?: () => void
   /** Callback when cart icon is tapped */
   onCartClick?: () => void
+  /** Callback when credits badge is tapped */
+  onCreditsClick?: () => void
   /** Link for the logo */
   logoHref?: string
   className?: string
@@ -38,9 +42,11 @@ export function SlimHeader({
   showCart = true,
   cartCount = 0,
   notificationCount = 0,
+  creditBalance = null,
   onSearchClick,
   onNotificationClick,
   onCartClick,
+  onCreditsClick,
   logoHref = '/',
   className,
 }: SlimHeaderProps) {
@@ -103,6 +109,25 @@ export function SlimHeader({
 
         {/* Utility Icons */}
         <div className="flex items-center gap-1">
+          {/* Credits Badge */}
+          {creditBalance !== null && (
+            <button
+              onClick={onCreditsClick}
+              className={cn(
+                'flex items-center gap-1 mr-1',
+                'h-7 px-2.5 rounded-full',
+                'bg-impact-secondary/90 text-impact-secondary-text',
+                'text-xs font-bold font-body',
+                'hover:bg-impact-secondary active:scale-95',
+                'transition-all duration-200'
+              )}
+              aria-label={`${creditBalance} credits`}
+            >
+              <Gem className="w-3 h-3" />
+              <span>{creditBalance >= 1000 ? `${(creditBalance / 1000).toFixed(1)}k` : creditBalance}</span>
+            </button>
+          )}
+
           {/* Search */}
           <button
             onClick={onSearchClick}

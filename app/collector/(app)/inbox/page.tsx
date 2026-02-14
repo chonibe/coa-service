@@ -1,13 +1,16 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
+import { ActivityFeed, type ActivityEvent } from '@/components/app-shell'
 
 // ============================================================================
 // Collector Inbox Tab
 //
-// All activity in one place.
+// Live activity feed — like Instagram's Activity tab.
+// Shows purchases, NFC scans, certificates, series progress,
+// level-ups, perk unlocks.
 // Sub-tabs: Activity / Notifications
-// Like Instagram's Activity tab.
 // ============================================================================
 
 const inboxTabs: SubTab[] = [
@@ -16,14 +19,31 @@ const inboxTabs: SubTab[] = [
 ]
 
 export default function CollectorInboxPage() {
+  const [events, setEvents] = useState<ActivityEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchActivity() {
+      try {
+        const res = await fetch('/api/collector/activity')
+        const json = await res.json()
+        if (json.success) {
+          setEvents(json.events || [])
+        }
+      } catch (err) {
+        console.error('[Activity] Failed to fetch:', err)
+        // Fallback: show empty state
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchActivity()
+  }, [])
+
   return (
     <div>
       <SubTabBar tabs={inboxTabs} />
-      <div className="px-4 py-4">
-        <p className="text-center text-sm text-gray-400 font-body py-12">
-          Authentication queue, order updates, and certificate-ready notifications will appear here
-        </p>
-      </div>
+      <ActivityFeed events={events} loading={loading} />
     </div>
   )
 }
