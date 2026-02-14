@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
 import { convertToUSD } from "@/lib/currency-converter"
 
-const DEFAULT_PAYOUT_PERCENTAGE = 25
+export const DEFAULT_PAYOUT_PERCENTAGE = 25
 export const MINIMUM_PAYOUT_AMOUNT = 25 // USD
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
@@ -65,9 +65,9 @@ export function calculateLineItemPayout(
     is_percentage?: boolean | null
   }
 ): number {
-  // Always use exactly 25% of the item price
+  // Always use exactly DEFAULT_PAYOUT_PERCENTAGE% of the item price
   // Custom payout settings are disabled
-  return (lineItem.price * 25) / 100
+  return (lineItem.price * DEFAULT_PAYOUT_PERCENTAGE) / 100
 }
 
 /**
@@ -391,6 +391,8 @@ export async function calculateVendorPayout(
 
 /**
  * Get pending line items for a vendor (fulfilled items not yet paid)
+ * @deprecated LEGACY — Used for display/audit only, NOT for money calculations.
+ * The authoritative balance comes from the ledger (calculateVendorBalance in vendor-balance-calculator.ts).
  */
 export async function getPendingLineItems(
   vendorName: string,

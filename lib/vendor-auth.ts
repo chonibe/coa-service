@@ -304,20 +304,8 @@ export const linkSupabaseUserToVendor = async (
       : null
   }
 
-  // Override check is now done at the beginning of the function
-  // This code path should not be reached for override emails, but keeping for safety
-  if (email) {
-    const override = EMAIL_VENDOR_OVERRIDES[email]
-    if (override?.vendorName) {
-      console.log(`[vendor-auth] Fallback: Found email override for ${email} -> ${override.vendorName}`)
-      const vendor = await findVendorByVendorName(override.vendorName)
-      if (vendor) {
-        await attachVendorUser(vendor.id, authId, override.contactEmail ?? email)
-        await setVendorStatusActive(vendor.id)
-        return { id: vendor.id, vendor_name: vendor.vendor_name, status: "active" }
-      }
-    }
-  }
+  // NOTE: Override check was removed here — it is handled at the beginning of the function.
+  // See the EMAIL_VENDOR_OVERRIDES early-return block above.
 
   if (!allowCreate) {
     return null

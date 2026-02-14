@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import type { PayoutDepositResult } from './types';
 import { ensureCollectorAccount } from './account-manager';
-import { calculateLineItemPayout } from '@/lib/payout-calculator';
-
-const DEFAULT_PAYOUT_PERCENTAGE = 25;
+import { calculateLineItemPayout, DEFAULT_PAYOUT_PERCENTAGE } from '@/lib/payout-calculator';
 
 /**
  * Deposit USD payout when a line item is fulfilled
@@ -148,8 +146,8 @@ export async function depositPayoutEarnings(
     }
     
     // Calculate payout amount using the original price (before discount)
-    // Enforce strict 25% payout rule
-    const payoutAmount = (priceForCalculation * 25) / 100;
+    // Enforce strict DEFAULT_PAYOUT_PERCENTAGE% payout rule
+    const payoutAmount = (priceForCalculation * DEFAULT_PAYOUT_PERCENTAGE) / 100;
 
     if (payoutAmount <= 0) {
       return {

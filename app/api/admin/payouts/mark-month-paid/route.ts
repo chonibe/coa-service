@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { validatePayout, ensureDataIntegrity } from "@/lib/payout-validator"
 import { calculateVendorPayout, calculateLineItemPayout } from "@/lib/payout-calculator"
 import { logAdminAction } from "@/lib/audit-logger"
+import { invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
 import crypto from "crypto"
 
 interface MarkMonthPaidRequest {
@@ -292,6 +293,9 @@ export async function POST(request: NextRequest) {
         totalAmount,
       },
     })
+
+    // Invalidate balance cache so subsequent reads reflect the change
+    invalidateVendorBalanceCache(vendorName)
 
     return NextResponse.json({
       success: true,

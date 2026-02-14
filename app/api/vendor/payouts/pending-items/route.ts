@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
+import { calculateVendorBalance } from "@/lib/vendor-balance-calculator"
+import { DEFAULT_PAYOUT_PERCENTAGE } from "@/lib/payout-calculator"
 
 export async function GET() {
   const cookieStore = cookies()
@@ -72,8 +74,44 @@ export async function GET() {
       item.fulfillment_status !== 'restocked' // Double-check to exclude restocked items
     )
 
+    // Fetch ledger entries for these line items (payout_earned entries are the source of truth)
+    const allLineItemIds = unpaidItems.map((item: any) => item.line_item_id)
+    const { data: ledgerEntries } = allLineItemIds.length > 0
+      ? await supabase
+          .from('collector_ledger_entries')
+          .select('line_item_id, amount')
+          .in('line_item_id', allLineItemIds)
+          .eq('transaction_type', 'payout_earned')
+          .eq('currency', 'USD')
+      : { data: [] }
+
+    const ledgerAmountByLineItem = new Map<string, number>(
+      (ledgerEntries || []).map((e: any) => [e.line_item_id, Number(e.amount) || 0])
+    )
+
+    // Get authoritative ledger balance
+    const ledgerBalance = await calculateVendorBalance(vendorName, supabase)
+
     // Calculate payout amounts for each line item
     const processItem = (item: any, includePayout: boolean = true) => {
+      // If the ledger has an entry for this line item, use that as the authoritative amount
+      const ledgerAmount = ledgerAmountByLineItem.get(item.line_item_id)
+      if (ledgerAmount !== undefined && ledgerAmount > 0) {
+        return {
+          line_item_id: item.line_item_id,
+          order_id: item.order_id,
+          order_name: item.order_name,
+          product_id: item.product_id,
+          product_title: item.name || `Product ${item.product_id}`,
+          price: Number(item.price || 0),
+          payout_amount: includePayout ? ledgerAmount : 0,
+          created_at: item.created_at,
+          fulfillment_status: item.fulfillment_status || 'unfulfilled',
+          source: 'ledger' as const,
+        }
+      }
+
+      // Fall back to estimate for items not yet in the ledger (e.g. unfulfilled)
       let originalPrice = Number(item.price || 0)
       const orderCurrency = item.orders?.currency_code || 'USD'
       const currencyUpper = orderCurrency.toUpperCase()
@@ -96,7 +134,7 @@ export async function GET() {
 
       let payoutAmount = 0
       if (includePayout) {
-        payoutAmount = (price * 25) / 100
+        payoutAmount = (price * DEFAULT_PAYOUT_PERCENTAGE) / 100
         
         // Apply $10 minimum for orders before October 2025 (safety check)
         if (createdAt < october2025 && payoutAmount < 10) {
@@ -114,6 +152,7 @@ export async function GET() {
         payout_amount: payoutAmount,
         created_at: item.created_at,
         fulfillment_status: item.fulfillment_status || 'unfulfilled',
+        source: 'estimate' as const,
       }
     }
 
@@ -157,6 +196,8 @@ export async function GET() {
       unfulfilledGroupedByMonth: unfulfilledGroupedByMonth,
       unfulfilledTotalAmount: unfulfilledWithPayouts.reduce((sum, item) => sum + item.payout_amount, 0),
       unfulfilledTotalItems: unfulfilledWithPayouts.length,
+      // Authoritative ledger balance (single source of truth)
+      ledger_balance: ledgerBalance.available_balance,
     })
   } catch (error) {
     console.error("Error in vendor pending items route:", error)

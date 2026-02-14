@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
 import { MINIMUM_PAYOUT_AMOUNT } from "@/lib/payout-calculator"
 import { isValidPayPalEmail } from "@/lib/paypal/payouts"
+import { calculateVendorBalance } from "@/lib/vendor-balance-calculator"
 
 export interface PayoutPrerequisites {
   hasPayPalEmail: boolean
@@ -88,27 +89,10 @@ export async function checkVendorPayoutReadiness(
       missingItems.push("Terms acceptance")
     }
 
-    // Get pending balance
-    const { data: lineItems } = await client.rpc("get_vendor_pending_line_items", {
-      p_vendor_name: vendorName,
-    })
-
-    // Calculate balance from fulfilled items only
-    const fulfilledItems = (lineItems || []).filter(
-      (item: any) => item.fulfillment_status === "fulfilled"
-    )
-
-    let totalBalance = 0
-    for (const item of fulfilledItems) {
-      const price = typeof item.price === "string" ? parseFloat(item.price || "0") : item.price || 0
-      const payoutAmount = item.is_percentage
-        ? (price * (item.payout_amount || 25)) / 100
-        : item.payout_amount || (price * 25) / 100
-      totalBalance += payoutAmount
-    }
-
-    prerequisites.currentBalance = totalBalance
-    prerequisites.hasMinimumBalance = totalBalance >= MINIMUM_PAYOUT_AMOUNT
+    // Get balance from the ledger (single source of truth)
+    const balance = await calculateVendorBalance(vendorName, client)
+    prerequisites.currentBalance = balance.available_balance
+    prerequisites.hasMinimumBalance = balance.available_balance >= MINIMUM_PAYOUT_AMOUNT
 
     if (!prerequisites.hasMinimumBalance) {
       missingItems.push(`Minimum balance of $${MINIMUM_PAYOUT_AMOUNT}`)

@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+import { invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
 
 // Proof print price constant
 const PROOF_PRINT_PRICE = 8.00
@@ -357,6 +358,9 @@ export async function POST(request: NextRequest) {
         console.error("Error creating payout balance purchase ledger entry:", ledgerEntryError)
         // Don't fail the purchase, but log the error
       }
+
+      // Invalidate balance cache so subsequent reads reflect the deduction
+      invalidateVendorBalanceCache(vendorName)
     }
 
     // Update vendor records based on purchase type

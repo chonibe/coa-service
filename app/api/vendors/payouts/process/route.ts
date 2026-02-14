@@ -4,6 +4,7 @@ import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
 import { processPayouts, type PaymentMethod } from "@/lib/payout-processor"
 import { notifyPayoutProcessed, notifyPayoutFailed } from "@/lib/notifications/payout-notifications"
+import { DEFAULT_PAYOUT_PERCENTAGE } from "@/lib/payout-calculator"
 import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -86,7 +87,8 @@ export async function POST(request: NextRequest) {
 
         const payoutId = data[0].id
 
-        // Get all pending fulfilled line items for this vendor
+        // LEGACY: Get pending line items via RPC for audit/display only, NOT for money calculations.
+        // @deprecated — The authoritative balance comes from the ledger (collector_ledger_entries).
         console.log(`[payouts/process] Fetching pending line items for ${vendor_name}`)
         const { data: lineItems, error: lineItemsError } = await supabase.rpc("get_vendor_pending_line_items", {
           p_vendor_name: vendor_name,
@@ -111,8 +113,8 @@ export async function POST(request: NextRequest) {
             
             // Calculate amount for this item based on its settings
             let payoutAmount = item.is_percentage 
-              ? (price * (item.payout_amount || 25)) / 100 
-              : (item.payout_amount || (price * 25) / 100)
+              ? (price * (item.payout_amount || DEFAULT_PAYOUT_PERCENTAGE)) / 100 
+              : (item.payout_amount || (price * DEFAULT_PAYOUT_PERCENTAGE) / 100)
             
             // Maintain $10 minimum for historical orders (pre-October 2025)
             if (orderDate < october2025 && payoutAmount < 10) {
