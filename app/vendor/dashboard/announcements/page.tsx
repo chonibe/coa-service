@@ -94,15 +94,39 @@ export default function AnnouncementsPage() {
   }
 
   const fetchTargets = async () => {
-    // Mock data for now - would fetch from API
-    setAvailableArtworks([
-      { id: "1", name: "Artwork 1" },
-      { id: "2", name: "Artwork 2" },
-    ])
-    setAvailableSeries([
-      { id: "1", name: "Series 1" },
-      { id: "2", name: "Series 2" },
-    ])
+    try {
+      // Fetch vendor's products/submissions
+      const productsResponse = await fetch("/api/vendor/products/submissions", {
+        credentials: "include",
+      })
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json()
+        const artworks = (productsData.submissions || []).map((s: any) => ({
+          id: s.id,
+          name: s.title || s.name || "Untitled",
+        }))
+        setAvailableArtworks(artworks)
+      }
+    } catch (err) {
+      console.error("Error fetching artworks for announcements:", err)
+    }
+
+    try {
+      // Fetch vendor's series
+      const seriesResponse = await fetch("/api/vendor/series", {
+        credentials: "include",
+      })
+      if (seriesResponse.ok) {
+        const seriesData = await seriesResponse.json()
+        const series = (seriesData.series || []).map((s: any) => ({
+          id: s.id,
+          name: s.name || "Untitled Series",
+        }))
+        setAvailableSeries(series)
+      }
+    } catch (err) {
+      console.error("Error fetching series for announcements:", err)
+    }
   }
 
   const handleSendAnnouncement = async () => {

@@ -10,7 +10,6 @@ export type ShortcutAction =
   | "products"
   | "analytics"
   | "payouts"
-  | "benefits"
   | "messages"
   | "settings"
   | "help"
@@ -79,7 +78,7 @@ export class KeyboardShortcutsManager {
     }
 
     this.shortcuts.forEach((shortcut) => {
-      if (["dashboard", "products", "analytics", "payouts", "benefits", "messages", "settings"].includes(shortcut.action)) {
+      if (["dashboard", "products", "analytics", "payouts", "messages", "settings"].includes(shortcut.action)) {
         categories.navigation.push(shortcut)
       } else {
         categories.actions.push(shortcut)
@@ -154,7 +153,6 @@ export const defaultShortcuts: Omit<KeyboardShortcut, "handler">[] = [
   { key: "g+p", action: "products", description: "Go to products" },
   { key: "g+a", action: "analytics", description: "Go to analytics" },
   { key: "g+y", action: "payouts", description: "Go to payouts" },
-  { key: "g+b", action: "benefits", description: "Go to benefits" },
   { key: "g+m", action: "messages", description: "Go to messages" },
   { key: "g+s", action: "settings", description: "Go to settings" },
   { key: "?", action: "shortcuts", description: "Show keyboard shortcuts" },

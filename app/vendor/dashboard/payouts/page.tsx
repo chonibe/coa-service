@@ -787,7 +787,7 @@ export default function PayoutsPage() {
                 <CardDescription>
                   These orders have been placed and are being fulfilled by our team. Once fulfillment is complete, they'll appear in "Ready to Request Payment" and you can request your payout via PayPal.
                   <div className="mt-2 text-xs">
-                    <a href="/vendor/dashboard/settings" className="text-blue-600 hover:underline">
+                    <a href="/vendor/dashboard/profile" className="text-blue-600 hover:underline">
                       How is my payout calculated?
                     </a>
                     {" • You earn 25% commission on each sale"}
@@ -857,7 +857,7 @@ export default function PayoutsPage() {
               <CardDescription>
                 Great news! These orders have been fulfilled by our team and are ready for payment. Click "Request Payment" above to get paid to your PayPal account.
                 <div className="mt-2 text-xs">
-                  <a href="/vendor/dashboard/settings" className="text-blue-600 hover:underline">
+                  <a href="/vendor/dashboard/profile" className="text-blue-600 hover:underline">
                     How is my payout calculated?
                   </a>
                   {" • You earn 25% commission on each sale"}

@@ -1089,7 +1089,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                   className="mb-4"
                 >
                   <a 
-                    href="/docs/features/vendor-terms/VENDOR_TERMS_OF_SERVICE.md" 
+                    href="/vendor/terms" 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
@@ -1171,8 +1171,8 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
               <Button onClick={onComplete} size="lg" className="gap-2">
                 Go to Dashboard <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="lg" onClick={() => window.location.href = "/vendor/dashboard/settings"}>
-                Review Settings
+              <Button variant="outline" size="lg" onClick={() => window.location.href = "/vendor/dashboard/profile"}>
+                Review Profile
             </Button>
             </div>
           </div>

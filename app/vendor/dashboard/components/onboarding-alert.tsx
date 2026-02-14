@@ -101,7 +101,7 @@ export function OnboardingAlert() {
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Button asChild variant="default" size="sm" className="bg-amber-600 hover:bg-amber-700">
-              <Link href="/vendor/dashboard/settings">
+              <Link href="/vendor/dashboard/profile">
                 Complete Profile <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>

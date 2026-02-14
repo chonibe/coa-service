@@ -90,14 +90,11 @@ export default function VendorDashboardPage() {
             case "payouts":
               router.push("/vendor/dashboard/payouts")
               break
-            case "benefits":
-              router.push("/vendor/dashboard/benefits")
-              break
             case "messages":
               router.push("/vendor/dashboard/messages")
               break
             case "settings":
-              router.push("/vendor/dashboard/settings")
+              router.push("/vendor/dashboard/profile")
               break
             case "search":
               // Focus search if available, or show command palette
@@ -234,15 +231,15 @@ export default function VendorDashboardPage() {
     }).format(amount)
   }
 
-  // Calculate trends (mock data for now - would come from API)
+  // Calculate trends from previous period comparison data
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0
     return ((current - previous) / previous) * 100
   }
 
-  const previousSales = (salesData as any).previousTotalSales ?? salesData.totalSales * 0.9
-  const previousRevenue = (salesData as any).previousTotalRevenue ?? salesData.totalRevenue * 0.95
-  const previousPayout = (salesData as any).previousTotalPayout ?? salesData.totalPayout * 0.95
+  const previousSales = salesData.previousTotalSales
+  const previousRevenue = salesData.previousTotalRevenue
+  const previousPayout = salesData.previousTotalPayout
   const isLoading = isLoadingStats || isLoadingAnalytics
   const formattedLastUpdated = lastUpdated ? new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(lastUpdated) : null
 
@@ -290,11 +287,11 @@ export default function VendorDashboardPage() {
                 title="Total Sales"
                 value={salesData?.totalSales || 0}
                 icon={ShoppingCart}
-                trend={{
+                trend={previousSales !== undefined ? {
                   value: calculateTrend(salesData.totalSales, previousSales),
                   label: "vs last period",
                   isPositive: salesData.totalSales >= previousSales,
-                }}
+                } : undefined}
                 description="Orders you've received"
                 variant="elevated"
               />
@@ -303,11 +300,11 @@ export default function VendorDashboardPage() {
                 title="Total Payout"
                 value={formatCurrency(salesData?.totalPayout || 0)}
                 icon={DollarSign}
-                trend={{
+                trend={previousPayout !== undefined ? {
                   value: calculateTrend(salesData.totalPayout, previousPayout),
                   label: "vs last period",
                   isPositive: salesData.totalPayout >= previousPayout,
-                }}
+                } : undefined}
                 description="Earnings ready for PayPal transfer"
                 variant="elevated"
               />

@@ -3,10 +3,8 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { SidebarLayout } from "./components/sidebar-layout"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
-import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
-import { buildVendorSessionCookie } from "@/lib/vendor-session"
-import { linkSupabaseUserToVendor, isAdminEmail, REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
+import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
 
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
@@ -20,14 +18,9 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
   try {
     const cookieStore = cookies()
     
-    // Debug: Log all cookies to see what's available
-    const allCookies = cookieStore.getAll()
-    console.log(`[vendor/layout] All cookies:`, allCookies.map(c => c.name).join(", "))
-
     // Check if account selection is required (user recently logged out)
     const requireAccountSelection = cookieStore.get(REQUIRE_ACCOUNT_SELECTION_COOKIE)?.value === "true"
     if (requireAccountSelection) {
-      console.log("[vendor/layout] Account selection required (user recently logged out), redirecting to login")
       redirect("/login")
     }
 
@@ -36,20 +29,11 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
   // If no vendor session cookie, redirect to login
   // Do NOT auto-login from Supabase session to prevent unwanted session restoration
   if (!vendorName) {
-    console.log("[vendor/layout] No vendor session cookie found, redirecting to login")
     redirect("/login")
   }
-
-  if (!vendorName) {
-    console.log("[vendor/layout] No vendor name found after all checks, redirecting to login")
-    redirect("/login")
-  }
-
-  console.log(`[vendor/layout] Vendor session found: ${vendorName}`)
 
   // Skip vendor database checks for admin users - they have full access
   if (vendorName === "admin-access") {
-    console.log("[vendor/layout] Admin user with full access, skipping vendor checks")
     return <SidebarLayout>{children}</SidebarLayout>
   }
 
@@ -65,7 +49,6 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
 
   // If not found, try case-insensitive search
   if (!vendor && !error) {
-    console.log(`[vendor/layout] Exact match not found for "${vendorName}", trying case-insensitive search`)
     const { data: vendors, error: searchError } = await supabase
       .from("vendors")
       .select("vendor_name,status,onboarding_completed")
@@ -73,16 +56,12 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
     
     if (searchError) {
       console.error(`[vendor/layout] Case-insensitive search error:`, searchError)
-    } else {
-      console.log(`[vendor/layout] Case-insensitive search found ${vendors?.length || 0} vendors`)
-      if (vendors && vendors.length > 0) {
-        vendor = vendors[0]
-        console.log(`[vendor/layout] Using vendor: ${vendor.vendor_name}`)
-      }
+    } else if (vendors && vendors.length > 0) {
+      vendor = vendors[0]
     }
   }
 
-  // If still not found, list all vendors for debugging and try to find by partial match
+  // If still not found, try to find by partial name match
   if (!vendor && !error) {
     const { data: allVendors, error: listError } = await supabase
       .from("vendors")
@@ -90,9 +69,6 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       .limit(50)
     
     if (!listError && allVendors) {
-      console.log(`[vendor/layout] Available vendors in database (${allVendors.length}):`, allVendors.map(v => `${v.vendor_name} (id: ${v.id})`))
-      
-      // Try to find vendor by partial name match (case-insensitive)
       const normalizedSearch = vendorName.toLowerCase().replace(/\s+/g, " ")
       const matchedVendor = allVendors.find(v => 
         v.vendor_name.toLowerCase().replace(/\s+/g, " ") === normalizedSearch ||
@@ -101,7 +77,6 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       )
       
       if (matchedVendor) {
-        console.log(`[vendor/layout] Found vendor by partial match: "${matchedVendor.vendor_name}" (searching for "${vendorName}")`)
         vendor = matchedVendor
       }
     } else if (listError) {
@@ -110,35 +85,22 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
   }
 
   if (error) {
-    console.error(`[vendor/layout] Database error for vendor ${vendorName}:`, error)
+    console.error(`[vendor/layout] Database error for vendor:`, error)
     redirect("/login")
   }
 
   if (!vendor) {
-    console.error(`[vendor/layout] Vendor not found in database: ${vendorName}`)
+    console.error(`[vendor/layout] Vendor not found in database`)
     redirect("/login")
   }
 
-  console.log(`[vendor/layout] Vendor found: ${vendor.vendor_name}, status: ${vendor.status}, onboarding_completed: ${vendor.onboarding_completed}`)
-
   if (vendor.status === "pending" || vendor.status === "review") {
-    console.log(`[vendor/layout] Vendor status is ${vendor.status}, redirecting to pending`)
     redirect(PENDING_ACCESS_ROUTE)
   }
 
   if (vendor.status === "disabled" || vendor.status === "suspended") {
-    console.log(`[vendor/layout] Vendor status is ${vendor.status}, redirecting to denied`)
     redirect(ACCESS_DENIED_ROUTE)
   }
-
-  // Note: We don't redirect for incomplete onboarding here to avoid loops
-  // The onboarding page is also wrapped by this layout, so redirecting would cause infinite loops
-  // Instead, individual pages (like dashboard) should check onboarding status and redirect if needed
-  if (!vendor.onboarding_completed) {
-    console.log(`[vendor/layout] Vendor onboarding not completed (${vendor.onboarding_completed}), but allowing page to render`)
-  }
-
-  console.log(`[vendor/layout] All checks passed, rendering content`)
 
     return <SidebarLayout>{children}</SidebarLayout>
   } catch (error: any) {

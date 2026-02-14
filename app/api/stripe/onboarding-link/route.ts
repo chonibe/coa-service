@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create account link for onboarding
-    const refreshUrl = `${API_BASE_URL}/vendor/dashboard/settings?stripe=refresh`
-    const returnUrl = `${API_BASE_URL}/vendor/dashboard/settings?stripe=success`
+    const refreshUrl = `${API_BASE_URL}/vendor/dashboard/profile?stripe=refresh`
+    const returnUrl = `${API_BASE_URL}/vendor/dashboard/profile?stripe=success`
 
     const result = await createAccountLink(vendor.stripe_account_id, refreshUrl, returnUrl)
 

@@ -250,7 +250,7 @@ export function PurchaseDialog({
                       className="h-auto p-0 mt-1 text-xs text-green-700 dark:text-green-300"
                       asChild
                     >
-                      <Link href="/vendor/dashboard/settings">Update address</Link>
+                      <Link href="/vendor/dashboard/profile">Update address</Link>
                     </Button>
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export function PurchaseDialog({
                   Delivery address is required for shipping
                 </p>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/vendor/dashboard/settings">
+                  <Link href="/vendor/dashboard/profile">
                     <MapPin className="h-4 w-4 mr-2" />
                     Add Delivery Address
                   </Link>

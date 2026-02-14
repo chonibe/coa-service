@@ -70,12 +70,6 @@ const PAGE_TIPS: Record<string, PageTip> = {
     icon: <HelpCircle className="h-5 w-5" />,
     highlight: "Support & guides",
   },
-  "/vendor/dashboard/settings": {
-    title: "Configure your account ⚙️",
-    description: "Manage your account settings, preferences, and notification preferences. Customize your experience here.",
-    icon: <UserCircle className="h-5 w-5" />,
-    highlight: "Account configuration",
-  },
 }
 
 export function PageOnboardingWizard() {
