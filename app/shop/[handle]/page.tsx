@@ -92,7 +92,7 @@ export default function ProductPage() {
         })
         
         // Set default variant
-        if (data.product.variants.edges.length > 0) {
+        if (data.product.variants?.edges?.length > 0) {
           const defaultVariant = data.product.variants.edges[0].node
           setSelectedVariant(defaultVariant)
           
@@ -124,7 +124,7 @@ export default function ProductPage() {
   useEffect(() => {
     if (!product) return
     
-    const matchingVariant = product.variants.edges.find(({ node }) => {
+    const matchingVariant = product.variants?.edges?.find(({ node }) => {
       return node.selectedOptions.every(
         (opt) => selectedOptions[opt.name] === opt.value
       )
@@ -396,8 +396,8 @@ export default function ProductPage() {
               </div>
 
               {/* Variant Options - Pill Style Selector */}
-              {product.options.map((option) => {
-                if (option.values.length <= 1 && option.values[0] === 'Default Title') {
+              {product.options?.map((option) => {
+                if (!option.values || (option.values.length <= 1 && option.values[0] === 'Default Title')) {
                   return null
                 }
                 

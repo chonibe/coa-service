@@ -25,7 +25,6 @@ export function StreetLampLogo({
 }: StreetLampLogoProps) {
   return (
     <svg
-      width={width || 'auto'}
       height={height}
       viewBox="0 0 43 49"
       fill="none"
