@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { shopifyFetch } from "@/lib/shopify-api"
 import { getTierByPriceId, MEMBERSHIP_TIERS, type MembershipTierId } from "@/lib/membership/tiers"
+import { getOrCreateCollectorAccount } from "@/lib/banking/account-manager"
+import { CREDITS_PER_DOLLAR } from "@/lib/banking/types"
+import { buildClaimUrl } from "@/lib/auth/claim-token"
+import { sendEmail } from "@/lib/email/client"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20",
@@ -234,11 +238,175 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
         metadata: session.metadata,
         created_at: new Date().toISOString(),
       })
+
+      // ── Post-Purchase Bridge: Create/link collector identity ──
+      const purchaserEmail = customer?.email?.toLowerCase()
+      if (purchaserEmail) {
+        try {
+          await bridgePostPurchase(
+            supabase,
+            purchaserEmail,
+            session.id,
+            completedOrder.order_id?.toString() || draft_order.id.toString(),
+            session.amount_total || 0,
+            session.currency || 'usd',
+            variants
+          )
+        } catch (bridgeError) {
+          // Non-critical: log but don't fail the webhook
+          console.error('[stripe/webhook] Post-purchase bridge error (non-critical):', bridgeError)
+        }
+      }
     } else {
       console.error('Failed to complete draft order')
     }
   } catch (err) {
     console.error('Error handling checkout.session.completed:', err)
+  }
+}
+
+/**
+ * Post-purchase bridge: Ensures every purchase creates or links a collector identity.
+ * 
+ * 1. Creates stub collector_profiles if none exists
+ * 2. Creates collector_accounts for the banking system
+ * 3. Deposits pending credits based on purchase amount
+ * 4. Sends a claim email for guest purchasers (no Supabase account)
+ */
+async function bridgePostPurchase(
+  supabase: any,
+  email: string,
+  stripeSessionId: string,
+  orderId: string,
+  amountTotalCents: number,
+  currency: string,
+  variants: Array<{ variantId: string; variantGid: string; quantity: number; productHandle: string }>
+) {
+  console.log(`[post-purchase] Bridging purchase for ${email}, order: ${orderId}`)
+
+  // 1. Check if collector profile exists
+  const { data: existingProfile } = await supabase
+    .from('collector_profiles')
+    .select('id, user_id, email')
+    .eq('email', email)
+    .maybeSingle()
+
+  let profileCreated = false
+
+  if (!existingProfile) {
+    // Create stub profile (no user_id yet — guest purchase)
+    const { error: profileError } = await supabase
+      .from('collector_profiles')
+      .insert({
+        email,
+        user_id: null,
+        signup_source: 'purchase',
+        onboarding_step: 0,
+        onboarding_completed_at: null,
+      })
+
+    if (profileError) {
+      // Might be a race condition (duplicate), ignore
+      if (!profileError.message?.includes('duplicate') && profileError.code !== '23505') {
+        console.error('[post-purchase] Profile creation error:', profileError)
+      }
+    } else {
+      profileCreated = true
+      console.log(`[post-purchase] Created stub collector profile for ${email}`)
+    }
+  }
+
+  // 2. Ensure banking account exists
+  try {
+    await getOrCreateCollectorAccount(email, 'customer')
+    console.log(`[post-purchase] Banking account ensured for ${email}`)
+  } catch (accountError) {
+    console.error('[post-purchase] Banking account creation error:', accountError)
+  }
+
+  // 3. Deposit pending credits (price in cents → dollars → credits)
+  const amountDollars = amountTotalCents / 100
+  const creditsToDeposit = Math.round(amountDollars * CREDITS_PER_DOLLAR)
+
+  if (creditsToDeposit > 0) {
+    // Idempotency check: use stripeSessionId as the unique key
+    const { data: existingCredit } = await supabase
+      .from('collector_ledger_entries')
+      .select('id')
+      .eq('collector_identifier', email)
+      .eq('transaction_type', 'credit_earned')
+      .eq('order_id', orderId)
+      .maybeSingle()
+
+    if (!existingCredit) {
+      const { error: ledgerError } = await supabase
+        .from('collector_ledger_entries')
+        .insert({
+          collector_identifier: email,
+          transaction_type: 'credit_earned',
+          amount: creditsToDeposit,
+          currency: 'CREDITS',
+          order_id: orderId,
+          description: `Credits earned from purchase: $${amountDollars.toFixed(2)}`,
+          created_by: 'system',
+          metadata: {
+            stripe_session_id: stripeSessionId,
+            order_id: orderId,
+            price_usd: amountDollars,
+            credits_per_dollar: CREDITS_PER_DOLLAR,
+            source: 'checkout_completed',
+          },
+        })
+
+      if (ledgerError) {
+        console.error('[post-purchase] Credit deposit error:', ledgerError)
+      } else {
+        console.log(`[post-purchase] Deposited ${creditsToDeposit} credits for ${email}`)
+      }
+    } else {
+      console.log(`[post-purchase] Credits already deposited for order ${orderId}`)
+    }
+  }
+
+  // 4. Send claim email for guest purchasers (no user_id linked)
+  const hasAccount = existingProfile?.user_id != null
+  if (!hasAccount) {
+    try {
+      const claimUrl = buildClaimUrl(email, stripeSessionId)
+      const itemSummary = variants
+        .map(v => `${v.productHandle} (×${v.quantity})`)
+        .join(', ')
+
+      await sendEmail({
+        to: email,
+        subject: 'Claim Your Street Collector Collection',
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
+              Your artwork is on its way!
+            </h1>
+            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 12px;">
+              Thank you for your purchase. You earned <strong>${creditsToDeposit} credits</strong> with this order.
+            </p>
+            <p style="font-size: 14px; color: #777; margin-bottom: 24px;">
+              Items: ${itemSummary}
+            </p>
+            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+              Claim your free collector account to track your collection, earn more credits, and unlock exclusive perks.
+            </p>
+            <a href="${claimUrl}" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+              Claim Your Collection
+            </a>
+            <p style="font-size: 12px; color: #999; margin-top: 24px;">
+              This link expires in 7 days. If you already have an account, just log in to see your collection.
+            </p>
+          </div>
+        `,
+      })
+      console.log(`[post-purchase] Claim email sent to ${email}`)
+    } catch (emailError) {
+      console.error('[post-purchase] Claim email error (non-critical):', emailError)
+    }
   }
 }
 

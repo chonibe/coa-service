@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { CompletionProgress, MilestoneConfig } from '@/types/artwork-series'
+import { rewardCreditsForSeriesCompletion } from '@/lib/banking/credit-reward'
 
 /**
  * Calculate completion progress for a series
@@ -174,6 +175,44 @@ export async function checkAndCompleteSeries(seriesId: string): Promise<boolean>
     if (historyError) {
       console.error('Error recording completion history:', historyError)
       // Don't throw - completion was successful, history is just for tracking
+    }
+
+    // ── Award series completion credits to collectors who own pieces ──
+    try {
+      // Get product IDs for this series
+      const { data: seriesMembers } = await supabase
+        .from('artwork_series_members')
+        .select('shopify_product_id')
+        .eq('series_id', seriesId)
+      
+      const seriesProductIds = (seriesMembers || [])
+        .map(m => m.shopify_product_id)
+        .filter((id): id is string => id != null)
+
+      // Find all unique buyers of items in this series
+      const { data: buyers } = await supabase
+        .from('order_line_items_v2')
+        .select('customer_email')
+        .in('product_id', seriesProductIds)
+        .eq('status', 'fulfilled')
+        .not('customer_email', 'is', null)
+
+      if (buyers && buyers.length > 0) {
+        const uniqueEmails = [...new Set(buyers.map(b => b.customer_email).filter(Boolean))]
+        console.log(`[series-completion] Rewarding ${uniqueEmails.length} collectors for series ${seriesId}`)
+
+        for (const email of uniqueEmails) {
+          try {
+            await rewardCreditsForSeriesCompletion(email as string, seriesId, 'customer')
+          } catch (rewardError) {
+            // Non-critical: log but continue with other collectors
+            console.error(`[series-completion] Credit reward error for ${email}:`, rewardError)
+          }
+        }
+      }
+    } catch (rewardError) {
+      // Non-critical: series is completed even if credit rewards fail
+      console.error('[series-completion] Error rewarding completion credits:', rewardError)
     }
 
     return true

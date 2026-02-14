@@ -17,7 +17,17 @@ import {
  * 
  * Uses useSearchParams to read the session_id from the URL.
  * Must be wrapped in Suspense in the parent Server Component.
+ * 
+ * Shows:
+ * - Order summary
+ * - Credits earned from purchase
+ * - Claim CTA (if guest) or View Collection (if authenticated)
+ * 
+ * @see app/api/stripe/webhook/route.ts - Post-purchase bridge
+ * @see lib/auth/claim-token.ts - Claim tokens
  */
+
+const CREDITS_PER_DOLLAR = 10
 
 interface OrderDetails {
   id: string
@@ -51,6 +61,7 @@ export function CheckoutSuccessContent() {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     async function fetchOrderDetails() {
@@ -77,6 +88,11 @@ export function CheckoutSuccessContent() {
     }
 
     fetchOrderDetails()
+
+    // Check if user is authenticated (has collector session cookie or Supabase session)
+    fetch('/api/auth/roles', { credentials: 'include' })
+      .then(res => { if (res.ok) setIsAuthenticated(true) })
+      .catch(() => {})
   }, [sessionId])
 
   // Format price
@@ -207,6 +223,49 @@ export function CheckoutSuccessContent() {
             </Card>
           )}
 
+          {/* Credits Earned */}
+          {order.amountTotal > 0 && (
+            <Card variant="default" padding="md" className="mb-6 border-amber-200 bg-gradient-to-r from-amber-50 to-white">
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">&#x1FA99;</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#1a1a1a] text-lg">
+                      You earned {Math.round((order.amountTotal / 100) * CREDITS_PER_DOLLAR).toLocaleString()} credits!
+                    </p>
+                    <p className="text-sm text-[#1a1a1a]/60">
+                      Worth ${((order.amountTotal / 100) * CREDITS_PER_DOLLAR * 0.10).toFixed(2)} towards future purchases. 10 credits = $1.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Claim CTA for guests / View Collection for authenticated users */}
+          {!isAuthenticated && (
+            <Card variant="default" padding="md" className="mb-6 border-[#2c4bce]/20 bg-gradient-to-r from-blue-50 to-white">
+              <CardContent>
+                <div className="text-center">
+                  <h3 className="font-semibold text-lg text-[#1a1a1a] mb-2">
+                    Claim Your Collection
+                  </h3>
+                  <p className="text-sm text-[#1a1a1a]/60 mb-4">
+                    Create a free account to track your artworks, use your credits, and unlock exclusive perks.
+                    Check your email for a claim link, or sign in now.
+                  </p>
+                  <Link href={`/login?redirect=/collector/dashboard&intent=collector`}>
+                    <Button variant="primary" size="lg">
+                      Create Free Account
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* What's Next */}
           <Card variant="flat" padding="md" className="mb-8">
             <CardHeader title="What's Next?" />
@@ -249,11 +308,19 @@ export function CheckoutSuccessContent() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/collector/dashboard">
-              <Button variant="primary" size="lg">
-                View My Collection
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/collector/dashboard">
+                <Button variant="primary" size="lg">
+                  View My Collection
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/login?redirect=/collector/dashboard&intent=collector`}>
+                <Button variant="primary" size="lg">
+                  Claim Your Collection
+                </Button>
+              </Link>
+            )}
             <Link href="/shop">
               <Button variant="outline" size="lg">
                 Continue Shopping

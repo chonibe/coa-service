@@ -23,6 +23,7 @@ import { ScrollingText } from '@/components/sections'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylProductCard } from '@/components/shop'
 import { useCart } from '@/lib/shop/CartContext'
+import { ProductCreditsCallout } from '@/components/shop/ProductCreditsCallout'
 import {
   ProductGallery,
   ProductAccordion,
@@ -456,6 +457,14 @@ export default function ProductPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Credits Callout */}
+              {selectedVariant && (
+                <ProductCreditsCallout
+                  price={parseFloat(selectedVariant.price?.amount || '0')}
+                  className="mt-2"
+                />
+              )}
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">

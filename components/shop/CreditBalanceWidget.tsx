@@ -38,14 +38,19 @@ export function CreditBalanceWidget({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Don't show for non-authenticated or non-members
-  if (loading || !isAuthenticated || !user?.isMember) {
+  // Show for ALL authenticated users, not just members
+  if (loading || !isAuthenticated) {
     return null
   }
 
-  const creditBalance = user.creditBalance || 0
-  const creditValue = user.creditBalanceValue || 0
-  const tierName = user.membershipTier || 'Member'
+  const creditBalance = user?.creditBalance || 0
+  const creditValue = user?.creditBalanceValue || 0
+  const tierName = user?.membershipTier || (user?.isMember ? 'Member' : 'Collector')
+
+  // Don't show if balance is 0 and not a member (nothing interesting to display)
+  if (creditBalance === 0 && !user?.isMember) {
+    return null
+  }
 
   // Format credit display
   const formatCredits = (credits: number): string => {
@@ -90,6 +95,16 @@ export function CreditBalanceWidget({
         <span className="font-semibold text-amber-900">
           {formatCredits(creditBalance)}
         </span>
+        {user?.isMember && (
+          <span className={cn(
+            'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
+            tierName === 'founding' ? 'bg-amber-200 text-amber-900' :
+            tierName === 'curator' ? 'bg-violet-100 text-violet-800' :
+            'bg-indigo-100 text-indigo-800'
+          )}>
+            {tierName.charAt(0).toUpperCase() + tierName.slice(1)}
+          </span>
+        )}
         <ChevronDown 
           className={cn(
             'w-4 h-4 text-amber-600 transition-transform',
