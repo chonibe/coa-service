@@ -367,6 +367,7 @@ export default function ArtistPage() {
                   <VinylProductCard
                     key={product.id}
                     product={product}
+                    artistAvatarUrl={artist.image}
                     onQuickAdd={(prod) => {
                       const variant = prod.variants.edges[0]?.node
                       if (variant) {

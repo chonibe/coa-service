@@ -54,6 +54,14 @@ interface OrderDetails {
   }
 }
 
+interface SeriesProgressItem {
+  seriesName: string
+  seriesId: string
+  totalArtworks: number
+  ownedCount: number
+  thumbnailUrl: string | null
+}
+
 export function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
@@ -62,6 +70,7 @@ export function CheckoutSuccessContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [seriesProgress, setSeriesProgress] = useState<SeriesProgressItem[]>([])
 
   useEffect(() => {
     async function fetchOrderDetails() {
@@ -80,6 +89,7 @@ export function CheckoutSuccessContent() {
         }
 
         setOrder(data.session)
+        setSeriesProgress(data.seriesProgress || [])
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -239,6 +249,74 @@ export function CheckoutSuccessContent() {
                       Worth ${((order.amountTotal / 100) * CREDITS_PER_DOLLAR * 0.10).toFixed(2)} towards future purchases. 10 credits = $1.
                     </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Series Progress */}
+          {seriesProgress.length > 0 && (
+            <Card variant="default" padding="md" className="mb-6 border-[#2c4bce]/20 bg-gradient-to-r from-indigo-50 to-white">
+              <CardContent>
+                <h3 className="font-semibold text-[#1a1a1a] mb-4 flex items-center gap-2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  Series Progress
+                </h3>
+                <div className="space-y-4">
+                  {seriesProgress.map((sp) => {
+                    const pct = sp.totalArtworks > 0
+                      ? Math.round((sp.ownedCount / sp.totalArtworks) * 100)
+                      : 0
+                    const isComplete = sp.ownedCount >= sp.totalArtworks && sp.totalArtworks > 0
+                    return (
+                      <Link
+                        key={sp.seriesId}
+                        href={`/shop/series/${sp.seriesId}`}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-[#f5f5f5]/60 transition-colors group"
+                      >
+                        {sp.thumbnailUrl && (
+                          <img
+                            src={sp.thumbnailUrl}
+                            alt={sp.seriesName}
+                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-[#1a1a1a] text-sm truncate">
+                            {sp.seriesName}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-2 bg-[#e5e5e5] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  isComplete ? 'bg-[#0a8754]' : 'bg-[#2c4bce]'
+                                }`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-[#1a1a1a]/60 whitespace-nowrap">
+                              {sp.ownedCount}/{sp.totalArtworks}
+                            </span>
+                          </div>
+                          {isComplete ? (
+                            <p className="text-xs text-[#0a8754] font-medium mt-1">
+                              Series complete! Bonus credits earned.
+                            </p>
+                          ) : (
+                            <p className="text-xs text-[#1a1a1a]/50 mt-1">
+                              {sp.totalArtworks - sp.ownedCount} more to complete the series
+                            </p>
+                          )}
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" className="opacity-30 group-hover:opacity-60 transition-opacity flex-shrink-0">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </Link>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>

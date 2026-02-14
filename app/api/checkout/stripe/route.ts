@@ -200,6 +200,20 @@ export async function GET(request: NextRequest) {
       expand: ['line_items', 'customer', 'payment_intent'],
     })
     
+    // Fetch series progress for purchased items (non-blocking)
+    let seriesProgress: SeriesProgressItem[] = []
+    try {
+      const productHandles = extractProductHandles(session.metadata)
+      if (productHandles.length > 0) {
+        seriesProgress = await fetchSeriesProgressForProducts(
+          productHandles,
+          session.customer_details?.email || session.customer_email || undefined
+        )
+      }
+    } catch (error) {
+      console.debug('Could not fetch series progress:', error)
+    }
+    
     return NextResponse.json({
       session: {
         id: session.id,
@@ -216,6 +230,7 @@ export async function GET(request: NextRequest) {
         shippingDetails: session.shipping_details,
         metadata: session.metadata,
       },
+      seriesProgress,
     })
   } catch (error: any) {
     console.error('Error retrieving Stripe checkout session:', error)
@@ -224,4 +239,114 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// =============================================================================
+// SERIES PROGRESS HELPERS
+// =============================================================================
+
+interface SeriesProgressItem {
+  seriesName: string
+  seriesId: string
+  totalArtworks: number
+  ownedCount: number
+  thumbnailUrl: string | null
+}
+
+/**
+ * Extract product handles from Stripe session metadata
+ */
+function extractProductHandles(metadata: Stripe.Metadata | null): string[] {
+  if (!metadata?.shopify_variant_ids) return []
+  
+  try {
+    const variants = JSON.parse(metadata.shopify_variant_ids)
+    return variants
+      .map((v: any) => v.productHandle)
+      .filter((h: string) => h && h.length > 0)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Look up series progress for purchased products
+ */
+async function fetchSeriesProgressForProducts(
+  productHandles: string[],
+  customerEmail?: string
+): Promise<SeriesProgressItem[]> {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  
+  // Find submissions matching these product handles
+  const { data: submissions } = await supabase
+    .from('vendor_product_submissions')
+    .select('id, series_id, shopify_product_handle')
+    .in('shopify_product_handle', productHandles)
+    .not('series_id', 'is', null)
+
+  if (!submissions || submissions.length === 0) return []
+
+  // Get unique series IDs
+  const seriesIds = [...new Set(submissions.map(s => s.series_id).filter(Boolean))] as string[]
+
+  // Fetch series details in parallel
+  const results = await Promise.all(
+    seriesIds.map(async (seriesId) => {
+      const [seriesResult, memberCount, ownedCount] = await Promise.all([
+        supabase
+          .from('artwork_series')
+          .select('id, name, thumbnail_url')
+          .eq('id', seriesId)
+          .single(),
+        supabase
+          .from('artwork_series_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('series_id', seriesId),
+        customerEmail
+          ? getOwnedCountInSeries(supabase, seriesId, customerEmail)
+          : Promise.resolve(0),
+      ])
+
+      if (!seriesResult.data) return null
+
+      return {
+        seriesName: seriesResult.data.name,
+        seriesId: seriesResult.data.id,
+        totalArtworks: memberCount.count || 0,
+        ownedCount: ownedCount,
+        thumbnailUrl: seriesResult.data.thumbnail_url,
+      }
+    })
+  )
+
+  return results.filter((r): r is SeriesProgressItem => r !== null)
+}
+
+/**
+ * Count how many artworks in a series a collector owns
+ */
+async function getOwnedCountInSeries(
+  supabase: any,
+  seriesId: string,
+  email: string
+): Promise<number> {
+  const { data: members } = await supabase
+    .from('artwork_series_members')
+    .select('submission_id')
+    .eq('series_id', seriesId)
+
+  if (!members || members.length === 0) return 0
+
+  const submissionIds = members.map((m: any) => m.submission_id).filter(Boolean)
+
+  const { data: owned } = await supabase
+    .from('line_items')
+    .select('submission_id')
+    .eq('owner_email', email)
+    .in('submission_id', submissionIds)
+    .eq('status', 'active')
+
+  return new Set((owned || []).map((li: any) => li.submission_id)).size
 }

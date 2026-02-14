@@ -53,6 +53,10 @@ export default function ProductPage() {
   const [seriesInfo, setSeriesInfo] = useState<any>(null)
   const [editionInfo, setEditionInfo] = useState<any>(null)
   const [collectorProgress, setCollectorProgress] = useState<any>(null)
+  const [artistAvatarUrl, setArtistAvatarUrl] = useState<string | null>(null)
+  const [moreFromArtist, setMoreFromArtist] = useState<ShopifyProduct[]>([])
+  const [ownedProductHandles, setOwnedProductHandles] = useState<string[]>([])
+  
   
     // For sticky buy bar
   const buyButtonRef = useRef<HTMLButtonElement>(null)
@@ -82,15 +86,9 @@ export default function ProductPage() {
         setSeriesInfo(data.seriesInfo || null)
         setEditionInfo(data.editionInfo || null)
         setCollectorProgress(data.collectorProgress || null)
-        
-        // Debug logging
-        console.log('Product data loaded:', {
-          hasSeriesInfo: !!data.seriesInfo,
-          seriesInfo: data.seriesInfo,
-          hasEditionInfo: !!data.editionInfo,
-          editionInfo: data.editionInfo,
-          hasCollectorProgress: !!data.collectorProgress
-        })
+        setArtistAvatarUrl(data.artistAvatarUrl || null)
+        setMoreFromArtist(data.moreFromArtist || [])
+        setOwnedProductHandles(data.ownedProductIds || [])
         
         // Set default variant
         if (data.product.variants?.edges?.length > 0) {
@@ -531,6 +529,59 @@ export default function ProductPage() {
         </Container>
       </SectionWrapper>
       
+      {/* More from this Artist */}
+      {moreFromArtist.length > 0 && product.vendor && (
+        <SectionWrapper spacing="md" background="default">
+          <Container maxWidth="default">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+                More from {product.vendor}
+              </h2>
+              <Link
+                href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
+                className="text-sm font-medium text-[#2c4bce] hover:underline flex items-center gap-1"
+              >
+                View all
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {moreFromArtist.map((artistProduct, index) => {
+                const isOwned = ownedProductHandles.includes(artistProduct.handle)
+                return (
+                  <ScrollReveal key={artistProduct.id} animation="fadeUp" delay={index * 0.05} duration={0.5}>
+                    <VinylProductCard
+                      product={artistProduct}
+                      artistAvatarUrl={artistAvatarUrl}
+                      isInCollection={isOwned}
+                      onQuickAdd={() => {
+                        const variant = artistProduct.variants?.edges?.[0]?.node
+                        if (variant) {
+                          cart.addItem({
+                            productId: artistProduct.id,
+                            variantId: variant.id,
+                            handle: artistProduct.handle,
+                            title: artistProduct.title,
+                            price: parseFloat(variant.price.amount),
+                            quantity: 1,
+                            image: artistProduct.featuredImage?.url,
+                            artistName: artistProduct.vendor,
+                          })
+                        }
+                      }}
+                      enableTilt={true}
+                      enableFlip={false}
+                    />
+                  </ScrollReveal>
+                )
+              })}
+            </div>
+          </Container>
+        </SectionWrapper>
+      )}
+
       {/* Scrolling Text Banner */}
       <ScrollingText
         text="One Lamp, Endless Inspiration"
@@ -579,11 +630,13 @@ export default function ProductPage() {
               onTouchEnd={onTouchEnd}
             >
               {relatedProducts.map((relatedProduct, index) => {
+                const isOwned = ownedProductHandles.includes(relatedProduct.handle)
                 return (
                   <div key={relatedProduct.id} className="flex-shrink-0 w-[calc(50%-12px)] lg:w-[calc(25%-18px)] snap-start">
                     <ScrollReveal animation="fadeUp" delay={index * 0.05} duration={0.5}>
                       <VinylProductCard
                         product={relatedProduct}
+                        isInCollection={isOwned}
                         onQuickAdd={() => {
                           const variant = relatedProduct.variants?.edges?.[0]?.node
                           if (variant) {
