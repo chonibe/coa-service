@@ -21,16 +21,20 @@ export async function GET(
   const { slug } = await context.params
   
   try {
-    // Derive the artist name from slug for database lookups
-    const artistName = slug.replace(/-/g, ' ')
+    // Decode and derive the artist name from slug for database lookups
+    const decodedSlug = decodeURIComponent(slug)
+    const artistName = decodedSlug.replace(/-/g, ' ')
     
-    // Fetch Shopify data and Supabase data in parallel
-    const [shopifyData, vendorData] = await Promise.all([
-      fetchShopifyArtistData(slug, artistName),
-      fetchSupabaseVendorData(artistName),
-    ])
+    // First try Supabase lookup to get the canonical vendor name
+    const vendorData = await fetchSupabaseVendorData(artistName)
+    
+    // Use canonical vendor name from Supabase if found, otherwise use derived name
+    const canonicalName = vendorData?.vendor_name || artistName
+    
+    // Fetch Shopify data using canonical name
+    const shopifyData = await fetchShopifyArtistData(decodedSlug, canonicalName)
 
-    if (!shopifyData) {
+    if (!shopifyData && !vendorData) {
       return NextResponse.json(
         { error: 'Artist not found' },
         { status: 404 }
@@ -39,18 +43,18 @@ export async function GET(
 
     // Merge Shopify + Supabase data (Supabase takes priority for profile fields)
     const artist = {
-      name: shopifyData.name,
-      slug,
+      name: shopifyData?.name || canonicalName,
+      slug: decodedSlug,
       // Supabase bio takes priority, then Shopify collection description
-      bio: vendorData?.bio || vendorData?.artist_bio || shopifyData.bio || undefined,
+      bio: vendorData?.bio || vendorData?.artist_bio || shopifyData?.bio || undefined,
       artistHistory: vendorData?.artist_history || undefined,
       // Supabase profile image takes priority
-      image: vendorData?.profile_picture_url || vendorData?.profile_image || shopifyData.image || undefined,
+      image: vendorData?.profile_picture_url || vendorData?.profile_image || shopifyData?.image || undefined,
       signatureUrl: vendorData?.signature_url || undefined,
       instagramUrl: vendorData?.instagram_url || undefined,
       website: vendorData?.website || undefined,
       // Products from Shopify
-      products: shopifyData.products,
+      products: shopifyData?.products || [],
       // Series from Supabase
       series: vendorData?.series || [],
       // Anonymized collector count

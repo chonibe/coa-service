@@ -113,6 +113,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const [cartLoading, setCartLoading] = useState(false)
   const [navModalOpen, setNavModalOpen] = useState(false)
   const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false)
+  const [creditBalance, setCreditBalance] = useState(0)
   const [recommendedProducts, setRecommendedProducts] = useState<Array<{
     id: string
     title: string
@@ -122,6 +123,22 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     image: string
     vendor: string
   }>>([])
+  
+  // Fetch credit balance for nav display
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        const response = await fetch('/api/collector/credits/balance', { credentials: 'include' })
+        if (response.ok) {
+          const data = await response.json()
+          setCreditBalance(data.balance || 0)
+        }
+      } catch {
+        // Not authenticated or endpoint unavailable
+      }
+    }
+    fetchCredits()
+  }, [])
   
   // Fetch recommendations for cart drawer
   useEffect(() => {
@@ -342,6 +359,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         onCheckout={handleCheckout}
         cartLoading={cartLoading}
         wishlistCount={wishlist.items.length}
+        creditBalance={creditBalance}
         onSearch={handleShopSearch}
       />
       

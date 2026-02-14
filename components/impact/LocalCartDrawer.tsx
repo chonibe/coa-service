@@ -101,7 +101,9 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
           aria-modal="true"
           aria-label="Shopping cart"
           className={cn(
-            'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
+            'fixed bottom-4 right-4 z-50 w-full',
+            'h-[70vh] max-h-[600px] max-w-md',
+            'lg:h-auto lg:max-h-[480px] lg:max-w-lg',
             'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
             'border border-[#1a1a1a]/10',
             'invisible pointer-events-none translate-x-full'

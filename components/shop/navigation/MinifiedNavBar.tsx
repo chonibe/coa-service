@@ -23,6 +23,7 @@ export interface MinifiedNavBarProps {
   isModalOpen: boolean
   cartCount?: number
   wishlistCount?: number
+  creditBalance?: number
   logoSrc?: string
   navigation?: NavItem[]
   onToggleModal: () => void
@@ -41,6 +42,7 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
       isModalOpen,
       cartCount = 0,
       wishlistCount = 0,
+      creditBalance = 0,
       logoSrc = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Logo_a395ed7f-3980-4407-80d0-70c343848544.png?v=1764246238',
       navigation = [],
       onToggleModal,
@@ -359,21 +361,31 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
                 />
               </div>
 
-              {/* Right: Wishlist & Cart */}
+              {/* Right: Credits, Wishlist & Cart */}
               <div className="flex justify-end items-center gap-0.5 sm:gap-1 pointer-events-auto">
+                {/* Credits balance (compact) */}
+                {creditBalance > 0 && (
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-[#f0c417] bg-[#f0c417]/10 rounded-full mr-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#f0c417]">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v12M8 10h8" />
+                    </svg>
+                    {creditBalance.toLocaleString()}
+                  </span>
+                )}
                 {/* Wishlist */}
                 <button
                   ref={wishlistButtonRef}
                   type="button"
                   onClick={onWishlistClick}
                   className="wishlist-button group relative p-1.5 sm:p-2 text-[#ffba94] flex-shrink-0 pointer-events-auto"
-                  aria-label="Wishlist"
+                  aria-label={`Wishlist${wishlistCount > 0 ? ` with ${wishlistCount} items` : ''}`}
                 >
                   <svg
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
-                    fill="none"
+                    fill={wishlistCount > 0 ? 'currentColor' : 'none'}
                     className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-all duration-200"
                     style={{ transformOrigin: 'center center' }}
                   >
@@ -385,6 +397,11 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
                       strokeLinejoin="round"
                     />
                   </svg>
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-[16px] sm:min-w-[18px] sm:h-[18px] px-1 sm:px-1.5 text-[9px] sm:text-[10px] font-bold bg-[#f83a3a] text-white rounded-full pointer-events-none border-2 border-[#390000]">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
                 </button>
                 
                 {/* Cart */}
