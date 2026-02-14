@@ -8,6 +8,7 @@ import {
   Button,
   Badge
 } from "@/components/ui";
+import { Nfc as NfcIcon, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 // Declare Web NFC types if not already available

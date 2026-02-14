@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { z } from "zod"  // Add zod for validation
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { z } from "zod"
 import { rewardCreditsForNfcScan } from "@/lib/banking/credit-reward"
 import { checkAndRewardSeriesCompletion } from "@/lib/gamification/series"
+import { verifyCollectorSessionToken } from "@/lib/collector-session"
 
 // Input validation schema
 const NfcClaimSchema = z.object({
@@ -13,8 +15,12 @@ const NfcClaimSchema = z.object({
   customerId: z.string().optional()
 })
 
-// Audit logging function
-async function logNfcTagAction(action: string, details: Record<string, any>) {
+// Audit logging function — accepts supabase client as parameter
+async function logNfcTagAction(
+  supabase: SupabaseClient,
+  action: string,
+  details: Record<string, any>
+) {
   const { error } = await supabase
     .from("nfc_tag_audit_log")
     .insert({
@@ -30,6 +36,22 @@ async function logNfcTagAction(action: string, details: Record<string, any>) {
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
+
+  // --- Authentication: verify the collector's session ---
+  const session = verifyCollectorSessionToken(
+    request.cookies.get("collector_session")?.value
+  )
+  const customerId =
+    session?.shopifyCustomerId ||
+    request.cookies.get("shopify_customer_id")?.value ||
+    null
+
+  if (!customerId) {
+    return NextResponse.json(
+      { success: false, message: "Authentication required" },
+      { status: 401 }
+    )
+  }
   
   try {
     // Parse and validate input
@@ -40,7 +62,7 @@ export async function POST(request: NextRequest) {
       const errorMessages = validationResult.error.errors.map(err => err.message).join(", ")
       
       // Log validation failure
-      await logNfcTagAction("claim_validation_failed", {
+      await logNfcTagAction(supabase, "claim_validation_failed", {
         errors: errorMessages,
         input: body
       })
@@ -51,18 +73,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { tagId, lineItemId, orderId, customerId } = validationResult.data
+    const { tagId, lineItemId, orderId } = validationResult.data
+
+    // Verify the collector owns this line item
+    const { data: ownerCheck } = await supabase
+      .from("orders")
+      .select("shopify_customer_id")
+      .eq("order_id", orderId)
+      .maybeSingle()
+
+    if (ownerCheck && ownerCheck.shopify_customer_id !== customerId) {
+      return NextResponse.json(
+        { success: false, message: "You are not the owner of this order" },
+        { status: 403 }
+      )
+    }
 
     // Get the line item to validate edition number exists
     const { data: lineItem, error: lineItemError } = await supabase
       .from("order_line_items_v2")
-      .select("line_item_id, order_id, edition_number, status")
+      .select("line_item_id, order_id, edition_number, status, certificate_url, certificate_token, name, product_id, submission_id, series_id")
       .eq("line_item_id", lineItemId)
       .eq("order_id", orderId)
       .maybeSingle()
 
     if (lineItemError) {
-      await logNfcTagAction("line_item_lookup_failed", {
+      await logNfcTagAction(supabase, "line_item_lookup_failed", {
         tagId,
         lineItemId,
         orderId,
@@ -77,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     // Validate that edition number exists before claiming
     if (!lineItem.edition_number) {
-      await logNfcTagAction("claim_failed_no_edition", {
+      await logNfcTagAction(supabase, "claim_failed_no_edition", {
         tagId,
         lineItemId,
         orderId
@@ -90,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // Validate that item is active
     if (lineItem.status !== 'active') {
-      await logNfcTagAction("claim_failed_inactive", {
+      await logNfcTagAction(supabase, "claim_failed_inactive", {
         tagId,
         lineItemId,
         orderId,
@@ -110,7 +146,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (tagError) {
-      await logNfcTagAction("tag_lookup_failed", {
+      await logNfcTagAction(supabase, "tag_lookup_failed", {
         tagId,
         error: tagError.message
       })
@@ -127,17 +163,17 @@ export async function POST(request: NextRequest) {
       })
 
       if (createError) {
-        await logNfcTagAction("tag_creation_failed", {
+        await logNfcTagAction(supabase, "tag_creation_failed", {
           tagId,
           error: createError.message
         })
         return NextResponse.json({ success: false, message: "Failed to create tag" }, { status: 500 })
       }
 
-      await logNfcTagAction("tag_created", { tagId })
+      await logNfcTagAction(supabase, "tag_created", { tagId })
     } else if (existingTag.status === "claimed" && existingTag.line_item_id) {
       // Check if tag is already claimed
-      await logNfcTagAction("tag_already_claimed", { 
+      await logNfcTagAction(supabase, "tag_already_claimed", { 
         tagId, 
         existingLineItemId: existingTag.line_item_id 
       })
@@ -146,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     // Validate certificate exists (already fetched in lineItem above)
     if (!lineItem.certificate_url) {
-      await logNfcTagAction("certificate_not_found", {
+      await logNfcTagAction(supabase, "certificate_not_found", {
         lineItemId,
         orderId
       })
@@ -182,7 +218,7 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (error) {
-      await logNfcTagAction("tag_claim_failed", {
+      await logNfcTagAction(supabase, "tag_claim_failed", {
         tagId,
         lineItemId,
         orderId,
@@ -204,7 +240,7 @@ export async function POST(request: NextRequest) {
       .eq("order_id", orderId)
 
     if (updateError) {
-      await logNfcTagAction("line_item_update_failed", {
+      await logNfcTagAction(supabase, "line_item_update_failed", {
         tagId,
         lineItemId,
         orderId,
@@ -266,7 +302,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log successful claim
-    await logNfcTagAction("tag_claimed_successfully", {
+    await logNfcTagAction(supabase, "tag_claimed_successfully", {
       tagId,
       lineItemId,
       orderId,
@@ -364,8 +400,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error in claim NFC tag API:", error)
     
-    // Log unexpected errors
-    await logNfcTagAction("unexpected_error", {
+    // Log unexpected errors (supabase is declared above the try block, so it's in scope)
+    await logNfcTagAction(supabase, "unexpected_error", {
       message: error.message,
       stack: error.stack
     })

@@ -1,7 +1,7 @@
-import crypto from "crypto"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { signPayload } from "@/lib/nfc/token"
 
 type SignRequestBody = {
   tagId?: string
@@ -10,31 +10,6 @@ type SignRequestBody = {
 }
 
 const TOKEN_TTL_MS = 10 * 60 * 1000 // 10 minutes
-
-const base64UrlEncode = (input: string) =>
-  Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
-
-const getSigningSecret = () => {
-  const secret =
-    process.env.NEXTAUTH_SECRET ||
-    process.env.JWT_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!secret) {
-    throw new Error("Signing secret is not configured")
-  }
-
-  return secret
-}
-
-const signPayload = (payload: Record<string, any>) => {
-  const secret = getSigningSecret()
-  const serialized = JSON.stringify(payload)
-  const payloadB64 = base64UrlEncode(serialized)
-  const signature = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
-  const signatureB64 = signature.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
-  return `${payloadB64}.${signatureB64}`
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,12 +50,19 @@ export async function POST(request: NextRequest) {
 
     const token = signPayload(payload)
     const origin = request.nextUrl.origin
+
+    // Signed URL (10-min TTL) — for one-time auth flows
     const unlockUrl = `${origin}/nfc/unlock?token=${token}`
+
+    // Permanent URL — this is what should be written to the physical NFC tag
+    // so the tag never expires. The redirect route looks up the tag by ID.
+    const permanentUrl = `${origin}/api/nfc-tags/redirect?tagId=${tagId}`
 
     return NextResponse.json({
       success: true,
       token,
       unlockUrl,
+      permanentUrl,
       expiresAt,
       context: {
         certificateUrl: certificate?.certificate_url || null,
