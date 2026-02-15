@@ -55,7 +55,8 @@ export default function VendorAppLayout({
             description: 'Create a new artwork with rich content blocks',
             icon: <ImageIcon className="w-6 h-6" />,
             onClick: () => {
-              console.log('[Create] New Artwork')
+              setCreateSheetOpen(false)
+              router.push('/vendor/dashboard/products/create')
             },
           },
           {
@@ -64,7 +65,8 @@ export default function VendorAppLayout({
             description: 'Organize artworks into a series',
             icon: <LayersIcon className="w-6 h-6" />,
             onClick: () => {
-              console.log('[Create] New Series')
+              setCreateSheetOpen(false)
+              router.push('/vendor/dashboard/series/create')
             },
           },
           {
@@ -73,7 +75,8 @@ export default function VendorAppLayout({
             description: 'Add images, video, or audio to your library',
             icon: <UploadIcon className="w-6 h-6" />,
             onClick: () => {
-              console.log('[Create] Upload Media')
+              setCreateSheetOpen(false)
+              router.push('/vendor/dashboard/media-library?upload=true')
             },
           },
         ]}
