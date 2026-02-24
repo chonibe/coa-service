@@ -7,6 +7,7 @@ import { Application } from "@splinetool/runtime"
 import * as THREE from "three"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
+import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
 interface Spline3DPreviewProps {
   image1: string | null
   image2: string | null
@@ -14,6 +15,32 @@ interface Spline3DPreviewProps {
   side2ObjectId?: string
   side1ObjectName?: string
   side2ObjectName?: string
+  /** When true, renders only the canvas with loading/error overlays -- no Card wrapper, no debug controls */
+  minimal?: boolean
+  /** Additional className for the outer container (only used in minimal mode) */
+  className?: string
+  /** Called after panel discovery; reports whether Side A and Side B objects were found in the scene */
+  onPanelsFound?: (found: { sideA: boolean; sideB: boolean; sameObject: boolean }) => void
+  /** Swap image mapping: when true, image1 goes to "Side B" object and image2 to "Side A" (use if physical sides are reversed) */
+  swapLampSides?: boolean
+  /** Which side(s) to flip horizontally: 'A' | 'B' | 'both' | 'none'. Use when one side appears mirrored. */
+  flipForSide?: 'A' | 'B' | 'both' | 'none'
+  /** Scale of image on panel (0.5–1.2, default 0.96). Smaller = more border. */
+  imageScale?: number
+  /** Horizontal offset from center (-0.5 to 0.5). Positive = right. */
+  imageOffsetX?: number
+  /** Vertical offset from center (-0.5 to 0.5). Positive = down. */
+  imageOffsetY?: number
+  /** Width scale multiplier (0.5–1). < 1 squeezes width. Default 0.95. */
+  imageScaleX?: number
+  /** Height scale multiplier (0.5–1.2). < 1 compresses, > 1 expands. Default 1. */
+  imageScaleY?: number
+  /** Side B overrides. When undefined, Side B uses Side A values. */
+  imageScaleB?: number
+  imageOffsetXB?: number
+  imageOffsetYB?: number
+  imageScaleXB?: number
+  imageScaleYB?: number
 }
 
 export function Spline3DPreview({ 
@@ -22,7 +49,22 @@ export function Spline3DPreview({
   side1ObjectId,
   side2ObjectId,
   side1ObjectName = "Side1",
-  side2ObjectName = "Side2"
+  side2ObjectName = "Side2",
+  minimal = false,
+  className,
+  onPanelsFound,
+  swapLampSides = false,
+  flipForSide = 'A',
+  imageScale = DEFAULT_SIDE_POSITION.scale,
+  imageOffsetX = DEFAULT_SIDE_POSITION.offsetX,
+  imageOffsetY = DEFAULT_SIDE_POSITION.offsetY,
+  imageScaleX = DEFAULT_SIDE_POSITION.scaleX,
+  imageScaleY = DEFAULT_SIDE_POSITION.scaleY,
+  imageScaleB,
+  imageOffsetXB,
+  imageOffsetYB,
+  imageScaleXB,
+  imageScaleYB,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const splineAppRef = useRef<Application | null>(null)
@@ -33,6 +75,9 @@ export function Spline3DPreview({
   // Store references to objects with image layers
   const side1ObjectRef = useRef<any>(null)
   const side2ObjectRef = useRef<any>(null)
+  
+  // Pre-discovered panel object refs (populated on scene load)
+  const discoveredPanelsRef = useRef<{ sideA: any; sideB: any }>({ sideA: null, sideB: null })
   
   // Store discovered layers for toggling
   interface LayerInfo {
@@ -336,86 +381,104 @@ export function Spline3DPreview({
 
     console.log("[Spline3D] ✓ Using imported THREE.js")
 
-    // Helper to find object by traversing path or by name/ID
-    const findObject = (id?: string, name?: string, alternativeNames?: string[], path?: string[]) => {
-      // Try by ID first
-      if (id && app.findObjectById) {
-        const obj = app.findObjectById(id)
-        if (obj) {
-          console.log(`[Spline3D] Found object by ID: ${id}`)
-          return obj
-        }
+    // Scene uses "PC trans A" (child, has material) under "Panel Side A" (parent, no material).
+    const hasMaterial = (obj: any) => {
+      const mat = obj?.material || obj?.mesh?.material
+      return mat?.layers?.some((l: any) => l.type === 'texture' && l.texture != null)
+    }
+    const findDescendantWithMaterial = (obj: any): any => {
+      if (!obj) return null
+      if (hasMaterial(obj)) return obj
+      for (const c of obj.children || []) {
+        const found = findDescendantWithMaterial(c)
+        if (found) return found
       }
-      
-      // Try by path traversal (most reliable)
-      if (path && path.length > 0) {
-        let currentObj: any = scene
-        for (const pathSegment of path) {
-          if (!currentObj) break
-          
-          // Try to find in children
-          const children = currentObj.children || []
-          const found = children.find((child: any) => 
-            child.name === pathSegment || 
-            child.type === pathSegment ||
-            (typeof child.name === 'string' && child.name.includes(pathSegment))
-          )
-          
-          if (found) {
-            currentObj = found
-          } else {
-            // Try mesh children
-            if (currentObj.mesh && currentObj.mesh.children) {
-              const meshFound = currentObj.mesh.children.find((child: any) => 
-                child.name === pathSegment || 
-                child.type === pathSegment ||
-                (typeof child.name === 'string' && child.name.includes(pathSegment))
-              )
-              if (meshFound) {
-                currentObj = meshFound
-              } else {
-                currentObj = null
-                break
-              }
-            } else {
-              currentObj = null
-              break
-            }
-          }
-        }
-        
-        if (currentObj) {
-          console.log(`[Spline3D] Found object by path: ${path.join(' > ')}`)
-          return currentObj
-        }
+      for (const c of obj.mesh?.children || []) {
+        const found = findDescendantWithMaterial(c)
+        if (found) return found
       }
-      
-      // Try alternative names first (more specific)
-      if (alternativeNames && app.findObjectByName) {
-        for (const altName of alternativeNames) {
-          const obj = app.findObjectByName(altName)
-          if (obj) {
-            console.log(`[Spline3D] Found object by alternative name: ${altName}`)
-            return obj
-          }
-        }
-      }
-      
-      // Try provided name
-      if (name && app.findObjectByName) {
-        const obj = app.findObjectByName(name)
-        if (obj) {
-          console.log(`[Spline3D] Found object by name: ${name}`)
-          return obj
-        }
-      }
-      
-      console.warn(`[Spline3D] Object not found - ID: ${id}, Name: ${name}, Path: ${path?.join(' > ')}`)
       return null
     }
 
+    const discoverPanels = () => {
+      if (discoveredPanelsRef.current.sideA && discoveredPanelsRef.current.sideB) {
+        return discoveredPanelsRef.current
+      }
+
+      const sideANames = ["PC trans A", "PC Trans A", "Trans A", "Panel Side A", "Side A"]
+      const sideBNames = ["PC Trans B", "Trans B", "Panel Side B", "Side B"]
+      let sideA: any = null
+      let sideB: any = null
+      const texturedObjects: { name: string; obj: any }[] = []
+      const visited = new Set<string>()
+
+      const traverse = (node: any, path: string) => {
+        if (!node) return
+        const uid = node.uuid || node.id || ''
+        if (uid && visited.has(uid)) return
+        if (uid) visited.add(uid)
+
+        const name = (node.name || '').toString()
+        const currentPath = path ? `${path} > ${name}` : name
+
+        if (hasMaterial(node)) {
+          texturedObjects.push({ name, obj: node })
+          if (!sideA && sideANames.some((p) => name.toLowerCase().includes(p.toLowerCase()))) sideA = node
+          if (!sideB && sideBNames.some((p) => name.toLowerCase().includes(p.toLowerCase()))) sideB = node
+        }
+
+        for (const c of node.children || []) traverse(c, currentPath)
+        for (const c of node.mesh?.children || []) traverse(c, currentPath)
+      }
+      traverse(scene, 'Scene')
+
+      if (app.findObjectByName) {
+        for (const n of sideANames) {
+          const o = app.findObjectByName(n)
+          if (o) {
+            const withMat = hasMaterial(o) ? o : findDescendantWithMaterial(o)
+            if (withMat) { sideA = withMat; break }
+          }
+        }
+        for (const n of sideBNames) {
+          const o = app.findObjectByName(n)
+          if (o) {
+            const withMat = hasMaterial(o) ? o : findDescendantWithMaterial(o)
+            if (withMat) { sideB = withMat; break }
+          }
+        }
+      }
+
+      if (!sideA && side1ObjectId && app.findObjectById) {
+        const o = app.findObjectById(side1ObjectId)
+        sideA = hasMaterial(o) ? o : findDescendantWithMaterial(o)
+      }
+      if (!sideB && side2ObjectId && app.findObjectById) {
+        const o = app.findObjectById(side2ObjectId)
+        sideB = hasMaterial(o) ? o : findDescendantWithMaterial(o)
+      }
+
+      if (!sideA && texturedObjects.length >= 1) sideA = texturedObjects[0].obj
+      if (!sideB && texturedObjects.length >= 2) sideB = texturedObjects[1].obj
+
+      console.log(`[Spline3D] Panel discovery — Side A: ${sideA ? (sideA.name || sideA.uuid) : 'NOT FOUND'}, Side B: ${sideB ? (sideB.name || sideB.uuid) : 'NOT FOUND'}, A has material: ${!!(sideA && hasMaterial(sideA))}, B has material: ${!!(sideB && hasMaterial(sideB))}`)
+
+      discoveredPanelsRef.current = { sideA, sideB }
+      return discoveredPanelsRef.current
+    }
+
+    type PositionParams = { scale: number; offsetX: number; offsetY: number; scaleX: number; scaleY: number }
+    const posA: PositionParams = { scale: imageScale, offsetX: imageOffsetX, offsetY: imageOffsetY, scaleX: imageScaleX, scaleY: imageScaleY }
+    const posB: PositionParams = {
+      scale: imageScaleB ?? imageScale,
+      offsetX: imageOffsetXB ?? imageOffsetX,
+      offsetY: imageOffsetYB ?? imageOffsetY,
+      scaleX: imageScaleXB ?? imageScaleX,
+      scaleY: imageScaleYB ?? imageScaleY,
+    }
+
     // Helper to add image layer to Spline material
-    const addImageLayerToMaterial = async (obj: any, imageUrl: string, label: string) => {
+    const addImageLayerToMaterial = async (obj: any, imageUrl: string, label: string, shouldFlip: boolean, pos: PositionParams) => {
       if (!obj) {
         console.warn(`[Spline3D] Cannot add image layer: ${label} object not found`)
         return false
@@ -454,19 +517,7 @@ export function Spline3DPreview({
           layerDetails: layerInfo
         })
 
-        // Load image as blob and convert to Uint8Array (like the texture.image format)
-        const imageResponse = await fetch(imageUrl)
-        const imageBlob = await imageResponse.blob()
-        const imageArrayBuffer = await imageBlob.arrayBuffer()
-        const imageUint8Array = new Uint8Array(imageArrayBuffer)
-
-        console.log(`[Spline3D] ✓ Loaded image data for ${label}`, {
-          size: imageUint8Array.length,
-          type: imageBlob.type,
-          url: imageUrl
-        })
-
-        // Also create HTMLImageElement for fallback approaches
+        // Load image element first
         const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image()
           img.crossOrigin = "anonymous"
@@ -475,10 +526,34 @@ export function Spline3DPreview({
           img.src = imageUrl
         })
 
-        console.log(`[Spline3D] ✓ Also loaded HTMLImageElement for ${label}`, {
-          width: imageElement.width,
-          height: imageElement.height
-        })
+        // Draw to canvas: scale + position, optionally flip (avoids texture repeat/splitting)
+        const scale = Math.max(0.5, Math.min(1.2, pos.scale))
+        const scaleX = Math.max(0.5, Math.min(1, pos.scaleX))
+        const scaleY = Math.max(0.5, Math.min(1.2, pos.scaleY))
+        const canvas = document.createElement('canvas')
+        canvas.width = imageElement.width
+        canvas.height = imageElement.height
+        const ctx = canvas.getContext('2d')!
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        const w = canvas.width * scale * scaleX
+        const h = canvas.height * scale * scaleY
+        const ox = Math.max(-0.5, Math.min(0.5, pos.offsetX))
+        const oy = Math.max(-0.5, Math.min(0.5, pos.offsetY))
+        const x = (canvas.width - w) / 2 + ox * canvas.width
+        const y = (canvas.height - h) / 2 + oy * canvas.height
+        ctx.save()
+        if (shouldFlip) {
+          ctx.translate(canvas.width, 0)
+          ctx.scale(-1, 1)
+        }
+        ctx.drawImage(imageElement, x, y, w, h)
+        ctx.restore()
+        const blob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b!), 'image/png')
+        )
+        const imageUint8Array = new Uint8Array(await blob!.arrayBuffer())
+        console.log(`[Spline3D] ✓ Loaded image for ${label}: ${canvas.width}x${canvas.height}, scale ${scale}`)
 
         // Try multiple approaches to add image layer
 
@@ -520,115 +595,19 @@ export function Spline3DPreview({
                     allProperties: Object.keys(originalImage)
                   })
 
-                  // Replace the image data
+                  // Replace ONLY the image data -- keep original UV transforms
+                  // (rotation, repeat, offset) that the Spline scene designer set up.
                   layer.texture.image.data = imageUint8Array
                   layer.texture.image.width = imageElement.width
                   layer.texture.image.height = imageElement.height
                   layer.texture.image.name = `uploaded-image-${label}`
 
-                  // SCALE BASED ON CURRENT VALUES: Current is 25x25, target needs to be smaller
-                  // User says images are still slightly bigger, so let's make them smaller
-                  const currentScaleX = originalImage.repeat ? originalImage.repeat[0] : 25
-                  const currentScaleY = originalImage.repeat ? originalImage.repeat[1] : 25
-
-                  // Make images smaller since user says they're still too big
-                  // Try 19x13 as a middle ground (smaller than 21x15 but not as small as 18x12)
-                  const targetScaleX = 19
-                  const targetScaleY = 13
-
-                  // Calculate scaling factors relative to current implementation
-                  const scaleFactorX = targetScaleX / currentScaleX  // 18/25 = 0.72
-                  const scaleFactorY = targetScaleY / currentScaleY  // 12/25 = 0.48
-
-                  // Set both texture and texture.image properties
-                  layer.texture.image.repeat = [targetScaleX, targetScaleY]
-                  layer.texture.image.offset = [-0.05, -0.05]  // Target offset
-                  layer.texture.image.rotation = -90 * (Math.PI / 180)  // Target angle in radians
-
-                  // Also set the texture-level properties (these might be what actually control rendering)
-                  if (layer.texture.repeat !== undefined) {
-                    layer.texture.repeat.set(targetScaleX, targetScaleY)
-                    console.log(`[Spline3D] ✓ Set texture.repeat to [${targetScaleX}, ${targetScaleY}]`)
-                  }
-                  if (layer.texture.offset !== undefined) {
-                    layer.texture.offset.set(-0.05, -0.05)
-                    console.log(`[Spline3D] ✓ Set texture.offset to [-0.05, -0.05]`)
-                  }
-                  if (layer.texture.rotation !== undefined) {
-                    layer.texture.rotation = -90 * (Math.PI / 180)
-                    console.log(`[Spline3D] ✓ Set texture.rotation to -90°`)
-                  }
-
-                  // Preserve other properties
+                  // Preserve original filter/wrapping values
                   layer.texture.image.magFilter = originalImage.magFilter !== undefined ? originalImage.magFilter : 1006
                   layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
                   layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
 
-                  console.log(`[Spline3D] ✓ REPLACED texture.image with proper scaling for layer ${i}`, {
-                    newImageName: layer.texture.image.name,
-                    newImageSize: imageUint8Array.length,
-                    newImageDimensions: `${imageElement.width}x${imageElement.height}`,
-                    scalingApplied: {
-                      currentScale: `${currentScaleX}x${currentScaleY}`,
-                      targetScale: `${targetScaleX}x${targetScaleY}`,
-                      scaleFactors: `${scaleFactorX.toFixed(2)}x${scaleFactorY.toFixed(2)}`,
-                      newRepeat: layer.texture.image.repeat,
-                      newOffset: layer.texture.image.offset,
-                      newRotationDegrees: layer.texture.image.rotation * (180 / Math.PI)
-                    },
-                    preservedProperties: {
-                      magFilter: layer.texture.image.magFilter,
-                      minFilter: layer.texture.image.minFilter,
-                      wrapping: layer.texture.image.wrapping
-                    }
-                  })
-
-                  // Debug: Show what we're actually setting vs original
-                  console.log(`[Spline3D] DEBUG - Texture scaling for layer ${i}:`, {
-                    originalImageRepeat: originalImage.repeat,
-                    newImageRepeat: layer.texture.image.repeat,
-                    originalImageOffset: originalImage.offset,
-                    newImageOffset: layer.texture.image.offset,
-                    originalImageRotation: originalImage.rotation,
-                    newImageRotation: layer.texture.image.rotation,
-                    // Also check texture-level properties
-                    originalTextureRepeat: layer.texture.repeat,
-                    newTextureRepeat: layer.texture.repeat, // This shouldn't change
-                    originalTextureOffset: layer.texture.offset,
-                    newTextureOffset: layer.texture.offset, // This shouldn't change
-                    scaleChange: `From ${currentScaleX}x${currentScaleY} → ${targetScaleX}x${targetScaleY}`
-                  })
-
-                  // Debug: Check final texture state after all updates
-                  setTimeout(() => {
-                    console.log(`[Spline3D] FINAL TEXTURE STATE for layer ${i}:`, {
-                      textureRepeat: layer.texture.repeat,
-                      textureOffset: layer.texture.offset,
-                      textureRotation: layer.texture.rotation,
-                      textureScale: layer.texture.scale,
-                      imageRepeat: layer.texture.image.repeat,
-                      imageOffset: layer.texture.image.offset,
-                      imageRotation: layer.texture.image.rotation,
-                      imageWidth: layer.texture.image.width,
-                      imageHeight: layer.texture.image.height,
-                      matrixNeedsUpdate: layer.texture.matrixNeedsUpdate,
-                      // Check if there are any UV transform matrices
-                      matrix: layer.texture.matrix,
-                      uvTransform: layer.texture.uvTransform,
-                      // Check material properties that might affect scaling
-                      materialNeedsUpdate: material.needsUpdate,
-                      materialVersion: material.version
-                    })
-
-                    // Also check if the texture has any parent scaling
-                    if (layer.texture.image && layer.texture.image.parent) {
-                      console.log(`[Spline3D] TEXTURE PARENT INFO for layer ${i}:`, {
-                        parentType: layer.texture.image.parent.type,
-                        parentScale: layer.texture.image.parent.scale,
-                        parentPosition: layer.texture.image.parent.position
-                      })
-                    }
-                  }, 100)
+                  console.log(`[Spline3D] ✓ Replaced image data for layer ${i} (${label}): ${imageElement.width}x${imageElement.height}, kept original transforms`)
 
                   // CRITICAL: Mark the texture itself as needing update
                   if (layer.texture.needsUpdate !== undefined) {
@@ -900,61 +879,45 @@ export function Spline3DPreview({
       }
     }
 
-    // Handle Side 1 - Add image layer to material
-    // Target: "Panel Side A PC Trans A" (the object that displays the image)
-    // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side A > PC Trans A
-    if (image1) {
-      const obj1 = findObject(
-        side1ObjectId,
-        side1ObjectName,
-        ["Panel Side A PC Trans A", "PC Trans A", "Side A", "Panel Side A"],
-        ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side A", "PC Trans A"]
-      )
-      if (obj1) {
-        side1ObjectRef.current = obj1
-        const success = await addImageLayerToMaterial(obj1, image1, "Side 1 (Panel Side A PC Trans A)")
-        if (success) {
-          console.log(`[Spline3D] ✓ Successfully added image layer to Side 1`)
-        } else {
-          console.warn(`[Spline3D] Failed to add image layer to Side 1`)
-        }
-      } else {
-        console.warn(`[Spline3D] Side 1 object not found - tried path and names`)
-      }
+    // Discover panel objects (cached after first successful find)
+    const panels = discoverPanels()
+    onPanelsFound?.({
+      sideA: !!panels.sideA,
+      sideB: !!panels.sideB,
+      sameObject: panels.sideA === panels.sideB && !!panels.sideA,
+    })
+
+    const objA = panels.sideA
+    const objB = panels.sideB
+    const imgA = swapLampSides ? image2 : image1
+    const imgB = swapLampSides ? image1 : image2
+
+    const flipA = flipForSide === 'A' || flipForSide === 'both'
+    const flipB = flipForSide === 'B' || flipForSide === 'both'
+
+    if (imgA && objA) {
+      side1ObjectRef.current = objA
+      const success = await addImageLayerToMaterial(objA, imgA, "Side A", flipA, posA)
+      console.log(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
     } else {
       side1ObjectRef.current = null
+      if (imgA) console.warn(`[Spline3D] Side A object not found or has no material`)
     }
 
-    // Handle Side 2 - Add image layer to material
-    // Target: "Panel Side B PC Trans B" (the object that displays the image)
-    // Full path: Scene > Scene > White > Assembly Small Lamp 2025 v62 > Panel Side B > PC Trans B
-    if (image2) {
-      const obj2 = findObject(
-        side2ObjectId,
-        side2ObjectName,
-        ["Panel Side B PC Trans B", "PC Trans B", "Side B", "Panel Side B"],
-        ["Scene", "Scene", "White", "Assembly Small Lamp 2025 v62", "Panel Side B", "PC Trans B"]
-      )
-      if (obj2) {
-        side2ObjectRef.current = obj2
-        const success = await addImageLayerToMaterial(obj2, image2, "Side 2 (Panel Side B PC Trans B)")
-        if (success) {
-          console.log(`[Spline3D] ✓ Successfully added image layer to Side 2`)
-        } else {
-          console.warn(`[Spline3D] Failed to add image layer to Side 2`)
-        }
-      } else {
-        console.warn(`[Spline3D] Side 2 object not found - tried path and names`)
-      }
+    if (imgB && objB) {
+      side2ObjectRef.current = objB
+      const success = await addImageLayerToMaterial(objB, imgB, "Side B", flipB, posB)
+      console.log(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
     } else {
       side2ObjectRef.current = null
+      if (imgB) console.warn(`[Spline3D] Side B object not found or has no material`)
     }
 
     // Force render
     if (app.renderer && scene && app.camera && typeof app.renderer.render === "function") {
       app.renderer.render(scene, app.camera)
     }
-  }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading])
+  }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading, onPanelsFound, swapLampSides, flipForSide, imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   // Load Spline scene
   useEffect(() => {
@@ -1842,6 +1805,7 @@ export function Spline3DPreview({
           console.error("[Spline3D] Error disposing scene:", err)
         }
         splineAppRef.current = null
+        discoveredPanelsRef.current = { sideA: null, sideB: null }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1852,6 +1816,48 @@ export function Spline3DPreview({
       updateTextures()
     }
   }, [image1, image2, isLoading, updateTextures])
+
+  if (minimal) {
+    return (
+      <div className={className ?? "relative w-full h-full"}>
+        {isLoading && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-950 z-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <p className="text-xs text-white/50">Loading 3D preview…</p>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 z-10 px-6">
+            {image1 && (
+              <img
+                src={image1}
+                alt="Artwork preview"
+                className="w-48 h-48 object-contain rounded-lg mb-4 opacity-80"
+              />
+            )}
+            <p className="text-sm text-white/60 text-center max-w-xs">
+              3D preview unavailable — {error.includes('fetch') ? 'check your connection and refresh' : error}
+            </p>
+            <button
+              onClick={() => { setError(null); setIsLoading(true); }}
+              className="mt-3 px-4 py-1.5 text-xs font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+          style={{ display: "block", width: "100%", height: "100%" }}
+          width={800}
+          height={600}
+        />
+      </div>
+    )
+  }
 
   return (
     <Card>

@@ -305,6 +305,23 @@ public/
 - Image Layers are updated in real-time as images are uploaded
 - No variables or postMessage needed - direct material manipulation
 
+## Troubleshooting
+
+### `_debouncedCallUserAPI is not a function` Error
+
+If the scene uses Spline's Real-Time API or API Request actions, you may see:
+
+```
+TypeError: this._debouncedCallUserAPI is not a function
+```
+
+**Fix applied:** This project includes a [patch-package](https://github.com/ds300/patch-package) patch for `@splinetool/runtime` that corrects a constructor-order bug. The patch is in `patches/@splinetool+runtime+1.12.60.patch` and runs automatically via `postinstall`.
+
+If the error persists:
+1. Run `npm install` to ensure the patch is applied
+2. Clear `.next` and restart dev: `npm run clear-cache && npm run dev`
+3. **Alternative:** Re-export the scene from Spline Editor and remove any Real-Time API / API Request actions if you don't need them
+
 ## Support
 
 If you encounter issues:

@@ -631,6 +631,49 @@ export async function getCollection(handle: string, options: {
 }
 
 /**
+ * Get a collection with full product data (images, variants, description).
+ * Used by the configurator experience page which needs richer product data
+ * than the card fragment provides.
+ */
+export async function getCollectionWithFullProducts(handle: string, options: {
+  first?: number
+  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED_AT' | 'UPDATED_AT' | 'MANUAL'
+  reverse?: boolean
+} = {}): Promise<ShopifyCollection | null> {
+  const { first = 24, sortKey = 'MANUAL', reverse = false } = options
+
+  const query = `
+    ${COLLECTION_FRAGMENT}
+    ${PRODUCT_FRAGMENT}
+    query GetCollectionFull($handle: String!, $first: Int!, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
+      collection(handle: $handle) {
+        ...CollectionFields
+        products(first: $first, sortKey: $sortKey, reverse: $reverse) {
+          edges {
+            node {
+              ...ProductFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  const data = await storefrontQuery<{ collection: ShopifyCollection | null }>(query, {
+    handle,
+    first,
+    sortKey,
+    reverse,
+  })
+
+  return data.collection
+}
+
+/**
  * Get multiple collections
  */
 export async function getCollections(options: {

@@ -54,18 +54,19 @@ export function Slideshow({
   allowTransparentHeader = true,
   className,
 }: SlideshowProps) {
+  const safeSlides = Array.isArray(slides) ? slides : []
   const [currentSlide, setCurrentSlide] = React.useState(0)
   const [isTransitioning, setIsTransitioning] = React.useState(showInitialTransition)
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
   // Autoplay
   React.useEffect(() => {
-    if (!autoplay || slides.length <= 1) return
+    if (!autoplay || safeSlides.length <= 1) return
 
     intervalRef.current = setInterval(() => {
       setIsTransitioning(true)
       setTimeout(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length)
+        setCurrentSlide((prev) => (prev + 1) % safeSlides.length)
         setIsTransitioning(false)
       }, 300)
     }, cycleSpeed * 1000)
@@ -75,7 +76,7 @@ export function Slideshow({
         clearInterval(intervalRef.current)
       }
     }
-  }, [autoplay, cycleSpeed, slides.length])
+  }, [autoplay, cycleSpeed, safeSlides.length])
 
   // Navigate to slide
   const goToSlide = (index: number) => {
@@ -89,8 +90,8 @@ export function Slideshow({
     }, 300)
   }
 
-  const slide = slides[currentSlide]
-  if (!slide) return null
+  const slide = safeSlides[currentSlide]
+  if (!slide || safeSlides.length === 0) return null
 
   // Position classes
   const textPositionClasses = {
@@ -108,7 +109,7 @@ export function Slideshow({
       )}
     >
       {/* Slides */}
-      {slides.map((s, index) => (
+      {safeSlides.map((s, index) => (
         <div
           key={s.id}
           className={cn(
@@ -203,11 +204,11 @@ export function Slideshow({
       )}
 
       {/* Controls */}
-      {slides.length > 1 && controlsType !== 'none' && (
+      {safeSlides.length > 1 && controlsType !== 'none' && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
           {controlsType === 'dots' && (
             <div className="flex items-center gap-2">
-              {slides.map((_, index) => (
+              {safeSlides.map((_, index) => (
                 <button
                   key={index}
                   type="button"
@@ -226,7 +227,7 @@ export function Slideshow({
 
           {controlsType === 'numbers' && (
             <div className="flex items-center gap-4">
-              {slides.map((_, index) => (
+              {safeSlides.map((_, index) => (
                 <button
                   key={index}
                   type="button"
@@ -248,7 +249,7 @@ export function Slideshow({
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => goToSlide((currentSlide - 1 + slides.length) % slides.length)}
+                onClick={() => goToSlide((currentSlide - 1 + safeSlides.length) % safeSlides.length)}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
                 aria-label="Previous slide"
               >
@@ -257,11 +258,11 @@ export function Slideshow({
                 </svg>
               </button>
               <span className="text-white text-sm">
-                {currentSlide + 1} / {slides.length}
+                {currentSlide + 1} / {safeSlides.length}
               </span>
               <button
                 type="button"
-                onClick={() => goToSlide((currentSlide + 1) % slides.length)}
+                onClick={() => goToSlide((currentSlide + 1) % safeSlides.length)}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
                 aria-label="Next slide"
               >

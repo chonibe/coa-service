@@ -640,9 +640,7 @@ export async function updateAllProductsWithBarcodes(limit: number = 100): Promis
     processed: 0,
     limit
   }
-}
-
-/**
+}/**
  * TODO: Implement barcode update functionality
  * Updates variants for a specific product with generated barcodes
  */
@@ -654,4 +652,3 @@ export async function updateProductVariantsWithBarcodes(productId: string): Prom
     productId
   }
 }
-

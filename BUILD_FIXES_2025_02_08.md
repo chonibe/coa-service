@@ -153,3 +153,27 @@ grep "export const dynamic" app/shop/artists/page.tsx
 **Status:** ✅ All fixes applied and verified
 **Date:** February 8, 2025
 **Build Version:** Next.js 15.2.6
+
+---
+
+## Build Fixes - February 9, 2025 (Vercel CLI build)
+
+### Summary
+Resolved two recurring build failures so `npm run build` and `vercel --prod` complete successfully.
+
+### Checklist of changes
+
+- [x] **Vendor layout – dynamic server usage**  
+  **Error:** `Route /vendor/dashboard/announcements couldn't be rendered statically because it used 'cookies'`  
+  **Fix:** Added `export const dynamic = 'force-dynamic'` to [`app/vendor/layout.tsx`](app/vendor/layout.tsx) so all vendor routes under this layout are server-rendered (layout uses `cookies()`).
+
+- [x] **Shop index – prerender TypeError**  
+  **Error:** `Error occurred prerendering page "/shop". TypeError: Cannot read properties of undefined (reading 'length')`  
+  **Fix:** Added `export const dynamic = 'force-dynamic'` to [`app/shop/page.tsx`](app/shop/page.tsx) so `/shop` is not statically prerendered, avoiding the undefined `.length` access during build.
+
+- [x] **Verification**  
+  Ran `npm run build` locally → exit code 0.  
+  Ran `npx vercel --prod --yes` → deployment completed.  
+  Production: https://app.thestreetcollector.com
+
+**Status:** ✅ Build and deploy verified (Feb 9, 2025)

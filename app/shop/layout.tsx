@@ -14,8 +14,10 @@ import {
   mainNavigation as syncedMainNavigation, 
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
+import { homepageContent } from '@/content/homepage'
 import { ShopNavigation } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
+import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { WishlistDrawer } from '@/components/shop/navigation'
 
 /**
@@ -41,9 +43,10 @@ const defaultNavigation = [
     href: '/shop/products',
     children: [
       { label: 'All Artworks', href: '/shop/products' },
-      { label: 'New Releases', href: '/shop/products?collection=new-releases' },
-      { label: 'Best Sellers', href: '/shop/products?collection=best-sellers' },
+      { label: 'New Releases', href: `/shop/products?collection=${homepageContent.newReleases.collectionHandle}` },
+      { label: 'Best Sellers', href: `/shop/products?collection=${homepageContent.bestSellers.collectionHandle}` },
       { label: 'Street Lamp', href: '/shop/street_lamp' },
+      { label: 'Customize Your Lamp', href: '/shop/experience' },
     ]
   },
   { 
@@ -121,7 +124,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        const response = await fetch('/api/shop/collections/new-releases')
+        const response = await fetch(`/api/shop/collections/${homepageContent.newReleases.collectionHandle}`)
         if (response.ok) {
           const data = await response.json()
           setRecommendedProducts(data.products || [])
@@ -247,35 +250,34 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     cart.removeItem(lineId)
   }, [cart])
   
-  // Build cart object for CartDrawer (convert from our format to Shopify format)
-  const cartForDrawer = {
-    id: 'local-cart',
-    totalQuantity: cart.itemCount,
-    cost: {
-      subtotalAmount: { amount: cart.subtotal.toString(), currencyCode: 'USD' },
-      totalAmount: { amount: cart.total.toString(), currencyCode: 'USD' },
-    },
-    lines: {
-      edges: cart.items.map(item => ({
-        node: {
-          id: item.id,
-          quantity: item.quantity,
-          merchandise: {
-            id: item.variantId,
-            title: item.variantTitle || 'Default Title',
-            image: item.image ? { url: item.image, altText: item.title } : null,
-            price: { amount: item.price.toString(), currencyCode: 'USD' },
-            product: {
-              id: item.productId,
-              title: item.title,
-              handle: item.handle,
-            },
-          },
-        },
-      })),
-    },
-  }
-  
+  // Shop search: call API and map to SearchResult shape for nav search drawer
+  const handleSearch = useCallback(async (query: string): Promise<{ products: SearchResult[]; collections: SearchResult[] }> => {
+    if (!query?.trim()) return { products: [], collections: [] }
+    try {
+      const res = await fetch(`/api/shop/search?q=${encodeURIComponent(query.trim())}`)
+      const data = await res.json()
+      const products: SearchResult[] = (data.products || []).map((p: { id: string; handle: string; title: string; featuredImage?: { url: string; altText?: string } | null; priceRange?: { minVariantPrice?: { amount: string } }; vendor?: string }) => ({
+        id: p.id,
+        handle: p.handle,
+        title: p.title,
+        type: 'product' as const,
+        image: p.featuredImage ? { url: p.featuredImage.url, altText: p.featuredImage.altText } : undefined,
+        price: p.priceRange?.minVariantPrice?.amount,
+        vendor: p.vendor,
+      }))
+      const collections: SearchResult[] = (data.collections || []).map((c: { id: string; handle: string; title: string; image?: { url: string; altText?: string } | null }) => ({
+        id: c.id,
+        handle: c.handle,
+        title: c.title,
+        type: 'collection' as const,
+        image: c.image ? { url: c.image.url, altText: c.image.altText } : undefined,
+      }))
+      return { products, collections }
+    } catch {
+      return { products: [], collections: [] }
+    }
+  }, [])
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Skip to content link for accessibility */}
@@ -294,25 +296,31 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       
       {/* Shop Navigation */}
       <ShopNavigation
+        cartItems={cart.items ?? []}
+        cartSubtotal={cart.subtotal}
+        cartTotal={cart.total}
+        cartItemCount={cart.itemCount}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={handleCheckout}
+        onSearch={handleSearch}
         isModalOpen={navModalOpen}
         onModalToggle={handleNavModalToggle}
         onViewCart={handleViewCart}
         onWishlistClick={handleWishlistClick}
+        cartLoading={cartLoading}
       />
       
       {/* Cart Drawer with Recommendations */}
       <LocalCartDrawer
         isOpen={cart.isOpen}
         onClose={() => cart.toggleCart(false)}
-        cart={cartForDrawer as any}
+        items={cart.items ?? []}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
-        loading={cartLoading}
-        orderNotes={cart.orderNotes}
-        onOrderNotesChange={cart.setOrderNotes}
-        recommendedProducts={recommendedProducts}
-        onAddRecommendedToCart={onAddRecommendedToCart}
+        subtotal={cart.subtotal}
+        total={cart.total}
       />
       
       {/* Wishlist Drawer */}
