@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from 'framer-motion'
-import { X, Check, ChevronLeft, ChevronRight, ChevronDown, User } from 'lucide-react'
+import { Check, ChevronRight, ChevronDown, User } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -34,8 +34,19 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
   const [showArtistBio, setShowArtistBio] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false
+  )
   const constraintsRef = useRef<HTMLDivElement>(null)
   const dragX = useMotionValue(0)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    setIsDesktop(mq.matches)
+    const fn = () => setIsDesktop(mq.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [])
 
   const price = product.priceRange?.minVariantPrice?.amount
     ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}`
@@ -44,9 +55,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
   const isSoldOut = !product.availableForSale
   const description = product.description || ''
 
-  const quantityAvailable = product.variants?.edges?.[0]?.node?.availableForSale
-    ? undefined
-    : undefined
+  const firstVariant = product.variants?.edges?.[0]?.node
+  const quantityAvailable = typeof firstVariant?.quantityAvailable === 'number' ? firstVariant.quantityAvailable : undefined
+  const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
+  const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
 
   const slug = artist.toLowerCase().replace(/\s+/g, '-')
 
@@ -103,34 +115,58 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[70] flex items-end md:items-stretch md:justify-end"
+        className="fixed inset-0 z-[70] flex items-end md:items-stretch md:justify-start pointer-events-none"
       >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          className="absolute inset-0 md:left-0 md:top-0 md:bottom-0 md:right-auto md:w-[60%] bg-black/40 backdrop-blur-sm pointer-events-auto"
         />
 
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
+          initial={isDesktop ? { x: '-100%' } : { y: '100%' }}
+          animate={{ x: 0, y: 0 }}
+          exit={isDesktop ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative z-10 w-full md:w-[420px] max-h-[90dvh] md:max-h-full md:h-full bg-white md:rounded-none rounded-t-2xl overflow-hidden flex flex-col"
+          className="relative z-10 w-full md:w-[420px] max-h-[90dvh] md:max-h-full md:h-full bg-white md:rounded-r-2xl md:rounded-tl-none rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-            <div className="md:hidden w-10 h-1 bg-neutral-300 rounded-full mx-auto absolute top-2 left-1/2 -translate-x-1/2" />
-            <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Artwork Details</h3>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          {/* Top info: vendor/title, then scarcity bar */}
+          <div className="flex-shrink-0 border-b border-neutral-100 relative">
+            {/* Vendor + title */}
+            <div className="flex items-center justify-center px-4 pt-4 pb-2 relative">
+              <div className="md:hidden w-10 h-1 bg-neutral-300 rounded-full mx-auto absolute top-2 left-1/2 -translate-x-1/2" />
+              <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
+                {artist && (
+                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider truncate max-w-full">
+                    {artist}
+                  </p>
+                )}
+                <h2 className="text-base font-semibold text-neutral-900 tracking-tight truncate max-w-full mt-0.5">
+                  {product.title}
+                </h2>
+                {isSoldOut && (
+                  <div className="flex items-center justify-center mt-1">
+                    <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                      Sold out
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Scarcity bar — under vendor/title */}
+            <div className="px-4 pb-3 overflow-visible">
+              <ScarcityBadge
+                quantityAvailable={quantityAvailable}
+                editionSize={editionSizeNum}
+                availableForSale={product.availableForSale}
+                variant="bar"
+                productId={product.id}
+                productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                productTitle={product.title}
+              />
+            </div>
           </div>
 
           {/* Scrollable content */}
@@ -166,29 +202,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
 
                 {allImages.length > 1 && (
                   <>
-                    <button
-                      onClick={() => setImageIndex((i) => (i - 1 + allImages.length) % allImages.length)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-sm transition-colors z-10"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setImageIndex((i) => (i + 1) % allImages.length)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-sm transition-colors z-10"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
                       {allImages.map((_, i) => (
                         <button
                           key={i}
                           onClick={() => setImageIndex(i)}
                           className={cn(
-                            'w-2 h-2 rounded-full transition-all',
-                            i === imageIndex ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'
+                            'w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0',
+                            i === imageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
                           )}
+                          style={{ width: 4, height: 4 }}
                           aria-label={`Image ${i + 1}`}
                         />
                       ))}
@@ -221,33 +244,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
                 ))}
               </div>
             )}
-
-            {/* Product info */}
-            <div className="px-4 pt-4 pb-2">
-              <h2 className="text-2xl font-semibold text-neutral-900 tracking-tight">
-                {product.title}
-              </h2>
-              {artist && (
-                <p className="text-sm text-neutral-500 mt-1">by {artist}</p>
-              )}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-lg font-medium text-neutral-900">{price}</span>
-                {isSoldOut && (
-                  <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                    Sold Out
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Scarcity indicator */}
-            <div className="px-4 pb-3">
-              <ScarcityBadge
-                quantityAvailable={quantityAvailable}
-                availableForSale={product.availableForSale}
-                variant="full"
-              />
-            </div>
 
             {/* Description */}
             {description && (

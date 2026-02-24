@@ -38,10 +38,10 @@ export function IntroQuiz({ onComplete }: IntroQuizProps) {
       {step === 2 && (
         <button
           onClick={() => setStep(1)}
-          className="absolute top-6 left-6 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors"
+          className="absolute top-6 left-6 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/25 hover:bg-white/35 text-white transition-colors border border-white/20"
           aria-label="Go back"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 shrink-0" />
         </button>
       )}
 

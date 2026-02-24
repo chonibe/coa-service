@@ -3,7 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Check, Eye, ShoppingBag } from 'lucide-react'
+import { Check, Eye } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -61,18 +61,16 @@ function ArtworkCard({
       whileTap={!isLampSelection && !isInCart ? { scale: 0.98 } : undefined}
       className={cn(
         'relative rounded-lg overflow-hidden transition-all duration-200',
-        !isLampSelection && isPreviewed && 'opacity-90',
-        !isLampSelection && !isPreviewed && 'opacity-85 hover:opacity-100'
+        isInCart && 'bg-neutral-900',
+        !isLampSelection && isPreviewed && !isInCart && 'opacity-90',
+        !isLampSelection && !isPreviewed && !isInCart && 'opacity-85 hover:opacity-100'
       )}
     >
-      {isInCart && (
-        <div
-          className="absolute inset-0 rounded-lg pointer-events-none z-10 shadow-[inset_0_0_16px_4px_rgba(0,0,0,0.35)]"
-          aria-hidden
-        />
-      )}
       <div
-        className="aspect-square relative bg-neutral-100 cursor-pointer touch-manipulation select-none"
+        className={cn(
+          'aspect-square relative overflow-hidden cursor-pointer touch-manipulation select-none',
+          isInCart ? 'bg-neutral-950' : 'bg-neutral-100'
+        )}
         onClick={handleImageClick}
         role="button"
         tabIndex={0}
@@ -88,7 +86,10 @@ function ArtworkCard({
             sizes="(max-width: 768px) 45vw, 18vw"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">
+          <div className={cn(
+            'w-full h-full flex items-center justify-center text-xs',
+            isInCart ? 'text-neutral-500' : 'text-neutral-300'
+          )}>
             No image
           </div>
         )}
@@ -97,11 +98,6 @@ function ArtworkCard({
             <span className="text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full">
               Sold Out
             </span>
-          </div>
-        )}
-        {isInCart && (
-          <div className="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-            <ShoppingBag className="w-3 h-3 text-white" />
           </div>
         )}
         {!isSoldOut && (
@@ -114,10 +110,19 @@ function ArtworkCard({
         )}
       </div>
 
-      <div className="p-2 pt-3 flex items-start gap-1 border-t border-neutral-100">
+      <div className={cn(
+        'p-2 pt-3 flex items-start gap-1 border-t transition-colors',
+        isInCart ? 'border-neutral-700 bg-neutral-900' : 'border-neutral-100'
+      )}>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-neutral-800 truncate">{product.title}</p>
-          <p className="text-xs text-neutral-500">{formatPrice(product)}</p>
+          <p className={cn(
+            'text-xs font-medium truncate',
+            isInCart ? 'text-white' : 'text-neutral-800'
+          )}>{product.title}</p>
+          <p className={cn(
+            'text-xs',
+            isInCart ? 'text-neutral-300' : 'text-neutral-500'
+          )}>{formatPrice(product)}</p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
@@ -126,15 +131,17 @@ function ArtworkCard({
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             className={cn(
-              'w-6 h-6 flex items-center justify-center rounded-full transition-colors',
+              'w-5 h-5 flex items-center justify-center rounded-full transition-colors',
               isLampSelection
-                ? 'bg-neutral-900 text-white'
-                : 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
+                ? 'text-blue-500'
+                : isInCart
+                  ? 'hover:bg-white/10 text-white/80 hover:text-white'
+                  : 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
             )}
             title={isLampSelection ? 'On lamp preview' : 'Preview on lamp'}
             aria-label="Preview on lamp"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-3 h-3" />
           </button>
           <button
             data-wizard-add-btn={isFirstCard ? '' : undefined}
@@ -143,21 +150,18 @@ function ArtworkCard({
             disabled={isSoldOut}
             title={isInCart ? 'Remove from order' : 'Add to cart'}
             className={cn(
-              'group w-6 h-6 flex items-center justify-center rounded-full transition-colors',
+              'flex items-center justify-center transition-colors shrink-0',
               isInCart
-                ? 'bg-green-500 text-white hover:bg-green-600'
-                : 'bg-neutral-100 text-neutral-500 hover:bg-green-500 hover:text-white',
+                ? 'w-5 h-5 rounded-full text-green-500 hover:text-green-600'
+                : 'h-6 px-2.5 rounded-md border border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             aria-label={isInCart ? 'Remove from order' : 'Add to cart'}
           >
             {isInCart ? (
-              <Check className="w-3.5 h-3.5" />
+              <Check className="w-2.5 h-2.5 text-green-500" strokeWidth={2.5} />
             ) : (
-              <>
-                <span className="hidden group-hover:inline text-base font-bold">+</span>
-                <ShoppingBag className="w-3.5 h-3.5 group-hover:hidden" />
-              </>
+              <span className="text-xs font-medium">Add</span>
             )}
           </button>
         </div>
