@@ -25,6 +25,8 @@ interface CreateCheckoutRequest {
   creditsToUse?: number
   shippingRequired?: boolean
   customerEmail?: string
+  orderNotes?: string
+  cancelUrl?: string
 }
 
 /**
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body: CreateCheckoutRequest = await request.json()
-    const { items, creditsToUse = 0, shippingRequired = true, customerEmail } = body
+    const { items, creditsToUse = 0, shippingRequired = true, customerEmail, orderNotes, cancelUrl } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
     // Create Stripe Checkout session for partial or full payment
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin') || 'http://localhost:3000'
     const successUrl = `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-    const cancelUrl = `${baseUrl}/shop/cart?cancelled=true`
+    const finalCancelUrl = cancelUrl || `${baseUrl}/shop/cart?cancelled=true`
 
     // Build Shopify variant metadata for webhook
     const shopifyVariants = items.map(item => ({
@@ -214,13 +216,14 @@ export async function POST(request: NextRequest) {
       mode: 'payment',
       line_items: stripeLineItems,
       success_url: successUrl,
-      cancel_url: cancelUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         source: 'headless_storefront',
         shopify_variant_ids: JSON.stringify(shopifyVariants),
         credits_used: actualCreditsToUse.toString(),
         credits_discount_cents: creditDiscountCents.toString(),
         collector_identifier: email || '',
+        ...(orderNotes && { order_notes: orderNotes }),
       },
       ...(stripeCustomerId && { customer: stripeCustomerId }),
       ...(email && !stripeCustomerId && { customer_email: email }),

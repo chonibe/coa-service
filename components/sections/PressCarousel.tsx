@@ -49,6 +49,7 @@ export function PressCarousel({
   fullWidth = true,
   className,
 }: PressCarouselProps) {
+  const safeQuotes = Array.isArray(quotes) ? quotes : []
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = React.useState(0)
   const [canScrollLeft, setCanScrollLeft] = React.useState(false)
@@ -99,7 +100,7 @@ export function PressCarousel({
   }
 
   const scrollNext = () => {
-    if (currentIndex < quotes.length - 1) {
+    if (currentIndex < safeQuotes.length - 1) {
       scrollToIndex(currentIndex + 1)
     }
   }
@@ -120,7 +121,7 @@ export function PressCarousel({
     if (!autoplay) return
 
     const interval = setInterval(() => {
-      if (currentIndex < quotes.length - 1) {
+      if (currentIndex < safeQuotes.length - 1) {
         scrollToIndex(currentIndex + 1)
       } else {
         scrollToIndex(0)
@@ -128,7 +129,7 @@ export function PressCarousel({
     }, autoplaySpeed)
 
     return () => clearInterval(interval)
-  }, [autoplay, autoplaySpeed, currentIndex, quotes.length])
+  }, [autoplay, autoplaySpeed, currentIndex, safeQuotes.length])
 
   return (
     <SectionWrapper
@@ -168,7 +169,7 @@ export function PressCarousel({
             className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
             style={{ scrollPaddingLeft: '1.25rem' }}
           >
-            {quotes.map((quote) => (
+            {safeQuotes.map((quote) => (
               <QuoteCard
                 key={quote.id}
                 quote={quote}
@@ -179,7 +180,7 @@ export function PressCarousel({
           </div>
 
           {/* Navigation arrows */}
-          {showArrows && quotes.length > 1 && (
+          {showArrows && safeQuotes.length > 1 && (
             <>
               <button
                 type="button"
@@ -224,9 +225,9 @@ export function PressCarousel({
         </div>
 
         {/* Dots */}
-        {showDots && quotes.length > 1 && (
+        {showDots && safeQuotes.length > 1 && (
           <div className="flex items-center justify-center gap-2 mt-6">
-            {quotes.map((_, index) => (
+            {safeQuotes.map((_, index) => (
               <button
                 key={index}
                 type="button"

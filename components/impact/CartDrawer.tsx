@@ -118,7 +118,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       }
     }, [isOpen])
 
-    const lines = cart?.lines.edges.map((edge) => edge.node) || []
+    const lines = (cart?.lines?.edges ?? []).map((edge) => edge.node)
     const isEmpty = lines.length === 0
 
     return (

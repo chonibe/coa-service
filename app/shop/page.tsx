@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * /shop Route - Redirect to Homepage
  * 

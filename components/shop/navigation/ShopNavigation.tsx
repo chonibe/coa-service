@@ -62,10 +62,10 @@ export function ShopNavigation({
   navigation = [],
   onSearch,
   searchPlaceholder,
-  cartItems,
-  cartSubtotal,
-  cartTotal,
-  cartItemCount,
+  cartItems: cartItemsProp,
+  cartSubtotal = 0,
+  cartTotal = 0,
+  cartItemCount = 0,
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
@@ -79,6 +79,8 @@ export function ShopNavigation({
   scrollThreshold = 80, // Reduced threshold - always show minified bar after small scroll
   className,
 }: ShopNavigationProps) {
+  const cartItems = Array.isArray(cartItemsProp) ? cartItemsProp : []
+  const safeOnSearch = onSearch ?? (async () => ({ products: [], collections: [] }))
   const [internalModalOpen, setInternalModalOpen] = useState(false)
   
   // Use controlled state if provided, otherwise use internal state
@@ -94,8 +96,7 @@ export function ShopNavigation({
   // Detect cart additions and show notification
   useEffect(() => {
     if (cartItemCount > prevCartCount.current) {
-      // Get the most recently added item (assumes last item in array)
-      const recentItem = cartItems[cartItems.length - 1]
+      const recentItem = cartItems.length > 0 ? cartItems[cartItems.length - 1] : undefined
       if (recentItem) {
         setAddToCartNotification({
           isVisible: true,
@@ -157,7 +158,7 @@ export function ShopNavigation({
         onWishlistClick={onWishlistClick}
         onSearchClick={handleSearchFocus}
         onAccountClick={onAccountClick}
-        onSearch={onSearch}
+        onSearch={safeOnSearch}
         className={className}
       />
 

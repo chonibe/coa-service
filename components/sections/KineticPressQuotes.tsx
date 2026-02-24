@@ -68,33 +68,35 @@ export function KineticPressQuotes({
   background = 'default',
   className,
 }: KineticPressQuotesProps) {
+  const safeQuotes = Array.isArray(quotes) ? quotes : []
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const quoteRef = useRef<HTMLParagraphElement>(null)
   const authorRef = useRef<HTMLParagraphElement>(null)
 
-  const currentQuote = quotes[currentIndex]
+  const currentQuote = safeQuotes[currentIndex]
+  if (safeQuotes.length === 0 || !currentQuote) return null
 
   // Auto-advance
   useEffect(() => {
-    if (!autoAdvance || quotes.length <= 1) return
+    if (!autoAdvance || safeQuotes.length <= 1) return
 
     const timer = setInterval(() => {
       next()
     }, interval)
 
     return () => clearInterval(timer)
-  }, [currentIndex, autoAdvance, interval, quotes.length])
+  }, [currentIndex, autoAdvance, interval, safeQuotes.length])
 
   const next = () => {
     if (isAnimating) return
-    setCurrentIndex((prev) => (prev + 1) % quotes.length)
+    setCurrentIndex((prev) => (prev + 1) % safeQuotes.length)
   }
 
   const prev = () => {
     if (isAnimating) return
-    setCurrentIndex((prev) => (prev - 1 + quotes.length) % quotes.length)
+    setCurrentIndex((prev) => (prev - 1 + safeQuotes.length) % safeQuotes.length)
   }
 
   const goTo = (index: number) => {
@@ -230,7 +232,7 @@ export function KineticPressQuotes({
           </div>
 
           {/* Navigation Arrows */}
-          {showArrows && quotes.length > 1 && (
+          {showArrows && safeQuotes.length > 1 && (
             <>
               <button
                 onClick={prev}
@@ -273,9 +275,9 @@ export function KineticPressQuotes({
         </div>
 
         {/* Navigation Dots */}
-        {showDots && quotes.length > 1 && (
+        {showDots && safeQuotes.length > 1 && (
           <div className="flex items-center justify-center gap-2 mt-8">
-            {quotes.map((_, index) => (
+            {safeQuotes.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goTo(index)}

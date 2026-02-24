@@ -78,7 +78,8 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
       }
     }, [isOpen])
 
-    const isEmpty = items.length === 0
+    const safeItems = Array.isArray(items) ? items : []
+    const isEmpty = safeItems.length === 0
 
     return (
       <>
@@ -117,9 +118,9 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a]/10">
               <h2 className="font-heading text-xl font-semibold text-[#1a1a1a]">
                 Your Cart
-                {items.length > 0 && (
+                {safeItems.length > 0 && (
                   <span className="ml-2 text-sm font-normal text-[#1a1a1a]/60">
-                    ({items.length} {items.length === 1 ? 'item' : 'items'})
+                    ({safeItems.length} {safeItems.length === 1 ? 'item' : 'items'})
                   </span>
                 )}
               </h2>
@@ -181,7 +182,7 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item, index) => (
+                  {safeItems.map((item, index) => (
                     <div
                       key={item.id}
                       style={{

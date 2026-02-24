@@ -63,6 +63,7 @@ export function ArtistCarousel({
   fullWidth = true,
   className,
 }: ArtistCarouselProps) {
+  const safeArtists = Array.isArray(artists) ? artists : []
   const sectionRef = useRef<HTMLElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const cardsContainerRef = useRef<HTMLDivElement>(null)
@@ -165,7 +166,7 @@ export function ArtistCarousel({
     return () => {
       container.removeEventListener('scroll', handleScroll)
     }
-  }, [artists.length])
+  }, [safeArtists.length])
 
   // Monitor scroll state
   React.useEffect(() => {
@@ -182,7 +183,7 @@ export function ArtistCarousel({
     }
   }, [checkScrollState])
 
-  if (artists.length === 0) return null
+  if (safeArtists.length === 0) return null
 
   return (
     <SectionWrapper
@@ -278,7 +279,7 @@ export function ArtistCarousel({
               paddingBottom: '20px',
             }}
           >
-            {artists.map((artist, index) => (
+            {safeArtists.map((artist, index) => (
               <Link
                 key={artist.handle}
                 href={`/shop?collection=${artist.handle}`}

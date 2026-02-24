@@ -28,7 +28,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com mapbox:", // Added Mapbox domains + mapbox: protocol
+      "connect-src 'self' data: https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com mapbox: https://*.spline.design https://unpkg.com https://www.gstatic.com https://fonts.gstatic.com blob:", // data: for texture fetch; Mapbox + Spline 3D + fonts
       "worker-src 'self' blob:", // Allow Mapbox web workers
       "child-src 'self' blob:", // Allow Mapbox child contexts
       "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://my.spline.design https://*.spline.design", // Added GTM for iframes + Spline 3D viewer
