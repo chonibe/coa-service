@@ -44,6 +44,17 @@ export function ExperienceClient({ lamp, productsSeason1, productsSeason2 }: Exp
   }, [])
 
   useEffect(() => {
+    const handleContextMenu = (e: Event) => {
+      // Allow context menu on the Spline 3D area so its controls work; block elsewhere
+      const target = e.target as Element | null
+      if (target?.closest?.('[data-wizard-spline]')) return
+      e.preventDefault()
+    }
+    document.addEventListener('contextmenu', handleContextMenu)
+    return () => document.removeEventListener('contextmenu', handleContextMenu)
+  }, [])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') router.push('/shop')
     }

@@ -1,18 +1,84 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Eye } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
+
+const SPARKLE_COUNT = 8
+const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
+
+const CONFETTI_DELAY_MS = 320
+
+function SparkleCheck({ justAdded, className }: { justAdded: boolean; className?: string }) {
+  const [sparkle, setSparkle] = useState(false)
+  const [tickGrow, setTickGrow] = useState(false)
+  const prevJustAdded = useRef(false)
+
+  useEffect(() => {
+    if (justAdded && !prevJustAdded.current) {
+      setTickGrow(true)
+      const growDone = setTimeout(() => setTickGrow(false), 400)
+      const confettiStart = setTimeout(() => setSparkle(true), CONFETTI_DELAY_MS)
+      const confettiDone = setTimeout(() => setSparkle(false), CONFETTI_DELAY_MS + 600)
+      return () => {
+        clearTimeout(growDone)
+        clearTimeout(confettiStart)
+        clearTimeout(confettiDone)
+      }
+    }
+    prevJustAdded.current = justAdded
+  }, [justAdded])
+
+  return (
+    <motion.span
+      className={cn('relative inline-flex items-center justify-center overflow-visible', className)}
+      initial={false}
+      animate={tickGrow ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
+      <Check className="w-2.5 h-2.5 text-green-500" strokeWidth={2.5} />
+      <AnimatePresence>
+        {sparkle && (
+          <>
+            {Array.from({ length: SPARKLE_COUNT }).map((_, i) => {
+              const angle = (i / SPARKLE_COUNT) * 360
+              const rad = (angle * Math.PI) / 180
+              const dist = 12
+              const x = Math.cos(rad) * dist
+              const y = Math.sin(rad) * dist
+              return (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 1, scale: 0.5, x: 0, y: 0 }}
+                  animate={{ opacity: 0, scale: 1.2, x, y }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="absolute left-1/2 top-1/2 w-1 h-1 rounded-full pointer-events-none"
+                  style={{
+                    backgroundColor: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+                    marginLeft: -2,
+                    marginTop: -2,
+                  }}
+                />
+              )
+            })}
+          </>
+        )}
+      </AnimatePresence>
+    </motion.span>
+  )
+}
 
 interface ArtworkCardProps {
   product: ShopifyProduct
   globalIdx: number
   isPreviewed: boolean
   isInCart: boolean
+  justAdded: boolean
   /** 1 = Side A on lamp, 2 = Side B on lamp, null = not in lamp preview */
   lampPosition: 1 | 2 | null
   isSoldOut: boolean
@@ -29,6 +95,7 @@ function ArtworkCard({
   globalIdx,
   isPreviewed,
   isInCart,
+  justAdded,
   lampPosition,
   isSoldOut,
   imageUrl,
@@ -61,6 +128,7 @@ function ArtworkCard({
       whileTap={!isLampSelection && !isInCart ? { scale: 0.98 } : undefined}
       className={cn(
         'relative rounded-lg overflow-hidden transition-all duration-200',
+        isInCart && 'overflow-visible',
         isInCart && 'bg-neutral-900',
         !isLampSelection && isPreviewed && !isInCart && 'opacity-90',
         !isLampSelection && !isPreviewed && !isInCart && 'opacity-85 hover:opacity-100'
@@ -68,7 +136,7 @@ function ArtworkCard({
     >
       <div
         className={cn(
-          'aspect-square relative overflow-hidden cursor-pointer touch-manipulation select-none',
+          'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
           isInCart ? 'bg-neutral-950' : 'bg-neutral-100'
         )}
         onClick={handleImageClick}
@@ -83,7 +151,7 @@ function ArtworkCard({
             alt={product.title}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 45vw, 18vw"
+            sizes="(max-width: 768px) 52vw, 28vw"
           />
         ) : (
           <div className={cn(
@@ -111,7 +179,7 @@ function ArtworkCard({
       </div>
 
       <div className={cn(
-        'p-2 pt-3 flex items-start gap-1 border-t transition-colors',
+        'p-2 pt-3 flex items-start gap-1 border-t transition-colors overflow-visible',
         isInCart ? 'border-neutral-700 bg-neutral-900' : 'border-neutral-100'
       )}>
         <div className="flex-1 min-w-0">
@@ -150,16 +218,16 @@ function ArtworkCard({
             disabled={isSoldOut}
             title={isInCart ? 'Remove from order' : 'Add to cart'}
             className={cn(
-              'flex items-center justify-center transition-colors shrink-0',
+              'flex items-center justify-center transition-colors shrink-0 overflow-visible',
               isInCart
-                ? 'w-5 h-5 rounded-full text-green-500 hover:text-green-600'
+                ? 'min-w-[28px] min-h-[28px] p-0 text-green-500 hover:text-green-600'
                 : 'h-6 px-2.5 rounded-md border border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             aria-label={isInCart ? 'Remove from order' : 'Add to cart'}
           >
             {isInCart ? (
-              <Check className="w-2.5 h-2.5 text-green-500" strokeWidth={2.5} />
+              <SparkleCheck justAdded={justAdded} />
             ) : (
               <span className="text-xs font-medium">Add</span>
             )}
@@ -175,6 +243,7 @@ interface ArtworkStripProps {
   previewIndex: number
   lampPreviewOrder: string[]
   cartOrder: string[]
+  lastAddedProductId?: string | null
   scrollToProductId?: string | null
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
@@ -193,6 +262,7 @@ export function ArtworkStrip({
   previewIndex,
   lampPreviewOrder,
   cartOrder,
+  lastAddedProductId,
   scrollToProductId,
   onPreview,
   onLampSelect,
@@ -223,7 +293,7 @@ export function ArtworkStrip({
   }
 
   return (
-    <div ref={containerRef} data-wizard-artwork-strip className="grid grid-cols-2 gap-3">
+    <div ref={containerRef} data-wizard-artwork-strip className="grid grid-cols-2 gap-2 md:gap-3 max-w-2xl mx-auto">
       {products.map((product, index) => (
         <ArtworkCard
           key={product.id}
@@ -231,8 +301,9 @@ export function ArtworkStrip({
           globalIdx={index}
           isPreviewed={index === previewIndex}
           isInCart={cartOrder.includes(product.id)}
+          justAdded={product.id === lastAddedProductId}
           isFirstCard={index === 0}
-            lampPosition={getLampPosition(product.id)}
+          lampPosition={getLampPosition(product.id)}
             isSoldOut={!product.availableForSale}
             imageUrl={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url}
             onPreview={onPreview}

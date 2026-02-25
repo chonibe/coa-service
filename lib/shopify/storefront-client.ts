@@ -159,6 +159,7 @@ export interface ShopifyProductVariant {
   id: string
   title: string
   availableForSale: boolean
+  quantityAvailable?: number
   price: ShopifyMoney
   compareAtPrice: ShopifyMoney | null
   selectedOptions: Array<{
@@ -388,6 +389,7 @@ const PRODUCT_FRAGMENT = `
           id
           title
           availableForSale
+          quantityAvailable
           price {
             amount
             currencyCode
@@ -413,6 +415,11 @@ const PRODUCT_FRAGMENT = `
       id
       name
       values
+    }
+    metafields(identifiers: [{namespace: "custom", key: "edition_size"}]) {
+      namespace
+      key
+      value
     }
   }
 `
@@ -588,12 +595,63 @@ export async function getProductsByVendor(vendorName: string, options: {
 // =============================================================================
 
 /**
+ * Get a collection by Shopify ID (numeric or GID) with products.
+ * Use when vendor_collections.shopify_collection_id is available.
+ */
+export async function getCollectionById(
+  id: string,
+  options: {
+    first?: number
+    after?: string
+    sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'UPDATED_AT' | 'MANUAL'
+    reverse?: boolean
+  } = {}
+): Promise<ShopifyCollection | null> {
+  const gid = id.startsWith('gid://') ? id : `gid://shopify/Collection/${id}`
+  const { first = 20, after, sortKey = 'CREATED', reverse = true } = options
+
+  const query = `
+    ${COLLECTION_FRAGMENT}
+    ${PRODUCT_CARD_FRAGMENT}
+    query GetCollectionById($id: ID!, $first: Int!, $after: String, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
+      collection(id: $id) {
+        ...CollectionFields
+        products(first: $first, after: $after, sortKey: $sortKey, reverse: $reverse) {
+          edges {
+            node {
+              ...ProductCardFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  try {
+    const data = await storefrontQuery<{ collection: ShopifyCollection | null }>(query, {
+      id: gid,
+      first,
+      after,
+      sortKey,
+      reverse,
+    })
+    return data.collection
+  } catch {
+    return null
+  }
+}
+
+/**
  * Get a single collection by handle with products
  */
 export async function getCollection(handle: string, options: {
   first?: number
   after?: string
-  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED_AT' | 'UPDATED_AT' | 'MANUAL'
+  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'UPDATED_AT' | 'MANUAL'
   reverse?: boolean
 } = {}): Promise<ShopifyCollection | null> {
   const { first = 20, after, sortKey = 'BEST_SELLING', reverse = false } = options
@@ -637,7 +695,7 @@ export async function getCollection(handle: string, options: {
  */
 export async function getCollectionWithFullProducts(handle: string, options: {
   first?: number
-  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED_AT' | 'UPDATED_AT' | 'MANUAL'
+  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'UPDATED_AT' | 'MANUAL'
   reverse?: boolean
 } = {}): Promise<ShopifyCollection | null> {
   const { first = 24, sortKey = 'MANUAL', reverse = false } = options

@@ -3,13 +3,13 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, Lamp, ArrowLeftRight } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { Spline3DPreview } from '@/app/template-preview/components/spline-3d-preview'
 import type { QuizAnswers } from './IntroQuiz'
 import { ArtworkStrip } from './ArtworkStrip'
 import { ArtworkDetail } from './ArtworkDetail'
-import { OrderBar } from './OrderBar'
+import { OrderBar, type OrderBarRef } from './OrderBar'
 import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { cn } from '@/lib/utils'
@@ -97,15 +97,29 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
   const [cartOrder, setCartOrder] = useState<string[]>([])
   const [lampQuantity, setLampQuantity] = useState(!quizAnswers.ownsLamp ? 1 : 0)
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
-  const [viewerCollapsed, setViewerCollapsed] = useState(false)
+  /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = 50/50; 'full' = selector covers preview */
+  const [selectorSheetState, setSelectorSheetState] = useState<'collapsed' | 'half' | 'full'>('half')
+  const [lampVariant, setLampVariant] = useState<'light' | 'dark'>('dark')
   const [panelStatus, setPanelStatus] = useState<{ sideA: boolean; sideB: boolean; sameObject: boolean } | null>(null)
 
-  // Side assignments derived from selection order: last 2 selected = lamp preview (oldest→A, newest→B)
+  const hasSelection = cartOrder.length > 0
+
+  const [isMobile, setIsMobile] = useState(false)
+  const orderBarRef = useRef<OrderBarRef>(null)
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 768
-    setViewerCollapsed(isMobile)
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
+
+  // Cycle selector state: collapsed -> half -> full -> collapsed (mobile only)
+  const cycleSelectorState = useCallback(() => {
+    setSelectorSheetState((s) => (s === 'collapsed' ? 'half' : s === 'half' ? 'full' : 'collapsed'))
+  }, [])
+
+  const previewVisible = !isMobile || selectorSheetState !== 'full'
 
   // Populate lamp preview when products load (if initially empty)
   useEffect(() => {
@@ -190,17 +204,27 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
     })
   }, [])
 
+  const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
+
   const handleAddToCart = useCallback((product: ShopifyProduct) => {
+    const isAdding = !cartOrder.includes(product.id)
     setCartOrder((prev) => {
       const idx = prev.indexOf(product.id)
       if (idx >= 0) return prev.filter((id) => id !== product.id)
       return [...prev, product.id]
     })
-  }, [])
+    if (isAdding) setLastAddedProductId(product.id)
+  }, [cartOrder])
+
+  useEffect(() => {
+    if (!lastAddedProductId) return
+    const t = setTimeout(() => setLastAddedProductId(null), 1200)
+    return () => clearTimeout(t)
+  }, [lastAddedProductId])
 
   const handlePreview = useCallback((index: number) => {
     setPreviewIndex(index)
-    setViewerCollapsed(false)
+    setSelectorSheetState((s) => (s === 'full' ? 'half' : s))
   }, [])
 
   const activeFilterCount = (filters.artists.length > 0 ? 1 : 0) +
@@ -228,29 +252,38 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-full">
-      {/* 3D Lamp viewer -- collapsible */}
+    <div className="flex flex-col md:flex-row h-full pb-20 md:pb-0 bg-white md:bg-transparent">
+      {/* 3D Lamp viewer — on mobile: size depends on selectorSheetState */}
       <motion.div
         data-wizard-spline
-        layout
+        layout={false}
         className={cn(
-          'relative bg-neutral-950 flex-shrink-0 overflow-hidden transition-all',
-          viewerCollapsed
-            ? 'h-12 md:h-full md:w-16'
-            : 'h-[35dvh] md:h-full md:w-[60%]'
+          'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
+          lampVariant === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#1A1A1A]',
+          /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
+          'md:flex-none md:h-full md:min-h-0',
+          selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
+          /* Mobile: 3 states — larger preview when selector collapsed */
+          selectorSheetState === 'collapsed' && 'min-h-[55dvh] flex-1',
+          selectorSheetState === 'half' && 'flex-[4] min-h-0 basis-0',
+          selectorSheetState === 'full' && 'h-0 min-h-0 overflow-hidden md:!h-full md:!min-h-0 md:!basis-auto'
         )}
       >
-        {!viewerCollapsed && (
+        {((!isMobile) || selectorSheetState !== 'full') && (
           <Spline3DPreview
             image1={image1}
             image2={image2}
+            lampVariant={lampVariant}
             side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
             side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
             minimal
+            animate
+            interactive
             className="relative w-full h-full"
             onPanelsFound={setPanelStatus}
             swapLampSides
             flipForSide="B"
+            flipForSideB="horizontal"
             imageScale={imageScale}
             imageOffsetX={imageOffsetX}
             imageOffsetY={imageOffsetY}
@@ -264,20 +297,8 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
           />
         )}
 
-        {/* Collapsed state */}
-        {viewerCollapsed && (
-          <button
-            onClick={() => setViewerCollapsed(false)}
-            className="w-full h-full md:w-full md:h-full flex items-center justify-center gap-2 text-white/60 hover:text-white/90 transition-colors"
-          >
-            <Lamp className="w-4 h-4" />
-            <span className="text-xs font-medium md:hidden">Tap to preview on lamp</span>
-            <span className="text-xs font-medium hidden md:inline md:[writing-mode:vertical-lr] md:rotate-180">3D Preview</span>
-          </button>
-        )}
-
         {/* Back to preferences */}
-        {!viewerCollapsed && (
+        {previewVisible && (
           <button
             type="button"
             onClick={onRetakeQuiz}
@@ -288,32 +309,48 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
           </button>
         )}
 
-        {/* Collapse toggle — mobile only */}
-        {!viewerCollapsed && (
-          <button
-            onClick={() => setViewerCollapsed(true)}
-            className="md:hidden absolute bottom-3 right-3 z-20 flex items-center justify-center gap-1.5 w-8 h-8 rounded-full bg-black/65 hover:bg-black/80 text-white transition-colors backdrop-blur-sm"
-            aria-label="Collapse preview"
-          >
-            <ChevronDown className="w-4 h-4 shrink-0" />
-          </button>
-        )}
+        {/* No collapse button — tap the selector bar to switch */}
 
         {/* Side B unavailable notice */}
-        {!viewerCollapsed && panelStatus && !panelStatus.sideB && (
+        {previewVisible && panelStatus && !panelStatus.sideB && (
           <div className="absolute top-14 left-3 right-3 z-20 px-2 py-1.5 rounded-lg bg-amber-500/90 text-white text-[10px] font-medium text-center">
             Side B not found in 3D scene — edit the lamp in Spline to add a second panel
           </div>
         )}
-        {!viewerCollapsed && panelStatus?.sideB && panelStatus?.sameObject && (
+        {previewVisible && panelStatus?.sideB && panelStatus?.sameObject && (
           <div className="absolute top-14 left-3 right-3 z-20 px-2 py-1.5 rounded-lg bg-amber-500/90 text-white text-[10px] font-medium text-center">
             Both sides share one panel — A and B will show the same image
           </div>
         )}
+        {/* Light/dark lamp toggle */}
+        {previewVisible && (
+          <button
+            type="button"
+            onClick={() => setLampVariant((v) => (v === 'light' ? 'dark' : 'light'))}
+            className="absolute top-4 right-4 z-20 flex items-center justify-center gap-1.5 w-9 h-9 rounded-full bg-black/65 hover:bg-black/80 text-white transition-colors backdrop-blur-sm"
+            aria-label={lampVariant === 'light' ? 'Switch to dark lamp' : 'Switch to light lamp'}
+          >
+            {lampVariant === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
+        )}
+
+        {/* Test $0 order — small icon in corner (dev/testing) */}
+        {previewVisible && (
+          <button
+            type="button"
+            onClick={() => orderBarRef.current?.testZeroOrder()}
+            className="absolute bottom-3 left-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/65 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
+            aria-label="Test $0 order"
+            title="Test $0 order"
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         {/* Lamp side labels + swap + position — order = last 2 selected */}
-        {!viewerCollapsed && (
+        {previewVisible && (
           <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 z-20 space-y-2">
-            {/* Image position controls (hidden) */}
+            {/* Image position controls (hidden — defaults in lib/experience-image-position.ts) */}
             {false && (
             <div className="rounded-lg bg-black/50 backdrop-blur-sm p-2 space-y-1.5 max-h-[50vh] overflow-y-auto">
               <span className="text-[10px] text-white/90 font-medium block">Side A</span>
@@ -322,7 +359,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1.2"
+                  max="2"
                   step="0.01"
                   value={imageScale}
                   onChange={(e) => setImageScale(parseFloat(e.target.value))}
@@ -335,7 +372,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1"
+                  max="1.5"
                   step="0.01"
                   value={imageScaleX}
                   onChange={(e) => setImageScaleX(parseFloat(e.target.value))}
@@ -348,7 +385,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1.2"
+                  max="2"
                   step="0.01"
                   value={imageScaleY}
                   onChange={(e) => setImageScaleY(parseFloat(e.target.value))}
@@ -388,7 +425,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1.2"
+                  max="2"
                   step="0.01"
                   value={imageScaleB}
                   onChange={(e) => setImageScaleB(parseFloat(e.target.value))}
@@ -401,7 +438,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1"
+                  max="1.5"
                   step="0.01"
                   value={imageScaleXB}
                   onChange={(e) => setImageScaleXB(parseFloat(e.target.value))}
@@ -414,7 +451,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                 <input
                   type="range"
                   min="0.5"
-                  max="1.2"
+                  max="2"
                   step="0.01"
                   value={imageScaleYB}
                   onChange={(e) => setImageScaleYB(parseFloat(e.target.value))}
@@ -482,116 +519,166 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
         )}
       </motion.div>
 
-      {/* Right: Panel */}
-      <div className="relative flex-1 flex flex-col bg-white overflow-hidden min-h-0">
-        {/* Top bar: season tabs, search (icon → expands), filter — all inline */}
-        <div className="flex-shrink-0 px-5 pt-4 pb-3 border-b border-neutral-100">
-          <div className="flex items-center gap-2">
-            {/* Season tabs */}
-            <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveSeasonAndReset('season1')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  activeSeason === 'season1'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700'
-                )}
-              >
-                Season 1
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSeasonAndReset('season2')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  activeSeason === 'season2'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700'
-                )}
-              >
-                Season 2
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="flex items-center flex-1 min-w-0 justify-end">
-              <AnimatePresence initial={false} mode="wait">
-                {searchExpanded ? (
-                  <motion.div
-                    key="search-bar"
-                    initial={{ opacity: 0, width: 36 }}
-                    animate={{ opacity: 1, width: 200 }}
-                    exit={{ opacity: 0, width: 36 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="relative flex items-center h-9 bg-neutral-100 rounded-full overflow-hidden"
-                  >
-                    <Search className="absolute left-3 w-3.5 h-3.5 text-neutral-400 pointer-events-none shrink-0" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onBlur={() => !searchQuery && setSearchExpanded(false)}
-                      placeholder="Search…"
-                      className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setSearchQuery(''); setSearchExpanded(false) }}
-                      className="absolute right-1.5 w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    key="search-icon"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    type="button"
-                    onClick={() => setSearchExpanded(true)}
-                    className={cn(
-                      'relative flex items-center justify-center w-9 h-9 rounded-full transition-colors flex-shrink-0',
-                      searchQuery
-                        ? 'bg-neutral-900 text-white'
-                        : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
-                    )}
-                    aria-label="Search artworks"
-                  >
-                    <Search className="w-4 h-4" />
-                    {searchQuery && (
-                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
-                    )}
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Filter */}
+      {/* Right: Selector Panel — 3 states on mobile: collapsed | half | full */}
+      <motion.div
+        layout={false}
+        className={cn(
+          'relative flex flex-col bg-white overflow-hidden min-h-0 border-t border-neutral-100 md:border-t-0 transition-[height,flex] duration-200 ease-out',
+          /* Desktop: always full */
+          'md:flex-1 md:h-full',
+          /* Mobile: 3 states — when collapsed, bar is fixed above OrderBar; panel takes no flow space */
+          selectorSheetState === 'collapsed' && 'h-0 min-h-0 flex-shrink-0 md:h-auto md:min-h-0',
+          selectorSheetState === 'half' && 'flex-[6] min-h-0 basis-0',
+          selectorSheetState === 'full' && 'flex-1 min-h-0'
+        )}
+      >
+        {/* Top bar: Season tabs, filter icon, chevron (mobile) — when collapsed on mobile: fixed above OrderBar so it stays visible */}
+        <div
+          role={selectorSheetState === 'collapsed' && isMobile ? 'button' : undefined}
+          tabIndex={selectorSheetState === 'collapsed' && isMobile ? 0 : undefined}
+          onClick={selectorSheetState === 'collapsed' && isMobile ? cycleSelectorState : undefined}
+          onKeyDown={selectorSheetState === 'collapsed' && isMobile ? (e) => e.key === 'Enter' && cycleSelectorState() : undefined}
+          className={cn(
+            'flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
+            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100',
+            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-neutral-50 justify-center',
+          )}
+          aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
+        >
+          {selectorSheetState === 'collapsed' ? (
+            /* Collapsed: simple Artworks bar with LayoutGrid icon + ChevronUp */
+            <>
+              <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
+              <span className="text-xs font-medium text-neutral-700">Artworks</span>
+              <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 md:hidden" />
+            </>
+          ) : (
+            <>
+          {/* Season tabs */}
+          <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
             <button
-              onClick={() => setFilterOpen(true)}
+              type="button"
+              onClick={() => setActiveSeasonAndReset('season1')}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
-                hasActiveFilters(filters)
-                  ? 'bg-neutral-900 text-white border-neutral-900'
-                  : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100'
+                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                activeSeason === 'season1'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
               )}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filter</span>
-              {activeFilterCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-bold">
-                  {activeFilterCount}
-                </span>
+              Season 1
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSeasonAndReset('season2')}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                activeSeason === 'season2'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
               )}
+            >
+              Season 2
             </button>
           </div>
-        </div>
 
+          <div className="flex-1 min-w-0" />
+
+          {/* Search — magnifying glass icon expands to search bar */}
+          <div className="flex items-center flex-shrink-0">
+            <AnimatePresence initial={false} mode="wait">
+              {searchExpanded ? (
+                <motion.div
+                  key="search-bar"
+                  initial={{ opacity: 0, width: 36 }}
+                  animate={{ opacity: 1, width: 160 }}
+                  exit={{ opacity: 0, width: 36 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="relative flex items-center h-9 bg-neutral-100 rounded-full overflow-hidden"
+                >
+                  <Search className="absolute left-3 w-3.5 h-3.5 text-neutral-400 pointer-events-none shrink-0" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => !searchQuery && setSearchExpanded(false)}
+                    placeholder="Search…"
+                    className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setSearchExpanded(false) }}
+                    className="absolute right-1.5 w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="search-icon"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  type="button"
+                  onClick={() => setSearchExpanded(true)}
+                  className={cn(
+                    'relative flex items-center justify-center w-9 h-9 rounded-lg border transition-colors flex-shrink-0',
+                    searchQuery
+                      ? 'bg-neutral-900 text-white border-neutral-900'
+                      : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100'
+                  )}
+                  aria-label="Search artworks"
+                >
+                  <Search className="w-4 h-4" />
+                  {searchQuery && (
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                  )}
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Filter icon */}
+          <button
+            onClick={() => setFilterOpen(true)}
+            className={cn(
+              'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+              hasActiveFilters(filters)
+                ? 'bg-neutral-900 text-white border-neutral-900'
+                : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100'
+            )}
+            aria-label="Open filters"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[10px] flex items-center justify-center font-bold leading-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Chevron: cycles half ↔ full (mobile only) */}
+          <button
+            onClick={cycleSelectorState}
+            className="md:hidden flex items-center justify-center py-1.5 px-2 text-neutral-500 hover:text-neutral-800 transition-colors"
+            aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse to show preview'}
+          >
+            {selectorSheetState === 'half' ? (
+              <ChevronUp className="w-4 h-4 shrink-0 text-neutral-400" aria-hidden />
+            ) : (
+              <ChevronDown className="w-4 h-4 shrink-0 text-neutral-400" aria-hidden />
+            )}
+          </button>
+            </>
+          )}
+        </div>
+        {/* Expanded content: shown when half or full on mobile, always on desktop */}
+        <div className={cn(
+          'flex flex-col flex-1 min-h-0 overflow-hidden',
+          selectorSheetState === 'collapsed' ? 'hidden md:flex' : 'flex'
+        )}>
         {/* Active filter pills */}
         {hasActiveFilters(filters) && (
           <div className="flex-shrink-0 px-5 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -657,6 +744,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
             previewIndex={previewIndex}
             lampPreviewOrder={lampPreviewOrder}
             cartOrder={cartOrder}
+            lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
@@ -664,10 +752,24 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
             onViewDetail={setDetailProduct}
           />
         </div>
+        </div>
 
-        {/* Order bar */}
+        {/* Order bar — always visible, outside collapsible content (fixed on mobile) */}
         <div className="flex-shrink-0 min-w-0">
           <OrderBar
+            ref={orderBarRef}
+            mobileTopSlot={selectorSheetState === 'collapsed' && isMobile ? (
+              <button
+                type="button"
+                onClick={cycleSelectorState}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-b border-neutral-100 active:bg-neutral-50 transition-colors"
+                aria-label="Expand artworks"
+              >
+                <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-400" />
+                <span className="text-xs font-medium text-neutral-600">Artworks</span>
+                <ChevronUp className="w-3 h-3 shrink-0 text-neutral-400" />
+              </button>
+            ) : undefined}
             lamp={lamp}
             selectedArtworks={selectedProducts}
             lampQuantity={lampQuantity}
@@ -684,7 +786,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
             isGift={isGift}
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Filter panel */}
       <FilterPanel
@@ -703,7 +805,11 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
         <ArtworkDetail
           product={detailProduct}
           isSelected={cartOrder.includes(detailProduct.id)}
-          onToggleSelect={() => handleAddToCart(detailProduct)}
+          onToggleSelect={() => {
+            const wasInCart = cartOrder.includes(detailProduct.id)
+            handleAddToCart(detailProduct)
+            if (!wasInCart) setDetailProduct(null)
+          }}
           onClose={() => setDetailProduct(null)}
         />
       )}

@@ -41,7 +41,7 @@ export function VinylProductCard({
   onQuickAdd,
   quickAddLoading = false,
   enableFlip = true,
-  enableTilt = true,
+  enableTilt = false,
   className,
 }: VinylProductCardProps) {
   const price = formatPrice(product.priceRange.minVariantPrice)

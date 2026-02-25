@@ -133,7 +133,7 @@ export function ProductCardItem({
         onQuickAdd={handleQuickAdd}
         quickAddLoading={isAdding}
         disableFlip={!artistNotes} // Only enable flip if there are artist notes
-        disableTilt={false}
+        disableTilt={true}
         variant="shop"
       />
     )
