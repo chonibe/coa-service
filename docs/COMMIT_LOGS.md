@@ -1,3 +1,19 @@
+## Commit: Experience Carousel & Slideshow Fixes (2026-02-25)
+
+**Ref:** [experience-carousel-slideshow-2026-02-25.md](COMMIT_LOGS/experience-carousel-slideshow-2026-02-25.md)
+
+### ✅ Implementation Checklist
+- [x] `app/shop/experience/components/ArtworkDetail.tsx` – Fix carousel drag (dragMomentum=false, elastic, snap-back); add auto-rotate slideshow (4s); wire goToIndex for dots/thumbnails/keyboard
+- [x] `app/api/shop/artists/[slug]/route.ts`, `app/api/shop/collections/[handle]/route.ts` – CREATED_AT → CREATED for ProductCollectionSortKeys
+- [x] `app/shop/products/page.tsx` – Map CREATED_AT → CREATED for collection sort
+- [x] `lib/shopify/storefront-client.ts` – Update ProductCollectionSortKeys type
+
+### 🧪 Verification
+- Carousel drag no longer sticks; slideshow advances when idle; manual nav stops slideshow
+- API collection queries no longer throw on sort
+
+---
+
 ## Commit: Premium Collector Dashboard UI/UX (2026-01-14)
 
 ### ✅ Implementation Checklist
