@@ -24,7 +24,7 @@ import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
 import { getUserActiveRoles, getUserVendorId, getPreferredDashboard } from "@/lib/rbac/role-helpers"
 import type { Role } from "@/lib/rbac/index"
 
-const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
+const DEFAULT_VENDOR_REDIRECT = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
 const ADMIN_DASHBOARD_REDIRECT = "/admin/dashboard"
 const PENDING_VENDOR_REDIRECT = "/vendor/access-pending"

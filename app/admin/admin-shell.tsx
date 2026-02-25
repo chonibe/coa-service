@@ -202,6 +202,11 @@ export function AdminShell({ children }: AdminShellProps) {
           href: "/admin/vendors",
           icon: <Icon size="sm"><TruckIcon className="h-4 w-4" /></Icon>,
         },
+        {
+          title: "Experience Links",
+          href: "/admin/vendors/experience-links",
+          icon: <Icon size="sm"><DevicePhoneMobileIcon className="h-4 w-4" /></Icon>,
+        },
       ],
       expanded: false,
     },

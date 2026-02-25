@@ -47,8 +47,9 @@ export async function POST(request: NextRequest) {
       issuedAt: Date.now(),
     })
 
-    // Redirect to vendor dashboard
-    const redirectResponse = NextResponse.redirect(new URL('/vendor/dashboard', request.nextUrl.origin), { status: 302 })
+    // Redirect to vendor home/dashboard
+    const vendorHome = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
+    const redirectResponse = NextResponse.redirect(new URL(vendorHome, request.nextUrl.origin), { status: 302 })
 
     // Clear collector session cookie and set vendor session cookie
     redirectResponse.cookies.delete('collector_session')

@@ -92,12 +92,12 @@ export async function GET(request: NextRequest) {
       redirectPath = "/admin/dashboard"
       console.log(`[auth/callback] Redirecting admin to: ${redirectPath}`)
     } else if (roles.includes("vendor")) {
-      // Vendor users go to vendor dashboard
-      redirectPath = "/vendor/dashboard"
+      // Vendor users go to vendor home/dashboard
+      redirectPath = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
       console.log(`[auth/callback] Redirecting vendor to: ${redirectPath}`)
     } else if (roles.includes("collector")) {
-      // Collector users go to collector dashboard
-      redirectPath = "/collector/dashboard"
+      // Collector users go to collector home/dashboard
+      redirectPath = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/collector/home' : '/collector/dashboard'
       console.log(`[auth/callback] Redirecting collector to: ${redirectPath}`)
     } else {
       // No roles found - user not registered

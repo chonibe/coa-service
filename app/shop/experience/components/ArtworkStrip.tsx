@@ -127,7 +127,7 @@ function ArtworkCard({
       whileHover={!isLampSelection && !isInCart ? { scale: 1.02 } : undefined}
       whileTap={!isLampSelection && !isInCart ? { scale: 0.98 } : undefined}
       className={cn(
-        'relative rounded-lg overflow-hidden transition-all duration-200',
+        'relative rounded-xl overflow-hidden transition-all duration-200',
         isInCart && 'overflow-visible',
         isInCart && 'bg-neutral-900',
         !isLampSelection && isPreviewed && !isInCart && 'opacity-90',
@@ -136,7 +136,7 @@ function ArtworkCard({
     >
       <div
         className={cn(
-          'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
+          'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none rounded-t-xl',
           isInCart ? 'bg-neutral-950' : 'bg-neutral-100'
         )}
         onClick={handleImageClick}
@@ -179,9 +179,13 @@ function ArtworkCard({
       </div>
 
       <div className={cn(
-        'p-2 pt-3 flex items-start gap-1 border-t transition-colors overflow-visible',
-        isInCart ? 'border-neutral-700 bg-neutral-900' : 'border-neutral-100'
-      )}>
+        'p-2 pt-3 flex items-start gap-1 border-t transition-colors overflow-visible rounded-b-xl',
+        isInCart
+          ? 'border-white/20 bg-neutral-900/80 backdrop-blur-xl backdrop-saturate-150'
+          : 'border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150'
+      )}
+        style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+      >
         <div className="flex-1 min-w-0">
           <p className={cn(
             'text-xs font-medium truncate',
@@ -221,9 +225,10 @@ function ArtworkCard({
               'flex items-center justify-center transition-colors shrink-0 overflow-visible',
               isInCart
                 ? 'min-w-[28px] min-h-[28px] p-0 text-green-500 hover:text-green-600'
-                : 'h-6 px-2.5 rounded-md border border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50',
+                : 'h-6 px-2.5 rounded-md border border-white/40 bg-white/60 backdrop-blur-xl text-neutral-600 hover:border-neutral-400 hover:bg-white/80',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
+            style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}
             aria-label={isInCart ? 'Remove from order' : 'Add to cart'}
           >
             {isInCart ? (

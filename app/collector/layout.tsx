@@ -21,7 +21,8 @@ export default async function CollectorLayout({ children }: CollectorLayoutProps
 
       if (!session || !sessionHasAnyRole(session, ['collector', 'admin'])) {
         console.log('[collector/layout] Unified auth: no collector/admin role, redirecting')
-        redirect("/login?redirect=/collector/dashboard")
+        const redirectTo = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/collector/home' : '/collector/dashboard'
+        redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
       }
 
       return (
@@ -42,7 +43,8 @@ export default async function CollectorLayout({ children }: CollectorLayoutProps
     // 1. Valid collector session, OR
     // 2. Admin session (admin can always access collector view)
     if (!collectorSession?.email && !adminSession?.email) {
-      redirect("/login?redirect=/collector/dashboard")
+      const redirectTo = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/collector/home' : '/collector/dashboard'
+      redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
     }
     
     return (

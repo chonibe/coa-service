@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
   const finalRedirectBase = (appUrl || "").replace(/\/$/, "")
   const code = searchParams.get("code")
-  const redirectParam = searchParams.get("redirect") || "/collector/dashboard"
+  const defaultCollectorRedirect = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/collector/home' : '/collector/dashboard'
+  const redirectParam = searchParams.get("redirect") || defaultCollectorRedirect
 
   if (!code) {
     return NextResponse.redirect(new URL(`/login?error=missing_code`, finalRedirectBase || undefined))

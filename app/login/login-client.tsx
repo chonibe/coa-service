@@ -144,17 +144,21 @@ export default function LoginClient() {
           return
         }
 
+        const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
+        const vendorHome = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
+        const collectorHome = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+
         if (data.vendorSession || data.vendor) {
-          console.log(`[login-client] Redirecting to vendor dashboard: vendorSession=${data.vendorSession}, vendor=${data.vendor?.vendor_name}`)
+          console.log(`[login-client] Redirecting to vendor: ${vendorHome}`)
           hasRedirected.current = true
-          window.location.replace("/vendor/dashboard")
+          window.location.replace(vendorHome)
           return
         }
 
         if ((data as any).hasCollectorSession) {
-          console.log(`[login-client] Redirecting to collector dashboard: hasCollectorSession=true`)
+          console.log(`[login-client] Redirecting to collector: ${collectorHome}`)
           hasRedirected.current = true
-          window.location.replace("/collector/dashboard")
+          window.location.replace(collectorHome)
           return
         }
       } catch (error) {
@@ -179,6 +183,9 @@ export default function LoginClient() {
     setGoogleLoading(true)
 
     const isAdminLogin = searchParams.get("admin") === "true"
+    const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
+    const vendorRedirect = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
+    const collectorRedirect = appShellEnabled ? '/collector/home' : '/collector/dashboard'
     let endpoint: string
 
     // Route to role-specific OAuth endpoints so scopes match the selected role.
@@ -187,10 +194,10 @@ export default function LoginClient() {
       endpoint = `/api/auth/google/start?admin=true&redirect=/admin/dashboard`
     } else if (loginType === "vendor") {
       // Vendor: main endpoint with vendor redirect (no Gmail scopes)
-      endpoint = `/api/auth/google/start?redirect=/vendor/dashboard`
+      endpoint = `/api/auth/google/start?redirect=${encodeURIComponent(vendorRedirect)}`
     } else {
       // Collector: dedicated endpoint that never requests Gmail scopes
-      endpoint = `/api/auth/collector/google/start?redirect=/collector/dashboard`
+      endpoint = `/api/auth/collector/google/start?redirect=${encodeURIComponent(collectorRedirect)}`
     }
 
     window.location.href = endpoint

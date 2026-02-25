@@ -73,7 +73,8 @@ export default function SelectRolePage() {
           throw new Error(errorData.message || "Failed to switch to vendor role")
         }
 
-        window.location.href = "/vendor/dashboard"
+        const vendorHome = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
+        window.location.href = vendorHome
       } else {
         // Switch to collector role
         const response = await fetch("/api/auth/admin/switch-to-collector", {
@@ -87,7 +88,8 @@ export default function SelectRolePage() {
           throw new Error(errorData.message || "Failed to switch to collector role")
         }
 
-        window.location.href = "/collector/dashboard"
+        const collectorHome = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/collector/home' : '/collector/dashboard'
+        window.location.href = collectorHome
       }
     } catch (err: any) {
       console.error("Role selection failed:", err)

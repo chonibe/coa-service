@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { IntroQuiz, type QuizAnswers } from './IntroQuiz'
 import { Configurator } from './Configurator'
+import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
@@ -13,6 +14,10 @@ interface ExperienceClientProps {
   lamp: ShopifyProduct
   productsSeason1: ShopifyProduct[]
   productsSeason2: ShopifyProduct[]
+  /** Artist slug from ?artist= to pre-filter artworks (e.g. from Instagram link) */
+  initialArtistSlug?: string
+  /** When true, skip intro quiz and go straight to configurator (default: true when artist link) */
+  skipQuiz?: boolean
 }
 
 function loadQuizAnswers(): QuizAnswers | null {
@@ -26,22 +31,43 @@ function loadQuizAnswers(): QuizAnswers | null {
   }
 }
 
-export function ExperienceClient({ lamp, productsSeason1, productsSeason2 }: ExperienceClientProps) {
+export function ExperienceClient({
+  lamp,
+  productsSeason1,
+  productsSeason2,
+  initialArtistSlug,
+  skipQuiz = false,
+}: ExperienceClientProps) {
   const router = useRouter()
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers | null>(null)
   const [showQuiz, setShowQuiz] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
 
   useEffect(() => {
     const saved = loadQuizAnswers()
-    if (saved) {
-      setQuizAnswers(saved)
+    if (saved || skipQuiz) {
+      setQuizAnswers(saved ?? { ownsLamp: false, purpose: 'self' })
       setShowQuiz(false)
     } else {
       setShowQuiz(true)
     }
     setMounted(true)
-  }, [])
+  }, [skipQuiz])
+
+  // Resolve artist slug to vendor name for initial filter
+  useEffect(() => {
+    if (!initialArtistSlug || !mounted) return
+    let cancelled = false
+    fetch(`/api/shop/artists/${encodeURIComponent(initialArtistSlug)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.name) return
+        setInitialFilters({ artists: [data.name] })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [initialArtistSlug, mounted])
 
   useEffect(() => {
     const handleContextMenu = (e: Event) => {
@@ -111,6 +137,7 @@ export function ExperienceClient({ lamp, productsSeason1, productsSeason2 }: Exp
             productsSeason2={productsSeason2}
             quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
             onRetakeQuiz={handleRetakeQuiz}
+            initialFilters={initialFilters}
           />
         </motion.div>
       )}

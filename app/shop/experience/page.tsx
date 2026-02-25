@@ -16,7 +16,14 @@ export const metadata = {
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 
-export default async function ExperiencePage() {
+interface ExperiencePageProps {
+  searchParams: Promise<{ artist?: string; skipQuiz?: string }>
+}
+
+export default async function ExperiencePage({ searchParams }: ExperiencePageProps) {
+  const resolved = await searchParams
+  const initialArtistSlug = resolved?.artist?.trim() || undefined
+  const skipQuiz = resolved?.skipQuiz === '1'
   let lamp: ShopifyProduct | null = null
   let productsSeason1: ShopifyProduct[] = []
   let productsSeason2: ShopifyProduct[] = []
@@ -67,6 +74,8 @@ export default async function ExperiencePage() {
       lamp={lamp}
       productsSeason1={productsSeason1}
       productsSeason2={productsSeason2}
+      initialArtistSlug={initialArtistSlug}
+      skipQuiz={skipQuiz}
     />
   )
 }

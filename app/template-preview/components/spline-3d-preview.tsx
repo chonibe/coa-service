@@ -104,7 +104,7 @@ export function Spline3DPreview({
   // Pre-discovered panel object refs (populated on scene load)
   const discoveredPanelsRef = useRef<{ sideA: any; sideB: any }>({ sideA: null, sideB: null })
 
-  const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
+  const SCENE_PATH = '/spline/scene.splinecode'
 
   
   // Store discovered layers for toggling

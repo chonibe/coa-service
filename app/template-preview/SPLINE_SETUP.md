@@ -315,7 +315,7 @@ If the scene uses Spline's Real-Time API or API Request actions, you may see:
 TypeError: this._debouncedCallUserAPI is not a function
 ```
 
-**Fix applied:** This project includes a [patch-package](https://github.com/ds300/patch-package) patch for `@splinetool/runtime` that corrects a constructor-order bug. The patch is in `patches/@splinetool+runtime+1.12.60.patch` and runs automatically via `postinstall`.
+**Fix applied:** This project includes a [patch-package](https://github.com/ds300/patch-package) patch for `@splinetool/runtime` that corrects a constructor-order bug: `_debouncedCallUserAPI` is now assigned before `prefetch()` can be called, fixing the "is not a function" error when the scene uses API Request actions. The patch is in `patches/@splinetool+runtime+1.12.60.patch` and runs automatically via `postinstall`.
 
 If the error persists:
 1. Run `npm install` to ensure the patch is applied
