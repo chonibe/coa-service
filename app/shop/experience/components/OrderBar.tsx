@@ -362,8 +362,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}
-            className="w-10 h-10 text-center text-sm font-medium rounded border border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150 text-neutral-800 hover:bg-black hover:text-white hover:border-black transition-colors flex-shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
-            style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+            className="w-10 h-8 text-center text-sm font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
             aria-label="Add lamp"
           >
             Add

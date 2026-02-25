@@ -571,8 +571,10 @@ export function Configurator({
           className={cn(
             'flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
             selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100',
-            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-neutral-50 justify-center',
+            selectorSheetState === 'collapsed' && 'bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-white/50',
+            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 justify-center',
           )}
+          style={selectorSheetState === 'collapsed' ? { backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } : undefined}
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
         >
           {selectorSheetState === 'collapsed' ? (

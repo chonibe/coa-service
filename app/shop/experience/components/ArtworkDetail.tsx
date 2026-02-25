@@ -587,8 +587,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, pr
             </div>
             )}
             <div
-              className={cn('p-4 space-y-3 bg-white/55 backdrop-blur-2xl backdrop-saturate-150 border-t border-white/40 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]', productBadges?.length ? 'pt-3' : 'pt-6')}
-              style={{ backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' }}
+              className={cn('p-5 space-y-3 bg-white/80 backdrop-blur-lg border-t border-white/50 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]', productBadges?.length ? 'pt-4' : 'pt-7')}
+              style={{ backdropFilter: 'blur(16px) saturate(140%)', WebkitBackdropFilter: 'blur(16px) saturate(140%)' }}
             >
               {/* Guarantee / returns / shipping badges — one top, two bottom, close to vendor */}
               {productBadges && productBadges.length > 0 && (
