@@ -13,7 +13,7 @@ export type SidePosition = {
   scaleY: number
 }
 
-/** Default position for Side A. Matches what preview renders. */
+/** Default position for Side A. Tuned for splinemodel2 lamp panels. */
 export const DEFAULT_SIDE_POSITION: SidePosition = {
   scale: 1,
   offsetX: -0.02,
@@ -22,10 +22,13 @@ export const DEFAULT_SIDE_POSITION: SidePosition = {
   scaleY: 0.96,
 }
 
-/** Default position for Side B (X offset aligned with Side A). */
+/** Default position for Side B. Tuned for splinemodel2 lamp panels. */
 export const DEFAULT_SIDE_B_POSITION: SidePosition = {
-  ...DEFAULT_SIDE_POSITION,
-  offsetX: 0.017,
+  scale: 1.6,
+  offsetX: 0.01,
+  offsetY: 0,
+  scaleX: 1,
+  scaleY: 0.72,
 }
 
 export type SavedPosition = {

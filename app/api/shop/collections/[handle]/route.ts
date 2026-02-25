@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCollection } from '@/lib/shopify/storefront-client'
+import { getCollection, isStorefrontConfigured } from '@/lib/shopify/storefront-client'
 
 /**
  * GET /api/shop/collections/[handle]
@@ -23,10 +23,20 @@ export async function GET(
     )
   }
 
+  if (!isStorefrontConfigured()) {
+    console.warn('[API] Shopify Storefront not configured, returning empty collection')
+    return NextResponse.json({
+      success: true,
+      collection: handle,
+      products: [],
+      count: 0,
+    })
+  }
+
   try {
     const collection = await getCollection(handle, {
       first: 12,
-      sortKey: 'CREATED_AT',
+      sortKey: 'CREATED',
       reverse: true,
     })
 

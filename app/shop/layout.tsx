@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { 
   ScrollingAnnouncementBar, 
   defaultAnnouncementMessages,
@@ -105,6 +105,8 @@ const legalLinks = [
 // Inner layout with access to cart context
 function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isExperiencePage = pathname?.startsWith('/shop/experience')
   const cart = useCart()
   const wishlist = useWishlist()
   const [cartLoading, setCartLoading] = useState(false)
@@ -309,19 +311,22 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         onViewCart={handleViewCart}
         onWishlistClick={handleWishlistClick}
         cartLoading={cartLoading}
+        hideAddToCartNotification={isExperiencePage}
       />
       
-      {/* Cart Drawer with Recommendations */}
-      <LocalCartDrawer
-        isOpen={cart.isOpen}
-        onClose={() => cart.toggleCart(false)}
-        items={cart.items ?? []}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-        subtotal={cart.subtotal}
-        total={cart.total}
-      />
+      {/* Cart Drawer - hidden on experience page (has its own OrderBar) */}
+      {!isExperiencePage && (
+        <LocalCartDrawer
+          isOpen={cart.isOpen}
+          onClose={() => cart.toggleCart(false)}
+          items={cart.items ?? []}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
+          subtotal={cart.subtotal}
+          total={cart.total}
+        />
+      )}
       
       {/* Wishlist Drawer */}
       <WishlistDrawer

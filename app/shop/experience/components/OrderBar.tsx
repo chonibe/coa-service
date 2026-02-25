@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, X, ChevronDown, ChevronUp, Percent } from 'lucide-react'
@@ -15,6 +15,12 @@ interface OrderBarProps {
   onRemoveArtwork: (id: string) => void
   onSelectArtwork?: (product: ShopifyProduct) => void
   isGift: boolean
+  /** Rendered at the top of the mobile fixed panel — used for the collapsed Artworks bar */
+  mobileTopSlot?: React.ReactNode
+}
+
+export interface OrderBarRef {
+  testZeroOrder: () => Promise<void>
 }
 
 function parsePrice(product: ShopifyProduct): number {
@@ -25,6 +31,67 @@ function parsePrice(product: ShopifyProduct): number {
 function getVariantId(product: ShopifyProduct): string {
   const gid = product.variants?.edges?.[0]?.node?.id ?? ''
   return gid.replace('gid://shopify/ProductVariant/', '')
+}
+
+const SPARKLE_COUNT = 8
+const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
+
+function SparkleDiscount({ discountPercent, className }: { discountPercent: number; className?: string }) {
+  const [sparkle, setSparkle] = useState(false)
+  const prevPercent = useRef(discountPercent)
+  const isFirstMount = useRef(true)
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false
+      prevPercent.current = discountPercent
+      return
+    }
+    if (discountPercent > prevPercent.current && discountPercent > 0) {
+      setSparkle(true)
+      const t = setTimeout(() => setSparkle(false), 600)
+      return () => clearTimeout(t)
+    }
+    prevPercent.current = discountPercent
+  }, [discountPercent])
+
+  return (
+    <motion.span
+      className={cn('relative inline-flex items-center overflow-visible', className)}
+      animate={sparkle ? { scale: [1, 1.15, 1] } : {}}
+      transition={{ duration: 0.3 }}
+    >
+      <span className="text-[10px] text-green-600 font-medium">-{discountPercent}%</span>
+      <AnimatePresence>
+        {sparkle && (
+          <>
+            {Array.from({ length: SPARKLE_COUNT }).map((_, i) => {
+              const angle = (i / SPARKLE_COUNT) * 360
+              const rad = (angle * Math.PI) / 180
+              const dist = 14
+              const x = Math.cos(rad) * dist
+              const y = Math.sin(rad) * dist
+              return (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 1, scale: 0.5, x: 0, y: 0 }}
+                  animate={{ opacity: 0, scale: 1.2, x, y }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full pointer-events-none"
+                  style={{
+                    backgroundColor: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+                    marginLeft: -3,
+                    marginTop: -3,
+                  }}
+                />
+              )
+            })}
+          </>
+        )}
+      </AnimatePresence>
+    </motion.span>
+  )
 }
 
 function AnimatedPrice({ value }: { value: number }) {
@@ -52,7 +119,7 @@ function AnimatedPrice({ value }: { value: number }) {
   return <span className="tabular-nums">${display.toFixed(2)}</span>
 }
 
-export function OrderBar({
+export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar({
   lamp,
   selectedArtworks,
   lampQuantity,
@@ -60,7 +127,8 @@ export function OrderBar({
   onRemoveArtwork,
   onSelectArtwork,
   isGift,
-}: OrderBarProps) {
+  mobileTopSlot,
+}, ref) {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [giftNote, setGiftNote] = useState('')
@@ -94,6 +162,42 @@ export function OrderBar({
   const hasUnavailable = selectedArtworks.some((p) => !p.availableForSale)
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
+
+  const handleTestZeroOrder = async () => {
+    setError(null)
+    setIsCheckingOut(true)
+    try {
+      const response = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{
+            productId: lamp.id.replace('gid://shopify/Product/', ''),
+            variantId: getVariantId(lamp),
+            variantGid: lamp.variants?.edges?.[0]?.node?.id ?? '',
+            handle: lamp.handle,
+            title: `${lamp.title} (Test $0)`,
+            price: 0,
+            quantity: 1,
+            image: lamp.featuredImage?.url ?? undefined,
+          }],
+          cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/shop/experience` : undefined,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to create checkout')
+      if (data.type === 'zero_dollar' || data.type === 'credit_only') {
+        window.location.href = data.completeUrl
+        return
+      }
+      if (data.url) window.location.href = data.url
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong.')
+      setIsCheckingOut(false)
+    }
+  }
+
+  useImperativeHandle(ref, () => ({ testZeroOrder: handleTestZeroOrder }), [handleTestZeroOrder])
 
   const handleCheckout = async () => {
     if (itemCount === 0) return
@@ -156,6 +260,10 @@ export function OrderBar({
 
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to create checkout')
+      if (data.type === 'credit_only' || data.type === 'zero_dollar') {
+        window.location.href = data.completeUrl
+        return
+      }
       if (data.url) window.location.href = data.url
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Try again.')
@@ -386,7 +494,7 @@ export function OrderBar({
               <span className="bg-neutral-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{itemCount}</span>
               <AnimatedPrice value={total} />
               {discountPercent > 0 && (
-                <span className="text-[10px] text-green-600 font-medium">-{discountPercent}%</span>
+                <SparkleDiscount discountPercent={discountPercent} />
               )}
             </span>
             <span className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
@@ -431,8 +539,8 @@ export function OrderBar({
         )}
       </div>
 
-      {/* Mobile bottom sheet */}
-      <div data-wizard-order-bar className="md:hidden fixed bottom-0 left-0 right-0 z-[65]">
+      {/* Mobile bottom sheet — fixed at bottom, always in view */}
+      <div data-wizard-order-bar className="md:hidden fixed bottom-0 left-0 right-0 z-[70]">
         <AnimatePresence>
           {mobileExpanded && (
             <motion.div
@@ -440,60 +548,67 @@ export function OrderBar({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileExpanded(false)}
-              className="fixed inset-0 bg-black/20 z-[64]"
+              className="fixed inset-0 bg-black/20 z-[68]"
             />
           )}
         </AnimatePresence>
 
-        <motion.div className="relative z-[65] min-w-0 overflow-x-hidden bg-white border-t border-neutral-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-2xl">
+        <motion.div className="relative z-[70] min-w-0 overflow-x-hidden bg-white border-t border-neutral-200 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] rounded-t-2xl pb-[env(safe-area-inset-bottom,0px)]">
+          {mobileTopSlot}
           {mobileExpanded && (
             <div className="px-4 pt-3 pb-1 max-h-[60dvh] overflow-y-auto overflow-x-hidden">
-              <div
+              <button
+                type="button"
                 onClick={() => setMobileExpanded(false)}
-                className="w-10 h-1 bg-neutral-300 rounded-full mx-auto mb-3 cursor-pointer"
-              />
+                className="w-full flex justify-center py-2 mb-1 cursor-pointer text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="Collapse cart"
+              >
+                <ChevronDown className="w-5 h-5" />
+              </button>
               {lineItemsContent}
             </div>
           )}
 
-          <div className="px-4 py-3 flex items-center gap-3">
-            {!mobileExpanded && (
-              <button
-                onClick={() => setMobileExpanded(true)}
-                className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900"
-              >
-                <span className="bg-neutral-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{itemCount}</span>
-                <AnimatedPrice value={total} />
-                {discountPercent > 0 && (
-                  <span className="text-[10px] text-green-600 font-medium">-{discountPercent}%</span>
+          <div className="px-4 py-3 space-y-1">
+            <div className="flex items-center gap-3">
+              {!mobileExpanded && (
+                <button
+                  onClick={() => setMobileExpanded(true)}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900"
+                >
+                  <span className="bg-neutral-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{itemCount}</span>
+                  <AnimatedPrice value={total} />
+                  {discountPercent > 0 && (
+                    <SparkleDiscount discountPercent={discountPercent} />
+                  )}
+                  <ChevronUp className="w-4 h-4 text-neutral-400" />
+                </button>
+              )}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleCheckout}
+                disabled={isCheckingOut || itemCount === 0 || !allAvailable}
+                className={cn(
+                  'flex-1 h-12 rounded-lg text-sm font-semibold transition-colors',
+                  itemCount === 0 || !allAvailable
+                    ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : 'bg-neutral-950 text-white hover:bg-neutral-800'
                 )}
-                <ChevronUp className="w-4 h-4 text-neutral-400" />
-              </button>
-            )}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={handleCheckout}
-              disabled={isCheckingOut || itemCount === 0 || !allAvailable}
-              className={cn(
-                'flex-1 h-12 rounded-lg text-sm font-semibold transition-colors',
-                itemCount === 0 || !allAvailable
-                  ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-                  : 'bg-neutral-950 text-white hover:bg-neutral-800'
-              )}
-            >
-              {isCheckingOut ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing...
-                </span>
-              ) : itemCount === 0 ? (
-                'Add items to checkout'
-              ) : hasUnavailable ? (
-                'Some items unavailable'
-              ) : (
-                <>Checkout &mdash; <AnimatedPrice value={total} /></>
-              )}
-            </motion.button>
+              >
+                {isCheckingOut ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : itemCount === 0 ? (
+                  'Add items to checkout'
+                ) : hasUnavailable ? (
+                  'Some items unavailable'
+                ) : (
+                  <>Checkout &mdash; <AnimatedPrice value={total} /></>
+                )}
+              </motion.button>
+            </div>
           </div>
 
           {error && (
@@ -503,4 +618,4 @@ export function OrderBar({
       </div>
     </>
   )
-}
+})

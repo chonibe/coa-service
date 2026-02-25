@@ -7,6 +7,7 @@ import { Application } from "@splinetool/runtime"
 import * as THREE from "three"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
+import { cn } from "@/lib/utils"
 import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
 interface Spline3DPreviewProps {
   image1: string | null
@@ -25,15 +26,17 @@ interface Spline3DPreviewProps {
   swapLampSides?: boolean
   /** Which side(s) to flip horizontally: 'A' | 'B' | 'both' | 'none'. Use when one side appears mirrored. */
   flipForSide?: 'A' | 'B' | 'both' | 'none'
-  /** Scale of image on panel (0.5–1.2, default 0.96). Smaller = more border. */
+  /** Override flip for Side B only: 'none' | 'horizontal' | 'vertical' | 'both'. Use when Side B panel has different UV orientation. */
+  flipForSideB?: 'none' | 'horizontal' | 'vertical' | 'both'
+  /** Scale of image on panel (0.5–2, default 0.96). Smaller = more border, larger = fills panel. */
   imageScale?: number
   /** Horizontal offset from center (-0.5 to 0.5). Positive = right. */
   imageOffsetX?: number
   /** Vertical offset from center (-0.5 to 0.5). Positive = down. */
   imageOffsetY?: number
-  /** Width scale multiplier (0.5–1). < 1 squeezes width. Default 0.95. */
+  /** Width scale multiplier (0.5–1.5). < 1 squeezes width. Default 0.95. */
   imageScaleX?: number
-  /** Height scale multiplier (0.5–1.2). < 1 compresses, > 1 expands. Default 1. */
+  /** Height scale multiplier (0.5–2). < 1 compresses, > 1 expands. Default 1. */
   imageScaleY?: number
   /** Side B overrides. When undefined, Side B uses Side A values. */
   imageScaleB?: number
@@ -41,6 +44,18 @@ interface Spline3DPreviewProps {
   imageOffsetYB?: number
   imageScaleXB?: number
   imageScaleYB?: number
+  /** Light or dark lamp variant. Toggles visibility of White vs Black (or Light vs Dark) scene groups. */
+  lampVariant?: 'light' | 'dark'
+  /** Override point light intensity (default: unchanged). E.g. 1.5 for brighter. */
+  pointLightIntensity?: number
+  /** Override point light position. */
+  pointLightPosition?: { x?: number; y?: number; z?: number }
+  /** Override point light distance (0 = infinite). */
+  pointLightDistance?: number
+  /** When true, apply subtle rotation (slow spin or cursor-follow when interactive). */
+  animate?: boolean
+  /** When true with animate, rotation follows cursor for interactivity. */
+  interactive?: boolean
 }
 
 export function Spline3DPreview({ 
@@ -55,6 +70,7 @@ export function Spline3DPreview({
   onPanelsFound,
   swapLampSides = false,
   flipForSide = 'A',
+  flipForSideB,
   imageScale = DEFAULT_SIDE_POSITION.scale,
   imageOffsetX = DEFAULT_SIDE_POSITION.offsetX,
   imageOffsetY = DEFAULT_SIDE_POSITION.offsetY,
@@ -65,8 +81,15 @@ export function Spline3DPreview({
   imageOffsetYB,
   imageScaleXB,
   imageScaleYB,
+  lampVariant = 'light',
+  pointLightIntensity,
+  pointLightPosition,
+  pointLightDistance,
+  animate = false,
+  interactive = false,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const splineAppRef = useRef<Application | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -75,9 +98,14 @@ export function Spline3DPreview({
   // Store references to objects with image layers
   const side1ObjectRef = useRef<any>(null)
   const side2ObjectRef = useRef<any>(null)
+  const variantRootsRef = useRef<{ light: any; dark: any }>({ light: null, dark: null })
+  const lightOriginalsRef = useRef<Map<any, number>>(new Map())
   
   // Pre-discovered panel object refs (populated on scene load)
   const discoveredPanelsRef = useRef<{ sideA: any; sideB: any }>({ sideA: null, sideB: null })
+
+  const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
+
   
   // Store discovered layers for toggling
   interface LayerInfo {
@@ -401,9 +429,7 @@ export function Spline3DPreview({
     }
 
     const discoverPanels = () => {
-      if (discoveredPanelsRef.current.sideA && discoveredPanelsRef.current.sideB) {
-        return discoveredPanelsRef.current
-      }
+      const searchRoot = scene
 
       const sideANames = ["PC trans A", "PC Trans A", "Trans A", "Panel Side A", "Side A"]
       const sideBNames = ["PC Trans B", "Trans B", "Panel Side B", "Side B"]
@@ -430,7 +456,7 @@ export function Spline3DPreview({
         for (const c of node.children || []) traverse(c, currentPath)
         for (const c of node.mesh?.children || []) traverse(c, currentPath)
       }
-      traverse(scene, 'Scene')
+      traverse(searchRoot, 'Scene')
 
       if (app.findObjectByName) {
         for (const n of sideANames) {
@@ -477,8 +503,23 @@ export function Spline3DPreview({
       scaleY: imageScaleYB ?? imageScaleY,
     }
 
+    type FlipMode = 'none' | 'horizontal' | 'vertical' | 'both'
+    const parseFlip = (v: boolean | FlipMode): FlipMode => {
+      if (typeof v === 'string') return v
+      return v ? 'horizontal' : 'none'
+    }
+    type LayerOverrides = { projection?: number; axis?: string } | null
     // Helper to add image layer to Spline material
-    const addImageLayerToMaterial = async (obj: any, imageUrl: string, label: string, shouldFlip: boolean, pos: PositionParams) => {
+    const addImageLayerToMaterial = async (
+      obj: any,
+      imageUrl: string,
+      label: string,
+      flip: boolean | FlipMode,
+      pos: PositionParams,
+      opts?: { layerOverrides?: LayerOverrides; captureLayer?: { projection?: number; axis?: string } }
+    ) => {
+      const layerOverrides = opts?.layerOverrides ?? null
+      const flipMode = parseFlip(flip)
       if (!obj) {
         console.warn(`[Spline3D] Cannot add image layer: ${label} object not found`)
         return false
@@ -527,9 +568,9 @@ export function Spline3DPreview({
         })
 
         // Draw to canvas: scale + position, optionally flip (avoids texture repeat/splitting)
-        const scale = Math.max(0.5, Math.min(1.2, pos.scale))
-        const scaleX = Math.max(0.5, Math.min(1, pos.scaleX))
-        const scaleY = Math.max(0.5, Math.min(1.2, pos.scaleY))
+        const scale = Math.max(0.5, Math.min(2, pos.scale))
+        const scaleX = Math.max(0.5, Math.min(1.5, pos.scaleX))
+        const scaleY = Math.max(0.5, Math.min(2, pos.scaleY))
         const canvas = document.createElement('canvas')
         canvas.width = imageElement.width
         canvas.height = imageElement.height
@@ -543,9 +584,15 @@ export function Spline3DPreview({
         const x = (canvas.width - w) / 2 + ox * canvas.width
         const y = (canvas.height - h) / 2 + oy * canvas.height
         ctx.save()
-        if (shouldFlip) {
+        if (flipMode === 'horizontal') {
           ctx.translate(canvas.width, 0)
           ctx.scale(-1, 1)
+        } else if (flipMode === 'vertical') {
+          ctx.translate(0, canvas.height)
+          ctx.scale(1, -1)
+        } else if (flipMode === 'both') {
+          ctx.translate(canvas.width, canvas.height)
+          ctx.scale(-1, -1)
         }
         ctx.drawImage(imageElement, x, y, w, h)
         ctx.restore()
@@ -594,6 +641,18 @@ export function Spline3DPreview({
                     currentRotation: originalImage.rotation,
                     allProperties: Object.keys(originalImage)
                   })
+
+                  // Apply projection/axis overrides from Side A (so Side B matches layout)
+                  if (layerOverrides) {
+                    if (layerOverrides.projection !== undefined && 'projection' in layer) {
+                      layer.projection = layerOverrides.projection
+                      console.log(`[Spline3D] Applied projection override for ${label}: ${layerOverrides.projection}`)
+                    }
+                    if (layerOverrides.axis !== undefined && 'axis' in layer) {
+                      layer.axis = layerOverrides.axis
+                      console.log(`[Spline3D] Applied axis override for ${label}: ${layerOverrides.axis}`)
+                    }
+                  }
 
                   // Replace ONLY the image data -- keep original UV transforms
                   // (rotation, repeat, offset) that the Spline scene designer set up.
@@ -653,6 +712,13 @@ export function Spline3DPreview({
                       console.log(`[Spline3D] ✓ Forced additional render after texture update`)
                     }
                   }, 100)
+
+                  // Capture projection/axis for Side B to match (avoids layout mismatch)
+                  if (opts?.captureLayer && 'projection' in layer && 'axis' in layer) {
+                    opts.captureLayer.projection = layer.projection
+                    opts.captureLayer.axis = layer.axis
+                    console.log(`[Spline3D] Captured layer layout for Side B: projection=${layer.projection}, axis=${layer.axis}`)
+                  }
 
                   console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
                   updatedLayers++
@@ -893,20 +959,30 @@ export function Spline3DPreview({
     const imgB = swapLampSides ? image1 : image2
 
     const flipA = flipForSide === 'A' || flipForSide === 'both'
-    const flipB = flipForSide === 'B' || flipForSide === 'both'
+    const flipBResolved = flipForSideB ?? (flipForSide === 'B' || flipForSide === 'both')
 
+    const sideALayerLayout = { projection: undefined as number | undefined, axis: undefined as string | undefined }
     if (imgA && objA) {
       side1ObjectRef.current = objA
-      const success = await addImageLayerToMaterial(objA, imgA, "Side A", flipA, posA)
+      const success = await addImageLayerToMaterial(objA, imgA, "Side A", flipA ? 'horizontal' : 'none', posA, {
+        captureLayer: sideALayerLayout,
+      })
       console.log(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
     } else {
       side1ObjectRef.current = null
       if (imgA) console.warn(`[Spline3D] Side A object not found or has no material`)
     }
 
+    const sideBLayerOverrides: LayerOverrides =
+      sideALayerLayout.projection !== undefined && sideALayerLayout.axis !== undefined
+        ? { projection: sideALayerLayout.projection, axis: sideALayerLayout.axis }
+        : null
+
     if (imgB && objB) {
       side2ObjectRef.current = objB
-      const success = await addImageLayerToMaterial(objB, imgB, "Side B", flipB, posB)
+      const success = await addImageLayerToMaterial(objB, imgB, "Side B", flipBResolved, posB, {
+        layerOverrides: sideBLayerOverrides,
+      })
       console.log(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
     } else {
       side2ObjectRef.current = null
@@ -917,7 +993,7 @@ export function Spline3DPreview({
     if (app.renderer && scene && app.camera && typeof app.renderer.render === "function") {
       app.renderer.render(scene, app.camera)
     }
-  }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading, onPanelsFound, swapLampSides, flipForSide, imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
+  }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading, onPanelsFound, swapLampSides, flipForSide, flipForSideB, imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   // Load Spline scene
   useEffect(() => {
@@ -950,12 +1026,38 @@ export function Spline3DPreview({
     }
 
     try {
-      const app = new Application(canvas)
-      const scenePath = "/spline/scene.splinecode"
-      
-      app.load(scenePath)
+      const app = new Application(canvas, { renderMode: 'continuous' })
+
+      app.load(SCENE_PATH)
         .then(() => {
           splineAppRef.current = app
+          const hex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
+          if (typeof (app as any).setBackgroundColor === 'function') {
+            ;(app as any).setBackgroundColor(hex)
+          } else {
+            const scene = (app as any).scene || (app as any)._scene
+            if (scene) {
+              scene.background = new THREE.Color(hex)
+            }
+          }
+          // Enable slight zoom on preview: find orbit controls and constrain zoom range
+          try {
+            const a = app as any
+            const controls = a.controls || a._controls || a.orbitControls || a.cameraControls ||
+              (a.manager && (a.manager.controls || a.manager._controls)) ||
+              (a._manager && (a._manager.controls || a._manager._controls))
+            const cam = a.camera
+            if (controls && cam) {
+              if (typeof controls.enableZoom === 'boolean') controls.enableZoom = true
+              if (controls.getDistance && typeof controls.getDistance === 'function') {
+                const d = controls.getDistance()
+                const minD = Math.max(1, d * 0.88)
+                const maxD = d * 1.02
+                if (controls.minDistance !== undefined) controls.minDistance = minD
+                if (controls.maxDistance !== undefined) controls.maxDistance = maxD
+              }
+            }
+          } catch (_) {}
           setTimeout(() => {
             setIsLoading(false)
             
@@ -1808,7 +1910,6 @@ export function Spline3DPreview({
         discoveredPanelsRef.current = { sideA: null, sideB: null }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -1817,19 +1918,195 @@ export function Spline3DPreview({
     }
   }, [image1, image2, isLoading, updateTextures])
 
+  const applyPointLightOverrides = useCallback(() => {
+    const app = splineAppRef.current as any
+    if (!app) return
+    const scene = app.scene || app._scene
+    if (!scene) return
+    if (pointLightIntensity === undefined && !pointLightPosition && pointLightDistance === undefined) return
+
+    const pointLights: any[] = []
+    const traverse = (node: any) => {
+      if (!node) return
+      if (node.isPointLight || node.type === 'PointLight') {
+        pointLights.push(node)
+      }
+      for (const c of node.children || []) traverse(c)
+    }
+    traverse(scene)
+
+    pointLights.forEach((light) => {
+      if (pointLightIntensity !== undefined) light.intensity = pointLightIntensity
+      if (pointLightPosition) {
+        if (pointLightPosition.x !== undefined) light.position.x = pointLightPosition.x
+        if (pointLightPosition.y !== undefined) light.position.y = pointLightPosition.y
+        if (pointLightPosition.z !== undefined) light.position.z = pointLightPosition.z
+      }
+      if (pointLightDistance !== undefined) light.distance = pointLightDistance
+    })
+
+    if (app.update && typeof app.update === 'function') app.update()
+    if (app.renderer && app.scene && app.camera) app.renderer.render(app.scene, app.camera)
+  }, [pointLightIntensity, pointLightPosition, pointLightDistance])
+
+  useEffect(() => {
+    if (!splineAppRef.current || isLoading) return
+    applyPointLightOverrides()
+    if (!splineAppRef.current || isLoading) return
+    applyPointLightOverrides()
+  }, [pointLightIntensity, pointLightPosition, pointLightDistance, isLoading, applyPointLightOverrides])
+
+  // Sync Spline background with lampVariant
+  const setBackgroundFromVariant = useCallback(() => {
+    const app = splineAppRef.current
+    if (!app || isLoading) return
+    const hex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
+    if (typeof (app as any).setBackgroundColor === 'function') {
+      ;(app as any).setBackgroundColor(hex)
+    } else {
+      const scene = (app as any).scene || (app as any)._scene
+      if (scene) {
+        scene.background = new THREE.Color(hex)
+      }
+    }
+  }, [lampVariant, isLoading])
+
+  useEffect(() => {
+    setBackgroundFromVariant()
+  }, [lampVariant, isLoading, setBackgroundFromVariant])
+
+  // Cursor-following or subtle rotation (when animate=true)
+  const cursorTargetRef = useRef({ x: 0, y: 0 })
+  const cursorCurrentRef = useRef({ x: 0, y: 0 })
+  const isPointerOverRef = useRef(false)
+
+  useEffect(() => {
+    if (!animate || isLoading || error) return
+
+    const app = splineAppRef.current as any
+    if (!app) return
+    const scene = app.scene || app._scene
+    if (!scene) return
+
+    const lampNames = ['Assembly Small Lamp 2025 v62', 'Assembly Small Lamp', 'Assembly', 'Lamp', 'White', 'Black']
+    let target: any = null
+    for (const name of lampNames) {
+      const obj = app.findObjectByName?.(name)
+      if (obj) { target = obj; break }
+    }
+    if (!target && scene.children?.length > 0) {
+      const first = scene.children.find((c: any) => c.type !== 'Camera' && c.name)
+      target = first || scene
+    }
+    if (!target) target = scene
+
+    const rotatable = (target?.rotation && target) || (target?.mesh?.rotation && target.mesh) || target?.object3D || target
+    if (!rotatable?.rotation) return
+
+    const container = containerRef.current
+    const maxYaw = 0.5
+    const maxPitch = 0.08
+    const turntableSpeed = 0.003
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!container || !interactive) return
+      isPointerOverRef.current = true
+      const rect = container.getBoundingClientRect()
+      const x = (e.clientX - rect.left) / rect.width
+      const y = (e.clientY - rect.top) / rect.height
+      cursorTargetRef.current = { x: (x - 0.5) * 2, y: (y - 0.5) * 2 }
+    }
+    const handleMouseLeave = () => {
+      isPointerOverRef.current = false
+      cursorTargetRef.current = { x: 0, y: 0 }
+    }
+    const handleTouchStart = () => {
+      if (!container || !interactive) return
+      isPointerOverRef.current = true
+    }
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!container || !interactive) return
+      const touch = e.touches[0]
+      if (!touch) return
+      isPointerOverRef.current = true
+      const rect = container.getBoundingClientRect()
+      const x = (touch.clientX - rect.left) / rect.width
+      const y = (touch.clientY - rect.top) / rect.height
+      cursorTargetRef.current = { x: (x - 0.5) * 2, y: (y - 0.5) * 2 }
+    }
+    const handleTouchEnd = () => {
+      isPointerOverRef.current = false
+      cursorTargetRef.current = { x: 0, y: 0 }
+    }
+
+    if (interactive && container) {
+      container.addEventListener('mousemove', handleMouseMove)
+      container.addEventListener('mouseleave', handleMouseLeave)
+      container.addEventListener('touchstart', handleTouchStart, { passive: true })
+      container.addEventListener('touchmove', handleTouchMove, { passive: true })
+      container.addEventListener('touchend', handleTouchEnd)
+      container.addEventListener('touchcancel', handleTouchEnd)
+    }
+
+    let rafId: number
+    const tick = () => {
+      const rot = rotatable.rotation
+      if (interactive && isPointerOverRef.current) {
+        const t = cursorTargetRef.current
+        const c = cursorCurrentRef.current
+        const lerpFactor = 0.08
+        c.x += (t.x - c.x) * lerpFactor
+        c.y += (t.y - c.y) * lerpFactor
+        rot.y = c.x * maxYaw
+        rot.x = -c.y * maxPitch
+      } else {
+        rot.y += turntableSpeed
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+
+    return () => {
+      if (interactive && container) {
+        container.removeEventListener('mousemove', handleMouseMove)
+        container.removeEventListener('mouseleave', handleMouseLeave)
+        container.removeEventListener('touchstart', handleTouchStart)
+        container.removeEventListener('touchmove', handleTouchMove)
+        container.removeEventListener('touchend', handleTouchEnd)
+        container.removeEventListener('touchcancel', handleTouchEnd)
+      }
+      cancelAnimationFrame(rafId)
+    }
+  }, [animate, interactive, isLoading, error])
+
   if (minimal) {
+    const bgHex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
+    const loadingFg = lampVariant === 'light' ? 'text-neutral-500' : 'text-white/50'
+    const spinBorder = lampVariant === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (
-      <div className={className ?? "relative w-full h-full"}>
+      <div ref={containerRef} className={cn(className, "relative w-full h-full")}>
+        {/* Background layer - ensures toggle changes color even if WebGL overrides */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{ backgroundColor: bgHex }}
+          aria-hidden
+        />
         {isLoading && !error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-950 z-10">
+          <div
+            className="absolute inset-0 flex items-center justify-center z-10"
+            style={{ backgroundColor: bgHex }}
+          >
             <div className="flex flex-col items-center gap-3">
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <p className="text-xs text-white/50">Loading 3D preview…</p>
+              <div className={cn("w-6 h-6 border-2 rounded-full animate-spin", spinBorder)} />
+              <p className={cn("text-xs", loadingFg)}>Loading 3D preview…</p>
             </div>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 z-10 px-6">
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6"
+            style={{ backgroundColor: bgHex }}
+          >
             {image1 && (
               <img
                 src={image1}
@@ -1837,12 +2114,17 @@ export function Spline3DPreview({
                 className="w-48 h-48 object-contain rounded-lg mb-4 opacity-80"
               />
             )}
-            <p className="text-sm text-white/60 text-center max-w-xs">
+            <p className={cn("text-sm text-center max-w-xs", lampVariant === 'light' ? 'text-neutral-600' : 'text-white/60')}>
               3D preview unavailable — {error.includes('fetch') ? 'check your connection and refresh' : error}
             </p>
             <button
               onClick={() => { setError(null); setIsLoading(true); }}
-              className="mt-3 px-4 py-1.5 text-xs font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              className={cn(
+                "mt-3 px-4 py-1.5 text-xs font-medium rounded-full transition-colors",
+                lampVariant === 'light'
+                  ? "bg-neutral-800 hover:bg-neutral-700 text-white"
+                  : "bg-white/10 hover:bg-white/20 text-white"
+              )}
             >
               Retry
             </button>
@@ -1851,7 +2133,12 @@ export function Spline3DPreview({
         <canvas
           ref={canvasRef}
           className="w-full h-full"
-          style={{ display: "block", width: "100%", height: "100%" }}
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            backgroundColor: lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A',
+          }}
           width={800}
           height={600}
         />

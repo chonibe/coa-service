@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCollection, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { createClient } from '@/lib/supabase/server'
+import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { getCollection, getCollectionById, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 
 /**
  * Artist/Vendor Profile API
- * 
- * Returns artist profile with their products from Shopify collection.
- * Collections contain the artist's profile photo and bio.
+ *
+ * Matches Liquid pattern: collections[vendor_handle] where vendor_handle = product.vendor | handle.
+ * Uses vendor_collections when available, else getVendorCollectionHandle(vendorName) for Shopify convention.
+ * Bio priority: 1. Vendor bio 2. Collection description 3. Product description
  */
 
 export const dynamic = 'force-dynamic'
@@ -15,37 +18,98 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params
-  
+  const { searchParams } = new URL(request.url)
+  const vendorParam = searchParams.get('vendor')
+  const artistNameForMatch = (vendorParam || slug.replace(/-/g, ' ')).trim()
+
   try {
-    // First, try to fetch the artist's collection by handle (slug)
-    let collection = null
+    const supabase = createClient()
+
+    // 1. Find vendor and their paired collection from vendor_collections
+    let vendorBio: string | undefined
+    let pairedCollectionId: string | null = null
+    let pairedCollectionHandle: string | null = null
+    let vendorName: string | undefined
+
     try {
-      collection = await getCollection(slug, {
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('id, bio, vendor_name')
+        .ilike('vendor_name', artistNameForMatch)
+        .maybeSingle()
+
+      if (vendor) {
+        vendorBio = vendor.bio?.trim() || undefined
+        vendorName = vendor.vendor_name
+
+        const { data: vendorCollection } = await supabase
+          .from('vendor_collections')
+          .select('shopify_collection_id, shopify_collection_handle')
+          .eq('vendor_id', vendor.id)
+          .maybeSingle()
+
+        pairedCollectionId = vendorCollection?.shopify_collection_id ?? null
+        pairedCollectionHandle = vendorCollection?.shopify_collection_handle ?? null
+      }
+    } catch {
+      // Supabase not configured or error, continue
+    }
+
+    // 2. Fetch collection - prefer ID from vendor_collections (e.g. 685744914818), then handle
+    let collection = null
+
+    if (pairedCollectionId) {
+      collection = await getCollectionById(pairedCollectionId, {
         first: 50,
-        sortKey: 'CREATED_AT',
+        sortKey: 'CREATED',
         reverse: true,
       })
-    } catch {
-      // Collection not found or API error, fall through to vendor lookup
     }
+
+    if (!collection) {
+      const canonicalHandle = vendorName ? getVendorCollectionHandle(vendorName) : slug
+      const handlesToTry = [
+        pairedCollectionHandle,
+        canonicalHandle !== slug ? canonicalHandle : null,
+        slug,
+      ].filter(Boolean) as string[]
+      const uniqueHandles = [...new Set(handlesToTry)]
+
+      for (const handle of uniqueHandles) {
+        try {
+          collection = await getCollection(handle, {
+            first: 50,
+            sortKey: 'CREATED',
+            reverse: true,
+          })
+          if (collection) break
+        } catch {
+          continue
+        }
+      }
+    }
+
+    const collectionDesc = collection?.description
+      || (collection?.descriptionHtml
+        ? collection.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        : '')
 
     if (collection?.products?.edges?.length) {
       const products = collection.products.edges.map((edge) => edge.node)
       const artist = {
-        name: collection.title,
+        name: vendorName || collection.title,
         slug,
-        bio: (collection.description || collection.descriptionHtml?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()) || undefined,
+        bio: vendorBio || (collectionDesc || undefined),
         image: collection.image?.url,
         products,
       }
       return NextResponse.json(artist)
     }
 
-    // Fallback: fetch by vendor name (slug with hyphens -> spaces)
-    const artistName = slug.replace(/-/g, ' ')
+    // Fallback: fetch by vendor name when no collection found
     let vendorProducts: ShopifyProduct[] = []
     try {
-      const result = await getProductsByVendor(artistName, {
+      const result = await getProductsByVendor(artistNameForMatch, {
         first: 50,
         sortKey: 'CREATED_AT',
         reverse: true,
@@ -63,9 +127,9 @@ export async function GET(
     }
 
     const artist = {
-      name: vendorProducts[0]?.vendor || artistName,
+      name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
       slug,
-      bio: vendorProducts[0]?.description || undefined,
+      bio: vendorBio || collectionDesc || vendorProducts[0]?.description || undefined,
       image: vendorProducts[0]?.featuredImage?.url,
       products: vendorProducts,
     }
