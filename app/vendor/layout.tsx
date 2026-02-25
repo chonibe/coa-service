@@ -10,8 +10,6 @@ import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasAnyRole } from "@/li
 
 export const dynamic = 'force-dynamic'
 
-export const dynamic = 'force-dynamic'
-
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
 const ACCESS_DENIED_ROUTE = "/vendor/access-denied"
 
