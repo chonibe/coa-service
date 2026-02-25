@@ -36,8 +36,8 @@ export default async function OsmoDemoPage() {
       getCollection(homepageContent.newReleases.collectionHandle, { first: 6, sortKey: 'MANUAL' }).catch(() => null),
     ])
 
-    bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
-    newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
+    bestSellers = bestSellersCollection?.products?.edges?.map(e => e.node) || []
+    newReleases = newReleasesCollection?.products?.edges?.map(e => e.node) || []
   } catch (error) {
     console.error('Failed to fetch products:', error)
   }

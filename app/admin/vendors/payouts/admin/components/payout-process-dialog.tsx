@@ -236,7 +236,12 @@ export function PayoutProcessDialog({
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">{formatUSD(payout.amount)}</div>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="font-semibold">{formatUSD(payout.amount)}</span>
+                          <Badge variant="outline" className="text-[9px] border-blue-200 text-blue-600 bg-blue-50/50 font-normal px-1">
+                            Ledger
+                          </Badge>
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {payout.product_count} product{payout.product_count !== 1 ? "s" : ""}
                         </div>

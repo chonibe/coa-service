@@ -6,6 +6,9 @@ import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
+import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasAnyRole } from "@/lib/auth/unified-session"
+
+export const dynamic = 'force-dynamic'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,19 +29,48 @@ export default async function VendorLayout({ children }: VendorLayoutProps) {
       redirect("/login")
     }
 
-    let vendorName = getVendorFromCookieStore(cookieStore)
+    let vendorName: string | null = null
 
-  // If no vendor session cookie, redirect to login
-  // Do NOT auto-login from Supabase session to prevent unwanted session restoration
-  if (!vendorName) {
-    redirect("/login")
-  }
+    // ── Unified Auth Path (feature-flagged) ──
+    if (isUnifiedAuthEnabled()) {
+      const session = await getUnifiedSession()
 
-  // Skip vendor database checks for admin users - they have full access
-  if (vendorName === "admin-access") {
-    return <SidebarLayout>{children}</SidebarLayout>
-  }
+      if (!session || !sessionHasAnyRole(session, ['vendor', 'admin'])) {
+        redirect("/login")
+      }
 
+      // Admin users skip vendor DB checks
+      if (session.roles.includes('admin') && !session.roles.includes('vendor')) {
+        return <SidebarLayout>{children}</SidebarLayout>
+      }
+
+      vendorName = session.vendorName || null
+      if (!vendorName) {
+        // Try legacy cookie as last resort even in unified mode
+        vendorName = getVendorFromCookieStore(cookieStore)
+      }
+
+      if (!vendorName) {
+        console.error('[vendor/layout] Unified auth: has vendor role but no vendor name')
+        redirect("/login")
+      }
+    } else {
+      // ── Legacy Auth Path ──
+      vendorName = getVendorFromCookieStore(cookieStore)
+
+      // If no vendor session cookie, redirect to login
+      // Do NOT auto-login from Supabase session to prevent unwanted session restoration
+      if (!vendorName) {
+        redirect("/login")
+      }
+
+      // Skip vendor database checks for admin users - they have full access
+      if (vendorName === "admin-access") {
+        return <SidebarLayout>{children}</SidebarLayout>
+      }
+    }
+
+  // ── Vendor DB validation (shared by both paths) ──
   // Use service role client to bypass RLS and ensure we can read vendors
   const supabase = createServiceClient()
   

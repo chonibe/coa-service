@@ -784,4 +784,67 @@
 - Comprehensive error handling
 - Graceful degradation for unsupported browsers
 
---- 
+---
+
+## Commit: feat: unify ledger as single source of truth for vendor payouts
+**Date**: 2026-02-15  
+**Hash**: 81cd5c780  
+**Deployed**: https://app.thestreetcollector.com
+
+### Summary
+Unifies `collector_ledger_entries` as the single source of truth for vendor payout balances. Previously, the pending payouts route bypassed the ledger and recalculated from line items, cancelled/refunded orders had stale `payout_earned` entries that were never reversed, and historically paid items lacked `payout_withdrawal` entries.
+
+### Changes Checklist
+
+- [x] **Phase 1: Ledger Reconciliation** — [`lib/banking/refund-deduction.ts`](../lib/banking/refund-deduction.ts)
+  - Created `createRefundDeduction()` with idempotency (checks for duplicate `refund_deduction` by `line_item_id`)
+  - Created `createRefundDeductionByVendor()` that resolves `vendor_name` → `collector_identifier`
+  - Invalidates vendor balance cache on successful deduction
+
+- [x] **Phase 1: Admin Reconciliation Endpoint** — [`app/api/admin/payouts/reconcile-ledger/route.ts`](../app/api/admin/payouts/reconcile-ledger/route.ts)
+  - POST `/api/admin/payouts/reconcile-ledger` (admin-only)
+  - Step 1: Scans all `payout_earned` entries, cross-references with `order_line_items_v2` + `orders.financial_status`, creates `refund_deduction` for voided/refunded orders
+  - Step 2: Scans `vendor_payout_items` for paid items missing `payout_withdrawal` entries and creates them
+  - Supports `?dryRun=true` for safe preview
+  - Idempotent: safe to re-run
+
+- [x] **Phase 2: Order Sync Deductions** — [`lib/shopify/order-sync-utils.ts`](../lib/shopify/order-sync-utils.ts)
+  - After upserting line items, checks which items became `inactive`
+  - For each inactive item with a prior `payout_earned` entry, creates a `refund_deduction`
+  - Prevents future ledger staleness on order sync
+
+- [x] **Phase 2: Webhook Refund Handler** — [`app/api/webhooks/shopify/orders/route.ts`](../app/api/webhooks/shopify/orders/route.ts)
+  - Added `processRefundDeductions()` function
+  - Triggered when `financial_status` is `voided` or `refunded`
+  - For each vendor line item with a `payout_earned` entry, creates offsetting `refund_deduction`
+
+- [x] **Phase 3: Restore Ledger as SOT** — [`app/api/vendors/payouts/pending/route.ts`](../app/api/vendors/payouts/pending/route.ts)
+  - Rewrote to use batch-queried ledger balances for USD amounts (single query grouped by `collector_identifier`)
+  - Line item queries now only used for `product_count` and `pending_fulfillment_count`
+  - Eliminates N+1 query pattern; single batch query for all vendor balances
+
+- [x] **Phase 4: Vendor Payout History in Drawer** — [`app/admin/vendors/payouts/admin/components/vendor-line-items-drawer.tsx`](../app/admin/vendors/payouts/admin/components/vendor-line-items-drawer.tsx)
+  - Added collapsible "Payout History" section showing date, amount, method, status, reference
+  - Fetches from `/api/vendors/payouts/history?vendorName={vendorName}` when drawer opens
+
+- [x] **Phase 4: Vendor Filter in History Tab** — [`app/admin/vendors/payouts/admin/components/payout-history-tab.tsx`](../app/admin/vendors/payouts/admin/components/payout-history-tab.tsx)
+  - Extracts unique vendor names from history data
+  - Passes `vendorNames` to `PayoutFiltersComponent`
+  - Added `vendorFilter` to [`use-payout-filters.ts`](../app/admin/vendors/payouts/admin/hooks/use-payout-filters.ts) and [`payout-filters.tsx`](../app/admin/vendors/payouts/admin/components/payout-filters.tsx)
+
+### Architecture After Fix
+```
+Shopify Webhook → payout_earned (on fulfillment)
+                → refund_deduction (on cancellation/refund)
+Admin Mark Paid → payout_withdrawal
+PayPal Failure  → payout_reversal
+All → collector_ledger_entries → balance/route.ts, pending/route.ts
+```
+
+### Post-Deploy Steps
+1. Run reconciliation: `POST /api/admin/payouts/reconcile-ledger?dryRun=true` (preview)
+2. Run reconciliation: `POST /api/admin/payouts/reconcile-ledger` (execute)
+3. Verify vendor balances are accurate
+4. Verify pending payouts page shows correct amounts
+
+---

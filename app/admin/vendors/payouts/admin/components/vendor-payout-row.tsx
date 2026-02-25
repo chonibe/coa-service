@@ -184,18 +184,34 @@ export function VendorPayoutRow({
         )}
       </TableCell>
       <TableCell className="text-right font-medium">
-        {formatPayoutAmount(payout.amount)}
+        <div className="flex items-center justify-end gap-2">
+          {formatPayoutAmount(payout.amount)}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-[10px] border-blue-200 text-blue-600 bg-blue-50/50 cursor-help font-normal">
+                  Ledger
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm">
+                  This amount is calculated from the authoritative ledger balance, not from line item aggregation.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </TableCell>
       <TableCell>
-        <div className="flex flex-col gap-1">
-          <span>{payout.product_count} ready</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="font-medium">{payout.product_count} ready</span>
           {payout.pending_fulfillment_count > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="outline" className="text-xs border-amber-200 text-amber-600 bg-amber-50/50 cursor-help w-fit">
-                    <Clock className="h-2.5 w-2.5 mr-1" />
-                    {payout.pending_fulfillment_count} pending
+                  <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50 cursor-help w-fit font-medium">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {payout.pending_fulfillment_count} pending fulfillment
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>

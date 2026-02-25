@@ -22,7 +22,7 @@ export async function GET() {
 
     // First, ensure all removed items have null edition numbers
     const { error: removeError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update({
         edition_number: null,
         updated_at: new Date().toISOString(),
@@ -37,7 +37,7 @@ export async function GET() {
 
     // Get all active line items for this product, ordered by creation date
     const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active")
@@ -65,7 +65,7 @@ export async function GET() {
 
     for (const item of activeItems) {
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
           updated_at: new Date().toISOString(),
@@ -83,7 +83,7 @@ export async function GET() {
 
     // Get count of removed items
     const { count: removedCount, error: countError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*", { count: "exact" })
       .eq("product_id", productId)
       .eq("status", "removed")

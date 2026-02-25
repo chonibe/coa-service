@@ -122,21 +122,25 @@ export async function processPayouts(
           continue
         }
 
-        // Record the payout withdrawal in the collector ledger
-        // This debits the USD balance when payout is processed
-        const withdrawalResult = await recordPayoutWithdrawal(
-          payout.vendor_name,
-          payout.payout_id,
-          payout.amount,
-          client
-        )
+        // Record withdrawal only for non-PayPal methods (which complete immediately).
+        // PayPal payouts: withdrawal is recorded when the PayPal webhook confirms success.
+        if (payment_method !== 'paypal') {
+          const withdrawalResult = await recordPayoutWithdrawal(
+            payout.vendor_name,
+            payout.payout_id,
+            payout.amount,
+            client
+          )
 
-        if (!withdrawalResult.success) {
-          console.error(`Error recording payout withdrawal for ${payout.vendor_name}:`, withdrawalResult.error)
-          // Don't fail the payout for ledger errors, but log it
+          if (!withdrawalResult.success) {
+            console.error(`Error recording payout withdrawal for ${payout.vendor_name}:`, withdrawalResult.error)
+            // Don't fail the payout for ledger errors, but log it
+          }
+
+          console.log(`Successfully processed payout for ${payout.vendor_name}: ${withdrawalResult.usdWithdrawn} USD withdrawn, status: ${status}`)
+        } else {
+          console.log(`Successfully initiated PayPal payout for ${payout.vendor_name}: $${payout.amount} — withdrawal will be recorded on webhook confirmation, status: ${status}`)
         }
-
-        console.log(`Successfully initiated payout for ${payout.vendor_name}: ${withdrawalResult.usdWithdrawn} USD withdrawn, status: ${status}`)
 
         results.push({
           vendor_name: payout.vendor_name,

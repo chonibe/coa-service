@@ -6,6 +6,7 @@ import { validatePayout, ensureDataIntegrity } from "@/lib/payout-validator"
 import { calculateVendorPayout, calculateLineItemPayout } from "@/lib/payout-calculator"
 import { logAdminAction } from "@/lib/audit-logger"
 import { invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
+import { recordPayoutWithdrawal } from "@/lib/banking/payout-withdrawal"
 import crypto from "crypto"
 
 interface MarkPaidRequest {
@@ -18,22 +19,18 @@ interface MarkPaidRequest {
 }
 
 export async function POST(request: NextRequest) {
-  console.log("Mark paid API called")
   const auth = guardAdminRequest(request)
   if (auth.kind !== "ok") {
-    console.log("Auth failed:", auth)
     return auth.response
   }
 
   const adminEmail = getAdminEmailFromCookieStore(request.cookies)
-  console.log("Admin email:", adminEmail)
   if (!adminEmail) {
     return NextResponse.json({ error: "Admin email not found" }, { status: 401 })
   }
 
   try {
     const body: MarkPaidRequest = await request.json()
-    console.log("Request body:", body)
     const {
       lineItemIds = [],
       orderIds = [],
@@ -170,19 +167,20 @@ export async function POST(request: NextRequest) {
       .eq("vendor_name", vendorNameToUse)
       .in("product_id", productIds)
 
+    // Calculate total payout amount
+    const totalAmount = lineItems.reduce((sum, item) => {
+      const setting = payoutSettings?.find((s) => s.product_id === item.product_id)
+      const payoutAmount = calculateLineItemPayout({
+        price: Number(item.price),
+        payout_amount: setting?.payout_amount ?? null,
+        is_percentage: setting?.is_percentage ?? null,
+      })
+      return sum + payoutAmount
+    }, 0)
+
     // Create payout record if requested
     let payoutId: number | null = null
     if (createPayoutRecord) {
-      const totalAmount = lineItems.reduce((sum, item) => {
-        const setting = payoutSettings?.find((s) => s.product_id === item.product_id)
-        const payoutAmount = calculateLineItemPayout({
-          price: Number(item.price),
-          payout_amount: setting?.payout_amount ?? null,
-          is_percentage: setting?.is_percentage ?? null,
-        })
-        return sum + payoutAmount
-      }, 0)
-
       const reference = payoutReference || `MANUAL-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`
 
       const { data: payoutData, error: payoutError } = await supabase
@@ -211,6 +209,19 @@ export async function POST(request: NextRequest) {
       }
 
       payoutId = payoutData.id
+
+      // Record ledger withdrawal so balance decreases
+      if (totalAmount > 0) {
+        const withdrawalResult = await recordPayoutWithdrawal(
+          vendorNameToUse,
+          payoutId,
+          totalAmount,
+          supabase
+        )
+        if (!withdrawalResult.success) {
+          console.error(`[mark-paid] Ledger withdrawal failed for ${vendorNameToUse}:`, withdrawalResult.error)
+        }
+      }
     }
 
     // Mark line items as paid

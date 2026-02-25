@@ -115,6 +115,10 @@ export function getPreferredDashboard(
   roles: Role[],
   loginIntent?: 'admin' | 'vendor' | 'collector'
 ): string {
+  const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
+  const vendorHome = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
+  const collectorHome = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+
   // If login intent is specified, ALWAYS honor it (users can choose which dashboard to go to)
   if (loginIntent) {
     console.log(`[rbac] Login intent specified: ${loginIntent}, honoring user choice`)
@@ -128,28 +132,28 @@ export function getPreferredDashboard(
       case 'vendor':
         // Only allow vendor if user has vendor role
         if (roles.includes('vendor')) {
-          return '/vendor/dashboard'
+          return vendorHome
         }
         break
       case 'collector':
         // Always allow collector dashboard (creates role if needed)
-        return '/collector/dashboard'
+        return collectorHome
     }
   }
-  
+
   // Default priority when no intent specified: admin > vendor > collector
   if (roles.includes('admin')) {
     return '/admin/dashboard'
   }
-  
+
   if (roles.includes('vendor')) {
-    return '/vendor/dashboard'
+    return vendorHome
   }
-  
+
   if (roles.includes('collector')) {
-    return '/collector/dashboard'
+    return collectorHome
   }
-  
+
   // Fallback (shouldn't happen if user has roles)
   return '/login?error=no_role'
 }

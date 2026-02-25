@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -37,7 +37,7 @@ export async function GET() {
     let certificateInfo = null
     if (nfcTag.line_item_id && nfcTag.order_id) {
       const { data: lineItem, error: lineItemError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("*")
         .eq("line_item_id", nfcTag.line_item_id)
         .eq("order_id", nfcTag.order_id)
@@ -54,17 +54,21 @@ export async function GET() {
       }
     }
 
+    // Build the permanent redirect URL for physical tags
+    const permanentUrl = `/api/nfc-tags/redirect?tagId=${nfcTag.tag_id}`
+
     // Generate programming data
     const programmingData = {
       tagId: nfcTag.tag_id,
       url: nfcTag.certificate_url,
-      // NDEF record for URL
+      // Permanent URL to write to the physical tag (no expiry)
+      permanentUrl,
+      // NDEF record for URL — the client-side NDEFReader.write() handles
+      // the actual NDEF framing; we just provide the URL string.
       ndefRecord: {
-        type: "URL",
-        data: nfcTag.certificate_url,
+        type: "url",
+        data: permanentUrl,
       },
-      // Raw NDEF message (for advanced NFC writers)
-      rawNdefMessage: generateRawNdefMessage(nfcTag.certificate_url),
       certificateInfo,
       qrCodeData: nfcTag.certificate_url,
     }
@@ -77,35 +81,4 @@ export async function GET() {
     console.error("Error in get NFC programming data API:", error)
     return NextResponse.json({ success: false, message: error.message || "An error occurred" }, { status: 500 })
   }
-}
-
-// Function to generate raw NDEF message for URL
-function generateRawNdefMessage(url: string): string {
-  // This is a simplified implementation
-  // In a real implementation, you would generate the actual NDEF message bytes
-  // For now, we'll return a placeholder
-
-  // URL record type
-  const TNF_WELL_KNOWN = 0x01
-  const RTD_URI = 0x55
-
-  // URL prefix (https://)
-  const URL_PREFIX_HTTPS = 0x03
-
-  // Remove https:// prefix if present
-  let urlWithoutPrefix = url
-  if (url.startsWith("https://")) {
-    urlWithoutPrefix = url.substring(8)
-  } else if (url.startsWith("http://")) {
-    urlWithoutPrefix = url.substring(7)
-  }
-
-  // Convert to hex representation (simplified)
-  const hexArray = []
-  for (let i = 0; i < urlWithoutPrefix.length; i++) {
-    hexArray.push(urlWithoutPrefix.charCodeAt(i).toString(16).padStart(2, "0"))
-  }
-
-  // Return a simplified NDEF message structure
-  return `${TNF_WELL_KNOWN.toString(16).padStart(2, "0")}${RTD_URI.toString(16).padStart(2, "0")}${URL_PREFIX_HTTPS.toString(16).padStart(2, "0")}${hexArray.join("")}`
 }

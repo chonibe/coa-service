@@ -202,7 +202,7 @@ export async function getSeriesArtworks(
         submission_id,
         is_locked,
         display_order,
-        vendor_product_submissions!inner (
+        vendor_product_submissions (
           id,
           title,
           shopify_product_id,

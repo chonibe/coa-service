@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase-server"
-
-// Vendors excluded from payout calculations (e.g., internal/company vendors)
-const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+import { createClient } from "@/lib/supabase/server"
+import { DEFAULT_PAYOUT_PERCENTAGE, EXCLUDED_VENDORS } from "@/lib/payout-calculator"
 
 export async function POST(request: Request) {
   try {
@@ -132,30 +130,30 @@ export async function POST(request: Request) {
     if (ordersError) {
       console.error("[pending-items] Error fetching orders:", ordersError)
     } else {
-      // Exclude cancelled orders (financial_status = 'voided')
+      // Exclude cancelled/voided/refunded orders — these should never have payouts calculated
       const cancelledOrderIds = new Set(
-        orders?.filter((order: any) => order.financial_status === 'voided').map((order: any) => order.id) || []
+        orders?.filter((order: any) => 
+          order.financial_status === 'voided' || 
+          order.financial_status === 'refunded'
+        ).map((order: any) => order.id) || []
       )
-      console.log(`[pending-items] Found ${cancelledOrderIds.size} cancelled orders (financial_status = 'voided')`)
+      console.log(`[pending-items] Found ${cancelledOrderIds.size} cancelled/refunded orders`)
       
-      // Filter items with active edition numbers - exclude cancelled orders
-      // Note: Cancelled orders should not have edition numbers, but we verify this here
+      // Filter items with active edition numbers - exclude cancelled/refunded orders
       const validItemsWithActiveEdition = itemsWithActiveEdition.filter((item: any) => {
-        const isFromCancelledOrder = cancelledOrderIds.has(item.order_id)
-        if (isFromCancelledOrder) {
-          console.warn(`[pending-items] WARNING: Item ${item.line_item_id} has edition number ${item.edition_number} but is from cancelled order ${item.order_id}`)
-        }
-        return !isFromCancelledOrder
+        return !cancelledOrderIds.has(item.order_id)
       })
       console.log(`[pending-items] Items with active edition (excluding cancelled): ${validItemsWithActiveEdition.length}`)
       
-      // Filter items needing financial_status check - only include orders with financial_status = 'paid', 'refunded', or 'complete' (and not cancelled)
+      // Filter items needing financial_status check - only include orders with eligible financial statuses
       const validOrderIds = new Set(
         orders?.filter((order: any) => 
           (order.financial_status === 'paid' || 
-           order.financial_status === 'refunded' || 
+           order.financial_status === 'partially_refunded' ||
+           order.financial_status === 'partially_paid' ||
+           order.financial_status === 'authorized' ||
            order.financial_status === 'complete') &&
-          order.financial_status !== 'voided' // Extra check (should already be excluded but just to be safe)
+          !cancelledOrderIds.has(order.id)
         ).map((order: any) => order.id) || []
       )
       
@@ -176,12 +174,13 @@ export async function POST(request: Request) {
     let allPaidItems: any[] = []
     let paidFrom = 0
     let hasMorePaid = true
+
     
     while (hasMorePaid) {
       const { data: paidItems, error: paidError, count: paidCount } = await supabase
         .from("vendor_payout_items")
-        .select("line_item_id, payout_id, payout_reference, marked_at, marked_by", { count: 'exact' })
-        .not("payout_id", "is", null)
+        .select("line_item_id, payout_id, payout_reference, marked_at, marked_by, manually_marked_paid", { count: 'exact' })
+        .or("payout_id.not.is.null,manually_marked_paid.eq.true")
         .range(paidFrom, paidFrom + pageSize - 1)
       
       if (paidError) {
@@ -255,7 +254,7 @@ export async function POST(request: Request) {
         
         // Get payout settings for this specific product
         const setting = payoutMap.get(item.product_id)
-        const payoutAmount = setting ? Number(setting.payout_amount) : 25
+        const payoutAmount = setting ? Number(setting.payout_amount) : DEFAULT_PAYOUT_PERCENTAGE
         const isPercentage = setting ? Boolean(setting.is_percentage) : true
         
         const orderDate = new Date(item.created_at)

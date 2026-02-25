@@ -87,8 +87,8 @@ export default async function ShopHomeV2Page() {
         getProduct(homepageContent.featuredProduct.productHandle).catch(() => null),
       ])
 
-      newReleases = newReleasesCollection?.products.edges.map(e => e.node) || []
-      bestSellers = bestSellersCollection?.products.edges.map(e => e.node) || []
+      newReleases = newReleasesCollection?.products?.edges?.map(e => e.node) || []
+      bestSellers = bestSellersCollection?.products?.edges?.map(e => e.node) || []
       featuredProduct = product
     } catch (error: any) {
       console.error('Shop homepage API error:', error.message)
@@ -109,7 +109,7 @@ export default async function ShopHomeV2Page() {
           handle: artist.handle,
           name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
           location: artist.location,
-          imageUrl: collection?.image?.url || collection?.products.edges[0]?.node.featuredImage?.url,
+          imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
         }
       } catch {
         return {

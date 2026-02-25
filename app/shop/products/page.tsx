@@ -13,14 +13,8 @@ import {
 } from '@/lib/shopify/storefront-client'
 import {
   Container,
-  GridContainer,
   SectionWrapper,
-  SectionHeader,
-  ProductCard,
-  Badge,
-  ProductBadge,
   Button,
-  Select,
 } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
 import { ShopFilters } from '../components/ShopFilters'
@@ -82,6 +76,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   let collectionDescription: string | null = null
   let collections: { handle: string; title: string }[] = []
   let apiError: string | null = null
+  let activeSeries: { id: string; name: string; thumbnail_url: string | null; total_artworks: number }[] = []
 
   try {
     if (collectionHandle) {
@@ -91,8 +86,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         reverse: sortConfig.reverse,
       })
       if (collection) {
-        products = collection.products.edges.map(edge => edge.node)
-        hasNextPage = collection.products.pageInfo.hasNextPage
+        products = collection.products?.edges?.map(edge => edge.node) || []
+        hasNextPage = collection.products?.pageInfo?.hasNextPage || false
         title = collection.title
         // Get collection image if available
         collectionImage = collection.image?.url || null
@@ -110,7 +105,37 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
     // Fetch collections for filter dropdown
     const collectionsResult = await getCollections({ first: 50 })
-    collections = collectionsResult.collections.map(c => ({ handle: c.handle, title: c.title }))
+    collections = (collectionsResult.collections || []).map(c => ({ handle: c.handle, title: c.title }))
+
+    // Fetch active series for "Browse by Series" section
+    try {
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = await createClient()
+      const { data: seriesData } = await supabase
+        .from('artwork_series')
+        .select('id, name, thumbnail_url')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(6)
+      
+      if (seriesData) {
+        // Get member counts
+        for (const s of seriesData) {
+          const { count } = await supabase
+            .from('artwork_series_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('series_id', s.id)
+          activeSeries.push({
+            id: s.id,
+            name: s.name,
+            thumbnail_url: s.thumbnail_url,
+            total_artworks: count || 0,
+          })
+        }
+      }
+    } catch {
+      // Non-critical: series section won't show
+    }
   } catch (error: any) {
     console.error('Error fetching shop data:', error)
     apiError = error.message || 'Failed to load products. Please check your Storefront API configuration.'
@@ -217,6 +242,52 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           />
         </Container>
       </SectionWrapper>
+
+      {/* Browse by Series */}
+      {activeSeries.length > 0 && !collectionHandle && (
+        <SectionWrapper spacing="sm" background="default">
+          <Container maxWidth="default">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] tracking-[-0.01em]">
+                Browse by Series
+              </h3>
+              <Link href="/shop/series" className="text-sm font-medium text-[#2c4bce] hover:underline">
+                View all series
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+              {activeSeries.map((series) => (
+                <Link
+                  key={series.id}
+                  href={`/shop/series/${series.id}`}
+                  className="flex-shrink-0 group"
+                >
+                  <div className="w-28 sm:w-36">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-[#1a1a1a]/5 group-hover:ring-[#2c4bce]/30 transition-all">
+                      {series.thumbnail_url ? (
+                        <img
+                          src={series.thumbnail_url}
+                          alt={series.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-sm font-medium text-[#1a1a1a] line-clamp-1">{series.name}</p>
+                    <p className="text-[10px] sm:text-xs text-[#1a1a1a]/50">{series.total_artworks} artworks</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Container>
+        </SectionWrapper>
+      )}
 
       {/* Product Grid - 2 cols mobile, 3 cols desktop */}
       <SectionWrapper spacing="md" background="default">

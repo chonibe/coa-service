@@ -21,7 +21,7 @@ export async function GET() {
 
     // Query database for line items with active certificates for this vendor
     const { data: lineItems, error: lineItemsError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select(`
         id,
         line_item_id,

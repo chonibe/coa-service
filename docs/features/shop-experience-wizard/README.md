@@ -64,7 +64,16 @@ Elements must include these attributes for the wizard to highlight them:
 5. Test "Skip tour" and "Done" both dismiss and persist completion
 6. Confirm wizard does not reappear on refresh
 
+## Artist Link Support
+
+Visitors arriving from artist Instagram pages can use pre-filtered links:
+
+- **Full URL**: `/shop/experience?artist=artist-slug` — opens experience with that artist's artworks filtered first (intro quiz still shown; add `&skipQuiz=1` to skip)
+- **Short URL**: `/e/artist-slug` — redirects to the same (ideal for Instagram bios)
+
+**Admin**: Create and copy links from **Admin → Vendors → Experience Links**. Each artist has a slug derived from their name (e.g. `jane-doe`). Copy the full or short URL for Instagram link-in-bio.
+
 ## Version
 
 - Last updated: 2026-02-24
-- Version: 1.0.0
+- Version: 1.1.0

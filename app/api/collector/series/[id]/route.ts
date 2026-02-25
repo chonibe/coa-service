@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const ownedMap = new Map<string, boolean>()
     if (shopifyCustomerId) {
       const { data: owned } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("product_id, shopify_product_id")
         .eq("customer_id", shopifyCustomerId)
       owned?.forEach((item) => {

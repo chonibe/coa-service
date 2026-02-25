@@ -220,8 +220,8 @@ function CartContent() {
               <span className="font-medium">${subtotal.toFixed(2)}</span>
             </div>
 
-            {/* Credit Slider - Only for members with credits */}
-            {canUseCredits() && availableCredits > 0 && (
+            {/* Credit Slider - For any authenticated user with credits */}
+            {availableCredits > 0 && (
               <div className="py-4 border-b border-slate-100">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -251,27 +251,36 @@ function CartContent() {
                     -${creditsDiscount.toFixed(2)}
                   </span>
                 </div>
+
+                {/* Helpful suggestion when slider is at 0 */}
+                {creditsToUse === 0 && maxCreditsForCart > 0 && (
+                  <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-700">
+                    Use {maxCreditsForCart.toLocaleString()} credits to save ${(maxCreditsForCart * 0.10).toFixed(2)} on this order
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Non-member credit promo */}
-            {!user?.isMember && (
+            {/* Purchase credit promo for users with no credits */}
+            {availableCredits === 0 && (
               <div className="py-4 border-b border-slate-100">
-                <div className="bg-violet-50 rounded-lg p-3">
-                  <p className="text-sm text-violet-800 font-medium mb-1">
-                    Become a member to earn credits!
+                <div className="bg-amber-50 rounded-lg p-3">
+                  <p className="text-sm text-amber-800 font-medium mb-1">
+                    Earn credits with every purchase
                   </p>
-                  <p className="text-xs text-violet-600">
-                    Members earn credits that appreciate over time.
+                  <p className="text-xs text-amber-700">
+                    You'll earn <strong>{Math.round(subtotal * 10).toLocaleString()} credits</strong> (${(subtotal).toFixed(2)} value) from this order. 10 credits per $1 spent.
                   </p>
-                  <Link href="/shop/membership">
-                    <Button 
-                      variant="link" 
-                      className="text-violet-700 p-0 h-auto text-xs mt-1"
-                    >
-                      Learn more
-                    </Button>
-                  </Link>
+                  {!user?.isMember && (
+                    <Link href="/shop/membership">
+                      <Button 
+                        variant="link" 
+                        className="text-amber-700 p-0 h-auto text-xs mt-1"
+                      >
+                        Become a member for bonus credits
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}

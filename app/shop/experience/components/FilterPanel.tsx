@@ -155,10 +155,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose }: Fi
                       key={opt.value}
                       onClick={() => onChange({ ...filters, sortBy: opt.value })}
                       className={cn(
-                        'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                        'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
                           ? 'bg-neutral-900 text-white'
-                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                          : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
                       )}
                     >
                       {opt.label}
@@ -198,10 +198,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose }: Fi
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={cn(
-                          'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                          'h-5 px-2 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           filters.tags.includes(tag)
                             ? 'bg-neutral-900 text-white'
-                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
                         )}
                       >
                         {tag} ({count})
@@ -224,10 +224,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose }: Fi
                         key={preset.label}
                         onClick={() => setPriceRange(preset.range)}
                         className={cn(
-                          'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                          'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           isActive
                             ? 'bg-neutral-900 text-white'
-                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
                         )}
                       >
                         {preset.label}

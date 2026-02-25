@@ -441,7 +441,7 @@ export async function POST(request: NextRequest) {
 
           // 6. Update legacy line items for compatibility
           await supabase
-            .from('order_line_items')
+            .from('order_line_items_v2')
             .update({
               fulfillment_status: 'fulfilled',
               tracking_number: order.tracking_number,

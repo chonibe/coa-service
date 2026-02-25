@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Check if the line item exists in the database
     const { data: lineItemData, error: lineItemError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("line_item_id", lineItemId)
       .single()
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Store the certificate URL and access token in the database
     const { error: updateError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .update({
         certificate_url: certificateUrl,
         certificate_token: accessToken,

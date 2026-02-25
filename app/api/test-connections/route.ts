@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log("Testing Supabase connection...")
     const { data, error, status } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("count", { count: "exact", head: true })
 
     if (error) {

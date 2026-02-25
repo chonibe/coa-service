@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import crypto from "crypto"
+import { validateToken } from "@/lib/nfc/token"
 
 export async function GET(
   request: NextRequest,
@@ -10,50 +10,6 @@ export async function GET(
 ) {
   try {
     const { token } = params
-    const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || "your-secret-key"
-
-    // Verify token using same approach as NFC redirect route
-    const base64UrlDecode = (input: string) => {
-      const padded = input.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((input.length + 3) % 4)
-      return Buffer.from(padded, "base64").toString()
-    }
-
-    const getSigningSecret = () => {
-      const secret =
-        process.env.NEXTAUTH_SECRET ||
-        process.env.JWT_SECRET ||
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-
-      if (!secret) {
-        throw new Error("Signing secret is not configured")
-      }
-      return secret
-    }
-
-    const validateToken = (token: string) => {
-      try {
-        const [payloadB64, signatureB64] = token.split(".")
-        if (!payloadB64 || !signatureB64) return null
-
-        const secret = getSigningSecret()
-        const expectedSig = crypto.createHmac("sha256", secret).update(payloadB64).digest("base64")
-        const expectedSigUrl = expectedSig.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
-
-        if (expectedSigUrl !== signatureB64) return null
-
-        const payloadStr = base64UrlDecode(payloadB64)
-        const payload = JSON.parse(payloadStr)
-
-        if (payload.exp && Date.now() > payload.exp) {
-          return null
-        }
-
-        return payload
-      } catch (err) {
-        console.error("Token validation failed:", err)
-        return null
-      }
-    }
 
     const payload = validateToken(token)
     if (!payload) {

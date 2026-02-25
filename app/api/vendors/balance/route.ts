@@ -9,12 +9,16 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const vendorName = searchParams.get("vendorName")
 
-  // Check if this is a vendor request
+  // Check if this is a vendor request or admin request
   if (vendorName) {
     const cookieStore = cookies()
     const sessionVendorName = getVendorFromCookieStore(cookieStore)
     if (sessionVendorName !== vendorName) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      // Not the vendor themselves — check if admin
+      const auth = guardAdminRequest(request)
+      if (auth.kind !== "ok") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
     }
   } else {
     // Admin request

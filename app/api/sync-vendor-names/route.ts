@@ -37,7 +37,7 @@ export async function POST() {
 
     // Fetch line items that don't have a vendor_name
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .is("vendor_name", null)
       .gt("id", startAfter)
@@ -118,7 +118,7 @@ export async function POST() {
 
           // Update line item in database
           const { error: updateError } = await supabase
-            .from("order_line_items")
+            .from("order_line_items_v2")
             .update({
               vendor_name: vendorName,
               updated_at: new Date().toISOString(),

@@ -34,9 +34,18 @@ interface ConfiguratorProps {
   productsSeason2: ShopifyProduct[]
   quizAnswers: QuizAnswers
   onRetakeQuiz: () => void
+  /** Pre-filter by artist when arriving from artist link (e.g. Instagram) */
+  initialFilters?: Pick<FilterState, 'artists'> | null
 }
 
-export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswers, onRetakeQuiz }: ConfiguratorProps) {
+export function Configurator({
+  lamp,
+  productsSeason1,
+  productsSeason2,
+  quizAnswers,
+  onRetakeQuiz,
+  initialFilters,
+}: ConfiguratorProps) {
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const products = activeSeason === 'season1' ? productsSeason1 : productsSeason2
 
@@ -137,6 +146,13 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
   const [filterOpen, setFilterOpen] = useState(false)
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
 
+  // Apply initial artist filter when arriving from artist link (e.g. Instagram)
+  useEffect(() => {
+    if (initialFilters?.artists?.length) {
+      setFilters((prev) => ({ ...prev, artists: initialFilters!.artists }))
+    }
+  }, [initialFilters])
+
   const isGift = quizAnswers.purpose === 'gift'
 
   const filteredProducts = useMemo(() => {
@@ -147,6 +163,20 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
     }
     return result
   }, [products, filters, searchQuery, cartOrder])
+
+  // Show artist's first artworks on the lamp when arriving from artist link.
+  // Must run after filters are applied and filteredProducts has the filtered list.
+  const hasSetInitialArtistLampRef = useRef(false)
+  useEffect(() => {
+    if (hasSetInitialArtistLampRef.current || !initialFilters?.artists?.length || filteredProducts.length === 0) return
+    // Only apply when filters already include our artist (filteredProducts is actually filtered)
+    if (!filters.artists.some((a) => initialFilters!.artists.includes(a))) return
+
+    const ids = filteredProducts.slice(0, 2).map((p) => p.id)
+    setLampPreviewOrder(ids.length >= 2 ? [ids[0], ids[1]] : [ids[0]])
+    setPreviewIndex(0)
+    hasSetInitialArtistLampRef.current = true
+  }, [initialFilters, filters, filteredProducts])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -541,8 +571,10 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
           className={cn(
             'flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
             selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100',
-            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-neutral-50 justify-center',
+            selectorSheetState === 'collapsed' && 'bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-white/50',
+            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 justify-center',
           )}
+          style={selectorSheetState === 'collapsed' ? { backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } : undefined}
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
         >
           {selectorSheetState === 'collapsed' ? (
@@ -627,7 +659,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
                     'relative flex items-center justify-center w-9 h-9 rounded-lg border transition-colors flex-shrink-0',
                     searchQuery
                       ? 'bg-neutral-900 text-white border-neutral-900'
-                      : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100'
+                      : 'bg-white text-neutral-900 border-neutral-900 hover:bg-neutral-50'
                   )}
                   aria-label="Search artworks"
                 >
@@ -647,7 +679,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
               'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
               hasActiveFilters(filters)
                 ? 'bg-neutral-900 text-white border-neutral-900'
-                : 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100'
+                : 'bg-white text-neutral-900 border-neutral-900 hover:bg-neutral-50'
             )}
             aria-label="Open filters"
           >
@@ -681,48 +713,53 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
         )}>
         {/* Active filter pills */}
         {hasActiveFilters(filters) && (
-          <div className="flex-shrink-0 px-5 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
+          <div className="flex-shrink-0 px-5 py-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
             {filters.artists.map((a) => (
               <button
                 key={a}
                 onClick={() => setFilters({ ...filters, artists: filters.artists.filter((x) => x !== a) })}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-xs text-neutral-600 hover:bg-neutral-200 flex-shrink-0"
+                className={cn(
+                  '!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg text-[10px] font-medium leading-none flex-shrink-0',
+                  initialFilters?.artists?.includes(a)
+                    ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                    : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
+                )}
               >
-                {a} <X className="w-2.5 h-2.5" />
+                {a} <X className="w-2 h-2" />
               </button>
             ))}
             {filters.tags.map((t) => (
               <button
                 key={t}
                 onClick={() => setFilters({ ...filters, tags: filters.tags.filter((x) => x !== t) })}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-xs text-neutral-600 hover:bg-neutral-200 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
               >
-                {t} <X className="w-2.5 h-2.5" />
+                {t} <X className="w-2 h-2" />
               </button>
             ))}
             {filters.priceRange && (
               <button
                 onClick={() => setFilters({ ...filters, priceRange: null })}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-xs text-neutral-600 hover:bg-neutral-200 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
               >
                 {filters.priceRange[1] === Infinity ? `$${filters.priceRange[0]}+` : `$${filters.priceRange[0]}–$${filters.priceRange[1]}`}
-                <X className="w-2.5 h-2.5" />
+                <X className="w-2 h-2" />
               </button>
             )}
             {filters.inStockOnly && (
               <button
                 onClick={() => setFilters({ ...filters, inStockOnly: false })}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-xs text-neutral-600 hover:bg-neutral-200 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
               >
-                In stock <X className="w-2.5 h-2.5" />
+                In stock <X className="w-2 h-2" />
               </button>
             )}
             {filters.inCartOnly && (
               <button
                 onClick={() => setFilters({ ...filters, inCartOnly: false })}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-xs text-neutral-600 hover:bg-neutral-200 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
               >
-                In cart <X className="w-2.5 h-2.5" />
+                In cart <X className="w-2 h-2" />
               </button>
             )}
             <button
@@ -762,7 +799,8 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
               <button
                 type="button"
                 onClick={cycleSelectorState}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-b border-neutral-100 active:bg-neutral-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-b border-white/60 bg-white/90 backdrop-blur-xl backdrop-saturate-150 active:bg-white transition-colors"
+                style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
                 aria-label="Expand artworks"
               >
                 <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-400" />
@@ -783,6 +821,7 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
               if (!inSeason1 && activeSeason !== 'season2') setActiveSeasonAndReset('season2')
               setScrollToProductId(product.id)
             }}
+            onViewLampDetail={setDetailProduct}
             isGift={isGift}
           />
         </div>
@@ -800,15 +839,88 @@ export function Configurator({ lamp, productsSeason1, productsSeason2, quizAnswe
       {/* First-session contextual wizard */}
       <ExperienceWizard />
 
-      {/* Artwork detail drawer */}
+      {/* Artwork / lamp detail drawer */}
       {detailProduct && (
         <ArtworkDetail
           product={detailProduct}
-          isSelected={cartOrder.includes(detailProduct.id)}
+          productBadges={
+            detailProduct.id === lamp.id
+              ? [
+                  { label: 'Free Worldwide Shipping', icon: 'globe' as const },
+                  { label: '12 months guarantee', icon: 'shield' as const },
+                  { label: 'Easy 30 days returns', icon: 'rotate' as const },
+                ]
+              : undefined
+          }
+          hideScarcityBar={detailProduct.id === lamp.id}
+          productIncludes={
+            detailProduct.id === lamp.id
+              ? [
+                  { label: 'A Street Lamp', icon: 'lamp' as const },
+                  { label: 'USB-C cable – 150mm length', icon: 'cable' as const },
+                  { label: 'Internal magnet mount', icon: 'magnet' as const },
+                  { label: 'EU/US wall adapter', icon: 'plug' as const },
+                  { label: 'Care instruction booklet', icon: 'book' as const },
+                  { label: 'Protective bag', icon: 'bag' as const },
+                ]
+              : undefined
+          }
+          productSpecs={
+            detailProduct.id === lamp.id
+              ? [
+                  { title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] },
+                  { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] },
+                  {
+                    title: 'Materials',
+                    icon: 'box' as const,
+                    items: [
+                      'Silver anodized matte finish, Aluminum 6063',
+                      'Polycarbonate transparent and double matte optical diffusion',
+                      'Neodymium magnet built into the frame (N52)',
+                    ],
+                  },
+                  {
+                    title: 'Light',
+                    icon: 'sun' as const,
+                    items: [
+                      'Energy efficient, heat resistant high output LED / 500 lumen, lasts up to 50,000 hours',
+                      'Light temperatures: 2700K (Warm White), 3000K (Soft White), 5000K (Daylight)',
+                      'Touch dimmer with multiple light options',
+                    ],
+                  },
+                  {
+                    title: 'Battery',
+                    icon: 'battery' as const,
+                    items: [
+                      '2500 mAh 3.7V 18650 rechargeable lithium ion',
+                      'Up to 8 hours battery life with constant use',
+                    ],
+                  },
+                  {
+                    title: 'Charging',
+                    icon: 'zap' as const,
+                    items: [
+                      'Type C charging port',
+                      '1.8 m 360° magnetic head charging cable',
+                      'EU/US wall adapter',
+                    ],
+                  },
+                ]
+              : undefined
+          }
+          isSelected={
+            detailProduct.id === lamp.id
+              ? lampQuantity > 0
+              : cartOrder.includes(detailProduct.id)
+          }
           onToggleSelect={() => {
-            const wasInCart = cartOrder.includes(detailProduct.id)
-            handleAddToCart(detailProduct)
-            if (!wasInCart) setDetailProduct(null)
+            if (detailProduct.id === lamp.id) {
+              setLampQuantity((q) => (q > 0 ? 0 : 1))
+            } else {
+              const wasInCart = cartOrder.includes(detailProduct.id)
+              handleAddToCart(detailProduct)
+              if (!wasInCart) setDetailProduct(null)
+            }
           }}
           onClose={() => setDetailProduct(null)}
         />

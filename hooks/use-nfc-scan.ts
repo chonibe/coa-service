@@ -1,82 +1,170 @@
-import { useState, useCallback } from 'react';
+"use client"
 
-interface NFCTagData {
-  serialNumber: string;
-  // Add other relevant NFC tag properties
+import { useState, useCallback, useRef, useEffect } from "react"
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface NDEFRecordData {
+  recordType: string
+  mediaType?: string
+  data: string
 }
 
-interface UseNFCScanOptions {
-  onSuccess?: (tagData: NFCTagData) => void;
-  onError?: (error: Error) => void;
+export interface NFCTagData {
+  serialNumber: string
+  records: NDEFRecordData[]
 }
+
+export interface UseNFCScanOptions {
+  onSuccess?: (tagData: NFCTagData) => void
+  onError?: (error: Error) => void
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export const useNFCScan = ({ onSuccess, onError }: UseNFCScanOptions = {}) => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const isSupported = typeof window !== 'undefined' && 'NDEFReader' in window;
+  // Persist the NDEFReader instance so stopScanning can abort it
+  const readerRef = useRef<NDEFReader | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
+  const isSupported =
+    typeof window !== "undefined" && "NDEFReader" in window
+
+  const isWriteSupported = isSupported // write uses the same NDEFReader API
+
+  // --- Vibration helper ---
   const triggerVibration = useCallback((pattern: number | number[] = 200) => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(pattern);
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(pattern)
     }
-  }, []);
+  }, [])
 
+  // --- Start scanning ---
   const startScanning = useCallback(async () => {
     if (!isSupported) {
-      const errorMsg = 'Web NFC is not supported in this browser';
-      setError(errorMsg);
-      onError?.(new Error(errorMsg));
-      return;
+      const errorMsg = "Web NFC is not supported in this browser"
+      setError(errorMsg)
+      onError?.(new Error(errorMsg))
+      return
     }
 
     try {
-      setIsScanning(true);
-      setError(null);
+      setIsScanning(true)
+      setError(null)
 
-      const ndef = new NDEFReader();
-      await ndef.scan();
+      const controller = new AbortController()
+      abortRef.current = controller
 
-      ndef.addEventListener('reading', (event: any) => {
-        const serialNumber = event.serialNumber;
-        const tagData: NFCTagData = { serialNumber };
-        
-        triggerVibration([100, 50, 100]); // Triple pulse for success
-        onSuccess?.(tagData);
-        setIsScanning(false);
-      });
+      const ndef = new NDEFReader()
+      readerRef.current = ndef
 
-      ndef.addEventListener('readingerror', () => {
-        const errorMsg = 'Could not read NFC tag. Try again.';
-        setError(errorMsg);
-        // We don't stop scanning on a single reading error to allow the user to adjust position
-      });
+      await ndef.scan({ signal: controller.signal })
 
-      ndef.addEventListener('error', (event: any) => {
-        const errorMsg = event.message || 'NFC scanning error';
-        setError(errorMsg);
-        onError?.(new Error(errorMsg));
-        setIsScanning(false);
-      });
+      ndef.addEventListener(
+        "reading",
+        ((event: NDEFReadingEvent) => {
+          const serialNumber = event.serialNumber ?? "unknown"
+
+          // Parse all NDEF message records
+          const records: NDEFRecordData[] = []
+          if (event.message?.records) {
+            for (const record of event.message.records) {
+              const decoder = new TextDecoder()
+              records.push({
+                recordType: record.recordType,
+                mediaType: record.mediaType || undefined,
+                data: record.data ? decoder.decode(record.data) : "",
+              })
+            }
+          }
+
+          const tagData: NFCTagData = { serialNumber, records }
+
+          triggerVibration([100, 50, 100]) // triple pulse
+          onSuccess?.(tagData)
+          setIsScanning(false)
+        }) as EventListener,
+        { signal: controller.signal }
+      )
+
+      ndef.addEventListener(
+        "readingerror",
+        (() => {
+          const errorMsg = "Could not read NFC tag. Try again."
+          setError(errorMsg)
+          // Don't stop scanning – user can adjust position
+        }) as EventListener,
+        { signal: controller.signal }
+      )
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'NFC scanning failed';
-      setError(errorMsg);
-      onError?.(new Error(errorMsg));
-      setIsScanning(false);
+      const errorMsg =
+        err instanceof Error ? err.message : "NFC scanning failed"
+      setError(errorMsg)
+      onError?.(new Error(errorMsg))
+      setIsScanning(false)
     }
-  }, [onSuccess, onError, isSupported, triggerVibration]);
+  }, [onSuccess, onError, isSupported, triggerVibration])
 
+  // --- Stop scanning ---
   const stopScanning = useCallback(() => {
-    setIsScanning(false);
-    setError(null);
-  }, []);
+    abortRef.current?.abort()
+    abortRef.current = null
+    readerRef.current = null
+    setIsScanning(false)
+    setError(null)
+  }, [])
+
+  // --- Write a URL to an NFC tag ---
+  const writeTag = useCallback(
+    async (url: string): Promise<boolean> => {
+      if (!isSupported) {
+        const errorMsg = "Web NFC is not supported in this browser"
+        setError(errorMsg)
+        onError?.(new Error(errorMsg))
+        return false
+      }
+
+      try {
+        setError(null)
+        const ndef = new NDEFReader()
+        await ndef.write({
+          records: [{ recordType: "url", data: url }],
+        })
+        triggerVibration([100, 50, 200])
+        return true
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to write NFC tag"
+        setError(errorMsg)
+        onError?.(new Error(errorMsg))
+        return false
+      }
+    },
+    [isSupported, onError, triggerVibration]
+  )
+
+  // --- Cleanup on unmount ---
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   return {
     startScanning,
     stopScanning,
     isScanning,
     isSupported,
+    isWriteSupported,
     triggerVibration,
-    error
-  };
-}; 
+    writeTag,
+    error,
+  }
+}

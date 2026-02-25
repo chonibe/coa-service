@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { createChinaDivisionClient } from '../chinadivision/client'
+import { createRefundDeductionByVendor } from '../banking/refund-deduction'
 
 /**
  * ============================================================================
@@ -290,6 +291,47 @@ export async function syncShopifyOrder(
     // Upsert Shopify line items
     const { error: liError } = await supabase.from('order_line_items_v2').upsert(dbLineItems, { onConflict: 'line_item_id' })
     if (liError) throw liError
+
+    // 3b. Create refund deductions for items that became inactive
+    // This ensures the ledger reflects cancelled/refunded orders
+    const isCancelledOrder = order.financial_status === 'voided' || order.cancelled_at !== null
+    const inactiveItems = dbLineItems.filter((li: any) => li.status === 'inactive' && li.vendor_name)
+
+    if (inactiveItems.length > 0) {
+      for (const item of inactiveItems) {
+        try {
+          // Check if there's a payout_earned entry for this line item
+          const { data: earnedEntry } = await supabase
+            .from('collector_ledger_entries')
+            .select('id, amount, collector_identifier')
+            .eq('line_item_id', item.line_item_id)
+            .eq('transaction_type', 'payout_earned')
+            .eq('currency', 'USD')
+            .maybeSingle()
+
+          if (earnedEntry) {
+            const deductionResult = await createRefundDeductionByVendor(
+              item.vendor_name,
+              item.line_item_id,
+              Math.abs(Number(earnedEntry.amount)),
+              supabase,
+              {
+                order_id: orderId,
+                order_name: orderName,
+                order_financial_status: order.financial_status,
+                is_cancelled_order: isCancelledOrder,
+                source: 'order_sync',
+              }
+            )
+            if (deductionResult.success && deductionResult.amountDeducted > 0) {
+              results.push(`Refund deduction: -$${deductionResult.amountDeducted} for ${item.line_item_id}`)
+            }
+          }
+        } catch (deductionError) {
+          console.warn(`[order-sync] Failed to create refund deduction for ${item.line_item_id}:`, deductionError)
+        }
+      }
+    }
 
     // 4. Warehouse items enrichment - REMOVED
     // We no longer ingest line items from the warehouse. 

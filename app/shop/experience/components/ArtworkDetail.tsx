@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, User, FileText, ZoomIn, ZoomOut } from 'lucide-react'
+import { Check, ChevronDown, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -20,11 +20,19 @@ interface ArtworkDetailProps {
   isSelected: boolean
   onToggleSelect: () => void
   onClose: () => void
+  /** Optional badges shown above What's included (e.g. guarantee, returns, shipping) */
+  productBadges?: { label: string; icon: 'shield' | 'rotate' | 'globe' }[]
+  /** When true, hide the scarcity bar (e.g. for lamp product) */
+  hideScarcityBar?: boolean
+  /** Optional list of what's included with icon (e.g. for lamp product) */
+  productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
+  /** Optional specifications sections with icon (e.g. Dimensions, Weight, Materials) */
+  productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, productBadges, productIncludes, productSpecs, hideScarcityBar }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -35,6 +43,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
   const [artistLoading, setArtistLoading] = useState(false)
   const [showArtistBio, setShowArtistBio] = useState(false)
   const [showDescription, setShowDescription] = useState(false)
+  const [showSpecs, setShowSpecs] = useState(false)
+  const [showIncludes, setShowIncludes] = useState(false)
   const [imageZoom, setImageZoom] = useState(1)
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false
@@ -48,6 +58,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
     setImageIndex(0)
     setShowDescription(false)
     setShowArtistBio(false)
+    setShowSpecs(false)
+    setShowIncludes(false)
     setImageZoom(1)
     setHasUserInteracted(false)
   }, [product.id])
@@ -202,15 +214,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
           animate={{ x: 0, y: 0 }}
           exit={isDesktop ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative z-10 w-full md:w-[420px] max-h-[90dvh] md:h-[85vh] md:max-h-[85vh] bg-white md:rounded-r-2xl md:rounded-tl-none rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
+          className="relative z-10 w-full md:w-[420px] max-h-[95dvh] md:h-[85vh] md:max-h-[85vh] bg-white md:rounded-r-2xl md:rounded-tl-none rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
         >
           {/* Top: drag handle on mobile only */}
           <div className="flex-shrink-0 md:hidden flex justify-center pt-2 pb-1">
             <div className="w-10 h-1 bg-neutral-300 rounded-full" />
           </div>
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-4">
+          {/* Scrollable content — pb allows content to scroll behind the action bar */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-4 pb-64">
             {/* Swipeable image gallery — shows artist image when About section is open */}
             {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
               <div
@@ -329,6 +341,135 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
               </div>
             )}
 
+            {/* What's included (collapsible) */}
+            {productIncludes && productIncludes.length > 0 && (
+              <div className="px-4 pb-3">
+                <button
+                  onClick={() => setShowIncludes(!showIncludes)}
+                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">
+                      <Package className="w-4 h-4 text-neutral-400" />
+                    </div>
+                    <span className="text-sm font-medium text-neutral-700 group-hover:text-neutral-900 transition-colors">
+                      What&apos;s included
+                    </span>
+                  </div>
+                  <ChevronDown className={cn(
+                    'w-4 h-4 text-neutral-400 transition-transform',
+                    showIncludes && 'rotate-180'
+                  )} />
+                </button>
+                <AnimatePresence>
+                  {showIncludes && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex flex-wrap gap-2 pt-2 pb-1 justify-center">
+                        {productIncludes.map((item, i) => {
+                          const Icon = {
+                            lamp: Lamp,
+                            ruler: Ruler,
+                            cable: Cable,
+                            plug: Plug,
+                            book: BookOpen,
+                            magnet: Magnet,
+                            package: Package,
+                            gift: Gift,
+                            bag: ShoppingBag,
+                          }[item.icon]
+                          return (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium"
+                            >
+                              <Icon className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
+                              {item.label}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Specifications (collapsible) */}
+            {productSpecs && productSpecs.length > 0 && (
+              <div className="px-4 pb-3">
+                <button
+                  onClick={() => setShowSpecs(!showSpecs)}
+                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">
+                      <List className="w-4 h-4 text-neutral-400" />
+                    </div>
+                    <span className="text-sm font-medium text-neutral-700 group-hover:text-neutral-900 transition-colors">
+                      Specifications
+                    </span>
+                  </div>
+                  <ChevronDown className={cn(
+                    'w-4 h-4 text-neutral-400 transition-transform',
+                    showSpecs && 'rotate-180'
+                  )} />
+                </button>
+                <AnimatePresence>
+                  {showSpecs && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2 pt-2 pb-1">
+                        {productSpecs.map((spec, i) => {
+                          const SpecIcon = spec.icon
+                            ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon]
+                            : List
+                          const isSingleValue = spec.items.length === 1
+                          return (
+                            <div
+                              key={i}
+                              className="rounded-xl border border-neutral-100 bg-neutral-50/50 px-4 py-3"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <SpecIcon className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+                                <h4 className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                                  {spec.title}
+                                </h4>
+                              </div>
+                              {isSingleValue ? (
+                                <p className="text-sm text-neutral-700 leading-snug">
+                                  {spec.items[0]}
+                                </p>
+                              ) : (
+                                <ul className="space-y-1.5">
+                                  {spec.items.map((item, j) => (
+                                    <li key={j} className="text-sm text-neutral-700 leading-relaxed flex items-start gap-2">
+                                      <span className="w-1 h-1 rounded-full bg-neutral-400 mt-1.5 flex-shrink-0" />
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* Description (expandable) — product description */}
             {description && (
               <div className="px-4 pb-3">
@@ -341,10 +482,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-neutral-400" />
+                      <ImageIcon className="w-4 h-4 text-neutral-400" />
                     </div>
                     <span className="text-sm font-medium text-neutral-700 group-hover:text-neutral-900 transition-colors">
-                      Description
+                      Artwork details
                     </span>
                   </div>
                   <ChevronDown className={cn(
@@ -428,9 +569,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
 
           </div>
 
-          {/* Sticky action bar */}
-          <div className="flex-shrink-0 relative pt-0">
+          {/* Sticky action bar — absolute overlay so content scrolls behind for glass effect */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 pt-0">
             {/* Scarcity bar — centered on top border */}
+            {!hideScarcityBar && (
             <div className="absolute left-0 right-4 top-0 -translate-y-1/2 z-10">
               <ScarcityBadge
                 quantityAvailable={quantityAvailable}
@@ -443,7 +585,70 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
                 className="w-full"
               />
             </div>
-            <div className="p-4 pt-6 border-t border-neutral-100 space-y-3">
+            )}
+            <div
+              className={cn('p-5 space-y-3 bg-white/80 backdrop-blur-lg border-t border-white/50 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]', productBadges?.length ? 'pt-4' : 'pt-7')}
+              style={{ backdropFilter: 'blur(16px) saturate(140%)', WebkitBackdropFilter: 'blur(16px) saturate(140%)' }}
+            >
+              {/* Guarantee / returns / shipping badges — one top, two bottom, close to vendor */}
+              {productBadges && productBadges.length > 0 && (
+                <div className="flex flex-col items-center gap-2 pb-1">
+                  {productBadges.slice(0, 1).map((item, i) => {
+                    const Icon = { shield: Shield, rotate: RotateCcw, globe: Globe }[item.icon]
+                    const styles = item.icon === 'shield'
+                      ? 'bg-emerald-50 text-emerald-800'
+                      : item.icon === 'rotate'
+                        ? 'bg-sky-50 text-sky-800'
+                        : 'bg-violet-50 text-violet-800'
+                    const iconStyles = item.icon === 'shield'
+                      ? 'text-emerald-600'
+                      : item.icon === 'rotate'
+                        ? 'text-sky-600'
+                        : 'text-violet-600'
+                    return (
+                      <span
+                        key={i}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium',
+                          styles
+                        )}
+                      >
+                        <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', iconStyles)} />
+                        {item.label}
+                      </span>
+                    )
+                  })}
+                  {productBadges.length > 1 && (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {productBadges.slice(1).map((item, i) => {
+                        const Icon = { shield: Shield, rotate: RotateCcw, globe: Globe }[item.icon]
+                        const styles = item.icon === 'shield'
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : item.icon === 'rotate'
+                            ? 'bg-sky-50 text-sky-800'
+                            : 'bg-violet-50 text-violet-800'
+                        const iconStyles = item.icon === 'shield'
+                          ? 'text-emerald-600'
+                          : item.icon === 'rotate'
+                            ? 'text-sky-600'
+                            : 'text-violet-600'
+                        return (
+                          <span
+                            key={i}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium',
+                              styles
+                            )}
+                          >
+                            <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', iconStyles)} />
+                            {item.label}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="space-y-2 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center min-w-0 w-full">
                   {artist && (
@@ -454,6 +659,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose }: 
                   <h2 className="text-sm font-semibold text-neutral-900 tracking-tight mt-0.5">
                     {product.title}
                   </h2>
+                  {editionSizeNum && editionSizeNum > 0 && (
+                    <span className="mt-1 text-[10px] text-neutral-500 uppercase tracking-wider">
+                      Limited Edition of {editionSizeNum}
+                    </span>
+                  )}
                   {isSoldOut && (
                     <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded w-fit mt-1">
                       Sold out

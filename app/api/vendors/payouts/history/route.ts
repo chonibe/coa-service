@@ -1,19 +1,33 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 import { createClient } from "@/lib/supabase/server"
 
-export async function GET() {
-  const supabase = createClient()
-  
-  try {
-    // Check for admin authentication
-    // This would normally check for admin authentication, but we're skipping it for brevity
+export async function GET(request: NextRequest) {
+  const auth = guardAdminRequest(request)
+  if (auth.kind !== "ok") {
+    return auth.response
+  }
 
-    // Get all payout history
-    const { data: payouts, error } = await supabase
+  const supabase = createClient()
+
+  try {
+    const { searchParams } = request.nextUrl
+    const vendorName = searchParams.get("vendorName")
+    const limit = parseInt(searchParams.get("limit") || "200")
+
+    // Build query with optional vendor filter
+    let query = supabase
       .from("vendor_payouts")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(100)
+      .limit(Math.min(limit, 500)) // Cap at 500
+
+    if (vendorName) {
+      query = query.eq("vendor_name", vendorName)
+    }
+
+    const { data: payouts, error } = await query
 
     if (error) {
       console.error("Error fetching payout history:", error)

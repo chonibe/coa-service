@@ -20,10 +20,15 @@ export type CollectorTransactionType =
   | 'perk_redemption'
   | 'payout_earned'      // USD deposited when line items are fulfilled
   | 'payout_withdrawal'  // USD withdrawn when payout is processed
+  | 'payout_reversal'    // USD restored when payout is rejected or fails
   | 'payout_balance_purchase' // USD spent from payout balance for store purchases
   | 'refund_deduction'   // USD deducted for refunds
   | 'adjustment'         // Manual balance adjustments
-  | 'platform_fee';      // Platform fees or commissions
+  | 'platform_fee'       // Platform fees or commissions
+  | 'early_access'       // Credits spent for early access to products/events
+  | 'exclusive_content'  // Credits spent for exclusive content access
+  | 'membership_upgrade' // Credits spent to upgrade membership tier
+  | 'referral_bonus';    // Credits earned from referring a new collector
 
 // Account types
 export type CollectorAccountType = 'customer' | 'vendor';

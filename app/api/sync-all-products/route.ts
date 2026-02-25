@@ -148,7 +148,7 @@ async function fetchExistingEditionData(productId: string) {
 
   try {
     const { data, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .order("edition_number", { ascending: true })
@@ -267,7 +267,7 @@ async function cleanupDuplicateLineItems(productId: string) {
   try {
     // Fetch all line items for this product
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .or(`product_id.eq.${productId},product_id.is.null`)
       .order("line_item_id", { ascending: true })
@@ -352,7 +352,7 @@ async function cleanupDuplicateLineItems(productId: string) {
 
             // Update the item status to "removed" and set edition_number to null
             const { error: updateError } = await supabase
-              .from("order_line_items")
+              .from("order_line_items_v2")
               .update({
                 status: "removed",
                 removed_reason: reason,
@@ -395,7 +395,7 @@ async function resequenceEditionNumbers(productId: string) {
     // Get all active line items for this product, ordered by creation date
     // IMPORTANT: Only select items with status="active" to exclude removed items
     const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active") // Explicitly filter for active items only
@@ -418,7 +418,7 @@ async function resequenceEditionNumbers(productId: string) {
 
     for (const item of activeItems) {
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
           updated_at: new Date().toISOString(),
@@ -458,7 +458,7 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
       // Check if this line item already has an edition number
       console.log(`Checking if line item already exists in database`)
       const { data: existingItems, error: queryError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("*")
         .eq("order_id", assignment.order_id)
         .eq("line_item_id", assignment.line_item_id)
@@ -514,7 +514,7 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
           }
 
           const { error: updateError } = await supabase
-            .from("order_line_items")
+            .from("order_line_items_v2")
             .update(updateData)
             .eq("order_id", assignment.order_id)
             .eq("line_item_id", assignment.line_item_id)
@@ -541,7 +541,7 @@ async function updateDatabaseWithEditionNumbers(editionAssignments, forceSync) {
         // Line item doesn't exist, insert it
         console.log(`Line item doesn't exist in database, inserting new record`)
 
-        const { error: insertError } = await supabase.from("order_line_items").insert({
+        const { error: insertError } = await supabase.from("order_line_items_v2").insert({
           order_id: assignment.order_id,
           order_name: assignment.order_name,
           line_item_id: assignment.line_item_id,

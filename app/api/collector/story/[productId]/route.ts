@@ -81,7 +81,7 @@ export async function POST(
 
     // Verify collector owns this artwork
     const { data: ownership, error: ownershipError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select(`
         id,
         orders!inner(customer_email)

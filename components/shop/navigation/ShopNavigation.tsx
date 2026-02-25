@@ -45,6 +45,8 @@ export interface ShopNavigationProps {
   // Wishlist
   wishlistCount?: number
   onWishlistClick?: () => void
+  // Credits
+  creditBalance?: number
   // Account
   onAccountClick?: () => void
   // Modal state control
@@ -75,6 +77,7 @@ export function ShopNavigation({
   cartLoading,
   wishlistCount = 0,
   onWishlistClick,
+  creditBalance = 0,
   onAccountClick,
   isModalOpen: controlledModalOpen,
   onModalToggle: controlledModalToggle,
@@ -158,6 +161,7 @@ export function ShopNavigation({
         isModalOpen={isModalOpen}
         cartCount={cartItemCount}
         wishlistCount={wishlistCount}
+        creditBalance={creditBalance}
         logoSrc={logoSrc}
         navigation={navigation}
         onToggleModal={handleToggleModal}

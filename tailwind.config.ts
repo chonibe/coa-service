@@ -65,6 +65,14 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // App Shell Colors (unified mobile-first chrome)
+        'app': {
+          'chrome': 'var(--app-chrome-bg)',
+          'chrome-text': 'var(--app-chrome-text)',
+          'chrome-inactive': 'var(--app-chrome-text-inactive)',
+          'chrome-border': 'var(--app-chrome-border)',
+          'content': 'var(--app-content-bg)',
+        },
         // Impact Theme Colors
         'impact': {
           'bg': '#ffffff',

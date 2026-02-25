@@ -6,6 +6,8 @@ import { getPayPalPayoutStatus } from "@/lib/paypal/payouts"
 import { notifyPayoutProcessed, notifyPayoutFailed } from "@/lib/notifications/payout-notifications"
 import { sendInvoiceEmail } from "@/lib/invoices/email-service"
 import { createPayPalClient } from "@/lib/paypal/client"
+import { reversePayoutWithdrawal } from "@/lib/banking/payout-reversal"
+import { invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
 
 /**
  * Verify PayPal webhook signature using PayPal's verification API
@@ -194,6 +196,9 @@ async function handlePayoutSuccess(event: any, supabase: ReturnType<typeof creat
         // Don't fail the webhook if withdrawal recording fails
       }
 
+      // Invalidate balance cache after recording withdrawal
+      invalidateVendorBalanceCache(payout.vendor_name)
+
       // Send notifications
       await notifyPayoutProcessed(payout.vendor_name, {
         vendorName: payout.vendor_name,
@@ -250,6 +255,24 @@ async function handlePayoutFailed(event: any, supabase: ReturnType<typeof create
         updated_at: new Date().toISOString(),
       })
       .eq("id", payout.id)
+
+    // Reverse the withdrawal in the ledger (restores vendor balance)
+    try {
+      const reversalResult = await reversePayoutWithdrawal(
+        payout.vendor_name,
+        payout.id,
+        parseFloat(payout.amount.toString()),
+        supabase
+      )
+      if (!reversalResult.success) {
+        console.error(`Failed to reverse payout withdrawal for payout ${payout.id}:`, reversalResult.error)
+      }
+    } catch (error) {
+      console.error(`Error reversing payout withdrawal for payout ${payout.id}:`, error)
+    }
+
+    // Invalidate balance cache
+    invalidateVendorBalanceCache(payout.vendor_name)
 
     // Send failure notification
     await notifyPayoutFailed(payout.vendor_name, {

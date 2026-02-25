@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "patch-package",
+"postinstall": "patch-package",
     "dev": "next dev",
     "typecheck:collector": "tsc -p tsconfig.collector.json --noEmit",
     "build": "next build",
@@ -191,6 +191,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3",
+    "vercel": "^39.0.0",
     "whatwg-fetch": "^3.6.20"
   }
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, X, ChevronDown, ChevronUp, Percent } from 'lucide-react'
+import { Loader2, X, ChevronDown, ChevronUp, Percent, Info } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +14,8 @@ interface OrderBarProps {
   onLampQuantityChange: (qty: number) => void
   onRemoveArtwork: (id: string) => void
   onSelectArtwork?: (product: ShopifyProduct) => void
+  /** Called when user taps info on the lamp row — opens lamp detail drawer */
+  onViewLampDetail?: (product: ShopifyProduct) => void
   isGift: boolean
   /** Rendered at the top of the mobile fixed panel — used for the collapsed Artworks bar */
   mobileTopSlot?: React.ReactNode
@@ -126,6 +128,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
   onLampQuantityChange,
   onRemoveArtwork,
   onSelectArtwork,
+  onViewLampDetail,
   isGift,
   mobileTopSlot,
 }, ref) {
@@ -134,7 +137,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
   const [giftNote, setGiftNote] = useState('')
   const [showGiftNote, setShowGiftNote] = useState(false)
   const [mobileExpanded, setMobileExpanded] = useState(false)
-  const [desktopCartExpanded, setDesktopCartExpanded] = useState(true)
+  const [desktopCartExpanded, setDesktopCartExpanded] = useState(false)
 
   const ARTWORKS_PER_FREE_LAMP = 14 // 7.5% each = 100%
   const DISCOUNT_PER_ARTWORK = 7.5
@@ -314,26 +317,27 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
   const lineItemsContent = (
     <div className="space-y-0 min-w-0 overflow-x-hidden">
       {/* Lamp row */}
-      <div
-        className={cn(
-          'flex items-center gap-3 h-11 min-w-0 transition-opacity duration-200',
-          lampQuantity === 0 && 'opacity-50'
-        )}
-      >
-        <div className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-neutral-500" stroke="currentColor" strokeWidth={1.5}>
+      <div className="flex items-center gap-3 min-h-[44px] min-w-0 pb-3 transition-opacity duration-200">
+        <div
+          className={cn(
+            'flex items-center gap-3 flex-1 min-w-0',
+            lampQuantity === 0 && 'opacity-50'
+          )}
+        >
+        <div className="w-6 h-6 rounded bg-neutral-200/80 flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-neutral-700" stroke="currentColor" strokeWidth={1.5}>
             <path d="M9 21h6M12 3v1M18.36 5.64l-.71.71M21 12h-1M4 12H3M5.64 5.64l.71.71" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M8 14a4 4 0 118 0c0 1.1-.6 2.1-1.5 2.6L14 18H10l-.5-1.4A3.96 3.96 0 018 14z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <span className="flex-1 min-w-0 text-sm text-neutral-800 truncate">{lamp.title}</span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-neutral-950 truncate">{lamp.title}</span>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {lampQuantity > 0 && lampSavings > 0 && (
-            <span className="text-xs text-neutral-400 line-through tabular-nums">${(lampQuantity * lampPrice).toFixed(2)}</span>
+            <span className="text-xs text-neutral-500 line-through tabular-nums">${(lampQuantity * lampPrice).toFixed(2)}</span>
           )}
           <span className={cn(
             'text-sm tabular-nums',
-            lampQuantity === 0 && 'line-through text-neutral-400',
+            lampQuantity === 0 && 'line-through text-neutral-500',
             lampQuantity > 0 && lampSavings > 0 && 'text-green-700 font-medium'
           )}>
             {lampQuantity > 0
@@ -343,27 +347,54 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
               : `$${lampPrice.toFixed(2)}`}
           </span>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => onLampQuantityChange(Math.max(0, lampQuantity - 1))}
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-neutral-200 text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            disabled={lampQuantity === 0}
-            aria-label="Decrease lamp quantity"
-          >
-            <span className="text-sm font-medium">−</span>
-          </button>
-          <span className="w-6 text-center text-sm font-medium tabular-nums">{lampQuantity}</span>
-          <button
-            type="button"
-            onClick={() => onLampQuantityChange(Math.min(99, lampQuantity + 1))}
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-neutral-200 text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            disabled={lampQuantity >= 99}
-            aria-label="Increase lamp quantity"
-          >
-            <span className="text-sm font-medium">+</span>
-          </button>
         </div>
+        {onViewLampDetail && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onViewLampDetail(lamp) }}
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+            aria-label="View lamp details"
+          >
+            <Info className="w-4 h-4" />
+          </button>
+        )}
+        {lampQuantity === 0 ? (
+          <button
+            type="button"
+            onClick={() => onLampQuantityChange(1)}
+            className="w-10 h-8 text-center text-sm font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
+            aria-label="Add lamp"
+          >
+            Add
+          </button>
+        ) : (
+          <div
+            className="w-10 h-8 rounded border border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150 flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+            style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+          >
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={lampQuantity}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === '') {
+                  onLampQuantityChange(0)
+                  return
+                }
+                const n = parseInt(v, 10)
+                if (!Number.isNaN(n)) onLampQuantityChange(Math.max(0, Math.min(99, n)))
+              }}
+              onBlur={(e) => {
+                const v = e.target.value
+                if (v === '' || Number.isNaN(parseInt(v, 10))) onLampQuantityChange(0)
+              }}
+              className="w-full h-full text-center text-sm font-medium tabular-nums bg-transparent text-neutral-900 focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              aria-label="Lamp quantity"
+            />
+          </div>
+        )}
       </div>
 
       {/* Discount progress bar */}
@@ -389,28 +420,24 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
                   onSelectArtwork && 'cursor-pointer hover:bg-neutral-50 transition-colors -mx-2 px-2 rounded'
                 )}
               >
-                <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-neutral-100">
+                <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-neutral-200/80 ring-1 ring-neutral-200/80">
                   {artImage ? (
                     <Image src={artImage} alt={art.title} width={24} height={24} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-neutral-200" />
                   )}
                 </div>
-                <span className={cn('flex-1 min-w-0 text-sm text-neutral-800 truncate', isSoldOut && 'line-through text-neutral-400')}>
+                <span className={cn('flex-1 min-w-0 text-sm font-medium text-neutral-950 truncate', isSoldOut && 'line-through text-neutral-500')}>
                   {art.title}
                 </span>
-                <span className="text-sm tabular-nums">${artPrice.toFixed(2)}</span>
-                {selectedArtworks.length > 1 ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id) }}
-                    className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0"
-                    aria-label="Remove artwork"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <div className="w-6 flex-shrink-0" />
-                )}
+                <span className="text-sm font-medium tabular-nums text-neutral-950">${artPrice.toFixed(2)}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id) }}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors flex-shrink-0"
+                  aria-label="Remove artwork"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </motion.div>
             )
           })}
@@ -418,22 +445,22 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
       </div>
 
       {/* Divider + total */}
-      <div className="flex items-center justify-between pt-3 border-t border-neutral-200 mt-2">
-        <span className="text-sm font-semibold text-neutral-900">
+      <div className="flex items-center justify-between pt-3 border-t border-neutral-300 mt-2">
+        <span className="text-sm font-semibold text-neutral-950">
           Total ({itemCount} {itemCount === 1 ? 'item' : 'items'})
         </span>
-        <span className="text-base font-semibold text-neutral-900">
+        <span className="text-base font-semibold text-neutral-950">
           <AnimatedPrice value={total} />
         </span>
       </div>
-      <p className="text-xs text-neutral-400 mt-0.5">Free shipping</p>
+      <p className="text-xs text-neutral-600 mt-0.5">Free shipping</p>
 
       {/* Gift note */}
       {isGift && (
         <div className="mt-3">
           <button
             onClick={() => setShowGiftNote(!showGiftNote)}
-            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
           >
             Add a gift note
             {showGiftNote ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -454,7 +481,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
                   rows={3}
                   className="w-full mt-2 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
                 />
-                <p className="text-[10px] text-neutral-400 text-right mt-0.5">{giftNote.length}/500</p>
+                <p className="text-[10px] text-neutral-600 text-right mt-0.5">{giftNote.length}/500</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -465,68 +492,81 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
 
   return (
     <>
-      {/* Desktop order bar */}
+      {/* Desktop order bar — liquid glass */}
       <div
         data-wizard-order-bar
-        className="hidden md:block min-w-0 overflow-x-hidden bg-white border-t border-neutral-200 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-6 py-4"
+        className="hidden md:block min-w-0 overflow-x-hidden bg-white/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-white/60 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] px-6 py-4"
+        style={{ backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' }}
       >
-        {desktopCartExpanded ? (
-          <>
-            <div className="flex items-center justify-center mb-2 relative">
+        {desktopCartExpanded && (
+          <div className="max-h-[40vh] overflow-y-auto overflow-x-hidden pb-3 mb-3 border-b border-neutral-200/80 bg-white/70 rounded-lg px-3 -mx-1">
+            {lineItemsContent}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 bg-white/65 rounded-lg py-1 -mx-1 px-1">
+          {!desktopCartExpanded ? (
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
+                type="button"
+                onClick={() => setDesktopCartExpanded(true)}
+                className="flex items-center justify-center w-10 h-10 text-neutral-600 hover:text-neutral-900 transition-colors"
+                aria-label="Expand cart"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setDesktopCartExpanded(true)}
+                className="flex items-center gap-1.5 text-sm font-semibold text-neutral-950 min-w-0"
+              >
+                <span className="bg-neutral-950 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">{itemCount}</span>
+                {!(itemCount > 0 && !hasUnavailable) && (
+                  <>
+                    <AnimatedPrice value={total} />
+                    {discountPercent > 0 && (
+                      <SparkleDiscount discountPercent={discountPercent} />
+                    )}
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                type="button"
                 onClick={() => setDesktopCartExpanded(false)}
-                className="absolute right-0 p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors flex items-center justify-center"
-                aria-label="Minimize cart"
+                className="flex items-center justify-center w-10 h-10 text-neutral-600 hover:text-neutral-900 transition-colors"
+                aria-label="Collapse cart"
               >
                 <ChevronDown className="w-5 h-5" />
               </button>
-              <span className="text-xs font-medium text-neutral-500">Cart</span>
             </div>
-            {lineItemsContent}
-          </>
-        ) : (
-          <button
-            onClick={() => setDesktopCartExpanded(true)}
-            className="w-full flex items-center justify-center gap-3 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
-            aria-label="Expand cart"
+          )}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleCheckout}
+            disabled={isCheckingOut || itemCount === 0 || !allAvailable}
+            className={cn(
+              'flex-1 h-12 rounded-lg text-sm font-semibold transition-colors',
+              itemCount === 0 || !allAvailable
+                ? 'bg-neutral-200 text-neutral-600 cursor-not-allowed'
+                : 'bg-neutral-950 text-white hover:bg-neutral-800'
+            )}
           >
-            <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
-              <span className="bg-neutral-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{itemCount}</span>
-              <AnimatedPrice value={total} />
-              {discountPercent > 0 && (
-                <SparkleDiscount discountPercent={discountPercent} />
-              )}
-            </span>
-            <span className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
-              <ChevronUp className="w-4 h-4 text-neutral-600" />
-            </span>
-          </button>
-        )}
-
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleCheckout}
-          disabled={isCheckingOut || itemCount === 0 || !allAvailable}
-          className={cn(
-            'w-full mt-4 h-12 rounded-lg text-sm font-semibold transition-colors',
-            itemCount === 0 || !allAvailable
-              ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-              : 'bg-neutral-950 text-white hover:bg-neutral-800'
-          )}
-        >
-          {isCheckingOut ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Preparing checkout...
-            </span>
-          ) : itemCount === 0 ? (
-            'Add items to checkout'
-          ) : hasUnavailable ? (
-            'Some items unavailable'
-          ) : (
-            <>Checkout &mdash; <AnimatedPrice value={total} /></>
-          )}
-        </motion.button>
+            {isCheckingOut ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processing...
+              </span>
+            ) : itemCount === 0 ? (
+              'Add items to checkout'
+            ) : hasUnavailable ? (
+              'Some items unavailable'
+            ) : (
+              <>Checkout &mdash; <AnimatedPrice value={total} /></>
+            )}
+          </motion.button>
+        </div>
 
         {error && (
           <motion.p
@@ -553,36 +593,44 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
           )}
         </AnimatePresence>
 
-        <motion.div className="relative z-[70] min-w-0 overflow-x-hidden bg-white border-t border-neutral-200 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] rounded-t-2xl pb-[env(safe-area-inset-bottom,0px)]">
+        <motion.div
+          className="relative z-[70] min-w-0 overflow-x-hidden bg-white/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-white/60 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] rounded-t-2xl pb-[env(safe-area-inset-bottom,0px)]"
+          style={{ backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' }}
+        >
           {mobileTopSlot}
           {mobileExpanded && (
-            <div className="px-4 pt-3 pb-1 max-h-[60dvh] overflow-y-auto overflow-x-hidden">
-              <button
-                type="button"
-                onClick={() => setMobileExpanded(false)}
-                className="w-full flex justify-center py-2 mb-1 cursor-pointer text-neutral-400 hover:text-neutral-600 transition-colors"
-                aria-label="Collapse cart"
-              >
-                <ChevronDown className="w-5 h-5" />
-              </button>
+            <div className="px-4 pt-3 pb-1 max-h-[60dvh] overflow-y-auto overflow-x-hidden bg-white/70 mx-2 rounded-lg -mt-1">
               {lineItemsContent}
             </div>
           )}
 
-          <div className="px-4 py-3 space-y-1">
+          <div className="px-4 py-3 space-y-1 bg-white/65 rounded-lg mx-2">
             <div className="flex items-center gap-3">
               {!mobileExpanded && (
-                <button
-                  onClick={() => setMobileExpanded(true)}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900"
-                >
-                  <span className="bg-neutral-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{itemCount}</span>
-                  <AnimatedPrice value={total} />
-                  {discountPercent > 0 && (
-                    <SparkleDiscount discountPercent={discountPercent} />
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setMobileExpanded(true)}
+                    className="flex items-center justify-center w-10 h-10 text-neutral-600 hover:text-neutral-900 transition-colors"
+                    aria-label="Expand cart"
+                  >
+                    <ChevronUp className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setMobileExpanded(true)}
+                    className="flex items-center gap-1.5 text-sm font-semibold text-neutral-950 min-w-0"
+                  >
+                    <span className="bg-neutral-950 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">{itemCount}</span>
+                  {!(itemCount > 0 && !hasUnavailable) && (
+                    <>
+                      <AnimatedPrice value={total} />
+                      {discountPercent > 0 && (
+                        <SparkleDiscount discountPercent={discountPercent} />
+                      )}
+                    </>
                   )}
-                  <ChevronUp className="w-4 h-4 text-neutral-400" />
-                </button>
+                  </button>
+                </div>
               )}
               <motion.button
                 whileTap={{ scale: 0.97 }}

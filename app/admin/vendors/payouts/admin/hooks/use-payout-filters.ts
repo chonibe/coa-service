@@ -5,6 +5,7 @@ export interface PayoutFilters {
   searchQuery: string
   statusFilter: string
   paymentMethodFilter: string
+  vendorFilter: string
   dateRange: { start: string; end: string }
   amountRange: { min: string; max: string }
   includePaid?: boolean
@@ -15,6 +16,7 @@ export function usePayoutFilters() {
     searchQuery: "",
     statusFilter: "all",
     paymentMethodFilter: "all",
+    vendorFilter: "all",
     dateRange: { start: "", end: "" },
     amountRange: { min: "", max: "" },
     includePaid: false,
@@ -29,6 +31,7 @@ export function usePayoutFilters() {
       searchQuery: "",
       statusFilter: "all",
       paymentMethodFilter: "all",
+      vendorFilter: "all",
       dateRange: { start: "", end: "" },
       amountRange: { min: "", max: "" },
       includePaid: false,
@@ -57,11 +60,14 @@ export function usePayoutFilters() {
         const matchesPaymentMethod =
           filters.paymentMethodFilter === "all" ||
           payout.payment_method === filters.paymentMethodFilter
+        const matchesVendor =
+          filters.vendorFilter === "all" ||
+          payout.vendor_name === filters.vendorFilter
 
-        return matchesSearch && matchesStatus && matchesPaymentMethod
+        return matchesSearch && matchesStatus && matchesPaymentMethod && matchesVendor
       })
     },
-    [filters.searchQuery, filters.statusFilter, filters.paymentMethodFilter]
+    [filters.searchQuery, filters.statusFilter, filters.paymentMethodFilter, filters.vendorFilter]
   )
 
   return {

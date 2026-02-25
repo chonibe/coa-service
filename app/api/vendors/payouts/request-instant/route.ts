@@ -4,7 +4,8 @@ import { guardAdminRequest } from "@/lib/auth-guards"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-import { calculateVendorBalance } from "@/lib/vendor-balance-calculator"
+import { calculateVendorBalance, invalidateVendorBalanceCache } from "@/lib/vendor-balance-calculator"
+import { recordPayoutWithdrawal } from "@/lib/banking/payout-withdrawal"
 import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -161,6 +162,20 @@ export async function POST(request: NextRequest) {
         .from("instant_payout_requests")
         .update({ payout_id: payoutData.id, status: "processed" })
         .eq("id", requestData.id)
+
+      // Record withdrawal in the ledger for the instant payout
+      const withdrawalResult = await recordPayoutWithdrawal(
+        vendorName,
+        payoutData.id,
+        amount,
+        supabase
+      )
+      if (!withdrawalResult.success) {
+        console.error(`Failed to record withdrawal for instant payout ${payoutData.id}:`, withdrawalResult.error)
+      }
+
+      // Invalidate balance cache
+      invalidateVendorBalanceCache(vendorName)
 
       return NextResponse.json({
         success: true,

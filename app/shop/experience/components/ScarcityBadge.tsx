@@ -90,7 +90,7 @@ export function ScarcityBadge({
           </div>
           {productImage && barWidth > 3 && (
             <motion.div
-              className="absolute top-1/2 w-8 h-8 overflow-hidden z-10"
+              className="absolute top-1/2 w-10 h-8 overflow-hidden z-10 rounded-none"
               initial={{ left: '100%', x: '-50%', y: '-50%', opacity: 0.9 }}
               animate={{
                 left: `${Math.max(4, barWidth)}%`,
@@ -110,7 +110,7 @@ export function ScarcityBadge({
               <Image
                 src={productImage}
                 alt={productTitle || 'Artwork'}
-                width={32}
+                width={40}
                 height={32}
                 className="w-full h-full object-cover"
               />

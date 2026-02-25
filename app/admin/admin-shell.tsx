@@ -52,6 +52,7 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/solid"
 import { PolarisUpdateNotifications } from "./components/polaris-update-notifications"
 import { AdminCommandPalette } from "./components/command-palette"
 import { DashboardSwitcher } from "@/components/dashboard-switcher"
+import { RoleSwitcher } from "@/components/RoleSwitcher"
 
 import { Button, Input, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui"
 interface NavItem {
@@ -200,6 +201,11 @@ export function AdminShell({ children }: AdminShellProps) {
           title: "Vendor List",
           href: "/admin/vendors",
           icon: <Icon size="sm"><TruckIcon className="h-4 w-4" /></Icon>,
+        },
+        {
+          title: "Experience Links",
+          href: "/admin/vendors/experience-links",
+          icon: <Icon size="sm"><DevicePhoneMobileIcon className="h-4 w-4" /></Icon>,
         },
       ],
       expanded: false,
@@ -1032,7 +1038,8 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="hidden md:flex gap-2">
             {renderViewToggle("hidden md:flex")}
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <RoleSwitcher variant="full" />
             <DashboardSwitcher />
           </div>
           <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => setSearchOpen(true)}>

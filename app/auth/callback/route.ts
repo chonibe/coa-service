@@ -24,7 +24,7 @@ import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
 import { getUserActiveRoles, getUserVendorId, getPreferredDashboard } from "@/lib/rbac/role-helpers"
 import type { Role } from "@/lib/rbac/index"
 
-const DEFAULT_VENDOR_REDIRECT = "/vendor/dashboard"
+const DEFAULT_VENDOR_REDIRECT = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
 const ADMIN_DASHBOARD_REDIRECT = "/admin/dashboard"
 const PENDING_VENDOR_REDIRECT = "/vendor/access-pending"
@@ -270,6 +270,15 @@ async function processUserLogin(user: any, email: string | null, origin: string,
         deleteCookie(signupResponse, LOGIN_INTENT_COOKIE)
         deleteCookie(signupResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
 
+        // Set active_role cookie for new collector signup
+        signupResponse.cookies.set('active_role', 'collector', {
+          path: '/',
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+        })
+
         // Set collector session cookie
         const collectorCookie = buildCollectorSessionCookie({
           shopifyCustomerId: shopifyCustomerId ? shopifyCustomerId.toString() : null,
@@ -323,7 +332,57 @@ async function processUserLogin(user: any, email: string | null, origin: string,
     deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
     deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
 
-    // Set role-specific session cookies
+    // Set active_role preference cookie based on target dashboard
+    // This lightweight cookie is used by the RoleSwitcher UI and unified session
+    const activeRole: string | null = preferredDashboard.startsWith('/admin/')
+      ? 'admin'
+      : preferredDashboard.startsWith('/vendor/')
+        ? 'vendor'
+        : preferredDashboard.startsWith('/collector/')
+          ? 'collector'
+          : null
+
+    if (activeRole) {
+      redirectResponse.cookies.set('active_role', activeRole, {
+        path: '/',
+        httpOnly: false, // Allow client-side access for UI (RoleSwitcher)
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+      })
+      console.log(`[auth/callback] Set active_role cookie: ${activeRole}`)
+    }
+
+    // Ensure all applicable roles are populated in user_roles table
+    // (vendor and admin roles are managed at account creation, but collector role
+    // may need to be added if user was created externally)
+    if (roles.length > 0 && email) {
+      try {
+        const serviceClient = createServiceClient()
+        for (const role of roles) {
+          await serviceClient
+            .from('user_roles')
+            .upsert({
+              user_id: userId,
+              role,
+              is_active: true,
+              metadata: {
+                source: 'login_sync',
+                last_login: new Date().toISOString(),
+                email,
+              }
+            }, {
+              onConflict: 'user_id,role',
+              ignoreDuplicates: true,
+            })
+        }
+      } catch (roleSyncError) {
+        // Non-critical: roles may already exist
+        console.warn('[auth/callback] Role sync warning (non-critical):', roleSyncError)
+      }
+    }
+
+    // Set role-specific session cookies (legacy — still needed during transition)
     if (preferredDashboard.startsWith('/admin/')) {
       // Admin dashboard - set admin session cookie
       if (email) {

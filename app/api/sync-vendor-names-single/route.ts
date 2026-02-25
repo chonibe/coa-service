@@ -40,7 +40,7 @@ export async function POST() {
 
     // Fetch line items for this order that don't have a vendor_name
     const { data: lineItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("order_id", orderId)
       .is("vendor_name", null)
@@ -112,7 +112,7 @@ export async function POST() {
 
       // Update line item in database
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           vendor_name: vendorName,
           updated_at: new Date().toISOString(),
@@ -130,7 +130,7 @@ export async function POST() {
 
     // Check if there are more items to process for this order
     const { count, error: countError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*", { count: "exact", head: true })
       .eq("order_id", orderId)
       .is("vendor_name", null)

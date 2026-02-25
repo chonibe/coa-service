@@ -54,7 +54,7 @@ export async function GET() {
 
     // Get the last synced order
     const { data: lastOrderData, error: lastOrderError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .order("updated_at", { ascending: false })
       .limit(1)

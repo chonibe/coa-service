@@ -27,6 +27,7 @@ import { CreateMenu } from "./create-menu"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { NotificationCenter } from "@/components/vendor/notification-center"
+import { RoleSwitcher } from "@/components/RoleSwitcher"
 
 import { useSwipeGesture } from "@/components/vendor/mobile-gestures"
 import { Logo } from "@/components/logo"
@@ -456,7 +457,9 @@ export function VendorSidebar() {
           </div>
         </ScrollArea>
 
-        <div className="absolute bottom-0 left-0 right-0 border-t p-4">
+        <div className="absolute bottom-0 left-0 right-0 border-t p-4 space-y-2">
+          {/* RBAC Role Switcher - shows for multi-role users */}
+          {!isCollapsed && <RoleSwitcher variant="compact" className="w-full" />}
           <Button
             variant="outline"
             className={cn(

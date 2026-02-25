@@ -6,12 +6,12 @@ import { cn } from '@/lib/utils'
 import gsap from 'gsap'
 
 /**
- * Cart Upsells Component
+ * Cart Upsells Component — Enhanced (Track B2)
  * 
  * Show personalized product recommendations in the cart drawer.
- * - "Complete your collection" suggestions
- * - Frequently bought together
- * - You might also like
+ * - "Complete the series" suggestions when cart items belong to a series
+ * - "You might also like" general recommendations
+ * - Frequently bought together (future)
  */
 
 export interface UpsellProduct {
@@ -21,6 +21,9 @@ export interface UpsellProduct {
   price: string
   image?: string
   artistName?: string
+  /** If this product is a series completion suggestion */
+  seriesName?: string
+  seriesId?: string
 }
 
 export interface CartUpsellsProps {
@@ -30,33 +33,26 @@ export interface CartUpsellsProps {
 }
 
 export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsProps) {
-  const [recommendations, setRecommendations] = React.useState<UpsellProduct[]>([])
+  const [seriesUpsells, setSeriesUpsells] = React.useState<UpsellProduct[]>([])
+  const [generalRecommendations, setGeneralRecommendations] = React.useState<UpsellProduct[]>([])
   const [loading, setLoading] = React.useState(true)
   const containerRef = React.useRef<HTMLDivElement>(null)
   
   React.useEffect(() => {
-    // Fetch recommendations based on cart contents
     async function fetchRecommendations() {
       try {
         setLoading(true)
         
-        // In production, this would call an API endpoint that uses ML/AI
-        // For now, fetch some random products excluding what's in cart
         const handles = cartItems.map(item => item.handle)
-        const response = await fetch(`/api/shop/products?limit=4&exclude=${handles.join(',')}`)
         
-        if (response.ok) {
-          const data = await response.json()
-          const products: UpsellProduct[] = (data.products || []).map((p: any) => ({
-            id: p.id,
-            handle: p.handle,
-            title: p.title,
-            price: `$${parseFloat(p.priceRange.minVariantPrice.amount).toFixed(2)}`,
-            image: p.featuredImage?.url,
-            artistName: p.vendor,
-          }))
-          setRecommendations(products)
-        }
+        // Fetch series completion suggestions and general recommendations in parallel
+        const [seriesResult, generalResult] = await Promise.all([
+          fetchSeriesCompletionSuggestions(handles),
+          fetchGeneralRecommendations(handles),
+        ])
+        
+        setSeriesUpsells(seriesResult)
+        setGeneralRecommendations(generalResult)
       } catch (error) {
         console.error('Failed to fetch cart recommendations:', error)
       } finally {
@@ -66,12 +62,16 @@ export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsPr
     
     if (cartItems.length > 0) {
       fetchRecommendations()
+    } else {
+      setSeriesUpsells([])
+      setGeneralRecommendations([])
+      setLoading(false)
     }
   }, [cartItems])
   
   React.useEffect(() => {
-    if (!loading && recommendations.length > 0 && containerRef.current) {
-      // Animate in recommendations with stagger
+    const allRecs = [...seriesUpsells, ...generalRecommendations]
+    if (!loading && allRecs.length > 0 && containerRef.current) {
       const cards = containerRef.current.querySelectorAll('[data-upsell-card]')
       gsap.from(cards, {
         opacity: 0,
@@ -81,37 +81,128 @@ export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsPr
         ease: 'power2.out',
       })
     }
-  }, [loading, recommendations])
+  }, [loading, seriesUpsells, generalRecommendations])
   
-  if (loading || recommendations.length === 0) {
+  if (loading || (seriesUpsells.length === 0 && generalRecommendations.length === 0)) {
     return null
   }
   
   return (
-    <div ref={containerRef} className={cn('space-y-3', className)}>
-      <h3 className="text-sm font-semibold text-[#1a1a1a] uppercase tracking-wide">
-        You might also like
-      </h3>
-      
-      <div className="grid grid-cols-2 gap-3">
-        {recommendations.slice(0, 2).map((product) => (
-          <UpsellCard
-            key={product.id}
-            product={product}
-            onAddToCart={onAddToCart}
-          />
-        ))}
-      </div>
+    <div ref={containerRef} className={cn('space-y-5', className)}>
+      {/* Series Completion Suggestions */}
+      {seriesUpsells.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2" className="flex-shrink-0">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <h3 className="text-sm font-semibold text-[#2c4bce] uppercase tracking-wide">
+              Complete the Series
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {seriesUpsells.slice(0, 2).map((product) => (
+              <UpsellCard
+                key={product.id}
+                product={product}
+                onAddToCart={onAddToCart}
+                variant="series"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* General Recommendations */}
+      {generalRecommendations.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-[#1a1a1a] uppercase tracking-wide">
+            You might also like
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {generalRecommendations.slice(0, 2).map((product) => (
+              <UpsellCard
+                key={product.id}
+                product={product}
+                onAddToCart={onAddToCart}
+                variant="general"
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+/**
+ * Fetch series completion suggestions based on cart items.
+ * If a cart item belongs to a series, suggest other items from the same series
+ * that the collector doesn't own yet.
+ */
+async function fetchSeriesCompletionSuggestions(
+  cartHandles: string[]
+): Promise<UpsellProduct[]> {
+  try {
+    const response = await fetch('/api/shop/cart/series-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handles: cartHandles }),
+    })
+    
+    if (!response.ok) return []
+    
+    const data = await response.json()
+    return (data.suggestions || []).map((s: any) => ({
+      id: s.id || s.shopify_product_id,
+      handle: s.handle,
+      title: s.title,
+      price: s.price ? `$${parseFloat(s.price).toFixed(2)}` : 'Price TBA',
+      image: s.image_url || s.image,
+      artistName: s.vendor_name || s.artistName,
+      seriesName: s.series_name,
+      seriesId: s.series_id,
+    }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Fetch general product recommendations
+ */
+async function fetchGeneralRecommendations(
+  cartHandles: string[]
+): Promise<UpsellProduct[]> {
+  try {
+    const response = await fetch(`/api/shop/products?limit=4&exclude=${cartHandles.join(',')}`)
+    
+    if (!response.ok) return []
+    
+    const data = await response.json()
+    return (data.products || []).map((p: any) => ({
+      id: p.id,
+      handle: p.handle,
+      title: p.title,
+      price: `$${parseFloat(p.priceRange.minVariantPrice.amount).toFixed(2)}`,
+      image: p.featuredImage?.url,
+      artistName: p.vendor,
+    }))
+  } catch {
+    return []
+  }
 }
 
 interface UpsellCardProps {
   product: UpsellProduct
   onAddToCart?: (product: UpsellProduct) => void
+  variant?: 'series' | 'general'
 }
 
-function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
+function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardProps) {
   const [isAdding, setIsAdding] = React.useState(false)
   const cardRef = React.useRef<HTMLDivElement>(null)
   
@@ -122,7 +213,6 @@ function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
     
     setIsAdding(true)
     
-    // Animate the card
     if (cardRef.current) {
       gsap.to(cardRef.current, {
         scale: 0.95,
@@ -133,10 +223,8 @@ function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
       })
     }
     
-    // Call the add to cart handler
     await onAddToCart?.(product)
     
-    // Brief delay for feedback
     setTimeout(() => {
       setIsAdding(false)
     }, 500)
@@ -150,9 +238,19 @@ function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
         className={cn(
           'group relative overflow-hidden rounded-lg bg-[#f5f5f5]',
           'hover:shadow-md transition-shadow duration-200',
-          'cursor-pointer'
+          'cursor-pointer',
+          variant === 'series' && 'ring-1 ring-[#2c4bce]/20'
         )}
       >
+        {/* Series badge */}
+        {variant === 'series' && product.seriesName && (
+          <div className="absolute top-2 left-2 z-10">
+            <span className="text-[10px] font-medium text-white bg-[#2c4bce] px-2 py-0.5 rounded-full">
+              {product.seriesName}
+            </span>
+          </div>
+        )}
+
         {/* Image */}
         <div className="aspect-square overflow-hidden">
           {product.image ? (
@@ -191,12 +289,14 @@ function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
             className={cn(
               'absolute bottom-2 left-2 right-2',
               'py-1.5 px-3 rounded-full',
-              'bg-[#f0c417] text-[#1a1a1a] text-xs font-semibold',
+              'text-xs font-semibold',
               'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0',
               'transition-all duration-200',
-              'hover:bg-[#e0b415]',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              'flex items-center justify-center gap-1'
+              'flex items-center justify-center gap-1',
+              variant === 'series'
+                ? 'bg-[#2c4bce] text-white hover:bg-[#1a3ab0]'
+                : 'bg-[#f0c417] text-[#1a1a1a] hover:bg-[#e0b415]'
             )}
           >
             {isAdding ? (
@@ -208,7 +308,7 @@ function UpsellCard({ product, onAddToCart }: UpsellCardProps) {
                 Adding...
               </>
             ) : (
-              '+ Add'
+              variant === 'series' ? '+ Complete Series' : '+ Add'
             )}
           </button>
         )}
@@ -252,7 +352,7 @@ export function FreeShippingBar({ currentTotal, threshold = 75, className }: Fre
               <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="text-[#0a8754] font-medium">
-              You've unlocked free shipping!
+              You&apos;ve unlocked free shipping!
             </span>
           </>
         ) : (

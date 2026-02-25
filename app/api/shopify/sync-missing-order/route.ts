@@ -335,7 +335,7 @@ async function processLineItem(order: any, lineItem: any) {
 
     // Check if this line item already exists in the database
     const { data: existingItems, error: queryError } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("order_id", orderId)
       .eq("line_item_id", lineItemId)
@@ -351,7 +351,7 @@ async function processLineItem(order: any, lineItem: any) {
       // Update vendor_name if it's available and not set previously
       if (vendorName && !existingItems[0].vendor_name) {
         const { error: updateError } = await supabase
-          .from("order_line_items")
+          .from("order_line_items_v2")
           .update({
             vendor_name: vendorName,
             updated_at: new Date().toISOString(),
@@ -375,7 +375,7 @@ async function processLineItem(order: any, lineItem: any) {
     }
 
     // Insert the new line item
-    const { error: insertError } = await supabase.from("order_line_items").insert({
+    const { error: insertError } = await supabase.from("order_line_items_v2").insert({
       order_id: orderId,
       order_name: order.name,
       line_item_id: lineItemId,
@@ -424,7 +424,7 @@ async function resequenceEditionNumbers(productId: string) {
 
     // Get all active line items for this product, ordered by creation date
     const { data: activeItems, error } = await supabase
-      .from("order_line_items")
+      .from("order_line_items_v2")
       .select("*")
       .eq("product_id", productId)
       .eq("status", "active")
@@ -447,7 +447,7 @@ async function resequenceEditionNumbers(productId: string) {
 
     for (const item of activeItems) {
       const { error: updateError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .update({
           edition_number: editionCounter,
           updated_at: new Date().toISOString(),

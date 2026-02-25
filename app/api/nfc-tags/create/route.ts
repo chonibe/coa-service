@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {
@@ -35,7 +35,7 @@ export async function POST() {
 
     if (lineItemId && orderId) {
       const { data: certificate, error: certError } = await supabase
-        .from("order_line_items")
+        .from("order_line_items_v2")
         .select("certificate_url, certificate_token")
         .eq("line_item_id", lineItemId)
         .eq("order_id", orderId)

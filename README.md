@@ -82,8 +82,10 @@ npm install
 ```
 
 ### Configuration
-1. Copy `.env.example` to `.env`
+1. Copy `.env.example` to `.env.local`
 2. Fill in Supabase, Google OAuth, Shopify, and Stripe credentials
+
+**Full local setup (Node, env, Vercel CLI, Supabase CLI):** see [Local Development Setup](docs/LOCAL_DEV_SETUP.md).
 
 ### Running the Application
 ```bash
@@ -469,6 +471,7 @@ The edition number assignment system allows for automatic assignment of edition 
 - Open editions are assigned numbers without limits
 
 ### Recent Changes
+- **Standardized on order_line_items_v2**: Migrated all app routes and lib code from legacy `order_line_items` to `order_line_items_v2` (NFC pairing, certificates, collector portal, sync routes). See [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md).
 - Fixed type mismatch issues with product IDs
 - Improved error handling and user feedback
 - Added type checking endpoints

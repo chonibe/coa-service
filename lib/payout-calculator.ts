@@ -7,7 +7,7 @@ export const DEFAULT_PAYOUT_PERCENTAGE = 25
 export const MINIMUM_PAYOUT_AMOUNT = 25 // USD
 
 // Vendors excluded from payout calculations (e.g., internal/company vendors)
-const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
+export const EXCLUDED_VENDORS = ["Street Collector", "street collector", "street-collector"]
 
 export interface LineItemPayout {
   line_item_id: string
