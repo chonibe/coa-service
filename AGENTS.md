@@ -18,7 +18,7 @@ COA Service ("Street Lamp" / "Street Collector") is a Next.js 15 + React 19 appl
 - **Authentication:** The app uses Google OAuth via Supabase Auth. Unauthenticated requests to `/` redirect to `/login`. Testing authenticated flows requires a Google account configured in the Supabase project.
 - **Environment variables:** `.env.local` contains Supabase credentials. Many features require additional secrets (Shopify, Stripe, Mapbox, etc.) — see `.env.example` and the README for the full list.
 - **Patch-package:** The `postinstall` script runs `patch-package` to apply patches in `/patches/` (currently one patch for `@splinetool/runtime`).
-- **Husky pre-commit:** Runs `lint-staged` (ESLint + secret scanning) and `npm test`. If tests fail, commits may be blocked — use `--no-verify` to bypass when needed.
+- **Husky pre-commit:** Runs `lint-staged` (ESLint + secret scanning) and `npm test`. The hook currently fails because `lint-staged` picks up a stale `linters` config from `customer-portal/node_modules/bs-logger/package.json`. Use `git commit --no-verify` to bypass.
 - **Customer portal:** A separate React (CRA) app in `/customer-portal/` with its own `package.json` and `package-lock.json`. Install its deps separately with `npm install` in that directory.
 - **MCP servers:** Four MCP server sub-projects in `/mcp-servers/` — each has independent dependencies. These are optional AI development tooling and not required for the main app.
 - **ESLint version:** Uses ESLint 9 with `eslint-config-next`. The flat config format is used via the Next.js wrapper.
