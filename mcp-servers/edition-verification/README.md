@@ -140,9 +140,7 @@ Returns properly filtered editions for a collector.
   "total_editions": 5,
   "editions": [...]
 }
-```
-
-### reassign_editions
+```### reassign_editions
 
 Triggers edition number reassignment for a product.
 
@@ -190,9 +188,7 @@ Audits data for inconsistencies.
   "issues": [],
   "scope": { "product_id": "all", "collector_id": "all" }
 }
-```
-
-## Business Logic Rules
+```## Business Logic Rules
 
 ### Status Determination (lib/status-logic.ts)
 
@@ -225,6 +221,4 @@ The line item status logic has been broken multiple times by changes to scattere
 1. Status determination logic was duplicated
 2. Edge cases were missed (string vs number comparison)
 3. Refunded items appeared in collector dashboards
-4. Manual fixes were required
-
-This MCP server prevents these bugs by centralizing ALL business logic in one place.
+4. Manual fixes were requiredThis MCP server prevents these bugs by centralizing ALL business logic in one place.

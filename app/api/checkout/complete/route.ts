@@ -49,16 +49,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For credit-only purchases, require authentication
-    if (checkoutSession.stripe_charge_cents === 0) {
+    // For credit-only purchases (credits_used > 0), require authentication
+    const creditsToUse = checkoutSession.credits_used || 0
+    if (checkoutSession.stripe_charge_cents === 0 && creditsToUse > 0) {
       if (!ctx || !isCollector(ctx)) {
         return NextResponse.json(
           { error: 'Authentication required for credit purchases' },
           { status: 401 }
         )
       }
-
-      // Verify the session belongs to this user
       if (checkoutSession.collector_identifier !== ctx.email) {
         return NextResponse.json(
           { error: 'Unauthorized' },
@@ -127,8 +126,22 @@ export async function POST(request: NextRequest) {
     const lineItems = checkoutSession.line_items as Array<{
       variantId: string
       quantity: number
-      title: string
+      title?: string
     }>
+
+    // Placeholder address for $0 test orders when not provided
+    const defaultShipping = {
+      firstName: 'Test',
+      lastName: 'Order',
+      address1: '123 Test St',
+      address2: '',
+      city: 'San Francisco',
+      province: 'CA',
+      country: 'US',
+      zip: '94102',
+      phone: '',
+    }
+    const effectiveShipping = shippingAddress || defaultShipping
 
     const draftOrderData = {
       draft_order: {
@@ -136,33 +149,35 @@ export async function POST(request: NextRequest) {
           variant_id: parseInt(item.variantId),
           quantity: item.quantity,
         })),
-        customer: collectorIdentifier ? {
-          email: collectorIdentifier,
+        customer: (collectorIdentifier || effectiveShipping) ? {
+          email: collectorIdentifier || 'test@example.com',
         } : undefined,
-        shipping_address: shippingAddress ? {
-          first_name: shippingAddress.firstName || '',
-          last_name: shippingAddress.lastName || '',
-          address1: shippingAddress.address1 || '',
-          address2: shippingAddress.address2 || '',
-          city: shippingAddress.city || '',
-          province: shippingAddress.province || '',
-          country: shippingAddress.country || '',
-          zip: shippingAddress.zip || '',
-          phone: shippingAddress.phone || '',
+        shipping_address: {
+          first_name: effectiveShipping.firstName || '',
+          last_name: effectiveShipping.lastName || '',
+          address1: effectiveShipping.address1 || '',
+          address2: effectiveShipping.address2 || '',
+          city: effectiveShipping.city || '',
+          province: effectiveShipping.province || '',
+          country: effectiveShipping.country || '',
+          zip: effectiveShipping.zip || '',
+          phone: effectiveShipping.phone || '',
+        },
+        billing_address: (billingAddress || effectiveShipping) ? {
+          first_name: (billingAddress || effectiveShipping).firstName || '',
+          last_name: (billingAddress || effectiveShipping).lastName || '',
+          address1: (billingAddress || effectiveShipping).address1 || '',
+          address2: (billingAddress || effectiveShipping).address2 || '',
+          city: (billingAddress || effectiveShipping).city || '',
+          province: (billingAddress || effectiveShipping).province || '',
+          country: (billingAddress || effectiveShipping).country || '',
+          zip: (billingAddress || effectiveShipping).zip || '',
         } : undefined,
-        billing_address: billingAddress ? {
-          first_name: billingAddress.firstName || '',
-          last_name: billingAddress.lastName || '',
-          address1: billingAddress.address1 || '',
-          address2: billingAddress.address2 || '',
-          city: billingAddress.city || '',
-          province: billingAddress.province || '',
-          country: billingAddress.country || '',
-          zip: billingAddress.zip || '',
-        } : undefined,
-        email: collectorIdentifier || '',
-        note: `Credit Purchase\nSession ID: ${sessionId}\nCredits Used: ${creditsToDeduct}\nSource: Headless Storefront`,
-        tags: 'headless,credit-purchase',
+        email: collectorIdentifier || 'test-order@example.com',
+        note: creditsToDeduct > 0
+          ? `Credit Purchase\nSession ID: ${sessionId}\nCredits Used: ${creditsToDeduct}\nSource: Headless Storefront`
+          : `Zero Dollar Test Order\nSession ID: ${sessionId}\nSource: Headless Storefront`,
+        tags: creditsToDeduct > 0 ? 'headless,credit-purchase' : 'headless,zero-dollar-test',
         use_customer_default_address: false,
       },
     }

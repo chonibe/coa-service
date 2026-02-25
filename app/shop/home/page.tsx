@@ -54,8 +54,8 @@ export default async function ShopHomePage() {
         getProduct(homepageContent.featuredProduct.productHandle).catch(() => null),
       ])
 
-      newReleases = newReleasesCollection?.products?.edges?.map(e => e.node) || []
-      bestSellers = bestSellersCollection?.products?.edges?.map(e => e.node) || []
+      newReleases = (newReleasesCollection?.products?.edges ?? []).map((e: any) => e.node)
+      bestSellers = (bestSellersCollection?.products?.edges ?? []).map((e: any) => e.node)
       featuredProduct = product
     } catch (error: any) {
       console.error('Shop homepage API error:', error.message)
@@ -67,28 +67,37 @@ export default async function ShopHomePage() {
     apiError = 'Shopify Storefront API not configured. Please set the required environment variables.'
   }
   
-  // Fetch artist images from Shopify collections
-  const artistsWithImages = await Promise.all(
-    homepageContent.featuredArtists.collections.slice(0, 6).map(async (artist) => {
-      try {
-        const collection = await getCollection(artist.handle, { first: 1 }).catch(() => null)
-        return {
-          handle: artist.handle,
-          name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-          location: artist.location,
-          imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
+  // Fetch artist images from Shopify collections (guard against missing content or API errors)
+  let featuredArtists: Array<{ handle: string; name: string; location?: string; imageUrl?: string }> = []
+  try {
+    const artistCollections = homepageContent.featuredArtists?.collections ?? []
+    const artistsWithImages = await Promise.all(
+      artistCollections.slice(0, 6).map(async (artist: { handle: string; location?: string }) => {
+        try {
+          const collection = await getCollection(artist?.handle ?? '', { first: 1 }).catch(() => null)
+          const name = (artist?.handle ?? '')
+            .split('-')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+          return {
+            handle: artist?.handle ?? '',
+            name,
+            location: artist?.location,
+            imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
+          }
+        } catch {
+          const name = (artist?.handle ?? '')
+            .split('-')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+          return { handle: artist?.handle ?? '', name, location: artist?.location }
         }
-      } catch {
-        return {
-          handle: artist.handle,
-          name: artist.handle.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-          location: artist.location,
-        }
-      }
-    })
-  )
-  
-  const featuredArtists = artistsWithImages
+      })
+    )
+    featuredArtists = Array.isArray(artistsWithImages) ? artistsWithImages : []
+  } catch (err) {
+    console.error('Shop home featured artists fetch error:', err)
+  }
 
   // Note: Header and Footer are provided by app/shop/layout.tsx
   return (
@@ -184,22 +193,36 @@ export default async function ShopHomePage() {
           removeHorizontalSpacing={homepageContent.spline3D.removeHorizontalSpacing}
         />
 
+        {/* Customize Your Lamp CTA */}
+        <SectionWrapper spacing="sm" background="default">
+          <Container maxWidth="default" paddingX="gutter">
+            <div className="flex flex-col items-center text-center py-4">
+              <p className="text-sm text-slate-500 mb-3">Preview artwork live on the 3D lamp</p>
+              <Link href="/shop/experience">
+                <Button variant="default" size="lg">
+                  Customize Your Lamp
+                </Button>
+              </Link>
+            </div>
+          </Container>
+        </SectionWrapper>
+
         {/* Featured Product Section (Street Lamp) */}
         {featuredProduct && (
           <FeaturedProductSection
-            title={featuredProduct.title}
-            handle={featuredProduct.handle}
-            price={formatPrice(featuredProduct.priceRange.minVariantPrice)}
+            title={featuredProduct.title ?? ''}
+            handle={featuredProduct.handle ?? ''}
+            price={featuredProduct.priceRange?.minVariantPrice ? formatPrice(featuredProduct.priceRange.minVariantPrice) : ''}
             compareAtPrice={
               featuredProduct.compareAtPriceRange?.minVariantPrice?.amount
                 ? formatPrice(featuredProduct.compareAtPriceRange.minVariantPrice)
                 : undefined
             }
             description={featuredProduct.description?.substring(0, 200)}
-            media={(featuredProduct.images?.edges || []).slice(0, 4).map((edge: any) => ({
+            media={(featuredProduct.images?.edges ?? []).slice(0, 4).map((edge: any) => ({
               type: 'image' as const,
-              url: edge.node.url,
-              alt: edge.node.altText || featuredProduct.title,
+              url: edge?.node?.url ?? '',
+              alt: edge?.node?.altText || featuredProduct?.title ?? '',
             }))}
             fullWidth={homepageContent.featuredProduct.fullWidth}
             desktopMediaWidth={homepageContent.featuredProduct.desktopMediaWidth}
@@ -232,7 +255,7 @@ export default async function ShopHomePage() {
 
         {/* Press Quotes Section 1 */}
         <PressCarousel
-          quotes={homepageContent.pressQuotes1.quotes.map((q, i) => ({
+          quotes={(homepageContent.pressQuotes1?.quotes ?? []).map((q: { author: string; content: string; rating?: number }, i: number) => ({
             id: `press1-${i}`,
             author: q.author,
             content: q.content,
@@ -297,7 +320,7 @@ export default async function ShopHomePage() {
 
         {/* Press Quotes Section 2 */}
         <PressCarousel
-          quotes={homepageContent.pressQuotes2.quotes.map((q, i) => ({
+          quotes={(homepageContent.pressQuotes2?.quotes ?? []).map((q: { author: string; content: string; rating?: number }, i: number) => ({
             id: `press2-${i}`,
             author: q.author,
             content: q.content,
@@ -312,7 +335,7 @@ export default async function ShopHomePage() {
 
         {/* FAQ Section */}
         <FAQSection
-          items={homepageContent.faq.items.map((item, i) => ({
+          items={(homepageContent.faq?.items ?? []).map((item: { question: string; answer: string }, i: number) => ({
             id: `faq-${i}`,
             question: item.question,
             answer: item.answer,

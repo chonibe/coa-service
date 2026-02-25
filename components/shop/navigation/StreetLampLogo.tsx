@@ -25,12 +25,13 @@ export function StreetLampLogo({
 }: StreetLampLogoProps) {
   return (
     <svg
+      width={width ?? 43}
       height={height}
       viewBox="0 0 43 49"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn('flex-shrink-0', className)}
-      style={{ width: width ? `${width}px` : 'auto', height: height ? `${height}px` : 'auto' }}
+      style={{ ...(width != null && { width: `${width}px` }), ...(height != null && { height: `${height}px` }) }}
     >
       <path
         d="M12.4297 41.5659L7.02832 41.5496V41.4354L7.2554 39.8368L7.28784 27.5865L7.07698 26.0205V25.9063L9.39649 25.6616V25.7921L9.18563 27.4233L9.15319 41.0766H10.1751L12.3162 40.1305H12.4459L12.4297 41.5659Z"

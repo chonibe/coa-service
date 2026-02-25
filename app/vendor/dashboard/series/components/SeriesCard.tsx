@@ -103,9 +103,8 @@ export function SeriesCard({
         onClick={onView}
       >
         <motion.div
-          whileHover={{ scale: 1.02, rotateY: 5 }}
+          whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.3 }}
-          style={{ transformStyle: "preserve-3d" }}
         >
           <div className="aspect-square relative overflow-hidden bg-muted">
             {series.thumbnail_url ? (

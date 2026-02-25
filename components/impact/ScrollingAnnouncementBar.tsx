@@ -41,7 +41,7 @@ export function ScrollingAnnouncementBar({
   className,
   visible = true,
 }: ScrollingAnnouncementBarProps) {
-  if (!visible || messages.length === 0) return null
+  if (!visible || !messages || messages.length === 0) return null
 
   // Create the message string with separators
   const messageString = messages.join(` ${separator} `)

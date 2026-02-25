@@ -87,17 +87,13 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
     }))
     
-    // Build metadata with all Shopify variant IDs for order sync
+    // Build metadata with all Shopify variant IDs for order sync (Stripe metadata values max 500 chars — use compact format)
+    const shopifyVariantsCompact = lineItems
+      .map(item => `${extractVariantId(item.variantId)}:${item.quantity}`)
+      .join(',')
     const sessionMetadata: Record<string, string> = {
       ...metadata,
-      shopify_variant_ids: JSON.stringify(
-        lineItems.map(item => ({
-          variantId: extractVariantId(item.variantId),
-          variantGid: item.variantId,
-          quantity: item.quantity,
-          productHandle: item.productHandle || '',
-        }))
-      ),
+      shopify_variant_ids: shopifyVariantsCompact,
       source: 'headless_storefront',
     }
     

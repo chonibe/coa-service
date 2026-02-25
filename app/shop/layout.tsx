@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { 
   ScrollingAnnouncementBar, 
   defaultAnnouncementMessages,
@@ -9,13 +9,15 @@ import {
 } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
-import { formatPrice, predictiveSearch, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { 
   mainNavigation as syncedMainNavigation, 
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
+import { homepageContent } from '@/content/homepage'
 import { ShopNavigation } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
+import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { WishlistDrawer } from '@/components/shop/navigation'
 
 /**
@@ -41,9 +43,10 @@ const defaultNavigation = [
     href: '/shop/products',
     children: [
       { label: 'All Artworks', href: '/shop/products' },
-      { label: 'New Releases', href: '/shop/products?collection=new-releases' },
-      { label: 'Best Sellers', href: '/shop/products?collection=best-sellers' },
+      { label: 'New Releases', href: `/shop/products?collection=${homepageContent.newReleases.collectionHandle}` },
+      { label: 'Best Sellers', href: `/shop/products?collection=${homepageContent.bestSellers.collectionHandle}` },
       { label: 'Street Lamp', href: '/shop/street_lamp' },
+      { label: 'Customize Your Lamp', href: '/shop/experience' },
     ]
   },
   { 
@@ -54,10 +57,6 @@ const defaultNavigation = [
       { label: 'Featured Artists', href: '/shop/artists?featured=true' },
     ]
   },
-  {
-    label: 'Series',
-    href: '/shop/series',
-  },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
@@ -67,9 +66,7 @@ const defaultNavigation = [
 const shopNavigation = defaultNavigation
 
 // Use synced footer sections from Shopify, with fallback to default
-const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0)
-  ? syncedFooterSections.map((s: any) => ({ ...s, links: s?.links ?? [] }))
-  : [
+const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0) ? syncedFooterSections : [
   {
     title: 'Street Collector',
     links: [
@@ -108,12 +105,13 @@ const legalLinks = [
 // Inner layout with access to cart context
 function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isExperiencePage = pathname?.startsWith('/shop/experience')
   const cart = useCart()
   const wishlist = useWishlist()
   const [cartLoading, setCartLoading] = useState(false)
   const [navModalOpen, setNavModalOpen] = useState(false)
   const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false)
-  const [creditBalance, setCreditBalance] = useState(0)
   const [recommendedProducts, setRecommendedProducts] = useState<Array<{
     id: string
     title: string
@@ -124,27 +122,11 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     vendor: string
   }>>([])
   
-  // Fetch credit balance for nav display
-  useEffect(() => {
-    const fetchCredits = async () => {
-      try {
-        const response = await fetch('/api/collector/credits/balance', { credentials: 'include' })
-        if (response.ok) {
-          const data = await response.json()
-          setCreditBalance(data.balance || 0)
-        }
-      } catch {
-        // Not authenticated or endpoint unavailable
-      }
-    }
-    fetchCredits()
-  }, [])
-  
   // Fetch recommendations for cart drawer
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        const response = await fetch('/api/shop/collections/new-releases')
+        const response = await fetch(`/api/shop/collections/${homepageContent.newReleases.collectionHandle}`)
         if (response.ok) {
           const data = await response.json()
           setRecommendedProducts(data.products || [])
@@ -270,63 +252,34 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     cart.removeItem(lineId)
   }, [cart])
   
-  // Handle shop search via Shopify predictive search
-  const handleShopSearch = useCallback(async (query: string) => {
+  // Shop search: call API and map to SearchResult shape for nav search drawer
+  const handleSearch = useCallback(async (query: string): Promise<{ products: SearchResult[]; collections: SearchResult[] }> => {
+    if (!query?.trim()) return { products: [], collections: [] }
     try {
-      const results = await predictiveSearch(query, { limit: 6 })
-      return {
-        products: (results.products || []).map((p) => ({
-          id: p.id,
-          handle: p.handle,
-          title: p.title,
-          type: 'product' as const,
-          image: p.featuredImage ? { url: p.featuredImage.url, altText: p.featuredImage.altText || undefined } : undefined,
-          price: formatPrice(p.priceRange.minVariantPrice),
-          vendor: p.vendor,
-        })),
-        collections: (results.collections || []).map((c) => ({
-          id: c.id,
-          handle: c.handle,
-          title: c.title,
-          type: 'collection' as const,
-          image: c.image ? { url: c.image.url, altText: c.image.altText || undefined } : undefined,
-        })),
-      }
-    } catch (error) {
-      console.error('[Shop Search] Error:', error)
+      const res = await fetch(`/api/shop/search?q=${encodeURIComponent(query.trim())}`)
+      const data = await res.json()
+      const products: SearchResult[] = (data.products || []).map((p: { id: string; handle: string; title: string; featuredImage?: { url: string; altText?: string } | null; priceRange?: { minVariantPrice?: { amount: string } }; vendor?: string }) => ({
+        id: p.id,
+        handle: p.handle,
+        title: p.title,
+        type: 'product' as const,
+        image: p.featuredImage ? { url: p.featuredImage.url, altText: p.featuredImage.altText } : undefined,
+        price: p.priceRange?.minVariantPrice?.amount,
+        vendor: p.vendor,
+      }))
+      const collections: SearchResult[] = (data.collections || []).map((c: { id: string; handle: string; title: string; image?: { url: string; altText?: string } | null }) => ({
+        id: c.id,
+        handle: c.handle,
+        title: c.title,
+        type: 'collection' as const,
+        image: c.image ? { url: c.image.url, altText: c.image.altText } : undefined,
+      }))
+      return { products, collections }
+    } catch {
       return { products: [], collections: [] }
     }
   }, [])
-  
-  // Build cart object for CartDrawer (convert from our format to Shopify format)
-  const cartForDrawer = {
-    id: 'local-cart',
-    totalQuantity: cart.itemCount,
-    cost: {
-      subtotalAmount: { amount: cart.subtotal.toString(), currencyCode: 'USD' },
-      totalAmount: { amount: cart.total.toString(), currencyCode: 'USD' },
-    },
-    lines: {
-      edges: cart.items.map(item => ({
-        node: {
-          id: item.id,
-          quantity: item.quantity,
-          merchandise: {
-            id: item.variantId,
-            title: item.variantTitle || 'Default Title',
-            image: item.image ? { url: item.image, altText: item.title } : null,
-            price: { amount: item.price.toString(), currencyCode: 'USD' },
-            product: {
-              id: item.productId,
-              title: item.title,
-              handle: item.handle,
-            },
-          },
-        },
-      })),
-    },
-  }
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Skip to content link for accessibility */}
@@ -345,35 +298,35 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       
       {/* Shop Navigation */}
       <ShopNavigation
-        navigation={shopNavigation}
-        isModalOpen={navModalOpen}
-        onModalToggle={handleNavModalToggle}
-        onViewCart={handleViewCart}
-        onWishlistClick={handleWishlistClick}
-        cartItems={cart.items}
+        cartItems={cart.items ?? []}
         cartSubtotal={cart.subtotal}
         cartTotal={cart.total}
         cartItemCount={cart.itemCount}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
+        onSearch={handleSearch}
+        isModalOpen={navModalOpen}
+        onModalToggle={handleNavModalToggle}
+        onViewCart={handleViewCart}
+        onWishlistClick={handleWishlistClick}
         cartLoading={cartLoading}
-        wishlistCount={wishlist.items.length}
-        creditBalance={creditBalance}
-        onSearch={handleShopSearch}
+        hideAddToCartNotification={isExperiencePage}
       />
       
-      {/* Cart Drawer with Recommendations */}
-      <LocalCartDrawer
-        isOpen={cart.isOpen}
-        onClose={() => cart.toggleCart(false)}
-        items={cart.items}
-        subtotal={cart.subtotal}
-        total={cart.total}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-      />
+      {/* Cart Drawer - hidden on experience page (has its own OrderBar) */}
+      {!isExperiencePage && (
+        <LocalCartDrawer
+          isOpen={cart.isOpen}
+          onClose={() => cart.toggleCart(false)}
+          items={cart.items ?? []}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
+          subtotal={cart.subtotal}
+          total={cart.total}
+        />
+      )}
       
       {/* Wishlist Drawer */}
       <WishlistDrawer

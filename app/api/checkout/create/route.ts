@@ -3,9 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-})
+const stripeSecret = process.env.STRIPE_SECRET_KEY
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
 
 interface CartLineItem {
   productId: string
@@ -25,6 +24,8 @@ interface CreateCheckoutRequest {
   creditsToUse?: number
   shippingRequired?: boolean
   customerEmail?: string
+  orderNotes?: string
+  cancelUrl?: string
 }
 
 /**
@@ -36,13 +37,20 @@ interface CreateCheckoutRequest {
  * - Full credit payment (member with enough credits)
  */
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    console.error('[checkout/create] STRIPE_SECRET_KEY not configured')
+    return NextResponse.json(
+      { error: 'Checkout is not configured. Please contact support.' },
+      { status: 503 }
+    )
+  }
   try {
     const supabase = createClient()
     const ctx = await getUserContext(supabase)
 
     // Parse request body
     const body: CreateCheckoutRequest = await request.json()
-    const { items, creditsToUse = 0, shippingRequired = true, customerEmail } = body
+    const { items, creditsToUse = 0, shippingRequired = true, customerEmail, orderNotes, cancelUrl } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -103,13 +111,14 @@ export async function POST(request: NextRequest) {
     const stripeChargeCents = subtotalCents - creditDiscountCents
     const email = ctx?.email || customerEmail
 
-    // If fully covered by credits, create credit-only checkout
-    if (stripeChargeCents === 0 && actualCreditsToUse > 0) {
+    // Zero-dollar flow: $0 total (for testing order creation in Shopify)
+    if (stripeChargeCents === 0) {
       // Create checkout session record for credit-only purchase
+      const sessionPrefix = actualCreditsToUse > 0 ? 'credit_only' : 'zero_dollar'
       const { data: checkoutSession, error: sessionError } = await supabase
         .from('checkout_sessions')
         .insert({
-          session_id: `credit_only_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          session_id: `${sessionPrefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           collector_id: collectorId,
           collector_identifier: email || '',
           session_type: 'one_time',
@@ -119,7 +128,7 @@ export async function POST(request: NextRequest) {
           subtotal_cents: subtotalCents,
           credits_discount_cents: creditDiscountCents,
           stripe_charge_cents: 0,
-          metadata: { credit_only: true },
+          metadata: actualCreditsToUse > 0 ? { credit_only: true } : { zero_dollar_test: true },
         })
         .select()
         .single()
@@ -133,29 +142,25 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({
-        type: 'credit_only',
+        type: actualCreditsToUse > 0 ? 'credit_only' : 'zero_dollar',
         sessionId: checkoutSession.session_id,
         creditsToUse: actualCreditsToUse,
         subtotal: subtotalCents / 100,
         creditDiscount: creditDiscountCents / 100,
         total: 0,
-        // For credit-only, client should redirect to complete endpoint
-        completeUrl: `/api/checkout/complete?session_id=${checkoutSession.session_id}`,
+        completeUrl: `/shop/checkout/zero-order?session_id=${checkoutSession.session_id}`,
       })
     }
 
     // Create Stripe Checkout session for partial or full payment
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin') || 'http://localhost:3000'
     const successUrl = `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-    const cancelUrl = `${baseUrl}/shop/cart?cancelled=true`
+    const finalCancelUrl = cancelUrl || `${baseUrl}/shop/cart?cancelled=true`
 
-    // Build Shopify variant metadata for webhook
-    const shopifyVariants = items.map(item => ({
-      variantId: item.variantId,
-      variantGid: item.variantGid,
-      quantity: item.quantity,
-      productHandle: item.handle,
-    }))
+    // Build Shopify variant metadata for webhook (Stripe metadata values max 500 chars — use compact format)
+    const shopifyVariantsCompact = items
+      .map(item => `${item.variantId}:${item.quantity}`)
+      .join(',')
 
     // Create Stripe line items
     const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
@@ -214,13 +219,14 @@ export async function POST(request: NextRequest) {
       mode: 'payment',
       line_items: stripeLineItems,
       success_url: successUrl,
-      cancel_url: cancelUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         source: 'headless_storefront',
-        shopify_variant_ids: JSON.stringify(shopifyVariants),
+        shopify_variant_ids: shopifyVariantsCompact,
         credits_used: actualCreditsToUse.toString(),
         credits_discount_cents: creditDiscountCents.toString(),
         collector_identifier: email || '',
+        ...(orderNotes && { order_notes: orderNotes }),
       },
       ...(stripeCustomerId && { customer: stripeCustomerId }),
       ...(email && !stripeCustomerId && { customer_email: email }),
@@ -233,7 +239,7 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
     }
 
-    const stripeSession = await stripe.checkout.sessions.create(sessionParams)
+    const stripeSession = await stripe!.checkout.sessions.create(sessionParams)
 
     // Save checkout session for tracking
     await supabase.from('checkout_sessions').insert({
@@ -248,7 +254,7 @@ export async function POST(request: NextRequest) {
       credits_discount_cents: creditDiscountCents,
       stripe_charge_cents: stripeChargeCents,
       stripe_payment_intent_id: stripeSession.payment_intent as string | undefined,
-      metadata: { shopify_variants: shopifyVariants },
+      metadata: { shopify_variants: items.map(i => ({ variantId: i.variantId, variantGid: i.variantGid, quantity: i.quantity, productHandle: i.handle })) },
     })
 
     return NextResponse.json({

@@ -143,18 +143,17 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       return
     }
 
-    const shopifyVariants = session.metadata?.shopify_variant_ids
-    if (!shopifyVariants) {
+    const shopifyVariantsRaw = session.metadata?.shopify_variant_ids
+    if (!shopifyVariantsRaw) {
       console.error('No Shopify variant IDs in session metadata')
       return
     }
 
-    const variants = JSON.parse(shopifyVariants) as Array<{
-      variantId: string
-      variantGid: string
-      quantity: number
-      productHandle: string
-    }>
+    // Parse compact format "variantId:qty,variantId:qty,..." (Stripe metadata max 500 chars)
+    const variants = shopifyVariantsRaw.split(',').map(part => {
+      const [variantId, qty] = part.split(':')
+      return { variantId: variantId ?? '', quantity: parseInt(qty ?? '1', 10) }
+    }).filter(v => v.variantId)
 
     // Get shipping details
     const shipping = session.shipping_details

@@ -52,6 +52,8 @@ export interface ShopNavigationProps {
   // Modal state control
   isModalOpen?: boolean
   onModalToggle?: () => void
+  // Hide add-to-cart slide-up notification (e.g. on experience page)
+  hideAddToCartNotification?: boolean
   // Scroll threshold
   scrollThreshold?: number
   className?: string
@@ -64,10 +66,10 @@ export function ShopNavigation({
   navigation = [],
   onSearch,
   searchPlaceholder,
-  cartItems,
-  cartSubtotal,
-  cartTotal,
-  cartItemCount,
+  cartItems: cartItemsProp,
+  cartSubtotal = 0,
+  cartTotal = 0,
+  cartItemCount = 0,
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
@@ -79,9 +81,12 @@ export function ShopNavigation({
   onAccountClick,
   isModalOpen: controlledModalOpen,
   onModalToggle: controlledModalToggle,
+  hideAddToCartNotification = false,
   scrollThreshold = 80, // Reduced threshold - always show minified bar after small scroll
   className,
 }: ShopNavigationProps) {
+  const cartItems = Array.isArray(cartItemsProp) ? cartItemsProp : []
+  const safeOnSearch = onSearch ?? (async () => ({ products: [], collections: [] }))
   const [internalModalOpen, setInternalModalOpen] = useState(false)
   
   // Use controlled state if provided, otherwise use internal state
@@ -94,11 +99,14 @@ export function ShopNavigation({
 
   const prevCartCount = useRef(cartItemCount)
 
-  // Detect cart additions and show notification
+  // Detect cart additions and show notification (skip when hidden e.g. on experience page)
   useEffect(() => {
+    if (hideAddToCartNotification) {
+      prevCartCount.current = cartItemCount
+      return
+    }
     if (cartItemCount > prevCartCount.current) {
-      // Get the most recently added item (assumes last item in array)
-      const recentItem = cartItems[cartItems.length - 1]
+      const recentItem = cartItems.length > 0 ? cartItems[cartItems.length - 1] : undefined
       if (recentItem) {
         setAddToCartNotification({
           isVisible: true,
@@ -107,7 +115,7 @@ export function ShopNavigation({
       }
     }
     prevCartCount.current = cartItemCount
-  }, [cartItemCount, cartItems])
+  }, [cartItemCount, cartItems, hideAddToCartNotification])
 
   // Handle modal toggle
   const handleToggleModal = useCallback(() => {
@@ -161,12 +169,12 @@ export function ShopNavigation({
         onWishlistClick={onWishlistClick}
         onSearchClick={handleSearchFocus}
         onAccountClick={onAccountClick}
-        onSearch={onSearch}
+        onSearch={safeOnSearch}
         className={className}
       />
 
       {/* Add to Cart Notification */}
-      {addToCartNotification.product && (
+      {!hideAddToCartNotification && addToCartNotification.product && (
         <AddToCartNotification
           isVisible={addToCartNotification.isVisible}
           onClose={handleCloseNotification}

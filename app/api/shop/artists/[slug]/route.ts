@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCollection, getProductsByVendor } from '@/lib/shopify/storefront-client'
 import { createClient } from '@/lib/supabase/server'
+import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { getCollection, getCollectionById, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 
 /**
  * Artist/Vendor Profile API
- * 
- * Returns enriched artist profile by merging:
- * - Shopify collection/vendor data (products, collection image)
- * - Supabase vendor data (bio, instagram, profile_image, signature_url, website)
- * - Supabase artwork_series (series by this vendor)
- * - Anonymized collector count (social proof)
+ *
+ * Matches Liquid pattern: collections[vendor_handle] where vendor_handle = product.vendor | handle.
+ * Uses vendor_collections when available, else getVendorCollectionHandle(vendorName) for Shopify convention.
+ * Bio priority: 1. Vendor bio 2. Collection description 3. Product description
  */
 
 export const dynamic = 'force-dynamic'
@@ -19,174 +18,127 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params
-  
-  try {
-    // Decode and derive the artist name from slug for database lookups
-    const decodedSlug = decodeURIComponent(slug)
-    const artistName = decodedSlug.replace(/-/g, ' ')
-    
-    // First try Supabase lookup to get the canonical vendor name
-    const vendorData = await fetchSupabaseVendorData(artistName)
-    
-    // Use canonical vendor name from Supabase if found, otherwise use derived name
-    const canonicalName = vendorData?.vendor_name || artistName
-    
-    // Fetch Shopify data using canonical name
-    const shopifyData = await fetchShopifyArtistData(decodedSlug, canonicalName)
+  const { searchParams } = new URL(request.url)
+  const vendorParam = searchParams.get('vendor')
+  const artistNameForMatch = (vendorParam || slug.replace(/-/g, ' ')).trim()
 
-    if (!shopifyData && !vendorData) {
+  try {
+    const supabase = createClient()
+
+    // 1. Find vendor and their paired collection from vendor_collections
+    let vendorBio: string | undefined
+    let pairedCollectionId: string | null = null
+    let pairedCollectionHandle: string | null = null
+    let vendorName: string | undefined
+
+    try {
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('id, bio, vendor_name')
+        .ilike('vendor_name', artistNameForMatch)
+        .maybeSingle()
+
+      if (vendor) {
+        vendorBio = vendor.bio?.trim() || undefined
+        vendorName = vendor.vendor_name
+
+        const { data: vendorCollection } = await supabase
+          .from('vendor_collections')
+          .select('shopify_collection_id, shopify_collection_handle')
+          .eq('vendor_id', vendor.id)
+          .maybeSingle()
+
+        pairedCollectionId = vendorCollection?.shopify_collection_id ?? null
+        pairedCollectionHandle = vendorCollection?.shopify_collection_handle ?? null
+      }
+    } catch {
+      // Supabase not configured or error, continue
+    }
+
+    // 2. Fetch collection - prefer ID from vendor_collections (e.g. 685744914818), then handle
+    let collection = null
+
+    if (pairedCollectionId) {
+      collection = await getCollectionById(pairedCollectionId, {
+        first: 50,
+        sortKey: 'CREATED',
+        reverse: true,
+      })
+    }
+
+    if (!collection) {
+      const canonicalHandle = vendorName ? getVendorCollectionHandle(vendorName) : slug
+      const handlesToTry = [
+        pairedCollectionHandle,
+        canonicalHandle !== slug ? canonicalHandle : null,
+        slug,
+      ].filter(Boolean) as string[]
+      const uniqueHandles = [...new Set(handlesToTry)]
+
+      for (const handle of uniqueHandles) {
+        try {
+          collection = await getCollection(handle, {
+            first: 50,
+            sortKey: 'CREATED',
+            reverse: true,
+          })
+          if (collection) break
+        } catch {
+          continue
+        }
+      }
+    }
+
+    const collectionDesc = collection?.description
+      || (collection?.descriptionHtml
+        ? collection.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        : '')
+
+    if (collection?.products?.edges?.length) {
+      const products = collection.products.edges.map((edge) => edge.node)
+      const artist = {
+        name: vendorName || collection.title,
+        slug,
+        bio: vendorBio || (collectionDesc || undefined),
+        image: collection.image?.url,
+        products,
+      }
+      return NextResponse.json(artist)
+    }
+
+    // Fallback: fetch by vendor name when no collection found
+    let vendorProducts: ShopifyProduct[] = []
+    try {
+      const result = await getProductsByVendor(artistNameForMatch, {
+        first: 50,
+        sortKey: 'CREATED_AT',
+        reverse: true,
+      })
+      vendorProducts = result?.products ?? []
+    } catch (vendorErr) {
+      console.warn('[Artist API] Vendor lookup failed for', slug, vendorErr)
+    }
+
+    if (vendorProducts.length === 0) {
       return NextResponse.json(
-        { error: 'Artist not found' },
+        { error: 'Artist not found', products: [] },
         { status: 404 }
       )
     }
 
-    // Merge Shopify + Supabase data (Supabase takes priority for profile fields)
     const artist = {
-      name: shopifyData?.name || canonicalName,
-      slug: decodedSlug,
-      // Supabase bio takes priority, then Shopify collection description
-      bio: vendorData?.bio || vendorData?.artist_bio || shopifyData?.bio || undefined,
-      artistHistory: vendorData?.artist_history || undefined,
-      // Supabase profile image takes priority
-      image: vendorData?.profile_picture_url || vendorData?.profile_image || shopifyData?.image || undefined,
-      signatureUrl: vendorData?.signature_url || undefined,
-      instagramUrl: vendorData?.instagram_url || undefined,
-      website: vendorData?.website || undefined,
-      // Products from Shopify
-      products: shopifyData?.products || [],
-      // Series from Supabase
-      series: vendorData?.series || [],
-      // Anonymized collector count
-      collectorCount: vendorData?.collectorCount || 0,
-      // Vendor ID for internal references
-      vendorId: vendorData?.id || undefined,
+      name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
+      slug,
+      bio: vendorBio || collectionDesc || vendorProducts[0]?.description || undefined,
+      image: vendorProducts[0]?.featuredImage?.url,
+      products: vendorProducts,
     }
-    
     return NextResponse.json(artist)
   } catch (error) {
-    console.error('[Artist API] Error:', error)
+    console.error('[Artist API] Error for slug', slug, ':', error)
     return NextResponse.json(
       { error: 'Failed to fetch artist', products: [] },
       { status: 500 }
     )
-  }
-}
-
-/**
- * Fetch artist data from Shopify (collection or vendor products)
- */
-async function fetchShopifyArtistData(slug: string, artistName: string) {
-  // First, try to fetch the artist's collection by handle (slug)
-  const collection = await getCollection(slug, {
-    first: 50,
-    sortKey: 'CREATED_AT',
-    reverse: true,
-  })
-  
-  if (collection) {
-    const products = collection.products?.edges?.map(edge => edge.node) || []
-    return {
-      name: collection.title,
-      bio: collection.description || collection.descriptionHtml?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
-      image: collection.image?.url,
-      products,
-    }
-  }
-  
-  // Fallback: fetch by vendor name
-  const { products: vendorProducts } = await getProductsByVendor(artistName, {
-    first: 50,
-    sortKey: 'CREATED_AT',
-    reverse: true,
-  })
-  
-  if (vendorProducts.length === 0) {
-    return null
-  }
-  
-  return {
-    name: vendorProducts[0].vendor || artistName,
-    bio: vendorProducts[0].description || undefined,
-    image: vendorProducts[0].featuredImage?.url,
-    products: vendorProducts,
-  }
-}
-
-/**
- * Fetch enriched vendor data from Supabase
- * Includes: profile fields, series, and anonymized collector count
- */
-async function fetchSupabaseVendorData(artistName: string) {
-  try {
-    const supabase = await createClient()
-
-    // 1. Look up vendor by vendor_name (case-insensitive)
-    const { data: vendor, error: vendorError } = await supabase
-      .from('vendors')
-      .select(`
-        id,
-        vendor_name,
-        bio,
-        artist_bio,
-        artist_history,
-        instagram_url,
-        website,
-        profile_image,
-        profile_picture_url,
-        signature_url
-      `)
-      .ilike('vendor_name', artistName)
-      .eq('status', 'active')
-      .single()
-
-    if (vendorError || !vendor) {
-      return null
-    }
-
-    // 2. Fetch series by this vendor (in parallel with collector count)
-    const [seriesResult, collectorCountResult] = await Promise.all([
-      supabase
-        .from('artwork_series')
-        .select(`
-          id,
-          name,
-          description,
-          thumbnail_url,
-          is_active
-        `)
-        .eq('vendor_id', vendor.id)
-        .eq('is_active', true)
-        .order('display_order', { ascending: true }),
-      
-      // 3. Anonymized collector count: distinct collectors who own this vendor's work
-      supabase
-        .from('line_items')
-        .select('owner_email', { count: 'exact', head: false })
-        .eq('vendor_name', vendor.vendor_name)
-        .eq('status', 'active')
-        .not('owner_email', 'is', null),
-    ])
-
-    const series = (seriesResult.data || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      description: s.description,
-      thumbnail_url: s.thumbnail_url,
-    }))
-
-    // Count distinct collector emails
-    const uniqueCollectors = new Set(
-      (collectorCountResult.data || []).map((row: any) => row.owner_email)
-    )
-
-    return {
-      ...vendor,
-      series,
-      collectorCount: uniqueCollectors.size,
-    }
-  } catch (error) {
-    console.error('[Artist API] Supabase vendor lookup error:', error)
-    return null
   }
 }

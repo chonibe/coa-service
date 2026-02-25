@@ -53,6 +53,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const productsPerPage = 12
 
   // Determine sort key for Shopify API
+  // ProductSortKeys (products query): TITLE, PRICE, BEST_SELLING, CREATED_AT, ...
+  // ProductCollectionSortKeys (collection.products): TITLE, PRICE, BEST_SELLING, CREATED, ...
   const sortKeyMap: Record<string, { key: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED_AT'; reverse: boolean }> = {
     'best-selling': { key: 'BEST_SELLING', reverse: false },
     'newest': { key: 'CREATED_AT', reverse: true },
@@ -62,6 +64,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     'title-za': { key: 'TITLE', reverse: true },
   }
   const sortConfig = sortKeyMap[sort] || sortKeyMap['best-selling']
+
+  // Map for collection queries: ProductCollectionSortKeys uses CREATED not CREATED_AT
+  const collectionSortKey = sortConfig.key === 'CREATED_AT' ? 'CREATED' : sortConfig.key
 
   // Fetch products with error handling
   let products: ShopifyProduct[] = []
@@ -77,7 +82,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     if (collectionHandle) {
       const collection = await getCollection(collectionHandle, {
         first: productsPerPage,
-        sortKey: sortConfig.key as any,
+        sortKey: collectionSortKey as 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'MANUAL',
         reverse: sortConfig.reverse,
       })
       if (collection) {

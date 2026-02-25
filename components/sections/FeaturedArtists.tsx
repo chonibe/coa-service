@@ -45,6 +45,7 @@ export function FeaturedArtistsSection({
 }: FeaturedArtistsSectionProps) {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
   const [scrollProgress, setScrollProgress] = React.useState(0)
+  const safeArtists = Array.isArray(artists) ? artists : []
 
   // Handle scroll progress
   const handleScroll = () => {
@@ -109,13 +110,13 @@ export function FeaturedArtistsSection({
           )}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {artists.map((artist) => (
+          {safeArtists.map((artist) => (
             <ArtistCard key={artist.handle} artist={artist} />
           ))}
         </div>
 
         {/* Progress Bar */}
-        {showProgressBar && artists.length > collectionsPerRow.desktop && (
+        {showProgressBar && safeArtists.length > collectionsPerRow.desktop && (
           <div className="mt-6 sm:mt-8">
             <div className="h-0.5 bg-[#1a1a1a]/10 rounded-full overflow-hidden">
               <div

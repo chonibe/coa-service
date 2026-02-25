@@ -1,17 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Download, FileText, Image as ImageIcon, Box } from "lucide-react"
 import { TemplatePreviewer } from "./components/template-previewer"
 import { ArtworkUploader } from "./components/artwork-uploader"
 import { Spline3DPreview } from "./components/spline-3d-preview"
+import { loadImagePosition, DEFAULT_SIDE_POSITION, DEFAULT_SIDE_B_POSITION } from "@/lib/experience-image-position"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription, Badge, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 export default function TemplatePreviewPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [side1Image, setSide1Image] = useState<string | null>(null)
   const [side2Image, setSide2Image] = useState<string | null>(null)
+  const [imagePosition, setImagePosition] = useState<ReturnType<typeof loadImagePosition>>(null)
+
+  useEffect(() => {
+    setImagePosition(loadImagePosition())
+  }, [])
 
   const handleDownloadTemplate = async () => {
     try {
@@ -213,9 +219,18 @@ export default function TemplatePreviewPage() {
                 <Spline3DPreview 
                   image1={side1Image} 
                   image2={side2Image}
-                  // Object IDs (UUIDs) from Spline scene
                   side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
                   side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
+                  imageScale={imagePosition?.sideA.scale ?? DEFAULT_SIDE_POSITION.scale}
+                  imageOffsetX={imagePosition?.sideA.offsetX ?? DEFAULT_SIDE_POSITION.offsetX}
+                  imageOffsetY={imagePosition?.sideA.offsetY ?? DEFAULT_SIDE_POSITION.offsetY}
+                  imageScaleX={imagePosition?.sideA.scaleX ?? DEFAULT_SIDE_POSITION.scaleX}
+                  imageScaleY={imagePosition?.sideA.scaleY ?? DEFAULT_SIDE_POSITION.scaleY}
+                  imageScaleB={imagePosition?.sideB.scale ?? DEFAULT_SIDE_B_POSITION.scale}
+                  imageOffsetXB={imagePosition?.sideB.offsetX ?? DEFAULT_SIDE_B_POSITION.offsetX}
+                  imageOffsetYB={imagePosition?.sideB.offsetY ?? DEFAULT_SIDE_B_POSITION.offsetY}
+                  imageScaleXB={imagePosition?.sideB.scaleX ?? DEFAULT_SIDE_B_POSITION.scaleX}
+                  imageScaleYB={imagePosition?.sideB.scaleY ?? DEFAULT_SIDE_B_POSITION.scaleY}
                 />
               </TabsContent>
             </Tabs>

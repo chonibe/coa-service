@@ -8,6 +8,8 @@ import { REQUIRE_ACCOUNT_SELECTION_COOKIE } from "@/lib/vendor-auth"
 import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
 import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasAnyRole } from "@/lib/auth/unified-session"
 
+export const dynamic = 'force-dynamic'
+
 const PENDING_ACCESS_ROUTE = "/vendor/access-pending"
 const ACCESS_DENIED_ROUTE = "/vendor/access-denied"
 

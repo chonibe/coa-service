@@ -65,10 +65,10 @@ export function FeaturedProductSection({
   className,
 }: FeaturedProductSectionProps) {
   const [activeMediaIndex, setActiveMediaIndex] = React.useState(0)
-  
+  const safeMedia = Array.isArray(media) ? media : []
   const productUrl = ctaUrl || `/shop/${handle}`
-  const primaryMedia = media[0]
-  const secondaryMedia = media.slice(1, 4)
+  const primaryMedia = safeMedia[0]
+  const secondaryMedia = safeMedia.slice(1, 4)
 
   return (
     <SectionWrapper

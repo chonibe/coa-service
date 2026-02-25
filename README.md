@@ -20,6 +20,14 @@ COA Service is a comprehensive digital art authentication and management platfor
 - Digital artwork verification
 - Secure claim process
 
+### 🎡 Giveaway Roulette Wheel
+- **Instagram Comment Parsing**: Parse @mentions from copied comments
+- **Animated Wheel Selection**: Smooth GSAP-powered roulette wheel animation
+- **Weighted Entry System**: Each tag = one entry, multiple tags = multiple chances
+- **Co-Winner Selection**: Both the tagger and tagged person win the prize
+- **Database Persistence**: Store giveaway history in Supabase
+- **Beautiful UI**: Street Collector branded interface with confetti celebration
+
 ### 💰 Gumroad-Level Payout System
 - **Unified Payment Processing**: PayPal, Stripe, and Bank Transfer support
 - **Automated Scheduling**: Bi-weekly, weekly, and monthly payout schedules
@@ -86,6 +94,8 @@ npm run dev
 
 ## Documentation
 
+- [Giveaway Roulette Wheel](/app/giveaway/README.md) - 🎡 Instagram-based giveaway with animated wheel selection
+- [Giveaway Migration Guide](/docs/migrations/APPLY_GIVEAWAY_MIGRATION.md) - Setup instructions for database migration
 - [NFC Pairing](/docs/NFC_PAIRING.md)
 - [Authentication](/docs/authentication/README.md)
 - [Dashboard Guides](/docs/README.md)

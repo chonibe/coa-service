@@ -1,0 +1,72 @@
+import {
+  getProduct,
+  getCollectionWithFullProducts,
+  type ShopifyProduct,
+} from '@/lib/shopify/storefront-client'
+import { ExperienceClient } from './components/ExperienceClient'
+
+export const dynamic = 'force-dynamic'
+
+export const metadata = {
+  title: 'Customize Your Lamp | Street Collector',
+  description:
+    'Build your Street Lamp with artwork you love. Preview art live on the 3D lamp and checkout in one tap.',
+}
+
+const SEASON_1_HANDLE = 'season-1'
+const SEASON_2_HANDLE = '2025-edition'
+
+export default async function ExperiencePage() {
+  let lamp: ShopifyProduct | null = null
+  let productsSeason1: ShopifyProduct[] = []
+  let productsSeason2: ShopifyProduct[] = []
+  let error: string | null = null
+
+  try {
+    const [lampResult, season1Result, season2Result] = await Promise.all([
+      getProduct('street_lamp').catch(() => null),
+      getCollectionWithFullProducts(SEASON_1_HANDLE, {
+        first: 50,
+        sortKey: 'MANUAL',
+      }).catch(() => null),
+      getCollectionWithFullProducts(SEASON_2_HANDLE, {
+        first: 50,
+        sortKey: 'MANUAL',
+      }).catch(() => null),
+    ])
+
+    lamp = lampResult
+    productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
+    productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
+  } catch (err: any) {
+    console.error('Experience page fetch error:', err)
+    error = err.message || 'Failed to load products'
+  }
+
+  if (error || !lamp) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
+        <div className="text-center max-w-md px-6">
+          <h1 className="text-2xl font-semibold mb-3">Unavailable</h1>
+          <p className="text-neutral-400 mb-6">
+            {error || 'Could not load the lamp product. Please try again later.'}
+          </p>
+          <a
+            href="/shop"
+            className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+          >
+            Back to Shop
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <ExperienceClient
+      lamp={lamp}
+      productsSeason1={productsSeason1}
+      productsSeason2={productsSeason2}
+    />
+  )
+}
