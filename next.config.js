@@ -97,6 +97,11 @@ const nextConfig = {
         fs: false,
       }
     }
+    // Dedupe Three.js – @splinetool/runtime and spline-3d-preview both use it
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      three: require('path').resolve(__dirname, 'node_modules/three'),
+    }
     return config
   },
   // This helps with potential CORS issues in development
