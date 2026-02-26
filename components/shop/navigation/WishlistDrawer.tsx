@@ -405,6 +405,16 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
           : 'opacity 150ms ease-out, transform 150ms ease-out',
       }}
     >
+      {/* Heart remove button — top right, touch-friendly */}
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove() }}
+        className="absolute top-2 right-2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm text-[#f83a3a] hover:bg-rose-50 hover:scale-110 active:scale-95 transition-all touch-manipulation"
+        aria-label="Remove from wishlist"
+      >
+        <Heart size={18} className="fill-[#f83a3a] text-[#f83a3a]" />
+      </button>
+
       <div className="flex gap-3">
         {/* Image */}
         <div 
@@ -480,8 +490,8 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
         </div>
       </div>
 
-      {/* Added date and Remove button */}
-      <div className="mt-2 pt-2 border-t border-[#1a1a1a]/5 flex items-center justify-between">
+      {/* Added date */}
+      <div className="mt-2 pt-2 border-t border-[#1a1a1a]/5">
         <p className="text-xs text-[#1a1a1a]/40">
           Added {new Date(item.addedAt).toLocaleDateString('en-US', { 
             month: 'short', 
@@ -489,15 +499,6 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
             year: 'numeric'
           })}
         </p>
-        
-        {/* Remove button - small x */}
-        <button
-          onClick={onRemove}
-          className="text-[#1a1a1a]/40 hover:text-[#f83a3a] transition-colors"
-          aria-label="Remove from wishlist"
-        >
-          <X size={14} />
-        </button>
       </div>
     </div>
   )

@@ -84,7 +84,41 @@ interface WishlistButtonProps {
 />
 ```
 
-### 3. Cart Drawer Integration (`components/impact/LocalCartDrawer.tsx`)
+### 3. WishlistSwiperSheet (`app/shop/experience/components/WishlistSwiperSheet.tsx`)
+**Purpose:** Tinder-style artwork rating interface that auto-adds 4+ star items to wishlist
+
+**Key Features:**
+- Drag-to-rate: Swipe right to fill stars (1–5), swipe left to skip
+- Tap stars directly for quick rating
+- Pre-rating filters: Unrated, All, Re-rate, or By artist
+- Completion summary with stats, rating breakdown, and top picks
+- Undo last rating (floating button, auto-hides after 5s)
+- Keyboard shortcuts: 1–5 to rate, 0/Backspace to skip, Z to undo, Escape to close, ? for tutorial
+- First-use tutorial overlay (persisted via localStorage)
+- Richer cards: artist, price, tags, wishlist badge, image counter
+- Progress bar and X/Y counter
+- Auto-add to wishlist when rating ≥ 4 stars
+
+**Props:**
+```typescript
+interface WishlistSwiperSheetProps {
+  isOpen: boolean
+  onClose: () => void
+  products: ShopifyProduct[]
+  onRatingChange?: () => void
+  onSelectProduct?: (product: ShopifyProduct) => void
+  onApplyStarFilter?: (minStars: number) => void
+}
+```
+
+**Rating UX Flow:**
+1. Setup: Choose what to rate (unrated/all/rerate/by artist)
+2. Rating: Drag or tap to rate each artwork; card advances on release
+3. Summary: View stats, top picks, and actions (View Wishlist, Filter by Rating, Rate More, Close)
+
+**Related:** `lib/experience-artwork-ratings.ts` — localStorage persistence for ratings
+
+### 4. Cart Drawer Integration (`components/impact/LocalCartDrawer.tsx`)
 **Purpose:** Display wishlist items in cart drawer recommendations section
 
 **Key Features:**
@@ -397,6 +431,14 @@ interface WishlistItem {
 ```
 
 ## Version History
+
+### v1.1.0 (2026-02-25)
+- WishlistSwiperSheet overhaul: drag-to-rate mechanic
+- Pre-rating filters (unrated, all, re-rate, by artist)
+- Completion summary with stats and top picks
+- Undo system, keyboard nav, first-use tutorial
+- Richer card design (artist, price, tags, wishlist badge)
+- `lib/experience-artwork-ratings.ts` extended with clearRating, getAllRatings, getRatingStats, getUnratedProductIds
 
 ### v1.0.0 (2026-02-04)
 - Initial wishlist implementation

@@ -7,6 +7,11 @@ import { Application } from "@splinetool/runtime"
 import * as THREE from "three"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
+
+const __SPLINE_DEV__ = process.env.NODE_ENV === "development"
+const splineLog = (...args: unknown[]) => __SPLINE_DEV__ && console.log('[Spline]', ...args)
+const splineWarn = (...args: unknown[]) => __SPLINE_DEV__ && console.warn('[Spline]', ...args)
+const splineError = (...args: unknown[]) => __SPLINE_DEV__ && console.error('[Spline]', ...args)
 import { cn } from "@/lib/utils"
 import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
 interface Spline3DPreviewProps {
@@ -135,17 +140,17 @@ export function Spline3DPreview({
 
   // Debug function to inspect current texture sizes
   const debugTextureSizes = useCallback(() => {
-    console.log("[Spline3D] ===== DEBUGGING TEXTURE SIZES =====")
+    splineLog("[Spline3D] ===== DEBUGGING TEXTURE SIZES =====")
 
     const app = splineAppRef.current as any
     if (!app) {
-      console.warn("[Spline3D] No app available for debugging")
+      splineWarn("[Spline3D] No app available for debugging")
       return
     }
 
     const scene = app.scene || app._scene
     if (!scene) {
-      console.warn("[Spline3D] No scene available for debugging")
+      splineWarn("[Spline3D] No scene available for debugging")
       return
     }
 
@@ -162,10 +167,10 @@ export function Spline3DPreview({
       }
 
       if (material && material.layers) {
-        console.log(`[Spline3D] Inspecting ${currentPath}:`)
+        splineLog(`[Spline3D] Inspecting ${currentPath}:`)
         material.layers.forEach((layer: any, index: number) => {
           if (layer.texture && layer.texture.image) {
-            console.log(`  Layer ${index} (${layer.type}):`, {
+            splineLog(`  Layer ${index} (${layer.type}):`, {
               textureRepeat: layer.texture.repeat,
               textureOffset: layer.texture.offset,
               textureRotation: layer.texture.rotation,
@@ -191,7 +196,7 @@ export function Spline3DPreview({
     }
 
     findAndInspectTextures(scene)
-    console.log("[Spline3D] ===== END TEXTURE SIZE DEBUG =====")
+    splineLog("[Spline3D] ===== END TEXTURE SIZE DEBUG =====")
   }, [])
   const [discoveredObjects, setDiscoveredObjects] = useState<ObjectInfo[]>([])
   
@@ -214,7 +219,7 @@ export function Spline3DPreview({
   const toggleObjectVisibility = useCallback((objectInfo: ObjectInfo) => {
     const app = splineAppRef.current as any
     if (!app || !objectInfo.objectRef) {
-      console.warn(`[Spline3D] Cannot toggle object: missing references`)
+      splineWarn(`[Spline3D] Cannot toggle object: missing references`)
       return
     }
 
@@ -266,9 +271,9 @@ export function Spline3DPreview({
         )
       )
       
-      console.log(`[Spline3D] Toggled object ${objectInfo.objectName} to ${newVisible ? 'visible' : 'hidden'}`)
+      splineLog(`[Spline3D] Toggled object ${objectInfo.objectName} to ${newVisible ? 'visible' : 'hidden'}`)
     } catch (err) {
-      console.error(`[Spline3D] Error toggling object:`, err)
+      splineError(`[Spline3D] Error toggling object:`, err)
     }
   }, [])
 
@@ -276,7 +281,7 @@ export function Spline3DPreview({
   const toggleLayerVisibility = useCallback((layerInfo: LayerInfo) => {
     const app = splineAppRef.current as any
     if (!app || !layerInfo.layerRef || !layerInfo.materialRef) {
-      console.warn(`[Spline3D] Cannot toggle layer: missing references`)
+      splineWarn(`[Spline3D] Cannot toggle layer: missing references`)
       return
     }
 
@@ -302,7 +307,7 @@ export function Spline3DPreview({
             layer.texture.image = originalTextureImage
           }
 
-          console.log(`[Spline3D] Restored image on ${layerInfo.objectName} (including texture.image)`)
+          splineLog(`[Spline3D] Restored image on ${layerInfo.objectName} (including texture.image)`)
         } else {
           // Store original and clear - check all possible locations
           if (!originalMaterialValuesRef.current.has(`${key}-image`)) {
@@ -319,12 +324,12 @@ export function Spline3DPreview({
           // Clear texture.image specifically (this is where the JPEG data was found!)
           if (layer.texture?.image !== undefined) {
             layer.texture.image = null
-            console.log(`[Spline3D] Cleared texture.image from ${layerInfo.objectName} - this should remove the visible image!`)
+            splineLog(`[Spline3D] Cleared texture.image from ${layerInfo.objectName} - this should remove the visible image!`)
           } else {
             layer.texture = null
           }
 
-          console.log(`[Spline3D] Cleared image from ${layerInfo.objectName}`)
+          splineLog(`[Spline3D] Cleared image from ${layerInfo.objectName}`)
         }
       }
       // Handle direct material properties (not layers)
@@ -338,7 +343,7 @@ export function Spline3DPreview({
           const originalValue = originalMaterialValuesRef.current.get(key)
           if (originalValue !== undefined) {
             material[property] = originalValue
-            console.log(`[Spline3D] Restored ${property} on ${layerInfo.objectName}`)
+            splineLog(`[Spline3D] Restored ${property} on ${layerInfo.objectName}`)
           }
         } else {
           // Store original and clear
@@ -346,7 +351,7 @@ export function Spline3DPreview({
             originalMaterialValuesRef.current.set(key, material[property])
           }
           material[property] = null
-          console.log(`[Spline3D] Cleared ${property} on ${layerInfo.objectName}`)
+          splineLog(`[Spline3D] Cleared ${property} on ${layerInfo.objectName}`)
         }
       } else {
         // Handle regular layers
@@ -381,9 +386,9 @@ export function Spline3DPreview({
         })
       )
       
-      console.log(`[Spline3D] Toggled ${layerInfo.objectName} layer ${layerInfo.layerIndex} (${layerInfo.layerType}) to ${newVisible ? 'visible' : 'hidden'}`)
+      splineLog(`[Spline3D] Toggled ${layerInfo.objectName} layer ${layerInfo.layerIndex} (${layerInfo.layerType}) to ${newVisible ? 'visible' : 'hidden'}`)
     } catch (err) {
-      console.error(`[Spline3D] Error toggling layer:`, err)
+      splineError(`[Spline3D] Error toggling layer:`, err)
     }
   }, [])
 
@@ -391,7 +396,7 @@ export function Spline3DPreview({
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
 
-    console.log("[Spline3D] Adding image layers to materials:", { 
+    splineLog("[Spline3D] Adding image layers to materials:", { 
       hasImage1: !!image1, 
       hasImage2: !!image2,
       side1ObjectId,
@@ -403,11 +408,11 @@ export function Spline3DPreview({
     // Get the THREE.js scene from Spline
     const scene = app.scene || app._scene
     if (!scene) {
-      console.error("[Spline3D] Scene not available")
+      splineError("[Spline3D] Scene not available")
       return
     }
 
-    console.log("[Spline3D] ✓ Using imported THREE.js")
+    splineLog("[Spline3D] ✓ Using imported THREE.js")
 
     // Scene uses "PC trans A" (child, has material) under "Panel Side A" (parent, no material).
     const hasMaterial = (obj: any) => {
@@ -487,7 +492,7 @@ export function Spline3DPreview({
       if (!sideA && texturedObjects.length >= 1) sideA = texturedObjects[0].obj
       if (!sideB && texturedObjects.length >= 2) sideB = texturedObjects[1].obj
 
-      console.log(`[Spline3D] Panel discovery — Side A: ${sideA ? (sideA.name || sideA.uuid) : 'NOT FOUND'}, Side B: ${sideB ? (sideB.name || sideB.uuid) : 'NOT FOUND'}, A has material: ${!!(sideA && hasMaterial(sideA))}, B has material: ${!!(sideB && hasMaterial(sideB))}`)
+      splineLog(`[Spline3D] Panel discovery — Side A: ${sideA ? (sideA.name || sideA.uuid) : 'NOT FOUND'}, Side B: ${sideB ? (sideB.name || sideB.uuid) : 'NOT FOUND'}, A has material: ${!!(sideA && hasMaterial(sideA))}, B has material: ${!!(sideB && hasMaterial(sideB))}`)
 
       discoveredPanelsRef.current = { sideA, sideB }
       return discoveredPanelsRef.current
@@ -521,12 +526,12 @@ export function Spline3DPreview({
       const layerOverrides = opts?.layerOverrides ?? null
       const flipMode = parseFlip(flip)
       if (!obj) {
-        console.warn(`[Spline3D] Cannot add image layer: ${label} object not found`)
+        splineWarn(`[Spline3D] Cannot add image layer: ${label} object not found`)
         return false
       }
 
       try {
-        console.log(`[Spline3D] Attempting to add image layer to ${label} material...`)
+        splineLog(`[Spline3D] Attempting to add image layer to ${label} material...`)
         
         // Get material from object
         let material = obj.material
@@ -535,7 +540,7 @@ export function Spline3DPreview({
         }
         
         if (!material) {
-          console.warn(`[Spline3D] No material found on ${label} object`)
+          splineWarn(`[Spline3D] No material found on ${label} object`)
           return false
         }
 
@@ -551,7 +556,7 @@ export function Spline3DPreview({
           name: l.name || l.id || 'unnamed'
         })) || []
         
-        console.log(`[Spline3D] Found material for ${label}:`, {
+        splineLog(`[Spline3D] Found material for ${label}:`, {
           hasLayers: !!material.layers,
           layersCount: material.layers?.length,
           layerTypes: material.layers?.map((l: any) => l.type),
@@ -600,7 +605,7 @@ export function Spline3DPreview({
           canvas.toBlob((b) => resolve(b!), 'image/png')
         )
         const imageUint8Array = new Uint8Array(await blob!.arrayBuffer())
-        console.log(`[Spline3D] ✓ Loaded image for ${label}: ${canvas.width}x${canvas.height}, scale ${scale}`)
+        splineLog(`[Spline3D] ✓ Loaded image for ${label}: ${canvas.width}x${canvas.height}, scale ${scale}`)
 
         // Try multiple approaches to add image layer
 
@@ -613,7 +618,7 @@ export function Spline3DPreview({
             const layer = material.layers[i]
             if (layer.type === 'texture' && layer.texture && layer.texture.image) {
               try {
-                console.log(`[Spline3D] Found image layer ${i} for ${label} - attempting to update`, {
+                splineLog(`[Spline3D] Found image layer ${i} for ${label} - attempting to update`, {
                   hasImage: layer.image !== undefined,
                   hasMap: layer.map !== undefined,
                   visible: layer.visible,
@@ -627,7 +632,7 @@ export function Spline3DPreview({
                   // Keep the same structure as the original texture.image object
                   const originalImage = layer.texture.image
 
-                  console.log(`[Spline3D] Original texture.image structure:`, {
+                  splineLog(`[Spline3D] Original texture.image structure:`, {
                     hasData: !!originalImage.data,
                     dataType: originalImage.data?.constructor?.name,
                     dataLength: originalImage.data?.length,
@@ -646,11 +651,11 @@ export function Spline3DPreview({
                   if (layerOverrides) {
                     if (layerOverrides.projection !== undefined && 'projection' in layer) {
                       layer.projection = layerOverrides.projection
-                      console.log(`[Spline3D] Applied projection override for ${label}: ${layerOverrides.projection}`)
+                      splineLog(`[Spline3D] Applied projection override for ${label}: ${layerOverrides.projection}`)
                     }
                     if (layerOverrides.axis !== undefined && 'axis' in layer) {
                       layer.axis = layerOverrides.axis
-                      console.log(`[Spline3D] Applied axis override for ${label}: ${layerOverrides.axis}`)
+                      splineLog(`[Spline3D] Applied axis override for ${label}: ${layerOverrides.axis}`)
                     }
                   }
 
@@ -666,27 +671,27 @@ export function Spline3DPreview({
                   layer.texture.image.minFilter = originalImage.minFilter !== undefined ? originalImage.minFilter : 1008
                   layer.texture.image.wrapping = originalImage.wrapping !== undefined ? originalImage.wrapping : 1000
 
-                  console.log(`[Spline3D] ✓ Replaced image data for layer ${i} (${label}): ${imageElement.width}x${imageElement.height}, kept original transforms`)
+                  splineLog(`[Spline3D] ✓ Replaced image data for layer ${i} (${label}): ${imageElement.width}x${imageElement.height}, kept original transforms`)
 
                   // CRITICAL: Mark the texture itself as needing update
                   if (layer.texture.needsUpdate !== undefined) {
                     layer.texture.needsUpdate = true
-                    console.log(`[Spline3D] ✓ Marked texture as needsUpdate`)
+                    splineLog(`[Spline3D] ✓ Marked texture as needsUpdate`)
                   }
 
                   // Also try to mark the image as needing update if it has that property
                   if (layer.texture.image.needsUpdate !== undefined) {
                     layer.texture.image.needsUpdate = true
-                    console.log(`[Spline3D] ✓ Marked texture.image as needsUpdate`)
+                    splineLog(`[Spline3D] ✓ Marked texture.image as needsUpdate`)
                   }
 
                   // Update texture matrix if the properties changed
                   if (layer.texture.updateMatrix) {
                     layer.texture.updateMatrix()
-                    console.log(`[Spline3D] ✓ Updated texture matrix`)
+                    splineLog(`[Spline3D] ✓ Updated texture matrix`)
                   } else if (layer.texture.matrixNeedsUpdate !== undefined) {
                     layer.texture.matrixNeedsUpdate = true
-                    console.log(`[Spline3D] ✓ Marked texture matrix as needsUpdate`)
+                    splineLog(`[Spline3D] ✓ Marked texture matrix as needsUpdate`)
                   }
 
                   // Immediately update material and force refresh after texture.image replacement
@@ -709,7 +714,7 @@ export function Spline3DPreview({
                   setTimeout(() => {
                     if (app.renderer && app.scene && app.camera) {
                       app.renderer.render(app.scene, app.camera)
-                      console.log(`[Spline3D] ✓ Forced additional render after texture update`)
+                      splineLog(`[Spline3D] ✓ Forced additional render after texture update`)
                     }
                   }, 100)
 
@@ -717,10 +722,10 @@ export function Spline3DPreview({
                   if (opts?.captureLayer && 'projection' in layer && 'axis' in layer) {
                     opts.captureLayer.projection = layer.projection
                     opts.captureLayer.axis = layer.axis
-                    console.log(`[Spline3D] Captured layer layout for Side B: projection=${layer.projection}, axis=${layer.axis}`)
+                    splineLog(`[Spline3D] Captured layer layout for Side B: projection=${layer.projection}, axis=${layer.axis}`)
                   }
 
-                  console.log(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
+                  splineLog(`[Spline3D] ✓ REPLACED texture.image and updated material for layer ${i}`)
                   updatedLayers++
 
                   // Continue to next layer instead of returning immediately
@@ -729,7 +734,7 @@ export function Spline3DPreview({
                   layer.image = imageElement
                   if (layer.map !== undefined) layer.map = imageElement
                   if (layer.texture !== undefined) layer.texture = imageElement
-                  console.log(`[Spline3D] Used fallback approach for layer ${i}`)
+                  splineLog(`[Spline3D] Used fallback approach for layer ${i}`)
 
                   // Update material for fallback approach too
                   material.needsUpdate = true
@@ -747,18 +752,18 @@ export function Spline3DPreview({
                     app.renderer.render(app.scene, app.camera)
                   }
 
-                  console.log(`[Spline3D] ✓ Used fallback approach and updated material for layer ${i}`)
+                  splineLog(`[Spline3D] ✓ Used fallback approach and updated material for layer ${i}`)
                   updatedLayers++
                 }
               } catch (e) {
-                console.warn(`[Spline3D] Approach 1a failed for image layer ${i}:`, e)
+                splineWarn(`[Spline3D] Approach 1a failed for image layer ${i}:`, e)
               }
             }
           }
 
           // If we updated any layers in the first pass, return success
           if (updatedLayers > 0) {
-            console.log(`[Spline3D] ✓ Successfully updated ${updatedLayers} texture layers for ${label}`)
+            splineLog(`[Spline3D] ✓ Successfully updated ${updatedLayers} texture layers for ${label}`)
             return true
           }
 
@@ -767,7 +772,7 @@ export function Spline3DPreview({
             const layer = material.layers[i]
             if (layer.type === 'texture' || layer.type === 'matcap') {
               try {
-                console.log(`[Spline3D] Attempting to update existing ${layer.type} layer ${i} for ${label}`, {
+                splineLog(`[Spline3D] Attempting to update existing ${layer.type} layer ${i} for ${label}`, {
                   hasImage: layer.image !== undefined,
                   visible: layer.visible,
                   alpha: layer.alpha
@@ -782,7 +787,7 @@ export function Spline3DPreview({
                     height: imageElement.height,
                     name: `uploaded-image-${label}`
                   }
-                  console.log(`[Spline3D] ✓ Set texture.image data for ${layer.type} layer ${i}`)
+                  splineLog(`[Spline3D] ✓ Set texture.image data for ${layer.type} layer ${i}`)
                 } else {
                   // Fallback to other approaches
                   if (layer.image !== undefined) layer.image = imageElement
@@ -815,13 +820,13 @@ export function Spline3DPreview({
                   app.update()
                 }
 
-                console.log(`[Spline3D] ✓ Approach 1b: Updated existing ${layer.type} layer ${i} for ${label}`, {
+                splineLog(`[Spline3D] ✓ Approach 1b: Updated existing ${layer.type} layer ${i} for ${label}`, {
                   layerVisible: layer.visible,
                   layerAlpha: layer.alpha
                 })
                 return true
               } catch (e) {
-                console.warn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
+                splineWarn(`[Spline3D] Approach 1b failed for layer ${i}:`, e)
               }
             }
           }
@@ -877,14 +882,14 @@ export function Spline3DPreview({
               app.update()
             }
             
-            console.log(`[Spline3D] ✓ Approach 2: Pushed new image layer to layers array for ${label}`, {
+            splineLog(`[Spline3D] ✓ Approach 2: Pushed new image layer to layers array for ${label}`, {
               layerIndex: 0,
               totalLayers: material.layers.length,
               layerProperties: Object.keys(newLayer)
             })
             return true
           } catch (e) {
-            console.warn(`[Spline3D] Approach 2 failed:`, e)
+            splineWarn(`[Spline3D] Approach 2 failed:`, e)
           }
         }
 
@@ -900,11 +905,11 @@ export function Spline3DPreview({
               if (app.update && typeof app.update === 'function') {
                 app.update()
               }
-              console.log(`[Spline3D] ✓ Approach 3: Added image layer via addLayer() for ${label}`)
+              splineLog(`[Spline3D] ✓ Approach 3: Added image layer via addLayer() for ${label}`)
               return true
             }
           } catch (e) {
-            console.warn(`[Spline3D] Approach 3 failed:`, e)
+            splineWarn(`[Spline3D] Approach 3 failed:`, e)
           }
         }
 
@@ -916,11 +921,11 @@ export function Spline3DPreview({
               newLayer.image = imageElement
               newLayer.visible = true
               material.needsUpdate = true
-              console.log(`[Spline3D] ✓ Approach 4: Created layer via app.createLayer() for ${label}`)
+              splineLog(`[Spline3D] ✓ Approach 4: Created layer via app.createLayer() for ${label}`)
               return true
             }
           } catch (e) {
-            console.warn(`[Spline3D] Approach 4 failed:`, e)
+            splineWarn(`[Spline3D] Approach 4 failed:`, e)
           }
         }
 
@@ -930,17 +935,17 @@ export function Spline3DPreview({
           if (material.setImage) {
             material.setImage(imageElement)
             material.needsUpdate = true
-            console.log(`[Spline3D] ✓ Approach 5: Set image via material.setImage() for ${label}`)
+            splineLog(`[Spline3D] ✓ Approach 5: Set image via material.setImage() for ${label}`)
             return true
           }
         } catch (e) {
-          console.warn(`[Spline3D] Approach 5 failed:`, e)
+          splineWarn(`[Spline3D] Approach 5 failed:`, e)
         }
 
-        console.warn(`[Spline3D] All approaches failed to add image layer for ${label}`)
+        splineWarn(`[Spline3D] All approaches failed to add image layer for ${label}`)
         return false
       } catch (err) {
-        console.error(`[Spline3D] Error adding image layer to ${label}:`, err)
+        splineError(`[Spline3D] Error adding image layer to ${label}:`, err)
         return false
       }
     }
@@ -967,10 +972,10 @@ export function Spline3DPreview({
       const success = await addImageLayerToMaterial(objA, imgA, "Side A", flipA ? 'horizontal' : 'none', posA, {
         captureLayer: sideALayerLayout,
       })
-      console.log(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
+      splineLog(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
     } else {
       side1ObjectRef.current = null
-      if (imgA) console.warn(`[Spline3D] Side A object not found or has no material`)
+      if (imgA) splineWarn(`[Spline3D] Side A object not found or has no material`)
     }
 
     const sideBLayerOverrides: LayerOverrides =
@@ -983,10 +988,10 @@ export function Spline3DPreview({
       const success = await addImageLayerToMaterial(objB, imgB, "Side B", flipBResolved, posB, {
         layerOverrides: sideBLayerOverrides,
       })
-      console.log(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
+      splineLog(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
     } else {
       side2ObjectRef.current = null
-      if (imgB) console.warn(`[Spline3D] Side B object not found or has no material`)
+      if (imgB) splineWarn(`[Spline3D] Side B object not found or has no material`)
     }
 
     // Force render
@@ -1057,7 +1062,7 @@ export function Spline3DPreview({
                 if (controls.maxDistance !== undefined) controls.maxDistance = maxD
               }
             }
-          } catch (_) {}
+          } catch (_) { /* camera controls unavailable */ }
           setTimeout(() => {
             setIsLoading(false)
             
@@ -1066,13 +1071,13 @@ export function Spline3DPreview({
               const app = splineAppRef.current as any
               if (!app) return []
               
-              console.log("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR ALL OBJECTS =====")
+              splineLog("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR ALL OBJECTS =====")
               
               const allObjectsInfo: ObjectInfo[] = []
               const scene = app.scene || app._scene
               
               if (!scene) {
-                console.warn("[Spline3D] Scene not available")
+                splineWarn("[Spline3D] Scene not available")
                 return []
               }
               
@@ -1085,10 +1090,10 @@ export function Spline3DPreview({
                   const objects = app.getAllObjects()
                   if (Array.isArray(objects)) {
                     objectsFromAPI.push(...objects)
-                    console.log(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
+                    splineLog(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
                   }
                 } catch (e) {
-                  console.warn("[Spline3D] getAllObjects() failed:", e)
+                  splineWarn("[Spline3D] getAllObjects() failed:", e)
                 }
               }
               
@@ -1136,8 +1141,8 @@ export function Spline3DPreview({
                 traverseScene(obj, `Object-${obj.name || obj.type || 'unnamed'}`)
               })
               
-              console.log(`[Spline3D] Found ${allObjectsInfo.length} objects in entire scene`)
-              console.log("[Spline3D] ===== END OBJECT SEARCH =====")
+              splineLog(`[Spline3D] Found ${allObjectsInfo.length} objects in entire scene`)
+              splineLog("[Spline3D] ===== END OBJECT SEARCH =====")
               
               return allObjectsInfo
             }
@@ -1147,13 +1152,13 @@ export function Spline3DPreview({
               const app = splineAppRef.current as any
               if (!app) return []
               
-              console.log("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR IMAGES =====")
+              splineLog("[Spline3D] ===== SEARCHING ENTIRE SCENE FOR IMAGES =====")
               
               const allLayers: LayerInfo[] = []
               const scene = app.scene || app._scene
               
               if (!scene) {
-                console.warn("[Spline3D] Scene not available")
+                splineWarn("[Spline3D] Scene not available")
                 return []
               }
               
@@ -1167,10 +1172,10 @@ export function Spline3DPreview({
                   const objects = app.getAllObjects()
                   if (Array.isArray(objects)) {
                     allObjects.push(...objects)
-                    console.log(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
+                    splineLog(`[Spline3D] Found ${objects.length} objects via getAllObjects()`)
                   }
                 } catch (e) {
-                  console.warn("[Spline3D] getAllObjects() failed:", e)
+                  splineWarn("[Spline3D] getAllObjects() failed:", e)
                 }
               }
               
@@ -1198,7 +1203,7 @@ export function Spline3DPreview({
                   const hasDirectImage = material.map || material.texture || material.image
                   
                   if (hasDirectImage) {
-                    console.log(`[Spline3D] Found direct image on: ${currentPath}`, {
+                    splineLog(`[Spline3D] Found direct image on: ${currentPath}`, {
                       hasMap: !!material.map,
                       hasTexture: !!material.texture,
                       hasImage: !!material.image
@@ -1227,7 +1232,7 @@ export function Spline3DPreview({
                       const hasTexture = layer.texture !== undefined && layer.texture !== null
                       
                       if (hasImage || hasMap || hasTexture) {
-                        console.log(`[Spline3D] Found image in layer on: ${currentPath}`, {
+                        splineLog(`[Spline3D] Found image in layer on: ${currentPath}`, {
                           layerIndex: index,
                           layerType: layer.type,
                           hasImage,
@@ -1286,9 +1291,9 @@ export function Spline3DPreview({
                 traverseScene(obj, `Object-${obj.name || obj.type || 'unnamed'}`)
               })
               
-              console.log(`[Spline3D] Found ${allLayers.length} image sources in entire scene`)
-              console.log(`[Spline3D] Processed ${processedObjects.size} unique objects`)
-              console.log("[Spline3D] ===== END SCENE SEARCH =====")
+              splineLog(`[Spline3D] Found ${allLayers.length} image sources in entire scene`)
+              splineLog(`[Spline3D] Processed ${processedObjects.size} unique objects`)
+              splineLog("[Spline3D] ===== END SCENE SEARCH =====")
               
               return allLayers
             }
@@ -1298,7 +1303,7 @@ export function Spline3DPreview({
               const app = splineAppRef.current as any
               if (!app) return []
               
-              console.log("[Spline3D] ===== INSPECTING PC MATERIALS =====")
+              splineLog("[Spline3D] ===== INSPECTING PC MATERIALS =====")
               
               // Try to find PC Trans A and PC Trans B objects
               const side1Id = "2de1e7d2-4b53-4738-a749-be197641fa9a"
@@ -1314,12 +1319,12 @@ export function Spline3DPreview({
               objectsToCheck.forEach(({ id, name }) => {
                 const obj = app.findObjectById?.(id) || app.findObjectByName?.(name.split(" ")[0])
                 if (!obj) {
-                  console.warn(`[Spline3D] ${name} object not found`)
+                  splineWarn(`[Spline3D] ${name} object not found`)
                   return
                 }
                 
-                console.log(`[Spline3D] --- ${name} Material Inspection ---`)
-                console.log(`[Spline3D] Object found:`, {
+                splineLog(`[Spline3D] --- ${name} Material Inspection ---`)
+                splineLog(`[Spline3D] Object found:`, {
                   id: obj.id,
                   name: obj.name,
                   type: obj.type,
@@ -1333,11 +1338,11 @@ export function Spline3DPreview({
                 }
                 
                 if (!material) {
-                  console.warn(`[Spline3D] No material found on ${name}`)
+                  splineWarn(`[Spline3D] No material found on ${name}`)
                   return
                 }
                 
-                console.log(`[Spline3D] Material found:`, {
+                splineLog(`[Spline3D] Material found:`, {
                   type: material.type,
                   name: material.name,
                   uuid: material.uuid,
@@ -1346,7 +1351,7 @@ export function Spline3DPreview({
                 })
                 
                 // Check for direct image/texture on material (not in layers)
-                console.log(`[Spline3D] Checking direct material properties for images:`, {
+                splineLog(`[Spline3D] Checking direct material properties for images:`, {
                   hasMap: material.map !== undefined,
                   hasTexture: material.texture !== undefined,
                   hasImage: material.image !== undefined,
@@ -1361,7 +1366,7 @@ export function Spline3DPreview({
                 // Check mesh material if different
                 if (obj.mesh && obj.mesh.material) {
                   const meshMaterial = obj.mesh.material
-                  console.log(`[Spline3D] Checking mesh material for images:`, {
+                  splineLog(`[Spline3D] Checking mesh material for images:`, {
                     hasMap: meshMaterial.map !== undefined,
                     hasTexture: meshMaterial.texture !== undefined,
                     hasImage: meshMaterial.image !== undefined,
@@ -1418,7 +1423,7 @@ export function Spline3DPreview({
                       if (childMaterial) {
                         const hasImage = childMaterial.map || childMaterial.texture || childMaterial.image
                         if (hasImage || (childMaterial.layers && childMaterial.layers.length > 0)) {
-                          console.log(`[Spline3D] Found child object ${childIdx} of ${parentName} with material:`, {
+                          splineLog(`[Spline3D] Found child object ${childIdx} of ${parentName} with material:`, {
                             childName: child.name || `Child ${childIdx}`,
                             hasMap: !!childMaterial.map,
                             hasTexture: !!childMaterial.texture,
@@ -1459,7 +1464,7 @@ export function Spline3DPreview({
                 
                 // Log all layers in detail and store them
                 if (material.layers && Array.isArray(material.layers)) {
-                  console.log(`[Spline3D] Total layers: ${material.layers.length}`)
+                  splineLog(`[Spline3D] Total layers: ${material.layers.length}`)
                   material.layers.forEach((layer: any, index: number) => {
                     const layerInfo = {
                       type: layer.type,
@@ -1477,7 +1482,7 @@ export function Spline3DPreview({
                       allProperties: Object.keys(layer)
                     }
                     
-                    console.log(`[Spline3D] Layer ${index}:`, layerInfo)
+                    splineLog(`[Spline3D] Layer ${index}:`, layerInfo)
                     
                     // Store layer for toggling
                     allLayers.push({
@@ -1498,7 +1503,7 @@ export function Spline3DPreview({
                       const hasTexture = layer.texture !== undefined && layer.texture !== null
                       
                       if (hasImage || hasMap || hasTexture) {
-                        console.log(`[Spline3D]   → ${layer.type.toUpperCase()} LAYER HAS IMAGE:`, {
+                        splineLog(`[Spline3D]   → ${layer.type.toUpperCase()} LAYER HAS IMAGE:`, {
                           hasImage,
                           hasMap,
                           hasTexture,
@@ -1526,7 +1531,7 @@ export function Spline3DPreview({
                     
                     // If it's an image layer, log more details
                     if (layer.type === 'image') {
-                      console.log(`[Spline3D]   → IMAGE LAYER DETAILS:`, {
+                      splineLog(`[Spline3D]   → IMAGE LAYER DETAILS:`, {
                         image: layer.image,
                         imageWidth: layer.image?.width,
                         imageHeight: layer.image?.height,
@@ -1537,21 +1542,21 @@ export function Spline3DPreview({
                     }
                   })
                 } else {
-                  console.warn(`[Spline3D] Material has no layers array`)
+                  splineWarn(`[Spline3D] Material has no layers array`)
                 }
                 
-                console.log(`[Spline3D] --- End ${name} Inspection ---\n`)
+                splineLog(`[Spline3D] --- End ${name} Inspection ---\n`)
               })
               
-              console.log("[Spline3D] ===== END PC MATERIAL INSPECTION =====")
-              console.log(`[Spline3D] Found ${allLayers.length} layers in PC materials`)
+              splineLog("[Spline3D] ===== END PC MATERIAL INSPECTION =====")
+              splineLog(`[Spline3D] Found ${allLayers.length} layers in PC materials`)
               
               return allLayers
             }
             
             // Helper function to inspect material layers of a specific object
             const inspectObjectMaterial = (obj: any, objectName: string): LayerInfo[] => {
-              console.log(`[Spline3D] Inspecting material for ${objectName}:`, {
+              splineLog(`[Spline3D] Inspecting material for ${objectName}:`, {
                 name: obj.name,
                 type: obj.type,
                 uuid: obj.uuid,
@@ -1565,11 +1570,11 @@ export function Spline3DPreview({
               }
 
               if (!material) {
-                console.warn(`[Spline3D] No material found on ${objectName}`)
+                splineWarn(`[Spline3D] No material found on ${objectName}`)
                 return []
               }
 
-              console.log(`[Spline3D] Material found for ${objectName}:`, {
+              splineLog(`[Spline3D] Material found for ${objectName}:`, {
                 type: material.type,
                 hasLayers: !!material.layers,
                 layersCount: material.layers?.length
@@ -1606,7 +1611,7 @@ export function Spline3DPreview({
                     allProperties: Object.keys(layer)
                   }
 
-                  console.log(`[Spline3D] ${objectName} Layer ${index}:`, layerInfo)
+                  splineLog(`[Spline3D] ${objectName} Layer ${index}:`, layerInfo)
 
                   layers.push({
                     objectName: objectName,
@@ -1621,7 +1626,7 @@ export function Spline3DPreview({
 
                   // If this layer has image data, add a "Clear Image" option
                   if (layer.type === 'texture' && (hasImage || hasMap || hasTexture || hasTextureImage)) {
-                    console.log(`[Spline3D]   → FOUND IMAGE DATA IN ${objectName} LAYER ${index}:`, {
+                    splineLog(`[Spline3D]   → FOUND IMAGE DATA IN ${objectName} LAYER ${index}:`, {
                       hasImage,
                       hasMap,
                       hasTexture,
@@ -1648,7 +1653,7 @@ export function Spline3DPreview({
                 })
               }
 
-              console.log(`[Spline3D] Found ${layers.length} layers on ${objectName}`)
+              splineLog(`[Spline3D] Found ${layers.length} layers on ${objectName}`)
               return layers
             }
 
@@ -1657,14 +1662,14 @@ export function Spline3DPreview({
               const app = splineAppRef.current as any
               if (!app) return []
 
-              console.log("[Spline3D] ===== INSPECTING PC TRANS B OBJECT =====")
+              splineLog("[Spline3D] ===== INSPECTING PC TRANS B OBJECT =====")
 
               // Try to find by ID first (from scene search results)
               const pcTransBId = "2e33392b-21d8-441d-87b0-11527f3a8b70"
               if (app.findObjectById) {
                 const obj = app.findObjectById(pcTransBId)
                 if (obj) {
-                  console.log(`[Spline3D] Found PC Trans B object by ID: ${pcTransBId}`)
+                  splineLog(`[Spline3D] Found PC Trans B object by ID: ${pcTransBId}`)
                   return inspectObjectMaterial(obj, "PC Trans B")
                 }
               }
@@ -1673,16 +1678,16 @@ export function Spline3DPreview({
               if (app.findObjectByName) {
                 const obj = app.findObjectByName("PC Trans B")
                 if (obj) {
-                  console.log(`[Spline3D] Found PC Trans B object by name`)
+                  splineLog(`[Spline3D] Found PC Trans B object by name`)
                   return inspectObjectMaterial(obj, "PC Trans B")
                 }
               }
 
-              console.warn(`[Spline3D] PC Trans B object not found by ID or name, trying path traversal`)
+              splineWarn(`[Spline3D] PC Trans B object not found by ID or name, trying path traversal`)
 
               const scene = app.scene || app._scene
               if (!scene) {
-                console.warn("[Spline3D] Scene not available")
+                splineWarn("[Spline3D] Scene not available")
                 return []
               }
 
@@ -1692,7 +1697,7 @@ export function Spline3DPreview({
               let currentObj: any = scene
               for (const pathSegment of path) {
                 if (!currentObj) {
-                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  splineWarn(`[Spline3D] Could not find path segment: ${pathSegment}`)
                   return []
                 }
                 
@@ -1712,21 +1717,21 @@ export function Spline3DPreview({
                   if (meshFound) {
                     currentObj = meshFound
                   } else {
-                    console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                    splineWarn(`[Spline3D] Could not find path segment: ${pathSegment}`)
                     return []
                   }
                 } else {
-                  console.warn(`[Spline3D] Could not find path segment: ${pathSegment}`)
+                  splineWarn(`[Spline3D] Could not find path segment: ${pathSegment}`)
                   return []
                 }
               }
               
               if (!currentObj) {
-                console.warn(`[Spline3D] PC Trans B object not found`)
+                splineWarn(`[Spline3D] PC Trans B object not found`)
                 return []
               }
               
-              console.log(`[Spline3D] Found PC Trans B object:`, {
+              splineLog(`[Spline3D] Found PC Trans B object:`, {
                 name: currentObj.name,
                 type: currentObj.type,
                 uuid: currentObj.uuid,
@@ -1740,11 +1745,11 @@ export function Spline3DPreview({
               }
               
               if (!material) {
-                console.warn(`[Spline3D] No material found on PC Trans B`)
+                splineWarn(`[Spline3D] No material found on PC Trans B`)
                 return []
               }
               
-              console.log(`[Spline3D] PC Trans B material:`, {
+              splineLog(`[Spline3D] PC Trans B material:`, {
                 type: material.type,
                 hasLayers: !!material.layers,
                 layersCount: material.layers?.length
@@ -1781,7 +1786,7 @@ export function Spline3DPreview({
                     allProperties: Object.keys(layer)
                   }
 
-                  console.log(`[Spline3D] PC Trans B Layer ${index}:`, layerInfo)
+                  splineLog(`[Spline3D] PC Trans B Layer ${index}:`, layerInfo)
 
                   layers.push({
                     objectName: "PC Trans B",
@@ -1797,7 +1802,7 @@ export function Spline3DPreview({
                   // If this layer has image data (including in texture.image), add a "Clear Image" option
                   if (layer.type === 'image' || layer.type === 'texture') {
                     if (hasImage || hasMap || hasTexture || hasTextureImage) {
-                      console.log(`[Spline3D]   → FOUND IMAGE DATA IN LAYER ${index}:`, {
+                      splineLog(`[Spline3D]   → FOUND IMAGE DATA IN LAYER ${index}:`, {
                         hasImage,
                         hasMap,
                         hasTexture,
@@ -1832,8 +1837,8 @@ export function Spline3DPreview({
                 })
               }
               
-              console.log(`[Spline3D] Found ${layers.length} layers on PC Trans B`)
-              console.log("[Spline3D] ===== END PC TRANS B INSPECTION =====")
+              splineLog(`[Spline3D] Found ${layers.length} layers on PC Trans B`)
+              splineLog("[Spline3D] ===== END PC TRANS B INSPECTION =====")
               
               return layers
             }
@@ -1874,8 +1879,8 @@ export function Spline3DPreview({
               const allLayers = Array.from(layerMap.values())
               setDiscoveredLayers(allLayers)
               
-              console.log(`[Spline3D] Total objects found: ${allObjects.length}`)
-              console.log(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
+              splineLog(`[Spline3D] Total objects found: ${allObjects.length}`)
+              splineLog(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
             }, 500)
             
             // Update textures after initialization
@@ -1885,12 +1890,12 @@ export function Spline3DPreview({
           }, 1000)
         })
         .catch((err) => {
-          console.error("[Spline3D] Error loading scene:", err)
+          splineError("[Spline3D] Error loading scene:", err)
           setError(`Failed to load 3D scene: ${err.message || err}`)
           setIsLoading(false)
         })
     } catch (err: any) {
-      console.error("[Spline3D] Error initializing Spline:", err)
+      splineError("[Spline3D] Error initializing Spline:", err)
       setError(`Failed to initialize 3D viewer: ${err.message || err}`)
       setIsLoading(false)
     }
@@ -1904,7 +1909,7 @@ export function Spline3DPreview({
         try {
           splineAppRef.current.dispose?.()
         } catch (err) {
-          console.error("[Spline3D] Error disposing scene:", err)
+          splineError("[Spline3D] Error disposing scene:", err)
         }
         splineAppRef.current = null
         discoveredPanelsRef.current = { sideA: null, sideB: null }

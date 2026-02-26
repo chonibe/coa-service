@@ -2,8 +2,9 @@
 
 import { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, SlidersHorizontal } from 'lucide-react'
+import { X, SlidersHorizontal, Star, Heart } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn } from '@/lib/utils'
 
 export interface FilterState {
@@ -13,6 +14,8 @@ export interface FilterState {
   inStockOnly: boolean
   inCartOnly: boolean
   sortBy: 'featured' | 'price-asc' | 'price-desc' | 'newest'
+  /** Min star rating (4 = "4+ stars"). Products must have user rating >= this. */
+  minStarRating: number | null
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -22,6 +25,7 @@ export const DEFAULT_FILTERS: FilterState = {
   inStockOnly: false,
   inCartOnly: false,
   sortBy: 'featured',
+  minStarRating: null,
 }
 
 export function hasActiveFilters(f: FilterState): boolean {
@@ -31,7 +35,8 @@ export function hasActiveFilters(f: FilterState): boolean {
     f.priceRange !== null ||
     f.inStockOnly ||
     f.inCartOnly ||
-    f.sortBy !== 'featured'
+    f.sortBy !== 'featured' ||
+    f.minStarRating !== null
   )
 }
 
@@ -41,6 +46,7 @@ interface FilterPanelProps {
   onChange: (filters: FilterState) => void
   isOpen: boolean
   onClose: () => void
+  wishlistCount?: number
 }
 
 const PRICE_PRESETS: Array<{ label: string; range: [number, number] }> = [
@@ -57,7 +63,7 @@ const SORT_OPTIONS: Array<{ value: FilterState['sortBy']; label: string }> = [
   { value: 'newest', label: 'Newest' },
 ]
 
-export function FilterPanel({ products, filters, onChange, isOpen, onClose }: FilterPanelProps) {
+export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0 }: FilterPanelProps) {
   const allArtists = useMemo(() => {
     const map = new Map<string, number>()
     products.forEach((p) => {
@@ -146,6 +152,26 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose }: Fi
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+              {/* Wishlist access */}
+              <section>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose()
+                    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('open-wishlist'))
+                  }}
+                  className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-medium hover:bg-rose-100 hover:border-rose-300 transition-colors"
+                >
+                  <Heart className="w-5 h-5 fill-rose-500 text-rose-500" />
+                  My Wishlist
+                  {wishlistCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full bg-rose-200/60 text-xs font-semibold">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+              </section>
+
               {/* Sort */}
               <section>
                 <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sort by</h4>
@@ -210,6 +236,42 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose }: Fi
                   </div>
                 </section>
               )}
+
+              {/* Star rating — show artworks you rated 4+ or 5 stars */}
+              <section>
+                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Rated by you</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 4 as const, label: '4+ stars' },
+                    { value: 5 as const, label: '5 stars' },
+                  ].map((opt) => {
+                    const isActive = filters.minStarRating === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() =>
+                          onChange({
+                            ...filters,
+                            minStarRating: isActive ? null : opt.value,
+                          })
+                        }
+                        className={cn(
+                          'h-9 px-3 flex items-center gap-1.5 rounded-lg text-xs font-medium transition-colors',
+                          isActive
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
+                        )}
+                      >
+                        <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400">
+                  Rate artworks in the wishlist flow to use this filter
+                </p>
+              </section>
 
               {/* Price range */}
               <section>
@@ -335,6 +397,10 @@ export function applyFilters(
 
   if (filters.inStockOnly) {
     result = result.filter((p) => p.availableForSale)
+  }
+
+  if (filters.minStarRating !== null) {
+    result = result.filter((p) => meetsStarFilter(p.id, filters.minStarRating!))
   }
 
   switch (filters.sortBy) {

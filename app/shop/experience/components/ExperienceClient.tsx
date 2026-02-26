@@ -1,14 +1,50 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { IntroQuiz, type QuizAnswers } from './IntroQuiz'
 import { Configurator } from './Configurator'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
+
+function ExperienceConfiguratorWithBoundary(
+  props: React.ComponentProps<typeof Configurator>
+) {
+  const [retryKey, setRetryKey] = useState(0)
+  return (
+    <ComponentErrorBoundary
+      key={retryKey}
+      componentName="Configurator"
+      fallback={
+        <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-950 px-6">
+          <p className="text-center text-white/80">
+            Something went wrong loading the configurator.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="rounded-full bg-white px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-100 transition-colors"
+          >
+            Try again
+          </button>
+          <Link
+            href="/shop"
+            className="text-sm text-white/50 hover:text-white/70 transition-colors"
+          >
+            Back to Shop
+          </Link>
+        </div>
+      }
+    >
+      <Configurator {...props} />
+    </ComponentErrorBoundary>
+  )
+}
 
 interface ExperienceClientProps {
   lamp: ShopifyProduct
@@ -131,7 +167,7 @@ export function ExperienceClient({
           transition={{ duration: 0.4, delay: 0.1 }}
           className="h-full"
         >
-          <Configurator
+          <ExperienceConfiguratorWithBoundary
             lamp={lamp}
             productsSeason1={productsSeason1}
             productsSeason2={productsSeason2}

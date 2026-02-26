@@ -460,6 +460,66 @@ const PRODUCT_CARD_FRAGMENT = `
   }
 `
 
+/** Lightweight fragment for experience artwork strip. Excludes description, media, full variants. */
+const PRODUCT_LIST_FRAGMENT = `
+  fragment ProductListFields on Product {
+    id
+    handle
+    title
+    vendor
+    productType
+    tags
+    availableForSale
+    priceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    compareAtPriceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    featuredImage {
+      url
+      altText
+      width
+      height
+    }
+    images(first: 2) {
+      edges {
+        node {
+          url
+          altText
+          width
+          height
+        }
+      }
+    }
+    variants(first: 1) {
+      edges {
+        node {
+          id
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+`
+
 const COLLECTION_FRAGMENT = `
   fragment CollectionFields on Collection {
     id
@@ -710,6 +770,49 @@ export async function getCollectionWithFullProducts(handle: string, options: {
           edges {
             node {
               ...ProductFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  const data = await storefrontQuery<{ collection: ShopifyCollection | null }>(query, {
+    handle,
+    first,
+    sortKey,
+    reverse,
+  })
+
+  return data.collection
+}
+
+/**
+ * Get a collection with lightweight product data for the experience artwork strip.
+ * Uses ProductListFields (no description, media, full variants). Fetch full product
+ * on-demand when user opens ArtworkDetail.
+ */
+export async function getCollectionWithListProducts(handle: string, options: {
+  first?: number
+  sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'UPDATED_AT' | 'MANUAL'
+  reverse?: boolean
+} = {}): Promise<ShopifyCollection | null> {
+  const { first = 24, sortKey = 'MANUAL', reverse = false } = options
+
+  const query = `
+    ${COLLECTION_FRAGMENT}
+    ${PRODUCT_LIST_FRAGMENT}
+    query GetCollectionList($handle: String!, $first: Int!, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
+      collection(handle: $handle) {
+        ...CollectionFields
+        products(first: $first, sortKey: $sortKey, reverse: $reverse) {
+          edges {
+            node {
+              ...ProductListFields
             }
           }
           pageInfo {
@@ -1095,6 +1198,7 @@ export function getImageUrl(url: string, size?: number): string {
   if (!url || !size) return url
   
   // Shopify CDN URL transformation
+  // eslint-disable-next-line security/detect-unsafe-regex
   const match = url.match(/(.+)\.(\w+)(\?.*)?$/)
   if (match) {
     return `${match[1]}_${size}x.${match[2]}${match[3] || ''}`

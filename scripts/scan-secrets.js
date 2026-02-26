@@ -5,9 +5,9 @@ const path = require('path');
 const PATTERNS = [
   { name: 'Supabase Anon Key', regex: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9._-]{50,}/g },
   { name: 'Supabase Service Role Key', regex: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9._-]{100,}/g },
-  { name: 'Generic Secret', regex: /secret["']?\s*[:=]\s*["']([^"']{10,})["']/gi },
-  { name: 'Generic Key', regex: /key["']?\s*[:=]\s*["']([^"']{10,})["']/gi },
-  { name: 'Password', regex: /password["']?\s*[:=]\s*["']([^"']{8,})["']/gi },
+  { name: 'Generic Secret', regex: /(?:api_secret|auth_secret|client_secret|secret_key)["']?\s*[:=]\s*["']([^"'\s]{10,})["']/gi },
+  { name: 'Generic Key', regex: /(?:api_key|apikey|api-key|access_key|secret_key|private_key)["']?\s*[:=]\s*["']([^"'\s]{20,})["']/gi },
+  { name: 'Password', regex: /(?:db_pass|database_password|auth_password)["']?\s*[:=]\s*["']([^"'\s]{8,})["']/gi },
   { name: 'Vercel Token', regex: /vc[a-z0-9]{24}/gi },
   { name: 'GitHub Token', regex: /gh[oprs]_[a-zA-Z0-9]{36}/g },
   { name: 'Stripe Secret Key', regex: /sk_live_[0-9a-zA-Z]{24}/g },

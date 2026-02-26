@@ -2,9 +2,11 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye } from 'lucide-react'
+import { Check, Eye, Heart } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { useWishlist } from '@/lib/shop/WishlistContext'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
 
@@ -84,10 +86,16 @@ interface ArtworkCardProps {
   isSoldOut: boolean
   imageUrl: string | undefined
   isFirstCard?: boolean
+  showWishlistHearts?: boolean
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
   onViewDetail: (product: ShopifyProduct) => void
+}
+
+function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
+  if (!product) return null
+  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
 }
 
 function ArtworkCard({
@@ -100,12 +108,38 @@ function ArtworkCard({
   isSoldOut,
   imageUrl,
   isFirstCard,
+  showWishlistHearts = false,
   onPreview,
   onLampSelect,
   onAddToCart,
   onViewDetail,
 }: ArtworkCardProps) {
+  const { isInWishlist, addItem, removeItem } = useWishlist()
   const isLampSelection = lampPosition === 1 || lampPosition === 2
+  const inWishlist = isInWishlist(product.id)
+
+  const handleWishlistToggle = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (inWishlist) {
+        removeItem(product.id)
+      } else {
+        const variantId = product.variants?.edges?.[0]?.node?.id ?? ''
+        const price = parseFloat(product.priceRange?.minVariantPrice?.amount || '0')
+        addItem({
+          productId: product.id,
+          variantId,
+          handle: product.handle,
+          title: product.title,
+          price,
+          image: getFirstImageForWishlist(product) ?? undefined,
+          artistName: product.vendor ?? undefined,
+        })
+      }
+    },
+    [product, inWishlist, addItem, removeItem]
+  )
 
   const handleLampSelect = useCallback(() => {
     if (isSoldOut) return
@@ -124,8 +158,6 @@ function ArtworkCard({
   return (
     <motion.div
       data-product-id={product.id}
-      whileHover={!isLampSelection && !isInCart ? { scale: 1.02 } : undefined}
-      whileTap={!isLampSelection && !isInCart ? { scale: 0.98 } : undefined}
       className={cn(
         'relative rounded-xl overflow-hidden transition-all duration-200',
         isInCart && 'overflow-visible',
@@ -176,6 +208,19 @@ function ArtworkCard({
             />
           </div>
         )}
+        {showWishlistHearts && (
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className="absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm touch-manipulation transition-all active:scale-95 hover:scale-105"
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              className={cn('w-4 h-4', inWishlist ? 'fill-rose-500 text-rose-500' : 'text-neutral-400 hover:text-rose-400')}
+              strokeWidth={1.5}
+            />
+          </button>
+        )}
       </div>
 
       <div className={cn(
@@ -196,7 +241,7 @@ function ArtworkCard({
             isInCart ? 'text-neutral-300' : 'text-neutral-500'
           )}>{formatPrice(product)}</p>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleLampSelect() }}
@@ -210,10 +255,16 @@ function ArtworkCard({
                   ? 'hover:bg-white/10 text-white/80 hover:text-white'
                   : 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
             )}
-            title={isLampSelection ? 'On lamp preview' : 'Preview on lamp'}
-            aria-label="Preview on lamp"
+            title={isLampSelection ? `Side ${lampPosition} on lamp` : 'Preview on lamp'}
+            aria-label={isLampSelection ? `Side ${lampPosition} on lamp preview` : 'Preview on lamp'}
           >
-            <Eye className="w-3 h-3" />
+            {isLampSelection ? (
+              <span className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-bold tabular-nums">
+                {lampPosition}
+              </span>
+            ) : (
+              <Eye className="w-3 h-3" />
+            )}
           </button>
           <button
             data-wizard-add-btn={isFirstCard ? '' : undefined}
@@ -243,13 +294,18 @@ function ArtworkCard({
   )
 }
 
+/** Fallback estimate; actual height measured via measureElement */
+const ROW_HEIGHT_ESTIMATE = 320
+
 interface ArtworkStripProps {
+  scrollRef: React.RefObject<HTMLDivElement | null>
   products: ShopifyProduct[]
   previewIndex: number
   lampPreviewOrder: string[]
   cartOrder: string[]
   lastAddedProductId?: string | null
   scrollToProductId?: string | null
+  showWishlistHearts?: boolean
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
@@ -263,24 +319,36 @@ function formatPrice(product: ShopifyProduct): string {
 }
 
 export function ArtworkStrip({
+  scrollRef,
   products,
   previewIndex,
   lampPreviewOrder,
   cartOrder,
   lastAddedProductId,
   scrollToProductId,
+  showWishlistHearts = false,
   onPreview,
   onLampSelect,
   onAddToCart,
   onViewDetail,
 }: ArtworkStripProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const rowCount = Math.ceil(products.length / 2)
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    overscan: 3,
+  })
 
   useEffect(() => {
     if (!scrollToProductId) return
-    const el = document.querySelector(`[data-product-id="${scrollToProductId}"]`)
-    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [scrollToProductId])
+    const idx = products.findIndex((p) => p.id === scrollToProductId)
+    if (idx >= 0) {
+      const rowIdx = Math.floor(idx / 2)
+      rowVirtualizer.scrollToIndex(rowIdx, { align: 'center', behavior: 'smooth' })
+    }
+  }, [scrollToProductId, products, rowVirtualizer])
 
   const getLampPosition = (productId: string): 1 | 2 | null => {
     const idx = lampPreviewOrder.indexOf(productId)
@@ -297,26 +365,70 @@ export function ArtworkStrip({
     )
   }
 
+  const virtualRows = rowVirtualizer.getVirtualItems()
+
   return (
-    <div ref={containerRef} data-wizard-artwork-strip className="grid grid-cols-2 gap-2 md:gap-3 max-w-2xl mx-auto">
-      {products.map((product, index) => (
-        <ArtworkCard
-          key={product.id}
-          product={product}
-          globalIdx={index}
-          isPreviewed={index === previewIndex}
-          isInCart={cartOrder.includes(product.id)}
-          justAdded={product.id === lastAddedProductId}
-          isFirstCard={index === 0}
-          lampPosition={getLampPosition(product.id)}
-            isSoldOut={!product.availableForSale}
-            imageUrl={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url}
-            onPreview={onPreview}
-            onLampSelect={onLampSelect}
-            onAddToCart={onAddToCart}
-            onViewDetail={onViewDetail}
-          />
-      ))}
+    <div
+      data-wizard-artwork-strip
+      className="relative max-w-2xl mx-auto"
+      style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+    >
+      {virtualRows.map((virtualRow) => {
+        const startIdx = virtualRow.index * 2
+        const product1 = products[startIdx]
+        const product2 = products[startIdx + 1]
+        return (
+          <div
+            key={virtualRow.key}
+            ref={rowVirtualizer.measureElement}
+            data-index={virtualRow.index}
+            className="absolute top-0 left-0 w-full"
+            style={{
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
+              {product1 && (
+                <ArtworkCard
+                  key={product1.id}
+                  product={product1}
+                  globalIdx={startIdx}
+                  isPreviewed={startIdx === previewIndex}
+                  isInCart={cartOrder.includes(product1.id)}
+                  justAdded={product1.id === lastAddedProductId}
+                  isFirstCard={startIdx === 0}
+                  lampPosition={getLampPosition(product1.id)}
+                  isSoldOut={!product1.availableForSale}
+                  imageUrl={product1.featuredImage?.url ?? product1.images?.edges?.[0]?.node?.url}
+                  showWishlistHearts={showWishlistHearts}
+                  onPreview={onPreview}
+                  onLampSelect={onLampSelect}
+                  onAddToCart={onAddToCart}
+                  onViewDetail={onViewDetail}
+                />
+              )}
+              {product2 && (
+                <ArtworkCard
+                  key={product2.id}
+                  product={product2}
+                  globalIdx={startIdx + 1}
+                  isPreviewed={startIdx + 1 === previewIndex}
+                  isInCart={cartOrder.includes(product2.id)}
+                  justAdded={product2.id === lastAddedProductId}
+                  lampPosition={getLampPosition(product2.id)}
+                  isSoldOut={!product2.availableForSale}
+                  imageUrl={product2.featuredImage?.url ?? product2.images?.edges?.[0]?.node?.url}
+                  showWishlistHearts={showWishlistHearts}
+                  onPreview={onPreview}
+                  onLampSelect={onLampSelect}
+                  onAddToCart={onAddToCart}
+                  onViewDetail={onViewDetail}
+                />
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

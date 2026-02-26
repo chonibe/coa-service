@@ -159,6 +159,17 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       cart.toggleCart(false)
     }
   }, [wishlistDrawerOpen, cart])
+
+  // Listen for open-wishlist from experience FilterPanel
+  useEffect(() => {
+    const handler = () => {
+      setWishlistDrawerOpen(true)
+      setNavModalOpen(false)
+      cart.toggleCart(false)
+    }
+    window.addEventListener('open-wishlist', handler)
+    return () => window.removeEventListener('open-wishlist', handler)
+  }, [cart])
   
   // Handle cart drawer toggle
   const handleViewCart = useCallback(() => {

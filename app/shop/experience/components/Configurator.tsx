@@ -1,17 +1,35 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Heart } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { Spline3DPreview } from '@/app/template-preview/components/spline-3d-preview'
 import type { QuizAnswers } from './IntroQuiz'
+
+const Spline3DPreview = dynamic(
+  () =>
+    import('@/app/template-preview/components/spline-3d-preview').then((m) => ({
+      default: m.Spline3DPreview,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="relative w-full h-full flex items-center justify-center bg-neutral-900/80">
+        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    ),
+  }
+)
+import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { ArtworkDetail } from './ArtworkDetail'
 import { OrderBar, type OrderBarRef } from './OrderBar'
 import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
+import { WishlistSwiperSheet } from './WishlistSwiperSheet'
+import { useWishlist } from '@/lib/shop/WishlistContext'
 import { cn } from '@/lib/utils'
 import {
   loadImagePosition,
@@ -106,6 +124,9 @@ export function Configurator({
   const [cartOrder, setCartOrder] = useState<string[]>([])
   const [lampQuantity, setLampQuantity] = useState(!quizAnswers.ownsLamp ? 1 : 0)
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
+  const [detailProductFull, setDetailProductFull] = useState<ShopifyProduct | null>(null)
+  const [detailProductLoading, setDetailProductLoading] = useState(false)
+  const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
   /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = 50/50; 'full' = selector covers preview */
   const [selectorSheetState, setSelectorSheetState] = useState<'collapsed' | 'half' | 'full'>('half')
   const [lampVariant, setLampVariant] = useState<'light' | 'dark'>('dark')
@@ -115,6 +136,7 @@ export function Configurator({
 
   const [isMobile, setIsMobile] = useState(false)
   const orderBarRef = useRef<OrderBarRef>(null)
+  const artworkStripScrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -145,6 +167,9 @@ export function Configurator({
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
+  const [wishlistSwiperOpen, setWishlistSwiperOpen] = useState(false)
+  const [ratingsVersion, setRatingsVersion] = useState(0)
+  const { itemCount: wishlistCount } = useWishlist()
 
   // Apply initial artist filter when arriving from artist link (e.g. Instagram)
   useEffect(() => {
@@ -162,7 +187,16 @@ export function Configurator({
       result = result.filter((p) => cartSet.has(p.id))
     }
     return result
-  }, [products, filters, searchQuery, cartOrder])
+  }, [products, filters, searchQuery, cartOrder, ratingsVersion])
+
+  const filteredAllProducts = useMemo(() => {
+    let result = applyFilters(allProducts, filters, searchQuery)
+    if (filters.inCartOnly) {
+      const cartSet = new Set(cartOrder)
+      result = result.filter((p) => cartSet.has(p.id))
+    }
+    return result
+  }, [allProducts, filters, searchQuery, cartOrder, ratingsVersion])
 
   // Show artist's first artworks on the lamp when arriving from artist link.
   // Must run after filters are applied and filteredProducts has the filtered list.
@@ -189,6 +223,43 @@ export function Configurator({
   useEffect(() => {
     if (searchExpanded) searchInputRef.current?.focus()
   }, [searchExpanded])
+
+  // Fetch full product on-demand when opening artwork detail (list products are lightweight)
+  useEffect(() => {
+    if (!detailProduct) {
+      setDetailProductFull(null)
+      setDetailProductLoading(false)
+      return
+    }
+    if (detailProduct.id === lamp.id) {
+      setDetailProductFull(detailProduct)
+      setDetailProductLoading(false)
+      return
+    }
+    const handle = detailProduct.handle
+    const cached = fullProductCacheRef.current.get(handle)
+    if (cached) {
+      setDetailProductFull(cached)
+      setDetailProductLoading(false)
+      return
+    }
+    let cancelled = false
+    setDetailProductLoading(true)
+    setDetailProductFull(null)
+    fetch(`/api/shop/products/${encodeURIComponent(handle)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.product) return
+        const full = data.product as ShopifyProduct
+        fullProductCacheRef.current.set(handle, full)
+        setDetailProductFull(full)
+        setDetailProductLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) setDetailProductLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [detailProduct, lamp.id])
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
   const selectedProducts = useMemo(
@@ -262,7 +333,8 @@ export function Configurator({
     (filters.priceRange ? 1 : 0) +
     (filters.inStockOnly ? 1 : 0) +
     (filters.inCartOnly ? 1 : 0) +
-    (filters.sortBy !== 'featured' ? 1 : 0)
+    (filters.sortBy !== 'featured' ? 1 : 0) +
+    (filters.minStarRating !== null ? 1 : 0)
 
   if (products.length === 0) {
     return (
@@ -300,10 +372,21 @@ export function Configurator({
         )}
       >
         {((!isMobile) || selectorSheetState !== 'full') && (
-          <Spline3DPreview
-            image1={image1}
-            image2={image2}
-            lampVariant={lampVariant}
+          <ComponentErrorBoundary
+            componentName="Spline3DPreview"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center bg-neutral-900/80">
+                <div className="text-center px-4">
+                  <p className="text-sm text-white/70">3D preview unavailable</p>
+                  <p className="text-xs text-white/50 mt-1">You can still browse and add artworks below.</p>
+                </div>
+              </div>
+            }
+          >
+            <Spline3DPreview
+              image1={image1}
+              image2={image2}
+              lampVariant={lampVariant}
             side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
             side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
             minimal
@@ -325,6 +408,7 @@ export function Configurator({
             imageScaleXB={imageScaleXB}
             imageScaleYB={imageScaleYB}
           />
+          </ComponentErrorBoundary>
         )}
 
         {/* Back to preferences */}
@@ -578,10 +662,18 @@ export function Configurator({
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
         >
           {selectorSheetState === 'collapsed' ? (
-            /* Collapsed: simple Artworks bar with LayoutGrid icon + ChevronUp */
+            /* Collapsed: Artworks bar with LayoutGrid, heart, ChevronUp */
             <>
               <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
               <span className="text-xs font-medium text-neutral-700">Artworks</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setWishlistSwiperOpen(true) }}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors shrink-0"
+                aria-label="Rate artworks and add to wishlist"
+              >
+                <Heart className="w-3.5 h-3.5" />
+              </button>
               <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 md:hidden" />
             </>
           ) : (
@@ -614,7 +706,16 @@ export function Configurator({
             </button>
           </div>
 
-          <div className="flex-1 min-w-0" />
+          <div className="flex-1 min-w-0 flex justify-center items-center">
+            <button
+              type="button"
+              onClick={() => setWishlistSwiperOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
+              aria-label="Rate artworks and add to wishlist"
+            >
+              <Heart className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Search — magnifying glass icon expands to search bar */}
           <div className="flex items-center flex-shrink-0">
@@ -762,6 +863,14 @@ export function Configurator({
                 In cart <X className="w-2 h-2" />
               </button>
             )}
+            {filters.minStarRating !== null && (
+              <button
+                onClick={() => setFilters({ ...filters, minStarRating: null })}
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-medium leading-none hover:bg-amber-100 flex-shrink-0"
+              >
+                {filters.minStarRating}+ stars <X className="w-2 h-2" />
+              </button>
+            )}
             <button
               onClick={() => setFilters(DEFAULT_FILTERS)}
               className="text-[10px] text-neutral-400 hover:text-neutral-600 flex-shrink-0 px-1"
@@ -772,17 +881,19 @@ export function Configurator({
         )}
 
         {/* Artwork strip */}
-        <div className="flex-1 overflow-y-auto px-5 pb-32 md:pb-4 min-h-0">
+        <div ref={artworkStripScrollRef} className="flex-1 overflow-y-auto px-5 pb-32 md:pb-4 min-h-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-neutral-400">{filteredProducts.length} artworks</span>
           </div>
           <ArtworkStrip
+            scrollRef={artworkStripScrollRef}
             products={filteredProducts}
             previewIndex={previewIndex}
             lampPreviewOrder={lampPreviewOrder}
             cartOrder={cartOrder}
             lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}
+            showWishlistHearts={filters.minStarRating !== null}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}
@@ -834,6 +945,7 @@ export function Configurator({
         onChange={setFilters}
         isOpen={filterOpen}
         onClose={() => setFilterOpen(false)}
+        wishlistCount={wishlistCount}
       />
 
       {/* First-session contextual wizard */}
@@ -842,7 +954,8 @@ export function Configurator({
       {/* Artwork / lamp detail drawer */}
       {detailProduct && (
         <ArtworkDetail
-          product={detailProduct}
+          product={detailProductFull ?? detailProduct}
+          isLoadingDetails={detailProductLoading}
           productBadges={
             detailProduct.id === lamp.id
               ? [
@@ -914,17 +1027,34 @@ export function Configurator({
               : cartOrder.includes(detailProduct.id)
           }
           onToggleSelect={() => {
-            if (detailProduct.id === lamp.id) {
+            const product = detailProductFull ?? detailProduct
+            if (product.id === lamp.id) {
               setLampQuantity((q) => (q > 0 ? 0 : 1))
             } else {
-              const wasInCart = cartOrder.includes(detailProduct.id)
-              handleAddToCart(detailProduct)
+              const wasInCart = cartOrder.includes(product.id)
+              handleAddToCart(product)
               if (!wasInCart) setDetailProduct(null)
             }
           }}
-          onClose={() => setDetailProduct(null)}
+          onClose={() => { setDetailProduct(null); setDetailProductFull(null) }}
         />
       )}
+      <WishlistSwiperSheet
+        isOpen={wishlistSwiperOpen}
+        onClose={() => setWishlistSwiperOpen(false)}
+        products={filteredAllProducts}
+        onRatingChange={() => setRatingsVersion((v) => v + 1)}
+        onSelectProduct={(p) => {
+          setWishlistSwiperOpen(false)
+          setDetailProduct(p)
+        }}
+        onViewProductDetail={(p) => setDetailProduct(p)}
+        onApplyStarFilter={(minStars: number) => {
+          setFilters((f) => ({ ...f, minStarRating: minStars }))
+          setWishlistSwiperOpen(false)
+          setFilterOpen(true)
+        }}
+      />
     </div>
   )
 }

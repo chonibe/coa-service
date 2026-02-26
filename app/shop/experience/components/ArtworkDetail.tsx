@@ -20,6 +20,8 @@ interface ArtworkDetailProps {
   isSelected: boolean
   onToggleSelect: () => void
   onClose: () => void
+  /** When true, full product details are still loading (show loading state) */
+  isLoadingDetails?: boolean
   /** Optional badges shown above What's included (e.g. guarantee, returns, shipping) */
   productBadges?: { label: string; icon: 'shield' | 'rotate' | 'globe' }[]
   /** When true, hide the scarcity bar (e.g. for lamp product) */
@@ -32,7 +34,7 @@ interface ArtworkDetailProps {
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, productBadges, productIncludes, productSpecs, hideScarcityBar }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -46,9 +48,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, pr
   const [showSpecs, setShowSpecs] = useState(false)
   const [showIncludes, setShowIncludes] = useState(false)
   const [imageZoom, setImageZoom] = useState(1)
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false
-  )
   const constraintsRef = useRef<HTMLDivElement>(null)
   const dragX = useMotionValue(0)
   const panX = useMotionValue(0)
@@ -83,14 +82,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, pr
       return 1
     })
   }, [panX, panY])
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)')
-    setIsDesktop(mq.matches)
-    const fn = () => setIsDesktop(mq.matches)
-    mq.addEventListener('change', fn)
-    return () => mq.removeEventListener('change', fn)
-  }, [])
 
   const price = product.priceRange?.minVariantPrice?.amount
     ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}`
@@ -199,27 +190,32 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, pr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[70] flex items-end md:items-center md:justify-start pointer-events-none"
+        className="fixed inset-0 z-[80] flex items-end pointer-events-none"
       >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 md:left-0 md:top-0 md:bottom-0 md:right-auto md:w-[60%] bg-black/40 backdrop-blur-sm pointer-events-auto"
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
         />
 
         <motion.div
-          initial={isDesktop ? { x: '-100%' } : { y: '100%' }}
-          animate={{ x: 0, y: 0 }}
-          exit={isDesktop ? { x: '-100%' } : { y: '100%' }}
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative z-10 w-full md:w-[420px] max-h-[95dvh] md:h-[85vh] md:max-h-[85vh] bg-white md:rounded-r-2xl md:rounded-tl-none rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
+          className="relative z-10 w-full max-h-[95dvh] bg-white rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
         >
-          {/* Top: drag handle on mobile only */}
-          <div className="flex-shrink-0 md:hidden flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 bg-neutral-300 rounded-full" />
-          </div>
+          {/* Top: chevron to close */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-shrink-0 flex justify-center pt-2 pb-2 w-full text-neutral-400 hover:text-neutral-600 transition-colors"
+            aria-label="Close"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </button>
 
           {/* Scrollable content — pb allows content to scroll behind the action bar */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-4 pb-64">
@@ -467,6 +463,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, pr
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+            )}
+
+            {/* Loading indicator when fetching full product details */}
+            {isLoadingDetails && (
+              <div className="px-4 py-3 border-t border-neutral-100 flex items-center gap-2 text-neutral-500">
+                <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin" />
+                <span className="text-xs">Loading details…</span>
               </div>
             )}
 

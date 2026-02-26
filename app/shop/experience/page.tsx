@@ -1,9 +1,12 @@
+import { Suspense } from 'react'
+import Link from 'next/link'
 import {
   getProduct,
-  getCollectionWithFullProducts,
+  getCollectionWithListProducts,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
 import { ExperienceClient } from './components/ExperienceClient'
+import { ExperienceLoadingSkeleton } from './loading'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +23,7 @@ interface ExperiencePageProps {
   searchParams: Promise<{ artist?: string; skipQuiz?: string }>
 }
 
-export default async function ExperiencePage({ searchParams }: ExperiencePageProps) {
+async function ExperiencePageContent({ searchParams }: ExperiencePageProps) {
   const resolved = await searchParams
   const initialArtistSlug = resolved?.artist?.trim() || undefined
   const skipQuiz = resolved?.skipQuiz === '1'
@@ -32,11 +35,11 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
   try {
     const [lampResult, season1Result, season2Result] = await Promise.all([
       getProduct('street_lamp').catch(() => null),
-      getCollectionWithFullProducts(SEASON_1_HANDLE, {
+      getCollectionWithListProducts(SEASON_1_HANDLE, {
         first: 50,
         sortKey: 'MANUAL',
       }).catch(() => null),
-      getCollectionWithFullProducts(SEASON_2_HANDLE, {
+      getCollectionWithListProducts(SEASON_2_HANDLE, {
         first: 50,
         sortKey: 'MANUAL',
       }).catch(() => null),
@@ -45,9 +48,9 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
     lamp = lampResult
     productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
     productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Experience page fetch error:', err)
-    error = err.message || 'Failed to load products'
+    error = err instanceof Error ? err.message : 'Failed to load products'
   }
 
   if (error || !lamp) {
@@ -58,12 +61,12 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
           <p className="text-neutral-400 mb-6">
             {error || 'Could not load the lamp product. Please try again later.'}
           </p>
-          <a
+          <Link
             href="/shop"
             className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
           >
             Back to Shop
-          </a>
+          </Link>
         </div>
       </div>
     )
@@ -77,5 +80,13 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
       initialArtistSlug={initialArtistSlug}
       skipQuiz={skipQuiz}
     />
+  )
+}
+
+export default function ExperiencePage(props: ExperiencePageProps) {
+  return (
+    <Suspense fallback={<ExperienceLoadingSkeleton />}>
+      <ExperiencePageContent {...props} />
+    </Suspense>
   )
 }
