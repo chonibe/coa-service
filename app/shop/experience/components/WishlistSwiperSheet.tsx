@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Star, Heart, Info, RotateCcw } from 'lucide-react'
@@ -118,6 +118,10 @@ interface WishlistSwiperSheetProps {
   isOpen: boolean
   onClose: () => void
   products: ShopifyProduct[]
+  /** On desktop, overlay only the selector body (not full screen). On mobile, full screen. */
+  isMobile?: boolean
+  /** Ref to selector body for desktop overlay positioning */
+  selectorBodyRef?: React.RefObject<HTMLDivElement | null>
   onRatingChange?: () => void
   onSelectProduct?: (product: ShopifyProduct) => void
   /** Opens artwork detail without closing the swiper (e.g. from Info button) */
@@ -129,6 +133,8 @@ export function WishlistSwiperSheet({
   isOpen,
   onClose,
   products,
+  isMobile = true,
+  selectorBodyRef,
   onRatingChange,
   onSelectProduct,
   onViewProductDetail,
@@ -152,6 +158,33 @@ export function WishlistSwiperSheet({
   const [exitDirection, setExitDirection] = useState<-1 | 1>(1)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [overlayBounds, setOverlayBounds] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
+
+  const isDesktop = !isMobile && selectorBodyRef
+  useLayoutEffect(() => {
+    if (!isOpen || !isDesktop || !selectorBodyRef?.current) {
+      setOverlayBounds(null)
+      return
+    }
+    const el = selectorBodyRef.current
+    const update = () => {
+      const rect = el.getBoundingClientRect()
+      setOverlayBounds({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    window.addEventListener('scroll', update, { capture: true })
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('scroll', update, { capture: true })
+    }
+  }, [isOpen, isDesktop, selectorBodyRef])
 
   const product = displayProducts[index] ?? null
   const totalCount = displayProducts.length
@@ -404,13 +437,29 @@ export function WishlistSwiperSheet({
 
   if (!isOpen) return null
 
+  const desktopOverlay = isDesktop && overlayBounds
+  const positionStyle = desktopOverlay
+    ? {
+        position: 'fixed' as const,
+        top: overlayBounds!.top,
+        left: overlayBounds!.left,
+        width: overlayBounds!.width,
+        height: overlayBounds!.height,
+        borderRadius: 0,
+      }
+    : undefined
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[70] flex flex-col bg-white"
+        className={cn(
+          'fixed z-[70] flex flex-col bg-white',
+          desktopOverlay ? '' : 'inset-0'
+        )}
+        style={positionStyle}
         role="dialog"
         aria-modal="true"
         aria-label="Rate artworks and add to wishlist"
@@ -648,8 +697,11 @@ export function WishlistSwiperSheet({
 
         {phase === 'rating' && (
           <>
-            {/* Progress bar + header */}
-            <div className="flex-shrink-0 border-b border-neutral-100">
+            {/* Progress bar + header — on desktop match selector bar (px-4 py-2.5, border-b) */}
+            <div className={cn(
+              'flex-shrink-0 border-b border-neutral-100',
+              desktopOverlay && 'flex flex-col'
+            )}>
               <div className="h-1 bg-neutral-100">
                 <motion.div
                   className="h-full bg-neutral-900"
@@ -658,7 +710,10 @@ export function WishlistSwiperSheet({
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               </div>
-              <div className="flex items-center justify-between px-4 py-3">
+              <div className={cn(
+                'flex items-center justify-between',
+                desktopOverlay ? 'px-4 py-2.5' : 'px-4 py-3'
+              )}>
                 <button
                   type="button"
                   onClick={onClose}

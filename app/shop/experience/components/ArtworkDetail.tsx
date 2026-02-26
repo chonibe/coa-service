@@ -20,6 +20,8 @@ interface ArtworkDetailProps {
   isSelected: boolean
   onToggleSelect: () => void
   onClose: () => void
+  /** On desktop, use right slideout instead of full-screen bottom sheet */
+  isMobile?: boolean
   /** When true, full product details are still loading (show loading state) */
   isLoadingDetails?: boolean
   /** Optional badges shown above What's included (e.g. guarantee, returns, shipping) */
@@ -34,7 +36,7 @@ interface ArtworkDetailProps {
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -184,13 +186,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     ? { url: artistData!.image!, altText: artistData!.name }
     : currentImage
 
+  const isSlideout = !isMobile
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[80] flex items-end pointer-events-none"
+        className={cn(
+          'fixed inset-0 z-[80] pointer-events-none',
+          isSlideout ? 'flex justify-end' : 'flex items-end'
+        )}
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -201,11 +207,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
         />
 
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
+          initial={isSlideout ? { x: '100%' } : { y: '100%' }}
+          animate={isSlideout ? { x: 0 } : { y: 0 }}
+          exit={isSlideout ? { x: '100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative z-10 w-full max-h-[95dvh] bg-white rounded-t-2xl overflow-hidden flex flex-col shadow-xl pointer-events-auto"
+          className={cn(
+            'relative z-10 bg-white overflow-hidden flex flex-col shadow-xl pointer-events-auto',
+            isSlideout ? 'w-full max-w-md h-full rounded-l-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
+          )}
         >
           {/* Top: chevron to close */}
           <button

@@ -137,6 +137,7 @@ export function Configurator({
   const [isMobile, setIsMobile] = useState(false)
   const orderBarRef = useRef<OrderBarRef>(null)
   const artworkStripScrollRef = useRef<HTMLDivElement>(null)
+  const selectorBodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -669,7 +670,7 @@ export function Configurator({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setWishlistSwiperOpen(true) }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors shrink-0"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors shrink-0"
                 aria-label="Rate artworks and add to wishlist"
               >
                 <Heart className="w-3.5 h-3.5" />
@@ -710,7 +711,7 @@ export function Configurator({
             <button
               type="button"
               onClick={() => setWishlistSwiperOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
               aria-label="Rate artworks and add to wishlist"
             >
               <Heart className="w-4 h-4" />
@@ -760,7 +761,7 @@ export function Configurator({
                     'relative flex items-center justify-center w-9 h-9 rounded-lg border transition-colors flex-shrink-0',
                     searchQuery
                       ? 'bg-neutral-900 text-white border-neutral-900'
-                      : 'bg-white text-neutral-900 border-neutral-900 hover:bg-neutral-50'
+                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
                   )}
                   aria-label="Search artworks"
                 >
@@ -780,7 +781,7 @@ export function Configurator({
               'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
               hasActiveFilters(filters)
                 ? 'bg-neutral-900 text-white border-neutral-900'
-                : 'bg-white text-neutral-900 border-neutral-900 hover:bg-neutral-50'
+                : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
             )}
             aria-label="Open filters"
           >
@@ -807,7 +808,12 @@ export function Configurator({
             </>
           )}
         </div>
-        {/* Expanded content: shown when half or full on mobile, always on desktop */}
+        {/* Selector body: expanded content + OrderBar — used for wishlist swiper overlay on desktop */}
+        <div ref={selectorBodyRef} className={cn(
+          'flex flex-col flex-1 min-h-0 overflow-hidden min-w-0',
+          selectorSheetState === 'collapsed' ? 'hidden md:flex' : 'flex'
+        )}>
+        {/* Expanded content: filter pills + artwork strip */}
         <div className={cn(
           'flex flex-col flex-1 min-h-0 overflow-hidden',
           selectorSheetState === 'collapsed' ? 'hidden md:flex' : 'flex'
@@ -901,8 +907,7 @@ export function Configurator({
           />
         </div>
         </div>
-
-        {/* Order bar — always visible, outside collapsible content (fixed on mobile) */}
+        {/* Order bar — always visible (fixed on mobile) */}
         <div className="flex-shrink-0 min-w-0">
           <OrderBar
             ref={orderBarRef}
@@ -936,6 +941,7 @@ export function Configurator({
             isGift={isGift}
           />
         </div>
+        </div>
       </motion.div>
 
       {/* Filter panel */}
@@ -955,6 +961,7 @@ export function Configurator({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
+          isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
           productBadges={
             detailProduct.id === lamp.id
@@ -1043,6 +1050,8 @@ export function Configurator({
         isOpen={wishlistSwiperOpen}
         onClose={() => setWishlistSwiperOpen(false)}
         products={filteredAllProducts}
+        isMobile={isMobile}
+        selectorBodyRef={selectorBodyRef}
         onRatingChange={() => setRatingsVersion((v) => v + 1)}
         onSelectProduct={(p) => {
           setWishlistSwiperOpen(false)
