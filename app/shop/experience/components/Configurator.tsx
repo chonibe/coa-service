@@ -30,6 +30,8 @@ import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { WishlistSwiperSheet } from './WishlistSwiperSheet'
 import { useWishlist } from '@/lib/shop/WishlistContext'
+import { useShopAuth } from '@/lib/shop/useShopAuth'
+import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { cn } from '@/lib/utils'
 import {
   loadImagePosition,
@@ -64,7 +66,10 @@ export function Configurator({
   onRetakeQuiz,
   initialFilters,
 }: ConfiguratorProps) {
+  useRatingSync()
+  const { isAuthenticated } = useShopAuth()
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
+  const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
   const products = activeSeason === 'season1' ? productsSeason1 : productsSeason2
 
   const setActiveSeasonAndReset = useCallback((season: SeasonTab) => {
@@ -263,6 +268,24 @@ export function Configurator({
   }, [detailProduct, lamp.id])
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
+
+  // Fetch crew counts when authenticated (for taste-similar social proof)
+  useEffect(() => {
+    if (!isAuthenticated || filteredProducts.length === 0) {
+      setCrewCountMap({})
+      return
+    }
+    const productIds = filteredProducts.map((p) => p.id).join(',')
+    if (!productIds) return
+    let cancelled = false
+    fetch(`/api/crew/count?productIds=${encodeURIComponent(productIds)}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => {
+        if (!cancelled && typeof data === 'object') setCrewCountMap(data)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isAuthenticated, filteredProducts, ratingsVersion])
   const selectedProducts = useMemo(
     () => cartOrder.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[],
     [allProducts, cartOrder]
@@ -900,6 +923,7 @@ export function Configurator({
             lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}
             showWishlistHearts={filters.minStarRating !== null}
+            crewCountMap={crewCountMap}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}

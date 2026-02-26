@@ -10,11 +10,14 @@ import {
   setRating,
   getRating,
   clearRating,
-  getRatingStats,
   getUnratedProductIds,
   getRatedProductIds,
+  getAllRatings,
 } from '@/lib/experience-artwork-ratings'
+import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { cn } from '@/lib/utils'
+
+const MIN_RATINGS_FOR_CREW = 15
 
 const TUTORIAL_STORAGE_KEY = 'swiper-tutorial-seen'
 const PX_PER_STAR = 40
@@ -141,7 +144,9 @@ export function WishlistSwiperSheet({
   onApplyStarFilter,
 }: WishlistSwiperSheetProps) {
   const { addItem, isInWishlist } = useWishlist()
+  const { isAuthenticated } = useShopAuth()
   const [phase, setPhase] = useState<Phase>('setup')
+  const [crewTopPicksCount, setCrewTopPicksCount] = useState<number | null>(null)
   const [ratingMode, setRatingMode] = useState<RatingMode>('unrated')
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null)
   const [displayProducts, setDisplayProducts] = useState<ShopifyProduct[]>([])
@@ -427,6 +432,31 @@ export function WishlistSwiperSheet({
 
   const progressPct = totalCount > 0 ? ((index + 1) / totalCount) * 100 : 0
 
+  const fiveStarProducts = useMemo(
+    () => sessionRatings.filter((r) => r.rating === 5).map((r) => r.product),
+    [sessionRatings]
+  )
+  const fiveStarIds = useMemo(
+    () => fiveStarProducts.map((p) => p.id).join(','),
+    [fiveStarProducts]
+  )
+  useEffect(() => {
+    if (phase !== 'summary' || !isAuthenticated || fiveStarProducts.length === 0) {
+      setCrewTopPicksCount(null)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/crew/count?productIds=${encodeURIComponent(fiveStarIds)}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => {
+        if (cancelled || typeof data !== 'object') return
+        const total = Object.values(data as Record<string, number>).reduce((a, b) => a + b, 0)
+        setCrewTopPicksCount(total)
+      })
+      .catch(() => setCrewTopPicksCount(null))
+    return () => { cancelled = true }
+  }, [phase, isAuthenticated, fiveStarIds])
+
   const sessionStats = (() => {
     const rated = sessionRatings.filter((r) => r.rating >= 1)
     const total = rated.length
@@ -439,7 +469,7 @@ export function WishlistSwiperSheet({
       total,
       average: total > 0 ? sum / total : 0,
       distribution,
-      fiveStars: sessionRatings.filter((r) => r.rating === 5).map((r) => r.product),
+      fiveStars: fiveStarProducts,
     }
   })()
 
@@ -621,9 +651,36 @@ export function WishlistSwiperSheet({
             </div>
             {sessionStats.total > 0 && (
               <>
-                <div className="flex gap-4 mb-6 text-sm">
-                  <span className="text-neutral-600">Avg: {sessionStats.average.toFixed(1)} ★</span>
+                <div className="flex flex-wrap gap-4 mb-6 text-sm">
                   <span className="text-neutral-600">{sessionWishlistCount} added to wishlist</span>
+                  {!isAuthenticated && (
+                    <span className="text-neutral-500">Sign in to find your crew</span>
+                  )}
+                  {isAuthenticated && (() => {
+                    const totalRated = Object.keys(getAllRatings()).length
+                    if (totalRated < MIN_RATINGS_FOR_CREW) {
+                      return (
+                        <span className="text-neutral-500">
+                          Rate 15+ artworks to discover your crew
+                        </span>
+                      )
+                    }
+                    if (crewTopPicksCount !== null && sessionStats.fiveStars.length > 0 && crewTopPicksCount > 0) {
+                      return (
+                        <span className="text-neutral-600">
+                          {crewTopPicksCount} in your crew responded to {sessionStats.fiveStars.length === 1 ? 'this' : 'these'}
+                        </span>
+                      )
+                    }
+                    if (totalRated >= MIN_RATINGS_FOR_CREW && sessionStats.fiveStars.length > 0 && crewTopPicksCount === 0) {
+                      return (
+                        <span className="text-neutral-500">
+                          Your crew is forming — keep rating to see overlap
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
                 <div className="mb-6">
                   <p className="text-xs font-medium text-neutral-500 mb-2">Rating breakdown</p>

@@ -87,6 +87,8 @@ interface ArtworkCardProps {
   imageUrl: string | undefined
   isFirstCard?: boolean
   showWishlistHearts?: boolean
+  /** Crew count (taste-similar collectors who responded). Only shown when > 0. */
+  crewCount?: number
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
@@ -109,6 +111,7 @@ function ArtworkCard({
   imageUrl,
   isFirstCard,
   showWishlistHearts = false,
+  crewCount = 0,
   onPreview,
   onLampSelect,
   onAddToCart,
@@ -240,6 +243,14 @@ function ArtworkCard({
             'text-xs',
             isInCart ? 'text-neutral-300' : 'text-neutral-500'
           )}>{formatPrice(product)}</p>
+          {crewCount > 0 && (
+            <p className={cn(
+              'text-[10px] mt-0.5',
+              isInCart ? 'text-neutral-400' : 'text-neutral-500'
+            )}>
+              {crewCount} in your crew
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
@@ -306,6 +317,8 @@ interface ArtworkStripProps {
   lastAddedProductId?: string | null
   scrollToProductId?: string | null
   showWishlistHearts?: boolean
+  /** Map of productId -> crew count. Used when authenticated and user has enough ratings. */
+  crewCountMap?: Record<string, number>
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
@@ -327,6 +340,7 @@ export function ArtworkStrip({
   lastAddedProductId,
   scrollToProductId,
   showWishlistHearts = false,
+  crewCountMap,
   onPreview,
   onLampSelect,
   onAddToCart,
@@ -401,6 +415,7 @@ export function ArtworkStrip({
                   isSoldOut={!product1.availableForSale}
                   imageUrl={product1.featuredImage?.url ?? product1.images?.edges?.[0]?.node?.url}
                   showWishlistHearts={showWishlistHearts}
+                  crewCount={crewCountMap?.[product1.id]}
                   onPreview={onPreview}
                   onLampSelect={onLampSelect}
                   onAddToCart={onAddToCart}
@@ -419,6 +434,7 @@ export function ArtworkStrip({
                   isSoldOut={!product2.availableForSale}
                   imageUrl={product2.featuredImage?.url ?? product2.images?.edges?.[0]?.node?.url}
                   showWishlistHearts={showWishlistHearts}
+                  crewCount={crewCountMap?.[product2.id]}
                   onPreview={onPreview}
                   onLampSelect={onLampSelect}
                   onAddToCart={onAddToCart}
