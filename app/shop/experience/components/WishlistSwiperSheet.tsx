@@ -719,24 +719,25 @@ export function WishlistSwiperSheet({
                 />
               </div>
               <div className={cn(
-                'flex items-center justify-between',
+                'flex items-center justify-between gap-2',
                 desktopOverlay ? 'px-4 py-2.5' : 'px-4 py-3'
               )}>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
+                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
                   aria-label="Back"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="text-sm font-medium text-neutral-600">
-                  {index + 1} / {totalCount}
+                <span className="flex-1 min-w-0 text-center">
+                  <span className="block text-sm font-medium text-neutral-900 truncate">{product?.title ?? 'Rate artworks'}</span>
+                  {product?.vendor && <span className="block text-xs text-neutral-500 truncate">{product.vendor}</span>}
                 </span>
                 <button
                   type="button"
                   onClick={() => product && (onViewProductDetail ?? onSelectProduct)?.(product)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
+                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
                   aria-label="View artwork details"
                 >
                   <Info className="w-5 h-5" />
@@ -793,46 +794,11 @@ export function WishlistSwiperSheet({
 
                       <SparkleBurst active={showSparkle} onComplete={() => setShowSparkle(false)} />
 
-                      <div className={cn('text-center min-w-0', desktopOverlay ? 'pb-1' : 'pb-2')}>
-                        <p className="text-base font-semibold text-neutral-900 truncate">{product.title}</p>
-                        {product.vendor && <p className="text-sm text-neutral-500 truncate">{product.vendor}</p>}
-                        {getFirstTags(product).length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                            {getFirstTags(product).map((t) => (
-                              <span key={t} className="px-1.5 py-0.5 rounded bg-neutral-100 text-xs text-neutral-600">
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={cn(
-                        'relative rounded-2xl overflow-hidden',
-                        desktopOverlay ? 'aspect-[3/4] max-h-[50vh]' : 'aspect-[4/5]'
-                      )}>
-                        {getFirstImage(product) && (
-                          <Image
-                            src={getFirstImage(product)!}
-                            alt={product.title}
-                            fill
-                            className="object-cover"
-                            sizes="400px"
-                            priority
-                            draggable={false}
-                          />
-                        )}
-                        {inWishlist && (
-                          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                            <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-                          </div>
-                        )}
-                      </div>
-
+                      {/* Stars at top */}
                       <div
                         className={cn(
                           'flex justify-center gap-2 flex-shrink-0',
-                          desktopOverlay ? '-mt-1' : '-mt-2'
+                          desktopOverlay ? 'mb-1' : 'mb-2'
                         )}
                         onMouseLeave={() => setHoverStar(0)}
                       >
@@ -859,6 +825,29 @@ export function WishlistSwiperSheet({
                           )
                         })}
                       </div>
+
+                      <div className={cn(
+                        'relative rounded-2xl overflow-hidden',
+                        desktopOverlay ? 'aspect-[3/4] max-h-[50vh]' : 'aspect-[4/5]'
+                      )}>
+                        {getFirstImage(product) && (
+                          <Image
+                            src={getFirstImage(product)!}
+                            alt={product.title}
+                            fill
+                            className="object-cover"
+                            sizes="400px"
+                            priority
+                            draggable={false}
+                          />
+                        )}
+                        {inWishlist && (
+                          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                            <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+                          </div>
+                        )}
+                      </div>
+
                       {displayRating >= 4 && !inWishlist && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8 }}
