@@ -29,6 +29,17 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 - `SHOPIFY_ACCESS_TOKEN` - Shopify Admin API access token
 - `SHOPIFY_SHOP` - Your Shopify shop domain (e.g., `your-shop.myshopify.com`)
 
+### 5b. Shopify Storefront API (Required for Shop/Experience pages)
+- `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` - **REQUIRED for product data** - Storefront API access token (not Admin API)
+- `SHOPIFY_SHOP` - Same as above, or use `NEXT_PUBLIC_SHOPIFY_SHOP` for client-side
+
+**To create a Storefront API token:**
+1. Shopify Admin → Apps → Develop apps → Create an app (or use existing)
+2. Configure Admin API scopes (optional for Storefront)
+3. Under **API credentials** → **Storefront API integration** → Configure Storefront API scopes
+4. Enable required scopes (e.g. `unauthenticated_read_product_listings`, `unauthenticated_read_product_inventory`)
+5. Install app → copy the **Storefront API access token**
+
 ### 6. Street Lamp (Already in vercel.json)
 - ✅ `NEXT_PUBLIC_STREET_LAMP_CLIENT_ID` - Already configured
 
@@ -69,6 +80,7 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 ## Verification Checklist
 
 After adding variables, verify:
+- [ ] `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` and `SHOPIFY_SHOP` are set (for shop/experience pages)
 - [ ] All variables are set for "Production" environment
 - [ ] PayPal credentials are correct (test with sandbox first)
 - [ ] `NEXT_PUBLIC_APP_URL` matches your actual Vercel URL
@@ -109,6 +121,14 @@ If cron jobs fail:
 1. Verify `CRON_SECRET` is set correctly
 2. Check cron job path matches in `vercel.json`
 3. Review Vercel cron job logs
+
+If "Shopify Storefront API Not Configured" appears:
+1. Go to Vercel → Project → Settings → Environment Variables
+2. Add `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` (Storefront API token, **not** Admin API token)
+3. Add `SHOPIFY_SHOP` (e.g. `your-store.myshopify.com`) if not already set
+4. Ensure both are enabled for Production
+5. Redeploy (Vercel → Deployments → … → Redeploy)
+6. For local dev: copy these to `.env.local`
 
 
 

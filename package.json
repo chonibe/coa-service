@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "patch-package",
+    "postinstall": "patch-package || echo 'Warning: patch-package could not apply some patches - continuing'",
     "dev": "next dev",
     "typecheck:collector": "tsc -p tsconfig.collector.json --noEmit",
     "build": "next build",

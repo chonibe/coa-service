@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronLeft, X, Lamp, ImageIcon, Info, ShoppingBag, CreditCard } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Lamp, ImageIcon, Info, ShoppingBag, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const WIZARD_STORAGE_KEY = 'sc-experience-wizard-complete'
@@ -234,9 +234,9 @@ export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
               <button
                 onClick={handleSkip}
                 className="flex-shrink-0 w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 flex items-center justify-center transition-colors"
-                aria-label="Skip tour"
+                aria-label="Back"
               >
-                <X className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
             </div>
             <div className="flex items-center justify-between px-4 pb-4">

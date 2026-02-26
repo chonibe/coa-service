@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Star, Heart, Info, RotateCcw } from 'lucide-react'
+import { ChevronLeft, Star, Heart, Info, RotateCcw } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import {
@@ -149,6 +149,7 @@ export function WishlistSwiperSheet({
   const [showTutorial, setShowTutorial] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [liveRating, setLiveRating] = useState(0)
+  const [hoverStar, setHoverStar] = useState<number>(0)
   const [isSkipZone, setIsSkipZone] = useState(false)
   const [showSparkle, setShowSparkle] = useState(false)
   const [sessionRatings, setSessionRatings] = useState<SessionRating[]>([])
@@ -206,8 +207,8 @@ export function WishlistSwiperSheet({
 
   useEffect(() => {
     if (!isOpen) return
-    setPhase('setup')
     setIndex(0)
+    setHoverStar(0)
     setSessionRatings([])
     setUndoStack([])
     setShowUndo(false)
@@ -216,9 +217,15 @@ export function WishlistSwiperSheet({
       clearTimeout(undoTimerRef.current)
       undoTimerRef.current = null
     }
-    const seen = localStorage.getItem(TUTORIAL_STORAGE_KEY)
-    if (!seen) setShowTutorial(true)
-  }, [isOpen])
+    // Skip setup – go straight to rating cards (default: unrated first)
+    const unrated = getUnratedProductIds(products.map((p) => p.id))
+    const unratedList = products.filter((p) => unrated.includes(p.id))
+    const shuffled = shuffleArray(unratedList.length > 0 ? unratedList : products)
+    setDisplayProducts(shuffled)
+    setPhase(shuffled.length > 0 ? 'rating' : 'summary')
+    setShowTutorial(false)
+    localStorage.setItem(TUTORIAL_STORAGE_KEY, '1')
+  }, [isOpen, products])
 
   const applyFilterAndStart = useCallback(() => {
     let filtered: ShopifyProduct[] = []
@@ -284,6 +291,7 @@ export function WishlistSwiperSheet({
     if (index < displayProducts.length - 1) {
       setIndex((i) => i + 1)
       setLiveRating(0)
+      setHoverStar(0)
       setIsSkipZone(false)
     } else {
       setPhase('summary')
@@ -516,9 +524,9 @@ export function WishlistSwiperSheet({
                 type="button"
                 onClick={onClose}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
-                aria-label="Close"
+                aria-label="Back"
               >
-                <X className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
             </div>
             <p className="text-sm text-neutral-600 mb-4">What would you like to rate?</p>
@@ -607,8 +615,8 @@ export function WishlistSwiperSheet({
               <h2 className="text-lg font-semibold text-neutral-900">
                 {sessionStats.total > 0 ? `${sessionStats.total} artworks rated` : 'All done!'}
               </h2>
-              <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100" aria-label="Close">
-                <X className="w-5 h-5" />
+              <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100" aria-label="Back">
+                <ChevronLeft className="w-5 h-5" />
               </button>
             </div>
             {sessionStats.total > 0 && (
@@ -718,9 +726,9 @@ export function WishlistSwiperSheet({
                   type="button"
                   onClick={onClose}
                   className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
-                  aria-label="Close"
+                  aria-label="Back"
                 >
-                  <X className="w-5 h-5" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
                 <span className="text-sm font-medium text-neutral-600">
                   {index + 1} / {totalCount}
@@ -738,7 +746,10 @@ export function WishlistSwiperSheet({
 
             {/* Card area */}
             <div
-              className="flex-1 overflow-hidden flex flex-col items-center justify-center p-6 min-h-0 relative"
+              className={cn(
+                'flex-1 overflow-hidden flex flex-col items-center min-h-0 relative',
+                desktopOverlay ? 'justify-start pt-4 pb-4 px-4' : 'justify-center p-6'
+              )}
               style={{
                 background: `linear-gradient(180deg, ${isSkipZone ? '#f0f0f0' : displayRating >= 4 ? 'rgb(255,251,235)' : displayRating >= 1 ? 'rgb(255,250,240)' : '#fafafa'} 0%, #fff 100%)`,
               }}
@@ -759,7 +770,10 @@ export function WishlistSwiperSheet({
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ x: exitDirection * 400, opacity: 0, transition: { duration: 0.2 } }}
                       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                      className="w-full max-w-md flex flex-col gap-4 relative select-none"
+                      className={cn(
+                        'w-full max-w-md flex flex-col relative select-none',
+                        desktopOverlay ? 'gap-2' : 'gap-4'
+                      )}
                       style={{ touchAction: 'none' }}
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
@@ -779,7 +793,7 @@ export function WishlistSwiperSheet({
 
                       <SparkleBurst active={showSparkle} onComplete={() => setShowSparkle(false)} />
 
-                      <div className="text-center min-w-0 pb-2">
+                      <div className={cn('text-center min-w-0', desktopOverlay ? 'pb-1' : 'pb-2')}>
                         <p className="text-base font-semibold text-neutral-900 truncate">{product.title}</p>
                         {product.vendor && <p className="text-sm text-neutral-500 truncate">{product.vendor}</p>}
                         {getFirstTags(product).length > 0 && (
@@ -793,7 +807,10 @@ export function WishlistSwiperSheet({
                         )}
                       </div>
 
-                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
+                      <div className={cn(
+                        'relative rounded-2xl overflow-hidden',
+                        desktopOverlay ? 'aspect-[3/4] max-h-[50vh]' : 'aspect-[4/5]'
+                      )}>
                         {getFirstImage(product) && (
                           <Image
                             src={getFirstImage(product)!}
@@ -812,24 +829,35 @@ export function WishlistSwiperSheet({
                         )}
                       </div>
 
-                      <div className="flex justify-center gap-2 -mt-2">
-                        {([1, 2, 3, 4, 5] as const).map((s) => (
-                          <motion.button
-                            key={s}
-                            type="button"
-                            onClick={() => { triggerHaptic(); handleStarTap(s) }}
-                            whileTap={{ scale: 1.15 }}
-                            transition={{ type: 'spring', damping: 15, stiffness: 400 }}
-                            className={cn(
-                              'w-12 h-12 flex items-center justify-center rounded-full transition-colors touch-manipulation',
-                              displayRating >= s ? 'text-amber-500 bg-amber-50' : 'text-neutral-300 hover:text-amber-400 hover:bg-neutral-50'
-                            )}
-                            aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
-                            aria-pressed={displayRating >= s}
-                          >
-                            <Star className={cn('w-7 h-7', displayRating >= s && 'fill-current')} strokeWidth={1.5} />
-                          </motion.button>
-                        ))}
+                      <div
+                        className={cn(
+                          'flex justify-center gap-2 flex-shrink-0',
+                          desktopOverlay ? '-mt-1' : '-mt-2'
+                        )}
+                        onMouseLeave={() => setHoverStar(0)}
+                      >
+                        {([1, 2, 3, 4, 5] as const).map((s) => {
+                          const fillUpTo = hoverStar > 0 ? hoverStar : displayRating
+                          const isFilled = fillUpTo >= s
+                          return (
+                            <motion.button
+                              key={s}
+                              type="button"
+                              onClick={() => { triggerHaptic(); handleStarTap(s) }}
+                              onMouseEnter={() => setHoverStar(s)}
+                              whileTap={{ scale: 1.15 }}
+                              transition={{ type: 'spring', damping: 15, stiffness: 400 }}
+                              className={cn(
+                                'w-12 h-12 flex items-center justify-center rounded-full transition-colors touch-manipulation',
+                                isFilled ? 'text-amber-500 bg-amber-50' : 'text-neutral-300 hover:text-amber-400 hover:bg-neutral-50'
+                              )}
+                              aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
+                              aria-pressed={displayRating >= s}
+                            >
+                              <Star className={cn('w-7 h-7', isFilled && 'fill-current')} strokeWidth={1.5} />
+                            </motion.button>
+                          )
+                        })}
                       </div>
                       {displayRating >= 4 && !inWishlist && (
                         <motion.div

@@ -20,7 +20,7 @@ interface ArtworkDetailProps {
   isSelected: boolean
   onToggleSelect: () => void
   onClose: () => void
-  /** On desktop, use right slideout instead of full-screen bottom sheet */
+  /** On desktop, use left slideout (next to lamp preview) instead of full-screen bottom sheet */
   isMobile?: boolean
   /** When true, full product details are still loading (show loading state) */
   isLoadingDetails?: boolean
@@ -50,6 +50,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const [showSpecs, setShowSpecs] = useState(false)
   const [showIncludes, setShowIncludes] = useState(false)
   const [imageZoom, setImageZoom] = useState(1)
+  const [isOpen, setIsOpen] = useState(true)
   const constraintsRef = useRef<HTMLDivElement>(null)
   const dragX = useMotionValue(0)
   const panX = useMotionValue(0)
@@ -63,6 +64,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     setShowIncludes(false)
     setImageZoom(1)
     setHasUserInteracted(false)
+    setIsOpen(true)
   }, [product.id])
 
   useEffect(() => {
@@ -134,15 +136,22 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     setImageIndex(i)
   }, [])
 
+  const handleClose = useCallback(() => {
+    setIsOpen(false)
+  }, [])
+  const handleExitComplete = useCallback(() => {
+    onClose()
+  }, [onClose])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose() }
+      if (e.key === 'Escape') { e.stopPropagation(); handleClose() }
       if (e.key === 'ArrowLeft') goToIndex((imageIndex - 1 + allImages.length) % allImages.length)
       if (e.key === 'ArrowRight') goToIndex((imageIndex + 1) % allImages.length)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, allImages.length, imageIndex, goToIndex])
+  }, [handleClose, allImages.length, imageIndex, goToIndex])
 
   const handleDragEnd = useCallback(
     (_: any, info: PanInfo) => {
@@ -187,44 +196,51 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     : currentImage
 
   const isSlideout = !isMobile
+
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={handleExitComplete}>
+      {isOpen && (
+      <>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className={cn(
           'fixed inset-0 z-[80] pointer-events-none',
-          isSlideout ? 'flex justify-end' : 'flex items-end'
+          isSlideout ? 'flex justify-start items-center' : 'flex items-end'
         )}
       >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          transition={{ duration: 0.2 }}
+          onClick={handleClose}
           className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
         />
 
         <motion.div
-          initial={isSlideout ? { x: '100%' } : { y: '100%' }}
+          initial={isSlideout ? { x: '-100%' } : { y: '100%' }}
           animate={isSlideout ? { x: 0 } : { y: 0 }}
-          exit={isSlideout ? { x: '100%' } : { y: '100%' }}
+          exit={isSlideout ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
             'relative z-10 bg-white overflow-hidden flex flex-col shadow-xl pointer-events-auto',
-            isSlideout ? 'w-full max-w-md h-full rounded-l-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
+            isSlideout ? 'w-full max-w-md max-h-[90dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
           )}
         >
-          {/* Top: chevron to close */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-shrink-0 flex justify-center pt-2 pb-2 w-full text-neutral-400 hover:text-neutral-600 transition-colors"
-            aria-label="Close"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
+          {/* Top: chevron to close (hidden on desktop) */}
+          {!isSlideout && (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex-shrink-0 flex justify-center pt-2 pb-2 w-full text-neutral-400 hover:text-neutral-600 transition-colors"
+              aria-label="Close"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
+          )}
 
           {/* Scrollable content — pb allows content to scroll behind the action bar */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-4 pb-64">
@@ -711,6 +727,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           </div>
         </motion.div>
       </motion.div>
+      </>
+      )}
     </AnimatePresence>
   )
 }
