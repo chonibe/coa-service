@@ -136,7 +136,7 @@ export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement>
   title: string
   subtitle?: string
   alignment?: 'left' | 'center' | 'right'
-  titleSize?: 'sm' | 'md' | 'lg' | 'xl'
+    titleSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
   action?: React.ReactNode
 }
 
@@ -164,6 +164,8 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
       md: 'text-impact-h3 xl:text-impact-h3-lg',
       lg: 'text-impact-h2 xl:text-impact-h2-lg',
       xl: 'text-impact-h1 xl:text-impact-h1-lg',
+      '2xl': 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl',
+      '3xl': 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl',
     }
     
     return (
@@ -183,12 +185,21 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
           alignment === 'right' && 'flex-col items-end sm:flex-row-reverse sm:items-end sm:justify-between',
         )}>
           <div>
-            <h2 className={cn(
-              'font-heading font-semibold text-[#1a1a1a] tracking-[-0.02em]',
-              titleSizeClasses[titleSize]
-            )}>
-              {title}
-            </h2>
+            <div
+              className={cn(
+                alignment === 'center' && 'inline-block',
+                alignment === 'left' && 'inline-block',
+                alignment === 'right' && 'inline-block text-right'
+              )}
+            >
+              <h2 className={cn(
+                'font-heading font-semibold text-[#1a1a1a] tracking-[-0.02em]',
+                titleSizeClasses[titleSize]
+              )}>
+                {title}
+              </h2>
+              <TitleSquiggle className="mt-1 text-[#1a1a1a]/40" />
+            </div>
             {subtitle && (
               <p className={cn(
                 'mt-3 text-base sm:text-lg text-[#1a1a1a]/60 max-w-2xl',
@@ -205,6 +216,26 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
   }
 )
 SectionHeader.displayName = 'SectionHeader'
+
+/** Squiggle underline that scales to container width; use under titles */
+function TitleSquiggle({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 22"
+      fill="none"
+      className={cn('block w-full', className)}
+      style={{ height: '0.4em', minHeight: 6, maxHeight: 10 }}
+      aria-hidden
+    >
+      <path
+        d="M0 14 C 22 6, 45 18, 65 10 C 82 4, 95 16, 100 11"
+        stroke="var(--marker-color, currentColor)"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
 
 /**
  * Section Divider - visual separator between sections

@@ -19,6 +19,7 @@ import { ShopNavigation } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { WishlistDrawer } from '@/components/shop/navigation'
+import { cn } from '@/lib/utils'
 
 /**
  * Shop Layout
@@ -65,27 +66,35 @@ const defaultNavigation = [
 // TODO: Update main-menu in Shopify to match this structure, then re-run sync script
 const shopNavigation = defaultNavigation
 
-// Use synced footer sections from Shopify, with fallback to default
-const footerSections = (Array.isArray(syncedFooterSections) && syncedFooterSections.length > 0) ? syncedFooterSections : [
-  {
-    title: 'Street Collector',
-    links: [
-      { label: 'Search', href: '/shop?search=true' },
-      { label: 'Artist Submissions', href: '/artist-submissions' },
-      { label: 'Careers', href: '/careers' },
-    ],
-  },
-  {
-    title: 'Policies',
-    links: [
-      { label: 'Terms of Service', href: '/policies/terms-of-service' },
-      { label: 'Shipping Policy', href: '/policies/shipping-policy' },
-      { label: 'Refund Policy', href: '/policies/refund-policy' },
-      { label: 'Privacy Policy', href: '/policies/privacy-policy' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
-]
+// Use synced footer sections from Shopify when they have links, else fallback to default
+// Sync: scripts/sync-shopify-content.ts — uses footer/footer-menu from theme
+const hasUsefulFooterSections =
+  Array.isArray(syncedFooterSections) &&
+  syncedFooterSections.length > 0 &&
+  syncedFooterSections.some((s) => s.links && s.links.length > 0)
+
+const footerSections = hasUsefulFooterSections
+  ? syncedFooterSections
+  : [
+      {
+        title: 'Street Collector',
+        links: [
+          { label: 'Search', href: '/shop?search=true' },
+          { label: 'Artist Submissions', href: '/artist-submissions' },
+          { label: 'Careers', href: '/careers' },
+        ],
+      },
+      {
+        title: 'Policies',
+        links: [
+          { label: 'Terms of Service', href: '/policies/terms-of-service' },
+          { label: 'Shipping Policy', href: '/policies/shipping-policy' },
+          { label: 'Refund Policy', href: '/policies/refund-policy' },
+          { label: 'Privacy Policy', href: '/policies/privacy-policy' },
+          { label: 'Contact', href: '/contact' },
+        ],
+      },
+    ]
 
 // Social links
 const socialLinks: Array<{ platform: 'facebook' | 'instagram'; href: string }> = [
@@ -107,6 +116,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const isExperiencePage = pathname?.startsWith('/shop/experience')
+  const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   const cart = useCart()
   const wishlist = useWishlist()
   const [cartLoading, setCartLoading] = useState(false)
@@ -160,16 +170,24 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [wishlistDrawerOpen, cart])
 
-  // Listen for open-wishlist from experience FilterPanel
+  // Close wishlist when navigating to street-collector (page has no nav)
+  useEffect(() => {
+    if (pathname?.startsWith('/shop/street-collector')) {
+      setWishlistDrawerOpen(false)
+    }
+  }, [pathname])
+
+  // Listen for open-wishlist from experience FilterPanel (ignore on street-collector - no nav)
   useEffect(() => {
     const handler = () => {
+      if (pathname?.startsWith('/shop/street-collector')) return
       setWishlistDrawerOpen(true)
       setNavModalOpen(false)
       cart.toggleCart(false)
     }
     window.addEventListener('open-wishlist', handler)
     return () => window.removeEventListener('open-wishlist', handler)
-  }, [cart])
+  }, [cart, pathname])
   
   // Handle cart drawer toggle
   const handleViewCart = useCallback(() => {
@@ -301,13 +319,16 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       
-      {/* Scrolling Announcement Bar */}
-      <ScrollingAnnouncementBar 
-        messages={defaultAnnouncementMessages}
-        speed={25}
-      />
+      {/* Scrolling Announcement Bar - hidden on street-collector (has fixed CTA) */}
+      {!isStreetCollectorPage && (
+        <ScrollingAnnouncementBar 
+          messages={defaultAnnouncementMessages}
+          speed={25}
+        />
+      )}
       
-      {/* Shop Navigation */}
+      {/* Shop Navigation - hidden on street-collector (has fixed CTA) */}
+      {!isStreetCollectorPage && (
       <ShopNavigation
         cartItems={cart.items ?? []}
         cartSubtotal={cart.subtotal}
@@ -324,6 +345,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         cartLoading={cartLoading}
         hideAddToCartNotification={isExperiencePage}
       />
+      )}
       
       {/* Cart Drawer - hidden on experience page (has its own OrderBar) */}
       {!isExperiencePage && (
@@ -339,15 +361,20 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         />
       )}
       
-      {/* Wishlist Drawer */}
-      <WishlistDrawer
-        isOpen={wishlistDrawerOpen}
-        onClose={() => setWishlistDrawerOpen(false)}
-        onAddToCart={onAddToCart}
-      />
+      {/* Wishlist Drawer - hidden on street-collector (no nav to open it) */}
+      {!isStreetCollectorPage && (
+        <WishlistDrawer
+          isOpen={wishlistDrawerOpen}
+          onClose={() => setWishlistDrawerOpen(false)}
+          onAddToCart={onAddToCart}
+        />
+      )}
       
       {/* Main Content */}
-      <main id="main-content" className="flex-1">
+      <main
+        id="main-content"
+        className={cn('flex-1', isStreetCollectorPage && 'bg-[#F5F5F5]')}
+      >
         {children}
       </main>
       

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, X, ChevronDown, ChevronUp, Percent, Info } from 'lucide-react'
@@ -166,7 +166,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
 
-  const handleTestZeroOrder = async () => {
+  const handleTestZeroOrder = useCallback(async () => {
     setError(null)
     setIsCheckingOut(true)
     try {
@@ -198,7 +198,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
       setError(err.message || 'Something went wrong.')
       setIsCheckingOut(false)
     }
-  }
+  }, [lamp])
 
   useImperativeHandle(ref, () => ({ testZeroOrder: handleTestZeroOrder }), [handleTestZeroOrder])
 
@@ -454,6 +454,11 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
         </span>
       </div>
       <p className="text-xs text-neutral-600 mt-0.5">Free shipping</p>
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-1">
+        <p className="text-[11px] text-neutral-500">Limited edition authenticity</p>
+        <p className="text-[11px] text-neutral-500">Shipping tracking included</p>
+        <p className="text-[11px] text-neutral-500">30-day returns · 1-year warranty</p>
+      </div>
 
       {/* Gift note */}
       {isGift && (

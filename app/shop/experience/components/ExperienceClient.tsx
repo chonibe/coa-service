@@ -147,36 +147,50 @@ export function ExperienceClient({
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {showQuiz ? (
-        <motion.div
-          key="quiz"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="h-full"
-        >
-          <IntroQuiz onComplete={handleQuizComplete} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="configurator"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="h-full"
-        >
-          <ExperienceConfiguratorWithBoundary
-            lamp={lamp}
-            productsSeason1={productsSeason1}
-            productsSeason2={productsSeason2}
-            quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
-            onRetakeQuiz={handleRetakeQuiz}
-            initialFilters={initialFilters}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="h-full flex flex-col relative">
+      {/* Back chevron — return to street collector landing */}
+      <Link
+        href="/shop/street-collector"
+        className="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white transition-colors backdrop-blur-sm"
+        aria-label="Back to Street Collector"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+      </Link>
+      <div className="flex-1 min-h-0">
+        <AnimatePresence mode="wait">
+          {showQuiz ? (
+            <motion.div
+              key="quiz"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="h-full"
+            >
+              <IntroQuiz onComplete={handleQuizComplete} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="configurator"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="h-full"
+            >
+              <ExperienceConfiguratorWithBoundary
+                lamp={lamp}
+                productsSeason1={productsSeason1}
+                productsSeason2={productsSeason2}
+                quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
+                onRetakeQuiz={handleRetakeQuiz}
+                initialFilters={initialFilters}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   )
 }

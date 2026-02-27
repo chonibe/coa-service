@@ -23,6 +23,9 @@ export interface VideoPlayerProps {
   overlay?: {
     headline?: string
     subheadline?: string
+    /** Micro cue—subtle directional text under subheadline (e.g. "Discover this month's drop.") */
+    microCue?: string
+    ctaUrl?: string
     cta?: {
       text: string
       url: string
@@ -32,6 +35,7 @@ export interface VideoPlayerProps {
     overlayColor?: string
     overlayOpacity?: number
     position?: 'center' | 'bottom-left' | 'bottom-center'
+    headlineSize?: 'default' | 'large'
   }
   size?: 'sm' | 'md' | 'lg' | 'full'
   fullWidth?: boolean
@@ -86,7 +90,7 @@ export function VideoPlayer({
   const positionClasses = {
     center: 'items-center justify-center text-center',
     'bottom-left': 'items-end justify-start text-left pb-16 px-8',
-    'bottom-center': 'items-end justify-center text-center pb-16',
+    'bottom-center': 'items-end justify-center text-center pb-20',
   }
 
   return (
@@ -136,11 +140,16 @@ export function VideoPlayer({
             positionClasses[overlay.position || 'center']
           )}
         >
-          <Container maxWidth="default" paddingX="gutter">
-            <div className="max-w-2xl">
+          <Container maxWidth="default" paddingX="gutter" className="flex justify-center">
+            <div className="max-w-2xl mx-auto w-full">
               {overlay.headline && (
                 <h1
-                  className="font-heading text-impact-h0 xl:text-impact-h0-lg font-semibold tracking-[-0.02em] mb-4"
+                  className={cn(
+                    'font-heading font-semibold tracking-[-0.02em] mb-4',
+                    overlay.headlineSize === 'large'
+                      ? 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
+                      : 'text-impact-h0 xl:text-impact-h0-lg'
+                  )}
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
                   {overlay.headline}
@@ -148,11 +157,25 @@ export function VideoPlayer({
               )}
               {overlay.subheadline && (
                 <p
-                  className="text-lg sm:text-xl mb-6"
+                  className={cn(
+                    'mb-6',
+                    overlay.headlineSize === 'large'
+                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                      : 'text-lg sm:text-xl'
+                  )}
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
                   {overlay.subheadline}
                 </p>
+              )}
+              {overlay.microCue && (
+                <a
+                  href={overlay.ctaUrl || overlay.cta?.url || '#'}
+                  className="block mb-6 text-sm sm:text-base opacity-90 hover:opacity-100 underline underline-offset-2 transition-opacity"
+                  style={{ color: overlay.textColor || '#ffffff' }}
+                >
+                  {overlay.microCue}
+                </a>
               )}
               {overlay.cta && (
                 <a href={overlay.cta.url}>
