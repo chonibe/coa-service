@@ -7,6 +7,7 @@ This guide covers how to test the Stripe checkout → Shopify order creation flo
 - [ ] **Supabase**: `checkout_sessions` table exists (run `scripts/apply-checkout-sessions-table.sql` in Supabase Dashboard if needed)
 - [ ] **Shopify**: Admin API credentials configured (`SHOPIFY_SHOP`, `SHOPIFY_ACCESS_TOKEN`)
 - [ ] **Stripe** (for full flow): `STRIPE_SECRET_KEY` set (test mode key for local testing)
+- [ ] **Payment methods**: PayPal and Google Pay can be enabled in [Stripe Dashboard → Payment methods](https://dashboard.stripe.com/settings/payment_methods). Checkout supports card, PayPal, and Link (one-click/Google Pay) — see [`docs/COMMIT_LOGS/checkout-payment-methods-google-pay-paypal-2026-03-01.md`](COMMIT_LOGS/checkout-payment-methods-google-pay-paypal-2026-03-01.md)
 
 ## Quick API Test (Zero-Order)
 

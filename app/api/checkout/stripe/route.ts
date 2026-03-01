@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       metadata: sessionMetadata,
       allow_promotion_codes: allowPromotionCodes,
       billing_address_collection: billingAddressCollection,
+      payment_method_types: ['card', 'paypal', 'link'],
       ...(customerEmail && { customer_email: customerEmail }),
       ...(shippingAddressCollection && {
         shipping_address_collection: {

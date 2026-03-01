@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
       line_items: stripeLineItems,
       success_url: successUrl,
       cancel_url: finalCancelUrl,
+      payment_method_types: ['card', 'paypal', 'link'],
       metadata: {
         source: 'headless_storefront',
         shopify_variant_ids: shopifyVariantsCompact,
