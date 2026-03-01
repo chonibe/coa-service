@@ -24,7 +24,53 @@ Current config has `images: { unoptimized: true }` in [next.config.js](../../../
 - **Re-enable optimization**: Set `unoptimized: false` and add `remotePatterns` for Shopify domains (e.g. `cdn.shopify.com`). Requires compatible image provider support.
 - **Keep unoptimized**: If external CDN constraints apply, keep `unoptimized: true` and consider Shopify URL size parameters (e.g. `_medium`, `_large`) where available to reduce transfer.
 
-## API Endpoints
+## Checkout & Payment (Stripe)
+
+The experience checkout uses a **multi-step in-drawer flow** powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
+
+### Multi-Step Checkout Flow
+
+1. **Step 1 -- Cart Review**: Items, quantities, lamp discount, gift note, totals
+2. **Step 2 -- Shipping Address**: Inline address form (email, name, country, address, phone)
+3. **Step 3 -- Payment & Confirm**: Stripe Payment Element (card/GPay/Link/PayPal), promo code, order summary, Place Order
+
+### Payment Methods
+
+| Method | How it works | Redirect? |
+|--------|-------------|-----------|
+| **Credit Card** | Payment Element card form → `confirmPayment` | No |
+| **Google Pay** | Payment Element shows GPay button (via `card` type) | No |
+| **Link** | Payment Element shows Link autofill | No |
+| **PayPal** | Payment Element shows PayPal option → redirect to PayPal | Yes (required) |
+
+### Key Components
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `OrderBar` | [`app/shop/experience/components/OrderBar.tsx`](../../../app/shop/experience/components/OrderBar.tsx) | 3-step drawer checkout |
+| `InlineAddressForm` | [`components/shop/checkout/InlineAddressForm.tsx`](../../../components/shop/checkout/InlineAddressForm.tsx) | Compact address form for drawer |
+| `PaymentStep` | [`components/shop/checkout/PaymentStep.tsx`](../../../components/shop/checkout/PaymentStep.tsx) | Stripe Payment Element + order confirm |
+| `CheckoutContext` | [`lib/shop/CheckoutContext.tsx`](../../../lib/shop/CheckoutContext.tsx) | Step state, address, payment data |
+
+### API Endpoints (Checkout)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/checkout/create-payment-intent` | Creates PaymentIntent (card, link, paypal) for in-drawer checkout |
+| `POST /api/checkout/complete-order` | Creates Shopify order after successful payment (idempotent) |
+| `POST /api/checkout/create` | Checkout Session (main shop cart, credits, zero-dollar flows) |
+| `POST /api/checkout/create-setup-intent` | SetupIntent for card + Link (legacy, used by main cart) |
+| `POST /api/checkout/confirm-payment` | Confirm PaymentIntent with saved card (legacy, used by main cart) |
+
+### Stripe Configuration
+
+- Domain `app.thestreetcollector.com` registered for Google Pay
+- Payment methods enabled in Stripe Dashboard: card, link, paypal
+- Environment variables: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+
+See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) for earlier configuration details.
+
+## API Endpoints (Products)
 
 | Endpoint | Purpose |
 |----------|---------|
@@ -38,5 +84,5 @@ Current config has `images: { unoptimized: true }` in [next.config.js](../../../
 
 ## Version
 
-- Last updated: 2026-02-25
-- Version: 1.2.0
+- Last updated: 2026-03-01
+- Version: 1.4.0

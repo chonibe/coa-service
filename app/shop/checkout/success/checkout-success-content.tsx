@@ -65,7 +65,9 @@ interface SeriesProgressItem {
 export function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
-  
+  const paymentIntentId = searchParams.get('payment_intent')
+  const orderParam = sessionId || paymentIntentId
+
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,14 +76,42 @@ export function CheckoutSuccessContent() {
 
   useEffect(() => {
     async function fetchOrderDetails() {
-      if (!sessionId) {
-        setError('No session ID provided')
+      if (!orderParam) {
+        setError('No session or payment ID provided')
         setLoading(false)
         return
       }
 
       try {
-        const response = await fetch(`/api/checkout/stripe?session_id=${sessionId}`)
+        // For PaymentIntent returns (PayPal redirect or inline), ensure order is fulfilled.
+        // The complete-order endpoint is idempotent (skips if already fulfilled).
+        if (paymentIntentId) {
+          const pendingItems = sessionStorage.getItem('sc_checkout_items')
+          const pendingAddress = sessionStorage.getItem('sc_checkout_address')
+          if (pendingItems && pendingAddress) {
+            try {
+              await fetch('/api/checkout/complete-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentIntentId,
+                  items: JSON.parse(pendingItems),
+                  shippingAddress: JSON.parse(pendingAddress),
+                }),
+              })
+            } catch {
+              // Best-effort; order may already exist from inline flow
+            } finally {
+              sessionStorage.removeItem('sc_checkout_items')
+              sessionStorage.removeItem('sc_checkout_address')
+            }
+          }
+        }
+
+        const url = paymentIntentId
+          ? `/api/checkout/stripe?payment_intent=${paymentIntentId}`
+          : `/api/checkout/stripe?session_id=${sessionId}`
+        const response = await fetch(url)
         const data = await response.json()
 
         if (!response.ok) {
@@ -90,8 +120,8 @@ export function CheckoutSuccessContent() {
 
         setOrder(data.session)
         setSeriesProgress(data.seriesProgress || [])
-      } catch (err: any) {
-        setError(err.message)
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
       } finally {
         setLoading(false)
       }
@@ -99,11 +129,10 @@ export function CheckoutSuccessContent() {
 
     fetchOrderDetails()
 
-    // Check if user is authenticated (has collector session cookie or Supabase session)
     fetch('/api/auth/roles', { credentials: 'include' })
       .then(res => { if (res.ok) setIsAuthenticated(true) })
       .catch(() => {})
-  }, [sessionId])
+  }, [orderParam, sessionId, paymentIntentId])
 
   // Format price
   const formatPrice = (amount: number, currency: string) => {
@@ -175,7 +204,7 @@ export function CheckoutSuccessContent() {
               Thank you for your order!
             </h1>
             <p className="text-lg text-[#1a1a1a]/60">
-              We've sent a confirmation email to{' '}
+              We&apos;ve sent a confirmation email to{' '}
               <span className="font-medium text-[#1a1a1a]">{order.customerEmail}</span>
             </p>
           </div>
@@ -355,7 +384,7 @@ export function CheckoutSuccessContent() {
                 <div>
                   <p className="font-medium text-[#1a1a1a]">Order Confirmation</p>
                   <p className="text-sm text-[#1a1a1a]/60">
-                    You'll receive an email confirmation shortly.
+                    You&apos;ll receive an email confirmation shortly.
                   </p>
                 </div>
               </div>
@@ -377,7 +406,7 @@ export function CheckoutSuccessContent() {
                 <div>
                   <p className="font-medium text-[#1a1a1a]">Shipping</p>
                   <p className="text-sm text-[#1a1a1a]/60">
-                    We'll email you tracking information once shipped.
+                    We&apos;ll email you tracking information once shipped.
                   </p>
                 </div>
               </div>
