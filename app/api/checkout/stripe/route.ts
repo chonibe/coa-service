@@ -185,10 +185,48 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('session_id')
-    
+    const paymentIntentId = searchParams.get('payment_intent')
+
+    if (paymentIntentId) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = createClient()
+      const { data: purchase } = await supabase
+        .from('stripe_purchases')
+        .select('*')
+        .eq('stripe_payment_intent', paymentIntentId)
+        .maybeSingle()
+
+      const metadata = pi.metadata || {}
+      const variantsRaw = metadata.shopify_variant_ids || ''
+      const variants = variantsRaw.split(',').map((part: string) => {
+        const [variantId, qty] = part.split(':')
+        return { variantId: variantId ?? '', quantity: parseInt(qty ?? '1', 10) }
+      }).filter((v: { variantId: string }) => v.variantId)
+
+      return NextResponse.json({
+        session: {
+          id: pi.id,
+          status: 'complete',
+          paymentStatus: 'paid',
+          customerEmail: metadata.collector_identifier || metadata.collector_email || '',
+          amountTotal: pi.amount_received || pi.amount,
+          currency: pi.currency || 'usd',
+          lineItems: purchase?.metadata?.line_items || variants.map((v: { variantId: string; quantity: number }) => ({
+            description: `Variant ${v.variantId}`,
+            quantity: v.quantity,
+            amount: Math.round((pi.amount_received || pi.amount || 0) / variants.reduce((s: number, x: { quantity: number }) => s + x.quantity, 0)) * (v.quantity || 1),
+          })),
+          shippingDetails: null,
+          metadata: metadata,
+        },
+        seriesProgress: [],
+      })
+    }
+
     if (!sessionId) {
       return NextResponse.json(
-        { error: 'Session ID is required' },
+        { error: 'Session ID or payment_intent is required' },
         { status: 400 }
       )
     }

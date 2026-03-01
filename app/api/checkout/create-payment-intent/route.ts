@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         source: 'experience_checkout',
         shopify_variant_ids: shopifyVariantsCompact,
         collector_email: email,
+        collector_identifier: email,
         items_json: JSON.stringify(
           items.map((i) => ({
             variantId: i.variantId,

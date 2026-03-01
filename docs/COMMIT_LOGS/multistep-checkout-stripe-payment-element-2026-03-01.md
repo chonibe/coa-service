@@ -11,17 +11,18 @@ Refactored the experience OrderBar drawer from a modal-based checkout into a mul
 
 ### New Files
 
-- [x] [`app/api/checkout/create-payment-intent/route.ts`](../../app/api/checkout/create-payment-intent/route.ts) -- Creates PaymentIntent with `card`, `link`, `paypal` methods for the in-drawer checkout
+- [x] [`app/api/checkout/create-payment-intent/route.ts`](../../app/api/checkout/create-payment-intent/route.ts) -- Creates PaymentIntent with `card`, `link`, `paypal`; metadata includes `collector_identifier` for success page
 - [x] [`app/api/checkout/complete-order/route.ts`](../../app/api/checkout/complete-order/route.ts) -- Idempotent order fulfillment: verifies PaymentIntent, creates Shopify draft order, records in `stripe_purchases`
 - [x] [`components/shop/checkout/InlineAddressForm.tsx`](../../components/shop/checkout/InlineAddressForm.tsx) -- Compact inline address form for drawer (email, name, country, address, city, postal, phone)
-- [x] [`components/shop/checkout/PaymentStep.tsx`](../../components/shop/checkout/PaymentStep.tsx) -- Stripe Elements + PaymentElement with order summary, promo code, and Place Order button
+- [x] [`components/shop/checkout/PaymentStep.tsx`](../../components/shop/checkout/PaymentStep.tsx) -- Stripe Elements + PaymentElement (tabs: google_pay, card, link, paypal), order summary, promo code, Place Order button
 
 ### Modified Files
 
 - [x] [`app/shop/experience/components/OrderBar.tsx`](../../app/shop/experience/components/OrderBar.tsx) -- Replaced single-step + CheckoutLayout with 3-step flow (Cart → Shipping → Payment) with step indicator and animated transitions
-- [x] [`lib/shop/CheckoutContext.tsx`](../../lib/shop/CheckoutContext.tsx) -- Added `CheckoutStep` type, `step` state, `setStep`, `goToCart`, `goToShipping`, `goToPayment` methods (backward compatible)
+- [x] [`lib/shop/CheckoutContext.tsx`](../../lib/shop/CheckoutContext.tsx) -- Added `CheckoutStep` type, `step` state, `paymentIntentClientSecret`, `setStep`, `setPaymentIntentClientSecret`, `goToCart`, `goToShipping`, `goToPayment` (backward compatible)
 - [x] [`components/shop/checkout/index.ts`](../../components/shop/checkout/index.ts) -- Exported `InlineAddressForm`, `PaymentStep` and their prop types
-- [x] [`app/shop/checkout/success/checkout-success-content.tsx`](../../app/shop/checkout/success/checkout-success-content.tsx) -- Added PayPal redirect handling: reads pending items/address from sessionStorage, calls `complete-order` to fulfill
+- [x] [`app/shop/checkout/success/checkout-success-content.tsx`](../../app/shop/checkout/success/checkout-success-content.tsx) -- PayPal redirect handling: reads pending items/address from sessionStorage, calls `complete-order` to fulfill
+- [x] [`app/api/checkout/stripe/route.ts`](../../app/api/checkout/stripe/route.ts) -- Fallback to `collector_email` for PaymentIntent success page when `collector_identifier` missing
 - [x] [`docs/features/experience/README.md`](../../docs/features/experience/README.md) -- Updated checkout documentation with multi-step flow, payment methods table, and new API endpoints
 
 ### Backward Compatibility

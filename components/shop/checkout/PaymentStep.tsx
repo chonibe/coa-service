@@ -211,7 +211,7 @@ function PaymentFormInner({
           options={{
             layout: 'tabs',
             defaultCollapsed: false,
-            paymentMethodOrder: ['card', 'google_pay', 'link', 'paypal'],
+            paymentMethodOrder: ['google_pay', 'card', 'link', 'paypal'],
           }}
         />
       </div>

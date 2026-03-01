@@ -58,6 +58,8 @@ export interface CheckoutState {
   openSection: OpenSection
   /** Multi-step checkout flow state (experience drawer) */
   step: CheckoutStep
+  /** PaymentIntent client secret for Stripe Elements (experience drawer) */
+  paymentIntentClientSecret: string | null
 }
 
 interface CheckoutContextValue extends CheckoutState {
@@ -71,6 +73,7 @@ interface CheckoutContextValue extends CheckoutState {
   setShippingCost: (cost: number) => void
   setOpenSection: (section: OpenSection) => void
   setStep: (step: CheckoutStep) => void
+  setPaymentIntentClientSecret: (secret: string | null) => void
   goToCart: () => void
   goToShipping: () => void
   goToPayment: () => void
@@ -122,6 +125,7 @@ const initialState: CheckoutState = {
   shippingCost: 0,
   openSection: null,
   step: 'cart',
+  paymentIntentClientSecret: null,
 }
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
@@ -167,6 +171,13 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, step }))
   }, [])
 
+  const setPaymentIntentClientSecret = useCallback(
+    (paymentIntentClientSecret: string | null) => {
+      setState((s) => ({ ...s, paymentIntentClientSecret }))
+    },
+    []
+  )
+
   const goToCart = useCallback(() => setStep('cart'), [setStep])
   const goToShipping = useCallback(() => setStep('shipping'), [setStep])
   const goToPayment = useCallback(() => setStep('payment'), [setStep])
@@ -211,6 +222,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setShippingCost,
       setOpenSection,
       setStep,
+      setPaymentIntentClientSecret,
       goToCart,
       goToShipping,
       goToPayment,
@@ -235,6 +247,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setShippingCost,
       setOpenSection,
       setStep,
+      setPaymentIntentClientSecret,
       goToCart,
       goToShipping,
       goToPayment,
