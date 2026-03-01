@@ -157,23 +157,6 @@ export default function ArtistPage() {
       <SectionWrapper spacing="lg" background="muted">
         <Container maxWidth="default">
           <ScrollReveal animation="fadeUp" duration={0.8}>
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm mb-8">
-              <Link href="/shop" className="text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors">
-                Shop
-              </Link>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <Link href="/shop/artists" className="text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors">
-                Artists
-              </Link>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="text-[#1a1a1a]">{artist.name}</span>
-            </div>
-
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
               {/* Profile Image */}
               <div className="relative flex-shrink-0">

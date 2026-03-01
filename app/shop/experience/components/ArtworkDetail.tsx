@@ -32,16 +32,18 @@ interface ArtworkDetailProps {
   productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
   /** Optional specifications sections with icon (e.g. Dimensions, Weight, Materials) */
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
+  /** Override add button label (e.g. "Add Lamp to order" for lamp product) */
+  addToOrderLabel?: string
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order' }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
 
-  const [imageIndex, setImageIndex] = useState(0)
+  const [imageIndex, setImageIndex] = useState(() => (allImages.length >= 2 ? 1 : 0))
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
@@ -57,7 +59,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const panY = useMotionValue(0)
 
   useEffect(() => {
-    setImageIndex(0)
+    const imgs = product.images?.edges?.map((e) => e.node) ?? []
+    const fallback = product.featuredImage
+    const count = imgs.length > 0 ? imgs.length : fallback ? 1 : 0
+    setImageIndex(count >= 2 ? 1 : 0)
     setShowDescription(false)
     setShowArtistBio(false)
     setShowSpecs(false)
@@ -720,7 +725,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               ) : isSoldOut ? (
                 'Sold Out'
               ) : (
-                <>Add to order &mdash; {price}</>
+                <>{addToOrderLabel} &mdash; {price}</>
               )}
               </button>
             </div>

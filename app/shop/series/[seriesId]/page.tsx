@@ -123,17 +123,6 @@ export default function SeriesPage() {
       <SectionWrapper spacing="sm" background="muted">
         <Container maxWidth="default">
           <div className="py-8 sm:py-12">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm mb-6">
-              <Link href="/shop" className="text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors">
-                Shop
-              </Link>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="text-[#1a1a1a]">Series</span>
-            </div>
-
             <div className="flex items-start gap-6">
               {/* Series Thumbnail */}
               {series.thumbnail_url && (

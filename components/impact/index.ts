@@ -7,7 +7,8 @@
  */
 
 // UI Components
-export { Button, buttonVariants } from './Button'
+export { Button } from './Button'
+export { buttonVariants } from './button-variants'
 export type { ButtonProps } from './Button'
 
 export { Input, Textarea, Select, inputVariants, textareaVariants } from './Input'

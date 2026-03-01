@@ -38,7 +38,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
             Quick answers to common questions. Can&apos;t find what you need?{' '}
             <a
-              href="mailto:hello@thestreetcollector.com"
+              href="mailto:info@thestreetlamp.com"
               className="text-neutral-900 font-medium underline underline-offset-2 hover:no-underline transition-all"
             >
               Get in touch

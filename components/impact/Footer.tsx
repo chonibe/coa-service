@@ -234,7 +234,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
           <div className="mt-8 pt-6 border-t border-[#ffba94]/10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <p className="text-xs text-[#ffba94]/50">
-                {copyrightText || `© ${currentYear} Street Collector. Powered by Shopify`}
+                {copyrightText || `© ${currentYear} Street Collector`}
               </p>
               
               {legalLinks.length > 0 && (

@@ -2,11 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { 
-  ScrollingAnnouncementBar, 
-  defaultAnnouncementMessages,
-  Footer,
-} from '@/components/impact'
+import { Footer } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -15,10 +11,9 @@ import {
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
 import { homepageContent } from '@/content/homepage'
-import { ShopNavigation } from '@/components/shop/navigation'
+import { BackBar, WishlistDrawer } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import type { SearchResult } from '@/components/impact/SearchDrawer'
-import { WishlistDrawer } from '@/components/shop/navigation'
 import { cn } from '@/lib/utils'
 
 /**
@@ -59,7 +54,7 @@ const defaultNavigation = [
     ]
   },
   { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
+  { label: 'Contact', href: '/shop/contact' },
 ]
 
 // Use default navigation (synced navigation from Shopify is incomplete)
@@ -77,21 +72,21 @@ const footerSections = hasUsefulFooterSections
   ? syncedFooterSections
   : [
       {
-        title: 'Street Collector',
+        title: 'RESOURCES',
         links: [
-          { label: 'Search', href: '/shop?search=true' },
-          { label: 'Artist Submissions', href: '/artist-submissions' },
-          { label: 'Careers', href: '/careers' },
+          { label: 'FAQ', href: '/shop/faq' },
+          { label: 'Affiliate program', href: '/shop/collab' },
+          { label: 'Artist Submissions', href: '/shop/artist-submissions' },
         ],
       },
       {
-        title: 'Policies',
+        title: 'TERMS & CONDITIONS',
         links: [
           { label: 'Terms of Service', href: '/policies/terms-of-service' },
           { label: 'Shipping Policy', href: '/policies/shipping-policy' },
           { label: 'Refund Policy', href: '/policies/refund-policy' },
           { label: 'Privacy Policy', href: '/policies/privacy-policy' },
-          { label: 'Contact', href: '/contact' },
+          { label: 'Contact', href: '/shop/contact' },
         ],
       },
     ]
@@ -100,15 +95,6 @@ const footerSections = hasUsefulFooterSections
 const socialLinks: Array<{ platform: 'facebook' | 'instagram'; href: string }> = [
   { platform: 'facebook', href: 'https://facebook.com/streetcollector' },
   { platform: 'instagram', href: 'https://instagram.com/thestreetcollector' },
-]
-
-// Legal links for footer bottom
-const legalLinks = [
-  { label: 'Refund policy', href: '/policies/refund-policy' },
-  { label: 'Privacy policy', href: '/policies/privacy-policy' },
-  { label: 'Terms of service', href: '/policies/terms-of-service' },
-  { label: 'Shipping policy', href: '/policies/shipping-policy' },
-  { label: 'Contact information', href: '/contact' },
 ]
 
 // Inner layout with access to cart context
@@ -280,6 +266,17 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const handleRemoveItem = useCallback(async (lineId: string) => {
     cart.removeItem(lineId)
   }, [cart])
+
+  // Newsletter signup - sends to Shopify customer list with marketing consent
+  const handleNewsletterSubmit = useCallback(async (email: string) => {
+    const res = await fetch('/api/shop/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data?.error || 'Signup failed')
+  }, [])
   
   // Shop search: call API and map to SearchResult shape for nav search drawer
   const handleSearch = useCallback(async (query: string): Promise<{ products: SearchResult[]; collections: SearchResult[] }> => {
@@ -319,33 +316,8 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       
-      {/* Scrolling Announcement Bar - hidden on street-collector (has fixed CTA) */}
-      {!isStreetCollectorPage && (
-        <ScrollingAnnouncementBar 
-          messages={defaultAnnouncementMessages}
-          speed={25}
-        />
-      )}
-      
-      {/* Shop Navigation - hidden on street-collector (has fixed CTA) */}
-      {!isStreetCollectorPage && (
-      <ShopNavigation
-        cartItems={cart.items ?? []}
-        cartSubtotal={cart.subtotal}
-        cartTotal={cart.total}
-        cartItemCount={cart.itemCount}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-        onSearch={handleSearch}
-        isModalOpen={navModalOpen}
-        onModalToggle={handleNavModalToggle}
-        onViewCart={handleViewCart}
-        onWishlistClick={handleWishlistClick}
-        cartLoading={cartLoading}
-        hideAddToCartNotification={isExperiencePage}
-      />
-      )}
+      {/* Minimal back bar on all shop pages except street-collector */}
+      {!isStreetCollectorPage && <BackBar href="/shop/street-collector" label="Back" />}
       
       {/* Cart Drawer - hidden on experience page (has its own OrderBar) */}
       {!isExperiencePage && (
@@ -385,10 +357,11 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
         newsletterEnabled={true}
         newsletterTitle="Sign up for new stories and personal offers"
         newsletterDescription=""
+        onNewsletterSubmit={handleNewsletterSubmit}
         aboutTitle="About The Street Lamp"
         aboutText="In a world where art is often consumed on screens, The Street Lamp bridges the gap between the digital and the real, bringing art back into the physical world to be truly felt and experienced."
         tagline=""
-        legalLinks={legalLinks}
+        legalLinks={[]}
         showPaymentIcons={true}
       />
     </div>

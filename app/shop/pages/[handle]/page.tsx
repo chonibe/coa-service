@@ -74,16 +74,6 @@ function PageContent({ title, body }: { title: string; body: string }) {
     <main className="min-h-screen bg-white">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow">
-          {/* Breadcrumb */}
-          <Breadcrumb 
-            items={[
-              { label: 'Home', href: '/shop' },
-              { label: 'Pages', href: '/shop' },
-              { label: title }
-            ]}
-            className="mb-6"
-          />
-          
           {/* Page Title with Scroll Reveal */}
           <ScrollReveal animation="fadeUp" duration={0.8}>
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-8">

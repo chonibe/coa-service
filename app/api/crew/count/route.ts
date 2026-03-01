@@ -19,7 +19,7 @@ const MAX_RATING_DIFF = 1.5
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore as any)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()

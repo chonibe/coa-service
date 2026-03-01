@@ -16,10 +16,12 @@ import {
 } from '@/lib/experience-artwork-ratings'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { cn } from '@/lib/utils'
+import { genieExit } from '@/lib/experience/genie-effect'
 
 const MIN_RATINGS_FOR_CREW = 15
 
 const TUTORIAL_STORAGE_KEY = 'swiper-tutorial-seen'
+const AUTO_ADD_WISHLIST_KEY = 'swiper-auto-add-wishlist'
 const PX_PER_STAR = 40
 const SKIP_THRESHOLD = 40
 const DEAD_ZONE = 20
@@ -162,8 +164,22 @@ export function WishlistSwiperSheet({
   const [showUndo, setShowUndo] = useState(false)
   const [sessionWishlistCount, setSessionWishlistCount] = useState(0)
   const [exitDirection, setExitDirection] = useState<-1 | 1>(1)
+  const [autoAddToWishlist, setAutoAddToWishlist] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true
+    try {
+      const v = localStorage.getItem(AUTO_ADD_WISHLIST_KEY)
+      return v === null || v === 'true'
+    } catch {
+      return true
+    }
+  })
+  const [showHeartPulse, setShowHeartPulse] = useState(false)
+  const [showGenieEffect, setShowGenieEffect] = useState(false)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevIsOpenRef = useRef(false)
+  const heartButtonRef = useRef<HTMLButtonElement>(null)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
   const [overlayBounds, setOverlayBounds] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
 
   const isDesktop = !isMobile && selectorBodyRef
@@ -196,6 +212,38 @@ export function WishlistSwiperSheet({
   const totalCount = displayProducts.length
   const inWishlist = product ? isInWishlist(product.id) : false
 
+  useEffect(() => {
+    if (!showGenieEffect || !product || !heartButtonRef.current || !imageContainerRef.current) return
+    const imageSrc = getFirstImage(product)
+    if (!imageSrc) return
+
+    const imgContainer = imageContainerRef.current
+    const rect = imgContainer.getBoundingClientRect()
+
+    const clone = document.createElement('div')
+    clone.style.cssText = `
+      position: fixed;
+      top: ${rect.top}px;
+      left: ${rect.left}px;
+      width: ${rect.width}px;
+      height: ${rect.height}px;
+      overflow: hidden;
+      border-radius: 1rem;
+      z-index: 9998;
+      pointer-events: none;
+    `
+    const img = document.createElement('img')
+    img.src = imageSrc
+    img.alt = product.title ?? ''
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;'
+    clone.appendChild(img)
+    document.body.appendChild(clone)
+
+    genieExit(clone, heartButtonRef.current, { duration: 650 }).finally(() => {
+      setShowGenieEffect(false)
+    })
+  }, [showGenieEffect, product])
+
   const productIds = products.map((p) => p.id)
   const unratedIds = getUnratedProductIds(productIds)
   const ratedIds = getRatedProductIds(productIds)
@@ -211,25 +259,31 @@ export function WishlistSwiperSheet({
   }, [products])
 
   useEffect(() => {
+    const wasOpen = prevIsOpenRef.current
+    prevIsOpenRef.current = isOpen
     if (!isOpen) return
-    setIndex(0)
-    setHoverStar(0)
-    setSessionRatings([])
-    setUndoStack([])
-    setShowUndo(false)
-    setSessionWishlistCount(0)
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current)
-      undoTimerRef.current = null
+    // Only reset when opening (false → true), not when products changes mid-session.
+    // onRatingChange updates parent state and causes products to change; we must not
+    // reset index/displayProducts or we'd jump to the wrong card and see doubling.
+    if (!wasOpen) {
+      setIndex(0)
+      setHoverStar(0)
+      setSessionRatings([])
+      setUndoStack([])
+      setShowUndo(false)
+      setSessionWishlistCount(0)
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current)
+        undoTimerRef.current = null
+      }
+      const unrated = getUnratedProductIds(products.map((p) => p.id))
+      const unratedList = products.filter((p) => unrated.includes(p.id))
+      const shuffled = shuffleArray(unratedList.length > 0 ? unratedList : products)
+      setDisplayProducts(shuffled)
+      setPhase(shuffled.length > 0 ? 'rating' : 'summary')
+      setShowTutorial(false)
+      localStorage.setItem(TUTORIAL_STORAGE_KEY, '1')
     }
-    // Skip setup – go straight to rating cards (default: unrated first)
-    const unrated = getUnratedProductIds(products.map((p) => p.id))
-    const unratedList = products.filter((p) => unrated.includes(p.id))
-    const shuffled = shuffleArray(unratedList.length > 0 ? unratedList : products)
-    setDisplayProducts(shuffled)
-    setPhase(shuffled.length > 0 ? 'rating' : 'summary')
-    setShowTutorial(false)
-    localStorage.setItem(TUTORIAL_STORAGE_KEY, '1')
   }, [isOpen, products])
 
   const applyFilterAndStart = useCallback(() => {
@@ -271,8 +325,8 @@ export function WishlistSwiperSheet({
   }, [product, inWishlist, addItem, onRatingChange])
 
   const commitRating = useCallback(
-    (rating: number, prevRating: number) => {
-      if (!product) return
+    (rating: number, prevRating: number): boolean => {
+      if (!product) return false
       if (rating === 0) {
         clearRating(product.id)
       } else {
@@ -285,11 +339,19 @@ export function WishlistSwiperSheet({
         if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
         undoTimerRef.current = setTimeout(() => setShowUndo(false), UNDO_HIDE_MS)
       }
-      if (rating >= 4 && !inWishlist) handleAddToWishlist()
+      let addedToWishlist = false
+      if (autoAddToWishlist && rating >= 4 && !inWishlist) {
+        handleAddToWishlist()
+        addedToWishlist = true
+        setShowHeartPulse(true)
+        setShowGenieEffect(true)
+        setTimeout(() => setShowHeartPulse(false), 1600)
+      }
       if (rating === 5) setShowSparkle(true)
       onRatingChange?.()
+      return addedToWishlist
     },
-    [product, index, undoStack.length, inWishlist, handleAddToWishlist, onRatingChange]
+    [product, index, undoStack.length, inWishlist, autoAddToWishlist, handleAddToWishlist, onRatingChange]
   )
 
   const advanceCard = useCallback(() => {
@@ -347,8 +409,11 @@ export function WishlistSwiperSheet({
       if (rating >= 1) {
         setExitDirection(1)
         const prev = getRating(product.id)
-        commitRating(rating, prev)
-        setTimeout(advanceCard, 150)
+        const added = commitRating(rating, prev)
+        setTimeout(() => {
+          if (added) setShowGenieEffect(false)
+          advanceCard()
+        }, added ? 750 : 150)
       }
     },
     [product, commitRating, advanceCard]
@@ -366,8 +431,11 @@ export function WishlistSwiperSheet({
       if (!product) return
       setExitDirection(1)
       const prev = getRating(product.id)
-      commitRating(stars, prev)
-      setTimeout(advanceCard, CONFIRM_DELAY_MS)
+      const added = commitRating(stars, prev)
+      setTimeout(() => {
+        if (added) setShowGenieEffect(false)
+        advanceCard()
+      }, added ? 750 : CONFIRM_DELAY_MS)
     },
     [product, commitRating, advanceCard]
   )
@@ -791,14 +859,38 @@ export function WishlistSwiperSheet({
                   <span className="block text-sm font-medium text-neutral-900 truncate">{product?.title ?? 'Rate artworks'}</span>
                   {product?.vendor && <span className="block text-xs text-neutral-500 truncate">{product.vendor}</span>}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => product && (onViewProductDetail ?? onSelectProduct)?.(product)}
-                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
-                  aria-label="View artwork details"
-                >
-                  <Info className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    ref={heartButtonRef}
+                    type="button"
+                    role="switch"
+                    aria-checked={autoAddToWishlist}
+                    onClick={() => {
+                      const next = !autoAddToWishlist
+                      setAutoAddToWishlist(next)
+                      try { localStorage.setItem(AUTO_ADD_WISHLIST_KEY, String(next)) } catch {}
+                    }}
+                    className="flex items-center gap-1.5 shrink-0 text-left text-sm text-neutral-700 hover:opacity-80 transition-opacity"
+                  >
+                    <span>Add to <motion.span
+                      animate={showHeartPulse ? {
+                        scale: [1, 1.35, 1.1, 1.3, 1],
+                        transition: { duration: 0.8, times: [0, 0.2, 0.4, 0.6, 0.8] }
+                      } : {}}
+                      className="inline-block"
+                    >
+                      <Heart className={cn('w-4 h-4 shrink-0 inline', autoAddToWishlist && 'fill-red-500 text-red-500')} strokeWidth={1.5} />
+                    </motion.span></span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => product && (onViewProductDetail ?? onSelectProduct)?.(product)}
+                    className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600"
+                    aria-label="View artwork details"
+                  >
+                    <Info className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -821,7 +913,7 @@ export function WishlistSwiperSheet({
                 </div>
               ) : (
                 <>
-                  <AnimatePresence>
+                  <AnimatePresence mode="wait">
                     <motion.div
                       key={product.id}
                       initial={{ scale: 0.95, opacity: 0.8 }}
@@ -883,20 +975,26 @@ export function WishlistSwiperSheet({
                         })}
                       </div>
 
-                      <div className={cn(
-                        'relative rounded-2xl overflow-hidden',
-                        desktopOverlay ? 'aspect-[3/4] max-h-[50vh]' : 'aspect-[4/5]'
-                      )}>
+                      <div
+                        ref={imageContainerRef}
+                        className={cn(
+                          'relative rounded-2xl overflow-hidden transition-opacity duration-200',
+                          showGenieEffect && 'opacity-0',
+                          desktopOverlay ? 'aspect-[3/4] max-h-[50vh]' : 'aspect-[4/5]'
+                        )}
+                      >
                         {getFirstImage(product) && (
-                          <Image
-                            src={getFirstImage(product)!}
-                            alt={product.title}
-                            fill
-                            className="object-cover"
-                            sizes="400px"
-                            priority
-                            draggable={false}
-                          />
+                          <div className="absolute inset-0">
+                            <Image
+                              src={getFirstImage(product)!}
+                              alt={product.title}
+                              fill
+                              className="object-cover"
+                              sizes="400px"
+                              priority
+                              draggable={false}
+                            />
+                          </div>
                         )}
                         {inWishlist && (
                           <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
@@ -905,7 +1003,7 @@ export function WishlistSwiperSheet({
                         )}
                       </div>
 
-                      {displayRating >= 4 && !inWishlist && (
+                      {autoAddToWishlist && displayRating >= 4 && !inWishlist && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}

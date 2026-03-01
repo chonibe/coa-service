@@ -82,17 +82,6 @@ export default function SeriesListingPage() {
       {/* Header */}
       <SectionWrapper spacing="lg" background="muted">
         <Container maxWidth="default">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm mb-8">
-            <Link href="/shop" className="text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors">
-              Shop
-            </Link>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-[#1a1a1a]">Series</span>
-          </div>
-
           <SectionHeader
             title="Artwork Series"
             subtitle="Explore curated collections of artworks. Collect a complete series to unlock exclusive rewards."

@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore as any)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -57,7 +57,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore as any)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore as any)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -160,7 +160,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore as any)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()

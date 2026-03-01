@@ -337,7 +337,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
           )}
           <span className={cn(
             'text-sm tabular-nums',
-            lampQuantity === 0 && 'line-through text-neutral-500',
+            lampQuantity === 0 && 'text-neutral-500',
             lampQuantity > 0 && lampSavings > 0 && 'text-green-700 font-medium'
           )}>
             {lampQuantity > 0
@@ -362,7 +362,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}
-            className="w-10 h-8 text-center text-sm font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
+            className="w-6 h-5 text-center text-[10px] font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
             aria-label="Add lamp"
           >
             Add

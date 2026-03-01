@@ -282,7 +282,7 @@ function ArtworkCard({
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onAddToCart(product) }}
             disabled={isSoldOut}
-            title={isInCart ? 'Remove from order' : 'Add to cart'}
+            title={isInCart ? 'Remove from order' : 'Add artwork to order'}
             className={cn(
               'flex items-center justify-center transition-colors shrink-0 overflow-visible',
               isInCart
@@ -291,7 +291,7 @@ function ArtworkCard({
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}
-            aria-label={isInCart ? 'Remove from order' : 'Add to cart'}
+            aria-label={isInCart ? 'Remove from order' : 'Add artwork to order'}
           >
             {isInCart ? (
               <SparkleCheck justAdded={justAdded} />

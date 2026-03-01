@@ -530,3 +530,10 @@ button[aria-label] svg {
 
 /* Gradient overlays removed - using Polaris design system */
 /* .gradient-overlay-bottom and .gradient-overlay-top classes removed for Polaris migration */
+
+/* Hide breadcrumbs - user requested removal across shop and other pages */
+nav[aria-label="Breadcrumb"],
+.breadcrumb,
+[data-breadcrumb] {
+  display: none !important;
+}

@@ -1,4 +1,5 @@
 import type React from "react"
+import Script from "next/script"
 import "./globals.css"
 import { Fraunces, Barlow } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -43,6 +44,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
             <SkipLink />
             <GoogleAnalytics />
+            <Script id="tawk" strategy="afterInteractive">
+              {`
+                var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+                (function(){
+                  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+                  s1.async=true;
+                  s1.src='https://embed.tawk.to/69a429d6e79dd41c3844154b/1jikk6s6e';
+                  s1.charset='UTF-8';
+                  s1.setAttribute('crossorigin','*');
+                  s0.parentNode.insertBefore(s1,s0);
+                })();
+              `}
+            </Script>
             {children}
           </ThemeProvider>
         </Providers>

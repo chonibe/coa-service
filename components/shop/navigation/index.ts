@@ -5,6 +5,7 @@
  */
 
 export { ShopNavigation } from './ShopNavigation'
+export { BackBar } from './BackBar'
 export { FullHeader } from './FullHeader'
 export { MinifiedNavBar } from './MinifiedNavBar'
 export { NavigationModal } from './NavigationModal'
@@ -15,6 +16,7 @@ export { StreetLampLogo } from './StreetLampLogo'
 export { WishlistDrawer } from './WishlistDrawer'
 
 export type { ShopNavigationProps } from './ShopNavigation'
+export type { BackBarProps, LegalLink } from './BackBar'
 export type { FullHeaderProps } from './FullHeader'
 export type { MinifiedNavBarProps } from './MinifiedNavBar'
 export type { NavigationModalProps } from './NavigationModal'

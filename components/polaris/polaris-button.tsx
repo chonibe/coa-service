@@ -109,7 +109,11 @@ export function PolarisButton({
   const resolvedSize = sizeMap[size as keyof typeof sizeMap] ?? 'medium'
 
   const isLink = Boolean(href ?? url) && !asChild
-  const Comp = asChild ? Slot : isLink ? 'a' : 'button'
+  // When asChild is true, Slot requires exactly one child. Do not add loading spinner.
+  const arr = React.Children.toArray(children)
+  const hasSingleValidChild = arr.length === 1 && React.isValidElement(arr[0])
+  const useSlot = Boolean(asChild && hasSingleValidChild)
+  const Comp = useSlot ? Slot : isLink ? 'a' : 'button'
 
   const linkProps = isLink
     ? {
@@ -120,14 +124,17 @@ export function PolarisButton({
       }
     : {}
 
-  const buttonProps = !isLink && !asChild
+  const buttonProps = !isLink && !useSlot
     ? {
         type: submit ? 'submit' : type ?? 'button',
         disabled: disabled ?? loading,
       }
     : {}
 
-  const content = loading ? (
+  // Slot requires a single child - never add loading spinner when asChild
+  const content = useSlot ? (
+    arr[0]
+  ) : loading ? (
     <>
       <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
       {children}

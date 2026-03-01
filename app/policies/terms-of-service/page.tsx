@@ -12,21 +12,35 @@ export default function TermsOfServicePage() {
       <h1 className="text-3xl font-semibold text-neutral-900">Terms of Service</h1>
       <div className="mt-6 prose prose-neutral max-w-none">
         <p className="text-neutral-600">
-          By using The Street Collector website and services, you agree to these
-          terms. Please read them carefully.
+          Welcome to Street Collector. By using our website and services, you agree to these terms. Please read them carefully.
         </p>
-        <p className="mt-4 text-neutral-600">
-          Our products are offered subject to availability. We reserve the right to
-          limit quantities and refuse orders. All purchases are subject to our
-          Refund and Shipping policies.
+
+        <h2 className="text-xl font-semibold text-neutral-900 mt-8 mb-2">Use of Our Site</h2>
+        <p className="text-neutral-600">
+          You agree to use our website and services only for lawful purposes. You must not misuse our site, attempt to gain unauthorized access, infringe on intellectual property rights, or engage in fraudulent activity. We reserve the right to suspend or terminate access for any violation of these terms.
         </p>
-        <p className="mt-4 text-neutral-600">
-          You agree not to misuse our site, infringe on intellectual property, or
-          engage in fraudulent activity. We may update these terms; continued use
-          constitutes acceptance.
+
+        <h2 className="text-xl font-semibold text-neutral-900 mt-8 mb-2">Products and Orders</h2>
+        <p className="text-neutral-600">
+          Our products are offered subject to availability. We reserve the right to limit quantities, refuse orders, and discontinue products at any time. All purchases are subject to our Refund Policy and Shipping Policy. Prices are in USD unless otherwise indicated and do not include VAT, sales tax, or import duties where applicable.
         </p>
-        <p className="mt-4 text-neutral-600">
-          For questions, contact us at hello@thestreetcollector.com.
+
+        <h2 className="text-xl font-semibold text-neutral-900 mt-8 mb-2">Intellectual Property</h2>
+        <p className="text-neutral-600">
+          All content on this site—including text, images, logos, and designs—is the property of Street Collector or our licensors. You may not reproduce, distribute, or use our content without prior written permission.
+        </p>
+
+        <h2 className="text-xl font-semibold text-neutral-900 mt-8 mb-2">Updates</h2>
+        <p className="text-neutral-600">
+          We may update these terms from time to time. The current version will always be available on this page. Continued use of our services after changes constitutes acceptance of the updated terms.
+        </p>
+
+        <p className="mt-8 text-neutral-600">
+          For questions about these terms, contact us at{' '}
+          <a href="mailto:info@thestreetlamp.com" className="text-neutral-900 underline hover:no-underline">
+            info@thestreetlamp.com
+          </a>
+          .
         </p>
       </div>
       <Link

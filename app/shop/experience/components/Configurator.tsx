@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Heart } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 
@@ -72,10 +72,17 @@ export function Configurator({
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
   const products = activeSeason === 'season1' ? productsSeason1 : productsSeason2
 
+  const artworkStripScrollRef = useRef<HTMLDivElement>(null)
+
+  const scrollArtworkStripToTop = useCallback(() => {
+    artworkStripScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
   const setActiveSeasonAndReset = useCallback((season: SeasonTab) => {
     setActiveSeason(season)
     setPreviewIndex(0)
-  }, [])
+    scrollArtworkStripToTop()
+  }, [scrollArtworkStripToTop])
   const allProducts = useMemo(
     () => [...productsSeason1, ...productsSeason2],
     [productsSeason1, productsSeason2]
@@ -121,11 +128,7 @@ export function Configurator({
     })
   }, [imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
-  const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>(() => {
-    if (products.length >= 2) return [products[0].id, products[1].id]
-    if (products.length === 1) return [products[0].id]
-    return []
-  })
+  const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>([])
   const [cartOrder, setCartOrder] = useState<string[]>([])
   const [lampQuantity, setLampQuantity] = useState(!quizAnswers.ownsLamp ? 1 : 0)
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
@@ -141,7 +144,6 @@ export function Configurator({
 
   const [isMobile, setIsMobile] = useState(false)
   const orderBarRef = useRef<OrderBarRef>(null)
-  const artworkStripScrollRef = useRef<HTMLDivElement>(null)
   const selectorBodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -158,23 +160,34 @@ export function Configurator({
 
   const previewVisible = !isMobile || selectorSheetState !== 'full'
 
-  // Populate lamp preview when products load (if initially empty)
-  useEffect(() => {
-    setLampPreviewOrder((prev) => {
-      if (prev.length > 0) return prev
-      if (products.length >= 2) return [products[0].id, products[1].id]
-      if (products.length === 1) return [products[0].id]
-      return prev
-    })
-  }, [products])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchExpanded, setSearchExpanded] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
+
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
+    setFilters(newFilters)
+    if (newFilters === DEFAULT_FILTERS) scrollArtworkStripToTop()
+  }, [scrollArtworkStripToTop])
   const [filterOpen, setFilterOpen] = useState(false)
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
   const [wishlistSwiperOpen, setWishlistSwiperOpen] = useState(false)
   const [ratingsVersion, setRatingsVersion] = useState(0)
+  const [chooseArtworkBannerDismissed, setChooseArtworkBannerDismissed] = useState(false)
+  const [rotateHintDismissed, setRotateHintDismissed] = useState(false)
+  const [previewEngaged, setPreviewEngaged] = useState(false)
+
+  // Lift dark overlay when user selects artworks
+  useEffect(() => {
+    if (lampPreviewOrder.length > 0) setPreviewEngaged(true)
+  }, [lampPreviewOrder.length])
+
+  // Auto-dismiss rotate hint after 5 seconds
+  useEffect(() => {
+    if (rotateHintDismissed) return
+    const t = setTimeout(() => setRotateHintDismissed(true), 5000)
+    return () => clearTimeout(t)
+  }, [rotateHintDismissed])
   const { itemCount: wishlistCount } = useWishlist()
 
   // Apply initial artist filter when arriving from artist link (e.g. Instagram)
@@ -203,20 +216,6 @@ export function Configurator({
     }
     return result
   }, [allProducts, filters, searchQuery, cartOrder, ratingsVersion])
-
-  // Show artist's first artworks on the lamp when arriving from artist link.
-  // Must run after filters are applied and filteredProducts has the filtered list.
-  const hasSetInitialArtistLampRef = useRef(false)
-  useEffect(() => {
-    if (hasSetInitialArtistLampRef.current || !initialFilters?.artists?.length || filteredProducts.length === 0) return
-    // Only apply when filters already include our artist (filteredProducts is actually filtered)
-    if (!filters.artists.some((a) => initialFilters!.artists.includes(a))) return
-
-    const ids = filteredProducts.slice(0, 2).map((p) => p.id)
-    setLampPreviewOrder(ids.length >= 2 ? [ids[0], ids[1]] : [ids[0]])
-    setPreviewIndex(0)
-    hasSetInitialArtistLampRef.current = true
-  }, [initialFilters, filters, filteredProducts])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -291,6 +290,22 @@ export function Configurator({
     [allProducts, cartOrder]
   )
 
+  // Lamp discount (7.5% per artwork, 14 artworks = 100% off) — matches OrderBar logic
+  const ARTWORKS_PER_FREE_LAMP = 14
+  const DISCOUNT_PER_ARTWORK = 7.5
+  const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
+  const artworkCount = selectedProducts.length
+  const lampPrices: number[] = []
+  for (let k = 1; k <= lampQuantity; k++) {
+    const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
+    const end = k * ARTWORKS_PER_FREE_LAMP
+    const allocated = Math.max(0, Math.min(artworkCount, end) - start)
+    const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+    lampPrices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
+  }
+  const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
+  const firstLampDiscountPercent = lampQuantity > 0 ? Math.min(Math.min(artworkCount, ARTWORKS_PER_FREE_LAMP) * DISCOUNT_PER_ARTWORK, 100) : 0
+
   // Lamp preview = last 2 selected on lamp (tap on card; separate from cart)
   const sideA = lampPreviewOrder[0] ?? null
   const sideB = lampPreviewOrder[1] ?? null
@@ -301,18 +316,18 @@ export function Configurator({
       ? 'Add to your collection'
       : 'Build your lamp'
 
-  // Resolve side products for the 3D preview — lamp only shows selections, never preview
+  // Resolve side products for the 3D preview — lamp only shows user-selected artworks
   const sideAProduct = sideA ? allProducts.find((p) => p.id === sideA) ?? null : null
   const sideBProduct = sideB ? allProducts.find((p) => p.id === sideB) ?? null : null
-  // When 0 selected: only side A gets preview (so both sides don't change together when browsing)
+  // When 0 selected: both sides empty (user selects artworks to preview)
   // When 1 selected: both sides show the same (stable until user picks second)
   // When 2 selected: each side shows its selection
-  const image1 = getFirstImage(sideAProduct) ?? getFirstImage(previewed)
+  const image1 = sideAProduct ? getFirstImage(sideAProduct) : null
   const image2 = sideBProduct
     ? getFirstImage(sideBProduct)
     : sideAProduct
       ? getFirstImage(sideAProduct) // 1 selected: both show same
-      : null // 0 selected: side B stays default, only side A gets preview
+      : null
 
   const handleSwapSides = useCallback(() => {
     setLampPreviewOrder((prev) =>
@@ -434,6 +449,57 @@ export function Configurator({
           />
           </ComponentErrorBoundary>
         )}
+
+        {/* Dark overlay until user selects artwork or taps preview — makes tooltip visible */}
+        <AnimatePresence>
+        {previewVisible && !previewEngaged && (
+          <motion.button
+            type="button"
+            key="preview-overlay"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setPreviewEngaged(true)}
+            className="absolute inset-0 z-[8] bg-black/75 flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            aria-label="Tap to view preview"
+          >
+            <span className="text-white/90 text-sm font-medium px-4 text-center">
+              Tap to explore • Select artworks below to customize
+            </span>
+          </motion.button>
+        )}
+        </AnimatePresence>
+
+        {/* Rotate gesture hint — shows briefly, auto-dismisses */}
+        <AnimatePresence>
+        {previewVisible && !rotateHintDismissed && (
+          <motion.div
+            key="rotate-hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.8, duration: 0.3 }}
+            className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full pointer-events-none"
+            style={{
+              background: lampVariant === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.12)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: 2, repeatDelay: 0.3, ease: 'easeInOut' }}
+            >
+              <RotateCw
+                className={cn('w-4 h-4', lampVariant === 'light' ? 'text-white' : 'text-white/90')}
+                strokeWidth={2}
+              />
+            </motion.div>
+            <span className={cn('text-xs font-medium', lampVariant === 'light' ? 'text-white' : 'text-white/90')}>
+              {isMobile ? 'Touch & swipe to rotate' : 'Drag to rotate'}
+            </span>
+          </motion.div>
+        )}
+        </AnimatePresence>
 
         {/* Back to preferences */}
         {previewVisible && (
@@ -670,6 +736,61 @@ export function Configurator({
           selectorSheetState === 'full' && 'flex-1 min-h-0'
         )}
       >
+        {/* Lamp row — always visible; Add when not included, Check when added; above Season/filter bar */}
+        {(selectorSheetState === 'half' || selectorSheetState === 'full' || !isMobile) && (
+          <div className="flex-shrink-0 w-full px-3 py-1.5 flex items-center gap-2 min-h-0 min-w-0 border-b border-white/50 bg-white/70 backdrop-blur-xl backdrop-saturate-150">
+            <div className={cn('flex items-center gap-2 flex-1 min-w-0', lampQuantity === 0 && 'opacity-50')}>
+              <div className="w-5 h-5 rounded bg-neutral-200/80 flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3 text-neutral-700" stroke="currentColor" strokeWidth={1.5}>
+                  <path d="M9 21h6M12 3v1M18.36 5.64l-.71.71M21 12h-1M4 12H3M5.64 5.64l.71.71" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M8 14a4 4 0 118 0c0 1.1-.6 2.1-1.5 2.6L14 18H10l-.5-1.4A3.96 3.96 0 018 14z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <span className="flex-1 min-w-0 text-xs font-medium text-neutral-950 truncate">{lamp.title}</span>
+              <span className={cn(
+                'text-xs tabular-nums',
+                lampQuantity === 0 ? 'text-neutral-500' : 'text-green-600 font-medium'
+              )}>
+                {lampQuantity === 0
+                  ? `$${lampPrice.toFixed(2)}`
+                  : lampTotal === 0
+                    ? 'FREE'
+                    : firstLampDiscountPercent > 0
+                      ? `-${Math.round(firstLampDiscountPercent)}% · $${lampTotal.toFixed(2)}`
+                      : `$${lampTotal.toFixed(2)}`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDetailProduct(lamp)}
+              className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+              aria-label="View lamp details"
+            >
+              <Info className="w-3 h-3" />
+            </button>
+            {lampQuantity === 0 ? (
+              <button
+                type="button"
+                onClick={() => setLampQuantity(1)}
+                className="w-6 h-5 text-center text-[10px] font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
+                aria-label="Add lamp"
+              >
+                Add
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLampQuantity(0)}
+                className="w-6 h-5 flex items-center justify-center rounded text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors flex-shrink-0"
+                aria-label="Remove lamp from order"
+                title="Remove lamp"
+              >
+                <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Top bar: Season tabs, filter icon, chevron (mobile) — when collapsed on mobile: fixed above OrderBar so it stays visible */}
         <div
           role={selectorSheetState === 'collapsed' && isMobile ? 'button' : undefined}
@@ -686,18 +807,10 @@ export function Configurator({
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
         >
           {selectorSheetState === 'collapsed' ? (
-            /* Collapsed: Artworks bar with LayoutGrid, heart, ChevronUp */
+            /* Collapsed: Artworks bar with LayoutGrid, ChevronUp */
             <>
               <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
               <span className="text-xs font-medium text-neutral-700">Artworks</span>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setWishlistSwiperOpen(true) }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors shrink-0"
-                aria-label="Rate artworks and add to wishlist"
-              >
-                <Heart className="w-3.5 h-3.5" />
-              </button>
               <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 md:hidden" />
             </>
           ) : (
@@ -730,16 +843,7 @@ export function Configurator({
             </button>
           </div>
 
-          <div className="flex-1 min-w-0 flex justify-center items-center">
-            <button
-              type="button"
-              onClick={() => setWishlistSwiperOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
-              aria-label="Rate artworks and add to wishlist"
-            >
-              <Heart className="w-4 h-4" />
-            </button>
-          </div>
+          <div className="flex-1 min-w-0" />
 
           {/* Search — magnifying glass icon expands to search bar */}
           <div className="flex items-center flex-shrink-0">
@@ -831,15 +935,13 @@ export function Configurator({
             </>
           )}
         </div>
-        {/* Selector body: expanded content + OrderBar — used for wishlist swiper overlay on desktop */}
-        <div ref={selectorBodyRef} className={cn(
-          'flex flex-col flex-1 min-h-0 overflow-hidden min-w-0',
-          selectorSheetState === 'collapsed' ? 'hidden md:flex' : 'flex'
-        )}>
-        {/* Expanded content: filter pills + artwork strip */}
+
+        {/* Selector body: expanded content + OrderBar — keep visible when collapsed so OrderBar (fixed on mobile) still renders */}
+        <div ref={selectorBodyRef} className="flex flex-col flex-1 min-h-0 overflow-hidden min-w-0">
+        {/* Expanded content: filter pills + artwork strip — hidden when collapsed on mobile */}
         <div className={cn(
           'flex flex-col flex-1 min-h-0 overflow-hidden',
-          selectorSheetState === 'collapsed' ? 'hidden md:flex' : 'flex'
+          selectorSheetState === 'collapsed' && isMobile ? 'hidden' : 'flex'
         )}>
         {/* Active filter pills */}
         {hasActiveFilters(filters) && (
@@ -901,7 +1003,7 @@ export function Configurator({
               </button>
             )}
             <button
-              onClick={() => setFilters(DEFAULT_FILTERS)}
+              onClick={() => handleFiltersChange(DEFAULT_FILTERS)}
               className="text-[10px] text-neutral-400 hover:text-neutral-600 flex-shrink-0 px-1"
             >
               Clear
@@ -911,6 +1013,28 @@ export function Configurator({
 
         {/* Artwork strip */}
         <div ref={artworkStripScrollRef} className="flex-1 overflow-y-auto px-5 pb-32 md:pb-4 min-h-0">
+          {lampPreviewOrder.length === 0 && !chooseArtworkBannerDismissed && (
+            <div className="mb-3 py-2.5 pl-3 pr-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-medium flex items-center justify-between gap-2" aria-live="polite">
+              <span className="flex-1 flex items-center justify-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-neutral-300 bg-white text-neutral-700 text-xs font-bold shadow-sm">
+                Add
+              </span>
+              <span className="text-neutral-600">to choose what goes on your lamp,</span>
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-neutral-300 bg-white text-neutral-700 shadow-sm">
+                <Eye className="w-3 h-3" aria-hidden />
+              </span>
+              <span className="text-neutral-600">to Preview</span>
+            </span>
+              <button
+                type="button"
+                onClick={() => setChooseArtworkBannerDismissed(true)}
+                className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200/80 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-neutral-400">{filteredProducts.length} artworks</span>
           </div>
@@ -929,6 +1053,14 @@ export function Configurator({
             onAddToCart={handleAddToCart}
             onViewDetail={setDetailProduct}
           />
+          {/* Season switch at end of artworks */}
+          <button
+            type="button"
+            onClick={() => setActiveSeasonAndReset(activeSeason === 'season1' ? 'season2' : 'season1')}
+            className="mt-6 mb-4 w-full py-3 px-4 rounded-xl border-2 border-dashed border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-800 transition-colors text-sm font-medium"
+          >
+            View {activeSeason === 'season1' ? 'Season 2' : 'Season 1'}
+          </button>
         </div>
         </div>
         {/* Order bar — always visible (fixed on mobile) */}
@@ -972,10 +1104,14 @@ export function Configurator({
       <FilterPanel
         products={products}
         filters={filters}
-        onChange={setFilters}
+        onChange={handleFiltersChange}
         isOpen={filterOpen}
         onClose={() => setFilterOpen(false)}
         wishlistCount={wishlistCount}
+        onOpenWishlist={() => {
+          setFilterOpen(false)
+          setWishlistSwiperOpen(true)
+        }}
       />
 
       {/* First-session contextual wizard */}
@@ -997,6 +1133,7 @@ export function Configurator({
               : undefined
           }
           hideScarcityBar={detailProduct.id === lamp.id}
+          addToOrderLabel={detailProduct.id === lamp.id ? 'Add Lamp to order' : 'Add artwork to order'}
           productIncludes={
             detailProduct.id === lamp.id
               ? [
