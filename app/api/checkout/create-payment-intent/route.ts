@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'usd',
-      payment_method_types: ['card', 'link', 'paypal'],
+      automatic_payment_methods: { enabled: true },
       metadata: {
         source: 'experience_checkout',
         shopify_variant_ids: shopifyVariantsCompact,

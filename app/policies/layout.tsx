@@ -60,8 +60,6 @@ export default function PoliciesLayout({
         newsletterTitle="Sign up for new stories and personal offers"
         newsletterDescription=""
         onNewsletterSubmit={handleNewsletterSubmit}
-        aboutTitle="About The Street Lamp"
-        aboutText="In a world where art is often consumed on screens, The Street Lamp bridges the gap between the digital and the real, bringing art back into the physical world to be truly felt and experienced."
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}

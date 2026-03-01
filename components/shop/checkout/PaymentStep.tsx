@@ -3,11 +3,10 @@
 import * as React from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
-  Elements,
+  CheckoutProvider,
+  useCheckout,
   PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js'
+} from '@stripe/react-stripe-js/checkout'
 import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +33,10 @@ export interface PaymentStepProps {
   total: number
   itemCount: number
   customerEmail?: string
+  /** When true, renders only form + PaymentElement (for use with external submit button via formId). */
+  compact?: boolean
+  /** Form id for external submit button (e.g. button with form="checkout-payment-form") */
+  formId?: string
   shippingAddress: {
     email?: string
     fullName?: string
@@ -48,6 +51,34 @@ export interface PaymentStepProps {
   onSuccess: (redirectUrl: string) => void
   onError: (message: string) => void
   renderTotal?: (value: number) => React.ReactNode
+  /** Called when the selected payment method changes (e.g. "google_pay", "paypal", "card") */
+  onPaymentMethodChange?: (type: string) => void
+}
+
+/** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
+const appearance = {
+  theme: 'stripe' as const,
+  variables: {
+    borderRadius: '4px',
+    colorPrimary: '#0070ba',
+    colorBackground: '#ffffff',
+    colorText: '#171717',
+    colorDanger: '#dc2626',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    spacingUnit: '4px',
+    buttonColorBackground: '#0070ba',
+    accessibleColorOnColorPrimary: '#ffffff',
+  },
+  rules: {
+    '.Tab': {
+      borderRadius: '4px',
+      padding: '14px 16px',
+    },
+    '.Tab--selected': {
+      borderColor: '#0070ba',
+      boxShadow: '0 0 0 2px #0070ba',
+    },
+  },
 }
 
 function PaymentFormInner({
@@ -62,9 +93,27 @@ function PaymentFormInner({
   onSuccess,
   onError,
   renderTotal,
+  compact,
+  formId,
+  onPaymentMethodChange,
 }: Omit<PaymentStepProps, 'customerEmail'>) {
-  const stripe = useStripe()
-  const elements = useElements()
+  const handlePaymentChange = React.useCallback(
+    (event: { value?: { type?: string } }) => {
+      const type = event?.value?.type
+      if (type && onPaymentMethodChange) onPaymentMethodChange(type)
+    },
+    [onPaymentMethodChange]
+  )
+  const checkoutState = useCheckout()
+
+  /* Auto-select: Google Pay first (paymentMethodOrder), fallback to card when onChange fires */
+  const hasReportedInitialRef = React.useRef(false)
+  React.useEffect(() => {
+    if (checkoutState.type === 'success' && onPaymentMethodChange && !hasReportedInitialRef.current) {
+      hasReportedInitialRef.current = true
+      onPaymentMethodChange('google_pay')
+    }
+  }, [checkoutState.type, onPaymentMethodChange])
   const [loading, setLoading] = React.useState(false)
   const [promoOpen, setPromoOpen] = React.useState(false)
   const [promoCode, setPromoCode] = React.useState('')
@@ -73,55 +122,23 @@ function PaymentFormInner({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stripe || !elements) return
+    if (checkoutState.type !== 'success') return
+    const checkout = checkoutState.checkout
     setLoading(true)
     setPaymentError(null)
 
     try {
-      // Persist checkout data for PayPal/redirect returns
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('sc_checkout_items', JSON.stringify(items))
-        sessionStorage.setItem('sc_checkout_address', JSON.stringify(shippingAddress))
-      }
+      const result = await checkout.confirm()
 
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: typeof window !== 'undefined'
-            ? `${window.location.origin}/shop/checkout/success`
-            : 'http://localhost:3000/shop/checkout/success',
-          receipt_email: shippingAddress.email,
-        },
-        redirect: 'if_required',
-      })
-
-      if (error) {
-        setPaymentError(error.message ?? 'Payment failed')
+      if (result.type === 'error') {
+        setPaymentError(result.error?.message ?? 'Payment failed')
+        onError(result.error?.message ?? 'Payment failed')
         setLoading(false)
         return
       }
 
-      if (paymentIntent && paymentIntent.status === 'succeeded') {
-        const orderRes = await fetch('/api/checkout/complete-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentIntentId: paymentIntent.id,
-            items,
-            shippingAddress,
-          }),
-        })
-        const orderData = await orderRes.json()
-        if (!orderRes.ok) {
-          throw new Error(orderData.error || 'Order creation failed')
-        }
-        onSuccess(orderData.redirectUrl || `/shop/checkout/success?payment_intent=${paymentIntent.id}`)
-        return
-      }
-
-      if (paymentIntent && paymentIntent.status === 'requires_action') {
-        setPaymentError('Additional authentication required. Please try again.')
-        setLoading(false)
+      if (result.type === 'redirect') {
+        onSuccess(result.redirectUrl)
         return
       }
     } catch (err: unknown) {
@@ -131,6 +148,40 @@ function PaymentFormInner({
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkoutState.type === 'loading') {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading checkout...</span>
+      </div>
+    )
+  }
+
+  if (checkoutState.type === 'error') {
+    return (
+      <div className="space-y-3 p-2">
+        <p className="text-sm text-red-500">{checkoutState.error?.message ?? 'Checkout failed to load'}</p>
+      </div>
+    )
+  }
+
+  if (compact) {
+    return (
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4 stripe-payment-element">
+        <div className="min-h-[180px] w-full" role="region" aria-label="Payment details">
+          <PaymentElement
+            options={{
+              layout: 'tabs',
+              paymentMethodOrder: ['google_pay', 'card', 'link', 'paypal'],
+            }}
+            onChange={handlePaymentChange}
+          />
+        </div>
+        {paymentError && <p className="text-center text-xs text-red-500">{paymentError}</p>}
+      </form>
+    )
   }
 
   return (
@@ -210,9 +261,9 @@ function PaymentFormInner({
         <PaymentElement
           options={{
             layout: 'tabs',
-            defaultCollapsed: false,
             paymentMethodOrder: ['google_pay', 'card', 'link', 'paypal'],
           }}
+          onChange={handlePaymentChange}
         />
       </div>
 
@@ -233,10 +284,10 @@ function PaymentFormInner({
         )}
         <button
           type="submit"
-          disabled={!stripe || loading}
+          disabled={loading}
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
-            !stripe || loading
+            loading
               ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
               : 'bg-neutral-950 text-white hover:bg-neutral-800'
           )}
@@ -264,7 +315,7 @@ export function PaymentStep(props: PaymentStepProps) {
     if (fetchedRef.current) return
     fetchedRef.current = true
 
-    fetch('/api/checkout/create-payment-intent', {
+    fetch('/api/checkout/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -275,7 +326,7 @@ export function PaymentStep(props: PaymentStepProps) {
     })
       .then(async (r) => {
         const data = await r.json()
-        if (!r.ok) throw new Error(data.error || 'Could not initialize payment')
+        if (!r.ok) throw new Error(data.error || 'Could not initialize checkout')
         setClientSecret(data.clientSecret)
       })
       .catch((err) => setIntentError(err?.message || 'Could not load payment form'))
@@ -316,25 +367,14 @@ export function PaymentStep(props: PaymentStepProps) {
   }
 
   return (
-    <Elements
+    <CheckoutProvider
       stripe={stripePromise}
       options={{
         clientSecret,
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            borderRadius: '8px',
-            colorPrimary: '#0a0a0a',
-            colorBackground: '#ffffff',
-            colorText: '#171717',
-            colorDanger: '#dc2626',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            spacingUnit: '4px',
-          },
-        },
+        elementsOptions: { appearance },
       }}
     >
       <PaymentFormInner {...props} />
-    </Elements>
+    </CheckoutProvider>
   )
 }

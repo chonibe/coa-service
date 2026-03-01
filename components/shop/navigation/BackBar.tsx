@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const HOME_ICON_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
@@ -17,6 +17,12 @@ export interface BackBarProps {
   iconUrl?: string
   /** Legal/terms links shown on the right (Terms of Service, Privacy Policy, etc.) */
   legalLinks?: LegalLink[]
+  /** Show chat icon on the right that opens Tawk.to chat */
+  showChatIcon?: boolean
+  /** Show center logo icon (default: true) */
+  showLogo?: boolean
+  /** Custom right-side slot (e.g. cart chip) — when set, replaces chat icon */
+  rightSlot?: React.ReactNode
   className?: string
 }
 
@@ -24,11 +30,22 @@ export interface BackBarProps {
  * Minimal top bar with back button, home icon, and optional legal links.
  * Used on shop pages to go back or return to the street-collector page.
  */
+function openTawkChat() {
+  if (typeof window !== 'undefined' && (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API) {
+    const api = (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API
+    api?.showWidget()
+    api?.maximize()
+  }
+}
+
 export function BackBar({
   href = '/shop/street-collector',
   label = 'Back to home',
   iconUrl = HOME_ICON_URL,
   legalLinks = [],
+  showChatIcon = true,
+  showLogo = true,
+  rightSlot,
   className,
 }: BackBarProps) {
   return (
@@ -53,6 +70,7 @@ export function BackBar({
         >
           <ArrowLeft size={24} className="shrink-0" />
         </button>
+        {showLogo && (
         <Link
           href={href}
           aria-label={label}
@@ -66,22 +84,35 @@ export function BackBar({
             className="shrink-0 w-8 h-8 object-contain"
           />
         </Link>
-        {legalLinks.length > 0 && (
-          <nav
-            className="absolute right-4 sm:right-6 hidden sm:flex items-center gap-3 sm:gap-4"
-            aria-label="Terms & conditions"
-          >
-            {legalLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-xs text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
         )}
+        <div className="absolute right-4 sm:right-6 flex items-center gap-3 sm:gap-4">
+          {legalLinks.length > 0 && (
+            <nav
+              className="hidden sm:flex items-center gap-3 sm:gap-4"
+              aria-label="Terms & conditions"
+            >
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-xs text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+          {rightSlot ?? (showChatIcon && (
+            <button
+              type="button"
+              onClick={openTawkChat}
+              aria-label="Open chat"
+              className="inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#2c4bce] transition-colors hover:scale-110 cursor-pointer"
+            >
+              <MessageCircle size={22} className="shrink-0" aria-hidden />
+            </button>
+          ))}
+        </div>
       </div>
     </header>
   )

@@ -4,6 +4,8 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import { useSmoothDrawer } from '@/lib/animations/navigation-animations'
+import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
+import { CheckoutLayout } from '@/components/shop/checkout'
 import type { CartItem } from '@/lib/shop/CartContext'
 
 /**
@@ -19,13 +21,18 @@ export interface LocalCartDrawerProps {
   items: CartItem[]
   onUpdateQuantity: (id: string, quantity: number) => void
   onRemoveItem: (id: string) => void
+  /** Called when user completes checkout (redirects to Stripe). Falls back to internal create API when using CheckoutLayout. */
   onCheckout: () => void
   subtotal: number
   total: number
+  /** Credits to use (from CartContext) */
+  creditsToUse?: number
+  /** Credits discount amount (from CartContext) */
+  creditsDiscount?: number
   className?: string
 }
 
-const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
+const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
   (
     {
       isOpen,
@@ -36,10 +43,68 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
       onCheckout,
       subtotal,
       total,
+      creditsToUse = 0,
+      creditsDiscount = 0,
       className,
     },
     ref
   ) => {
+    const checkout = useCheckout()
+    const [isCheckingOut, setIsCheckingOut] = React.useState(false)
+    const [checkoutError, setCheckoutError] = React.useState<string | null>(null)
+
+    const handleCheckout = React.useCallback(async () => {
+      setCheckoutError(null)
+      setIsCheckingOut(true)
+      try {
+        const response = await fetch('/api/checkout/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: items.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              variantGid: `gid://shopify/ProductVariant/${item.variantId}`,
+              handle: item.handle,
+              title: item.title,
+              variantTitle: item.variantTitle,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+              artistName: item.artistName,
+            })),
+            creditsToUse,
+            customerEmail: checkout.address?.email,
+            shippingAddress: checkout.address
+              ? {
+                  email: checkout.address.email,
+                  fullName: checkout.address.fullName,
+                  country: checkout.address.country,
+                  addressLine1: checkout.address.addressLine1,
+                  addressLine2: checkout.address.addressLine2,
+                  city: checkout.address.city,
+                  postalCode: checkout.address.postalCode,
+                  phoneCountryCode: checkout.address.phoneCountryCode,
+                  phoneNumber: checkout.address.phoneNumber,
+                }
+              : undefined,
+            paymentMethodPreference: checkout.paymentMethod,
+            promoCode: checkout.promoCode || undefined,
+          }),
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || 'Failed to create checkout')
+        if (data.type === 'credit_only') {
+          window.location.href = data.completeUrl
+          return
+        }
+        if (data.url) window.location.href = data.url
+      } catch (err: unknown) {
+        setCheckoutError(err instanceof Error ? err.message : 'Something went wrong')
+        setIsCheckingOut(false)
+      }
+    }, [items, creditsToUse, checkout.address, checkout.paymentMethod, checkout.promoCode])
+
     const drawerRef = React.useRef<HTMLDivElement>(null)
     const backdropRef = React.useRef<HTMLDivElement>(null)
 
@@ -206,38 +271,24 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
             {/* Footer */}
             {!isEmpty && (
               <div className="border-t border-[#1a1a1a]/10 px-6 py-4 space-y-4">
-                {/* Subtotal */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[#1a1a1a]/60">Subtotal</span>
-                  <span className="text-lg font-semibold text-[#1a1a1a]">
-                    ${subtotal.toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Total */}
-                <div className="flex items-center justify-between border-t border-[#1a1a1a]/10 pt-4">
-                  <span className="text-lg font-semibold text-[#1a1a1a]">Total</span>
-                  <span className="text-lg font-bold text-[#1a1a1a]">
-                    ${total.toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Shipping note */}
-                <p className="text-xs text-[#1a1a1a]/50">
-                  Shipping and taxes calculated at checkout
-                </p>
-
-                {/* Checkout button */}
-                <Button
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  onClick={onCheckout}
+                <CheckoutLayout
+                  subtotal={subtotal}
+                  discount={creditsDiscount}
+                  discountLabel={creditsDiscount > 0 ? 'Credits' : undefined}
+                  shipping={0}
+                  total={total}
+                  onCheckout={handleCheckout}
+                  isCheckingOut={isCheckingOut}
+                  error={checkoutError}
+                  variant="drawer"
+                  itemCount={items.length}
+                  hideTitle
                 >
-                  Checkout
-                </Button>
+                  <p className="text-xs text-[#1a1a1a]/50 py-2">
+                    Shipping and taxes calculated at checkout
+                  </p>
+                </CheckoutLayout>
 
-                {/* Continue shopping */}
                 <button
                   type="button"
                   onClick={onClose}
@@ -252,6 +303,15 @@ const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
       </>
     )
   }
+)
+LocalCartDrawerInner.displayName = 'LocalCartDrawerInner'
+
+const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
+  (props, ref) => (
+    <CheckoutProvider>
+      <LocalCartDrawerInner {...props} ref={ref} />
+    </CheckoutProvider>
+  )
 )
 LocalCartDrawer.displayName = 'LocalCartDrawer'
 

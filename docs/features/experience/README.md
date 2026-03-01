@@ -26,10 +26,7 @@ Current config has `images: { unoptimized: true }` in [next.config.js](../../../
 
 ## Checkout & Payment (Stripe)
 
-The experience checkout offers two flows:
-
-1. **In-drawer** – Multi-step flow powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
-2. **Full-page** – Stripe Checkout Sessions (ui_mode: custom) with Payment Element, Billing/Shipping Address Elements. Users can click "Checkout on full page" to go to `/shop/checkout`.
+The experience checkout uses a **multi-step in-drawer flow** powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
 
 ### Multi-Step Checkout Flow
 
@@ -41,10 +38,11 @@ The experience checkout offers two flows:
 
 | Method | How it works | Redirect? |
 |--------|-------------|-----------|
-| **Credit Card** | Payment Element card form → `confirmPayment` | No |
-| **Google Pay** | Payment Element shows GPay button (via `card` type) | No |
+| **Credit Card** | Stripe Payment Element card form → `checkout.confirm` | No |
+| **Google Pay** | Payment Element shows GPay button | No |
 | **Link** | Payment Element shows Link autofill | No |
-| **PayPal** | Payment Element shows PayPal option → redirect to PayPal | Yes (required) |
+| **PayPal (Stripe)** | Payment Element PayPal tab (if enabled in Stripe) | Yes |
+| **PayPal (Direct)** | `@paypal/react-paypal-js` Smart Buttons when `NEXT_PUBLIC_PAYPAL_CLIENT_ID` set | Yes (popup or redirect) |
 
 ### Key Components
 
@@ -59,9 +57,10 @@ The experience checkout offers two flows:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/checkout/create-payment-intent` | Creates PaymentIntent (card, link, paypal) for in-drawer checkout |
-| `POST /api/checkout/create-checkout-session` | Creates Checkout Session (ui_mode: custom) for full-page `/shop/checkout` |
+| `POST /api/checkout/create-checkout-session` | Creates Stripe Checkout Session (ui_mode: custom) for experience checkout |
 | `POST /api/checkout/complete-order` | Creates Shopify order after successful payment (idempotent) |
+| `POST /api/checkout/paypal/create-order` | Creates PayPal order for Smart Buttons flow |
+| `POST /api/checkout/paypal/capture` | Captures PayPal order, creates Shopify order, records purchase |
 | `POST /api/checkout/create` | Checkout Session (main shop cart, credits, zero-dollar flows) |
 | `POST /api/checkout/create-setup-intent` | SetupIntent for card + Link (legacy, used by main cart) |
 | `POST /api/checkout/confirm-payment` | Confirm PaymentIntent with saved card (legacy, used by main cart) |
@@ -72,7 +71,7 @@ The experience checkout offers two flows:
 - Payment methods enabled in Stripe Dashboard: card, link, paypal
 - Environment variables: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) for earlier configuration details.
+See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) and [docs/COMMIT_LOGS/paypal-checkout-integration-2026-03-01.md](../COMMIT_LOGS/paypal-checkout-integration-2026-03-01.md) for configuration details.
 
 ## API Endpoints (Products)
 

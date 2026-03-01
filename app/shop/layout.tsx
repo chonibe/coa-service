@@ -11,7 +11,7 @@ import {
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
 import { homepageContent } from '@/content/homepage'
-import { BackBar, WishlistDrawer } from '@/components/shop/navigation'
+import { BackBar, WishlistDrawer, ChatIconScrollReveal } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { cn } from '@/lib/utils'
@@ -72,6 +72,15 @@ const footerSections = hasUsefulFooterSections
   ? syncedFooterSections
   : [
       {
+        title: 'FOLLOW US',
+        links: [
+          { label: 'Instagram', href: 'https://instagram.com/thestreetcollector' },
+          { label: 'Facebook', href: 'https://facebook.com/streetcollector' },
+          { label: 'TikTok', href: 'https://tiktok.com/@thestreetcollector' },
+          { label: 'Pinterest', href: 'https://pinterest.com/thestreetcollector' },
+        ],
+      },
+      {
         title: 'RESOURCES',
         links: [
           { label: 'FAQ', href: '/shop/faq' },
@@ -90,12 +99,6 @@ const footerSections = hasUsefulFooterSections
         ],
       },
     ]
-
-// Social links
-const socialLinks: Array<{ platform: 'facebook' | 'instagram'; href: string }> = [
-  { platform: 'facebook', href: 'https://facebook.com/streetcollector' },
-  { platform: 'instagram', href: 'https://instagram.com/thestreetcollector' },
-]
 
 // Inner layout with access to cart context
 function ShopLayoutInner({ children }: { children: React.ReactNode }) {
@@ -318,6 +321,8 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       
       {/* Minimal back bar on all shop pages except street-collector */}
       {!isStreetCollectorPage && <BackBar href="/shop/street-collector" label="Back" />}
+      {/* Chat icon in top-right when scrolled past hero (street-collector has no BackBar) */}
+      {isStreetCollectorPage && <ChatIconScrollReveal />}
       
       {/* Cart Drawer - hidden on experience page (has its own OrderBar) */}
       {!isExperiencePage && (
@@ -330,6 +335,8 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
           onCheckout={handleCheckout}
           subtotal={cart.subtotal}
           total={cart.total}
+          creditsToUse={cart.creditsToUse}
+          creditsDiscount={cart.creditsDiscount}
         />
       )}
       
@@ -353,13 +360,10 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Footer */}
       <Footer
         sections={footerSections}
-        socialLinks={socialLinks}
         newsletterEnabled={true}
         newsletterTitle="Sign up for new stories and personal offers"
         newsletterDescription=""
         onNewsletterSubmit={handleNewsletterSubmit}
-        aboutTitle="About The Street Lamp"
-        aboutText="In a world where art is often consumed on screens, The Street Lamp bridges the gap between the digital and the real, bringing art back into the physical world to be truly felt and experienced."
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}

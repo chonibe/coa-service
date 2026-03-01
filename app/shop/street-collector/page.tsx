@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import {
   Container,
   SectionWrapper,
@@ -16,6 +17,8 @@ import { TestimonialCarousel } from './TestimonialCarousel'
 import { FixedCTAButton } from './FixedCTAButton'
 import { StreetCollectorFAQ } from './StreetCollectorFAQ'
 import { ArtistCarousel } from '@/components/sections/ArtistCarousel'
+
+const HOME_LOGO_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Revolutionizing The Urban Art World',
@@ -176,30 +179,46 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      {/* Hero - Video with CTA from thestreetcollector.com (proxied to avoid CORS) */}
-      <VideoPlayer
-        video={{
-          url: `/api/proxy-video?url=${encodeURIComponent(streetCollectorContent.hero.video)}`,
-          poster: streetCollectorContent.hero.image,
-          autoplay: true,
-          loop: true,
-          muted: true,
-        }}
-        overlay={{
-          headline: streetCollectorContent.hero.headline,
-          subheadline: streetCollectorContent.hero.subheadline,
-          microCue: streetCollectorContent.hero.microCue,
-          ctaUrl: streetCollectorContent.experienceUrl,
-          position: 'center',
-          headlineSize: 'large',
-          textColor: '#ffffff',
-          overlayColor: '#000000',
-          overlayOpacity: 40,
-        }}
-        size="full"
-        fullWidth={true}
-        showControls={false}
-      />
+      {/* Hero - Video with logo overlay */}
+      <div className="relative">
+        {/* Logo overlay on hero */}
+        <Link
+          href="/shop/street-collector"
+          aria-label="Street Collector Home"
+          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top"
+        >
+          <img
+            src={HOME_LOGO_URL}
+            alt=""
+            width={32}
+            height={32}
+            className="shrink-0 w-8 h-8 object-contain drop-shadow-lg"
+          />
+        </Link>
+        <VideoPlayer
+          video={{
+            url: `/api/proxy-video?url=${encodeURIComponent(streetCollectorContent.hero.video)}`,
+            poster: streetCollectorContent.hero.image,
+            autoplay: true,
+            loop: true,
+            muted: true,
+          }}
+          overlay={{
+            headline: streetCollectorContent.hero.headline,
+            subheadline: streetCollectorContent.hero.subheadline,
+            microCue: streetCollectorContent.hero.microCue,
+            ctaUrl: streetCollectorContent.experienceUrl,
+            position: 'center',
+            headlineSize: 'large',
+            textColor: '#ffffff',
+            overlayColor: '#000000',
+            overlayOpacity: 40,
+          }}
+          size="full"
+          fullWidth={true}
+          showControls={false}
+        />
+      </div>
 
       {/* Meet the Street Lamp — one video (desktop/mobile), progress bar rotates through stage texts */}
       <MeetTheStreetLamp

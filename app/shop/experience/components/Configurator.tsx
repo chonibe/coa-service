@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, ChevronLeft, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Percent } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 
@@ -25,9 +25,9 @@ const Spline3DPreview = dynamic(
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { ArtworkDetail } from './ArtworkDetail'
-import { OrderBar, type OrderBarRef } from './OrderBar'
 import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
+import { useExperienceOrder } from '../ExperienceOrderContext'
 import { WishlistSwiperSheet } from './WishlistSwiperSheet'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
@@ -143,7 +143,6 @@ export function Configurator({
   const hasSelection = cartOrder.length > 0
 
   const [isMobile, setIsMobile] = useState(false)
-  const orderBarRef = useRef<OrderBarRef>(null)
   const selectorBodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -296,15 +295,67 @@ export function Configurator({
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
   const artworkCount = selectedProducts.length
   const lampPrices: number[] = []
+  const lampProgress: number[] = []
   for (let k = 1; k <= lampQuantity; k++) {
     const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
     const end = k * ARTWORKS_PER_FREE_LAMP
     const allocated = Math.max(0, Math.min(artworkCount, end) - start)
     const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
     lampPrices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
+    lampProgress.push(Math.min(100, (allocated / ARTWORKS_PER_FREE_LAMP) * 100))
   }
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
+  const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
+  const freeLampCount = lampPrices.filter((p) => p === 0).length
+  const nextLampArtworks = lampQuantity > 0
+    ? (artworkCount % ARTWORKS_PER_FREE_LAMP === 0 ? ARTWORKS_PER_FREE_LAMP : ARTWORKS_PER_FREE_LAMP - (artworkCount % ARTWORKS_PER_FREE_LAMP))
+    : ARTWORKS_PER_FREE_LAMP
+  const discountBarLabel =
+    freeLampCount === lampQuantity && lampQuantity > 0
+      ? lampQuantity === 1 ? 'Lamp is FREE!' : `All ${lampQuantity} lamps FREE!`
+      : freeLampCount > 0
+        ? `${freeLampCount} FREE · add ${nextLampArtworks} for next free`
+        : `Add ${nextLampArtworks} more artworks for free lamp`
   const firstLampDiscountPercent = lampQuantity > 0 ? Math.min(Math.min(artworkCount, ARTWORKS_PER_FREE_LAMP) * DISCOUNT_PER_ARTWORK, 100) : 0
+  const artworksTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(p.priceRange?.minVariantPrice?.amount ?? '0'), 0)
+  const orderTotal = lampTotal + artworksTotal
+  const orderItemCount = selectedProducts.length + lampQuantity
+
+  const { setOrderSummary, setOrderBarProps, orderBarRef } = useExperienceOrder()
+  useEffect(() => {
+    setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
+  }, [orderTotal, orderItemCount, setOrderSummary])
+
+  // Provide OrderBar props to shared OrderBar (rendered in ExperienceClient)
+  useEffect(() => {
+    setOrderBarProps({
+      lamp,
+      selectedArtworks: selectedProducts,
+      lampQuantity,
+      onLampQuantityChange: setLampQuantity,
+      onRemoveArtwork: (id) => setCartOrder((prev) => prev.filter((oid) => oid !== id)),
+      onSelectArtwork: (product) => {
+        const inSeason1 = productsSeason1.some((p) => p.id === product.id)
+        if (inSeason1 && activeSeason !== 'season1') setActiveSeasonAndReset('season1')
+        if (!inSeason1 && activeSeason !== 'season2') setActiveSeasonAndReset('season2')
+        setScrollToProductId(product.id)
+      },
+      onViewLampDetail: setDetailProduct,
+      isGift,
+    })
+  }, [
+    lamp,
+    selectedProducts,
+    lampQuantity,
+    setLampQuantity,
+    productsSeason1,
+    activeSeason,
+    setActiveSeasonAndReset,
+    setScrollToProductId,
+    setDetailProduct,
+    isGift,
+    setOrderBarProps,
+  ])
 
   // Lamp preview = last 2 selected on lamp (tap on card; separate from cart)
   const sideA = lampPreviewOrder[0] ?? null
@@ -500,18 +551,6 @@ export function Configurator({
           </motion.div>
         )}
         </AnimatePresence>
-
-        {/* Back to preferences */}
-        {previewVisible && (
-          <button
-            type="button"
-            onClick={onRetakeQuiz}
-            className="absolute top-4 left-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/65 hover:bg-black/80 text-white transition-colors backdrop-blur-sm"
-            aria-label="Back to preferences"
-          >
-            <ChevronLeft className="w-4 h-4 shrink-0" />
-          </button>
-        )}
 
         {/* No collapse button — tap the selector bar to switch */}
 
@@ -791,6 +830,34 @@ export function Configurator({
           </div>
         )}
 
+        {/* Lamp discount progress bar — 14 artworks for 100% off; only on main selector */}
+        {lampQuantity > 0 && artworkCount > 0 && (selectorSheetState === 'half' || selectorSheetState === 'full' || !isMobile) && (
+          <div className="flex-shrink-0 w-full px-3 py-2 border-b border-neutral-100 bg-green-50/30">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Percent className="w-3 h-3 text-green-600" />
+                <span className="text-xs font-medium text-green-700">{discountBarLabel}</span>
+              </div>
+              {lampSavings > 0 && (
+                <span className="text-xs font-semibold text-green-700">-${lampSavings.toFixed(2)}</span>
+              )}
+            </div>
+            <div className="relative h-1.5 rounded-full overflow-hidden flex bg-neutral-200">
+              {Array.from({ length: lampQuantity }).map((_, i) => (
+                <div key={i} className="flex-1 min-w-0 h-full overflow-hidden relative">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400"
+                    initial={false}
+                    animate={{ width: `${lampProgress[i] ?? 0}%` }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-neutral-400 mt-1">{ARTWORKS_PER_FREE_LAMP} artworks per lamp for 100% off (7.5% each)</p>
+          </div>
+        )}
+
         {/* Top bar: Season tabs, filter icon, chevron (mobile) — when collapsed on mobile: fixed above OrderBar so it stays visible */}
         <div
           role={selectorSheetState === 'collapsed' && isMobile ? 'button' : undefined}
@@ -1063,42 +1130,26 @@ export function Configurator({
           </button>
         </div>
         </div>
-        {/* Order bar — always visible (fixed on mobile) */}
-        <div className="flex-shrink-0 min-w-0">
-          <OrderBar
-            ref={orderBarRef}
-            mobileTopSlot={selectorSheetState === 'collapsed' && isMobile ? (
-              <button
-                type="button"
-                onClick={cycleSelectorState}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-b border-white/60 bg-white/90 backdrop-blur-xl backdrop-saturate-150 active:bg-white transition-colors"
-                style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
-                aria-label="Expand artworks"
-              >
-                <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-400" />
-                <span className="text-xs font-medium text-neutral-600">Artworks</span>
-                <ChevronUp className="w-3 h-3 shrink-0 text-neutral-400" />
-              </button>
-            ) : undefined}
-            lamp={lamp}
-            selectedArtworks={selectedProducts}
-            lampQuantity={lampQuantity}
-            onLampQuantityChange={setLampQuantity}
-            onRemoveArtwork={(id) => {
-              setCartOrder((prev) => prev.filter((oid) => oid !== id))
-            }}
-            onSelectArtwork={(product) => {
-              const inSeason1 = productsSeason1.some((p) => p.id === product.id)
-              if (inSeason1 && activeSeason !== 'season1') setActiveSeasonAndReset('season1')
-              if (!inSeason1 && activeSeason !== 'season2') setActiveSeasonAndReset('season2')
-              setScrollToProductId(product.id)
-            }}
-            onViewLampDetail={setDetailProduct}
-            isGift={isGift}
-          />
-        </div>
+        {/* Artworks expand bar — when selector collapsed on mobile (cart is now right slide-out) */}
+        {selectorSheetState === 'collapsed' && isMobile && (
+          <div className="flex-shrink-0 md:hidden">
+            <button
+              type="button"
+              onClick={cycleSelectorState}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-neutral-200 bg-white/90 backdrop-blur-xl active:bg-neutral-50 transition-colors"
+              style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+              aria-label="Expand artworks"
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
+              <span className="text-sm font-medium text-neutral-700">Artworks</span>
+              <ChevronUp className="w-4 h-4 shrink-0 text-neutral-500" />
+            </button>
+          </div>
+        )}
         </div>
       </motion.div>
+
+      {/* Order bar is rendered in ExperienceClient (always mounted so cart chip works) */}
 
       {/* Filter panel */}
       <FilterPanel

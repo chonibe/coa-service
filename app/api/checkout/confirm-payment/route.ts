@@ -1,0 +1,127 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import Stripe from 'stripe'
+import { createAndCompleteOrder } from '@/lib/stripe/fulfill-embedded-payment'
+
+const stripeSecret = process.env.STRIPE_SECRET_KEY
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+interface CartLineItem {
+  productId: string
+  variantId: string
+  variantGid: string
+  handle: string
+  title: string
+  price: number
+  quantity: number
+}
+
+interface ShippingAddressInput {
+  email?: string
+  fullName?: string
+  country?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  postalCode?: string
+  phoneNumber?: string
+}
+
+interface ConfirmPaymentRequest {
+  items: CartLineItem[]
+  paymentMethodId: string
+  shippingAddress: ShippingAddressInput
+}
+
+/**
+ * POST /api/checkout/confirm-payment
+ *
+ * Confirms a PaymentIntent with a saved card. Used for embedded card/Link flow.
+ */
+export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Payment not configured' }, { status: 503 })
+  }
+
+  try {
+    const body: ConfirmPaymentRequest = await request.json()
+    const { items, paymentMethodId, shippingAddress } = body
+
+    if (!items?.length || !paymentMethodId || !shippingAddress?.email) {
+      return NextResponse.json({ error: 'Missing items, paymentMethodId, or shipping address' }, { status: 400 })
+    }
+
+    const subtotalCents = items.reduce(
+      (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
+      0
+    )
+
+    const shopifyVariantsCompact = items
+      .map((i) => `${i.variantId}:${i.quantity}`)
+      .join(',')
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: subtotalCents,
+      currency: 'usd',
+      payment_method: paymentMethodId,
+      confirm: true,
+      automatic_payment_methods: { enabled: false },
+      payment_method_types: ['card', 'link'],
+      metadata: {
+        source: 'headless_storefront_embedded',
+        shopify_variant_ids: shopifyVariantsCompact,
+        collector_identifier: shippingAddress.email || '',
+      },
+      return_url: `${baseUrl}/shop/checkout/success`,
+    })
+
+    if (paymentIntent.status === 'succeeded') {
+      const variants = items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        productHandle: i.handle,
+      }))
+      const { draftOrderId, orderId } = await createAndCompleteOrder(
+        variants,
+        shippingAddress,
+        paymentIntent.id,
+        subtotalCents,
+        'usd'
+      )
+
+      const supabase = createClient()
+      await supabase.from('stripe_purchases').insert({
+        stripe_session_id: `pi_${paymentIntent.id}`,
+        stripe_payment_intent: paymentIntent.id,
+        shopify_draft_order_id: draftOrderId,
+        shopify_order_id: orderId || null,
+        customer_email: shippingAddress.email || null,
+        amount_total: subtotalCents,
+        currency: 'usd',
+        status: 'completed',
+        metadata: paymentIntent.metadata,
+        created_at: new Date().toISOString(),
+      })
+
+      return NextResponse.json({
+        success: true,
+        redirectUrl: `${baseUrl}/shop/checkout/success?payment_intent=${paymentIntent.id}`,
+      })
+    }
+
+    if (paymentIntent.status === 'requires_action') {
+      return NextResponse.json({
+        requires_action: true,
+        client_secret: paymentIntent.client_secret,
+        payment_intent_id: paymentIntent.id,
+      })
+    }
+
+    return NextResponse.json({ error: 'Payment could not be completed' }, { status: 400 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Payment failed'
+    console.error('[checkout/confirm-payment] Error:', err)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}

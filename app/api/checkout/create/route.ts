@@ -19,6 +19,18 @@ interface CartLineItem {
   artistName?: string
 }
 
+interface ShippingAddressInput {
+  email?: string
+  fullName?: string
+  country?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  postalCode?: string
+  phoneCountryCode?: string
+  phoneNumber?: string
+}
+
 interface CreateCheckoutRequest {
   items: CartLineItem[]
   creditsToUse?: number
@@ -26,6 +38,12 @@ interface CreateCheckoutRequest {
   customerEmail?: string
   orderNotes?: string
   cancelUrl?: string
+  /** Address from pre-checkout UI (email used for customer_email) */
+  shippingAddress?: ShippingAddressInput
+  /** User-selected payment method: 'link' | 'paypal' | 'card' */
+  paymentMethodPreference?: 'link' | 'paypal' | 'card'
+  /** Promo code (Stripe validates on redirect; stored for metadata) */
+  promoCode?: string
 }
 
 /**
@@ -50,7 +68,17 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body: CreateCheckoutRequest = await request.json()
-    const { items, creditsToUse = 0, shippingRequired = true, customerEmail, orderNotes, cancelUrl } = body
+    const {
+      items,
+      creditsToUse = 0,
+      shippingRequired = true,
+      customerEmail,
+      orderNotes,
+      cancelUrl,
+      shippingAddress,
+      paymentMethodPreference,
+      promoCode,
+    } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -109,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stripeChargeCents = subtotalCents - creditDiscountCents
-    const email = ctx?.email || customerEmail
+    const email = ctx?.email || customerEmail || shippingAddress?.email?.trim()
 
     // Zero-dollar flow: $0 total (for testing order creation in Shopify)
     if (stripeChargeCents === 0) {
@@ -215,12 +243,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Restrict payment method if user selected one
+    const paymentMethodTypes: Stripe.Checkout.SessionCreateParams['payment_method_types'] =
+      paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal', 'link']
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       line_items: stripeLineItems,
       success_url: successUrl,
       cancel_url: finalCancelUrl,
-      payment_method_types: ['card', 'paypal', 'link'],
+      payment_method_types: paymentMethodTypes,
       metadata: {
         source: 'headless_storefront',
         shopify_variant_ids: shopifyVariantsCompact,
@@ -228,6 +260,7 @@ export async function POST(request: NextRequest) {
         credits_discount_cents: creditDiscountCents.toString(),
         collector_identifier: email || '',
         ...(orderNotes && { order_notes: orderNotes }),
+        ...(promoCode && { promo_code: promoCode }),
       },
       ...(stripeCustomerId && { customer: stripeCustomerId }),
       ...(email && !stripeCustomerId && { customer_email: email }),

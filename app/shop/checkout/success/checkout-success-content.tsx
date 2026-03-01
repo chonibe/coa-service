@@ -66,7 +66,8 @@ export function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const paymentIntentId = searchParams.get('payment_intent')
-  const orderParam = sessionId || paymentIntentId
+  const paypalOrderId = searchParams.get('paypal_order')
+  const orderParam = sessionId || paymentIntentId || paypalOrderId
 
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -110,7 +111,9 @@ export function CheckoutSuccessContent() {
 
         const url = paymentIntentId
           ? `/api/checkout/stripe?payment_intent=${paymentIntentId}`
-          : `/api/checkout/stripe?session_id=${sessionId}`
+          : paypalOrderId
+            ? `/api/checkout/stripe?paypal_order=${paypalOrderId}`
+            : `/api/checkout/stripe?session_id=${sessionId}`
         const response = await fetch(url)
         const data = await response.json()
 
@@ -132,7 +135,7 @@ export function CheckoutSuccessContent() {
     fetch('/api/auth/roles', { credentials: 'include' })
       .then(res => { if (res.ok) setIsAuthenticated(true) })
       .catch(() => {})
-  }, [orderParam, sessionId, paymentIntentId])
+  }, [orderParam, sessionId, paymentIntentId, paypalOrderId])
 
   // Format price
   const formatPrice = (amount: number, currency: string) => {

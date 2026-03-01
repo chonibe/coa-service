@@ -43,7 +43,8 @@ export { ScrollingAnnouncementBar, defaultAnnouncementMessages } from './Scrolli
 export type { ScrollingAnnouncementBarProps } from './ScrollingAnnouncementBar'
 
 export { Footer, SimpleFooter } from './Footer'
-export type { FooterProps, FooterLink, FooterSection, SocialLink, SimpleFooterProps } from './Footer'
+export { PaymentIcons } from './PaymentIcons'
+export type { FooterProps, FooterLink, FooterSection, SimpleFooterProps } from './Footer'
 
 export { CartDrawer, MiniCart } from './CartDrawer'
 export type { CartDrawerProps, MiniCartProps } from './CartDrawer'

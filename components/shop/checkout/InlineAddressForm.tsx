@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 import {
   Input,
   Label,
@@ -22,6 +23,8 @@ export interface InlineAddressFormProps {
   onSubmit: (address: CheckoutAddress) => void
   onBack?: () => void
   submitLabel?: string
+  /** When true, omits the Back button and uses compact single-column layout */
+  compact?: boolean
 }
 
 const emptyAddress: CheckoutAddress = {
@@ -56,6 +59,7 @@ export function InlineAddressForm({
   onSubmit,
   onBack,
   submitLabel = 'Continue to Payment',
+  compact = false,
 }: InlineAddressFormProps) {
   const [form, setForm] = React.useState<CheckoutAddress>(
     () => initialAddress ?? { ...emptyAddress }
@@ -83,7 +87,7 @@ export function InlineAddressForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className={cn('space-y-3', compact && 'space-y-2')}>
       {error && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
           {error}
@@ -207,8 +211,8 @@ export function InlineAddressForm({
         </div>
       </div>
 
-      <div className="flex gap-2 pt-2">
-        {onBack && (
+      <div className={cn('flex gap-2 pt-2', compact && 'pt-1.5')}>
+        {onBack && !compact && (
           <button
             type="button"
             onClick={onBack}
@@ -219,7 +223,10 @@ export function InlineAddressForm({
         )}
         <button
           type="submit"
-          className="flex-1 rounded-lg bg-neutral-950 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
+          className={cn(
+            'rounded-lg bg-neutral-950 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors',
+            onBack && !compact ? 'flex-1' : 'w-full'
+          )}
         >
           {submitLabel}
         </button>

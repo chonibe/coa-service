@@ -47,6 +47,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Script id="tawk" strategy="afterInteractive">
               {`
                 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+                Tawk_API.onLoad=function(){
+                  Tawk_API.hideWidget();
+                  var hidePoweredBy=function(){
+                    try{
+                      document.querySelectorAll('a[href*="tawk.to"][href*="utm_source=tawk-messenger"]').forEach(function(a){
+                        a.style.setProperty('display','none','important');
+                        if(a.parentElement)a.parentElement.style.setProperty('display','none','important');
+                      });
+                    }catch(e){}
+                  };
+                  hidePoweredBy();
+                  setInterval(hidePoweredBy,500);
+                };
+                Tawk_API.onChatMinimized=function(){ Tawk_API.hideWidget(); };
                 (function(){
                   var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
                   s1.async=true;

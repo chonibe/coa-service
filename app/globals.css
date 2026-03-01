@@ -537,3 +537,15 @@ nav[aria-label="Breadcrumb"],
 [data-breadcrumb] {
   display: none !important;
 }
+
+/* Hide Tawk.to "Powered by" branding link and its container */
+a[href*="tawk.to"][href*="utm_source=tawk-messenger"],
+div:has(a[href*="tawk.to"][href*="utm_source=tawk-messenger"]) {
+  display: none !important;
+}
+
+/* Hide Tawk.to bubble - chat opened via toolbar icon instead */
+#tawk-bubble-container,
+#tawk-bubble-wrapper {
+  display: none !important;
+}

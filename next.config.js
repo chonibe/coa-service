@@ -24,14 +24,14 @@ const nextConfig = {
     // Build CSP directive
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://cdn.jsdelivr.net", // Google Analytics + Google Ads + Tawk.to chat (incl. emoji lib)
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com https://embed.tawk.to https://cdn.jsdelivr.net", // Tawk.to chat styles
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://cdn.jsdelivr.net https://js.stripe.com", // Google Analytics + Stripe.js + Tawk.to chat (incl. emoji lib)
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com https://embed.tawk.to https://cdn.jsdelivr.net https://*.stripe.com", // Tawk.to + Stripe Payment Element styles
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to https://embed.tawk.to", // Tawk.to chat fonts
-      "connect-src 'self' data: https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com mapbox: https://*.spline.design https://unpkg.com https://www.gstatic.com https://fonts.gstatic.com https://*.tawk.to https://tawk.to https://embed.tawk.to wss://*.tawk.to wss://embed.tawk.to blob:", // data: for texture fetch; Mapbox + Spline 3D + fonts + Tawk.to (incl. WebSocket)
+      "connect-src 'self' data: https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://api.mapbox.com https://*.tiles.mapbox.com mapbox: https://*.spline.design https://unpkg.com https://www.gstatic.com https://fonts.gstatic.com https://*.tawk.to https://tawk.to https://embed.tawk.to wss://*.tawk.to wss://embed.tawk.to blob: https://*.stripe.com", // data: for texture fetch; Mapbox + Spline 3D + Stripe + Tawk.to (incl. WebSocket)
       "worker-src 'self' blob:", // Allow Mapbox web workers
       "child-src 'self' blob:", // Allow Mapbox child contexts
-      "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://my.spline.design https://*.spline.design https://embed.tawk.to", // Added GTM for iframes + Spline 3D viewer + Tawk.to chat
+      "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://my.spline.design https://*.spline.design https://embed.tawk.to https://js.stripe.com https://*.stripe.com https://hooks.stripe.com", // GTM + Spline 3D + Stripe Payment Element/3DS + Tawk.to chat
       "media-src 'self' https://*.supabase.co https://cdn.shopify.com https://thestreetcollector.com blob:",
       "object-src 'none'",
       "base-uri 'self'",

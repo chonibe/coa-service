@@ -6,6 +6,7 @@
 
 export { ShopNavigation } from './ShopNavigation'
 export { BackBar } from './BackBar'
+export { ChatIconScrollReveal } from './ChatIconScrollReveal'
 export { FullHeader } from './FullHeader'
 export { MinifiedNavBar } from './MinifiedNavBar'
 export { NavigationModal } from './NavigationModal'

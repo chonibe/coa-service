@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { extractVariantId } from '@/lib/shopify/storefront-client'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecret
-  ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' })
-  : null
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const baseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  'http://localhost:3000'
 
 interface CartLineItem {
   productId: string
@@ -15,7 +15,7 @@ interface CartLineItem {
   variantGid: string
   handle: string
   title: string
-  price: number // in dollars
+  price: number
   quantity: number
   image?: string
 }
@@ -23,13 +23,23 @@ interface CartLineItem {
 interface CreateCheckoutSessionRequest {
   items: CartLineItem[]
   customerEmail?: string
+  shippingAddress?: {
+    email?: string
+    fullName?: string
+    country?: string
+    addressLine1?: string
+    addressLine2?: string
+    city?: string
+    postalCode?: string
+    phoneNumber?: string
+  }
 }
 
 /**
  * POST /api/checkout/create-checkout-session
  *
- * Creates a Stripe Checkout Session with ui_mode: "custom" for embedded checkout.
- * Returns clientSecret for use with CheckoutProvider and Payment Element.
+ * Creates a Checkout Session with ui_mode: "custom" for embedded Payment Element.
+ * Returns clientSecret for CheckoutProvider (Stripe Elements with Checkout Sessions API).
  *
  * @see https://docs.stripe.com/payments/quickstart-checkout-sessions
  */
@@ -43,14 +53,66 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: CreateCheckoutSessionRequest = await request.json()
-    const { items, customerEmail } = body
+    const { items, customerEmail, shippingAddress } = body
 
     if (!items?.length) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
-      (item) => ({
+    const totalCents = items.reduce(
+      (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
+      0
+    )
+
+    if (totalCents <= 0) {
+      return NextResponse.json(
+        { error: 'Order total must be greater than zero' },
+        { status: 400 }
+      )
+    }
+
+    const shopifyVariantsCompact = items
+      .map((i) => `${i.variantId.replace('gid://shopify/ProductVariant/', '')}:${i.quantity}`)
+      .join(',')
+    const email = customerEmail || shippingAddress?.email || ''
+
+    const metadata: Record<string, string> = {
+      source: 'experience_checkout',
+      shopify_variant_ids: shopifyVariantsCompact,
+      collector_email: email,
+      collector_identifier: email,
+      items_json: JSON.stringify(
+        items.map((i) => ({
+          variantId: i.variantId,
+          variantGid: i.variantGid,
+          handle: i.handle,
+          title: i.title,
+          price: i.price,
+          quantity: i.quantity,
+        }))
+      ).slice(0, 500),
+    }
+    if (shippingAddress) {
+      metadata.shipping_address = JSON.stringify({
+        fullName: shippingAddress.fullName,
+        addressLine1: shippingAddress.addressLine1,
+        addressLine2: shippingAddress.addressLine2,
+        city: shippingAddress.city,
+        postalCode: shippingAddress.postalCode,
+        country: shippingAddress.country,
+        phoneNumber: shippingAddress.phoneNumber,
+      }).slice(0, 500)
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'custom',
+      mode: 'payment',
+      return_url: `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      customer_email: email || undefined,
+      payment_method_types: ['card', 'link', 'paypal'],
+      automatic_tax: { enabled: false },
+      metadata,
+      line_items: items.map((item) => ({
         price_data: {
           currency: 'usd',
           unit_amount: Math.round(item.price * 100),
@@ -58,63 +120,13 @@ export async function POST(request: NextRequest) {
             name: item.title,
             images: item.image ? [item.image] : undefined,
             metadata: {
-              shopify_variant_id: extractVariantId(item.variantId),
-              shopify_variant_gid: item.variantId,
-              product_handle: item.handle || '',
+              shopify_variant_id: item.variantId.replace('gid://shopify/ProductVariant/', ''),
+              product_handle: item.handle,
             },
           },
         },
         quantity: item.quantity,
-      })
-    )
-
-    const shopifyVariantsCompact = items
-      .map((i) => `${extractVariantId(i.variantId)}:${i.quantity}`)
-      .join(',')
-
-    const session = await stripe.checkout.sessions.create({
-      ui_mode: 'custom',
-      mode: 'payment',
-      line_items: lineItems,
-      return_url: `${APP_URL}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      customer_email: customerEmail || undefined,
-      billing_address_collection: 'auto',
-      shipping_address_collection: {
-        allowed_countries: [
-          'US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE',
-          'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'IE', 'PT', 'GR', 'PL',
-          'CZ', 'HU', 'RO', 'BG', 'HR', 'SK', 'SI', 'LT', 'LV', 'EE',
-          'LU', 'MT', 'CY', 'NZ', 'SG', 'HK', 'JP', 'KR', 'IL', 'AE',
-        ],
-      },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 0, currency: 'usd' },
-            display_name: 'Free shipping',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 5 },
-              maximum: { unit: 'business_day', value: 10 },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 1500, currency: 'usd' },
-            display_name: 'Express shipping',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: 2 },
-              maximum: { unit: 'business_day', value: 5 },
-            },
-          },
-        },
-      ],
-      metadata: {
-        source: 'checkout_session',
-        shopify_variant_ids: shopifyVariantsCompact,
-      },
+      })),
     })
 
     return NextResponse.json({
@@ -122,8 +134,7 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
     })
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : 'Failed to create checkout session'
+    const message = err instanceof Error ? err.message : 'Failed to create checkout session'
     console.error('[checkout/create-checkout-session] Error:', err)
     return NextResponse.json({ error: message }, { status: 500 })
   }

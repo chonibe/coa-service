@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import Stripe from 'stripe'
-import { getProduct, extractVariantId } from '@/lib/shopify/storefront-client'
+import { extractVariantId } from '@/lib/shopify/storefront-client'
 
 /**
  * Stripe Checkout API
@@ -186,6 +186,43 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('session_id')
     const paymentIntentId = searchParams.get('payment_intent')
+    const paypalOrderId = searchParams.get('paypal_order')
+
+    if (paypalOrderId) {
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = createClient()
+      const { data: purchase } = await supabase
+        .from('stripe_purchases')
+        .select('*')
+        .eq('stripe_payment_intent', `paypal_${paypalOrderId}`)
+        .maybeSingle()
+
+      if (!purchase) {
+        return NextResponse.json(
+          { error: 'PayPal order not found' },
+          { status: 404 }
+        )
+      }
+
+      const lineItems = (purchase.metadata?.line_items as Array<{ description: string; quantity: number; amount: number }>) || [
+        { description: 'Order', quantity: 1, amount: purchase.amount_total },
+      ]
+
+      return NextResponse.json({
+        session: {
+          id: purchase.shopify_order_id || purchase.stripe_session_id,
+          status: 'complete',
+          paymentStatus: 'paid',
+          customerEmail: purchase.customer_email,
+          amountTotal: purchase.amount_total,
+          currency: purchase.currency || 'usd',
+          lineItems,
+          shippingDetails: null,
+          metadata: purchase.metadata || {},
+        },
+        seriesProgress: [],
+      })
+    }
 
     if (paymentIntentId) {
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
@@ -226,7 +263,7 @@ export async function GET(request: NextRequest) {
 
     if (!sessionId) {
       return NextResponse.json(
-        { error: 'Session ID or payment_intent is required' },
+        { error: 'session_id, payment_intent, or paypal_order is required' },
         { status: 400 }
       )
     }
@@ -290,18 +327,27 @@ interface SeriesProgressItem {
 
 /**
  * Extract product handles from Stripe session metadata
+ * Supports headless_storefront (JSON array) and experience_checkout (items_json)
  */
 function extractProductHandles(metadata: Stripe.Metadata | null): string[] {
-  if (!metadata?.shopify_variant_ids) return []
-  
+  if (!metadata) return []
   try {
-    const variants = JSON.parse(metadata.shopify_variant_ids)
-    return variants
-      .map((v: any) => v.productHandle)
-      .filter((h: string) => h && h.length > 0)
+    if (metadata.items_json) {
+      const items = JSON.parse(metadata.items_json)
+      return (items || [])
+        .map((v: any) => v.handle || v.productHandle)
+        .filter((h: string) => h && h.length > 0)
+    }
+    if (metadata.shopify_variant_ids) {
+      const variants = JSON.parse(metadata.shopify_variant_ids)
+      return (variants || [])
+        .map((v: any) => v.productHandle || v.handle)
+        .filter((h: string) => h && h.length > 0)
+    }
   } catch {
-    return []
+    // Compact format "id:qty,id:qty" is not JSON - ignore
   }
+  return []
 }
 
 /**

@@ -139,9 +139,11 @@ export async function POST(request: NextRequest) {
  */
 async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.Session) {
   try {
-    // Only process headless storefront purchases
-    if (session.metadata?.source !== 'headless_storefront') {
-      console.log('Ignoring non-headless checkout session')
+    const source = session.metadata?.source
+    const isHeadless = source === 'headless_storefront'
+    const isExperience = source === 'experience_checkout'
+    if (!isHeadless && !isExperience) {
+      console.log('Ignoring non-headless/experience checkout session:', source)
       return
     }
 
@@ -157,9 +159,32 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       return { variantId: variantId ?? '', quantity: parseInt(qty ?? '1', 10) }
     }).filter(v => v.variantId)
 
-    // Get shipping details
-    const shipping = session.shipping_details
-    const customer = session.customer_details
+    // Get shipping details (from Stripe or metadata for experience_checkout)
+    let shipping = session.shipping_details
+    if (!shipping?.address && session.metadata?.shipping_address) {
+      try {
+        const meta = JSON.parse(session.metadata.shipping_address)
+        shipping = {
+          name: meta.fullName || '',
+          address: {
+            line1: meta.addressLine1 || '',
+            line2: meta.addressLine2 || '',
+            city: meta.city || '',
+            state: '',
+            postal_code: meta.postalCode || '',
+            country: meta.country || 'US',
+          },
+        }
+      } catch {
+        console.warn('Could not parse shipping_address from metadata')
+      }
+    }
+    const customer = session.customer_details ?? {
+      email: session.metadata?.collector_email ?? session.customer_email ?? '',
+      phone: '',
+      address: null,
+      name: '',
+    }
 
     // Create Shopify draft order via Admin API
     const draftOrderData = {

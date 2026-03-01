@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Tag, Home, CreditCard, Heart, ChevronRight, ExternalLink } from 'lucide-react'
+import { X, Tag, Home, CreditCard, Heart, ChevronRight } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder } from '../ExperienceOrderContext'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
-import { storeCheckoutItems } from '@/lib/checkout/session-storage'
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
 import { PaymentMethodsModal } from '@/components/shop/checkout/PaymentMethodsModal'
@@ -257,7 +255,24 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     </button>
   )
 
-  const paymentRow = hasAddress && (
+  const paymentMethodLabel = React.useMemo(() => {
+    switch (selectedPaymentMethod) {
+      case 'google_pay':
+        return 'Google Pay'
+      case 'paypal':
+      case 'external_paypal':
+        return 'PayPal'
+      case 'link':
+        return 'Link'
+      case 'card':
+        return 'Card'
+      default:
+        return selectedPaymentMethod ? selectedPaymentMethod.replace(/_/g, ' ') : 'Payment'
+    }
+  }, [selectedPaymentMethod])
+
+  const hasPaymentSelection = paymentModalHasBeenOpened
+  const paymentRow = (
     <button
       type="button"
       onClick={() => setPaymentModalOpen(true)}
@@ -265,12 +280,20 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       className="flex w-full items-center justify-between gap-2 py-2 text-left"
     >
       <span className="flex items-center gap-2 text-sm">
-        <CreditCard className="w-4 h-4 shrink-0 text-neutral-500" />
-        <span data-testid="add-payment-method-button-text" className="text-sm font-medium text-neutral-900">
-          Payment
+        <CreditCard className={cn('w-4 h-4 shrink-0', !hasPaymentSelection ? 'text-pink-500' : 'text-neutral-500')} />
+        <span
+          data-testid="add-payment-method-button-text"
+          className={cn(
+            'text-sm font-medium',
+            !hasPaymentSelection ? 'text-pink-600' : 'text-neutral-900'
+          )}
+        >
+          {hasPaymentSelection ? paymentMethodLabel : 'Add payment method'}
         </span>
       </span>
-      <ChevronRight className="w-4 h-4 text-neutral-400" />
+      {hasPaymentSelection && (
+        <span className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors">Change</span>
+      )}
     </button>
   )
 
@@ -456,14 +479,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             {orderSummary}
             {error && <p className="mt-2 text-center text-xs text-red-500">{error}</p>}
             {placeOrderButton}
-            <Link
-              href="/shop/checkout"
-              onClick={() => storeCheckoutItems(buildLineItems())}
-              className="mt-3 flex items-center justify-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-700"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Checkout on full page
-            </Link>
           </div>
         </div>
       </motion.div>
@@ -486,7 +501,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         volumeDiscountDescription={lampSavings > 0 ? '7.5% per artwork' : undefined}
       />
 
-      {hasAddress && itemCount > 0 && allAvailable && checkout.address && (
+      {itemCount > 0 && allAvailable && (
         <PaymentMethodsModal
           open={paymentModalOpen}
           onOpenChange={handlePaymentModalOpenChange}
@@ -496,17 +511,30 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           shipping={0}
           total={total}
           itemCount={itemCount}
-          customerEmail={checkout.address.email}
-          shippingAddress={{
-            email: checkout.address.email,
-            fullName: checkout.address.fullName,
-            country: checkout.address.country,
-            addressLine1: checkout.address.addressLine1,
-            addressLine2: checkout.address.addressLine2,
-            city: checkout.address.city,
-            postalCode: checkout.address.postalCode,
-            phoneNumber: checkout.address.phoneNumber,
-          }}
+          customerEmail={checkout.address?.email}
+          shippingAddress={
+            checkout.address
+              ? {
+                  email: checkout.address.email,
+                  fullName: checkout.address.fullName,
+                  country: checkout.address.country,
+                  addressLine1: checkout.address.addressLine1,
+                  addressLine2: checkout.address.addressLine2,
+                  city: checkout.address.city,
+                  postalCode: checkout.address.postalCode,
+                  phoneNumber: checkout.address.phoneNumber,
+                }
+              : {
+                  email: '',
+                  fullName: '',
+                  country: '',
+                  addressLine1: '',
+                  addressLine2: '',
+                  city: '',
+                  postalCode: '',
+                  phoneNumber: '',
+                }
+          }
           onSuccess={handlePaymentSuccess}
           onError={(msg) => setError(msg)}
           onPaymentMethodChange={(type) => setSelectedPaymentMethod(type)}

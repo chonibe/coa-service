@@ -11,7 +11,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/lib/shop/CartContext'
-import { storeCheckoutItems } from '@/lib/checkout/session-storage'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { Button, Slider } from '@/components/ui'
@@ -302,28 +301,6 @@ function CartContentInner() {
               <Button variant="outline" className="w-full">
                 Continue Shopping
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <Link
-              href="/shop/checkout"
-              onClick={() =>
-                storeCheckoutItems(
-                  items.map((item) => ({
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    variantGid: `gid://shopify/ProductVariant/${item.variantId}`,
-                    handle: item.handle,
-                    title: item.title,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.image,
-                  }))
-                )
-              }
-              className="block mt-2"
-            >
-              <Button variant="ghost" className="w-full text-sm">
-                Stripe Checkout (full page)
               </Button>
             </Link>
           </div>
