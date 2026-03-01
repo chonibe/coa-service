@@ -1,7 +1,7 @@
 # Track C: Post-Purchase + Credits
 
-**Version:** 1.0.0  
-**Last Updated:** 2026-02-14  
+**Version:** 1.1.0  
+**Last Updated:** 2026-03-01  
 **Status:** Implemented  
 **Plan Reference:** `platform_integration_streams_48a1af4f.plan.md` — Track C
 
@@ -24,17 +24,19 @@ Track C bridges the gap between purchase and collector identity, syncs wishlists
 
 ### Solution
 
-#### 1. Webhook Enhancement
+#### 1. Webhook Enhancement (Auto-Account Creation — v1.1.0)
 **File:** [`app/api/stripe/webhook/route.ts`](../../../app/api/stripe/webhook/route.ts)
 
-After creating the Shopify draft order and recording the purchase, a new `bridgePostPurchase()` function:
+After creating the Shopify draft order and recording the purchase, `bridgePostPurchase()` now:
 
-1. **Creates stub `collector_profiles`** if none exists for the purchaser email (with `user_id: null`)
-2. **Creates `collector_accounts`** via `getOrCreateCollectorAccount()` for the banking system
-3. **Deposits credits immediately** based on purchase total (10 credits per $1)
-4. **Sends a claim email** via Resend for guest purchasers (no linked Supabase account)
+1. **Auto-creates Supabase auth user** if none exists (`email_confirm: true`, no password required)
+2. **Creates/updates `collector_profiles`** linked to `user_id` (or links existing stub)
+3. **Ensures collector role** in `user_roles` and `collector_avatars` (InkOGatchi)
+4. **Creates `collector_accounts`** via `getOrCreateCollectorAccount()` for the banking system
+5. **Deposits credits immediately** based on purchase total (10 credits per $1)
+6. **Sends "View your order" email** with magic link for one-click sign-in (redirects to `/collector/dashboard`)
 
-All operations are idempotent (duplicate-safe) and non-critical (failures are logged but don't fail the webhook).
+Customers can now log in immediately with their email (magic link) after purchase to view orders and track shipments. The claim token flow remains available via `/collector/welcome` for edge cases.
 
 #### 2. Claim Token System
 **File:** [`lib/auth/claim-token.ts`](../../../lib/auth/claim-token.ts)

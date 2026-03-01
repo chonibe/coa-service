@@ -3,10 +3,9 @@ import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { shopifyFetch } from "@/lib/shopify-api"
-import { getTierByPriceId, MEMBERSHIP_TIERS, type MembershipTierId } from "@/lib/membership/tiers"
+import { MEMBERSHIP_TIERS, type MembershipTierId } from "@/lib/membership/tiers"
 import { getOrCreateCollectorAccount } from "@/lib/banking/account-manager"
 import { CREDITS_PER_DOLLAR } from "@/lib/banking/types"
-import { buildClaimUrl } from "@/lib/auth/claim-token"
 import { sendEmail } from "@/lib/email/client"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -56,57 +55,60 @@ export async function POST(request: NextRequest) {
     // Handle the event
     try {
       switch (event.type) {
-        case "account.updated":
+        case "account.updated": {
           const account = event.data.object as Stripe.Account
           await handleAccountUpdated(supabase, account)
           break
-        case "transfer.created":
+        }
+        case "transfer.created": {
           const transfer = event.data.object as Stripe.Transfer
           await handleTransferCreated(supabase, transfer)
           break
-        case "transfer.failed":
+        }
+        case "transfer.failed": {
           const failedTransfer = event.data.object as Stripe.Transfer
           await handleTransferFailed(supabase, failedTransfer)
           break
-        // Handle checkout session completed for product purchases
-        case "checkout.session.completed":
+        }
+        case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session
           await handleCheckoutCompleted(supabase, session)
           break
-        case "checkout.session.expired":
+        }
+        case "checkout.session.expired": {
           const expiredSession = event.data.object as Stripe.Checkout.Session
           console.log(`Checkout session expired: ${expiredSession.id}`)
-          // Update checkout_sessions table
           await supabase
             .from('checkout_sessions')
             .update({ status: 'expired' })
             .eq('session_id', expiredSession.id)
           break
-          
-        // ============================================
-        // SUBSCRIPTION EVENTS (Membership)
-        // ============================================
-        case "invoice.payment_succeeded":
+        }
+        case "invoice.payment_succeeded": {
           const paidInvoice = event.data.object as Stripe.Invoice
           await handleInvoicePaymentSucceeded(supabase, paidInvoice)
           break
-        case "invoice.payment_failed":
+        }
+        case "invoice.payment_failed": {
           const failedInvoice = event.data.object as Stripe.Invoice
           await handleInvoicePaymentFailed(supabase, failedInvoice)
           break
-        case "customer.subscription.created":
+        }
+        case "customer.subscription.created": {
           const newSubscription = event.data.object as Stripe.Subscription
           await handleSubscriptionCreated(supabase, newSubscription)
           break
-        case "customer.subscription.updated":
+        }
+        case "customer.subscription.updated": {
           const updatedSubscription = event.data.object as Stripe.Subscription
           await handleSubscriptionUpdated(supabase, updatedSubscription)
           break
-        case "customer.subscription.deleted":
+        }
+        case "customer.subscription.deleted": {
           const deletedSubscription = event.data.object as Stripe.Subscription
           await handleSubscriptionDeleted(supabase, deletedSubscription)
           break
-          
+        }
         default:
           console.log(`Unhandled event type: ${event.type}`)
       }
@@ -266,11 +268,13 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
 
 /**
  * Post-purchase bridge: Ensures every purchase creates or links a collector identity.
- * 
- * 1. Creates stub collector_profiles if none exists
- * 2. Creates collector_accounts for the banking system
- * 3. Deposits pending credits based on purchase amount
- * 4. Sends a claim email for guest purchasers (no Supabase account)
+ *
+ * 1. Auto-creates Supabase auth user if none exists (email-confirmed, no password)
+ * 2. Creates/updates collector_profiles linked to user_id
+ * 3. Ensures collector role in user_roles and collector_avatars
+ * 4. Creates collector_accounts for banking
+ * 5. Deposits credits
+ * 6. Sends "View your order" email with magic link for one-click sign-in
  */
 async function bridgePostPurchase(
   supabase: any,
@@ -283,129 +287,212 @@ async function bridgePostPurchase(
 ) {
   console.log(`[post-purchase] Bridging purchase for ${email}, order: ${orderId}`)
 
-  // 1. Check if collector profile exists
+  const normalizedEmail = email.toLowerCase().trim()
+
+  // 1. Get or create auth user
+  let userId: string | null = null
   const { data: existingProfile } = await supabase
     .from('collector_profiles')
     .select('id, user_id, email')
-    .eq('email', email)
+    .eq('email', normalizedEmail)
     .maybeSingle()
 
-  let profileCreated = false
+  if (existingProfile?.user_id) {
+    userId = existingProfile.user_id
+    console.log(`[post-purchase] Existing collector found: ${normalizedEmail}`)
+  } else {
+    // Try to create auth user (no password, email pre-confirmed)
+    const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+      email: normalizedEmail,
+      email_confirm: true,
+    })
 
-  if (!existingProfile) {
-    // Create stub profile (no user_id yet — guest purchase)
-    const { error: profileError } = await supabase
-      .from('collector_profiles')
-      .insert({
-        email,
-        user_id: null,
+    if (createData?.user) {
+      userId = createData.user.id
+      console.log(`[post-purchase] Created auth user for ${normalizedEmail}`)
+    } else if (createError) {
+      // User may already exist (e.g. from OAuth) - try to find them
+      const isDuplicate = /already|registered|exists/i.test(createError.message || '')
+      if (isDuplicate) {
+        const { data: listData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        const existingUser = listData?.users?.find((u: { email?: string }) => u.email?.toLowerCase() === normalizedEmail)
+        if (existingUser) {
+          userId = existingUser.id
+          console.log(`[post-purchase] Found existing auth user for ${normalizedEmail}`)
+        }
+      }
+      if (!userId) {
+        console.warn('[post-purchase] Could not create or find auth user:', createError.message)
+      }
+    }
+  }
+
+  // 2. Create or update collector profile with user_id (only when we have userId)
+  if (userId) {
+    if (!existingProfile) {
+      const { error: profileError } = await supabase.from('collector_profiles').insert({
+        email: normalizedEmail,
+        user_id: userId,
         signup_source: 'purchase',
         onboarding_step: 0,
         onboarding_completed_at: null,
       })
 
-    if (profileError) {
-      // Might be a race condition (duplicate), ignore
-      if (!profileError.message?.includes('duplicate') && profileError.code !== '23505') {
-        console.error('[post-purchase] Profile creation error:', profileError)
+      if (profileError) {
+        if (!profileError.message?.includes('duplicate') && profileError.code !== '23505') {
+          console.error('[post-purchase] Profile creation error:', profileError)
+        } else {
+          // Race: profile created elsewhere, update with user_id
+          await supabase
+            .from('collector_profiles')
+            .update({ user_id: userId, updated_at: new Date().toISOString() })
+            .eq('email', normalizedEmail)
+        }
+      } else {
+        console.log(`[post-purchase] Created collector profile for ${normalizedEmail}`)
       }
-    } else {
-      profileCreated = true
-      console.log(`[post-purchase] Created stub collector profile for ${email}`)
+    } else if (existingProfile.user_id === null) {
+      // Link stub profile to auth user
+      await supabase
+        .from('collector_profiles')
+        .update({ user_id: userId, updated_at: new Date().toISOString() })
+        .eq('email', normalizedEmail)
+      console.log(`[post-purchase] Linked collector profile to auth user for ${normalizedEmail}`)
     }
   }
 
-  // 2. Ensure banking account exists
+  // 3. Ensure collector role in user_roles
+  if (userId) {
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', 'collector')
+      .maybeSingle()
+
+    if (!existingRole) {
+      const { error: roleError } = await supabase.from('user_roles').insert({
+        user_id: userId,
+        role: 'collector',
+        is_active: true,
+        metadata: { source: 'purchase_auto_signup', email: normalizedEmail, signup_date: new Date().toISOString() },
+      })
+      if (roleError && !roleError.message?.includes('duplicate') && roleError.code !== '23505') {
+        console.warn('[post-purchase] Role creation failed (non-critical):', roleError.message)
+      } else if (!roleError) {
+        console.log(`[post-purchase] Collector role created for ${normalizedEmail}`)
+      }
+    }
+
+    // 4. Ensure collector_avatars (InkOGatchi) - non-critical
+    const { error: avatarError } = await supabase
+      .from('collector_avatars')
+      .insert({ user_id: userId, equipped_items: {} })
+    if (avatarError && !avatarError.message?.includes('duplicate') && avatarError.code !== '23505') {
+      console.warn('[post-purchase] Avatar creation failed (non-critical):', avatarError.message)
+    }
+  }
+
+  // 5. Ensure banking account exists
   try {
-    await getOrCreateCollectorAccount(email, 'customer')
-    console.log(`[post-purchase] Banking account ensured for ${email}`)
+    await getOrCreateCollectorAccount(normalizedEmail, 'customer')
+    console.log(`[post-purchase] Banking account ensured for ${normalizedEmail}`)
   } catch (accountError) {
     console.error('[post-purchase] Banking account creation error:', accountError)
   }
 
-  // 3. Deposit pending credits (price in cents → dollars → credits)
+  // 6. Deposit credits
   const amountDollars = amountTotalCents / 100
   const creditsToDeposit = Math.round(amountDollars * CREDITS_PER_DOLLAR)
 
   if (creditsToDeposit > 0) {
-    // Idempotency check: use stripeSessionId as the unique key
     const { data: existingCredit } = await supabase
       .from('collector_ledger_entries')
       .select('id')
-      .eq('collector_identifier', email)
+      .eq('collector_identifier', normalizedEmail)
       .eq('transaction_type', 'credit_earned')
       .eq('order_id', orderId)
       .maybeSingle()
 
     if (!existingCredit) {
-      const { error: ledgerError } = await supabase
-        .from('collector_ledger_entries')
-        .insert({
-          collector_identifier: email,
-          transaction_type: 'credit_earned',
-          amount: creditsToDeposit,
-          currency: 'CREDITS',
+      const { error: ledgerError } = await supabase.from('collector_ledger_entries').insert({
+        collector_identifier: normalizedEmail,
+        transaction_type: 'credit_earned',
+        amount: creditsToDeposit,
+        currency: 'CREDITS',
+        order_id: orderId,
+        description: `Credits earned from purchase: $${amountDollars.toFixed(2)}`,
+        created_by: 'system',
+        metadata: {
+          stripe_session_id: stripeSessionId,
           order_id: orderId,
-          description: `Credits earned from purchase: $${amountDollars.toFixed(2)}`,
-          created_by: 'system',
-          metadata: {
-            stripe_session_id: stripeSessionId,
-            order_id: orderId,
-            price_usd: amountDollars,
-            credits_per_dollar: CREDITS_PER_DOLLAR,
-            source: 'checkout_completed',
-          },
-        })
+          price_usd: amountDollars,
+          credits_per_dollar: CREDITS_PER_DOLLAR,
+          source: 'checkout_completed',
+        },
+      })
 
       if (ledgerError) {
         console.error('[post-purchase] Credit deposit error:', ledgerError)
       } else {
-        console.log(`[post-purchase] Deposited ${creditsToDeposit} credits for ${email}`)
+        console.log(`[post-purchase] Deposited ${creditsToDeposit} credits for ${normalizedEmail}`)
       }
     } else {
       console.log(`[post-purchase] Credits already deposited for order ${orderId}`)
     }
   }
 
-  // 4. Send claim email for guest purchasers (no user_id linked)
-  const hasAccount = existingProfile?.user_id != null
-  if (!hasAccount) {
-    try {
-      const claimUrl = buildClaimUrl(email, stripeSessionId)
-      const itemSummary = variants
-        .map(v => `${v.productHandle} (×${v.quantity})`)
-        .join(', ')
+  // 7. Send "View your order" email with magic link (one-click sign-in)
+  try {
+    let signInUrl: string | null = null
 
-      await sendEmail({
-        to: email,
-        subject: 'Claim Your Street Collector Collection',
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
-              Your artwork is on its way!
-            </h1>
-            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 12px;">
-              Thank you for your purchase. You earned <strong>${creditsToDeposit} credits</strong> with this order.
-            </p>
-            <p style="font-size: 14px; color: #777; margin-bottom: 24px;">
-              Items: ${itemSummary}
-            </p>
-            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 24px;">
-              Claim your free collector account to track your collection, earn more credits, and unlock exclusive perks.
-            </p>
-            <a href="${claimUrl}" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-              Claim Your Collection
-            </a>
-            <p style="font-size: 12px; color: #999; margin-top: 24px;">
-              This link expires in 7 days. If you already have an account, just log in to see your collection.
-            </p>
-          </div>
-        `,
+    if (userId) {
+      const { data: linkData } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: normalizedEmail,
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'}/collector/dashboard`,
+        },
       })
-      console.log(`[post-purchase] Claim email sent to ${email}`)
-    } catch (emailError) {
-      console.error('[post-purchase] Claim email error (non-critical):', emailError)
+      // generateLink returns { user, properties: { action_link, ... } } or { action_link }
+      signInUrl = linkData?.properties?.action_link || (linkData as { action_link?: string })?.action_link || null
     }
+
+    const itemSummary = variants.map((v) => `${v.productHandle} (×${v.quantity})`).join(', ')
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'
+
+    const ctaUrl = signInUrl || `${baseUrl}/login?email=${encodeURIComponent(normalizedEmail)}&redirect=/collector/dashboard`
+    const ctaText = signInUrl ? 'View Your Order & Track Shipping' : 'Log In to View Your Order'
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: 'Your artwork is on its way!',
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
+            Your artwork is on its way!
+          </h1>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 12px;">
+            Thank you for your purchase. You earned <strong>${creditsToDeposit} credits</strong> with this order.
+          </p>
+          <p style="font-size: 14px; color: #777; margin-bottom: 24px;">
+            Items: ${itemSummary}
+          </p>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+            ${signInUrl ? 'Click below to sign in and track your order, view your collection, and manage your account.' : 'Log in with your email to view your order and track shipping.'}
+          </p>
+          <a href="${ctaUrl}" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            ${ctaText}
+          </a>
+          <p style="font-size: 12px; color: #999; margin-top: 24px;">
+            ${signInUrl ? 'This link expires in 1 hour. You can also log in anytime at ' + baseUrl + '/login with your email.' : 'Go to ' + baseUrl + '/login and enter your email to receive a sign-in link.'}
+          </p>
+        </div>
+      `,
+    })
+    console.log(`[post-purchase] Order confirmation email sent to ${normalizedEmail}`)
+  } catch (emailError) {
+    console.error('[post-purchase] Order confirmation email error (non-critical):', emailError)
   }
 }
 
@@ -633,7 +720,6 @@ async function handleSubscriptionCreated(supabase: any, subscription: Stripe.Sub
   try {
     const tierId = subscription.metadata?.tier_id as MembershipTierId | undefined
     const collectorIdentifier = subscription.metadata?.collector_identifier
-    const userId = subscription.metadata?.user_id
 
     if (!collectorIdentifier) {
       console.error('[webhook] No collector_identifier in subscription metadata')
