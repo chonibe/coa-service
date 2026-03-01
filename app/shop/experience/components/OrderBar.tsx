@@ -2,14 +2,18 @@
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronDown, ChevronUp, ChevronLeft, Tag } from 'lucide-react'
+import { X, Tag, Home, CreditCard, Heart, ChevronRight, ExternalLink } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder } from '../ExperienceOrderContext'
-import { CheckoutProvider, useCheckout, type CheckoutStep } from '@/lib/shop/CheckoutContext'
-import { InlineAddressForm } from '@/components/shop/checkout/InlineAddressForm'
-import { PaymentStep } from '@/components/shop/checkout/PaymentStep'
+import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
+import { storeCheckoutItems } from '@/lib/checkout/session-storage'
+import { AddressModal } from '@/components/shop/checkout/AddressModal'
+import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
+import { PaymentMethodsModal } from '@/components/shop/checkout/PaymentMethodsModal'
+import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 
 interface OrderBarProps {
   lamp: ShopifyProduct
@@ -34,32 +38,6 @@ function parsePrice(product: ShopifyProduct): number {
 function getVariantId(product: ShopifyProduct): string {
   const gid = product.variants?.edges?.[0]?.node?.id ?? ''
   return gid.replace('gid://shopify/ProductVariant/', '')
-}
-
-const STEP_LABELS: Record<CheckoutStep, string> = {
-  cart: 'Cart',
-  shipping: 'Shipping',
-  payment: 'Payment',
-}
-
-const STEPS: CheckoutStep[] = ['cart', 'shipping', 'payment']
-
-function StepIndicator({ current }: { current: CheckoutStep }) {
-  const currentIdx = STEPS.indexOf(current)
-  return (
-    <div className="flex items-center justify-center gap-1.5 py-1">
-      {STEPS.map((s, i) => (
-        <div key={s} className="flex items-center gap-1.5">
-          <div
-            className={cn(
-              'h-1.5 rounded-full transition-all duration-300',
-              i === currentIdx ? 'w-6 bg-neutral-900' : i < currentIdx ? 'w-1.5 bg-neutral-400' : 'w-1.5 bg-neutral-200'
-            )}
-          />
-        </div>
-      ))}
-    </div>
-  )
 }
 
 function AnimatedPrice({ value }: { value: number }) {
@@ -97,15 +75,18 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   onLampQuantityChange,
   onRemoveArtwork,
   onSelectArtwork,
-  _onViewLampDetail,
   isGift,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [giftNote, setGiftNote] = useState('')
   const [showGiftNote, setShowGiftNote] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [addressModalOpen, setAddressModalOpen] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [promoModalOpen, setPromoModalOpen] = useState(false)
+  const [promoApplied, setPromoApplied] = useState('')
+  const [promoDiscount, setPromoDiscount] = useState(0)
   const checkout = useCheckout()
-  const step = checkout.step
 
   useExperienceOpenOrder(() => {
     setDrawerOpen(true)
@@ -211,14 +192,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   useImperativeHandle(ref, () => ({ testZeroOrder: handleTestZeroOrder }), [handleTestZeroOrder])
 
-  const handleContinueToShipping = () => {
-    if (itemCount === 0 || !allAvailable) return
-    checkout.goToShipping()
-  }
-
-  const handleAddressDone = (addr: typeof checkout.address) => {
+  const handleAddressSave = (addr: typeof checkout.address) => {
     checkout.setAddress(addr)
-    checkout.goToPayment()
+    setAddressModalOpen(false)
   }
 
   const handlePaymentSuccess = (redirectUrl: string) => {
@@ -227,235 +203,214 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const handleClose = () => {
     setDrawerOpen(false)
-    setTimeout(() => checkout.goToCart(), 350)
   }
 
-  const stepTitle = STEP_LABELS[step]
+  const hasAddress = checkout.isAddressComplete()
+  const [paymentModalHasBeenOpened, setPaymentModalHasBeenOpened] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('google_pay')
 
-  const cartStepContent = (
-    <div className="space-y-0 min-w-0 overflow-x-hidden">
-      {/* Lamp row */}
-      <div className="min-w-0 pb-3 transition-opacity duration-200">
-        <div className="flex items-center gap-3 min-h-[44px]">
-          <div className={cn('flex items-center gap-3 flex-1 min-w-0', lampQuantity === 0 && 'opacity-50')}>
-            <span className="flex-1 min-w-0 text-sm font-medium text-neutral-950 truncate">{lamp.title}</span>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {lampQuantity > 0 && lampSavings > 0 && (
-                <span className="text-xs text-neutral-500 line-through tabular-nums">${(lampQuantity * lampPrice).toFixed(2)}</span>
-              )}
-              <span className={cn(
-                'text-sm tabular-nums',
-                lampQuantity === 0 && 'text-neutral-500',
-                lampQuantity > 0 && lampSavings > 0 && 'text-green-700 font-medium'
-              )}>
-                {lampQuantity > 0
-                  ? lampTotal === 0
-                    ? 'FREE'
-                    : `$${lampTotal.toFixed(2)}${lampQuantity > 1 ? ' total' : ''}`
-                  : `$${lampPrice.toFixed(2)}`}
-              </span>
-            </div>
-          </div>
-          {lampQuantity === 0 ? (
-            <button
-              type="button"
-              onClick={() => onLampQuantityChange(1)}
-              className="w-6 h-5 text-center text-[10px] font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
-              aria-label="Add lamp"
-            >
-              Add
-            </button>
-          ) : (
-            <div
-              className="w-10 h-8 rounded border border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150 flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
-              style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
-            >
+  /* Auto-apply WELCOME10 for first-time users */
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const key = 'sc_welcome10_applied'
+    if (!localStorage.getItem(key) && drawerOpen && !promoApplied) {
+      setPromoApplied('WELCOME10')
+      localStorage.setItem(key, '1')
+    }
+  }, [drawerOpen, promoApplied])
+
+  const handlePaymentModalOpenChange = (open: boolean) => {
+    if (open) setPaymentModalHasBeenOpened(true)
+    setPaymentModalOpen(open)
+  }
+
+  const handlePlaceOrderClick = () => {
+    if (!hasAddress) {
+      setAddressModalOpen(true)
+      return
+    }
+    if (!paymentModalHasBeenOpened) {
+      setPaymentModalHasBeenOpened(true)
+      setPaymentModalOpen(true)
+      return
+    }
+    ;(document.getElementById('checkout-payment-form') as HTMLFormElement | null)?.requestSubmit()
+  }
+
+  /* ─── Summary rows (Address, Payment, Promo) ─── */
+  const addressRow = (
+    <button
+      type="button"
+      onClick={() => setAddressModalOpen(true)}
+      data-testid="add-address-button"
+      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+    >
+      <span className="flex items-center gap-2 text-sm">
+        <Home className={cn('w-4 h-4 shrink-0', !hasAddress ? 'text-pink-500' : 'text-neutral-500')} />
+        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900' : 'text-pink-600 font-medium'}>
+          {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
+        </span>
+      </span>
+      {hasAddress && (
+        <span className="text-xs text-neutral-500 hover:text-neutral-700">Change</span>
+      )}
+    </button>
+  )
+
+  const paymentRow = hasAddress && (
+    <button
+      type="button"
+      onClick={() => setPaymentModalOpen(true)}
+      data-testid="add-payment-method-button"
+      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+    >
+      <span className="flex items-center gap-2 text-sm">
+        <CreditCard className="w-4 h-4 shrink-0 text-neutral-500" />
+        <span data-testid="add-payment-method-button-text" className="text-sm font-medium text-neutral-900">
+          Payment
+        </span>
+      </span>
+      <ChevronRight className="w-4 h-4 text-neutral-400" />
+    </button>
+  )
+
+  const promoRow = (
+    <button
+      type="button"
+      onClick={() => setPromoModalOpen(true)}
+      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+    >
+      <span className="flex items-center gap-2 text-sm">
+        <Tag className="w-4 h-4 shrink-0 text-neutral-500" />
+        <span className="text-neutral-900">
+          {promoApplied ? `Promo: ${promoApplied}` : 'Add promo code'}
+        </span>
+      </span>
+      <span className="text-xs text-neutral-500 hover:text-neutral-700">
+        {promoApplied ? 'Change' : ''}
+      </span>
+    </button>
+  )
+
+  /* ─── Order summary & cart ─── */
+  const orderSummary = (
+    <div className="order-summary-container border-t border-neutral-200 pt-4 space-y-2">
+      {/* Compact cart lines */}
+      <div className="space-y-1.5 max-h-[18vh] overflow-y-auto">
+        {lampQuantity > 0 && (
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <input
                 type="number"
                 min={0}
                 max={99}
                 value={lampQuantity}
                 onChange={(e) => {
-                  const v = e.target.value
-                  if (v === '') { onLampQuantityChange(0); return }
-                  const n = parseInt(v, 10)
+                  const n = parseInt(e.target.value, 10)
                   if (!Number.isNaN(n)) onLampQuantityChange(Math.max(0, Math.min(99, n)))
                 }}
-                onBlur={(e) => {
-                  const v = e.target.value
-                  if (v === '' || Number.isNaN(parseInt(v, 10))) onLampQuantityChange(0)
-                }}
-                className="w-full h-full text-center text-sm font-medium tabular-nums bg-transparent text-neutral-900 focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                aria-label="Lamp quantity"
+                className="w-10 h-7 text-center text-sm rounded border border-neutral-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
+              <span className="text-neutral-900 truncate">× {lamp.title}</span>
             </div>
-          )}
-        </div>
-        {includeLamp && artworkCount > 0 && lampSavings > 0 && (
-          <div className="mt-0.5 flex items-center gap-2 rounded-lg border border-green-200/80 bg-green-50/50 px-3 py-2">
-            <Tag className="w-4 h-4 shrink-0 text-green-700" />
-            <span className="text-sm font-medium text-green-800">
-              7.5% per artwork ({artworkCount} {artworkCount === 1 ? 'artwork' : 'artworks'}) · -${lampSavings.toFixed(2)}
+            <span className="text-neutral-700 tabular-nums shrink-0">
+              {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
             </span>
           </div>
         )}
-      </div>
-
-      {/* Artwork rows */}
-      <div className="max-h-[30vh] overflow-y-auto overflow-x-hidden space-y-1">
-        <AnimatePresence>
-          {selectedArtworks.map((art) => {
-            const artPrice = parsePrice(art)
-            const artImage = art.featuredImage?.url
-            const isSoldOut = !art.availableForSale
-            return (
-              <motion.div
-                key={art.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 44 }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
-                onClick={() => onSelectArtwork?.(art)}
-                className={cn(
-                  'summary-item flex items-center gap-3 min-w-0 overflow-hidden py-1.5',
-                  onSelectArtwork && 'cursor-pointer hover:bg-neutral-50 transition-colors -mx-2 px-2 rounded'
-                )}
+        {selectedArtworks.slice(0, 6).map((art) => (
+          <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
+            <span className={cn('truncate flex-1 min-w-0', !art.availableForSale && 'line-through text-neutral-500')}>
+              {art.title}
+            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-neutral-700 tabular-nums">${parsePrice(art).toFixed(2)}</span>
+              <button
+                type="button"
+                onClick={() => onRemoveArtwork(art.id)}
+                className="w-5 h-5 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-700"
+                aria-label="Remove"
               >
-                <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-neutral-200/80 ring-1 ring-neutral-200/80">
-                  {artImage ? (
-                    <Image src={artImage} alt={art.title} width={24} height={24} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-neutral-200" />
-                  )}
-                </div>
-                <span className={cn('flex-1 min-w-0 text-sm font-medium text-neutral-950 truncate', isSoldOut && 'line-through text-neutral-500')}>
-                  {art.title}
-                </span>
-                <span className="text-sm font-medium tabular-nums text-neutral-950">${artPrice.toFixed(2)}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id) }}
-                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors flex-shrink-0"
-                  aria-label="Remove artwork"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-      </div>
-
-      {/* Gift note */}
-      {isGift && (
-        <div className="mt-3">
-          <button
-            onClick={() => setShowGiftNote(!showGiftNote)}
-            className="flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
-          >
-            Add a gift note
-            {showGiftNote ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
-          <AnimatePresence>
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {selectedArtworks.length > 6 && (
+          <div className="text-xs text-neutral-500">+{selectedArtworks.length - 6} more</div>
+        )}
+        {isGift && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowGiftNote(!showGiftNote)}
+              className="text-xs text-neutral-600 hover:text-neutral-900"
+            >
+              {showGiftNote ? 'Hide gift note' : 'Add gift note'}
+            </button>
             {showGiftNote && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <textarea
-                  value={giftNote}
-                  onChange={(e) => setGiftNote(e.target.value.slice(0, 500))}
-                  placeholder="Write a personal message..."
-                  rows={3}
-                  className="w-full mt-2 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
-                />
-                <p className="text-[10px] text-neutral-600 text-right mt-0.5">{giftNote.length}/500</p>
-              </motion.div>
+              <textarea
+                value={giftNote}
+                onChange={(e) => setGiftNote(e.target.value.slice(0, 500))}
+                placeholder="Write a message..."
+                rows={2}
+                className="mt-1 w-full px-2 py-1.5 text-xs border border-neutral-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              />
             )}
-          </AnimatePresence>
+          </div>
+        )}
+        {lampQuantity === 0 && (
+          <button
+            type="button"
+            onClick={() => onLampQuantityChange(1)}
+            className="text-sm text-pink-600 font-medium hover:text-pink-700"
+          >
+            + Add lamp
+          </button>
+        )}
+      </div>
+      {lampQuantity > 0 && lampSavings > 0 && (
+        <div className="flex items-center gap-1.5 text-sm text-pink-600">
+          <Heart className="w-4 h-4 shrink-0 fill-current" />
+          <span>7.5% per artwork · You&apos;re saving ${lampSavings.toFixed(2)}</span>
         </div>
       )}
-
-      {/* Cart summary + continue */}
-      <div className="mt-4 space-y-2 border-t border-neutral-200 pt-4">
+      <div className="space-y-1.5 text-sm pt-1">
         {lampSavings > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-neutral-600">Lamp discount</span>
+          <div className="flex justify-between">
+            <span className="text-neutral-600">Discount</span>
             <span className="font-medium text-green-700">-${lampSavings.toFixed(2)}</span>
           </div>
         )}
-        <div className="flex justify-between text-sm">
+        <div data-testid="delivery-summary-item" className="flex justify-between">
           <span className="text-neutral-600">Shipping</span>
           <span className="font-medium text-neutral-950">Free</span>
         </div>
-        <div className="flex items-center justify-between pt-2">
-          <span className="font-semibold text-neutral-950">
-            Total ({itemCount} {itemCount === 1 ? 'item' : 'items'})
-          </span>
+        <div data-testid="total-summary-item" className="flex justify-between pt-1.5 border-t border-neutral-100">
+          <span className="font-semibold text-neutral-950">Total</span>
           <span className="text-lg font-bold text-neutral-950">
             <AnimatedPrice value={total} />
           </span>
         </div>
       </div>
-
-      {error && (
-        <p className="mt-2 text-center text-xs text-red-500">{error}</p>
-      )}
-
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.98 }}
-        onClick={handleContinueToShipping}
-        disabled={itemCount === 0 || !allAvailable}
-        className={cn(
-          'mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
-          itemCount === 0 || !allAvailable
-            ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-            : 'bg-neutral-950 text-white hover:bg-neutral-800'
-        )}
-      >
-        Continue to Shipping
-      </motion.button>
     </div>
   )
 
-  const shippingStepContent = (
-    <div>
-      <InlineAddressForm
-        initialAddress={checkout.address}
-        onSubmit={handleAddressDone}
-        onBack={() => checkout.goToCart()}
-      />
-    </div>
-  )
+  const getCheckoutButtonVariant = (): 'google_pay' | 'paypal' | 'default' => {
+    if (selectedPaymentMethod === 'google_pay') return 'google_pay'
+    if (selectedPaymentMethod === 'paypal' || selectedPaymentMethod === 'external_paypal')
+      return 'paypal'
+    return 'default'
+  }
 
-  const paymentStepContent = checkout.address ? (
-    <PaymentStep
-      items={buildLineItems()}
-      subtotal={lampTotal + artworksTotal}
-      discount={lampSavings}
-      shipping={0}
-      total={total}
-      itemCount={itemCount}
-      customerEmail={checkout.address.email}
-      shippingAddress={{
-        email: checkout.address.email,
-        fullName: checkout.address.fullName,
-        country: checkout.address.country,
-        addressLine1: checkout.address.addressLine1,
-        addressLine2: checkout.address.addressLine2,
-        city: checkout.address.city,
-        postalCode: checkout.address.postalCode,
-        phoneNumber: checkout.address.phoneNumber,
-      }}
-      onBack={() => checkout.goToShipping()}
-      onSuccess={handlePaymentSuccess}
-      onError={(msg) => setError(msg)}
-      renderTotal={(v) => <AnimatedPrice value={v} />}
+  const placeOrderButton = (
+    <CheckoutButton
+      variant={getCheckoutButtonVariant()}
+      amount={total}
+      disabled={itemCount === 0 || !allAvailable}
+      onClick={handlePlaceOrderClick}
     />
-  ) : null
+  )
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[90]" aria-hidden={!drawerOpen}>
@@ -480,72 +435,83 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         style={{ width: 'min(calc(100vw - 2rem), 400px)' }}
       >
         {/* Header */}
-        <div className="checkout-title flex-shrink-0 relative flex items-center px-4 py-3">
-          {step !== 'cart' && (
-            <button
-              type="button"
-              onClick={() => step === 'shipping' ? checkout.goToCart() : checkout.goToShipping()}
-              className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors mr-1"
-              aria-label="Go back"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-neutral-950">{stepTitle}</h3>
-            <StepIndicator current={step} />
-          </div>
+        <div className="checkout-title flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+          <h3 className="text-base font-semibold text-neutral-950">Checkout</h3>
           <button
             type="button"
             onClick={handleClose}
-            className="CloseButton dark w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors ml-2"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable content with step transitions */}
+        {/* Single checkout screen - summary rows, order summary, Place Order */}
         <div className="checkout-content right-drawer flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="px-4 pt-2 pb-6">
-            <AnimatePresence mode="wait">
-              {step === 'cart' && (
-                <motion.div
-                  key="cart"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {cartStepContent}
-                </motion.div>
-              )}
-              {step === 'shipping' && (
-                <motion.div
-                  key="shipping"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {shippingStepContent}
-                </motion.div>
-              )}
-              {step === 'payment' && (
-                <motion.div
-                  key="payment"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {paymentStepContent}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="px-4 pt-4 pb-6">
+            {addressRow}
+            {paymentRow}
+            {promoRow}
+            {orderSummary}
+            {error && <p className="mt-2 text-center text-xs text-red-500">{error}</p>}
+            {placeOrderButton}
+            <Link
+              href="/shop/checkout"
+              onClick={() => storeCheckoutItems(buildLineItems())}
+              className="mt-3 flex items-center justify-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-700"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Checkout on full page
+            </Link>
           </div>
         </div>
       </motion.div>
+
+      <AddressModal
+        open={addressModalOpen}
+        onOpenChange={setAddressModalOpen}
+        initialAddress={checkout.address}
+        onSave={handleAddressSave}
+      />
+
+      <PromoCodeModal
+        open={promoModalOpen}
+        onOpenChange={setPromoModalOpen}
+        appliedCode={promoApplied}
+        appliedDiscount={promoDiscount}
+        onApply={(code) => { setPromoApplied(code); setPromoDiscount(0) }}
+        onRemove={() => { setPromoApplied(''); setPromoDiscount(0) }}
+        volumeDiscountLabel={lampSavings > 0 ? 'Volume Discount Applied' : undefined}
+        volumeDiscountDescription={lampSavings > 0 ? '7.5% per artwork' : undefined}
+      />
+
+      {hasAddress && itemCount > 0 && allAvailable && checkout.address && (
+        <PaymentMethodsModal
+          open={paymentModalOpen}
+          onOpenChange={handlePaymentModalOpenChange}
+          items={buildLineItems()}
+          subtotal={lampTotal + artworksTotal}
+          discount={lampSavings}
+          shipping={0}
+          total={total}
+          itemCount={itemCount}
+          customerEmail={checkout.address.email}
+          shippingAddress={{
+            email: checkout.address.email,
+            fullName: checkout.address.fullName,
+            country: checkout.address.country,
+            addressLine1: checkout.address.addressLine1,
+            addressLine2: checkout.address.addressLine2,
+            city: checkout.address.city,
+            postalCode: checkout.address.postalCode,
+            phoneNumber: checkout.address.phoneNumber,
+          }}
+          onSuccess={handlePaymentSuccess}
+          onError={(msg) => setError(msg)}
+          onPaymentMethodChange={(type) => setSelectedPaymentMethod(type)}
+        />
+      )}
     </div>
   )
 })

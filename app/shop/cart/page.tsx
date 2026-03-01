@@ -11,8 +11,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/lib/shop/CartContext'
+import { storeCheckoutItems } from '@/lib/checkout/session-storage'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { Button, Slider } from '@/components/ui'
+import { CheckoutLayout } from '@/components/shop/checkout'
 import { 
   Trash2, 
   Plus, 
@@ -26,7 +29,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-function CartContent() {
+function CartContentInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { 
@@ -41,13 +44,14 @@ function CartContent() {
     isEmpty,
     clearCart,
   } = useCart()
-  const { user, loading: authLoading, canUseCredits } = useShopAuthContext()
+  const { user } = useShopAuthContext()
+  const checkout = useCheckout()
   
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const cancelled = searchParams.get('cancelled') === 'true'
-  const availableCredits = user?.creditBalance || 0
+  const availableCredits = user?.creditBalance ?? 0
   const maxCreditsForCart = Math.min(availableCredits, subtotal * 10) // 10 credits per $1
 
   const handleCheckout = async () => {
@@ -72,7 +76,20 @@ function CartContent() {
             artistName: item.artistName,
           })),
           creditsToUse: creditsToUse,
-          customerEmail: user?.email,
+          customerEmail: user?.email || checkout.address?.email,
+          shippingAddress: checkout.address ? {
+            email: checkout.address.email,
+            fullName: checkout.address.fullName,
+            country: checkout.address.country,
+            addressLine1: checkout.address.addressLine1,
+            addressLine2: checkout.address.addressLine2,
+            city: checkout.address.city,
+            postalCode: checkout.address.postalCode,
+            phoneCountryCode: checkout.address.phoneCountryCode,
+            phoneNumber: checkout.address.phoneNumber,
+          } : undefined,
+          paymentMethodPreference: checkout.paymentMethod,
+          promoCode: checkout.promoCode || undefined,
         }),
       })
 
@@ -210,118 +227,70 @@ function CartContent() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-slate-200 p-6 sticky top-4">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Order Summary
-            </h2>
-
-            {/* Subtotal */}
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-600">Subtotal</span>
-              <span className="font-medium">${subtotal.toFixed(2)}</span>
-            </div>
-
-            {/* Credit Slider - For any authenticated user with credits */}
-            {availableCredits > 0 && (
-              <div className="py-4 border-b border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Coins className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-medium text-slate-700">
-                      Use Credits
+            <CheckoutLayout
+              subtotal={subtotal}
+              discount={creditsDiscount}
+              discountLabel="Credits"
+              shipping={0}
+              total={total}
+              onCheckout={handleCheckout}
+              isCheckingOut={isCheckingOut}
+              error={error}
+              variant="page"
+              itemCount={items.reduce((sum, i) => sum + i.quantity, 0)}
+            >
+              {/* Credit Slider */}
+              {availableCredits > 0 && (
+                <div className="py-4 border-b border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-medium text-slate-700">Use Credits</span>
+                    </div>
+                    <span className="text-sm text-slate-500">
+                      {availableCredits.toLocaleString()} available
                     </span>
                   </div>
-                  <span className="text-sm text-slate-500">
-                    {availableCredits.toLocaleString()} available
-                  </span>
-                </div>
-                
-                <Slider
-                  value={[creditsToUse]}
-                  onValueChange={([value]) => setCreditsToUse(value)}
-                  max={maxCreditsForCart}
-                  step={10}
-                  className="my-4"
-                />
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">
-                    Using {creditsToUse.toLocaleString()} credits
-                  </span>
-                  <span className="text-green-600 font-medium">
-                    -${creditsDiscount.toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Helpful suggestion when slider is at 0 */}
-                {creditsToUse === 0 && maxCreditsForCart > 0 && (
-                  <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-700">
-                    Use {maxCreditsForCart.toLocaleString()} credits to save ${(maxCreditsForCart * 0.10).toFixed(2)} on this order
+                  <Slider
+                    value={[creditsToUse]}
+                    onValueChange={([value]) => setCreditsToUse(value)}
+                    max={maxCreditsForCart}
+                    step={10}
+                    className="my-4"
+                  />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">
+                      Using {creditsToUse.toLocaleString()} credits
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      -${creditsDiscount.toFixed(2)}
+                    </span>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Purchase credit promo for users with no credits */}
-            {availableCredits === 0 && (
-              <div className="py-4 border-b border-slate-100">
-                <div className="bg-amber-50 rounded-lg p-3">
-                  <p className="text-sm text-amber-800 font-medium mb-1">
-                    Earn credits with every purchase
-                  </p>
-                  <p className="text-xs text-amber-700">
-                    You'll earn <strong>{Math.round(subtotal * 10).toLocaleString()} credits</strong> (${(subtotal).toFixed(2)} value) from this order. 10 credits per $1 spent.
-                  </p>
-                  {!user?.isMember && (
-                    <Link href="/shop/membership">
-                      <Button 
-                        variant="link" 
-                        className="text-amber-700 p-0 h-auto text-xs mt-1"
-                      >
-                        Become a member for bonus credits
-                      </Button>
-                    </Link>
+                  {creditsToUse === 0 && maxCreditsForCart > 0 && (
+                    <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-700">
+                      Use {maxCreditsForCart.toLocaleString()} credits to save ${(maxCreditsForCart * 0.10).toFixed(2)} on this order
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Credits discount */}
-            {creditsDiscount > 0 && (
-              <div className="flex justify-between py-2 text-green-600">
-                <span>Credits discount</span>
-                <span className="font-medium">-${creditsDiscount.toFixed(2)}</span>
-              </div>
-            )}
-
-            {/* Total */}
-            <div className="flex justify-between py-4 text-lg font-semibold">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
-            </div>
-
-            {/* Checkout Button */}
-            <Button
-              onClick={handleCheckout}
-              disabled={isCheckingOut}
-              className="w-full py-6 text-lg"
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : total === 0 ? (
-                <>
-                  <Coins className="w-5 h-5 mr-2" />
-                  Pay with Credits
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Checkout ${total.toFixed(2)}
-                </>
               )}
-            </Button>
+              {availableCredits === 0 && (
+                <div className="py-4 border-b border-slate-100">
+                  <div className="bg-amber-50 rounded-lg p-3">
+                    <p className="text-sm text-amber-800 font-medium mb-1">Earn credits with every purchase</p>
+                    <p className="text-xs text-amber-700">
+                      You&apos;ll earn <strong>{Math.round(subtotal * 10).toLocaleString()} credits</strong> (${subtotal.toFixed(2)} value) from this order.
+                    </p>
+                    {!user?.isMember && (
+                      <Link href="/shop/membership">
+                        <Button variant="link" className="text-amber-700 p-0 h-auto text-xs mt-1">
+                          Become a member for bonus credits
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CheckoutLayout>
 
             {total === 0 && creditsToUse > 0 && (
               <p className="text-xs text-center text-slate-500 mt-2">
@@ -329,11 +298,32 @@ function CartContent() {
               </p>
             )}
 
-            {/* Continue Shopping */}
             <Link href="/shop" className="block mt-4">
               <Button variant="outline" className="w-full">
                 Continue Shopping
                 <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <Link
+              href="/shop/checkout"
+              onClick={() =>
+                storeCheckoutItems(
+                  items.map((item) => ({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    variantGid: `gid://shopify/ProductVariant/${item.variantId}`,
+                    handle: item.handle,
+                    title: item.title,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.image,
+                  }))
+                )
+              }
+              className="block mt-2"
+            >
+              <Button variant="ghost" className="w-full text-sm">
+                Stripe Checkout (full page)
               </Button>
             </Link>
           </div>
@@ -357,6 +347,14 @@ function CartLoading() {
         </div>
       </div>
     </div>
+  )
+}
+
+function CartContent() {
+  return (
+    <CheckoutProvider>
+      <CartContentInner />
+    </CheckoutProvider>
   )
 }
 

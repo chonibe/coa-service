@@ -26,7 +26,10 @@ Current config has `images: { unoptimized: true }` in [next.config.js](../../../
 
 ## Checkout & Payment (Stripe)
 
-The experience checkout uses a **multi-step in-drawer flow** powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
+The experience checkout offers two flows:
+
+1. **In-drawer** – Multi-step flow powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
+2. **Full-page** – Stripe Checkout Sessions (ui_mode: custom) with Payment Element, Billing/Shipping Address Elements. Users can click "Checkout on full page" to go to `/shop/checkout`.
 
 ### Multi-Step Checkout Flow
 
@@ -57,6 +60,7 @@ The experience checkout uses a **multi-step in-drawer flow** powered by Stripe P
 | Endpoint | Purpose |
 |----------|---------|
 | `POST /api/checkout/create-payment-intent` | Creates PaymentIntent (card, link, paypal) for in-drawer checkout |
+| `POST /api/checkout/create-checkout-session` | Creates Checkout Session (ui_mode: custom) for full-page `/shop/checkout` |
 | `POST /api/checkout/complete-order` | Creates Shopify order after successful payment (idempotent) |
 | `POST /api/checkout/create` | Checkout Session (main shop cart, credits, zero-dollar flows) |
 | `POST /api/checkout/create-setup-intent` | SetupIntent for card + Link (legacy, used by main cart) |
