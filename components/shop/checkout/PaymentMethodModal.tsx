@@ -200,7 +200,7 @@ export function PaymentMethodModal({
                   onCheckedChange={(c) => handleSameAsChange(!!c)}
                 />
                 <Label htmlFor="same-as-shipping" className="text-sm text-neutral-700 cursor-pointer">
-                  Same as shipping address
+                  Same as Address
                 </Label>
               </div>
               {!sameAsShipping && (
@@ -225,6 +225,7 @@ export function PaymentMethodModal({
         onOpenChange={setBillingModalOpen}
         initialAddress={billingAddress}
         onSave={handleBillingSave}
+        addressType="billing"
       />
     </Dialog.Root>
   )

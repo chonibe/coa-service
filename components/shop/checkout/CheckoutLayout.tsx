@@ -10,9 +10,10 @@ import {
   type CheckoutAddress,
 } from '@/lib/shop/CheckoutContext'
 import { AddressModal } from './AddressModal'
+import { PAYPAL_LOGO_URL } from './PaymentButtonAssets'
 import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
-import { COUNTRY_OPTIONS } from '@/lib/data/countries'
+import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 
 function getPaymentMethodLabel(method: PaymentMethodType): string {
   switch (method) {
@@ -41,9 +42,14 @@ function PaymentButtonIcon({ method, size = 'md' }: { method: PaymentMethodType;
   }
   if (method === 'paypal') {
     return (
-      <svg viewBox="0 0 38 24" width={w} height={h} fill="none" aria-hidden className="shrink-0">
-        <path fill="#003087" d="M23.9 8.3c.2-1 0-1.7-.6-2.3-.6-.7-1.7-1-3.1-1h-4.1c-.94 0-1.74.7-1.97 1.63L14 15.6c0 .2.1.4.3.4H17l.4-3.4 1.8-2.2 4.7-2.1z" />
-      </svg>
+      <img
+        src={PAYPAL_LOGO_URL}
+        alt="PayPal"
+        width={w}
+        height={h}
+        aria-hidden
+        className="shrink-0 object-contain"
+      />
     )
   }
   return <CreditCard className={size === 'lg' ? 'h-7 w-7 shrink-0' : 'h-5 w-5 shrink-0'} />
@@ -95,6 +101,7 @@ export function CheckoutLayout({
   topSection,
   suppressDiscountInSummary = false,
 }: CheckoutLayoutProps) {
+  const countryOptions = useShippingCountries()
   const checkout = useCheckout()
   const {
     address,
@@ -132,7 +139,7 @@ export function CheckoutLayout({
     ? `${address.addressLine1}${address.city ? `, ${address.city}` : ''}`
     : null
   const countryName = address?.country
-    ? COUNTRY_OPTIONS.find((c) => c.code === address.country)?.name ?? address.country
+    ? countryOptions.find((c) => c.code === address.country)?.name ?? address.country
     : null
 
   return (
@@ -298,6 +305,7 @@ export function CheckoutLayout({
           if (sameAsShipping) setBillingAddress(addr)
           closeModals()
         }}
+        billingAddress={!sameAsShipping ? billingAddress : null}
       />
       <PaymentMethodModal
         open={openSection === 'payment'}

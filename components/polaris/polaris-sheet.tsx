@@ -10,6 +10,8 @@ export interface PolarisSheetProps extends React.HTMLAttributes<HTMLDivElement> 
   onClose?: () => void
   side?: 'top' | 'right' | 'bottom' | 'left'
   children?: React.ReactNode
+  /** Optional class for the overlay container (e.g. z-[70] for high-z contexts) */
+  overlayClassName?: string
 }
 
 const sideClasses = {
@@ -52,6 +54,7 @@ export function PolarisSheet({
   children,
   className,
   style,
+  overlayClassName,
   ...props
 }: PolarisSheetProps) {
   React.useEffect(() => {
@@ -72,7 +75,7 @@ export function PolarisSheet({
 
   const overlay = (
     <div
-      className="fixed inset-0 z-50"
+      className={cn('fixed inset-0 z-50', overlayClassName)}
       aria-modal="true"
       role="dialog"
       aria-label={title ?? 'Sheet'}
@@ -81,7 +84,7 @@ export function PolarisSheet({
         type="button"
         aria-hidden
         tabIndex={-1}
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
       <div

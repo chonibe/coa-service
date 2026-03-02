@@ -10,7 +10,7 @@ function CartBagIcon({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 18 17"
-      className={cn('w-4 h-4 shrink-0', className)}
+      className={cn('w-3.5 h-3.5 shrink-0', className)}
       aria-hidden
     >
       <path
@@ -60,7 +60,7 @@ export function ExperienceCartChip({
       data-testid="photo-styler-cta-button"
       aria-label={`View cart – ${formattedPrice} (${itemCount} items)`}
       className={cn(
-        'inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:scale-[1.02] cursor-pointer',
+        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors hover:scale-[1.02] cursor-pointer text-sm',
         isLight
           ? 'bg-white/90 hover:bg-white text-neutral-900 border border-neutral-200/60'
           : 'bg-black/65 hover:bg-black/80 text-white border border-white/10 backdrop-blur-sm',
@@ -68,7 +68,7 @@ export function ExperienceCartChip({
       )}
     >
       <span className="inline-flex items-center gap-2">
-        <span className="text-base font-semibold tabular-nums">{formattedPrice}</span>
+        <span className="font-semibold tabular-nums">{formattedPrice}</span>
         <CartBagIcon />
       </span>
     </button>

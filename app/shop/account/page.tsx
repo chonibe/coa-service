@@ -187,7 +187,7 @@ export default function AccountPage() {
                   Access your order history and manage your profile.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link href="/collector/login">
+                  <Link href="/login?redirect=/shop/account&intent=collector">
                     <Button variant="primary" size="lg">
                       Sign In
                     </Button>

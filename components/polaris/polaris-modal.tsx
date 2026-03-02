@@ -10,6 +10,8 @@ export interface PolarisModalProps extends React.HTMLAttributes<HTMLDivElement> 
   size?: 'small' | 'medium' | 'large' | 'fullWidth'
   onClose?: () => void
   children?: React.ReactNode
+  /** Optional class for the overlay container (e.g. z-[80] for high-z contexts) */
+  overlayClassName?: string
 }
 
 const sizeMap = {
@@ -27,6 +29,7 @@ export function PolarisModal({
   children,
   className,
   style,
+  overlayClassName,
   ...props
 }: PolarisModalProps) {
   React.useEffect(() => {
@@ -47,7 +50,7 @@ export function PolarisModal({
 
   const overlay = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className={cn('fixed inset-0 z-50 flex items-center justify-center p-4', overlayClassName)}
       aria-modal="true"
       role="dialog"
       aria-labelledby={title ? 'polaris-modal-title' : undefined}

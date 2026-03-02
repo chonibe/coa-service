@@ -4,8 +4,10 @@ import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Checkbox, Label } from '@/components/ui'
 import { PaymentStep } from './PaymentStep'
-import { PayPalButton } from './PayPalButton'
+import { AddressModal } from './AddressModal'
+import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 
 interface CartLineItem {
   productId: string
@@ -35,12 +37,20 @@ export interface PaymentMethodsModalProps {
     addressLine1?: string
     addressLine2?: string
     city?: string
+    state?: string
     postalCode?: string
     phoneNumber?: string
   }
   onSuccess: (redirectUrl: string) => void
   onError: (message: string) => void
   onPaymentMethodChange?: (type: string) => void
+  /** Billing address section: same as Address + add billing address */
+  billingAddress?: CheckoutAddress | null
+  sameAsShipping?: boolean
+  onSameAsShippingChange?: (v: boolean) => void
+  onBillingAddressSave?: (addr: CheckoutAddress) => void
+  /** Preloaded checkout session clientSecret – starts loading immediately when cart opens */
+  preloadedClientSecret?: string | null
 }
 
 export function PaymentMethodsModal({
@@ -57,7 +67,25 @@ export function PaymentMethodsModal({
   onSuccess,
   onError,
   onPaymentMethodChange,
+  billingAddress,
+  sameAsShipping = true,
+  onSameAsShippingChange,
+  onBillingAddressSave,
+  preloadedClientSecret,
 }: PaymentMethodsModalProps) {
+  const [billingModalOpen, setBillingModalOpen] = React.useState(false)
+  const showBillingSection = onSameAsShippingChange != null && onBillingAddressSave != null
+
+  const handleSameAsChange = (checked: boolean) => {
+    onSameAsShippingChange?.(checked)
+    if (checked) setBillingModalOpen(false)
+  }
+
+  const handleBillingSave = (addr: CheckoutAddress) => {
+    onBillingAddressSave?.(addr)
+    setBillingModalOpen(false)
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -95,23 +123,6 @@ export function PaymentMethodsModal({
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4" data-testid="stripe-payment-element-loaded">
-            <PayPalButton
-              items={items}
-              total={total}
-              shippingAddress={shippingAddress}
-              onSuccess={onSuccess}
-              onError={onError}
-            />
-            {process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID && (
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-neutral-200" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-white px-2 text-neutral-500">Or pay with card</span>
-                </div>
-              </div>
-            )}
             <PaymentStep
               compact
               formId="checkout-payment-form"
@@ -126,10 +137,48 @@ export function PaymentMethodsModal({
               onSuccess={onSuccess}
               onError={onError}
               onPaymentMethodChange={onPaymentMethodChange}
+              preloadedClientSecret={preloadedClientSecret}
             />
+            {showBillingSection && (
+              <div className="mt-6 border-t border-neutral-200 pt-6">
+                <h3 className="text-sm font-medium text-neutral-950">Billing address</h3>
+                <div className="mt-3 flex items-center gap-2">
+                  <Checkbox
+                    id="same-as-address"
+                    checked={sameAsShipping}
+                    onCheckedChange={(c) => handleSameAsChange(!!c)}
+                  />
+                  <Label htmlFor="same-as-address" className="text-sm text-neutral-700 cursor-pointer">
+                    Same as Address
+                  </Label>
+                </div>
+                {!sameAsShipping && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setBillingModalOpen(true)}
+                      className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+                    >
+                      {billingAddress
+                        ? `${billingAddress.addressLine1}, ${billingAddress.city}`
+                        : 'Add billing address'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+      {showBillingSection && (
+        <AddressModal
+          open={billingModalOpen}
+          onOpenChange={setBillingModalOpen}
+          initialAddress={billingAddress ?? undefined}
+          onSave={handleBillingSave}
+          addressType="billing"
+        />
+      )}
     </Dialog.Root>
   )
 }

@@ -26,6 +26,7 @@ export interface CheckoutAddress {
   addressLine1: string
   addressLine2?: string
   city: string
+  state?: string
   postalCode: string
   phoneCountryCode: string
   phoneNumber: string

@@ -94,3 +94,22 @@ export const PHONE_DIAL_OPTIONS = [
 export function getPhoneCodeForCountry(countryCode: string): string {
   return COUNTRY_PHONE_CODES[countryCode] ?? '+1'
 }
+
+/** Map dial code → country code (for inferring country from autofilled phone) */
+export const PHONE_CODE_TO_COUNTRY: Record<string, string> = {
+  '+1': 'US',
+  '+44': 'GB',
+  '+61': 'AU',
+  '+49': 'DE',
+  '+33': 'FR',
+  '+39': 'IT',
+  '+34': 'ES',
+  '+31': 'NL',
+  '+972': 'IL',
+  '+81': 'JP',
+  '+82': 'KR',
+  '+52': 'MX',
+  '+55': 'BR',
+  '+91': 'IN',
+  '+86': 'CN',
+}

@@ -30,6 +30,7 @@ interface CreateCheckoutSessionRequest {
     addressLine1?: string
     addressLine2?: string
     city?: string
+    state?: string
     postalCode?: string
     phoneNumber?: string
   }
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
         addressLine1: shippingAddress.addressLine1,
         addressLine2: shippingAddress.addressLine2,
         city: shippingAddress.city,
+        state: shippingAddress.state,
         postalCode: shippingAddress.postalCode,
         country: shippingAddress.country,
         phoneNumber: shippingAddress.phoneNumber,
@@ -111,6 +113,11 @@ export async function POST(request: NextRequest) {
       customer_email: email || undefined,
       payment_method_types: ['card', 'link', 'paypal'],
       automatic_tax: { enabled: false },
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
+      payment_intent_data: {
+        setup_future_usage: 'off_session',
+      },
       metadata,
       line_items: items.map((item) => ({
         price_data: {

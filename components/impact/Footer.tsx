@@ -5,15 +5,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Container } from './Container'
 
-function openTawkChat() {
-  if (typeof window !== 'undefined') {
-    const api = (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API
-    if (api) {
-      api.showWidget?.()
-      api.maximize?.()
-    }
-  }
-}
+import { openTawkChat } from '@/lib/tawk'
 import { PaymentIcons } from './PaymentIcons'
 import { Input } from './Input'
 import { Button } from './Button'

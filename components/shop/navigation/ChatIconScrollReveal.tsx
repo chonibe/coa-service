@@ -3,14 +3,7 @@
 import { useState, useEffect } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-function openTawkChat() {
-  if (typeof window !== 'undefined' && (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API) {
-    const api = (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API
-    api?.showWidget()
-    api?.maximize()
-  }
-}
+import { openTawkChat } from '@/lib/tawk'
 
 export interface ChatIconScrollRevealProps {
   /** Scroll threshold in pixels - icon appears when scrollY exceeds this. Default: 70vh */

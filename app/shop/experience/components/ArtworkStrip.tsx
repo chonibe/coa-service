@@ -164,9 +164,7 @@ function ArtworkCard({
       className={cn(
         'relative rounded-xl overflow-hidden transition-all duration-200',
         isInCart && 'overflow-visible',
-        isInCart && 'bg-neutral-900',
-        !isLampSelection && isPreviewed && !isInCart && 'opacity-90',
-        !isLampSelection && !isPreviewed && !isInCart && 'opacity-85 hover:opacity-100'
+        isInCart && 'bg-neutral-900'
       )}
     >
       <div
@@ -227,7 +225,7 @@ function ArtworkCard({
       </div>
 
       <div className={cn(
-        'p-2 pt-3 flex items-start gap-1 border-t transition-colors overflow-visible rounded-b-xl',
+        'px-2 py-1.5 flex items-center gap-1 border-t transition-colors overflow-hidden rounded-b-xl',
         isInCart
           ? 'border-white/20 bg-neutral-900/80 backdrop-blur-xl backdrop-saturate-150'
           : 'border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150'
@@ -286,7 +284,7 @@ function ArtworkCard({
             className={cn(
               'flex items-center justify-center transition-colors shrink-0 overflow-visible',
               isInCart
-                ? 'min-w-[28px] min-h-[28px] p-0 text-green-500 hover:text-green-600'
+                ? 'h-6 w-6 p-0 text-green-500 hover:text-green-600'
                 : 'h-6 px-2.5 rounded-md border border-white/40 bg-white/60 backdrop-blur-xl text-neutral-600 hover:border-neutral-400 hover:bg-white/80',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
@@ -401,7 +399,7 @@ export function ArtworkStrip({
               transform: `translateY(${virtualRow.start}px)`,
             }}
           >
-            <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-6 md:gap-x-3 md:gap-y-8">
               {product1 && (
                 <ArtworkCard
                   key={product1.id}

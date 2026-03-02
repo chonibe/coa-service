@@ -83,6 +83,7 @@ function CartContentInner() {
             addressLine1: checkout.address.addressLine1,
             addressLine2: checkout.address.addressLine2,
             city: checkout.address.city,
+            state: checkout.address.state,
             postalCode: checkout.address.postalCode,
             phoneCountryCode: checkout.address.phoneCountryCode,
             phoneNumber: checkout.address.phoneNumber,

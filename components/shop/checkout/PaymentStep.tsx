@@ -44,6 +44,7 @@ export interface PaymentStepProps {
     addressLine1?: string
     addressLine2?: string
     city?: string
+    state?: string
     postalCode?: string
     phoneNumber?: string
   }
@@ -53,6 +54,10 @@ export interface PaymentStepProps {
   renderTotal?: (value: number) => React.ReactNode
   /** Called when the selected payment method changes (e.g. "google_pay", "paypal", "card") */
   onPaymentMethodChange?: (type: string) => void
+  /** Called when the checkout session has expired; parent can reset to fetch a new session */
+  onSessionExpired?: () => void
+  /** Preloaded clientSecret from parent (e.g. from cart drawer preload) – skips fetch when valid */
+  preloadedClientSecret?: string | null
 }
 
 /** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
@@ -96,6 +101,7 @@ function PaymentFormInner({
   compact,
   formId,
   onPaymentMethodChange,
+  onSessionExpired,
 }: Omit<PaymentStepProps, 'customerEmail'>) {
   const handlePaymentChange = React.useCallback(
     (event: { value?: { type?: string } }) => {
@@ -131,13 +137,22 @@ function PaymentFormInner({
       const result = await checkout.confirm()
 
       if (result.type === 'error') {
-        setPaymentError(result.error?.message ?? 'Payment failed')
-        onError(result.error?.message ?? 'Payment failed')
+        const errMsg = result.error?.message ?? 'Payment failed'
+        setPaymentError(errMsg)
+        onError(errMsg)
         setLoading(false)
+        const isExpired = /expired|session/i.test(errMsg)
+        if (isExpired && onSessionExpired) onSessionExpired()
         return
       }
 
       if (result.type === 'redirect') {
+        try {
+          sessionStorage.setItem('sc_checkout_items', JSON.stringify(items))
+          sessionStorage.setItem('sc_checkout_address', JSON.stringify(shippingAddress))
+        } catch {
+          /* ignore */
+        }
         onSuccess(result.redirectUrl)
         return
       }
@@ -145,6 +160,8 @@ function PaymentFormInner({
       const msg = err instanceof Error ? err.message : 'Something went wrong'
       setPaymentError(msg)
       onError(msg)
+      const isExpired = /expired|session/i.test(msg)
+      if (isExpired && onSessionExpired) onSessionExpired()
     } finally {
       setLoading(false)
     }
@@ -179,7 +196,14 @@ function PaymentFormInner({
             onChange={handlePaymentChange}
           />
         </div>
-        {paymentError && <p className="text-center text-xs text-red-500">{paymentError}</p>}
+        {paymentError && (
+          <div className="space-y-2">
+            <p className="text-center text-xs text-red-500">{paymentError}</p>
+            <p className="text-center text-xs text-neutral-500">
+              Try a different payment method or card, then try again.
+            </p>
+          </div>
+        )}
       </form>
     )
   }
@@ -268,7 +292,12 @@ function PaymentFormInner({
       </div>
 
       {paymentError && (
-        <p className="text-center text-xs text-red-500">{paymentError}</p>
+        <div className="space-y-2 rounded-lg bg-red-50 px-3 py-2">
+          <p className="text-sm text-red-600">{paymentError}</p>
+          <p className="text-xs text-neutral-600">
+            Try a different payment method or card, then try again.
+          </p>
+        </div>
       )}
 
       {/* Actions */}
@@ -307,9 +336,29 @@ function PaymentFormInner({
 }
 
 export function PaymentStep(props: PaymentStepProps) {
-  const [clientSecret, setClientSecret] = React.useState<string | null>(null)
+  const { preloadedClientSecret, ...restProps } = props
+  const [clientSecret, setClientSecret] = React.useState<string | null>(
+    () => preloadedClientSecret ?? null
+  )
   const [intentError, setIntentError] = React.useState<string | null>(null)
-  const fetchedRef = React.useRef(false)
+  const [retryKey, setRetryKey] = React.useState(0)
+  const fetchedRef = React.useRef(!!preloadedClientSecret)
+
+  const resetAndRetry = React.useCallback(() => {
+    fetchedRef.current = false
+    setClientSecret(null)
+    setIntentError(null)
+    setRetryKey((k) => k + 1)
+  }, [])
+
+  React.useEffect(() => {
+    if (preloadedClientSecret) {
+      setClientSecret(preloadedClientSecret)
+      fetchedRef.current = true
+    } else {
+      fetchedRef.current = false
+    }
+  }, [preloadedClientSecret])
 
   React.useEffect(() => {
     if (fetchedRef.current) return
@@ -329,8 +378,11 @@ export function PaymentStep(props: PaymentStepProps) {
         if (!r.ok) throw new Error(data.error || 'Could not initialize checkout')
         setClientSecret(data.clientSecret)
       })
-      .catch((err) => setIntentError(err?.message || 'Could not load payment form'))
-  }, [props.items, props.customerEmail, props.shippingAddress])
+      .catch((err) => {
+        setIntentError(err?.message || 'Could not load payment form')
+        fetchedRef.current = false
+      })
+  }, [props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret])
 
   if (!stripePromise) {
     return (
@@ -344,15 +396,24 @@ export function PaymentStep(props: PaymentStepProps) {
     return (
       <div className="space-y-3 p-2">
         <p className="text-sm text-red-500">{intentError}</p>
-        {props.onBack && (
+        <div className="flex gap-2">
           <button
             type="button"
-            onClick={props.onBack}
+            onClick={resetAndRetry}
             className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
-            Back
+            Try again
           </button>
-        )}
+          {props.onBack && (
+            <button
+              type="button"
+              onClick={props.onBack}
+              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              Back
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -374,7 +435,10 @@ export function PaymentStep(props: PaymentStepProps) {
         elementsOptions: { appearance },
       }}
     >
-      <PaymentFormInner {...props} />
+      <PaymentFormInner
+        {...props}
+        onSessionExpired={props.onSessionExpired ?? resetAndRetry}
+      />
     </CheckoutProvider>
   )
 }

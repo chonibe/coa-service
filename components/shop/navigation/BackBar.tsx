@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowLeft, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { openTawkChat } from '@/lib/tawk'
 
 const HOME_ICON_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
 
@@ -30,13 +31,6 @@ export interface BackBarProps {
  * Minimal top bar with back button, home icon, and optional legal links.
  * Used on shop pages to go back or return to the street-collector page.
  */
-function openTawkChat() {
-  if (typeof window !== 'undefined' && (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API) {
-    const api = (window as Window & { Tawk_API?: { showWidget: () => void; maximize: () => void } }).Tawk_API
-    api?.showWidget()
-    api?.maximize()
-  }
-}
 
 export function BackBar({
   href = '/shop/street-collector',

@@ -34,10 +34,23 @@ const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
 }
 
+/** Validate redirect path to prevent open redirects - must be relative path starting with / */
+function isValidRedirectPath(path: string | null): path is string {
+  if (!path || typeof path !== 'string') return false
+  const decoded = decodeURIComponent(path).trim()
+  return decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes('://')
+}
+
 /**
  * Process user login after authentication - handles vendor/collector/admin routing using RBAC
  */
-async function processUserLogin(user: any, email: string | null, origin: string, cookieStore: ReturnType<typeof cookies>) {
+async function processUserLogin(
+  user: any,
+  email: string | null,
+  origin: string,
+  cookieStore: ReturnType<typeof cookies>,
+  postLoginRedirect?: string | null
+) {
   try {
     const userId = user.id
     console.log(`[auth/callback] Processing login for user: ${userId}, email: ${email}`)
@@ -265,12 +278,16 @@ async function processUserLogin(user: any, email: string | null, origin: string,
         // Refresh roles after creation
         const updatedRoles = await getUserActiveRoles(userId)
         const preferredDashboard = getPreferredDashboard(updatedRoles, loginIntent)
+        const redirectPath =
+          loginIntent === 'collector' && isValidRedirectPath(postLoginRedirect)
+            ? postLoginRedirect!
+            : preferredDashboard
 
-        const signupResponse = NextResponse.redirect(new URL(preferredDashboard, origin), { status: 307 })
+        const signupResponse = NextResponse.redirect(new URL(redirectPath, origin), { status: 307 })
         deleteCookie(signupResponse, LOGIN_INTENT_COOKIE)
         deleteCookie(signupResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
 
-        // Set active_role cookie for new collector signup
+        // Set active_role cookie for new collector signup (redirectPath may be /shop/experience)
         signupResponse.cookies.set('active_role', 'collector', {
           path: '/',
           httpOnly: false,
@@ -322,10 +339,14 @@ async function processUserLogin(user: any, email: string | null, origin: string,
 
     // Determine the preferred dashboard based on roles and login intent
     const preferredDashboard = getPreferredDashboard(roles, loginIntent)
-    console.log(`[auth/callback] Preferred dashboard: ${preferredDashboard}`)
+    const redirectPath =
+      loginIntent === 'collector' && isValidRedirectPath(postLoginRedirect)
+        ? postLoginRedirect!
+        : preferredDashboard
+    console.log(`[auth/callback] Redirect path: ${redirectPath}${redirectPath !== preferredDashboard ? ` (post-login override)` : ''}`)
 
     // Set appropriate session cookies based on the target dashboard
-    const redirectResponse = NextResponse.redirect(new URL(preferredDashboard, origin), { status: 307 })
+    const redirectResponse = NextResponse.redirect(new URL(redirectPath, origin), { status: 307 })
 
     // Clean up login intent cookie
     deleteCookie(redirectResponse, LOGIN_INTENT_COOKIE)
@@ -1207,8 +1228,9 @@ export async function GET(request: NextRequest) {
     return errorResponse
   }
 
-  // Use RBAC-based login processing
-  return await processUserLogin(user, email, finalRedirectBase, cookieStore)
+  // Use RBAC-based login processing (pass redirect from callback URL for collector → experience flow)
+  const redirectParam = request.nextUrl.searchParams.get('redirect')
+  return await processUserLogin(user, email, finalRedirectBase, cookieStore, redirectParam)
   } catch (error: any) {
     // Catch all errors and redirect to login with error message
     console.error('[auth/callback] Unexpected error in auth callback:', {

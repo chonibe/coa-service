@@ -26,44 +26,57 @@ Current config has `images: { unoptimized: true }` in [next.config.js](../../../
 
 ## Checkout & Payment (Stripe)
 
-The experience checkout uses a **multi-step in-drawer flow** powered by Stripe Payment Element with PaymentIntent. All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
+The experience checkout uses a **single-screen drawer flow** powered by Stripe Checkout Sessions API with embedded Payment Element (`ui_mode: "custom"`). All 4 payment methods (Credit Card, Google Pay, Link, PayPal) are supported within the OrderBar drawer.
 
-### Multi-Step Checkout Flow
+### Checkout Flow
 
-1. **Step 1 -- Cart Review**: Items, quantities, lamp discount, gift note, totals
-2. **Step 2 -- Shipping Address**: Inline address form (email, name, country, address, phone)
-3. **Step 3 -- Payment & Confirm**: Stripe Payment Element (card/GPay/Link/PayPal), promo code, order summary, Place Order
+1. **Cart Review**: Items, lamp discount, gift note, totals, Address, Payment, Promo rows
+2. **Address Modal**: Collect shipping address (email, name, country, address, city, state/province, postal code, phone); "Same as billing" when billing exists
+3. **Payment Modal**: Stripe Payment Element (card/GPay/Link/PayPal), billing address ("Same as Address"), promo codes
+4. **Place Order**: Submits Payment Element; redirects to success on completion
+
+### Address Form Enhancements
+
+- **Mapbox Address Autocomplete**: Street address field uses Mapbox Geocoding API to suggest addresses; selecting one auto-fills city, state, postal code, country.
+- **State/Province by Country**: US, CA, AU, MX show a dropdown of states/provinces; other countries show a free-text field.
+- **Phone with Country Code Detection**: Pasting or typing a full international number (e.g. `+44 7911 123456`) auto-detects the country code, updates the country dropdown, and strips the code from the local number.
 
 ### Payment Methods
 
 | Method | How it works | Redirect? |
 |--------|-------------|-----------|
-| **Credit Card** | Stripe Payment Element card form → `checkout.confirm` | No |
+| **Credit Card** | Payment Element card form → `checkout.confirm()` | No |
 | **Google Pay** | Payment Element shows GPay button | No |
-| **Link** | Payment Element shows Link autofill | No |
-| **PayPal (Stripe)** | Payment Element PayPal tab (if enabled in Stripe) | Yes |
-| **PayPal (Direct)** | `@paypal/react-paypal-js` Smart Buttons when `NEXT_PUBLIC_PAYPAL_CLIENT_ID` set | Yes (popup or redirect) |
+| **Link** | Payment Element shows Link autofill; `setup_future_usage` saves for returns | No |
+| **PayPal** | Payment Element shows PayPal option → redirect to PayPal | Yes (required) |
+
+### Stripe Checkout Session Features
+
+- `allow_promotion_codes: true` — Native Stripe promo codes in Payment Element
+- `billing_address_collection: 'auto'` — Collect billing when needed
+- `payment_intent_data.setup_future_usage: 'off_session'` — Save cards for Link and returning customers
+- Session expiry recovery — "Try again" fetches new session when expired
 
 ### Key Components
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| `OrderBar` | [`app/shop/experience/components/OrderBar.tsx`](../../../app/shop/experience/components/OrderBar.tsx) | 3-step drawer checkout |
-| `InlineAddressForm` | [`components/shop/checkout/InlineAddressForm.tsx`](../../../components/shop/checkout/InlineAddressForm.tsx) | Compact address form for drawer |
-| `PaymentStep` | [`components/shop/checkout/PaymentStep.tsx`](../../../components/shop/checkout/PaymentStep.tsx) | Stripe Payment Element + order confirm |
-| `CheckoutContext` | [`lib/shop/CheckoutContext.tsx`](../../../lib/shop/CheckoutContext.tsx) | Step state, address, payment data |
+| `ExperienceSlideoutMenu` | [`app/shop/experience/ExperienceSlideoutMenu.tsx`](../../../app/shop/experience/ExperienceSlideoutMenu.tsx) | Hamburger menu with auth slide-up |
+| `AuthSlideupMenu` | [`components/shop/auth/AuthSlideupMenu.tsx`](../../../components/shop/auth/AuthSlideupMenu.tsx) | Login/signup slide-up (Email OTP, Google, Facebook) |
+| `OrderBar` | [`app/shop/experience/components/OrderBar.tsx`](../../../app/shop/experience/components/OrderBar.tsx) | Drawer checkout with Address, Payment, Promo |
+| `AddressModal` | [`components/shop/checkout/AddressModal.tsx`](../../../components/shop/checkout/AddressModal.tsx) | Shipping address form; "Same as billing" option |
+| `PaymentMethodsModal` | [`components/shop/checkout/PaymentMethodsModal.tsx`](../../../components/shop/checkout/PaymentMethodsModal.tsx) | Payment Element + billing section |
+| `PaymentStep` | [`components/shop/checkout/PaymentStep.tsx`](../../../components/shop/checkout/PaymentStep.tsx) | CheckoutProvider, Payment Element, error recovery |
+| `CheckoutContext` | [`lib/shop/CheckoutContext.tsx`](../../../lib/shop/CheckoutContext.tsx) | Address, billing, sameAsShipping, promo state |
 
 ### API Endpoints (Checkout)
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/checkout/create-checkout-session` | Creates Stripe Checkout Session (ui_mode: custom) for experience checkout |
-| `POST /api/checkout/complete-order` | Creates Shopify order after successful payment (idempotent) |
-| `POST /api/checkout/paypal/create-order` | Creates PayPal order for Smart Buttons flow |
-| `POST /api/checkout/paypal/capture` | Captures PayPal order, creates Shopify order, records purchase |
+| `POST /api/checkout/create-checkout-session` | Creates Checkout Session (`ui_mode: custom`) for embedded Payment Element |
 | `POST /api/checkout/create` | Checkout Session (main shop cart, credits, zero-dollar flows) |
-| `POST /api/checkout/create-setup-intent` | SetupIntent for card + Link (legacy, used by main cart) |
-| `POST /api/checkout/confirm-payment` | Confirm PaymentIntent with saved card (legacy, used by main cart) |
+| `POST /api/checkout/complete-order` | Legacy PaymentIntent completion (idempotent) |
+| `POST /api/checkout/create-setup-intent` | SetupIntent for card + Link (legacy, main cart) |
 
 ### Stripe Configuration
 
@@ -71,7 +84,7 @@ The experience checkout uses a **multi-step in-drawer flow** powered by Stripe P
 - Payment methods enabled in Stripe Dashboard: card, link, paypal
 - Environment variables: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) and [docs/COMMIT_LOGS/paypal-checkout-integration-2026-03-01.md](../COMMIT_LOGS/paypal-checkout-integration-2026-03-01.md) for configuration details.
+See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) for earlier configuration details.
 
 ## API Endpoints (Products)
 

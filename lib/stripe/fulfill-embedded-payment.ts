@@ -10,6 +10,7 @@ interface ShippingAddressInput {
   addressLine1?: string
   addressLine2?: string
   city?: string
+  state?: string
   postalCode?: string
   country?: string
   phoneNumber?: string
@@ -46,7 +47,7 @@ export async function createAndCompleteOrder(
         address1: address.addressLine1 || '',
         address2: address.addressLine2 || '',
         city: address.city || '',
-        province: '',
+        province: address.state || '',
         country: address.country || 'US',
         zip: address.postalCode || '',
         phone: address.phoneNumber || '',
@@ -57,7 +58,7 @@ export async function createAndCompleteOrder(
         address1: address.addressLine1 || '',
         address2: address.addressLine2 || '',
         city: address.city || '',
-        province: '',
+        province: address.state || '',
         country: address.country || 'US',
         zip: address.postalCode || '',
       },

@@ -13,20 +13,28 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Checkbox,
 } from '@/components/ui'
 import {
-  COUNTRY_OPTIONS,
   COUNTRY_PHONE_CODES,
   PHONE_DIAL_OPTIONS,
+  PHONE_CODE_TO_COUNTRY,
   getPhoneCodeForCountry,
 } from '@/lib/data/countries'
+import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { useShippingCountries } from '@/lib/shop/useShippingCountries'
+import { AddressAutocompleteInput } from './AddressAutocompleteInput'
 
 export interface AddressModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialAddress?: CheckoutAddress | null
   onSave: (address: CheckoutAddress) => void
+  /** When provided and complete, shows "Same as billing" option to use billing as delivery address */
+  billingAddress?: CheckoutAddress | null
+  /** 'shipping' | 'billing' — enables browser autofill from saved addresses (shipping/billing prefixes) */
+  addressType?: 'shipping' | 'billing'
 }
 
 const emptyAddress: CheckoutAddress = {
@@ -36,6 +44,7 @@ const emptyAddress: CheckoutAddress = {
   addressLine1: '',
   addressLine2: '',
   city: '',
+  state: '',
   postalCode: '',
   phoneCountryCode: '+1',
   phoneNumber: '',
@@ -56,23 +65,56 @@ function validateAddress(addr: Partial<CheckoutAddress>): string | null {
   return null
 }
 
+function isAddressComplete(addr: CheckoutAddress | null | undefined): boolean {
+  return !!addr && validateAddress(addr) === null
+}
+
 export function AddressModal({
   open,
   onOpenChange,
   initialAddress,
   onSave,
+  billingAddress,
+  addressType = 'shipping',
 }: AddressModalProps) {
+  const countryOptions = useShippingCountries()
+  const ac = (field: string) => (addressType ? `${addressType} ${field}` : field)
   const [form, setForm] = React.useState<CheckoutAddress>(
     () => initialAddress ?? { ...emptyAddress }
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
+  const [sameAsBilling, setSameAsBilling] = React.useState(false)
+  const [addressExpanded, setAddressExpanded] = React.useState(false)
+  const hasValidBilling = isAddressComplete(billingAddress)
 
   React.useEffect(() => {
     if (open) {
       setForm(initialAddress ?? { ...emptyAddress })
       setValidationError(null)
+      setSameAsBilling(false)
+      setAddressExpanded(!!(initialAddress?.addressLine1 || initialAddress?.city || initialAddress?.postalCode || initialAddress?.phoneNumber))
     }
   }, [open, initialAddress])
+
+  /* Auto-set country from session geo (Vercel IP) when form opens without an existing address */
+  React.useEffect(() => {
+    if (!open) return
+    if (initialAddress?.country) return
+    fetch('/api/geo/country')
+      .then((r) => r.json())
+      .then((data: { country: string | null }) => {
+        const code = data.country?.toUpperCase()
+        if (code && countryOptions.some((c) => c.code === code)) {
+          setForm((p) => ({
+            ...p,
+            country: code,
+            phoneCountryCode: getPhoneCodeForCountry(code),
+            state: '',
+          }))
+        }
+      })
+      .catch(() => {})
+  }, [open, initialAddress, countryOptions])
 
   React.useEffect(() => {
     if (form.country && !COUNTRY_PHONE_CODES[form.country]) {
@@ -80,12 +122,107 @@ export function AddressModal({
     }
   }, [form.country])
 
+  /* Sync form state from browser autofill – updates inputs AND dropdowns (Country, Phone code) */
+  const formRef = React.useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    if (!open) return
+    const syncFromAutofill = () => {
+      const root = formRef.current
+      if (!root) return
+      const updates: Partial<CheckoutAddress> = {}
+      const emailEl = root.querySelector<HTMLInputElement>('[data-testid="address-email"], #address-email')
+      const fullNameEl = root.querySelector<HTMLInputElement>('#address-fullname')
+      const line1El = root.querySelector<HTMLInputElement>('#address-line1')
+      const line2El = root.querySelector<HTMLInputElement>('#address-line2')
+      const cityEl = root.querySelector<HTMLInputElement>('#address-city')
+      const postalEl = root.querySelector<HTMLInputElement>('#address-postal')
+      const phoneEl = root.querySelector<HTMLInputElement>('input[type="tel"]')
+      const countrySelect = root.querySelector<HTMLSelectElement>('#address-country-native')
+      if (emailEl?.value) updates.email = emailEl.value
+      if (fullNameEl?.value) updates.fullName = fullNameEl.value
+      if (line1El?.value) updates.addressLine1 = line1El.value
+      if (line2El?.value) updates.addressLine2 = line2El.value
+      if (cityEl?.value) updates.city = cityEl.value
+      if (postalEl?.value) updates.postalCode = postalEl.value
+      const hasTextAutofill = !!(updates.email || updates.fullName || updates.addressLine1 || updates.city || updates.postalCode)
+      if (hasTextAutofill && countrySelect?.value && countryOptions.some((c) => c.code === countrySelect!.value)) {
+        updates.country = countrySelect.value
+        updates.phoneCountryCode = getPhoneCodeForCountry(countrySelect.value)
+      }
+      if (phoneEl?.value) {
+        const raw = phoneEl.value.trim()
+        const plusMatch = raw.match(/^(\+\d{1,4})\s*(.*)$/)
+        if (plusMatch) {
+          const [, code, rest] = plusMatch
+          const dial = code!
+          if (PHONE_DIAL_OPTIONS.some((o) => o.dial === dial)) {
+            updates.phoneCountryCode = dial
+            updates.phoneNumber = rest.replace(/\D/g, '')
+          } else {
+            updates.phoneNumber = raw.replace(/\D/g, '')
+          }
+          const inferred = PHONE_CODE_TO_COUNTRY[dial]
+          if (inferred && !updates.country && hasTextAutofill) updates.country = inferred
+        } else {
+          updates.phoneNumber = raw.replace(/\D/g, '')
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        setForm((p) => ({ ...p, ...updates }))
+      }
+    }
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startId = setTimeout(() => {
+      intervalId = setInterval(syncFromAutofill, 150)
+      setTimeout(() => {
+        if (intervalId) clearInterval(intervalId)
+      }, 2500)
+    }, 100)
+    return () => {
+      clearTimeout(startId)
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [open, countryOptions])
+
   const handleCountryChange = (code: string) => {
     const phoneCode = getPhoneCodeForCountry(code)
-    setForm((p) => ({ ...p, country: code, phoneCountryCode: phoneCode }))
+    setForm((p) => ({ ...p, country: code, phoneCountryCode: phoneCode, state: '' }))
+  }
+
+  const statesForCountry = React.useMemo(
+    () => getStatesForCountry(form.country),
+    [form.country]
+  )
+  const hasStateDropdown = statesForCountry.length > 0
+
+  const handlePhoneChange = (raw: string) => {
+    const plusMatch = raw.trim().match(/^(\+\d{1,4})\s*(.*)$/)
+    if (plusMatch) {
+      const [, code, rest] = plusMatch
+      const dial = code!
+      if (PHONE_DIAL_OPTIONS.some((o) => o.dial === dial)) {
+        const updates: Partial<CheckoutAddress> = {
+          phoneCountryCode: dial,
+          phoneNumber: rest.replace(/\D/g, ''),
+        }
+        const inferred = PHONE_CODE_TO_COUNTRY[dial]
+        if (inferred) {
+          updates.country = inferred
+          updates.state = ''
+        }
+        setForm((p) => ({ ...p, ...updates }))
+        return
+      }
+    }
+    setForm((p) => ({ ...p, phoneNumber: raw.replace(/\D/g, '') }))
   }
 
   const handleDone = () => {
+    if (sameAsBilling && hasValidBilling && billingAddress) {
+      onSave(billingAddress)
+      onOpenChange(false)
+      return
+    }
     const err = validateAddress(form)
     if (err) {
       setValidationError(err)
@@ -140,7 +277,39 @@ export function AddressModal({
                 {validationError}
               </div>
             )}
-            <div className="space-y-4 address-form" data-testid="stripe-address-element-loaded">
+            {hasValidBilling && billingAddress && (
+              <div className="mb-4 flex items-center gap-2">
+                <Checkbox
+                  id="same-as-billing"
+                  checked={sameAsBilling}
+                  onCheckedChange={(c) => setSameAsBilling(!!c)}
+                />
+                <Label htmlFor="same-as-billing" className="text-sm text-neutral-700 cursor-pointer">
+                  Same as billing address
+                </Label>
+              </div>
+            )}
+            <div
+              ref={formRef}
+              key={open ? 'address-form-open' : 'address-form-closed'}
+              className={cn('space-y-4 address-form', sameAsBilling && 'pointer-events-none opacity-60')}
+              data-testid="stripe-address-element-loaded"
+            >
+              {/* Hidden native select for browser country autofill – we poll and sync to our Radix dropdown */}
+              <select
+                id="address-country-native"
+                autoComplete={ac('country-code')}
+                defaultValue={form.country}
+                className="absolute opacity-0 pointer-events-none h-0 w-0 overflow-hidden"
+                tabIndex={-1}
+                aria-hidden
+              >
+                {countryOptions.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
               <div>
                 <Label htmlFor="address-email" className="text-sm text-neutral-700">
                   Email
@@ -149,6 +318,7 @@ export function AddressModal({
                   id="address-email"
                   data-testid="address-email"
                   type="email"
+                  autoComplete={ac('email')}
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   className="mt-1.5"
@@ -162,6 +332,7 @@ export function AddressModal({
                 <Input
                   id="address-fullname"
                   type="text"
+                  autoComplete={ac('name')}
                   value={form.fullName}
                   onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
                   className="mt-1.5"
@@ -174,10 +345,10 @@ export function AddressModal({
                 </Label>
                 <Select value={form.country} onValueChange={handleCountryChange}>
                   <SelectTrigger id="address-country" className="mt-1.5">
-                    <SelectValue placeholder="Select country" />
+                    <SelectValue placeholder="United States" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRY_OPTIONS.map((c) => (
+                  <SelectContent className="z-[200]">
+                    {countryOptions.map((c) => (
                       <SelectItem key={c.code} value={c.code}>
                         {c.name}
                       </SelectItem>
@@ -189,87 +360,161 @@ export function AddressModal({
                 <Label htmlFor="address-line1" className="text-sm text-neutral-700">
                   Address line 1
                 </Label>
-                <Input
-                  id="address-line1"
-                  type="text"
-                  value={form.addressLine1}
-                  onChange={(e) => setForm((p) => ({ ...p, addressLine1: e.target.value }))}
+                <div
+                  onFocus={() => setAddressExpanded(true)}
+                  onClick={() => setAddressExpanded(true)}
                   className="mt-1.5"
-                  placeholder="Street address"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address-line2" className="text-sm text-neutral-700">
-                  Address line 2
-                </Label>
-                <Input
-                  id="address-line2"
-                  type="text"
-                  value={form.addressLine2 ?? ''}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, addressLine2: e.target.value || undefined }))
-                  }
-                  className="mt-1.5"
-                  placeholder="Apt., suite, unit number, etc. (optional)"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address-city" className="text-sm text-neutral-700">
-                  City
-                </Label>
-                <Input
-                  id="address-city"
-                  type="text"
-                  value={form.city}
-                  onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
-                  className="mt-1.5"
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address-postal" className="text-sm text-neutral-700">
-                  Postal code
-                </Label>
-                <Input
-                  id="address-postal"
-                  type="text"
-                  value={form.postalCode}
-                  onChange={(e) => setForm((p) => ({ ...p, postalCode: e.target.value }))}
-                  className="mt-1.5"
-                  placeholder="Postal code"
-                />
-              </div>
-              <div>
-                <Label className="text-sm text-neutral-700">Phone number</Label>
-                <div className="mt-1.5 flex gap-2">
-                  <Select
-                    value={form.phoneCountryCode}
-                    onValueChange={(v) =>
-                      setForm((p) => ({ ...p, phoneCountryCode: v }))
-                    }
-                  >
-                    <SelectTrigger className="w-24 shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PHONE_DIAL_OPTIONS.map(({ dial }) => (
-                        <SelectItem key={dial} value={dial}>
-                          {dial}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="tel"
-                    value={form.phoneNumber}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, phoneNumber: e.target.value }))
-                    }
-                    className="flex-1"
-                    placeholder="Phone number"
+                >
+                  <AddressAutocompleteInput
+                    id="address-line1"
+                    value={form.addressLine1}
+                    onChange={(v) => setForm((p) => ({ ...p, addressLine1: v }))}
+                    onSelect={(s) => {
+                      const validCountry = s.country && countryOptions.some((c) => c.code === s.country)
+                        ? s.country
+                        : undefined
+                      const states = validCountry ? getStatesForCountry(validCountry) : []
+                      const matchedState = s.state && states.length
+                        ? states.find(
+                            (st) =>
+                              st.name.toLowerCase() === s.state!.toLowerCase() ||
+                              st.code.toLowerCase() === s.state!.toLowerCase()
+                          )?.code ?? s.state
+                        : s.state ?? ''
+                      setForm((p) => ({
+                        ...p,
+                        addressLine1: s.addressLine1,
+                        city: s.city,
+                        state: matchedState,
+                        postalCode: s.postalCode,
+                        ...(validCountry && {
+                          country: validCountry,
+                          phoneCountryCode: getPhoneCodeForCountry(validCountry),
+                        }),
+                      }))
+                      setAddressExpanded(true)
+                    }}
+                    country={form.country}
+                    autoComplete={ac('address-line1')}
+                    placeholder="Street address"
                   />
                 </div>
               </div>
+              {addressExpanded && (
+                <>
+                  <div>
+                    <Label htmlFor="address-line2" className="text-sm text-neutral-700">
+                      Address line 2
+                    </Label>
+                    <Input
+                      id="address-line2"
+                      type="text"
+                      autoComplete={ac('address-line2')}
+                      value={form.addressLine2 ?? ''}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, addressLine2: e.target.value || undefined }))
+                      }
+                      className="mt-1.5"
+                      placeholder="Apt., suite, unit number, etc. (optional)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address-city" className="text-sm text-neutral-700">
+                      City
+                    </Label>
+                    <Input
+                      id="address-city"
+                      type="text"
+                      autoComplete={ac('address-level2')}
+                      value={form.city}
+                      onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                      className="mt-1.5"
+                      placeholder="City"
+                    />
+                  </div>
+                  {hasStateDropdown ? (
+                    <div>
+                      <Label htmlFor="address-state" className="text-sm text-neutral-700">
+                        State
+                      </Label>
+                      <Select
+                        value={form.state || ''}
+                        onValueChange={(v) => setForm((p) => ({ ...p, state: v }))}
+                      >
+                        <SelectTrigger id="address-state" className="mt-1.5">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[200]">
+                          {statesForCountry.map((s) => (
+                            <SelectItem key={s.code} value={s.code}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : form.country ? (
+                    <div>
+                      <Label htmlFor="address-state" className="text-sm text-neutral-700">
+                        State / Province
+                      </Label>
+                      <Input
+                        id="address-state"
+                        type="text"
+                        autoComplete={ac('address-level1')}
+                        value={form.state ?? ''}
+                        onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
+                        className="mt-1.5"
+                        placeholder="State or province"
+                      />
+                    </div>
+                  ) : null}
+                  <div>
+                    <Label htmlFor="address-postal" className="text-sm text-neutral-700">
+                      Postal code
+                    </Label>
+                    <Input
+                      id="address-postal"
+                      type="text"
+                      autoComplete={ac('postal-code')}
+                      value={form.postalCode}
+                      onChange={(e) => setForm((p) => ({ ...p, postalCode: e.target.value }))}
+                      className="mt-1.5"
+                      placeholder="Postal code"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-neutral-700">Phone number</Label>
+                    <div className="mt-1.5 flex gap-2">
+                      <Select
+                        value={form.phoneCountryCode}
+                        onValueChange={(v) =>
+                          setForm((p) => ({ ...p, phoneCountryCode: v }))
+                        }
+                      >
+                        <SelectTrigger className="w-24 shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[200]">
+                          {PHONE_DIAL_OPTIONS.map(({ dial }) => (
+                            <SelectItem key={dial} value={dial}>
+                              {dial}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="tel"
+                        autoComplete={ac('tel')}
+                        value={form.phoneNumber}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        className="flex-1"
+                        placeholder="Phone number"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Dialog.Content>

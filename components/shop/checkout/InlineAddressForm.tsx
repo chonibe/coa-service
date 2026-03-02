@@ -12,11 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui'
 import {
-  COUNTRY_OPTIONS,
   PHONE_DIAL_OPTIONS,
+  PHONE_CODE_TO_COUNTRY,
   getPhoneCodeForCountry,
 } from '@/lib/data/countries'
+import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 
 export interface InlineAddressFormProps {
   initialAddress?: CheckoutAddress | null
@@ -34,6 +36,7 @@ const emptyAddress: CheckoutAddress = {
   addressLine1: '',
   addressLine2: '',
   city: '',
+  state: '',
   postalCode: '',
   phoneCountryCode: '+1',
   phoneNumber: '',
@@ -61,6 +64,7 @@ export function InlineAddressForm({
   submitLabel = 'Continue to Payment',
   compact = false,
 }: InlineAddressFormProps) {
+  const countryOptions = useShippingCountries()
   const [form, setForm] = React.useState<CheckoutAddress>(
     () => initialAddress ?? { ...emptyAddress }
   )
@@ -70,9 +74,56 @@ export function InlineAddressForm({
     if (initialAddress) setForm(initialAddress)
   }, [initialAddress])
 
+  /* Auto-set country from session geo (Vercel IP) when form has no address yet */
+  React.useEffect(() => {
+    if (initialAddress?.country) return
+    fetch('/api/geo/country')
+      .then((r) => r.json())
+      .then((data: { country: string | null }) => {
+        const code = data.country?.toUpperCase()
+        if (code && countryOptions.some((c) => c.code === code)) {
+          setForm((p) => ({
+            ...p,
+            country: code,
+            phoneCountryCode: getPhoneCodeForCountry(code),
+            state: '',
+          }))
+        }
+      })
+      .catch(() => {})
+  }, [initialAddress?.country, countryOptions])
+
   const handleCountryChange = (code: string) => {
     const phoneCode = getPhoneCodeForCountry(code)
-    setForm((p) => ({ ...p, country: code, phoneCountryCode: phoneCode }))
+    setForm((p) => ({ ...p, country: code, phoneCountryCode: phoneCode, state: '' }))
+  }
+
+  const statesForCountry = React.useMemo(
+    () => getStatesForCountry(form.country),
+    [form.country]
+  )
+  const hasStateDropdown = statesForCountry.length > 0
+
+  const handlePhoneChange = (raw: string) => {
+    const plusMatch = raw.trim().match(/^(\+\d{1,4})\s*(.*)$/)
+    if (plusMatch) {
+      const [, code, rest] = plusMatch
+      const dial = code!
+      if (PHONE_DIAL_OPTIONS.some((o) => o.dial === dial)) {
+        const updates: Partial<CheckoutAddress> = {
+          phoneCountryCode: dial,
+          phoneNumber: rest.replace(/\D/g, ''),
+        }
+        const inferred = PHONE_CODE_TO_COUNTRY[dial]
+        if (inferred) {
+          updates.country = inferred
+          updates.state = ''
+        }
+        setForm((p) => ({ ...p, ...updates }))
+        return
+      }
+    }
+    setForm((p) => ({ ...p, phoneNumber: raw.replace(/\D/g, '') }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -125,7 +176,7 @@ export function InlineAddressForm({
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
           <SelectContent>
-            {COUNTRY_OPTIONS.map((c) => (
+            {countryOptions.map((c) => (
               <SelectItem key={c.code} value={c.code}>
                 {c.name}
               </SelectItem>
@@ -170,7 +221,36 @@ export function InlineAddressForm({
             placeholder="City"
           />
         </div>
-        <div>
+        {hasStateDropdown ? (
+          <div>
+            <Label htmlFor="inline-state" className="text-xs text-neutral-600">State</Label>
+            <Select value={form.state || ''} onValueChange={(v) => setForm((p) => ({ ...p, state: v }))}>
+              <SelectTrigger id="inline-state" className="mt-1 h-9 text-sm">
+                <SelectValue placeholder="State" />
+              </SelectTrigger>
+              <SelectContent>
+                {statesForCountry.map((s) => (
+                  <SelectItem key={s.code} value={s.code}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : form.country ? (
+          <div>
+            <Label htmlFor="inline-state" className="text-xs text-neutral-600">State / Province</Label>
+            <Input
+              id="inline-state"
+              type="text"
+              value={form.state ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
+              className="mt-1 h-9 text-sm"
+              placeholder="State or province"
+            />
+          </div>
+        ) : null}
+        <div className={(hasStateDropdown || form.country) ? 'col-span-2' : ''}>
           <Label htmlFor="inline-postal" className="text-xs text-neutral-600">Postal code</Label>
           <Input
             id="inline-postal"
@@ -204,7 +284,7 @@ export function InlineAddressForm({
           <Input
             type="tel"
             value={form.phoneNumber}
-            onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             className="flex-1 h-9 text-sm"
             placeholder="Phone number"
           />

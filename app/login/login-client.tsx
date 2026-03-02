@@ -52,6 +52,10 @@ export default function LoginClient() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [loginType, setLoginType] = useState<"vendor" | "collector">("collector")
+  useEffect(() => {
+    const intent = searchParams.get("intent")
+    if (intent === "vendor" || intent === "collector") setLoginType(intent)
+  }, [searchParams])
 
   useEffect(() => {
     const errorParam = searchParams.get("error")
@@ -156,9 +160,11 @@ export default function LoginClient() {
         }
 
         if ((data as any).hasCollectorSession) {
-          console.log(`[login-client] Redirecting to collector: ${collectorHome}`)
+          const redirectParam = searchParams.get("redirect")
+          const target = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : collectorHome
+          console.log(`[login-client] Redirecting to collector: ${target}`)
           hasRedirected.current = true
-          window.location.replace(collectorHome)
+          window.location.replace(target)
           return
         }
       } catch (error) {
@@ -183,9 +189,11 @@ export default function LoginClient() {
     setGoogleLoading(true)
 
     const isAdminLogin = searchParams.get("admin") === "true"
+    const redirectParam = searchParams.get("redirect")
     const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
     const vendorRedirect = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
-    const collectorRedirect = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+    const defaultCollectorRedirect = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+    const collectorRedirect = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : defaultCollectorRedirect
     let endpoint: string
 
     // Route to role-specific OAuth endpoints so scopes match the selected role.

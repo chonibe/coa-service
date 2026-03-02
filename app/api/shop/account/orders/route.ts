@@ -1,162 +1,148 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { createClient as createRouteClient } from '@/lib/supabase-server'
+import { createClient as createServiceClient } from '@/lib/supabase/server'
 
 /**
  * Shop Account Orders API
- * 
- * Returns order history for the authenticated customer.
+ *
+ * Returns order history for the authenticated customer from the orders table
+ * (Shopify-synced data). Matches by customer_email.
  */
 
 export async function GET() {
   try {
-    const supabase = createClient()
-    
-    // Get current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+    const cookieStore = cookies()
+    const supabase = createRouteClient(cookieStore)
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    if (sessionError || !session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Get collector ID
-    const { data: collector, error: collectorError } = await supabase
-      .from('collectors')
-      .select('id')
-      .eq('email', session.user.email)
-      .single()
+    const email = session.user.email.trim().toLowerCase()
 
-    if (collectorError) {
-      // No collector record - return empty orders
-      return NextResponse.json({ orders: [] })
-    }
+    const serviceClient = createServiceClient()
 
-    // Get orders from stripe_purchases table
-    const { data: purchases, error: purchasesError } = await supabase
-      .from('stripe_purchases')
-      .select('*')
-      .eq('customer_email', session.user.email)
-      .order('created_at', { ascending: false })
-
-    if (purchasesError) {
-      console.error('Error fetching purchases:', purchasesError)
-      return NextResponse.json({ orders: [] })
-    }
-
-    // Also get line_items for the collector
-    const { data: lineItems, error: lineItemsError } = await supabase
-      .from('line_items')
+    const { data: orders, error: ordersError } = await serviceClient
+      .from('orders')
       .select(`
         id,
-        shopify_line_item_id,
-        shopify_order_id,
-        shopify_order_number,
-        product_title,
-        variant_title,
+        shopify_id,
+        order_number,
+        order_name,
+        processed_at,
+        created_at,
+        total_price,
+        currency_code,
+        financial_status,
+        fulfillment_status,
+        customer_email,
+        raw_shopify_order_data
+      `)
+      .ilike('customer_email', email)
+      .is('cancelled_at', null)
+      .order('processed_at', { ascending: false })
+      .limit(50)
+
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError)
+      return NextResponse.json({ orders: [] })
+    }
+
+    if (!orders || orders.length === 0) {
+      return NextResponse.json({ orders: [] })
+    }
+
+    const orderIds = orders.map((o) => o.id)
+
+    const { data: lineItems, error: lineItemsError } = await serviceClient
+      .from('order_line_items_v2')
+      .select(`
+        id,
+        order_id,
+        name,
         quantity,
         price,
-        order_date,
+        img_url,
         fulfillment_status,
-        tracking_number,
-        tracking_url,
-        products (
-          product_name,
-          product_image
-        )
+        status
       `)
-      .eq('collector_id', collector.id)
-      .order('order_date', { ascending: false })
+      .in('order_id', orderIds)
+      .order('created_at', { ascending: true })
 
     if (lineItemsError) {
       console.error('Error fetching line items:', lineItemsError)
     }
 
-    // Group line items by order
-    const orderMap = new Map<string, any>()
-    
-    for (const item of (lineItems || [])) {
-      const orderId = item.shopify_order_id
-      if (!orderId) continue
-
-      if (!orderMap.has(orderId)) {
-        orderMap.set(orderId, {
-          id: orderId,
-          shopifyOrderId: orderId,
-          orderNumber: item.shopify_order_number || orderId.slice(-6),
-          createdAt: item.order_date,
-          status: mapFulfillmentStatus(item.fulfillment_status),
-          totalAmount: 0,
-          currency: 'USD',
-          lineItems: [],
-          trackingNumber: item.tracking_number || undefined,
-          trackingUrl: item.tracking_url || undefined,
-        })
-      }
-
-      const order = orderMap.get(orderId)
-      const price = parseFloat(item.price || '0') * 100 // Convert to cents
-      
-      order.lineItems.push({
-        id: item.id,
-        title: item.product_title || item.products?.product_name || 'Artwork',
-        variantTitle: item.variant_title,
-        quantity: item.quantity || 1,
-        price: price,
-        imageUrl: item.products?.product_image,
-      })
-      
-      order.totalAmount += price * (item.quantity || 1)
+    const lineItemsByOrder = new Map<string, typeof lineItems>()
+    for (const item of lineItems || []) {
+      const list = lineItemsByOrder.get(item.order_id) || []
+      list.push(item)
+      lineItemsByOrder.set(item.order_id, list)
     }
 
-    // Add any purchases from stripe_purchases that aren't in line_items
-    for (const purchase of (purchases || [])) {
-      const orderId = purchase.shopify_order_id
-      if (orderId && !orderMap.has(orderId)) {
-        orderMap.set(purchase.stripe_session_id, {
-          id: purchase.stripe_session_id,
-          shopifyOrderId: orderId || null,
-          orderNumber: orderId?.slice(-6) || purchase.stripe_session_id.slice(-8).toUpperCase(),
-          createdAt: purchase.created_at,
-          status: purchase.status === 'completed' ? 'processing' : 'pending',
-          totalAmount: purchase.amount_total || 0,
-          currency: purchase.currency?.toUpperCase() || 'USD',
-          lineItems: [],
-        })
+    const result = orders.map((order) => {
+      const raw = order.raw_shopify_order_data as Record<string, unknown> | null
+      const shipping = raw?.shipping_address as Record<string, string> | undefined
+      const fulfillments = (raw?.fulfillments as Array<{ tracking_number?: string; tracking_urls?: { url?: string }[] }>) || []
+      const trackingNum = fulfillments[0]?.tracking_number
+      const trackingUrl = fulfillments[0]?.tracking_urls?.[0]?.url
+
+      return {
+        id: order.id,
+        shopifyOrderId: order.shopify_id || order.id,
+        orderNumber: order.order_number || order.order_name?.replace('#', '') || order.id.slice(-6),
+        createdAt: order.processed_at || order.created_at,
+        status: mapFulfillmentStatus(order.fulfillment_status, order.financial_status),
+        totalAmount: Math.round((order.total_price || 0) * 100),
+        currency: order.currency_code || 'USD',
+        lineItems: (lineItemsByOrder.get(order.id) || []).map((li) => ({
+          id: li.id,
+          title: li.name || 'Artwork',
+          variantTitle: undefined,
+          quantity: li.quantity || 1,
+          price: Math.round((parseFloat(String(li.price || 0)) || 0) * 100),
+          imageUrl: li.img_url,
+        })),
+        shippingAddress: shipping
+          ? {
+              name: [shipping.first_name, shipping.last_name].filter(Boolean).join(' '),
+              address1: shipping.address1,
+              address2: shipping.address2,
+              city: shipping.city,
+              province: shipping.province || shipping.province_code,
+              postalCode: shipping.zip,
+              country: shipping.country,
+            }
+          : undefined,
+        trackingNumber: trackingNum,
+        trackingUrl: trackingUrl || (trackingNum ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNum}` : undefined),
       }
-    }
+    })
 
-    const orders = Array.from(orderMap.values())
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-    return NextResponse.json({ orders })
-  } catch (error: any) {
+    return NextResponse.json({ orders: result })
+  } catch (error: unknown) {
     console.error('Orders fetch error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
   }
 }
 
-/**
- * Map Shopify fulfillment status to our status type
- */
-function mapFulfillmentStatus(status: string | null): string {
-  switch (status?.toLowerCase()) {
-    case 'fulfilled':
-    case 'shipped':
-      return 'shipped'
-    case 'delivered':
-      return 'delivered'
-    case 'cancelled':
-    case 'refunded':
-      return 'cancelled'
-    case 'pending':
-    case 'unfulfilled':
-    case null:
-    default:
-      return 'processing'
-  }
+function mapFulfillmentStatus(
+  fulfillment: string | null,
+  financial: string | null
+): 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' {
+  const f = fulfillment?.toLowerCase()
+  const fin = financial?.toLowerCase()
+
+  if (fin === 'refunded' || fin === 'voided') return 'refunded'
+  if (f === 'fulfilled' || f === 'shipped') return 'shipped'
+  if (f === 'delivered') return 'delivered'
+  if (f === 'cancelled' || f === 'restocked') return 'cancelled'
+  if (f === 'partial' || fin === 'paid') return 'processing'
+  return 'pending'
 }

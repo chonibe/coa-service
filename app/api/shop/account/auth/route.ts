@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { createClient as createRouteClient } from '@/lib/supabase-server'
+import { createClient as createServiceClient } from '@/lib/supabase/server'
 
 /**
  * Shop Account Auth API
- * 
+ *
  * Checks if the current user is authenticated and returns their profile.
  */
 
 export async function GET() {
   try {
-    const supabase = createClient()
+    const cookieStore = cookies()
+    const supabase = createRouteClient(cookieStore)
     
     // Get current session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -21,24 +24,20 @@ export async function GET() {
       )
     }
 
-    // Get customer profile from collectors table
-    const { data: collector, error: collectorError } = await supabase
-      .from('collectors')
+    const serviceClient = createServiceClient()
+    const { data: profile } = await serviceClient
+      .from('collector_profiles')
       .select('id, email, first_name, last_name, phone')
       .eq('email', session.user.email)
-      .single()
-
-    if (collectorError && collectorError.code !== 'PGRST116') {
-      console.error('Error fetching collector:', collectorError)
-    }
+      .maybeSingle()
 
     return NextResponse.json({
       authenticated: true,
       customer: {
         email: session.user.email,
-        firstName: collector?.first_name || session.user.user_metadata?.first_name || '',
-        lastName: collector?.last_name || session.user.user_metadata?.last_name || '',
-        phone: collector?.phone || session.user.user_metadata?.phone || '',
+        firstName: profile?.first_name || session.user.user_metadata?.first_name || '',
+        lastName: profile?.last_name || session.user.user_metadata?.last_name || '',
+        phone: profile?.phone || session.user.user_metadata?.phone || '',
       },
     })
   } catch (error: any) {

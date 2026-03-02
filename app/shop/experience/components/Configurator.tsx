@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Percent } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, ShoppingBag } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 
@@ -25,9 +25,11 @@ const Spline3DPreview = dynamic(
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { ArtworkDetail } from './ArtworkDetail'
+import { DiscountCelebration } from './DiscountCelebration'
 import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { WishlistSwiperSheet } from './WishlistSwiperSheet'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
@@ -172,7 +174,6 @@ export function Configurator({
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
   const [wishlistSwiperOpen, setWishlistSwiperOpen] = useState(false)
   const [ratingsVersion, setRatingsVersion] = useState(0)
-  const [chooseArtworkBannerDismissed, setChooseArtworkBannerDismissed] = useState(false)
   const [rotateHintDismissed, setRotateHintDismissed] = useState(false)
   const [previewEngaged, setPreviewEngaged] = useState(false)
 
@@ -321,7 +322,7 @@ export function Configurator({
   const orderTotal = lampTotal + artworksTotal
   const orderItemCount = selectedProducts.length + lampQuantity
 
-  const { setOrderSummary, setOrderBarProps, orderBarRef } = useExperienceOrder()
+  const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar } = useExperienceOrder()
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
   }, [orderTotal, orderItemCount, setOrderSummary])
@@ -396,6 +397,7 @@ export function Configurator({
   }, [])
 
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
+  const [discountCelebrationAmount, setDiscountCelebrationAmount] = useState<number | null>(null)
 
   const handleAddToCart = useCallback((product: ShopifyProduct) => {
     const isAdding = !cartOrder.includes(product.id)
@@ -404,8 +406,14 @@ export function Configurator({
       if (idx >= 0) return prev.filter((id) => id !== product.id)
       return [...prev, product.id]
     })
-    if (isAdding) setLastAddedProductId(product.id)
-  }, [cartOrder])
+    if (isAdding) {
+      setLastAddedProductId(product.id)
+      if (lampQuantity > 0) {
+        const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
+        if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
+      }
+    }
+  }, [cartOrder, lampQuantity, lampPrice])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -444,7 +452,7 @@ export function Configurator({
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-full pb-20 md:pb-0 bg-white md:bg-transparent">
+    <div className="flex flex-col md:flex-row h-full bg-white md:bg-transparent">
       {/* 3D Lamp viewer — on mobile: size depends on selectorSheetState */}
       <motion.div
         data-wizard-spline
@@ -514,16 +522,23 @@ export function Configurator({
             className="absolute inset-0 z-[8] bg-black/75 flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             aria-label="Tap to view preview"
           >
-            <span className="text-white/90 text-sm font-medium px-4 text-center">
-              Tap to explore • Select artworks below to customize
+            <span className="flex items-center gap-2 flex-wrap justify-center px-4 text-center">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-white/40 bg-white/20 text-white text-xs font-bold shrink-0">
+                Add
+              </span>
+              <span className="text-white/90 text-sm">to choose what goes on your lamp,</span>
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
+                <Eye className="w-3.5 h-3.5 text-white" aria-hidden />
+              </span>
+              <span className="text-white/90 text-sm">to Preview</span>
             </span>
           </motion.button>
         )}
         </AnimatePresence>
 
-        {/* Rotate gesture hint — shows briefly, auto-dismisses */}
+        {/* Rotate gesture hint — shows after user selects artwork, auto-dismisses */}
         <AnimatePresence>
-        {previewVisible && !rotateHintDismissed && (
+        {previewVisible && lampPreviewOrder.length > 0 && !rotateHintDismissed && (
           <motion.div
             key="rotate-hint"
             initial={{ opacity: 0 }}
@@ -565,8 +580,8 @@ export function Configurator({
             Both sides share one panel — A and B will show the same image
           </div>
         )}
-        {/* Light/dark lamp toggle */}
-        {previewVisible && (
+        {/* Light/dark lamp toggle — hidden for now */}
+        {false && previewVisible && (
           <button
             type="button"
             onClick={() => setLampVariant((v) => (v === 'light' ? 'dark' : 'light'))}
@@ -577,8 +592,8 @@ export function Configurator({
           </button>
         )}
 
-        {/* Test $0 order — small icon in corner (dev/testing) */}
-        {previewVisible && (
+        {/* Test $0 order — small icon in corner (dev/testing) — hidden for now */}
+        {false && previewVisible && (
           <button
             type="button"
             onClick={() => orderBarRef.current?.testZeroOrder()}
@@ -760,6 +775,21 @@ export function Configurator({
             )}
           </div>
         )}
+
+        {/* File-tab chevron at bottom of Spline preview — mobile only when selector expanded */}
+        {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
+          <button
+            onClick={cycleSelectorState}
+            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white border border-t-0 border-neutral-200 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 shadow-sm transition-colors"
+            aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
+          >
+            {selectorSheetState === 'half' ? (
+              <ChevronUp className="w-3.5 h-3.5" aria-hidden />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden />
+            )}
+          </button>
+        )}
       </motion.div>
 
       {/* Right: Selector Panel — 3 states on mobile: collapsed | half | full */}
@@ -769,96 +799,25 @@ export function Configurator({
           'relative flex flex-col bg-white overflow-hidden min-h-0 border-t border-neutral-100 md:border-t-0 transition-[height,flex] duration-200 ease-out',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
-          /* Mobile: 3 states — when collapsed, bar is fixed above OrderBar; panel takes no flow space */
-          selectorSheetState === 'collapsed' && 'h-0 min-h-0 flex-shrink-0 md:h-auto md:min-h-0',
+          /* Mobile: 3 states — when collapsed, keep expand tab visible (min 56px) */
+          selectorSheetState === 'collapsed' && 'min-h-[56px] flex-shrink-0 md:h-auto md:min-h-0',
           selectorSheetState === 'half' && 'flex-[6] min-h-0 basis-0',
           selectorSheetState === 'full' && 'flex-1 min-h-0'
         )}
       >
-        {/* Lamp row — always visible; Add when not included, Check when added; above Season/filter bar */}
-        {(selectorSheetState === 'half' || selectorSheetState === 'full' || !isMobile) && (
-          <div className="flex-shrink-0 w-full px-3 py-1.5 flex items-center gap-2 min-h-0 min-w-0 border-b border-white/50 bg-white/70 backdrop-blur-xl backdrop-saturate-150">
-            <div className={cn('flex items-center gap-2 flex-1 min-w-0', lampQuantity === 0 && 'opacity-50')}>
-              <div className="w-5 h-5 rounded bg-neutral-200/80 flex items-center justify-center flex-shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3 text-neutral-700" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M9 21h6M12 3v1M18.36 5.64l-.71.71M21 12h-1M4 12H3M5.64 5.64l.71.71" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 14a4 4 0 118 0c0 1.1-.6 2.1-1.5 2.6L14 18H10l-.5-1.4A3.96 3.96 0 018 14z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <span className="flex-1 min-w-0 text-xs font-medium text-neutral-950 truncate">{lamp.title}</span>
-              <span className={cn(
-                'text-xs tabular-nums',
-                lampQuantity === 0 ? 'text-neutral-500' : 'text-green-600 font-medium'
-              )}>
-                {lampQuantity === 0
-                  ? `$${lampPrice.toFixed(2)}`
-                  : lampTotal === 0
-                    ? 'FREE'
-                    : firstLampDiscountPercent > 0
-                      ? `-${Math.round(firstLampDiscountPercent)}% · $${lampTotal.toFixed(2)}`
-                      : `$${lampTotal.toFixed(2)}`}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDetailProduct(lamp)}
-              className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-              aria-label="View lamp details"
-            >
-              <Info className="w-3 h-3" />
-            </button>
-            {lampQuantity === 0 ? (
-              <button
-                type="button"
-                onClick={() => setLampQuantity(1)}
-                className="w-6 h-5 text-center text-[10px] font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
-                aria-label="Add lamp"
-              >
-                Add
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setLampQuantity(0)}
-                className="w-6 h-5 flex items-center justify-center rounded text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors flex-shrink-0"
-                aria-label="Remove lamp from order"
-                title="Remove lamp"
-              >
-                <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
-        )}
+        {/* Discount celebration — slide up at top of selector, next to Artworks icon */}
+        <AnimatePresence>
+          {discountCelebrationAmount !== null && (
+            <DiscountCelebration
+              key="discount-celebration"
+              amount={discountCelebrationAmount}
+              onComplete={() => setDiscountCelebrationAmount(null)}
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Lamp discount progress bar — 14 artworks for 100% off; only on main selector */}
-        {lampQuantity > 0 && artworkCount > 0 && (selectorSheetState === 'half' || selectorSheetState === 'full' || !isMobile) && (
-          <div className="flex-shrink-0 w-full px-3 py-2 border-b border-neutral-100 bg-green-50/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-1.5">
-                <Percent className="w-3 h-3 text-green-600" />
-                <span className="text-xs font-medium text-green-700">{discountBarLabel}</span>
-              </div>
-              {lampSavings > 0 && (
-                <span className="text-xs font-semibold text-green-700">-${lampSavings.toFixed(2)}</span>
-              )}
-            </div>
-            <div className="relative h-1.5 rounded-full overflow-hidden flex bg-neutral-200">
-              {Array.from({ length: lampQuantity }).map((_, i) => (
-                <div key={i} className="flex-1 min-w-0 h-full overflow-hidden relative">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400"
-                    initial={false}
-                    animate={{ width: `${lampProgress[i] ?? 0}%` }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-neutral-400 mt-1">{ARTWORKS_PER_FREE_LAMP} artworks per lamp for 100% off (7.5% each)</p>
-          </div>
-        )}
-
-        {/* Top bar: Season tabs, filter icon, chevron (mobile) — when collapsed on mobile: fixed above OrderBar so it stays visible */}
+        {/* Top bar: Season tabs, filter, search (desktop); Artworks bar (mobile collapsed). Hidden on mobile when expanded — controls are in bottom bar. */}
+        {(!isMobile || selectorSheetState === 'collapsed') && (
         <div
           role={selectorSheetState === 'collapsed' && isMobile ? 'button' : undefined}
           tabIndex={selectorSheetState === 'collapsed' && isMobile ? 0 : undefined}
@@ -882,126 +841,121 @@ export function Configurator({
             </>
           ) : (
             <>
-          {/* Season tabs */}
-          <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveSeasonAndReset('season1')}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                activeSeason === 'season1'
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-700'
-              )}
-            >
-              Season 1
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSeasonAndReset('season2')}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                activeSeason === 'season2'
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-700'
-              )}
-            >
-              Season 2
-            </button>
-          </div>
-
-          <div className="flex-1 min-w-0" />
-
-          {/* Search — magnifying glass icon expands to search bar */}
-          <div className="flex items-center flex-shrink-0">
-            <AnimatePresence initial={false} mode="wait">
-              {searchExpanded ? (
-                <motion.div
-                  key="search-bar"
-                  initial={{ opacity: 0, width: 36 }}
-                  animate={{ opacity: 1, width: 160 }}
-                  exit={{ opacity: 0, width: 36 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="relative flex items-center h-9 bg-neutral-100 rounded-full overflow-hidden"
-                >
-                  <Search className="absolute left-3 w-3.5 h-3.5 text-neutral-400 pointer-events-none shrink-0" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onBlur={() => !searchQuery && setSearchExpanded(false)}
-                    placeholder="Search…"
-                    className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { setSearchQuery(''); setSearchExpanded(false) }}
-                    className="absolute right-1.5 w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="search-icon"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+          {/* Top bar: on desktop = full; on mobile = just chevron (season/filter/search in bottom bar) */}
+          {!isMobile && (
+            <>
+              {/* Season tabs — desktop only */}
+              <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
+                <button
                   type="button"
-                  onClick={() => setSearchExpanded(true)}
+                  onClick={() => setActiveSeasonAndReset('season1')}
                   className={cn(
-                    'relative flex items-center justify-center w-9 h-9 rounded-lg border transition-colors flex-shrink-0',
-                    searchQuery
-                      ? 'bg-neutral-900 text-white border-neutral-900'
-                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                    activeSeason === 'season1'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-700'
                   )}
-                  aria-label="Search artworks"
                 >
-                  <Search className="w-4 h-4" />
-                  {searchQuery && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                  Season 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSeasonAndReset('season2')}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                    activeSeason === 'season2'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-700'
                   )}
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
+                >
+                  Season 2
+                </button>
+              </div>
 
-          {/* Filter icon */}
-          <button
-            onClick={() => setFilterOpen(true)}
-            className={cn(
-              'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
-              hasActiveFilters(filters)
-                ? 'bg-neutral-900 text-white border-neutral-900'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
-            )}
-            aria-label="Open filters"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            {activeFilterCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[10px] flex items-center justify-center font-bold leading-none">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+              <div className="flex-1 min-w-0" />
 
-          {/* Chevron: cycles half ↔ full (mobile only) */}
-          <button
-            onClick={cycleSelectorState}
-            className="md:hidden flex items-center justify-center py-1.5 px-2 text-neutral-500 hover:text-neutral-800 transition-colors"
-            aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse to show preview'}
-          >
-            {selectorSheetState === 'half' ? (
-              <ChevronUp className="w-4 h-4 shrink-0 text-neutral-400" aria-hidden />
-            ) : (
-              <ChevronDown className="w-4 h-4 shrink-0 text-neutral-400" aria-hidden />
-            )}
-          </button>
+              {/* Search — desktop only */}
+              <div className="flex items-center flex-shrink-0">
+                <AnimatePresence initial={false} mode="wait">
+                  {searchExpanded ? (
+                    <motion.div
+                      key="search-bar"
+                      initial={{ opacity: 0, width: 36 }}
+                      animate={{ opacity: 1, width: 160 }}
+                      exit={{ opacity: 0, width: 36 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="relative flex items-center h-9 bg-neutral-100 rounded-full overflow-hidden"
+                    >
+                      <Search className="absolute left-3 w-3.5 h-3.5 text-neutral-400 pointer-events-none shrink-0" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onBlur={() => !searchQuery && setSearchExpanded(false)}
+                        placeholder="Search…"
+                        className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setSearchQuery(''); setSearchExpanded(false) }}
+                        className="absolute right-1.5 w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      key="search-icon"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      type="button"
+                      onClick={() => setSearchExpanded(true)}
+                      className={cn(
+                        'relative flex items-center justify-center w-9 h-9 rounded-lg border transition-colors flex-shrink-0',
+                        searchQuery
+                          ? 'bg-neutral-900 text-white border-neutral-900'
+                          : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                      )}
+                      aria-label="Search artworks"
+                    >
+                      <Search className="w-4 h-4" />
+                      {searchQuery && (
+                        <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                      )}
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Filter icon — desktop only */}
+              <button
+                onClick={() => setFilterOpen(true)}
+                className={cn(
+                  'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+                  hasActiveFilters(filters)
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                )}
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[10px] flex items-center justify-center font-bold leading-none">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </>
+          )}
+
+          {!isMobile && <div className="flex-1 min-w-0" />}
             </>
           )}
         </div>
+        )}
 
         {/* Selector body: expanded content + OrderBar — keep visible when collapsed so OrderBar (fixed on mobile) still renders */}
         <div ref={selectorBodyRef} className="flex flex-col flex-1 min-h-0 overflow-hidden min-w-0">
@@ -1078,33 +1032,97 @@ export function Configurator({
           </div>
         )}
 
-        {/* Artwork strip */}
-        <div ref={artworkStripScrollRef} className="flex-1 overflow-y-auto px-5 pb-32 md:pb-4 min-h-0">
-          {lampPreviewOrder.length === 0 && !chooseArtworkBannerDismissed && (
-            <div className="mb-3 py-2.5 pl-3 pr-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-medium flex items-center justify-between gap-2" aria-live="polite">
-              <span className="flex-1 flex items-center justify-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-neutral-300 bg-white text-neutral-700 text-xs font-bold shadow-sm">
-                Add
-              </span>
-              <span className="text-neutral-600">to choose what goes on your lamp,</span>
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-neutral-300 bg-white text-neutral-700 shadow-sm">
-                <Eye className="w-3 h-3" aria-hidden />
-              </span>
-              <span className="text-neutral-600">to Preview</span>
-            </span>
-              <button
-                type="button"
-                onClick={() => setChooseArtworkBannerDismissed(true)}
-                className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200/80 transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        {/* Artwork strip — street lamp first item, then artworks */}
+        <div
+          ref={artworkStripScrollRef}
+          className={cn(
+            'flex-1 overflow-y-auto px-5 min-h-0',
+            isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
           )}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-neutral-400">{filteredProducts.length} artworks</span>
+        >
+          {/* Street lamp — first item; discount progress unified when lamp added */}
+          <div className="mt-3 mb-3">
+            <div className={cn(
+                'flex flex-col gap-0 rounded-lg w-full overflow-hidden',
+                lampQuantity > 0 ? 'bg-green-50/60 border-2 border-green-700' : 'bg-neutral-100 border border-neutral-200'
+              )}>
+              <div className="flex items-center gap-2 min-h-0 min-w-0 px-3 py-2.5">
+                <div className="flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 306 400" fill="currentColor" className="w-5 h-6 text-neutral-700 shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+                  </svg>
+                </div>
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span className="text-xs font-semibold text-neutral-950 truncate">{lamp.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDetailProduct(lamp)}
+                    className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+                    aria-label="View lamp details"
+                  >
+                    <Info className="w-3 h-3" />
+                  </button>
+                </div>
+                <span className={cn(
+                  'text-xs tabular-nums shrink-0',
+                  lampQuantity === 0 ? 'text-neutral-500' : 'text-green-600 font-medium'
+                )}>
+                  {lampQuantity === 0
+                    ? `$${lampPrice.toFixed(2)}`
+                    : lampTotal === 0
+                      ? 'FREE'
+                      : `$${lampTotal.toFixed(2)}`}
+                </span>
+                {lampQuantity === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setLampQuantity(1)}
+                    className="w-6 h-5 text-center text-[10px] font-medium rounded bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex-shrink-0"
+                    aria-label="Add lamp"
+                  >
+                    Add
+                  </button>
+                ) : (
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={lampQuantity}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10)
+                      if (!Number.isNaN(n)) setLampQuantity(Math.max(0, Math.min(99, n)))
+                    }}
+                    className="w-9 h-5 text-center text-[10px] font-medium rounded border border-neutral-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none flex-shrink-0"
+                    aria-label="Lamp quantity"
+                  />
+                )}
+              </div>
+              {/* Discount progress — compact, only when lamp + artworks */}
+              {lampQuantity > 0 && artworkCount > 0 && (
+                <div className="px-3 pt-1.5 pb-2 border-t border-neutral-200/60 bg-green-50/40">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-medium text-green-700">{discountBarLabel}</span>
+                    {lampSavings > 0 && (
+                      <span className="text-[11px] font-semibold text-green-700 tabular-nums">-${lampSavings.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <div className="relative h-1.5 rounded-full overflow-hidden flex bg-neutral-200">
+                    {Array.from({ length: lampQuantity }).map((_, i) => (
+                      <div key={i} className="flex-1 min-w-0 h-full overflow-hidden relative">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400"
+                          initial={false}
+                          animate={{ width: `${lampProgress[i] ?? 0}%` }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
           <ArtworkStrip
             scrollRef={artworkStripScrollRef}
             products={filteredProducts}
@@ -1120,32 +1138,165 @@ export function Configurator({
             onAddToCart={handleAddToCart}
             onViewDetail={setDetailProduct}
           />
-          {/* Season switch at end of artworks */}
-          <button
-            type="button"
-            onClick={() => setActiveSeasonAndReset(activeSeason === 'season1' ? 'season2' : 'season1')}
-            className="mt-6 mb-4 w-full py-3 px-4 rounded-xl border-2 border-dashed border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-800 transition-colors text-sm font-medium"
-          >
-            View {activeSeason === 'season1' ? 'Season 2' : 'Season 1'}
-          </button>
         </div>
         </div>
-        {/* Artworks expand bar — when selector collapsed on mobile (cart is now right slide-out) */}
-        {selectorSheetState === 'collapsed' && isMobile && (
-          <div className="flex-shrink-0 md:hidden">
-            <button
-              type="button"
-              onClick={cycleSelectorState}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-neutral-200 bg-white/90 backdrop-blur-xl active:bg-neutral-50 transition-colors"
-              style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
-              aria-label="Expand artworks"
-            >
-              <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
-              <span className="text-sm font-medium text-neutral-700">Artworks</span>
-              <ChevronUp className="w-4 h-4 shrink-0 text-neutral-500" />
-            </button>
+
+        {/* Checkout button above bottom bar when cart filter (in cart only) is selected */}
+        {isMobile && filters.inCartOnly && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
+          <div className="flex-shrink-0 w-full px-3 py-2 border-t border-neutral-200 bg-white">
+            <CheckoutButton
+              variant="default"
+              amount={orderTotal}
+              disabled={orderItemCount === 0 || !selectedProducts.every((p) => p.availableForSale)}
+              onClick={openOrderBar}
+              className="w-full h-11 rounded-xl text-base font-semibold"
+            />
           </div>
         )}
+
+        {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
+        {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
+          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 bg-white">
+            {/* Left: Filter */}
+            <div className="flex-1 min-w-0 flex items-center justify-start">
+              <button
+                onClick={() => setFilterOpen(true)}
+                className={cn(
+                  'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
+                  hasActiveFilters(filters)
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-700 border-neutral-200'
+                )}
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[9px] flex items-center justify-center font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Center: Cart counter — tap to filter to cart items only */}
+            <button
+              onClick={() => setFilters({ ...filters, inCartOnly: !filters.inCartOnly })}
+              className={cn(
+                'flex items-center justify-center gap-1 w-9 h-9 rounded-lg border shrink-0 relative',
+                filters.inCartOnly
+                  ? 'bg-green-500 text-white border-green-500'
+                  : 'bg-white text-neutral-700 border-neutral-200'
+              )}
+              aria-label={filters.inCartOnly ? 'Show all artworks' : `Show ${orderItemCount} items in cart`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {orderItemCount > 0 && (
+                <span className={cn(
+                  'absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full text-[9px] flex items-center justify-center font-bold',
+                  filters.inCartOnly ? 'bg-white text-green-600' : 'bg-green-500 text-white'
+                )}>
+                  {orderItemCount}
+                </span>
+              )}
+            </button>
+
+            {/* Right: Season tabs + Expand/collapse chevron (far right) — search hidden for now */}
+            <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+              {false && (
+              <AnimatePresence initial={false} mode="wait">
+                {searchExpanded ? (
+                  <motion.div
+                    key="search-bar-mobile"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="relative flex items-center h-8 flex-1 min-w-0 bg-neutral-100 rounded-lg overflow-hidden"
+                  >
+                    <Search className="absolute left-2.5 w-3.5 h-3.5 text-neutral-400 pointer-events-none shrink-0" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onBlur={() => !searchQuery && setSearchExpanded(false)}
+                      placeholder="Search…"
+                      className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setSearchQuery(''); setSearchExpanded(false) }}
+                      className="absolute right-1.5 w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-200 text-neutral-400"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="search-icon-mobile"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    type="button"
+                    onClick={() => setSearchExpanded(true)}
+                    className={cn(
+                      'relative flex items-center justify-center w-9 h-9 rounded-lg border shrink-0',
+                      searchQuery
+                        ? 'bg-neutral-900 text-white border-neutral-900'
+                        : 'bg-white text-neutral-700 border-neutral-200'
+                    )}
+                    aria-label="Search artworks"
+                  >
+                    <Search className="w-4 h-4" />
+                    {searchQuery && (
+                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                    )}
+                  </motion.button>
+                )}
+              </AnimatePresence>
+              )}
+              <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveSeasonAndReset('season1')}
+                className={cn(
+                  'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  activeSeason === 'season1'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                )}
+              >
+                S1
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSeasonAndReset('season2')}
+                className={cn(
+                  'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  activeSeason === 'season2'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                )}
+              >
+                S2
+              </button>
+              </div>
+              <button
+                onClick={cycleSelectorState}
+                className="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 shrink-0 transition-colors"
+                aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
+              >
+                {selectorSheetState === 'half' ? (
+                  <ChevronUp className="w-4 h-4" aria-hidden />
+                ) : (
+                  <ChevronDown className="w-4 h-4" aria-hidden />
+                )}
+              </button>
+            </div>
+
+          </div>
+        )}
+
         </div>
       </motion.div>
 

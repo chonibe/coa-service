@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Tag, Home, CreditCard, Heart, ChevronRight } from 'lucide-react'
+import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon } from '@heroicons/react/24/solid'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder } from '../ExperienceOrderContext'
@@ -76,11 +76,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   isGift,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
-  const [giftNote, setGiftNote] = useState('')
-  const [showGiftNote, setShowGiftNote] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [addressModalOpen, setAddressModalOpen] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [preloadedClientSecret, setPreloadedClientSecret] = useState<string | null>(null)
   const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [promoApplied, setPromoApplied] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
@@ -155,6 +154,72 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     }
     return items
   }, [lamp, lampQuantity, lampPrices, selectedArtworks])
+
+  /* Preload checkout session when cart drawer opens – payment dialog loads instantly */
+  const preloadKeyRef = React.useRef<string>('')
+  React.useEffect(() => {
+    const key = JSON.stringify({
+      items: buildLineItems().map((i) => i.variantId + ':' + i.quantity),
+      address: checkout.address
+        ? `${checkout.address.country}|${checkout.address.postalCode}|${checkout.address.addressLine1}`
+        : '',
+    })
+    if (preloadKeyRef.current && preloadKeyRef.current !== key) {
+      setPreloadedClientSecret(null)
+    }
+    preloadKeyRef.current = key
+  })
+  React.useEffect(() => {
+    if (!drawerOpen || itemCount === 0 || !allAvailable) return
+    const items = buildLineItems()
+    if (items.length === 0) return
+
+    const shippingAddress = checkout.address
+      ? {
+          email: checkout.address.email,
+          fullName: checkout.address.fullName,
+          country: checkout.address.country,
+          addressLine1: checkout.address.addressLine1,
+          addressLine2: checkout.address.addressLine2,
+          city: checkout.address.city,
+          state: checkout.address.state,
+          postalCode: checkout.address.postalCode,
+          phoneNumber: checkout.address.phoneNumber,
+        }
+      : {
+          email: '',
+          fullName: '',
+          country: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          phoneNumber: '',
+        }
+
+    let cancelled = false
+    fetch('/api/checkout/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items,
+        customerEmail: checkout.address?.email,
+        shippingAddress,
+      }),
+    })
+      .then(async (r) => {
+        if (cancelled) return
+        const data = await r.json()
+        if (!r.ok) return
+        if (data.clientSecret) setPreloadedClientSecret(data.clientSecret)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address])
 
   const handleTestZeroOrder = useCallback(async () => {
     setError(null)
@@ -241,16 +306,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       type="button"
       onClick={() => setAddressModalOpen(true)}
       data-testid="add-address-button"
-      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
-      <span className="flex items-center gap-2 text-sm">
-        <Home className={cn('w-4 h-4 shrink-0', !hasAddress ? 'text-pink-500' : 'text-neutral-500')} />
+      <span className="flex items-center gap-3">
+        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-pink-500' : 'text-neutral-500')} />
         <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900' : 'text-pink-600 font-medium'}>
           {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
         </span>
       </span>
       {hasAddress && (
-        <span className="text-xs text-neutral-500 hover:text-neutral-700">Change</span>
+        <span className="text-neutral-500 hover:text-neutral-700">Change</span>
       )}
     </button>
   )
@@ -277,14 +342,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       type="button"
       onClick={() => setPaymentModalOpen(true)}
       data-testid="add-payment-method-button"
-      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
-      <span className="flex items-center gap-2 text-sm">
-        <CreditCard className={cn('w-4 h-4 shrink-0', !hasPaymentSelection ? 'text-pink-500' : 'text-neutral-500')} />
+      <span className="flex items-center gap-3">
+        <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-pink-500' : 'text-neutral-500')} />
         <span
           data-testid="add-payment-method-button-text"
           className={cn(
-            'text-sm font-medium',
+            'font-medium',
             !hasPaymentSelection ? 'text-pink-600' : 'text-neutral-900'
           )}
         >
@@ -292,7 +357,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         </span>
       </span>
       {hasPaymentSelection && (
-        <span className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors">Change</span>
+        <span className="text-neutral-400 hover:text-neutral-600 transition-colors">Change</span>
       )}
     </button>
   )
@@ -301,117 +366,107 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     <button
       type="button"
       onClick={() => setPromoModalOpen(true)}
-      className="flex w-full items-center justify-between gap-2 py-2 text-left"
+      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
-      <span className="flex items-center gap-2 text-sm">
-        <Tag className="w-4 h-4 shrink-0 text-neutral-500" />
-        <span className="text-neutral-900">
-          {promoApplied ? `Promo: ${promoApplied}` : 'Add promo code'}
-        </span>
+      <span className="text-neutral-900">
+        Promo: {promoApplied || 'WELCOME10'}
       </span>
-      <span className="text-xs text-neutral-500 hover:text-neutral-700">
-        {promoApplied ? 'Change' : ''}
-      </span>
+      <span className="text-neutral-500 hover:text-neutral-700">Change</span>
     </button>
   )
 
   /* ─── Order summary & cart ─── */
+  const lampOriginalTotal = lampQuantity * lampPrice
   const orderSummary = (
-    <div className="order-summary-container border-t border-neutral-200 pt-4 space-y-2">
+    <div className="order-summary-container space-y-3">
       {/* Compact cart lines */}
-      <div className="space-y-1.5 max-h-[18vh] overflow-y-auto">
+      <div className="pt-2 space-y-2 max-h-[18vh] overflow-y-auto">
         {lampQuantity > 0 && (
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <input
-                type="number"
-                min={0}
-                max={99}
-                value={lampQuantity}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10)
-                  if (!Number.isNaN(n)) onLampQuantityChange(Math.max(0, Math.min(99, n)))
-                }}
-                className="w-10 h-7 text-center text-sm rounded border border-neutral-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <span className="text-neutral-900 truncate">× {lamp.title}</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-700 shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-neutral-900 truncate">{lampQuantity} × {lamp.title}</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 tabular-nums text-sm">
+                {lampSavings > 0 ? (
+                  <>
+                    <span className="text-sm line-through text-neutral-500">${lampOriginalTotal.toFixed(2)}</span>
+                    <span className={cn('text-sm font-medium', lampTotal === 0 ? 'text-green-600' : 'text-green-700')}>
+                      {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-neutral-700">
+                    {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-neutral-700 tabular-nums shrink-0">
-              {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
-            </span>
+            {lampSavings > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-7 shrink-0" aria-hidden />
+                <TagIcon className="w-4 h-4 shrink-0 text-green-600" />
+                <span className="text-sm text-green-600">
+                  7.5% per artwork · You&apos;re saving ${lampSavings.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
         )}
         {selectedArtworks.slice(0, 6).map((art) => (
           <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
-            <span className={cn('truncate flex-1 min-w-0', !art.availableForSale && 'line-through text-neutral-500')}>
-              {art.title}
-            </span>
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-neutral-700 tabular-nums">${parsePrice(art).toFixed(2)}</span>
-              <button
-                type="button"
-                onClick={() => onRemoveArtwork(art.id)}
-                className="w-5 h-5 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-700"
-                aria-label="Remove"
-              >
-                <X className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100">
+                {art.featuredImage?.url ? (
+                  <Image
+                    src={art.featuredImage.url}
+                    alt={art.title}
+                    width={28}
+                    height={28}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">
+                    —
+                  </div>
+                )}
+              </div>
+              <span className={cn('truncate min-w-0 text-sm', !art.availableForSale && 'line-through text-neutral-500')}>
+                {art.title}
+              </span>
             </div>
+            <span className="text-sm text-neutral-700 tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
           </div>
         ))}
         {selectedArtworks.length > 6 && (
-          <div className="text-xs text-neutral-500">+{selectedArtworks.length - 6} more</div>
-        )}
-        {isGift && (
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setShowGiftNote(!showGiftNote)}
-              className="text-xs text-neutral-600 hover:text-neutral-900"
-            >
-              {showGiftNote ? 'Hide gift note' : 'Add gift note'}
-            </button>
-            {showGiftNote && (
-              <textarea
-                value={giftNote}
-                onChange={(e) => setGiftNote(e.target.value.slice(0, 500))}
-                placeholder="Write a message..."
-                rows={2}
-                className="mt-1 w-full px-2 py-1.5 text-xs border border-neutral-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-neutral-400"
-              />
-            )}
-          </div>
+          <div className="text-sm text-neutral-500">+{selectedArtworks.length - 6} more</div>
         )}
         {lampQuantity === 0 && (
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}
-            className="text-sm text-pink-600 font-medium hover:text-pink-700"
+            className="flex items-center gap-2 text-sm text-pink-600 font-medium hover:text-pink-700"
           >
-            + Add lamp
+            <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-600 shrink-0" xmlns="http://www.w3.org/2000/svg">
+              <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+            </svg>
+            <span>+ Add lamp</span>
           </button>
         )}
       </div>
-      {lampQuantity > 0 && lampSavings > 0 && (
-        <div className="flex items-center gap-1.5 text-sm text-pink-600">
-          <Heart className="w-4 h-4 shrink-0 fill-current" />
-          <span>7.5% per artwork · You&apos;re saving ${lampSavings.toFixed(2)}</span>
-        </div>
-      )}
-      <div className="space-y-1.5 text-sm pt-1">
-        {lampSavings > 0 && (
-          <div className="flex justify-between">
-            <span className="text-neutral-600">Discount</span>
-            <span className="font-medium text-green-700">-${lampSavings.toFixed(2)}</span>
-          </div>
-        )}
-        <div data-testid="delivery-summary-item" className="flex justify-between">
+      <div className="space-y-2 text-sm pt-3">
+        <div data-testid="delivery-summary-item" className="flex justify-between text-sm">
           <span className="text-neutral-600">Shipping</span>
           <span className="font-medium text-neutral-950">Free</span>
         </div>
-        <div data-testid="total-summary-item" className="flex justify-between pt-1.5 border-t border-neutral-100">
+        <div data-testid="total-summary-item" className="flex justify-between pt-2 text-sm">
           <span className="font-semibold text-neutral-950">Total</span>
-          <span className="text-lg font-bold text-neutral-950">
+          <span className="font-bold text-neutral-950 tabular-nums">
             <AnimatedPrice value={total} />
           </span>
         </div>
@@ -432,6 +487,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       amount={total}
       disabled={itemCount === 0 || !allAvailable}
       onClick={handlePlaceOrderClick}
+      className="text-sm"
     />
   )
 
@@ -454,30 +510,38 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         initial={false}
         animate={{ x: drawerOpen ? 0 : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-sm bg-white shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
-        style={{ width: 'min(calc(100vw - 2rem), 400px)' }}
+        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
+        style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
       >
-        {/* Header */}
-        <div className="checkout-title flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-          <h3 className="text-base font-semibold text-neutral-950">Checkout</h3>
+        {/* Header - close button only */}
+        <div className="checkout-title flex-shrink-0 flex items-center justify-end px-6 pt-4 pb-1">
           <button
             type="button"
             onClick={handleClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Single checkout screen - summary rows, order summary, Place Order */}
-        <div className="checkout-content right-drawer flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="px-4 pt-4 pb-6">
-            {addressRow}
-            {paymentRow}
-            {promoRow}
-            {orderSummary}
-            {error && <p className="mt-2 text-center text-xs text-red-500">{error}</p>}
+        {/* Single checkout screen - Top (compressed), divider, Items section */}
+        <div className="checkout-content right-drawer flex-1 overflow-y-auto overflow-x-hidden text-sm font-normal">
+          <div className="px-6 pb-6">
+            {/* Top: Checkout title, Address, Payment — compressed */}
+            <div className="pb-3">
+              <h3 className="text-sm font-semibold text-neutral-950 mb-3">Checkout</h3>
+              {addressRow}
+              {paymentRow}
+            </div>
+            {/* Divider + Items section: Promo, order summary */}
+            <div className="border-t border-neutral-200 pt-5">
+              <div className="border-b border-neutral-200 pb-5 mb-4">
+                {promoRow}
+              </div>
+              {orderSummary}
+            </div>
+            {error && <p className="mt-2 text-center text-red-500">{error}</p>}
             {placeOrderButton}
           </div>
         </div>
@@ -488,6 +552,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         onOpenChange={setAddressModalOpen}
         initialAddress={checkout.address}
         onSave={handleAddressSave}
+        billingAddress={!checkout.sameAsShipping ? checkout.billingAddress : null}
       />
 
       <PromoCodeModal
@@ -521,6 +586,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                   addressLine1: checkout.address.addressLine1,
                   addressLine2: checkout.address.addressLine2,
                   city: checkout.address.city,
+                  state: checkout.address.state,
                   postalCode: checkout.address.postalCode,
                   phoneNumber: checkout.address.phoneNumber,
                 }
@@ -531,6 +597,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                   addressLine1: '',
                   addressLine2: '',
                   city: '',
+                  state: '',
                   postalCode: '',
                   phoneNumber: '',
                 }
@@ -538,6 +605,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           onSuccess={handlePaymentSuccess}
           onError={(msg) => setError(msg)}
           onPaymentMethodChange={(type) => setSelectedPaymentMethod(type)}
+          billingAddress={checkout.sameAsShipping ? null : checkout.billingAddress}
+          sameAsShipping={checkout.sameAsShipping}
+          onSameAsShippingChange={(v) => {
+            checkout.setSameAsShipping(v)
+            if (v) checkout.setBillingAddress(null)
+          }}
+          onBillingAddressSave={(addr) => checkout.setBillingAddress(addr)}
+          preloadedClientSecret={preloadedClientSecret}
         />
       )}
     </div>
