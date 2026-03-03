@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
-import { LOGIN_INTENT_COOKIE } from "@/lib/vendor-auth"
+import { LOGIN_INTENT_COOKIE, COLLECTOR_REDIRECT_COOKIE } from "@/lib/vendor-auth"
 
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl
@@ -46,9 +46,16 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(data.url)
-  
-  // Set login intent to collector since this is the collector-specific OAuth endpoint
+
+  // Set login intent and desired redirect (fallback when Supabase strips URL params)
   response.cookies.set(LOGIN_INTENT_COOKIE, 'collector', {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 5, // 5 minutes
+  })
+  response.cookies.set(COLLECTOR_REDIRECT_COOKIE, redirect, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",

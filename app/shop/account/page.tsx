@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Container,
@@ -14,6 +14,8 @@ import {
 } from '@/components/impact'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
+import { AddressModal } from '@/components/shop/checkout'
+import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 
 /**
  * Shop Account Page
@@ -47,6 +49,15 @@ interface Order {
     postalCode: string
     country: string
   }
+  billingAddress?: {
+    name: string
+    address1: string
+    address2?: string
+    city: string
+    province: string
+    postalCode: string
+    country: string
+  }
   trackingNumber?: string
   trackingUrl?: string
 }
@@ -57,6 +68,13 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [profileLoading, setProfileLoading] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState<{
+    shippingAddress: CheckoutAddress | null
+    billingAddress: CheckoutAddress | null
+  } | null>(null)
+  const [shippingModalOpen, setShippingModalOpen] = useState(false)
+  const [billingModalOpen, setBillingModalOpen] = useState(false)
+  const [addressesLoading, setAddressesLoading] = useState(false)
 
   const profile = user
     ? { email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone }
@@ -70,6 +88,85 @@ export default function AccountPage() {
       .then((data) => setOrders(data.orders || []))
       .catch(() => setOrders([]))
   }, [isAuthenticated])
+
+  // Fetch saved addresses when authenticated (profile tab / account)
+  const fetchAddresses = useCallback(() => {
+    if (!isAuthenticated) return
+    fetch('/api/shop/account/addresses')
+      .then((res) => (res.ok ? res.json() : { shippingAddress: null, billingAddress: null }))
+      .then((data) => setSavedAddresses(data))
+      .catch(() => setSavedAddresses(null))
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'profile') {
+      fetchAddresses()
+    }
+  }, [isAuthenticated, activeTab, fetchAddresses])
+
+  /** Convert order address format to CheckoutAddress for use as initial value in AddressModal */
+  const orderAddrToCheckout = (
+    addr: Order['shippingAddress'],
+    email: string
+  ): CheckoutAddress | null => {
+    if (!addr?.address1 || !addr.city || !addr.postalCode || !addr.country) return null
+    return {
+      email,
+      fullName: addr.name || '',
+      country: addr.country,
+      addressLine1: addr.address1,
+      addressLine2: addr.address2,
+      city: addr.city,
+      state: addr.province,
+      postalCode: addr.postalCode,
+      phoneCountryCode: '+1',
+      phoneNumber: '',
+    }
+  }
+
+  const handleShippingSave = async (address: CheckoutAddress) => {
+    setAddressesLoading(true)
+    try {
+      const res = await fetch('/api/shop/account/addresses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shippingAddress: address }),
+      })
+      if (res.ok) {
+        setShippingModalOpen(false)
+        fetchAddresses()
+      } else {
+        alert('Failed to save address')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save address')
+    } finally {
+      setAddressesLoading(false)
+    }
+  }
+
+  const handleBillingSave = async (address: CheckoutAddress) => {
+    setAddressesLoading(true)
+    try {
+      const res = await fetch('/api/shop/account/addresses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billingAddress: address }),
+      })
+      if (res.ok) {
+        setBillingModalOpen(false)
+        fetchAddresses()
+      } else {
+        alert('Failed to save address')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save address')
+    } finally {
+      setAddressesLoading(false)
+    }
+  }
 
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -375,57 +472,186 @@ export default function AccountPage() {
 
           {/* Profile Tab */}
           {activeTab === 'profile' && profile && (
-            <Card variant="default" padding="lg">
-              <CardHeader title="Profile Information" />
-              <CardContent className="mt-6">
-                <form
-                  key={`${profile.email}-${profile.firstName ?? ''}-${profile.lastName ?? ''}-${profile.phone ?? ''}`}
-                  onSubmit={handleProfileUpdate}
-                  className="space-y-6 max-w-md"
-                >
-                  <Input
-                    label="Email"
-                    type="email"
-                    value={profile.email}
-                    disabled
-                    hint="Email cannot be changed"
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6">
+              <Card variant="default" padding="lg">
+                <CardHeader title="Profile Information" />
+                <CardContent className="mt-6">
+                  <form
+                    key={`${profile.email}-${profile.firstName ?? ''}-${profile.lastName ?? ''}-${profile.phone ?? ''}`}
+                    onSubmit={handleProfileUpdate}
+                    className="space-y-6 max-w-md"
+                  >
                     <Input
-                      label="First Name"
-                      name="firstName"
-                      defaultValue={profile.firstName || ''}
-                      placeholder="Enter first name"
+                      label="Email"
+                      type="email"
+                      value={profile.email}
+                      disabled
+                      hint="Email cannot be changed"
                     />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="First Name"
+                        name="firstName"
+                        defaultValue={profile.firstName || ''}
+                        placeholder="Enter first name"
+                      />
+                      <Input
+                        label="Last Name"
+                        name="lastName"
+                        defaultValue={profile.lastName || ''}
+                        placeholder="Enter last name"
+                      />
+                    </div>
+
                     <Input
-                      label="Last Name"
-                      name="lastName"
-                      defaultValue={profile.lastName || ''}
-                      placeholder="Enter last name"
+                      label="Phone"
+                      name="phone"
+                      type="tel"
+                      defaultValue={profile.phone || ''}
+                      placeholder="Enter phone number"
                     />
-                  </div>
 
-                  <Input
-                    label="Phone"
-                    name="phone"
-                    type="tel"
-                    defaultValue={profile.phone || ''}
-                    placeholder="Enter phone number"
-                  />
+                    <div className="flex gap-3">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        loading={profileLoading}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
 
-                  <div className="flex gap-3">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      loading={profileLoading}
-                    >
-                      Save Changes
-                    </Button>
+              {/* Addresses Section - saved in account or from most recent order */}
+              <Card variant="default" padding="lg">
+                <CardHeader title="Saved Addresses" />
+                <CardContent className="mt-6">
+                  <p className="text-sm text-[#1a1a1a]/60 mb-4">
+                    Add and manage your default shipping and billing addresses. They will be used to prefill checkout.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#1a1a1a] mb-2">
+                        Shipping Address
+                      </h3>
+                      {(() => {
+                        const addr = savedAddresses?.shippingAddress ?? orderAddrToCheckout(orders[0]?.shippingAddress, profile?.email ?? '')
+                        if (!addr?.addressLine1) {
+                          return (
+                            <div>
+                              <p className="text-sm text-[#1a1a1a]/60 mb-3">
+                                No shipping address yet.
+                              </p>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setShippingModalOpen(true)}
+                                disabled={addressesLoading}
+                              >
+                                Add Address
+                              </Button>
+                            </div>
+                          )
+                        }
+                        return (
+                          <div>
+                            <p className="text-sm text-[#1a1a1a]/80">
+                              {addr.fullName}<br />
+                              {addr.addressLine1}
+                              {addr.addressLine2 && <>, {addr.addressLine2}</>}<br />
+                              {addr.city}, {addr.state} {addr.postalCode}<br />
+                              {addr.country}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                              onClick={() => setShippingModalOpen(true)}
+                              disabled={addressesLoading}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#1a1a1a] mb-2">
+                        Billing Address
+                      </h3>
+                      {(() => {
+                        const orderBilling = orders[0]?.billingAddress ?? orders[0]?.shippingAddress
+                        const addr = savedAddresses?.billingAddress ?? orderAddrToCheckout(orderBilling, profile?.email ?? '')
+                        if (!addr?.addressLine1) {
+                          return (
+                            <div>
+                              <p className="text-sm text-[#1a1a1a]/60 mb-3">
+                                No billing address yet.
+                              </p>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => setBillingModalOpen(true)}
+                                disabled={addressesLoading}
+                              >
+                                Add Address
+                              </Button>
+                            </div>
+                          )
+                        }
+                        return (
+                          <div>
+                            <p className="text-sm text-[#1a1a1a]/80">
+                              {addr.fullName}<br />
+                              {addr.addressLine1}
+                              {addr.addressLine2 && <>, {addr.addressLine2}</>}<br />
+                              {addr.city}, {addr.state} {addr.postalCode}<br />
+                              {addr.country}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                              onClick={() => setBillingModalOpen(true)}
+                              disabled={addressesLoading}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        )
+                      })()}
+                    </div>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <AddressModal
+                open={shippingModalOpen}
+                onOpenChange={setShippingModalOpen}
+                initialAddress={
+                  savedAddresses?.shippingAddress ??
+                  orderAddrToCheckout(orders[0]?.shippingAddress, profile?.email ?? '') ??
+                  undefined
+                }
+                onSave={handleShippingSave}
+                addressType="shipping"
+                billingAddress={savedAddresses?.billingAddress ?? undefined}
+              />
+              <AddressModal
+                open={billingModalOpen}
+                onOpenChange={setBillingModalOpen}
+                initialAddress={
+                  savedAddresses?.billingAddress ??
+                  orderAddrToCheckout(orders[0]?.billingAddress ?? orders[0]?.shippingAddress, profile?.email ?? '') ??
+                  undefined
+                }
+                onSave={handleBillingSave}
+                addressType="billing"
+              />
+            </div>
           )}
 
           {/* Quick Links */}

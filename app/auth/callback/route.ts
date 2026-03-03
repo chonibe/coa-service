@@ -10,6 +10,7 @@ import {
   PENDING_VENDOR_EMAIL_COOKIE,
   REQUIRE_ACCOUNT_SELECTION_COOKIE,
   LOGIN_INTENT_COOKIE,
+  COLLECTOR_REDIRECT_COOKIE,
 } from "@/lib/vendor-auth"
 import {
   buildAdminSessionCookie,
@@ -286,6 +287,7 @@ async function processUserLogin(
         const signupResponse = NextResponse.redirect(new URL(redirectPath, origin), { status: 307 })
         deleteCookie(signupResponse, LOGIN_INTENT_COOKIE)
         deleteCookie(signupResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+        deleteCookie(signupResponse, COLLECTOR_REDIRECT_COOKIE)
 
         // Set active_role cookie for new collector signup (redirectPath may be /shop/experience)
         signupResponse.cookies.set('active_role', 'collector', {
@@ -324,6 +326,7 @@ async function processUserLogin(
       const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })
       deleteCookie(notRegisteredResponse, VENDOR_SESSION_COOKIE_NAME)
       deleteCookie(notRegisteredResponse, LOGIN_INTENT_COOKIE)
+      deleteCookie(notRegisteredResponse, COLLECTOR_REDIRECT_COOKIE)
 
       const supabase = createRouteClient(cookieStore)
       await supabase.auth.signOut()
@@ -364,6 +367,7 @@ async function processUserLogin(
     deleteCookie(redirectResponse, LOGIN_INTENT_COOKIE)
     deleteCookie(redirectResponse, PENDING_VENDOR_EMAIL_COOKIE)
     deleteCookie(redirectResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+    deleteCookie(redirectResponse, COLLECTOR_REDIRECT_COOKIE)
 
     // Set active_role preference cookie based on target dashboard
     // This lightweight cookie is used by the RoleSwitcher UI and unified session
@@ -1253,7 +1257,14 @@ export async function GET(request: NextRequest) {
   }
 
   // Use RBAC-based login processing (pass redirect from callback URL for collector → experience flow)
-  const redirectParam = request.nextUrl.searchParams.get('redirect')
+  // Fallback to cookie when Supabase strips URL params or Site URL override causes redirect to /login
+  let redirectParam = request.nextUrl.searchParams.get('redirect')
+  if (!redirectParam || !redirectParam.startsWith('/')) {
+    const cookieRedirect = cookieStore.get(COLLECTOR_REDIRECT_COOKIE)?.value
+    if (cookieRedirect && cookieRedirect.startsWith('/') && !cookieRedirect.includes('://')) {
+      redirectParam = cookieRedirect
+    }
+  }
   return await processUserLogin(user, email, finalRedirectBase, cookieStore, redirectParam)
   } catch (error: any) {
     // Catch all errors and redirect to login with error message

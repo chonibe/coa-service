@@ -21,6 +21,8 @@ export const POST_LOGIN_REDIRECT_COOKIE = "vendor_post_login_redirect"
 export const PENDING_VENDOR_EMAIL_COOKIE = "pending_vendor_email"
 export const REQUIRE_ACCOUNT_SELECTION_COOKIE = "require_account_selection"
 export const LOGIN_INTENT_COOKIE = "login_intent"
+/** Collector OAuth: desired post-login path (e.g. /shop/experience) - fallback when URL redirect param is lost */
+export const COLLECTOR_REDIRECT_COOKIE = "collector_post_login_redirect"
 
 export const isAdminEmail = (email: string | null | undefined) => {
   if (!email) return false
