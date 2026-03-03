@@ -29,7 +29,7 @@ export async function GET() {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      return NextResponse.json({ items: [] })
     }
 
     const { data: items, error } = await supabase

@@ -13,6 +13,7 @@ import {
   Input,
 } from '@/components/impact'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 
 /**
  * Shop Account Page
@@ -55,6 +56,7 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [profileLoading, setProfileLoading] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const profile = user
     ? { email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone }
@@ -134,47 +136,52 @@ export default function AccountPage() {
   // Not authenticated state
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-[#f5f5f5]">
-        <SectionWrapper spacing="md" background="muted">
-          <Container maxWidth="narrow">
-            <Card variant="default" padding="lg" className="text-center">
-              <div className="py-8">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <h1 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
-                  Sign in to your account
-                </h1>
-                <p className="text-[#1a1a1a]/60 mb-6">
-                  Access your order history and manage your profile.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link href="/login?redirect=/shop/account&intent=collector">
-                    <Button variant="primary" size="lg">
+      <>
+        <main className="min-h-screen bg-[#f5f5f5]">
+          <SectionWrapper spacing="md" background="muted">
+            <Container maxWidth="narrow">
+              <Card variant="default" padding="lg" className="text-center">
+                <div className="py-8">
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <h1 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+                    Sign in to your account
+                  </h1>
+                  <p className="text-[#1a1a1a]/60 mb-6">
+                    Access your order history and manage your profile.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button variant="primary" size="lg" onClick={() => setAuthOpen(true)}>
                       Sign In
                     </Button>
-                  </Link>
-                  <Link href="/shop">
-                    <Button variant="outline" size="lg">
-                      Continue Shopping
-                    </Button>
-                  </Link>
-                </div>
-                {process.env.NODE_ENV === 'development' && (
-                  <p className="mt-4 text-xs text-[#1a1a1a]/50">
-                    <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-amber-600 hover:underline">
-                      Dev: View as mock user (streets@streets.com)
+                    <Link href="/shop">
+                      <Button variant="outline" size="lg">
+                        Continue Shopping
+                      </Button>
                     </Link>
-                  </p>
-                )}
-              </div>
-            </Card>
-          </Container>
-        </SectionWrapper>
-      </main>
+                  </div>
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="mt-4 text-xs text-[#1a1a1a]/50">
+                      <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-amber-600 hover:underline">
+                        Dev: View as mock user (streets@streets.com)
+                      </Link>
+                    </p>
+                  )}
+                </div>
+              </Card>
+            </Container>
+          </SectionWrapper>
+        </main>
+        <AuthSlideupMenu
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          redirectTo="/shop/account"
+        />
+      </>
     )
   }
 

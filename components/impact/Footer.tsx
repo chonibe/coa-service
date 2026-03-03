@@ -236,7 +236,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
           {/* Bottom bar - Copyright and Legal links */}
           <div className="mt-10 pt-8 border-t border-[#ffba94]/10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <p className="text-xs text-[#ffba94]/50">
+              <p className="text-xs text-[#ffba94]/80">
                 {copyrightText || `© ${currentYear} Street Collector`}
               </p>
               
@@ -246,7 +246,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="text-xs text-[#ffba94]/50 hover:text-[#ffba94] transition-colors"
+                      className="text-xs text-[#ffba94]/80 hover:text-[#ffba94] transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -284,7 +284,7 @@ const SimpleFooter = React.forwardRef<HTMLElement, SimpleFooterProps>(
         )}
       >
         <Container maxWidth="default" paddingX="gutter">
-          <p className="text-xs text-[#ffba94]/50 text-center">
+          <p className="text-xs text-[#ffba94]/80 text-center">
             {copyrightText || `© ${currentYear} Street Collector. All rights reserved.`}
           </p>
         </Container>

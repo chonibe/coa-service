@@ -834,7 +834,7 @@ export function Configurator({
                 <Plus className="w-5 h-5" />
                 Add Street Lamp  ${lampPrice.toFixed(2)}
               </button>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-600">
                 Volume discount : 7.5% Off the Street lamp - for each artwork you add
               </p>
               <button

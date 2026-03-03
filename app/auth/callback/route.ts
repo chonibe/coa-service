@@ -1182,14 +1182,22 @@ export async function GET(request: NextRequest) {
       console.error("Failed to establish Supabase session from tokens:", sessionError)
       deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
       await logFailedLoginAttempt({ method: "oauth", reason: sessionError.message })
-      response.headers.set("Location", new URL("/vendor/login?error=session_missing", origin).toString())
+      const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value
+      const errorUrl = loginIntent === 'collector'
+        ? `/login?error=session_missing&redirect=%2Fshop%2Faccount&intent=collector`
+        : '/vendor/login?error=session_missing'
+      response.headers.set("Location", new URL(errorUrl, origin).toString())
       return response
     }
   } else {
     deleteCookie(response, VENDOR_SESSION_COOKIE_NAME)
     response.cookies.set("auth_error", "missing_code", { path: "/", maxAge: 60 })
     await logFailedLoginAttempt({ method: "oauth", reason: "Missing OAuth code" })
-    return response
+    const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value
+    const fallbackUrl = loginIntent === 'collector'
+      ? `/login?error=missing_code&redirect=%2Fshop%2Faccount&intent=collector`
+      : '/login?error=missing_code'
+    return NextResponse.redirect(new URL(fallbackUrl, origin), { status: 307 })
   }
 
   const {

@@ -79,7 +79,7 @@ export function ExperienceSlideoutMenu() {
                     ? 'bg-white/10 hover:bg-white/20 text-white'
                     : 'bg-white/5 hover:bg-white/15 text-white/80 hover:text-white'
                 )}
-                aria-label="View lamp details"
+                aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}. View details`}
                 animate={
                   shouldPulse
                     ? {
