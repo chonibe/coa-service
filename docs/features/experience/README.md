@@ -49,7 +49,8 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 
 ### Address Form Enhancements
 
-- **Mapbox Address Autocomplete**: Street address field uses Mapbox Geocoding API to suggest addresses; selecting one auto-fills city, state, postal code, country.
+- **Address Autocomplete**: Uses **Google Places** when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` or `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` is set. Selecting a suggestion auto-fills street, city, state, **ZIP/postal code**, and country. ZIP codes are explicitly fetched and displayed. Without Google keys, a plain address input is shown (no autocomplete).
+- **ZIP / Postal code field**: Dedicated field with label "ZIP / Postal code"; populated from autocomplete selection; supports both US ZIP and international postal codes.
 - **State/Province by Country**: US, CA, AU, MX show a dropdown of states/provinces; other countries show a free-text field.
 - **Phone with Country Code Detection**: Pasting or typing a full international number (e.g. `+44 7911 123456`) auto-detects the country code, updates the country dropdown, and strips the code from the local number.
 
@@ -67,6 +68,7 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 - `allow_promotion_codes: true` — Native Stripe promo codes in Payment Element
 - `billing_address_collection: 'auto'` — Collect billing when needed
 - `payment_intent_data.setup_future_usage: 'off_session'` — Save cards for Link and returning customers
+- **Saved payment methods** — Stripe Customer ID stored in `collector_profiles`/`collectors` after checkout; returning users are passed `customer` instead of `customer_email` so they can reuse saved cards, Link, etc., without re-entering.
 - Session expiry recovery — "Try again" fetches new session when expired
 
 ### Key Components
@@ -112,5 +114,5 @@ See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](
 
 ## Version
 
-- Last updated: 2026-03-01
-- Version: 1.4.0
+- Last updated: 2026-03-03
+- Version: 1.5.0

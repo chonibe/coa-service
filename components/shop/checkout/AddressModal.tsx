@@ -24,7 +24,7 @@ import {
 import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
-import { AddressAutocompleteInput } from './AddressAutocompleteInput'
+import { GooglePlacesAddressInput } from './GooglePlacesAddressInput'
 
 export interface AddressModalProps {
   open: boolean
@@ -365,39 +365,51 @@ export function AddressModal({
                   onClick={() => setAddressExpanded(true)}
                   className="mt-1.5"
                 >
-                  <AddressAutocompleteInput
-                    id="address-line1"
-                    value={form.addressLine1}
-                    onChange={(v) => setForm((p) => ({ ...p, addressLine1: v }))}
-                    onSelect={(s) => {
-                      const validCountry = s.country && countryOptions.some((c) => c.code === s.country)
-                        ? s.country
-                        : undefined
-                      const states = validCountry ? getStatesForCountry(validCountry) : []
-                      const matchedState = s.state && states.length
-                        ? states.find(
-                            (st) =>
-                              st.name.toLowerCase() === s.state!.toLowerCase() ||
-                              st.code.toLowerCase() === s.state!.toLowerCase()
-                          )?.code ?? s.state
-                        : s.state ?? ''
-                      setForm((p) => ({
-                        ...p,
-                        addressLine1: s.addressLine1,
-                        city: s.city,
-                        state: matchedState,
-                        postalCode: s.postalCode,
-                        ...(validCountry && {
-                          country: validCountry,
-                          phoneCountryCode: getPhoneCodeForCountry(validCountry),
-                        }),
-                      }))
-                      setAddressExpanded(true)
-                    }}
-                    country={form.country}
-                    autoComplete={ac('address-line1')}
-                    placeholder="Street address"
-                  />
+                  {(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+                    process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY) ? (
+                    <GooglePlacesAddressInput
+                      id="address-line1"
+                      value={form.addressLine1}
+                      onChange={(v) => setForm((p) => ({ ...p, addressLine1: v }))}
+                      onSelect={(s) => {
+                        const validCountry = s.country && countryOptions.some((c) => c.code === s.country)
+                          ? s.country
+                          : undefined
+                        const states = validCountry ? getStatesForCountry(validCountry) : []
+                        const matchedState = s.state && states.length
+                          ? states.find(
+                              (st) =>
+                                st.name.toLowerCase() === s.state!.toLowerCase() ||
+                                st.code.toLowerCase() === s.state!.toLowerCase()
+                            )?.code ?? s.state
+                          : s.state ?? ''
+                        setForm((p) => ({
+                          ...p,
+                          addressLine1: s.addressLine1,
+                          city: s.city,
+                          state: matchedState,
+                          postalCode: s.postalCode || '',
+                          ...(validCountry && {
+                            country: validCountry,
+                            phoneCountryCode: getPhoneCodeForCountry(validCountry),
+                          }),
+                        }))
+                        setAddressExpanded(true)
+                      }}
+                      country={form.country}
+                      autoComplete={ac('address-line1')}
+                      placeholder="Street address"
+                    />
+                  ) : (
+                    <Input
+                      id="address-line1"
+                      type="text"
+                      autoComplete={ac('address-line1')}
+                      value={form.addressLine1}
+                      onChange={(e) => setForm((p) => ({ ...p, addressLine1: e.target.value }))}
+                      placeholder="Street address"
+                    />
+                  )}
                 </div>
               </div>
               {addressExpanded && (
@@ -471,16 +483,17 @@ export function AddressModal({
                   ) : null}
                   <div>
                     <Label htmlFor="address-postal" className="text-sm text-neutral-700">
-                      Postal code
+                      ZIP / Postal code
                     </Label>
                     <Input
                       id="address-postal"
+                      data-testid="address-postal"
                       type="text"
                       autoComplete={ac('postal-code')}
                       value={form.postalCode}
                       onChange={(e) => setForm((p) => ({ ...p, postalCode: e.target.value }))}
                       className="mt-1.5"
-                      placeholder="Postal code"
+                      placeholder="ZIP or postal code"
                     />
                   </div>
                   <div>
