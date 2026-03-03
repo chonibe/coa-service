@@ -22,7 +22,6 @@ import {
 import { ScrollingText } from '@/components/sections'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylProductCard } from '@/components/shop'
-import { WishlistButton } from '@/components/shop/WishlistButton'
 import { useCart } from '@/lib/shop/CartContext'
 import { ProductCreditsCallout } from '@/components/shop/ProductCreditsCallout'
 import {
@@ -515,20 +514,6 @@ export default function ProductPage() {
                   )}
                 </button>
                 
-                {/* Wishlist Button */}
-                {selectedVariant && (
-                  <WishlistButton
-                    productId={product.id}
-                    variantId={selectedVariant.id}
-                    handle={product.handle}
-                    title={product.title}
-                    price={parseFloat(selectedVariant.price.amount)}
-                    image={selectedVariant.image?.url || product.featuredImage?.url}
-                    artistName={product.vendor}
-                    size="lg"
-                    variant="default"
-                  />
-                )}
                 </div>
                 
                 {/* Tax & Shipping Notice */}

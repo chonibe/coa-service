@@ -798,18 +798,19 @@ export async function getCollectionWithFullProducts(handle: string, options: {
  */
 export async function getCollectionWithListProducts(handle: string, options: {
   first?: number
+  after?: string
   sortKey?: 'TITLE' | 'PRICE' | 'BEST_SELLING' | 'CREATED' | 'UPDATED_AT' | 'MANUAL'
   reverse?: boolean
 } = {}): Promise<ShopifyCollection | null> {
-  const { first = 24, sortKey = 'MANUAL', reverse = false } = options
+  const { first = 24, after, sortKey = 'MANUAL', reverse = false } = options
 
   const query = `
     ${COLLECTION_FRAGMENT}
     ${PRODUCT_LIST_FRAGMENT}
-    query GetCollectionList($handle: String!, $first: Int!, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
+    query GetCollectionList($handle: String!, $first: Int!, $after: String, $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
       collection(handle: $handle) {
         ...CollectionFields
-        products(first: $first, sortKey: $sortKey, reverse: $reverse) {
+        products(first: $first, after: $after, sortKey: $sortKey, reverse: $reverse) {
           edges {
             node {
               ...ProductListFields
@@ -827,6 +828,7 @@ export async function getCollectionWithListProducts(handle: string, options: {
   const data = await storefrontQuery<{ collection: ShopifyCollection | null }>(query, {
     handle,
     first,
+    after: after ?? null,
     sortKey,
     reverse,
   })

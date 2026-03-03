@@ -19,9 +19,16 @@ Enhanced the checkout address form with Mapbox autocomplete, country-based state
 
 ## Technical Details
 
-### Mapbox Region Extraction
+### Mapbox Response Parsing (2026-03-02 fix)
 
-Mapbox Geocoding v5 returns a `context` array. The `region.*` item holds state/province (e.g. "California", "Ontario"). Added `regionCtx` extraction and `state` field to the API response.
+**Bug fixes for autocomplete not populating city/postcode/country:**
+
+1. **Country code**: Mapbox context `id` is numeric (e.g. `country.9053006287256050`), not the ISO code. Use `short_code` (e.g. "us") and uppercase to "US".
+2. **Region/state**: Use `short_code` (e.g. "US-IL") and extract "IL" for the state dropdown; fallback to `text` for other countries.
+3. **Locality fallback**: When `place` is missing, use `locality` for city (e.g. city districts).
+4. **place_name fallback**: When context lacks city/postcode/country, parse from `place_name` (e.g. "123 Main St, Brooklyn, NY 11201, United States").
+5. **Place-type results**: When feature is a place (not address), use `feature.text` as city.
+6. **Search improvements**: Added `proximity=ip` to bias results to user location; expanded `types` to `address,place,postcode,locality`; increased `limit` to 10.
 
 ### Phone Parsing
 

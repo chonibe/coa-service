@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const state = crypto.randomBytes(16).toString("hex")
     const redirectBackUrl = `${appUrl}/api/auth/shopify/google/callback`
-    const redirectParam = request.nextUrl.searchParams.get("redirect") || "/collector/dashboard"
+    const redirectParam = request.nextUrl.searchParams.get("redirect") || "/shop/experience"
 
     const loginUrl = new URL(`https://${shopDomain}/account/login`)
     const returnUrl = `https://${shopDomain}/pages/street-collector-auth?redirect_uri=${encodeURIComponent(
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.redirect(loginUrl.toString())
 
-    const postLoginRedirect = "/collector/dashboard"
+    const postLoginRedirect = redirectParam
     response.cookies.set("shopify_oauth_state", state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

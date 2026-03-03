@@ -101,6 +101,7 @@ export async function GET() {
     const result = orders.map((order) => {
       const raw = order.raw_shopify_order_data as Record<string, unknown> | null
       const shipping = raw?.shipping_address as Record<string, string> | undefined
+      const billing = raw?.billing_address as Record<string, string> | undefined
       const fulfillments = (raw?.fulfillments as Array<{ tracking_number?: string; tracking_urls?: { url?: string }[] }>) || []
       const trackingNum = fulfillments[0]?.tracking_number
       const trackingUrl = fulfillments[0]?.tracking_urls?.[0]?.url
@@ -130,6 +131,17 @@ export async function GET() {
               province: shipping.province || shipping.province_code,
               postalCode: shipping.zip,
               country: shipping.country,
+            }
+          : undefined,
+        billingAddress: billing
+          ? {
+              name: [billing.first_name, billing.last_name].filter(Boolean).join(' '),
+              address1: billing.address1,
+              address2: billing.address2,
+              city: billing.city,
+              province: billing.province || billing.province_code,
+              postalCode: billing.zip,
+              country: billing.country,
             }
           : undefined,
         trackingNumber: trackingNum,

@@ -3,13 +3,14 @@
  * Use these functions in client components instead of direct Supabase access
  */
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/types/supabase'
+import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/types/supabase'
 
-export const supabase = createClientComponentClient<Database>({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-})
+/** Shared browser Supabase client (singleton). Only created when used in browser. */
+export const supabase =
+  typeof window !== 'undefined'
+    ? (createClient() as ReturnType<typeof createClient<Database>>)
+    : (null as unknown as ReturnType<typeof createClient<Database>>)
 
 export async function getEditionInfo(orderId: string, lineItemId: string) {
   try {

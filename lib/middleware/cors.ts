@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 /**
  * Get allowed origins from environment variable
  */
-function getAllowedOrigins(): string[] {
+export function getAllowedOrigins(): string[] {
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || []
   const defaultOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   
@@ -23,7 +23,7 @@ function getAllowedOrigins(): string[] {
 /**
  * Validate if an origin is allowed
  */
-function isOriginAllowed(origin: string | null, allowedOrigins: string[]): boolean {
+export function isOriginAllowed(origin: string | null, allowedOrigins: string[]): boolean {
   if (!origin) {
     // Same-origin requests don't have an Origin header
     return true

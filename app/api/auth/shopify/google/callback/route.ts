@@ -41,7 +41,9 @@ export async function GET(request: NextRequest) {
       { domain: cookieDomain },
     )
 
-    const response = NextResponse.redirect(new URL("/collector/dashboard", request.url))
+    const postLoginRedirect = request.cookies.get("shopify_login_redirect")?.value || "/shop/experience"
+    const redirectPath = postLoginRedirect.startsWith("/") ? postLoginRedirect : "/shop/experience"
+    const response = NextResponse.redirect(new URL(redirectPath, request.url))
 
     response.cookies.set("shopify_customer_id", customerId.toString(), {
       httpOnly: false,
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set(collectorCookie.name, collectorCookie.value, collectorCookie.options)
 
     response.cookies.delete("shopify_oauth_state")
+    response.cookies.delete("shopify_login_redirect")
     response.cookies.set(clearCollectorSessionCookie().name, "", clearCollectorSessionCookie().options)
 
     return response

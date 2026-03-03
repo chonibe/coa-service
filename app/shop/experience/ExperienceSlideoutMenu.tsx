@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Menu, Gift, TicketPercent, Clock, HelpCircle, MessageCircle } from 'lucide-react'
+import { Menu, Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { ExperienceCartChip } from './ExperienceCartChip'
 import { useExperienceOrder } from './ExperienceOrderContext'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { openTawkChat } from '@/lib/tawk'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,7 @@ export function ExperienceSlideoutMenu() {
   const [shouldPulse, setShouldPulse] = useState(false)
   const prevLampQuantity = useRef(0)
   const { orderBarProps } = useExperienceOrder()
+  const { user, isAuthenticated, loading } = useShopAuthContext()
 
   const showLampCard = orderBarProps && typeof orderBarProps.lampPrice === 'number'
   const lamp = orderBarProps?.lamp
@@ -79,7 +81,7 @@ export function ExperienceSlideoutMenu() {
                     ? 'bg-white/10 hover:bg-white/20 text-white'
                     : 'bg-white/5 hover:bg-white/15 text-white/80 hover:text-white'
                 )}
-                aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}. View details`}
+                aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}`}
                 animate={
                   shouldPulse
                     ? {
@@ -133,22 +135,44 @@ export function ExperienceSlideoutMenu() {
           </div>
 
           <div className="px-6 py-4 border-b border-neutral-200 bg-white">
-            <p className="text-neutral-900 text-[15px] leading-snug mb-3">
-              <span className="font-semibold">Sign up</span>
-              {' to save your progress &'}
-              <br />
-              track orders
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false)
-                setAuthOpen(true)
-              }}
-              className="flex w-full items-center justify-center rounded-lg bg-pink-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-pink-600"
-            >
-              Login or Sign Up
-            </button>
+            {!loading && isAuthenticated && user ? (
+              <>
+                <p className="text-neutral-900 text-[15px] leading-snug mb-3">
+                  <span className="font-semibold">
+                    Welcome back{user.firstName ? `, ${user.firstName}` : ''}!
+                  </span>
+                  <br />
+                  <span className="text-neutral-600 text-sm">Your progress is saved.</span>
+                </p>
+                <Link
+                  href="/shop/account"
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-pink-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-pink-600"
+                >
+                  <User size={18} className="shrink-0" />
+                  View My Account
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-neutral-900 text-[15px] leading-snug mb-3">
+                  <span className="font-semibold">Sign up</span>
+                  {' to save your progress &'}
+                  <br />
+                  track orders
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    setAuthOpen(true)
+                  }}
+                  className="flex w-full items-center justify-center rounded-lg bg-pink-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-pink-600"
+                >
+                  Login or Sign Up
+                </button>
+              </>
+            )}
           </div>
 
           <nav className="flex flex-col py-4">

@@ -7,6 +7,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Plus } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
+import type { SeasonPageInfo } from './ExperienceClient'
+
+const SEASON_1_HANDLE = 'season-1'
+const SEASON_2_HANDLE = '2025-edition'
+const LOAD_MORE_PAGE_SIZE = 36
 
 const Spline3DPreview = dynamic(
   () =>
@@ -31,8 +36,6 @@ import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
-import { WishlistSwiperSheet } from './WishlistSwiperSheet'
-import { useWishlist } from '@/lib/shop/WishlistContext'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { cn } from '@/lib/utils'
@@ -55,6 +58,8 @@ interface ConfiguratorProps {
   lamp: ShopifyProduct
   productsSeason1: ShopifyProduct[]
   productsSeason2: ShopifyProduct[]
+  pageInfoSeason1: SeasonPageInfo
+  pageInfoSeason2: SeasonPageInfo
   quizAnswers: QuizAnswers
   onRetakeQuiz: () => void
   /** Pre-filter by artist when arriving from artist link (e.g. Instagram) */
@@ -63,8 +68,10 @@ interface ConfiguratorProps {
 
 export function Configurator({
   lamp,
-  productsSeason1,
-  productsSeason2,
+  productsSeason1: initialSeason1,
+  productsSeason2: initialSeason2,
+  pageInfoSeason1: initialPage1,
+  pageInfoSeason2: initialPage2,
   quizAnswers,
   onRetakeQuiz,
   initialFilters,
@@ -73,9 +80,44 @@ export function Configurator({
   const { isAuthenticated } = useShopAuth()
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
+  const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
+  const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
+  const [pageInfoSeason1, setPageInfoSeason1] = useState<SeasonPageInfo>(() => initialPage1)
+  const [pageInfoSeason2, setPageInfoSeason2] = useState<SeasonPageInfo>(() => initialPage2)
+  const [loadingMore, setLoadingMore] = useState(false)
   const products = activeSeason === 'season1' ? productsSeason1 : productsSeason2
+  const pageInfo = activeSeason === 'season1' ? pageInfoSeason1 : pageInfoSeason2
 
   const artworkStripScrollRef = useRef<HTMLDivElement>(null)
+
+  const loadMoreForSeason = useCallback(async (season: SeasonTab) => {
+    const info = season === 'season1' ? pageInfoSeason1 : pageInfoSeason2
+    if (!info.hasNextPage || !info.endCursor || loadingMore) return
+    const handle = season === 'season1' ? SEASON_1_HANDLE : SEASON_2_HANDLE
+    setLoadingMore(true)
+    try {
+      const res = await fetch(
+        `/api/shop/experience/collection-products?handle=${encodeURIComponent(handle)}&after=${encodeURIComponent(info.endCursor)}&first=${LOAD_MORE_PAGE_SIZE}`
+      )
+      const data = await res.json().catch(() => ({}))
+      const newProducts = data.products ?? []
+      if (season === 'season1') {
+        setProductsSeason1((prev) => [...prev, ...newProducts])
+        setPageInfoSeason1({
+          hasNextPage: data.hasNextPage ?? false,
+          endCursor: data.endCursor ?? null,
+        })
+      } else {
+        setProductsSeason2((prev) => [...prev, ...newProducts])
+        setPageInfoSeason2({
+          hasNextPage: data.hasNextPage ?? false,
+          endCursor: data.endCursor ?? null,
+        })
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [pageInfoSeason1, pageInfoSeason2, loadingMore])
 
   const scrollArtworkStripToTop = useCallback(() => {
     artworkStripScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -174,7 +216,6 @@ export function Configurator({
   }, [scrollArtworkStripToTop])
   const [filterOpen, setFilterOpen] = useState(false)
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
-  const [wishlistSwiperOpen, setWishlistSwiperOpen] = useState(false)
   const [ratingsVersion, setRatingsVersion] = useState(0)
   const [rotateHintDismissed, setRotateHintDismissed] = useState(false)
   const [previewEngaged, setPreviewEngaged] = useState(false)
@@ -190,7 +231,6 @@ export function Configurator({
     const t = setTimeout(() => setRotateHintDismissed(true), 5000)
     return () => clearTimeout(t)
   }, [rotateHintDismissed])
-  const { itemCount: wishlistCount } = useWishlist()
 
   // Apply initial artist filter when arriving from artist link (e.g. Instagram)
   useEffect(() => {
@@ -1147,12 +1187,15 @@ export function Configurator({
             cartOrder={cartOrder}
             lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}
-            showWishlistHearts={filters.minStarRating !== null}
+            showWishlistHearts={false}
             crewCountMap={crewCountMap}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}
             onViewDetail={setDetailProduct}
+            hasMore={pageInfo.hasNextPage}
+            onLoadMore={() => loadMoreForSeason(activeSeason)}
+            isLoadingMore={loadingMore}
           />
         </div>
         </div>
@@ -1292,12 +1335,7 @@ export function Configurator({
         onChange={handleFiltersChange}
         isOpen={filterOpen}
         onClose={() => setFilterOpen(false)}
-        wishlistCount={wishlistCount}
         cartOrder={cartOrder}
-        onOpenWishlist={() => {
-          setFilterOpen(false)
-          setWishlistSwiperOpen(true)
-        }}
       />
 
       {/* First-session contextual wizard */}
@@ -1393,24 +1431,6 @@ export function Configurator({
           onClose={() => { setDetailProduct(null); setDetailProductFull(null) }}
         />
       )}
-      <WishlistSwiperSheet
-        isOpen={wishlistSwiperOpen}
-        onClose={() => setWishlistSwiperOpen(false)}
-        products={filteredAllProducts}
-        isMobile={isMobile}
-        selectorBodyRef={selectorBodyRef}
-        onRatingChange={() => setRatingsVersion((v) => v + 1)}
-        onSelectProduct={(p) => {
-          setWishlistSwiperOpen(false)
-          setDetailProduct(p)
-        }}
-        onViewProductDetail={(p) => setDetailProduct(p)}
-        onApplyStarFilter={(minStars: number) => {
-          setFilters((f) => ({ ...f, minStarRating: minStars }))
-          setWishlistSwiperOpen(false)
-          setFilterOpen(true)
-        }}
-      />
     </div>
   )
 }

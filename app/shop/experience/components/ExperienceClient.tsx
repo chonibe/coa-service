@@ -66,10 +66,17 @@ function ExperienceConfiguratorWithBoundary(
   )
 }
 
+export interface SeasonPageInfo {
+  hasNextPage: boolean
+  endCursor: string | null
+}
+
 interface ExperienceClientProps {
   lamp: ShopifyProduct
   productsSeason1: ShopifyProduct[]
   productsSeason2: ShopifyProduct[]
+  pageInfoSeason1: SeasonPageInfo
+  pageInfoSeason2: SeasonPageInfo
   /** Artist slug from ?artist= to pre-filter artworks (e.g. from Instagram link) */
   initialArtistSlug?: string
   /** When true, skip intro quiz and go straight to configurator (default: true when artist link) */
@@ -91,6 +98,8 @@ export function ExperienceClient({
   lamp,
   productsSeason1,
   productsSeason2,
+  pageInfoSeason1,
+  pageInfoSeason2,
   initialArtistSlug,
   skipQuiz = false,
 }: ExperienceClientProps) {
@@ -222,6 +231,8 @@ export function ExperienceClient({
                 lamp={lamp}
                 productsSeason1={productsSeason1}
                 productsSeason2={productsSeason2}
+                pageInfoSeason1={pageInfoSeason1}
+                pageInfoSeason2={pageInfoSeason2}
                 quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
                 onRetakeQuiz={handleRetakeQuiz}
                 initialFilters={initialFilters}

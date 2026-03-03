@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Footer } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
-import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
+import { WishlistProvider } from '@/lib/shop/WishlistContext'
 import { ShopAuthProvider } from '@/lib/shop/ShopAuthContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { 
@@ -12,7 +12,7 @@ import {
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
 import { homepageContent } from '@/content/homepage'
-import { BackBar, WishlistDrawer, ChatIconScrollReveal } from '@/components/shop/navigation'
+import { BackBar, ChatIconScrollReveal } from '@/components/shop/navigation'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { cn } from '@/lib/utils'
@@ -108,10 +108,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const isExperiencePage = pathname?.startsWith('/shop/experience')
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   const cart = useCart()
-  const wishlist = useWishlist()
   const [cartLoading, setCartLoading] = useState(false)
-  const [navModalOpen, setNavModalOpen] = useState(false)
-  const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false)
   const [recommendedProducts, setRecommendedProducts] = useState<Array<{
     id: string
     title: string
@@ -152,54 +149,9 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     fetchRecommendations()
   }, [isExperiencePage])
   
-  // Handle wishlist drawer toggle
-  const handleWishlistClick = useCallback(() => {
-    setWishlistDrawerOpen((prev) => !prev)
-    if (!wishlistDrawerOpen) {
-      setNavModalOpen(false)
-      cart.toggleCart(false)
-    }
-  }, [wishlistDrawerOpen, cart])
-
-  // Close wishlist when navigating to street-collector (page has no nav)
-  useEffect(() => {
-    if (pathname?.startsWith('/shop/street-collector')) {
-      setWishlistDrawerOpen(false)
-    }
-  }, [pathname])
-
-  // Listen for open-wishlist from experience FilterPanel (ignore on street-collector - no nav)
-  useEffect(() => {
-    const handler = () => {
-      if (pathname?.startsWith('/shop/street-collector')) return
-      setWishlistDrawerOpen(true)
-      setNavModalOpen(false)
-      cart.toggleCart(false)
-    }
-    window.addEventListener('open-wishlist', handler)
-    return () => window.removeEventListener('open-wishlist', handler)
-  }, [cart, pathname])
-  
-  // Handle cart drawer toggle
-  const handleViewCart = useCallback(() => {
-    cart.toggleCart(true)
-    setNavModalOpen(false)
-    setWishlistDrawerOpen(false)
-  }, [cart])
-  
-  // Handle navigation modal toggle
-  const handleNavModalToggle = useCallback(() => {
-    setNavModalOpen((prev) => !prev)
-    if (!navModalOpen) {
-      cart.toggleCart(false)
-      setWishlistDrawerOpen(false)
-    }
-  }, [navModalOpen, cart])
-  
   // Handle adding recommended products to cart
   const onAddRecommendedToCart = useCallback(async (productId: string) => {
-    const product = recommendedProducts.find(p => p.id === productId) || 
-                    wishlist.items?.find(item => item.id === productId)
+    const product = recommendedProducts.find(p => p.id === productId)
     
     if (!product) {
       console.error('[Cart Recommendations] Product not found:', productId)
@@ -216,12 +168,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       image: product.image,
       vendor: product.vendor || 'Unknown'
     })
-  }, [recommendedProducts, wishlist.items, cart])
-  
-  // Handle adding wishlist items to cart
-  const onAddToCart = useCallback(async (productId: string) => {
-    await onAddRecommendedToCart(productId)
-  }, [onAddRecommendedToCart])
+  }, [recommendedProducts, cart])
   
   // Handle cart checkout
   const handleCheckout = useCallback(async () => {
@@ -339,15 +286,6 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
           total={cart.total}
           creditsToUse={cart.creditsToUse}
           creditsDiscount={cart.creditsDiscount}
-        />
-      )}
-      
-      {/* Wishlist Drawer - hidden on street-collector (no nav to open it) */}
-      {!isStreetCollectorPage && (
-        <WishlistDrawer
-          isOpen={wishlistDrawerOpen}
-          onClose={() => setWishlistDrawerOpen(false)}
-          onAddToCart={onAddToCart}
         />
       )}
       

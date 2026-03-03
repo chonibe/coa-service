@@ -336,6 +336,10 @@ interface ArtworkStripProps {
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
   onViewDetail: (product: ShopifyProduct) => void
+  /** When true, show load-more sentinel and call onLoadMore when it enters viewport */
+  hasMore?: boolean
+  onLoadMore?: () => void
+  isLoadingMore?: boolean
 }
 
 function formatPrice(product: ShopifyProduct): string {
@@ -343,6 +347,8 @@ function formatPrice(product: ShopifyProduct): string {
   if (!amount) return ''
   return `$${parseFloat(amount).toFixed(2)}`
 }
+
+const SENTINEL_HEIGHT = 80
 
 export function ArtworkStrip({
   scrollRef,
@@ -358,15 +364,35 @@ export function ArtworkStrip({
   onLampSelect,
   onAddToCart,
   onViewDetail,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
 }: ArtworkStripProps) {
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const rowCount = Math.ceil(products.length / 2)
+  const totalRows = rowCount + (hasMore ? 1 : 0)
 
   const rowVirtualizer = useVirtualizer({
-    count: rowCount,
+    count: totalRows,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    estimateSize: (index) => (index >= rowCount ? SENTINEL_HEIGHT : ROW_HEIGHT_ESTIMATE),
     overscan: 3,
   })
+
+  useEffect(() => {
+    if (!hasMore || !onLoadMore || isLoadingMore) return
+    const el = loadMoreSentinelRef.current
+    const scrollEl = scrollRef.current
+    if (!el || !scrollEl) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onLoadMore()
+      },
+      { root: scrollEl, rootMargin: '200px', threshold: 0 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [hasMore, onLoadMore, isLoadingMore])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -401,6 +427,30 @@ export function ArtworkStrip({
       style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
     >
       {virtualRows.map((virtualRow) => {
+        if (virtualRow.index >= rowCount) {
+          return (
+            <div
+              key={virtualRow.key}
+              ref={(node) => {
+                loadMoreSentinelRef.current = node
+                rowVirtualizer.measureElement(node)
+              }}
+              data-index={virtualRow.index}
+              className="absolute top-0 left-0 w-full flex items-center justify-center py-4"
+              style={{
+                transform: `translateY(${virtualRow.start}px)`,
+                height: SENTINEL_HEIGHT,
+              }}
+            >
+              {isLoadingMore ? (
+                <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                  <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-500 rounded-full animate-spin" />
+                  Loading more…
+                </div>
+              ) : null}
+            </div>
+          )
+        }
         const startIdx = virtualRow.index * 2
         const product1 = products[startIdx]
         const product2 = products[startIdx + 1]

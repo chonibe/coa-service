@@ -44,6 +44,25 @@ function MyComponent() {
 
 ## Supabase Configuration
 
+### 0. Custom SMTP (required for production – avoid "Email rate limit exceeded")
+
+Supabase's built-in email service allows only **~2 emails per hour**. You will hit "Email rate limit exceeded" during development or when multiple users sign in via email OTP.
+
+**Fix**: Configure a custom SMTP server in Supabase Dashboard:
+
+1. Go to **Supabase Dashboard** → **Project Settings** → **Authentication** → **SMTP Settings**
+2. Enable custom SMTP
+3. Configure one of:
+   - **Resend** (resend.com): host `smtp.resend.com`, port 465, API key as password
+   - **SendGrid**: host `smtp.sendgrid.net`, port 587, user `apikey`, password = SendGrid API key
+   - **Mailgun**, **Postmark**, or any SMTP provider
+4. Set sender email and name (e.g. `noreply@thestreetcollector.com`)
+5. Save – Supabase will use your SMTP for OTP/magic links, password resets, etc.
+
+Once configured, email rate limits are controlled by your SMTP provider, not Supabase's 2/hour limit.
+
+**UX fallback**: When rate limit is hit, AuthSlideupMenu shows a friendly message and suggests signing in with Google or Facebook instead.
+
 ### 1. Email OTP (6-digit code)
 
 By default, Supabase sends a **magic link** when using `signInWithOtp`. To send a **6-digit OTP code** instead:
@@ -99,7 +118,14 @@ By default, Supabase sends a **magic link** when using `signInWithOtp`. To send 
 - `lib/collector-session` – signed collector session cookie
 - `lib/supabase-server` – server-side Supabase client
 
+## Known Limitations / Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "Email rate limit exceeded" | Configure custom SMTP (see §0 above). Until then, use Google/Facebook sign-in. |
+| OTP not received | Check spam; ensure Supabase email templates are configured for OTP (see §1). |
+
 ## Version
 
-- Last updated: 2026-03-02
-- Version: 1.0.0
+- Last updated: 2026-03-03
+- Version: 1.1.0

@@ -18,10 +18,15 @@ export const metadata = {
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
-const PRODUCTS_PER_SEASON = 24
+const INITIAL_PRODUCTS_PER_SEASON = 36
 
 interface ExperiencePageProps {
   searchParams: Promise<{ artist?: string; skipQuiz?: string }>
+}
+
+interface SeasonPageInfo {
+  hasNextPage: boolean
+  endCursor: string | null
 }
 
 async function ExperienceProductsLoader({
@@ -35,11 +40,11 @@ async function ExperienceProductsLoader({
 }) {
   const [season1Result, season2Result] = await Promise.all([
     getCollectionWithListProducts(SEASON_1_HANDLE, {
-      first: PRODUCTS_PER_SEASON,
+      first: INITIAL_PRODUCTS_PER_SEASON,
       sortKey: 'MANUAL',
     }).catch(() => null),
     getCollectionWithListProducts(SEASON_2_HANDLE, {
-      first: PRODUCTS_PER_SEASON,
+      first: INITIAL_PRODUCTS_PER_SEASON,
       sortKey: 'MANUAL',
     }).catch(() => null),
   ])
@@ -47,11 +52,22 @@ async function ExperienceProductsLoader({
   const productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
   const productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
 
+  const pageInfoSeason1: SeasonPageInfo = {
+    hasNextPage: season1Result?.products?.pageInfo?.hasNextPage ?? false,
+    endCursor: season1Result?.products?.pageInfo?.endCursor ?? null,
+  }
+  const pageInfoSeason2: SeasonPageInfo = {
+    hasNextPage: season2Result?.products?.pageInfo?.hasNextPage ?? false,
+    endCursor: season2Result?.products?.pageInfo?.endCursor ?? null,
+  }
+
   return (
     <ExperienceClient
       lamp={lamp}
       productsSeason1={productsSeason1}
       productsSeason2={productsSeason2}
+      pageInfoSeason1={pageInfoSeason1}
+      pageInfoSeason2={pageInfoSeason2}
       initialArtistSlug={initialArtistSlug}
       skipQuiz={skipQuiz}
     />

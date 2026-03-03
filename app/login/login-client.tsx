@@ -203,7 +203,7 @@ export default function LoginClient() {
     const redirectParam = searchParams.get("redirect")
     const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
     const vendorRedirect = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
-    const defaultCollectorRedirect = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+    const defaultCollectorRedirect = '/shop/experience'
     const collectorRedirect = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : defaultCollectorRedirect
     let endpoint: string
 

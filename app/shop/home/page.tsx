@@ -222,7 +222,7 @@ export default async function ShopHomePage() {
             media={(featuredProduct.images?.edges ?? []).slice(0, 4).map((edge: any) => ({
               type: 'image' as const,
               url: edge?.node?.url ?? '',
-              alt: edge?.node?.altText || featuredProduct?.title ?? '',
+              alt: (edge?.node?.altText || featuredProduct?.title) ?? '',
             }))}
             fullWidth={homepageContent.featuredProduct.fullWidth}
             desktopMediaWidth={homepageContent.featuredProduct.desktopMediaWidth}

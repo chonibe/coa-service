@@ -140,7 +140,7 @@ export function HomeProductCard({ product, compact = false, disableTilt = false 
       disableFlip={!artistNotes}
       disableTilt={disableTilt}
       variant="shop"
-      showWishlist={true}
+      showWishlist={false}
       productId={product.id}
       variantId={firstVariantForWishlist?.id || product.id}
     />

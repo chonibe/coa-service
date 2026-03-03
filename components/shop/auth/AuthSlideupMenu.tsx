@@ -2,7 +2,7 @@
 
 import { useState, useLayoutEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Sheet, Modal, Button, Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -30,11 +30,19 @@ export interface AuthSlideupMenuProps {
 
 const COLLECTOR_REDIRECT = '/shop/experience'
 
+/** Supabase returns this when built-in email limit (2/hour) is hit. Custom SMTP fixes it. */
+const RATE_LIMIT_HINT = 'Email sending is temporarily limited. Try signing in with Google or Facebook instead, or try again in about an hour.'
+
+function isEmailRateLimitError(message: string): boolean {
+  const lower = message.toLowerCase()
+  return lower.includes('rate limit') || lower.includes('too many') || (lower.includes('email') && lower.includes('exceeded'))
+}
+
 type Step = 'email' | 'code'
 
 export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT }: AuthSlideupMenuProps) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -75,7 +83,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
       })
 
       if (otpError) {
-        setError(otpError.message)
+        setError(isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message)
         setIsLoading(false)
         return
       }
@@ -107,7 +115,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         email: email.trim(),
         options: { shouldCreateUser: true },
       })
-      if (otpError) setError(otpError.message)
+      if (otpError) setError(isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message)
       else setResendCooldown(60)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -140,8 +148,12 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         return
       }
 
-      if (data?.session) {
-        const res = await fetch('/api/auth/collector/ensure-profile', { method: 'POST' })
+      if (data?.session?.access_token) {
+        const res = await fetch('/api/auth/collector/ensure-profile', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+          credentials: 'include',
+        })
         if (!res.ok) {
           console.warn('[AuthSlideup] ensure-profile failed:', await res.text())
         }

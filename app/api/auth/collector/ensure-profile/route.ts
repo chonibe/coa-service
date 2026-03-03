@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { buildCollectorSessionCookie } from "@/lib/collector-session"
@@ -9,17 +10,34 @@ import { getUserActiveRoles } from "@/lib/rbac/role-helpers"
  * Ensures collector profile and role exist for the current Supabase user.
  * Called after email OTP verification (signInWithOtp + verifyOtp) since
  * that flow does not go through the auth callback.
+ * Accepts Authorization: Bearer <access_token> when cookies are not yet propagated.
  */
-export async function POST() {
-  const cookieStore = cookies()
-  const supabase = createRouteClient(cookieStore)
+export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get("authorization")
+  const accessToken = authHeader?.replace(/^Bearer\s+/i, "")
 
-  const {
-    data: { user },
-    error: sessionError,
-  } = await supabase.auth.getUser()
+  let user: { id: string; email: string | null } | null = null
 
-  if (sessionError || !user) {
+  if (accessToken) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (supabaseUrl && supabaseAnonKey) {
+      const client = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      })
+      const { data, error } = await client.auth.getUser()
+      if (!error && data?.user) user = data.user
+    }
+  }
+
+  if (!user) {
+    const cookieStore = cookies()
+    const supabase = createRouteClient(cookieStore)
+    const { data, error: sessionError } = await supabase.auth.getUser()
+    if (!sessionError && data?.user) user = data.user
+  }
+
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   }
 
