@@ -337,13 +337,25 @@ async function processUserLogin(
       return notRegisteredResponse
     }
 
-    // Determine the preferred dashboard based on roles and login intent
-    const preferredDashboard = getPreferredDashboard(roles, loginIntent)
-    const redirectPath =
-      loginIntent === 'collector' && isValidRedirectPath(postLoginRedirect)
-        ? postLoginRedirect!
-        : preferredDashboard
-    console.log(`[auth/callback] Redirect path: ${redirectPath}${redirectPath !== preferredDashboard ? ` (post-login override)` : ''}`)
+    // Collector/experience login path: redirect=/shop/* means collector-only flow (no vendor/admin routing)
+    const isCollectorExperienceFlow = isValidRedirectPath(postLoginRedirect) && postLoginRedirect!.startsWith('/shop/')
+
+    let redirectPath: string
+    let effectiveDashboard: string
+
+    if (isCollectorExperienceFlow) {
+      redirectPath = postLoginRedirect!
+      effectiveDashboard = '/collector/home'
+      console.log(`[auth/callback] Collector/experience flow: redirect=${redirectPath} (no vendor routing)`)
+    } else {
+      const preferredDashboard = getPreferredDashboard(roles, loginIntent)
+      redirectPath =
+        loginIntent === 'collector' && isValidRedirectPath(postLoginRedirect)
+          ? postLoginRedirect!
+          : preferredDashboard
+      effectiveDashboard = preferredDashboard
+      console.log(`[auth/callback] Redirect path: ${redirectPath}`)
+    }
 
     // Set appropriate session cookies based on the target dashboard
     const redirectResponse = NextResponse.redirect(new URL(redirectPath, origin), { status: 307 })
@@ -355,11 +367,11 @@ async function processUserLogin(
 
     // Set active_role preference cookie based on target dashboard
     // This lightweight cookie is used by the RoleSwitcher UI and unified session
-    const activeRole: string | null = preferredDashboard.startsWith('/admin/')
+    const activeRole: string | null = effectiveDashboard.startsWith('/admin/')
       ? 'admin'
-      : preferredDashboard.startsWith('/vendor/')
+      : effectiveDashboard.startsWith('/vendor/')
         ? 'vendor'
-        : preferredDashboard.startsWith('/collector/')
+        : effectiveDashboard.startsWith('/collector/')
           ? 'collector'
           : null
 
@@ -404,7 +416,7 @@ async function processUserLogin(
     }
 
     // Set role-specific session cookies (legacy — still needed during transition)
-    if (preferredDashboard.startsWith('/admin/')) {
+    if (effectiveDashboard.startsWith('/admin/')) {
       // Admin dashboard - set admin session cookie
       if (email) {
         const adminCookie = buildAdminSessionCookie(email)
@@ -412,7 +424,7 @@ async function processUserLogin(
       }
       redirectResponse.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
       console.log(`[auth/callback] Admin login successful for ${email}`)
-    } else if (preferredDashboard.startsWith('/vendor/')) {
+    } else if (effectiveDashboard.startsWith('/vendor/')) {
       // Vendor dashboard - set vendor session cookie
       const vendorId = await getUserVendorId(userId)
       if (vendorId) {
@@ -441,8 +453,12 @@ async function processUserLogin(
         }
       }
       redirectResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, "", { ...clearAdminSessionCookie().options, maxAge: 0 })
-    } else if (preferredDashboard.startsWith('/collector/')) {
+    } else if (effectiveDashboard.startsWith('/collector/')) {
       // Collector dashboard - set collector session cookie
+      // Clear vendor session when from experience flow (collector-only path; multi-role users stay in collector context)
+      if (isCollectorExperienceFlow) {
+        redirectResponse.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
+      }
       const serviceClient = createServiceClient()
       const { data: orderMatch } = await serviceClient
         .from("orders")

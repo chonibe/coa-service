@@ -1,40 +1,42 @@
-import { NextRequest, NextResponse } from "next/server"
-import { rateLimitMiddleware, addRateLimitHeaders } from "@/lib/middleware/rate-limit"
-import { corsMiddleware, addCorsHeaders, handleCorsPreflight } from "@/lib/middleware/cors"
+import { NextRequest, NextResponse } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
+import { rateLimitMiddleware } from '@/lib/middleware/rate-limit'
+import {
+  addCorsHeaders,
+  handleCorsPreflight,
+} from '@/lib/middleware/cors'
+
+function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
+  from.cookies.getAll().forEach(({ name, value, options }) =>
+    to.cookies.set(name, value, options)
+  )
+  return to
+}
 
 export async function middleware(request: NextRequest) {
-  // Handle CORS preflight requests
-  if (request.method === "OPTIONS") {
+  const supabaseResponse = await updateSession(request)
+
+  if (request.method === 'OPTIONS') {
     const corsResponse = handleCorsPreflight(request)
     if (corsResponse) {
-      return corsResponse
+      return copyCookies(supabaseResponse, corsResponse)
     }
   }
 
-  // Apply rate limiting to API routes
-  if (request.nextUrl.pathname.startsWith("/api")) {
+  if (request.nextUrl.pathname.startsWith('/api')) {
     const rateLimitResponse = rateLimitMiddleware(request)
     if (rateLimitResponse) {
-      return addCorsHeaders(rateLimitResponse, request)
+      const withCookies = copyCookies(supabaseResponse, rateLimitResponse)
+      return addCorsHeaders(withCookies, request)
     }
+    return addCorsHeaders(supabaseResponse, request)
   }
 
-  // Continue with the request
-  const response = NextResponse.next()
-
-  // Add CORS headers if needed
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    return addCorsHeaders(response, request)
-  }
-
-  return response
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    "/api/:path*",
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
-
-

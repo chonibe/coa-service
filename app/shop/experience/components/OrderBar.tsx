@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon } from '@heroicons/react/24/solid'
+import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon, TicketIcon } from '@heroicons/react/24/solid'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder } from '../ExperienceOrderContext'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
+import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
 import { PaymentMethodsModal } from '@/components/shop/checkout/PaymentMethodsModal'
@@ -368,7 +369,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       onClick={() => setPromoModalOpen(true)}
       className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
-      <span className="text-neutral-900">
+      <span className="flex items-center gap-2 text-neutral-900">
+        <TicketIcon className="w-5 h-5 text-neutral-600 shrink-0" />
         Promo: {promoApplied || 'WELCOME10'}
       </span>
       <span className="text-neutral-500 hover:text-neutral-700">Change</span>
@@ -390,7 +392,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
                   </svg>
                 </div>
-                <span className="text-sm text-neutral-900 truncate">{lampQuantity} × {lamp.title}</span>
+                <span className="text-sm text-neutral-900 truncate">{lampQuantity} × Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0 tabular-nums text-sm">
                 {lampSavings > 0 ? (
@@ -412,13 +414,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                 <div className="w-7 shrink-0" aria-hidden />
                 <TagIcon className="w-4 h-4 shrink-0 text-green-600" />
                 <span className="text-sm text-green-600">
-                  7.5% per artwork · You&apos;re saving ${lampSavings.toFixed(2)}
+                  Volume discount : you&apos;re saving ${lampSavings.toFixed(2)}
                 </span>
               </div>
             )}
           </div>
         )}
-        {selectedArtworks.slice(0, 6).map((art) => (
+        {selectedArtworks.map((art) => (
           <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100">
@@ -429,6 +431,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     width={28}
                     height={28}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">
@@ -441,11 +444,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               </span>
             </div>
             <span className="text-sm text-neutral-700 tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
+            <button
+              type="button"
+              onClick={() => onRemoveArtwork(art.id)}
+              aria-label={`Remove ${art.title} from cart`}
+              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+            >
+              <XMarkIcon className="w-3 h-3" />
+            </button>
           </div>
         ))}
-        {selectedArtworks.length > 6 && (
-          <div className="text-sm text-neutral-500">+{selectedArtworks.length - 6} more</div>
-        )}
         {lampQuantity === 0 && (
           <button
             type="button"
@@ -563,7 +571,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         onApply={(code) => { setPromoApplied(code); setPromoDiscount(0) }}
         onRemove={() => { setPromoApplied(''); setPromoDiscount(0) }}
         volumeDiscountLabel={lampSavings > 0 ? 'Volume Discount Applied' : undefined}
-        volumeDiscountDescription={lampSavings > 0 ? '7.5% per artwork' : undefined}
+        volumeDiscountDescription={lampSavings > 0 ? 'Volume discount : you\'re saving' : undefined}
       />
 
       {itemCount > 0 && allAvailable && (
@@ -622,6 +630,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar(props, ref) {
   return (
     <CheckoutProvider>
+      <CheckoutPiiPrefill />
       <OrderBarInner {...props} ref={ref} />
     </CheckoutProvider>
   )

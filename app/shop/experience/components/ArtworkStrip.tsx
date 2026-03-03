@@ -117,6 +117,7 @@ function ArtworkCard({
   onAddToCart,
   onViewDetail,
 }: ArtworkCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
   const isLampSelection = lampPosition === 1 || lampPosition === 2
   const inWishlist = isInWishlist(product.id)
@@ -162,9 +163,10 @@ function ArtworkCard({
     <motion.div
       data-product-id={product.id}
       className={cn(
-        'relative rounded-xl overflow-hidden transition-all duration-200',
+        'relative rounded-xl overflow-hidden transition-all duration-200 origin-center',
         isInCart && 'overflow-visible',
-        isInCart && 'bg-neutral-900'
+        isInCart && 'bg-neutral-900',
+        isInCart && 'scale-[0.95]'
       )}
     >
       <div
@@ -179,13 +181,20 @@ function ArtworkCard({
         title="Tap for details + lamp preview"
       >
         {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={product.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 52vw, 28vw"
-          />
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-neutral-700/50 animate-pulse" />
+            )}
+            <Image
+              src={imageUrl}
+              alt={product.title}
+              fill
+              className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
+              sizes="(max-width: 768px) 52vw, 28vw"
+              loading="lazy"
+              onLoad={() => setImageLoaded(true)}
+            />
+          </>
         ) : (
           <div className={cn(
             'w-full h-full flex items-center justify-center text-xs',
@@ -224,13 +233,19 @@ function ArtworkCard({
         )}
       </div>
 
-      <div className={cn(
-        'px-2 py-1.5 flex items-center gap-1 border-t transition-colors overflow-hidden rounded-b-xl',
-        isInCart
-          ? 'border-white/20 bg-neutral-900/80 backdrop-blur-xl backdrop-saturate-150'
-          : 'border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150'
-      )}
+      <div
+        className={cn(
+          'px-2 py-1.5 flex items-center gap-1 border-t transition-colors overflow-hidden rounded-b-xl cursor-pointer',
+          isInCart
+            ? 'border-white/20 bg-neutral-900/80 backdrop-blur-xl backdrop-saturate-150'
+            : 'border-white/40 bg-white/60 backdrop-blur-xl backdrop-saturate-150'
+        )}
         style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+        onClick={(e) => {
+          if (isSoldOut) return
+          if ((e.target as HTMLElement).closest('button')) return
+          handleLampSelect()
+        }}
       >
         <div className="flex-1 min-w-0">
           <p className={cn(

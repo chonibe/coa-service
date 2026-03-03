@@ -1,11 +1,24 @@
 "use client"
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 import { VendorSidebar } from "./vendor-sidebar"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { ImpersonationBanner } from "./impersonation-banner"
 import { PageOnboardingWizard } from "./page-onboarding-wizard"
 import { ComponentErrorBoundary } from "@/components/error-boundaries"
+
+/** App shell routes use the new BottomTabBar - hide the old VendorSidebar on these paths */
+const APP_SHELL_PATHS = [
+  "/vendor/home",
+  "/vendor/studio",
+  "/vendor/insights",
+  "/vendor/inbox",
+  "/vendor/profile",
+]
+function isAppShellRoute(pathname: string): boolean {
+  return APP_SHELL_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
+}
 
 type RefreshHandler = () => Promise<void> | void
 
@@ -38,8 +51,10 @@ interface SidebarLayoutProps {
 }
 
 export function SidebarLayout({ children }: SidebarLayoutProps) {
+  const pathname = usePathname()
   const handlersRef = useRef<RefreshHandler[]>([])
   const [isDirty, setDirty] = useState(false)
+  const showOldSidebar = !isAppShellRoute(pathname ?? "")
 
   const register = useCallback((handler: RefreshHandler) => {
     handlersRef.current.push(handler)
@@ -72,10 +87,12 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-background focus:px-3 focus:py-2 focus:rounded-md">
             Skip to content
           </a>
-          {/* The sidebar is now a true overlay */}
-          <ComponentErrorBoundary componentName="VendorSidebar" fallbackMode="silent">
-            <VendorSidebar />
-          </ComponentErrorBoundary>
+          {/* Old sidebar: hide on app shell routes (home, studio, insights, inbox, profile) */}
+          {showOldSidebar && (
+            <ComponentErrorBoundary componentName="VendorSidebar" fallbackMode="silent">
+              <VendorSidebar />
+            </ComponentErrorBoundary>
+          )}
 
           {/* Main content takes full width */}
           <div className="w-full overflow-x-hidden">

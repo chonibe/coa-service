@@ -20,6 +20,7 @@ export interface ShopUser {
   collectorIdentifier: string
   firstName?: string
   lastName?: string
+  phone?: string
   avatarUrl?: string
   
   // RBAC integration
@@ -36,6 +37,8 @@ export interface ShopUser {
   membershipCurrentPeriodEnd?: string
   creditBalance: number
   creditBalanceValue: number // USD value of credits
+  /** True when using dev mock login */
+  isMockUser?: boolean
 }
 
 interface UseShopAuthReturn {
@@ -69,39 +72,48 @@ export function useShopAuth(): UseShopAuthReturn {
       const permissions = (claims.user_permissions || []) as Permission[]
       const isCollector = roles.includes('collector')
 
-      // Fetch membership status and credit balance (only if collector role)
+      // Fetch PII from collector_profiles, membership status, and credit balance in parallel
       let membershipData = null
       let creditBalance = 0
       let creditBalanceValue = 0
-      
-      if (isCollector) {
-        try {
-          const [memberRes, balanceRes] = await Promise.all([
-            fetch('/api/membership/status'),
-            fetch(`/api/banking/balance?collector_identifier=${encodeURIComponent(session.user.email || '')}`)
-          ])
-          
-          if (memberRes.ok) {
-            membershipData = await memberRes.json()
-          }
-          
-          if (balanceRes.ok) {
-            const balanceData = await balanceRes.json()
-            creditBalance = balanceData?.balance?.creditsBalance || 0
-            // Calculate USD value (base rate $0.10 per credit)
-            creditBalanceValue = creditBalance * 0.10
-          }
-        } catch (fetchError) {
-          console.warn('[useShopAuth] Error fetching membership/balance:', fetchError)
+      let customer: { firstName?: string; lastName?: string; phone?: string } | null = null
+      let isMockUser = false
+
+      const authPromise = fetch('/api/shop/account/auth', { cache: 'no-store' })
+      const memberPromise = isCollector ? fetch('/api/membership/status') : Promise.resolve(new Response(null, { status: 401 }))
+      const balancePromise = isCollector
+        ? fetch(`/api/banking/balance?collector_identifier=${encodeURIComponent(session.user.email || '')}`)
+        : Promise.resolve(new Response(null, { status: 401 }))
+
+      try {
+        const [authRes, memberRes, balanceRes] = await Promise.all([authPromise, memberPromise, balancePromise])
+
+        if (authRes.ok) {
+          const authData = await authRes.json()
+          customer = authData?.customer ?? null
+          isMockUser = !!authData?.isMockUser
         }
+
+        if (isCollector && memberRes.ok) {
+          membershipData = await memberRes.json()
+        }
+
+        if (isCollector && balanceRes.ok) {
+          const balanceData = await balanceRes.json()
+          creditBalance = balanceData?.balance?.creditsBalance || 0
+          creditBalanceValue = creditBalance * 0.10
+        }
+      } catch (fetchError) {
+        console.warn('[useShopAuth] Error fetching auth/membership/balance:', fetchError)
       }
 
       setUser({
         id: session.user.id,
         email: session.user.email || '',
         collectorIdentifier: session.user.email || '',
-        firstName: session.user.user_metadata?.first_name,
-        lastName: session.user.user_metadata?.last_name,
+        firstName: customer?.firstName || session.user.user_metadata?.first_name,
+        lastName: customer?.lastName || session.user.user_metadata?.last_name,
+        phone: customer?.phone,
         avatarUrl: session.user.user_metadata?.avatar_url,
         
         // RBAC
@@ -118,6 +130,7 @@ export function useShopAuth(): UseShopAuthReturn {
         membershipCurrentPeriodEnd: membershipData?.subscription?.current_period_end,
         creditBalance,
         creditBalanceValue,
+        isMockUser,
       })
     } catch (error) {
       console.error('[useShopAuth] Auth check error:', error)

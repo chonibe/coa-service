@@ -13,6 +13,7 @@ import Image from 'next/image'
 import { useCart } from '@/lib/shop/CartContext'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
+import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { Button, Slider } from '@/components/ui'
 import { CheckoutLayout } from '@/components/shop/checkout'
 import { 
@@ -331,6 +332,7 @@ function CartLoading() {
 function CartContent() {
   return (
     <CheckoutProvider>
+      <CheckoutPiiPrefill />
       <CartContentInner />
     </CheckoutProvider>
   )

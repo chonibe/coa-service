@@ -177,3 +177,51 @@ export const mockResponseData = {
   orders: mockOrders,
   pagination: mockPagination,
 }
+
+/** Mock account orders for streets@streets.com (shop account page format) */
+export const mockAccountOrders = [
+  {
+    id: 'mock-order-1',
+    shopifyOrderId: 'mock-order-1',
+    orderNumber: '1001',
+    createdAt: new Date().toISOString(),
+    status: 'shipped' as const,
+    totalAmount: 22500, // $225.00 in cents
+    currency: 'USD',
+    lineItems: [
+      { id: 'li-1', title: 'Limited Edition Print', variantTitle: '18x24', quantity: 1, price: 15000, imageUrl: '/placeholder.svg?height=80&width=80' },
+      { id: 'li-2', title: "Collector's Edition Book", variantTitle: 'Hardcover', quantity: 1, price: 7500, imageUrl: '/placeholder.svg?height=80&width=80' },
+    ],
+    shippingAddress: {
+      name: 'Street Collector',
+      address1: '123 Main St',
+      address2: 'Apt 4',
+      city: 'Brooklyn',
+      province: 'NY',
+      postalCode: '11201',
+      country: 'United States',
+    },
+    trackingNumber: '1Z999AA10123456784',
+    trackingUrl: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=1Z999AA10123456784',
+  },
+  {
+    id: 'mock-order-2',
+    shopifyOrderId: 'mock-order-2',
+    orderNumber: '1002',
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'processing' as const,
+    totalAmount: 20000,
+    currency: 'USD',
+    lineItems: [
+      { id: 'li-3', title: 'Exclusive Digital Artwork', variantTitle: 'High Res', quantity: 1, price: 20000, imageUrl: '/placeholder.svg?height=80&width=80' },
+    ],
+    shippingAddress: {
+      name: 'Street Collector',
+      address1: '123 Main St',
+      city: 'Brooklyn',
+      province: 'NY',
+      postalCode: '11201',
+      country: 'United States',
+    },
+  },
+]

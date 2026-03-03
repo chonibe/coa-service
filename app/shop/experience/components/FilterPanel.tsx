@@ -12,8 +12,7 @@ export interface FilterState {
   tags: string[]
   priceRange: [number, number] | null
   inStockOnly: boolean
-  inCartOnly: boolean
-  sortBy: 'featured' | 'price-asc' | 'price-desc' | 'newest'
+  sortBy: 'featured' | 'price-asc' | 'price-desc' | 'newest' | 'added-to-cart'
   /** Min star rating (4 = "4+ stars"). Products must have user rating >= this. */
   minStarRating: number | null
 }
@@ -23,7 +22,6 @@ export const DEFAULT_FILTERS: FilterState = {
   tags: [],
   priceRange: null,
   inStockOnly: false,
-  inCartOnly: false,
   sortBy: 'featured',
   minStarRating: null,
 }
@@ -34,7 +32,6 @@ export function hasActiveFilters(f: FilterState): boolean {
     f.tags.length > 0 ||
     f.priceRange !== null ||
     f.inStockOnly ||
-    f.inCartOnly ||
     f.sortBy !== 'featured' ||
     f.minStarRating !== null
   )
@@ -47,6 +44,8 @@ interface FilterPanelProps {
   isOpen: boolean
   onClose: () => void
   wishlistCount?: number
+  /** Cart order (product IDs) for "Sort by added to cart" */
+  cartOrder?: string[]
   /** When provided, called instead of global open-wishlist event (e.g. to open WishlistSwiperSheet in experience) */
   onOpenWishlist?: () => void
 }
@@ -63,9 +62,10 @@ const SORT_OPTIONS: Array<{ value: FilterState['sortBy']; label: string }> = [
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest' },
+  { value: 'added-to-cart', label: 'Added to cart' },
 ]
 
-export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0, onOpenWishlist }: FilterPanelProps) {
+export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0, cartOrder = [], onOpenWishlist }: FilterPanelProps) {
   const allArtists = useMemo(() => {
     const map = new Map<string, number>()
     products.forEach((p) => {
@@ -267,27 +267,6 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                 </label>
               </section>
 
-              {/* Added to cart */}
-              <section>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.inCartOnly}
-                    onChange={(e) => onChange({ ...filters, inCartOnly: e.target.checked })}
-                    className="sr-only"
-                  />
-                  <span className={cn(
-                    'relative inline-block w-10 h-5 flex-shrink-0 rounded-full border transition-colors duration-200',
-                    filters.inCartOnly ? 'bg-green-500 border-green-500' : 'bg-neutral-200 border-neutral-200'
-                  )}>
-                    <span className={cn(
-                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200',
-                      filters.inCartOnly ? 'translate-x-5' : 'translate-x-0'
-                    )} />
-                  </span>
-                  <span className="text-sm text-neutral-700">Added to cart only</span>
-                </label>
-              </section>
             </div>
 
             {/* Footer */}
@@ -309,7 +288,8 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
 export function applyFilters(
   products: ShopifyProduct[],
   filters: FilterState,
-  searchQuery: string
+  searchQuery: string,
+  cartOrder: string[] = []
 ): ShopifyProduct[] {
   let result = [...products]
 
@@ -359,6 +339,15 @@ export function applyFilters(
     case 'newest':
       result.reverse()
       break
+    case 'added-to-cart': {
+      const orderMap = new Map(cartOrder.map((id, i) => [id, i]))
+      result.sort((a, b) => {
+        const aIdx = orderMap.get(a.id) ?? Infinity
+        const bIdx = orderMap.get(b.id) ?? Infinity
+        return aIdx - bIdx
+      })
+      break
+    }
   }
 
   return result

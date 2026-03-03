@@ -151,6 +151,18 @@ export default function LoginClient() {
         const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
         const vendorHome = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
         const collectorHome = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+        const redirectParam = searchParams.get("redirect")
+        const intentParam = searchParams.get("intent")
+        const wantsCollector = intentParam === "collector" || (redirectParam && /^\/shop\//.test(redirectParam))
+
+        // If user explicitly wants collector (e.g. from My Orders /shop/account), respect that over vendor
+        if (wantsCollector && (data as any).hasCollectorSession) {
+          const target = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : collectorHome
+          console.log(`[login-client] Redirecting to collector (intent): ${target}`)
+          hasRedirected.current = true
+          window.location.replace(target)
+          return
+        }
 
         if (data.vendorSession || data.vendor) {
           console.log(`[login-client] Redirecting to vendor: ${vendorHome}`)
@@ -160,7 +172,6 @@ export default function LoginClient() {
         }
 
         if ((data as any).hasCollectorSession) {
-          const redirectParam = searchParams.get("redirect")
           const target = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : collectorHome
           console.log(`[login-client] Redirecting to collector: ${target}`)
           hasRedirected.current = true
@@ -363,10 +374,20 @@ export default function LoginClient() {
               </Link>
             </Button>
 
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-xs text-muted-foreground">
                 Secure authentication powered by Google and Shopify
               </p>
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs">
+                  <Link
+                    href={`/api/dev/mock-login?email=streets@streets.com&redirect=${encodeURIComponent(searchParams.get('redirect') ?? '/shop/account')}`}
+                    className="text-amber-600 dark:text-amber-500 hover:underline"
+                  >
+                    Dev: View as mock user (streets@streets.com)
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         </CardContent>

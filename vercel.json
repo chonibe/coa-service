@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["iad1"],
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1"

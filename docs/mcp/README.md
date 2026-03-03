@@ -8,13 +8,22 @@ This project includes custom Model Context Protocol (MCP) servers that enable Cu
 
 ### Components
 
-1. **Supabase MCP Server** (`mcp-servers/supabase-server/`)
+1. **Lighthouse MCP Server** (via [lighthouse-mcp](https://github.com/priyankark/lighthouse-mcp))
+   - Run Lighthouse audits on any URL
+   - Get performance scores and metrics
+   - Configure device emulation (mobile/desktop)
+   - Control network throttling
+   - Tools: `run_audit`, `get_performance_score`
+   - Configured in `~/.cursor/mcp.json` via `npx lighthouse-mcp`
+   - **Requirements:** Node.js 16+, Chrome/Chromium for Lighthouse
+
+2. **Supabase MCP Server** (`mcp-servers/supabase-server/`)
    - Read-only database access
    - Schema inspection tools
    - Query execution (SELECT only)
    - Relationship discovery
 
-2. **Shopify MCP Server** (`mcp-servers/shopify-server/`)
+3. **Shopify MCP Server** (`mcp-servers/shopify-server/`)
    - Read-only API access
    - Product catalog inspection
    - Order information queries
@@ -96,6 +105,20 @@ Example configuration:
 ```
 
 ## Usage
+
+### Lighthouse MCP Server
+
+#### Tools
+
+1. **run_audit**
+   - Run a comprehensive Lighthouse audit on any URL
+   - Parameters: `url` (required), `categories` (optional: performance, accessibility, best-practices, seo, pwa), `device` (optional: mobile/desktop), `throttling` (optional)
+   - Example: "Run a Lighthouse audit on https://example.com for performance and accessibility"
+
+2. **get_performance_score**
+   - Get just the performance score for a URL
+   - Parameters: `url` (required), `device` (optional: mobile/desktop)
+   - Example: "What's the performance score for example.com?"
 
 ### Supabase MCP Server
 

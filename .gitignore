@@ -40,6 +40,7 @@ next-env.d.ts
 # backup
 /backup/storage
 /backup/dist
+*.backup
 
 # large files
 postgresql-installer.exe

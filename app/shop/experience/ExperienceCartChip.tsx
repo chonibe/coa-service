@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useExperienceOrder } from './ExperienceOrderContext'
 import { cn } from '@/lib/utils'
 
@@ -10,7 +12,7 @@ function CartBagIcon({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 18 17"
-      className={cn('w-3.5 h-3.5 shrink-0', className)}
+      className={cn('shrink-0', className)}
       aria-hidden
     >
       <path
@@ -47,30 +49,67 @@ export function ExperienceCartChip({
   className?: string
   variant?: 'light' | 'dark'
 }) {
-  const { total, itemCount, openOrderBar } = useExperienceOrder()
+  const { total, itemCount, openOrderBar, orderBarProps } = useExperienceOrder()
+  const prevLampQuantity = useRef(0)
+  const [hasExpanded, setHasExpanded] = useState(false)
+  const lampQuantity = orderBarProps?.lampQuantity ?? 0
 
-  const formattedPrice = total > 0 ? `$${total.toFixed(2)}` : '$0.00'
+  const formattedPrice = total > 0 ? `$${total.toFixed(2)}` : ''
+  const showPrice = hasExpanded && total > 0
 
-  const isLight = variant === 'light'
+  useEffect(() => {
+    if (lampQuantity > prevLampQuantity.current && lampQuantity >= 1) {
+      setHasExpanded(true)
+    }
+    prevLampQuantity.current = lampQuantity
+  }, [lampQuantity])
+
+  // Stay expanded once we have items (e.g. from quiz state with empty cart)
+  useEffect(() => {
+    if (itemCount > 0) setHasExpanded(true)
+  }, [itemCount])
+
+  const iconSize = 14
+  const collapsedPadding = 5
+  const collapsedWidth = iconSize + collapsedPadding * 2
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={openOrderBar}
       data-testid="photo-styler-cta-button"
-      aria-label={`View cart – ${formattedPrice} (${itemCount} items)`}
+      aria-label={formattedPrice ? `View cart – ${formattedPrice} (${itemCount} items)` : `View cart (${itemCount} items)`}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors hover:scale-[1.02] cursor-pointer text-sm',
-        isLight
-          ? 'bg-white/90 hover:bg-white text-neutral-900 border border-neutral-200/60'
-          : 'bg-black/65 hover:bg-black/80 text-white border border-white/10 backdrop-blur-sm',
+        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-pink-500 hover:bg-pink-600 text-white self-center shrink-0 !min-h-0 -mx-1',
         className
       )}
+      initial={false}
+      animate={{
+        width: showPrice ? 'auto' : collapsedWidth,
+        paddingLeft: showPrice ? 10 : collapsedPadding,
+        paddingRight: showPrice ? 10 : collapsedPadding,
+        paddingTop: 5,
+        paddingBottom: 5,
+      }}
+      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <span className="inline-flex items-center gap-2">
-        <span className="font-semibold tabular-nums">{formattedPrice}</span>
-        <CartBagIcon />
+      <span className="inline-flex items-center justify-center min-w-0">
+        <AnimatePresence mode="sync">
+          {showPrice && (
+            <motion.span
+              key="price"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="font-bold tabular-nums whitespace-nowrap shrink-0 mr-1.5"
+            >
+              {formattedPrice}
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <CartBagIcon className="!w-[14px] !h-[14px] !min-w-0 !min-h-0 shrink-0" />
       </span>
-    </button>
+    </motion.button>
   )
 }

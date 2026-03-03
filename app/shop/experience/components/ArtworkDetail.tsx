@@ -350,6 +350,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       width={56}
                       height={56}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </button>
                 ))}

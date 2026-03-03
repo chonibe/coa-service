@@ -2,17 +2,29 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient as createRouteClient } from '@/lib/supabase-server'
 import { createClient as createServiceClient } from '@/lib/supabase/server'
+import { mockAccountOrders } from '@/lib/mock-data'
+
+const MOCK_COOKIE = 'mock_user_email'
 
 /**
  * Shop Account Orders API
  *
  * Returns order history for the authenticated customer from the orders table
  * (Shopify-synced data). Matches by customer_email.
+ * In development, supports mock orders via mock_user_email cookie (streets@streets.com).
  */
 
 export async function GET() {
   try {
     const cookieStore = cookies()
+    const mockEmail = cookieStore.get(MOCK_COOKIE)?.value
+    const isDev = process.env.NODE_ENV === 'development'
+    const mockEnabled = process.env.MOCK_LOGIN_ENABLED === 'true'
+
+    if (mockEmail && (isDev || mockEnabled)) {
+      return NextResponse.json({ orders: mockAccountOrders })
+    }
+
     const supabase = createRouteClient(cookieStore)
 
     const {

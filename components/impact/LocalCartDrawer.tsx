@@ -6,6 +6,7 @@ import { Button } from './Button'
 import { useSmoothDrawer } from '@/lib/animations/navigation-animations'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutLayout } from '@/components/shop/checkout'
+import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import type { CartItem } from '@/lib/shop/CartContext'
 
 /**
@@ -310,6 +311,7 @@ LocalCartDrawerInner.displayName = 'LocalCartDrawerInner'
 const LocalCartDrawer = React.forwardRef<HTMLDivElement, LocalCartDrawerProps>(
   (props, ref) => (
     <CheckoutProvider>
+      <CheckoutPiiPrefill />
       <LocalCartDrawerInner {...props} ref={ref} />
     </CheckoutProvider>
   )

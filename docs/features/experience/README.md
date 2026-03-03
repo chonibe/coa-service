@@ -12,10 +12,22 @@ The Experience page (`/shop/experience`) lets users customize a Street Lamp with
 
 1. **Streaming + Suspense** – Page shell renders immediately; data streams in via `loading.tsx` and Suspense fallback.
 2. **Lazy Spline 3D** – `Spline3DPreview` is loaded with `next/dynamic` only when the configurator mounts.
+3. **Spline scene preload** – `SplineScenePreload` in experience layout preloads `scene.splinecode` (~6.7MB) as soon as the page loads, so it's cached before the 3D preview is needed.
+4. **Spline when visible** – `SplineWhenVisible` defers mounting Spline until the preview container is in the viewport (Intersection Observer).
 3. **Lightweight product payload** – `getCollectionWithListProducts` uses `PRODUCT_LIST_FRAGMENT` (no description, media, full variants) for the artwork strip; full product fetched on-demand when opening ArtworkDetail.
 4. **Virtualized ArtworkStrip** – `@tanstack/react-virtual` renders only visible rows (~10–15 cards instead of 100+).
 5. **Reduced motion** – `whileHover` / `whileTap` removed from ArtworkCard to cut scroll-time JS work.
 6. **Error boundaries** – Configurator and Spline wrapped in `ComponentErrorBoundary` for graceful degradation.
+
+### Spline Scene Optimization (Optional)
+
+The `scene.splinecode` file is ~6.7MB. To reduce it in the Spline editor:
+
+1. **Export > Play Settings > Compression** – Set Geometry Quality to "Performance"; enable image compression (can reduce textures up to 4x).
+2. **Performance Panel** – Use Spline's built-in metrics to find heavy elements (polygons, materials, textures).
+3. **Simplify** – Reduce subdivision levels, lower polygon counts on parametric objects, avoid excessive clones.
+
+See [Spline optimization docs](https://docs.spline.design/doc/-/doczPMIye7Ko).
 
 ### Image Optimization (Optional)
 

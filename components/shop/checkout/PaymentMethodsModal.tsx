@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Checkbox, Label } from '@/components/ui'
@@ -101,6 +102,9 @@ export function PaymentMethodsModal({
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
         >
+          <VisuallyHidden>
+            <Dialog.Title>Payment</Dialog.Title>
+          </VisuallyHidden>
           <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-5">
             <button
               type="button"

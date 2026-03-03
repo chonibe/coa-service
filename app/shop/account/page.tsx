@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   Container,
   SectionWrapper,
@@ -10,10 +9,10 @@ import {
   Card,
   CardHeader,
   CardContent,
-  Badge,
   StatusBadge,
   Input,
 } from '@/components/impact'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 
 /**
  * Shop Account Page
@@ -51,57 +50,25 @@ interface Order {
   trackingUrl?: string
 }
 
-interface CustomerProfile {
-  email: string
-  firstName?: string
-  lastName?: string
-  phone?: string
-}
-
 export default function AccountPage() {
-  const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const { user, isAuthenticated, loading, refreshUser } = useShopAuthContext()
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
-  const [profile, setProfile] = useState<CustomerProfile | null>(null)
-  const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
 
-  // Check authentication and fetch data
+  const profile = user
+    ? { email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone }
+    : null
+
+  // Fetch orders when authenticated
   useEffect(() => {
-    async function checkAuthAndFetchData() {
-      try {
-        // Check if user is authenticated
-        const authResponse = await fetch('/api/shop/account/auth')
-        
-        if (!authResponse.ok) {
-          setIsAuthenticated(false)
-          setLoading(false)
-          return
-        }
+    if (!isAuthenticated) return
+    fetch('/api/shop/account/orders')
+      .then((res) => (res.ok ? res.json() : { orders: [] }))
+      .then((data) => setOrders(data.orders || []))
+      .catch(() => setOrders([]))
+  }, [isAuthenticated])
 
-        setIsAuthenticated(true)
-        const { customer } = await authResponse.json()
-        setProfile(customer)
-
-        // Fetch orders
-        const ordersResponse = await fetch('/api/shop/account/orders')
-        if (ordersResponse.ok) {
-          const { orders: orderData } = await ordersResponse.json()
-          setOrders(orderData || [])
-        }
-      } catch (error) {
-        console.error('Error fetching account data:', error)
-        setIsAuthenticated(false)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuthAndFetchData()
-  }, [])
-
-  // Handle profile update
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!profile) return
@@ -120,8 +87,7 @@ export default function AccountPage() {
       })
 
       if (response.ok) {
-        const { customer } = await response.json()
-        setProfile(customer)
+        await refreshUser()
         alert('Profile updated successfully')
       }
     } catch (error) {
@@ -149,7 +115,6 @@ export default function AccountPage() {
     })
   }
 
-  // Loading state
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f5f5f5]">
@@ -198,6 +163,13 @@ export default function AccountPage() {
                     </Button>
                   </Link>
                 </div>
+                {process.env.NODE_ENV === 'development' && (
+                  <p className="mt-4 text-xs text-[#1a1a1a]/50">
+                    <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-amber-600 hover:underline">
+                      Dev: View as mock user (streets@streets.com)
+                    </Link>
+                  </p>
+                )}
               </div>
             </Card>
           </Container>
@@ -220,11 +192,21 @@ export default function AccountPage() {
                 <p className="text-[#1a1a1a]/60 mt-1">{profile.email}</p>
               )}
             </div>
-            <Link href="/shop">
-              <Button variant="outline" size="sm">
-                Continue Shopping
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {user?.isMockUser && (
+                <Link
+                  href="/api/dev/mock-logout?redirect=/login?redirect=%2Fshop%2Faccount"
+                  className="text-xs text-amber-600 hover:underline"
+                >
+                  Dev: End mock session
+                </Link>
+              )}
+              <Link href="/shop">
+                <Button variant="outline" size="sm">
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -389,7 +371,11 @@ export default function AccountPage() {
             <Card variant="default" padding="lg">
               <CardHeader title="Profile Information" />
               <CardContent className="mt-6">
-                <form onSubmit={handleProfileUpdate} className="space-y-6 max-w-md">
+                <form
+                  key={`${profile.email}-${profile.firstName ?? ''}-${profile.lastName ?? ''}-${profile.phone ?? ''}`}
+                  onSubmit={handleProfileUpdate}
+                  className="space-y-6 max-w-md"
+                >
                   <Input
                     label="Email"
                     type="email"

@@ -24,6 +24,15 @@ export interface OrderBarContextProps {
   onSelectArtwork?: (product: ShopifyProduct) => void
   onViewLampDetail?: (product: ShopifyProduct) => void
   isGift: boolean
+  /** For header lamp bar: price, total, discount label, artwork count */
+  lampPrice?: number
+  lampTotal?: number
+  discountBarLabel?: string
+  artworkCount?: number
+  lampSavings?: number
+  lampProgressPercent?: number
+  /** True when user has passed the lamp paywall (added lamp, skipped, or owns one) */
+  pastLampPaywall?: boolean
 }
 
 interface ExperienceOrderContextValue extends ExperienceOrderState {
