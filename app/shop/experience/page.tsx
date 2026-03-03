@@ -18,48 +18,60 @@ export const metadata = {
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
+const PRODUCTS_PER_SEASON = 24
 
 interface ExperiencePageProps {
   searchParams: Promise<{ artist?: string; skipQuiz?: string }>
 }
 
-async function ExperiencePageContent({ searchParams }: ExperiencePageProps) {
+async function ExperienceProductsLoader({
+  lamp,
+  initialArtistSlug,
+  skipQuiz,
+}: {
+  lamp: ShopifyProduct
+  initialArtistSlug?: string
+  skipQuiz: boolean
+}) {
+  const [season1Result, season2Result] = await Promise.all([
+    getCollectionWithListProducts(SEASON_1_HANDLE, {
+      first: PRODUCTS_PER_SEASON,
+      sortKey: 'MANUAL',
+    }).catch(() => null),
+    getCollectionWithListProducts(SEASON_2_HANDLE, {
+      first: PRODUCTS_PER_SEASON,
+      sortKey: 'MANUAL',
+    }).catch(() => null),
+  ])
+
+  const productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
+  const productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
+
+  return (
+    <ExperienceClient
+      lamp={lamp}
+      productsSeason1={productsSeason1}
+      productsSeason2={productsSeason2}
+      initialArtistSlug={initialArtistSlug}
+      skipQuiz={skipQuiz}
+    />
+  )
+}
+
+async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   const resolved = await searchParams
   const initialArtistSlug = resolved?.artist?.trim() || undefined
   const skipQuiz = resolved?.skipQuiz === '1'
-  let lamp: ShopifyProduct | null = null
-  let productsSeason1: ShopifyProduct[] = []
-  let productsSeason2: ShopifyProduct[] = []
-  let error: string | null = null
 
-  try {
-    const [lampResult, season1Result, season2Result] = await Promise.all([
-      getProduct('street_lamp').catch(() => null),
-      getCollectionWithListProducts(SEASON_1_HANDLE, {
-        first: 50,
-        sortKey: 'MANUAL',
-      }).catch(() => null),
-      getCollectionWithListProducts(SEASON_2_HANDLE, {
-        first: 50,
-        sortKey: 'MANUAL',
-      }).catch(() => null),
-    ])
+  const lamp = await getProduct('street_lamp').catch(() => null)
 
-    lamp = lampResult
-    productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
-    productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
-  } catch (err: unknown) {
-    console.error('Experience page fetch error:', err)
-    error = err instanceof Error ? err.message : 'Failed to load products'
-  }
-
-  if (error || !lamp) {
+  if (!lamp) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
         <div className="text-center max-w-md px-6">
           <h1 className="text-2xl font-semibold mb-3">Unavailable</h1>
           <p className="text-neutral-400 mb-6">
-            {error || 'Could not load the lamp product. Please try again later.'}
+            Could not load the lamp product. Please try again later.
           </p>
           <Link
             href="/shop"
@@ -73,20 +85,20 @@ async function ExperiencePageContent({ searchParams }: ExperiencePageProps) {
   }
 
   return (
-    <ExperienceClient
-      lamp={lamp}
-      productsSeason1={productsSeason1}
-      productsSeason2={productsSeason2}
-      initialArtistSlug={initialArtistSlug}
-      skipQuiz={skipQuiz}
-    />
+    <Suspense fallback={<ExperienceLoadingSkeleton />}>
+      <ExperienceProductsLoader
+        lamp={lamp}
+        initialArtistSlug={initialArtistSlug}
+        skipQuiz={skipQuiz}
+      />
+    </Suspense>
   )
 }
 
 export default function ExperiencePage(props: ExperiencePageProps) {
   return (
     <Suspense fallback={<ExperienceLoadingSkeleton />}>
-      <ExperiencePageContent {...props} />
+      <ExperienceLampLoader {...props} />
     </Suspense>
   )
 }

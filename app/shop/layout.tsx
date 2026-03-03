@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Footer } from '@/components/impact'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { WishlistProvider, useWishlist } from '@/lib/shop/WishlistContext'
+import { ShopAuthProvider } from '@/lib/shop/ShopAuthContext'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { 
   mainNavigation as syncedMainNavigation, 
@@ -121,8 +122,9 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
     vendor: string
   }>>([])
   
-  // Fetch recommendations for cart drawer
+  // Fetch recommendations for cart drawer (skip on experience page - it has its own OrderBar)
   useEffect(() => {
+    if (isExperiencePage) return
     const fetchRecommendations = async () => {
       try {
         const response = await fetch(`/api/shop/collections/${homepageContent.newReleases.collectionHandle}`)
@@ -148,7 +150,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       }
     }
     fetchRecommendations()
-  }, [])
+  }, [isExperiencePage])
   
   // Handle wishlist drawer toggle
   const handleWishlistClick = useCallback(() => {
@@ -381,9 +383,11 @@ export default function ShopLayout({
   return (
     <CartProvider>
       <WishlistProvider>
-        <ShopLayoutInner>
-          {children}
-        </ShopLayoutInner>
+        <ShopAuthProvider>
+          <ShopLayoutInner>
+            {children}
+          </ShopLayoutInner>
+        </ShopAuthProvider>
       </WishlistProvider>
     </CartProvider>
   )

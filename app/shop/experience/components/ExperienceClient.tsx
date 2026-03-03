@@ -1,14 +1,23 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { IntroQuiz, type QuizAnswers } from './IntroQuiz'
-import { Configurator } from './Configurator'
 import { OrderBar } from './OrderBar'
+
+const Configurator = dynamic(() => import('./Configurator').then((m) => ({ default: m.Configurator })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-neutral-950">
+      <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+    </div>
+  ),
+})
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import type { FilterState } from './FilterPanel'
 
