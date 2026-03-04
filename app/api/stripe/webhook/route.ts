@@ -135,11 +135,17 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Handle checkout session completed - create Shopify draft order
+ * Handle checkout session completed - create Shopify draft order or provision gift card
  */
 async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.Session) {
   try {
     const source = session.metadata?.source
+
+    if (source === 'gift_card_purchase') {
+      await handleGiftCardPurchase(supabase, session)
+      return
+    }
+
     const isHeadless = source === 'headless_storefront'
     const isExperience = source === 'experience_checkout'
     if (!isHeadless && !isExperience) {
@@ -265,8 +271,15 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
         created_at: new Date().toISOString(),
       })
 
+      // ── Persist Stripe customer ID for saved payment methods ──
+      const stripeCustomerId = session.customer && typeof session.customer === 'string' ? session.customer : null
+      const purchaserEmail = customer?.email?.toLowerCase()?.trim()
+      if (stripeCustomerId && purchaserEmail) {
+        await supabase.from('collector_profiles').update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() }).ilike('email', purchaserEmail)
+        await supabase.from('collectors').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
+      }
+
       // ── Post-Purchase Bridge: Create/link collector identity ──
-      const purchaserEmail = customer?.email?.toLowerCase()
       if (purchaserEmail) {
         try {
           await bridgePostPurchase(
@@ -289,6 +302,132 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
   } catch (err) {
     console.error('Error handling checkout.session.completed:', err)
   }
+}
+
+/**
+ * Provision gift card after successful payment: create Stripe coupon + promotion code, store in DB, email code.
+ * Idempotent: skips if gift card already exists for this session.
+ */
+async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Session) {
+  const sessionId = session.id
+  const amountCents = parseInt(session.metadata?.gift_card_amount_cents || '0', 10)
+  const purchaserEmail = (session.customer_details?.email || session.customer_email || session.metadata?.collector_email || '').toString().toLowerCase().trim()
+  const recipientEmail = (session.metadata?.recipient_email || '').toString().toLowerCase().trim() || null
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'
+
+  if (!amountCents || amountCents < 1000) {
+    console.error('[gift-card] Invalid amount:', session.metadata?.gift_card_amount_cents)
+    return
+  }
+  if (!purchaserEmail) {
+    console.error('[gift-card] No purchaser email')
+    return
+  }
+
+  const { data: existing } = await supabase
+    .from('gift_cards')
+    .select('id, code, status')
+    .eq('stripe_session_id', sessionId)
+    .maybeSingle()
+
+  if (existing) {
+    console.log('[gift-card] Already provisioned for session:', sessionId)
+    return
+  }
+
+  try {
+    const coupon = await stripe.coupons.create({
+      amount_off: amountCents,
+      currency: 'usd',
+      max_redemptions: 1,
+    })
+    const code = `GC-${randomAlphanumeric(8).toUpperCase()}`
+    const promo = await stripe.promotionCodes.create({
+      coupon: coupon.id,
+      code,
+      max_redemptions: 1,
+    })
+
+    await supabase.from('gift_cards').insert({
+      code,
+      stripe_coupon_id: coupon.id,
+      stripe_promotion_code_id: promo.id,
+      amount_cents: amountCents,
+      currency: 'usd',
+      purchaser_email: purchaserEmail,
+      recipient_email: recipientEmail,
+      status: 'issued',
+      stripe_session_id: sessionId,
+    })
+
+    const emailTo = recipientEmail || purchaserEmail
+    const amountDollars = (amountCents / 100).toFixed(2)
+    await sendEmail({
+      to: emailTo,
+      subject: `Your $${amountDollars} Gift Card from The Street Collector`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
+            Your Gift Card
+          </h1>
+          <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 16px;">
+            Here's your $${amountDollars} gift card code. Use it at checkout when purchasing artwork from The Street Collector.
+          </p>
+          <p style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #1a1a1a; margin: 24px 0; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: center;">
+            ${code}
+          </p>
+          <p style="font-size: 14px; color: #777; line-height: 1.6;">
+            To redeem: Add items to your cart, go to checkout, and enter this code in the "Add Promo Code or Gift Card" field.
+          </p>
+          <a href="${baseUrl}/shop" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px;">
+            Shop Now
+          </a>
+          <p style="font-size: 12px; color: #999; margin-top: 24px;">
+            This code can only be used once. Questions? Contact us at ${baseUrl}/shop/contact
+          </p>
+        </div>
+      `,
+    })
+    console.log('[gift-card] Provisioned and emailed:', code)
+  } catch (err: any) {
+    console.error('[gift-card] Provisioning failed:', err)
+    await supabase.from('gift_cards').insert({
+      code: `PENDING-${sessionId.slice(-12)}`,
+      amount_cents: amountCents,
+      currency: 'usd',
+      purchaser_email: purchaserEmail,
+      recipient_email: recipientEmail,
+      status: 'provisioning_failed',
+      stripe_session_id: sessionId,
+      error_message: err?.message || 'Unknown error',
+    })
+    await sendEmail({
+      to: purchaserEmail,
+      subject: 'Gift Card – Delayed Delivery',
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
+            Your gift card is being prepared
+          </h1>
+          <p style="font-size: 16px; color: #555; line-height: 1.6;">
+            Thank you for your purchase. There was a slight delay in preparing your gift card. Our team has been notified and will send you the code shortly. If you don't receive it within 24 hours, please contact us.
+          </p>
+          <a href="${baseUrl}/shop/contact" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px;">
+            Contact Support
+          </a>
+        </div>
+      `,
+    })
+  }
+}
+
+function randomAlphanumeric(length: number): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
 }
 
 /**
