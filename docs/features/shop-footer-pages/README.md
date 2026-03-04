@@ -15,6 +15,7 @@ All footer-linked pages for the Street Collector shop, providing information, fo
 
 | Route | Description |
 |-------|-------------|
+| `/shop/for-business` | B2B page: Gifting, Hospitality, Offices, Galleries. Submits to API. |
 | `/shop/artist-submissions` | Artist submission form—portfolio, Instagram, message. Submits to API. |
 | `/shop/collab` | Affiliate program (Shopify Collabs). Apply now + Log in CTAs. |
 | `/shop/wholesale` | Wholesale partnership info. Details checklist + mailto contact. |
@@ -23,6 +24,14 @@ All footer-linked pages for the Street Collector shop, providing information, fo
 | `/shop/contact` | Contact info—email, hours, DPO note. |
 
 ## API
+
+### POST `/api/shop/for-business`
+
+**Body** (contact forms): `{ type: "hospitality"|"offices"|"galleries", name, companyName, desiredTiles, email, phone?, additionalInfo? }`
+
+**Body** (gifting): multipart/form-data with type=gifting, cardValue, employeesCount, company, sendToday, sendDate, giftMessage, emails, csvFile?
+
+**Behavior**: Validates, sends email to CONTACT_EMAIL (with CSV attachment for gifting if provided). See [For Business README](../for-business/README.md).
 
 ### POST `/api/shop/artist-submissions`
 
@@ -52,13 +61,17 @@ app/shop/
 │   ├── layout.tsx
 │   └── page.tsx
 ├── collab/page.tsx
+├── for-business/
+│   ├── layout.tsx
+│   └── page.tsx
 ├── wholesale/page.tsx
 ├── faq/page.tsx
 ├── careers/page.tsx
 └── contact/page.tsx
 
 app/api/shop/
-└── artist-submissions/route.ts
+├── artist-submissions/route.ts
+└── for-business/route.ts
 
 content/
 └── shop-faq.ts

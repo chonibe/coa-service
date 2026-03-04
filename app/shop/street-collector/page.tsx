@@ -11,6 +11,8 @@ import {
   getCollectionWithListProducts,
   isStorefrontConfigured,
 } from '@/lib/shopify/storefront-client'
+import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
+import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { MultiColumnVideoSection } from './MultiColumnVideoSection'
 import { MeetTheStreetLamp } from './MeetTheStreetLamp'
 import { TestimonialCarousel } from './TestimonialCarousel'
@@ -56,20 +58,31 @@ export default async function StreetCollectorPage() {
               .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
               .join(' ')
             const name = col?.title?.trim() || fallbackName
+            let description: string | undefined =
+              col?.description
+                ? col.description
+                : col?.descriptionHtml
+                  ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+                  : undefined
+            if (!description) {
+              const vendorBio = await getVendorBioByHandle(artist.handle)
+              description = vendorBio?.bio
+            }
+            let imageUrl = col?.image?.url || col?.products?.edges?.[0]?.node?.featuredImage?.url
+            if (!imageUrl) {
+              imageUrl = await getArtistImageByHandle(artist.handle)
+            }
             return {
               handle: artist.handle,
               name,
               location: artist.location,
-              imageUrl: col?.image?.url || col?.products?.edges?.[0]?.node?.featuredImage?.url,
-              description: col?.description
-              ? col.description
-              : col?.descriptionHtml
-                ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-                : undefined,
+              imageUrl,
+              description,
               href: collectionHref,
             }
           } catch {
             const handleForName = artist.handle.replace(/-\d+$/, '')
+            const imageUrl = await getArtistImageByHandle(artist.handle)
             return {
               handle: artist.handle,
               name: handleForName
@@ -77,6 +90,7 @@ export default async function StreetCollectorPage() {
                 .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                 .join(' '),
               location: artist.location,
+              imageUrl,
               description: undefined,
               href: collectionHref,
             }
@@ -110,16 +124,27 @@ export default async function StreetCollectorPage() {
           const col = await getCollection(slug, { first: 1 }).catch(() => null)
           const colAlt = col ?? (await getCollection(`${slug}-1`, { first: 1 }).catch(() => null))
           const c = col ?? colAlt
-          return {
-            handle: c ? (col ? slug : `${slug}-1`) : slug,
-            name: c?.title?.trim() || vendorName,
-            location: undefined as string | undefined,
-            imageUrl: c?.image?.url || c?.products?.edges?.[0]?.node?.featuredImage?.url,
-            description: c?.description
+          const handle = c ? (col ? slug : `${slug}-1`) : slug
+          let description: string | undefined =
+            c?.description
               ? c.description
               : c?.descriptionHtml
                 ? c.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-                : undefined,
+                : undefined
+          if (!description) {
+            const vendorBio = await getVendorBioByHandle(handle)
+            description = vendorBio?.bio
+          }
+          let imageUrl = c?.image?.url || c?.products?.edges?.[0]?.node?.featuredImage?.url
+          if (!imageUrl) {
+            imageUrl = await getArtistImageByHandle(handle)
+          }
+          return {
+            handle,
+            name: c?.title?.trim() || vendorName,
+            location: undefined as string | undefined,
+            imageUrl,
+            description,
           }
         })
       )

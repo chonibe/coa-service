@@ -310,7 +310,7 @@ export const streetCollectorContent = {
       { handle: 'moshe-gilboa', location: 'Jerusalem' },
       { handle: 'eden-kalif', location: 'Tel Aviv' },
       { handle: 'tiffany-chin', location: 'Toronto' },
-      { handle: 'tiago-hespart' },
+      { handle: 'tiago-hesp', collectionHref: 'https://thestreetcollector.com/collections/tiago-hesp' },
       { handle: 'yoaz', location: 'Paris' },
     ],
   },

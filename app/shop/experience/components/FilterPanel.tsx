@@ -128,15 +128,14 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 z-[68] md:hidden"
+            className="fixed inset-0 bg-black/20 z-[68]"
           />
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: '-100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-neutral-950 shadow-xl flex flex-col
-                       md:relative md:max-w-none md:shadow-none md:border-l md:border-neutral-100 dark:md:border-white/10"
+            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-neutral-950 shadow-xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-white/10 flex-shrink-0">

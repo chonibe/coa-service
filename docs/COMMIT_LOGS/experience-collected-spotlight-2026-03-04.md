@@ -9,7 +9,7 @@ Adds two experience enhancements: (1) Collected artworks indication for logged-i
 ## Changes Checklist
 
 - [x] [`app/api/shop/collected-products/route.ts`](../../app/api/shop/collected-products/route.ts) — New API: returns product IDs user owns from orders (for Collected badge)
-- [x] [`app/api/shop/artist-spotlight/route.ts`](../../app/api/shop/artist-spotlight/route.ts) — New API: returns most recent vendor new drop (series with latest artwork_series_members)
+- [x] [`app/api/shop/artist-spotlight/route.ts`](../../app/api/shop/artist-spotlight/route.ts) — New API: returns most recent vendor new drop (Shopify most recently created product first, Supabase artwork_series_members fallback)
 - [x] [`app/shop/experience/components/ArtworkStrip.tsx`](../../app/shop/experience/components/ArtworkStrip.tsx) — Collected icon + New Drop badge on artwork cards
 - [x] [`app/shop/experience/components/Configurator.tsx`](../../app/shop/experience/components/Configurator.tsx) — Fetch collected IDs & spotlight, pass to ArtworkStrip, ArtistSpotlightBanner, filter logic
 - [x] [`app/shop/experience/components/ArtistSpotlightBanner.tsx`](../../app/shop/experience/components/ArtistSpotlightBanner.tsx) — New component: expandable banner with artist info, filter toggle, artwork thumbnails

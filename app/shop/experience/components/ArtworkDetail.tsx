@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe } from 'lucide-react'
+import { Check, ChevronDown, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X, Instagram } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -13,6 +13,7 @@ interface ArtistData {
   slug: string
   bio?: string
   image?: string
+  instagram?: string
 }
 
 interface ArtworkDetailProps {
@@ -232,12 +233,402 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
             'relative z-10 bg-white dark:bg-neutral-950 overflow-hidden flex flex-col shadow-xl pointer-events-auto',
-            isSlideout ? 'w-full max-w-md max-h-[90dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
+            isSlideout ? 'w-full max-w-4xl h-[88dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
           )}
         >
-          {/* Scrollable content — pb allows content to scroll behind the action bar */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-4 pb-64">
-            {/* Swipeable image gallery — shows artist image when About section is open */}
+          {/* Desktop: close button top-right */}
+          {isSlideout && (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Content: two-column on desktop, single scroll on mobile */}
+          <div
+            className={cn(
+              'flex-1 min-h-0',
+              isSlideout ? 'flex flex-row overflow-hidden gap-8 px-6 pt-5 pb-0' : 'overflow-y-auto overflow-x-hidden pt-4 pb-64'
+            )}
+          >
+            {isSlideout ? (
+              /* Desktop: left = carousel (48%), right = info (52%) */
+              <>
+                {/* Left: Image carousel + thumbnails — 48% for balanced artwork focus */}
+                <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
+                  {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
+                    <div
+                      ref={constraintsRef}
+                      className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-neutral-900 rounded-xl overflow-hidden shadow-inner"
+                    >
+                      <AnimatePresence initial={false} mode="sync">
+                        <motion.div
+                          key={showingArtistInCarousel ? `artist-${artistData?.image}` : `${imageIndex}-${currentImage?.url ?? ''}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          drag={imageZoom > 1 ? true : (!showingArtistInCarousel && allImages.length > 1 ? 'x' : false)}
+                          dragConstraints={
+                            imageZoom > 1
+                              ? { left: -150, right: 150, top: -150, bottom: 150 }
+                              : { left: -280, right: 280 }
+                          }
+                          dragElastic={imageZoom > 1 ? 0.1 : 0.2}
+                          dragMomentum={false}
+                          onDragEnd={imageZoom > 1 || showingArtistInCarousel ? undefined : handleDragEnd}
+                          style={{
+                            x: imageZoom > 1 ? panX : dragX,
+                            y: imageZoom > 1 ? panY : 0,
+                            scale: imageZoom,
+                          }}
+                          className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                        >
+                          {carouselImage && (
+                            <Image
+                              key={carouselImage.url}
+                              src={carouselImage.url}
+                              alt={carouselImage.altText || product.title}
+                              fill
+                              className={imageZoom > 1 ? 'object-contain' : 'object-cover'}
+                              sizes="(max-width: 768px) 100vw, 480px"
+                              draggable={false}
+                            />
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                      <button
+                        type="button"
+                        onClick={handleZoomChange}
+                        className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+                        aria-label={imageZoom > 1 ? 'Zoom out' : 'Zoom in'}
+                      >
+                        {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+                      </button>
+                      {!showingArtistInCarousel && allImages.length > 1 && (
+                        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                          {allImages.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => goToIndex(i)}
+                              className={cn(
+                                'w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0',
+                                i === imageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
+                              )}
+                              style={{ width: 4, height: 4 }}
+                              aria-label={`Image ${i + 1}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!showingArtistInCarousel && allImages.length > 1 && (
+                    <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
+                      {allImages.map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => goToIndex(i)}
+                          className={cn(
+                            'w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors',
+                            i === imageIndex ? 'border-neutral-900 dark:border-white' : 'border-transparent opacity-60 hover:opacity-100'
+                          )}
+                        >
+                          <Image
+                            src={img.url}
+                            alt={img.altText || `Image ${i + 1}`}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Product info — 52%, scrollable content + fixed bottom bar */}
+                <div className="flex-1 min-w-0 flex flex-col min-w-0 pl-2 overflow-hidden">
+                  {/* Scrollable content — pb ensures bottom text isn't cut off when scrolling */}
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
+                  {/* Header: artist, title, edition, price — immediate context */}
+                  <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
+                    {artist && (
+                      <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">
+                        {artist}
+                      </p>
+                    )}
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mt-0.5 leading-tight">
+                      {product.title}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                      {editionSizeNum && editionSizeNum > 0 && (
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Edition of {editionSizeNum}
+                        </span>
+                      )}
+                      {isSoldOut && (
+                        <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded">
+                          Sold out
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  {product.tags && product.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 py-4">
+                      {product.tags.slice(0, 10).map((tag) => (
+                        <span key={tag} className="text-[11px] bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 px-2.5 py-1 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {productIncludes && productIncludes.length > 0 && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                      <button
+                        onClick={() => setShowIncludes(!showIncludes)}
+                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                            <Package className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          </div>
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                            What&apos;s included
+                          </span>
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showIncludes && 'rotate-180')} />
+                      </button>
+                      <AnimatePresence>
+                        {showIncludes && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="flex flex-wrap gap-2 pt-3 pb-1">
+                              {productIncludes.map((item, i) => {
+                                const Icon = { lamp: Lamp, ruler: Ruler, cable: Cable, plug: Plug, book: BookOpen, magnet: Magnet, package: Package, gift: Gift, bag: ShoppingBag }[item.icon]
+                                return (
+                                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium">
+                                    <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
+                                    {item.label}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                  {productSpecs && productSpecs.length > 0 && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                      <button
+                        onClick={() => setShowSpecs(!showSpecs)}
+                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                            <List className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          </div>
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                            Specifications
+                          </span>
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showSpecs && 'rotate-180')} />
+                      </button>
+                      <AnimatePresence>
+                        {showSpecs && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="grid gap-3 sm:grid-cols-2 pt-3 pb-1">
+                              {productSpecs.map((spec, i) => {
+                                const SpecIcon = spec.icon ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon] : List
+                                const isSingleValue = spec.items.length === 1
+                                return (
+                                  <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-neutral-800/30 px-4 py-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-300 flex-shrink-0" />
+                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{spec.title}</h4>
+                                    </div>
+                                    {isSingleValue ? (
+                                      <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-snug">{spec.items[0]}</p>
+                                    ) : (
+                                      <ul className="space-y-1.5">
+                                        {spec.items.map((item, j) => (
+                                          <li key={j} className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed flex items-start gap-2">
+                                            <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-neutral-500 mt-1.5 flex-shrink-0" />
+                                            <span>{item}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                  {isLoadingDetails && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+                      <div className="w-4 h-4 border-2 border-neutral-300 dark:border-neutral-600 border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+                      <span className="text-xs">Loading details…</span>
+                    </div>
+                  )}
+                  {description && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                      <button
+                        onClick={() => { setShowDescription(!showDescription); if (!showDescription) setShowArtistBio(false) }}
+                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                            <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          </div>
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                            Artwork details
+                          </span>
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
+                      </button>
+                      <AnimatePresence>
+                        {showDescription && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed pt-1 pb-2">{description}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                  {artist && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                      <button
+                        onClick={() => setShowArtistBio(!showArtistBio)}
+                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          {allImages[0] ? (
+                            <Image src={allImages[0].url} alt={product.title} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                            </div>
+                          )}
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                            About {artistData?.name || artist}
+                          </span>
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showArtistBio && 'rotate-180')} />
+                      </button>
+                      <AnimatePresence>
+                        {showArtistBio && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            {artistLoading ? (
+                              <div className="py-4 flex justify-center">
+                                <div className="w-5 h-5 border-2 border-neutral-200 dark:border-neutral-600 border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                              </div>
+                            ) : (
+                              <div className="pt-1 pb-2 space-y-3">
+                                {artistData?.bio && (
+                                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">{artistData.bio}</p>
+                                )}
+                                {artistData?.instagram && (
+                                  <a
+                                    href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                                  >
+                                    <Instagram className="w-4 h-4" />
+                                    @{artistData.instagram.replace(/^@/, '')}
+                                  </a>
+                                )}
+                                {!artistData?.bio && !artistData?.instagram && (
+                                  <p className="text-sm text-neutral-400 dark:text-neutral-500">No bio available for this artist.</p>
+                                )}
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                  </div>
+
+                  {/* Fixed bar at bottom of right panel — scarcity + add button, flush with bottom to align with image carousel */}
+                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-neutral-950 pt-3 pb-5 space-y-2">
+                    {!hideScarcityBar && (
+                      <ScarcityBadge
+                        quantityAvailable={quantityAvailable}
+                        editionSize={editionSizeNum}
+                        availableForSale={product.availableForSale}
+                        variant="bar"
+                        productId={product.id}
+                        productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                        productTitle={product.title}
+                        className="w-full"
+                      />
+                    )}
+                    <button
+                      onClick={onToggleSelect}
+                      disabled={isSoldOut && !isSelected}
+                      className={cn(
+                        'w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                        isSelected
+                          ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                          : isSoldOut
+                            ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                            : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
+                      )}
+                    >
+                      {isSelected ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Added to order — Tap to remove
+                        </>
+                      ) : isSoldOut ? (
+                        'Sold Out'
+                      ) : (
+                        <>{addToOrderLabel} — {price}</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+          /* Mobile: single scroll column */
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-64">
+            {/* Swipeable image gallery */}
             {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
               <div
                 ref={constraintsRef}
@@ -552,16 +943,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    {artistData?.image ? (
+                    {allImages[0] ? (
                       <Image
-                        src={artistData.image}
-                        alt={artistData.name}
+                        src={allImages[0].url}
+                        alt={product.title}
                         width={32}
                         height={32}
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-8 h-8 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
                         <User className="w-4 h-4 text-neutral-400 dark:text-neutral-300" />
                       </div>
                     )}
@@ -588,12 +979,26 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         <div className="py-4 flex justify-center">
                           <div className="w-5 h-5 border-2 border-neutral-200 dark:border-neutral-600 border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                         </div>
-                      ) : artistData?.bio ? (
-                        <div className="pb-3">
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">{artistData.bio}</p>
-                        </div>
                       ) : (
-                        <p className="text-sm text-neutral-400 dark:text-neutral-500 pb-3">No bio available for this artist.</p>
+                        <div className="pb-3 space-y-3">
+                          {artistData?.bio && (
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">{artistData.bio}</p>
+                          )}
+                          {artistData?.instagram && (
+                            <a
+                              href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                            >
+                              <Instagram className="w-4 h-4" />
+                              @{artistData.instagram.replace(/^@/, '')}
+                            </a>
+                          )}
+                          {!artistData?.bio && !artistData?.instagram && (
+                            <p className="text-sm text-neutral-400 dark:text-neutral-500">No bio available for this artist.</p>
+                          )}
+                        </div>
                       )}
                     </motion.div>
                   )}
@@ -602,8 +1007,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
 
           </div>
+          )}
+          </div>
 
-          {/* Sticky action bar — absolute overlay so content scrolls behind for glass effect */}
+          {/* Sticky action bar — mobile only; desktop has button/scarcity in right column */}
+          {!isSlideout && (
           <div className="absolute bottom-0 left-0 right-0 z-10 pt-0">
             {/* Scarcity bar — centered on top border */}
             {!hideScarcityBar && (
@@ -621,10 +1029,13 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             </div>
             )}
             <div
-              className={cn('p-5 space-y-3 bg-white/80 dark:bg-neutral-950/90 backdrop-blur-lg border-t border-white/50 dark:border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)]', productBadges?.length ? 'pt-4' : 'pt-7')}
-              style={{ backdropFilter: 'blur(16px) saturate(140%)', WebkitBackdropFilter: 'blur(16px) saturate(140%)' }}
+              className={cn(
+                'space-y-3 p-5 bg-white/90 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
+                productBadges?.length ? 'pt-4' : 'pt-7'
+              )}
+              style={{ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' }}
             >
-              {/* Guarantee / returns / shipping badges — one top, two bottom, close to vendor */}
+              {/* Guarantee / returns / shipping badges — mobile action bar */}
               {productBadges && productBadges.length > 0 && (
                 <div className="flex flex-col items-center gap-2 pb-1">
                   {productBadges.slice(0, 1).map((item, i) => {
@@ -709,7 +1120,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               onClick={onToggleSelect}
               disabled={isSoldOut && !isSelected}
               className={cn(
-                'w-full h-12 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2',
+                'w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
                 isSelected
                   ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
                   : isSoldOut
@@ -730,6 +1141,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </button>
             </div>
           </div>
+          )}
         </motion.div>
       </motion.div>
       </>

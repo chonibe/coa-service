@@ -36,7 +36,6 @@ export async function GET(request: Request) {
     const collection = await getCollectionWithListProducts(handle, {
       first,
       after,
-      sortKey: 'MANUAL',
     })
 
     if (!collection) {

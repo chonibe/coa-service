@@ -14,7 +14,7 @@ const MOCK_COOKIE = 'mock_user_email'
 
 export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const mockEmail = cookieStore.get(MOCK_COOKIE)?.value
     const isDev = process.env.NODE_ENV === 'development'
     const mockEnabled = process.env.MOCK_LOGIN_ENABLED === 'true'

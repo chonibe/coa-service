@@ -114,7 +114,9 @@ API: `GET /api/shop/collected-products` returns `{ productIds: string[] }` for t
 
 ## Artist Spotlight Banner
 
-A banner shows the **most recent artist spotlight** — the vendor whose artworks were most recently added to the catalog (via `artwork_series_members`).
+A banner shows the **most recent artist spotlight** — the vendor with the most recently activated product. Fetches from:
+1. **Shopify** (primary): Most recently created active product via Storefront API (`CREATED_AT` desc)
+2. **Supabase** (fallback): Most recently added member in `artwork_series_members`
 
 When the banner is selected/expanded:
 
@@ -132,6 +134,7 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 | `GET /api/shop/artists/[slug]` | Artist bio/filter when arriving from `?artist=` link |
 | `GET /api/shop/collected-products` | Product IDs user owns (for Collected badge) |
 | `GET /api/shop/artist-spotlight` | Most recent vendor new drop (for spotlight banner) |
+| `GET /api/shop/experience/collection-products` | Paginated products for configurator (load-more) |
 
 ## Data Flow
 

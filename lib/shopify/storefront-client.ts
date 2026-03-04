@@ -266,6 +266,8 @@ export interface ShopifyCollection {
   description: string
   descriptionHtml: string
   image: ShopifyImage | null
+  /** Collection metafield custom.instagram (handle or URL) */
+  metafield?: { value?: string } | null
   products: {
     edges: Array<{ node: ShopifyProduct }>
     pageInfo: {
@@ -532,6 +534,9 @@ const COLLECTION_FRAGMENT = `
       altText
       width
       height
+    }
+    metafield(namespace: "custom", key: "instagram") {
+      value
     }
   }
 `

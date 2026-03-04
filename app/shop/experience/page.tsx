@@ -41,11 +41,9 @@ async function ExperienceProductsLoader({
   const [season1Result, season2Result] = await Promise.all([
     getCollectionWithListProducts(SEASON_1_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
-      sortKey: 'MANUAL',
     }).catch(() => null),
     getCollectionWithListProducts(SEASON_2_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
-      sortKey: 'MANUAL',
     }).catch(() => null),
   ])
 

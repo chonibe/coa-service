@@ -50,6 +50,7 @@ const Spline3DPreview = dynamic(
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { SplineWhenVisible } from './SplineWhenVisible'
 import { ArtworkStrip } from './ArtworkStrip'
+
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import { DiscountCelebration } from './DiscountCelebration'
@@ -124,6 +125,7 @@ export function Configurator({
     vendorSlug: string
     bio?: string
     image?: string
+    instagram?: string
     productIds: string[]
     seriesName?: string
   } | null>(null)
@@ -323,6 +325,20 @@ export function Configurator({
       setFilters((prev) => ({ ...prev, artists: [...prev.artists, spotlightData.vendorName] }))
     }
   }, [spotlightData, filters.artists])
+
+  // When spotlight is selected: filter to that artist and switch to the series that has their artworks
+  const handleSpotlightSelect = useCallback(() => {
+    if (!spotlightData) return
+    const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
+    const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
+    const inSeason2 = productsSeason2.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
+    if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
+    else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
+    setFilters((prev) => {
+      if (prev.artists.includes(spotlightData.vendorName)) return prev
+      return { ...prev, artists: [...prev.artists, spotlightData.vendorName] }
+    })
+  }, [spotlightData, productsSeason1, productsSeason2, activeSeason])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -651,7 +667,7 @@ export function Configurator({
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-white md:bg-transparent">
+    <div className="flex flex-col md:flex-row md:flex-row-reverse h-full bg-white md:bg-transparent">
       {/* 3D Lamp viewer — on mobile: size depends on selectorSheetState */}
       <motion.div
         data-wizard-spline
@@ -1108,7 +1124,7 @@ export function Configurator({
           onClick={selectorSheetState === 'collapsed' && isMobile ? cycleSelectorState : undefined}
           onKeyDown={selectorSheetState === 'collapsed' && isMobile ? (e) => e.key === 'Enter' && cycleSelectorState() : undefined}
           className={cn(
-            'flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
+            'relative flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
             selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100 dark:border-neutral-800',
             selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-neutral-900/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
             selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 dark:active:bg-neutral-800/95 justify-center',
@@ -1128,8 +1144,27 @@ export function Configurator({
           {/* Top bar: on desktop = full; on mobile = just chevron (season/filter/search in bottom bar) */}
           {!isMobile && (
             <>
-              {/* Season tabs — desktop only */}
-              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
+              {/* Filter — desktop only, left */}
+              <button
+                onClick={() => setFilterOpen(true)}
+                className={cn(
+                  'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+                  hasActiveFilters(filters)
+                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
+                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                )}
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Season tabs — desktop only, centered */}
+              <div className="absolute left-1/2 -translate-x-1/2 flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveSeasonAndReset('season1')}
@@ -1155,27 +1190,6 @@ export function Configurator({
                   Season 2
                 </button>
               </div>
-
-              <div className="flex-1 min-w-0" />
-
-              {/* Filter — desktop only, right of selector bar */}
-              <button
-                onClick={() => setFilterOpen(true)}
-                className={cn(
-                  'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0 ml-auto',
-                  hasActiveFilters(filters)
-                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
-                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                )}
-                aria-label="Open filters"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
             </>
           )}
             </>
@@ -1263,8 +1277,7 @@ export function Configurator({
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
-              isFilterActive={isSpotlightFilterActive}
-              onToggleFilter={handleToggleSpotlightFilter}
+              onSelect={handleSpotlightSelect}
             />
           )}
           {/* Street lamp — hidden; now in top toolbar only */}
@@ -1392,7 +1405,7 @@ export function Configurator({
         {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
           <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
             {/* Left: Filter */}
-            <div className="flex-1 min-w-0 flex items-center justify-start">
+            <div className="flex-shrink-0">
               <button
                 onClick={() => setFilterOpen(true)}
                 className={cn(
@@ -1412,8 +1425,9 @@ export function Configurator({
               </button>
             </div>
 
-            {/* Right: Season tabs + Expand/collapse chevron (far right) — search hidden for now */}
-            <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+            {/* Center: Season tabs */}
+            <div className="flex-1 min-w-0 flex items-center justify-center">
+              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-600 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
               {false && (
               <AnimatePresence initial={false} mode="wait">
                 {searchExpanded ? (
@@ -1467,7 +1481,6 @@ export function Configurator({
                 )}
               </AnimatePresence>
               )}
-              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-600 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveSeasonAndReset('season1')}
@@ -1493,6 +1506,10 @@ export function Configurator({
                 Season 2
               </button>
               </div>
+            </div>
+
+            {/* Right: Expand/collapse chevron */}
+            <div className="flex-shrink-0">
               <button
                 onClick={cycleSelectorState}
                 className="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white shrink-0 transition-colors"

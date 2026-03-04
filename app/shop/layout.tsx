@@ -55,6 +55,7 @@ const defaultNavigation = [
     ]
   },
   { label: 'About', href: '/about' },
+  { label: 'For Business', href: '/shop/for-business' },
   { label: 'Contact', href: '/shop/contact' },
 ]
 
@@ -85,6 +86,7 @@ const footerSections = hasUsefulFooterSections
         title: 'RESOURCES',
         links: [
           { label: 'FAQ', href: '/shop/faq' },
+          { label: 'For Business', href: '/shop/for-business' },
           { label: 'Affiliate program', href: '/shop/collab' },
           { label: 'Artist Submissions', href: '/shop/artist-submissions' },
         ],

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { ChevronDown, Sparkles } from 'lucide-react'
+import { ChevronDown, Instagram, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface SpotlightData {
@@ -10,13 +10,15 @@ export interface SpotlightData {
   vendorSlug: string
   bio?: string
   image?: string
+  /** Instagram handle (without @) from collection metafield or vendor profile */
+  instagram?: string
   productIds: string[]
   seriesName?: string
 }
 
 interface ArtistSpotlightBannerProps {
   spotlight: SpotlightData
-  /** Products in the selector that match this spotlight (for the info card) */
+  /** Products in the selector that match this spotlight (for artwork icons) */
   spotlightProducts: Array<{
     id: string
     title: string
@@ -26,134 +28,149 @@ interface ArtistSpotlightBannerProps {
     images?: { edges?: Array<{ node?: { url?: string } }> } | null
     priceRange?: { minVariantPrice?: { amount?: string } } | null
   }>
-  /** Whether the spotlight filter is currently active */
-  isFilterActive: boolean
-  onToggleFilter: () => void
+  /** Called when banner is clicked — filter to artist and/or switch series */
+  onSelect?: () => void
 }
 
 export function ArtistSpotlightBanner({
   spotlight,
   spotlightProducts,
-  isFilterActive,
-  onToggleFilter,
+  onSelect,
 }: ArtistSpotlightBannerProps) {
   const [expanded, setExpanded] = useState(false)
 
   const firstImage = (p: (typeof spotlightProducts)[0]) =>
     p?.featuredImage?.url ?? p?.images?.edges?.[0]?.node?.url
 
+  const twoArtworks = spotlightProducts.slice(0, 2)
+
+  const handleClick = () => {
+    onSelect?.()
+    setExpanded((e) => !e)
+  }
+
   return (
     <div className="mb-3">
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
+        onClick={handleClick}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left',
-          isFilterActive
-            ? 'bg-amber-500/15 border-amber-500/40 dark:bg-amber-500/20 dark:border-amber-500/50'
-            : 'bg-neutral-100 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80'
+          'w-full rounded-xl border transition-all duration-300 text-left overflow-hidden',
+          'bg-neutral-100 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80',
+          expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-700">
-          {spotlight.image ? (
-            <Image
-              src={spotlight.image}
-              alt={spotlight.vendorName}
-              width={40}
-              height={40}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Artist Spotlight</p>
-          <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-            {spotlight.vendorName}
-          </p>
-          {spotlight.seriesName && (
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
-              {spotlight.seriesName}
-            </p>
-          )}
-        </div>
-        <ChevronDown
-          className={cn(
-            'w-5 h-5 flex-shrink-0 text-neutral-500 transition-transform',
-            expanded && 'rotate-180'
-          )}
-        />
-      </button>
-
-      {expanded && (
-        <div
-          className={cn(
-            'mt-2 rounded-xl border overflow-hidden',
-            'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700'
-          )}
-        >
-          {/* Artist info card */}
-          <div className="p-3 border-b border-neutral-100 dark:border-neutral-800">
-            {spotlight.bio && (
-              <p className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-3 mb-2">
-                {spotlight.bio}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                onToggleFilter()
-                setExpanded(false)
-              }}
-              className={cn(
-                'text-xs font-medium px-2.5 py-1 rounded-lg transition-colors',
-                isFilterActive
-                  ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+        {/* Collapsed row */}
+        {!expanded && (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-700">
+              {spotlight.image ? (
+                <Image
+                  src={spotlight.image}
+                  alt={spotlight.vendorName}
+                  width={48}
+                  height={48}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-amber-500" />
+                </div>
               )}
-            >
-              {isFilterActive ? 'Showing spotlight artworks' : 'Filter to spotlight artworks'}
-            </button>
-          </div>
-
-          {/* Artworks in this drop */}
-          {spotlightProducts.length > 0 && (
-            <div className="p-2">
-              <p className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 px-1">
-                Artworks in this drop
-              </p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {spotlightProducts.slice(0, 8).map((p) => (
-                  <div
-                    key={p.id}
-                    className="aspect-[4/5] rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 relative"
-                  >
-                    {firstImage(p) ? (
-                      <Image
-                        src={firstImage(p)!}
-                        alt={p.title}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-neutral-400 text-[10px]">
-                        No image
-                      </div>
-                    )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-                      <p className="text-[9px] font-medium text-white truncate">{p.title}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-          )}
-        </div>
-      )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Artist Spotlight</p>
+              <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                {spotlight.vendorName}
+              </p>
+              {spotlight.seriesName && (
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                  {spotlight.seriesName}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {twoArtworks.map((p) => (
+                <div
+                  key={p.id}
+                  className="w-8 h-8 rounded-md overflow-hidden bg-neutral-200 dark:bg-neutral-700"
+                >
+                  {firstImage(p) ? (
+                    <Image
+                      src={firstImage(p)!}
+                      alt={p.title}
+                      width={32}
+                      height={32}
+                      className="object-cover w-full h-full"
+                      sizes="32px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-neutral-400 text-[8px]">–</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <ChevronDown className="w-5 h-5 flex-shrink-0 text-neutral-500 transition-transform duration-300 rotate-0" />
+          </div>
+        )}
+
+        {/* Expanded card: large profile, title, description */}
+        {expanded && (
+          <div className="flex flex-col">
+            <div className="flex items-start gap-4 p-4">
+              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-700">
+                {spotlight.image ? (
+                  <Image
+                    src={spotlight.image}
+                    alt={spotlight.vendorName}
+                    width={112}
+                    height={112}
+                    className="object-cover w-full h-full"
+                    sizes="112px"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Sparkles className="w-12 h-12 text-amber-500" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  Artist Spotlight
+                </p>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  {spotlight.vendorName}
+                </h3>
+                {spotlight.seriesName && (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {spotlight.seriesName}
+                  </p>
+                )}
+                {spotlight.instagram && (
+                  <a
+                    href={`https://instagram.com/${spotlight.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
+                  >
+                    <Instagram className="w-4 h-4 flex-shrink-0" />
+                    <span>@{spotlight.instagram}</span>
+                  </a>
+                )}
+              </div>
+              <ChevronDown className="w-5 h-5 flex-shrink-0 text-neutral-500 rotate-180 transition-transform duration-300" />
+            </div>
+            {spotlight.bio && (
+              <div className="px-4 pb-4 pt-0">
+                <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
+                  {spotlight.bio}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </button>
     </div>
   )
 }
