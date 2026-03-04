@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, us
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon, TicketIcon } from '@heroicons/react/24/solid'
+import { Package } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
@@ -24,6 +25,8 @@ interface OrderBarProps {
   onSelectArtwork?: (product: ShopifyProduct) => void
   onViewLampDetail?: (product: ShopifyProduct) => void
   isGift: boolean
+  /** Set of product IDs user already owns (show "Collected" badge on order items) */
+  collectedProductIds?: Set<string>
 }
 
 export interface OrderBarRef {
@@ -68,6 +71,12 @@ function AnimatedPrice({ value }: { value: number }) {
 const ARTWORKS_PER_FREE_LAMP = 14
 const DISCOUNT_PER_ARTWORK = 7.5
 
+function isProductCollected(productId: string, collectedIds?: Set<string>): boolean {
+  if (!collectedIds?.size) return false
+  const numeric = productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
+  return collectedIds.has(productId) || collectedIds.has(numeric)
+}
+
 const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarInner({
   lamp,
   selectedArtworks,
@@ -76,6 +85,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   onRemoveArtwork,
   onSelectArtwork,
   isGift,
+  collectedProductIds,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -424,10 +434,12 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             )}
           </div>
         )}
-        {selectedArtworks.map((art) => (
+        {selectedArtworks.map((art) => {
+          const collected = isProductCollected(art.id, collectedProductIds)
+          return (
           <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+              <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                 {art.featuredImage?.url ? (
                   <Image
                     src={art.featuredImage.url}
@@ -442,9 +454,15 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     —
                   </div>
                 )}
+                {collected && (
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center" title="Already in your collection">
+                    <Package className="w-2 h-2 text-white" strokeWidth={2.5} />
+                  </div>
+                )}
               </div>
               <span className={cn('truncate min-w-0 text-sm text-neutral-900 dark:text-white', !art.availableForSale && 'line-through text-neutral-500 dark:text-neutral-400')}>
                 {art.title}
+                {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
               </span>
             </div>
             <span className="text-sm text-neutral-700 dark:text-neutral-300 tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
@@ -457,7 +475,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               <XMarkIcon className="w-3 h-3" />
             </button>
           </div>
-        ))}
+        )})}
         {lampQuantity === 0 && (
           <button
             type="button"

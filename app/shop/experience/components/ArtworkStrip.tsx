@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, Heart, Info } from 'lucide-react'
+import { Check, Eye, Heart, Info, Package } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
@@ -145,6 +145,10 @@ interface ArtworkCardProps {
   mergeWithLeft?: boolean
   /** When true, this card merges with the one on its right (round only left corners) */
   mergeWithRight?: boolean
+  /** When true, user already owns this artwork (from past orders) */
+  isCollected?: boolean
+  /** When true, artwork is part of the current artist spotlight "New Drop" */
+  isNewDrop?: boolean
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
@@ -171,6 +175,8 @@ function ArtworkCard({
   crewCount = 0,
   mergeWithLeft = false,
   mergeWithRight = false,
+  isCollected = false,
+  isNewDrop = false,
   onPreview,
   onLampSelect,
   onAddToCart,
@@ -278,6 +284,23 @@ function ArtworkCard({
             <span className="text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full">
               Sold Out
             </span>
+          </div>
+        )}
+        {isCollected && !isSoldOut && (
+          <div
+            className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white backdrop-blur-sm"
+            title="Already in your collection"
+          >
+            <Package className="w-3 h-3" strokeWidth={2} />
+            <span className="text-[10px] font-medium">Collected</span>
+          </div>
+        )}
+        {isNewDrop && !isSoldOut && !isCollected && (
+          <div
+            className="absolute top-1.5 right-10 z-10 px-1.5 py-0.5 rounded-md bg-amber-500/95 text-white text-[10px] font-semibold backdrop-blur-sm"
+            title="New drop from spotlight artist"
+          >
+            New Drop
           </div>
         )}
         {!isSoldOut && (
@@ -423,6 +446,10 @@ interface ArtworkStripProps {
   hasMore?: boolean
   onLoadMore?: () => void
   isLoadingMore?: boolean
+  /** Set of product IDs user already owns (from orders). Used for "Collected" badge. */
+  collectedProductIds?: Set<string>
+  /** Product IDs in the "New Drop" spotlight series (for badge) */
+  newDropProductIds?: Set<string>
 }
 
 function formatPrice(product: ShopifyProduct): string {
@@ -451,7 +478,19 @@ export function ArtworkStrip({
   hasMore = false,
   onLoadMore,
   isLoadingMore = false,
+  collectedProductIds,
+  newDropProductIds,
 }: ArtworkStripProps) {
+  const isProductCollected = useCallback((productId: string) => {
+    if (!collectedProductIds?.size) return false
+    const numeric = productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
+    return collectedProductIds.has(productId) || collectedProductIds.has(numeric)
+  }, [collectedProductIds])
+  const isProductNewDrop = useCallback((productId: string) => {
+    if (!newDropProductIds?.size) return false
+    const numeric = productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
+    return newDropProductIds.has(productId) || newDropProductIds.has(numeric)
+  }, [newDropProductIds])
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const rowCount = Math.ceil(products.length / 2)
   const totalRows = rowCount + (hasMore ? 1 : 0)
@@ -593,6 +632,8 @@ export function ArtworkStrip({
                     showWishlistHearts={showWishlistHearts}
                     crewCount={crewCountMap?.[product1.id]}
                     mergeWithRight={shouldMerge}
+                    isCollected={isProductCollected(product1.id)}
+                    isNewDrop={isProductNewDrop(product1.id)}
                     onPreview={onPreview}
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}
@@ -623,6 +664,8 @@ export function ArtworkStrip({
                     showWishlistHearts={showWishlistHearts}
                     crewCount={crewCountMap?.[product2.id]}
                     mergeWithLeft={shouldMerge}
+                    isCollected={isProductCollected(product2.id)}
+                    isNewDrop={isProductNewDrop(product2.id)}
                     onPreview={onPreview}
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}

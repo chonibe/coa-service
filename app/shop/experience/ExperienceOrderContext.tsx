@@ -33,6 +33,8 @@ export interface OrderBarContextProps {
   lampProgressPercent?: number
   /** True when user has passed the lamp paywall (added lamp, skipped, or owns one) */
   pastLampPaywall?: boolean
+  /** Set of product IDs user already owns (for "Collected" badge in order items) */
+  collectedProductIds?: Set<string>
 }
 
 interface ExperienceOrderContextValue extends ExperienceOrderState {

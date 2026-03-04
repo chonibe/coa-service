@@ -50,6 +50,7 @@ const Spline3DPreview = dynamic(
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { SplineWhenVisible } from './SplineWhenVisible'
 import { ArtworkStrip } from './ArtworkStrip'
+import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import { DiscountCelebration } from './DiscountCelebration'
 import { ExperienceWizard } from './ExperienceWizard'
@@ -117,6 +118,15 @@ export function Configurator({
   const { isAuthenticated } = useShopAuth()
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
+  const [collectedProductIds, setCollectedProductIds] = useState<Set<string>>(new Set())
+  const [spotlightData, setSpotlightData] = useState<{
+    vendorName: string
+    vendorSlug: string
+    bio?: string
+    image?: string
+    productIds: string[]
+    seriesName?: string
+  } | null>(null)
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
   const [pageInfoSeason1, setPageInfoSeason1] = useState<SeasonPageInfo>(() => initialPage1)
@@ -288,6 +298,32 @@ export function Configurator({
     return applyFilters(allProducts, filters, searchQuery, cartOrder)
   }, [allProducts, filters, searchQuery, cartOrder, ratingsVersion])
 
+  const isSpotlightFilterActive = useMemo(
+    () => !!spotlightData && filters.artists.includes(spotlightData.vendorName),
+    [spotlightData, filters.artists]
+  )
+  const spotlightProducts = useMemo(() => {
+    if (!spotlightData?.productIds?.length) return []
+    const idSet = new Set(spotlightData.productIds)
+    const numericSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
+    return allProducts.filter(
+      (p) =>
+        idSet.has(p.id) ||
+        numericSet.has(p.id) ||
+        numericSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, ''))
+    )
+  }, [allProducts, spotlightData])
+
+  const handleToggleSpotlightFilter = useCallback(() => {
+    if (!spotlightData) return
+    const isActive = filters.artists.includes(spotlightData.vendorName)
+    if (isActive) {
+      setFilters((prev) => ({ ...prev, artists: prev.artists.filter((a) => a !== spotlightData.vendorName) }))
+    } else {
+      setFilters((prev) => ({ ...prev, artists: [...prev.artists, spotlightData.vendorName] }))
+    }
+  }, [spotlightData, filters.artists])
+
   useEffect(() => {
     if (!scrollToProductId) return
     const idx = filteredProducts.findIndex((p) => p.id === scrollToProductId)
@@ -356,6 +392,40 @@ export function Configurator({
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
 
+  // Fetch collected product IDs when authenticated (for "Collected" badge)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCollectedProductIds(new Set())
+      return
+    }
+    let cancelled = false
+    fetch('/api/shop/collected-products')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { productIds?: string[] } | null) => {
+        if (!cancelled && data && Array.isArray(data.productIds)) {
+          setCollectedProductIds(new Set(data.productIds))
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isAuthenticated])
+
+  // Fetch artist spotlight (most recent vendor new drop)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/shop/artist-spotlight')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.vendorName && Array.isArray(data?.productIds)) {
+          setSpotlightData(data)
+        } else {
+          setSpotlightData(null)
+        }
+      })
+      .catch(() => setSpotlightData(null))
+    return () => { cancelled = true }
+  }, [])
+
   // Fetch crew counts when authenticated (for taste-similar social proof)
   useEffect(() => {
     if (!isAuthenticated || filteredProducts.length === 0) {
@@ -366,9 +436,9 @@ export function Configurator({
     if (!productIds) return
     let cancelled = false
     fetch(`/api/crew/count?productIds=${encodeURIComponent(productIds)}`)
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((data) => {
-        if (!cancelled && typeof data === 'object') setCrewCountMap(data)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Record<string, number> | null) => {
+        if (!cancelled && data && typeof data === 'object') setCrewCountMap(data)
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -459,6 +529,7 @@ export function Configurator({
       lampSavings,
       lampProgressPercent: lampQuantity > 0 ? (lampProgress[lampProgress.length - 1] ?? 0) : 0,
       pastLampPaywall: !showLampPaywall,
+      collectedProductIds,
     })
   }, [
     lamp,
@@ -477,6 +548,7 @@ export function Configurator({
     artworkCount,
     lampSavings,
     showLampPaywall,
+    collectedProductIds,
     setOrderBarProps,
   ])
 
@@ -1186,6 +1258,15 @@ export function Configurator({
             isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
           )}
         >
+          {/* Artist Spotlight banner — most recent vendor new drop */}
+          {spotlightData && spotlightData.productIds.length > 0 && (
+            <ArtistSpotlightBanner
+              spotlight={spotlightData}
+              spotlightProducts={spotlightProducts}
+              isFilterActive={isSpotlightFilterActive}
+              onToggleFilter={handleToggleSpotlightFilter}
+            />
+          )}
           {/* Street lamp — hidden; now in top toolbar only */}
           <div className="hidden">
             <div className={cn(
@@ -1293,6 +1374,8 @@ export function Configurator({
             scrollToProductId={scrollToProductId}
             showWishlistHearts={false}
             crewCountMap={crewCountMap}
+            collectedProductIds={collectedProductIds}
+            newDropProductIds={spotlightData ? new Set(spotlightData.productIds) : undefined}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}

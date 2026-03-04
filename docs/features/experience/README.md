@@ -102,19 +102,45 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 
 See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) for earlier configuration details.
 
+## Collected Artworks (Logged-in Users)
+
+When a user is logged in and has orders, artworks they already own are indicated:
+
+- **Artwork selector**: A "Collected" badge (green, Package icon) appears on artwork cards the user owns.
+- **OrderBar**: Artworks in the cart that the user already owns show a small collected icon and "(Collected)" label.
+- **Data source**: Product IDs from `order_line_items_v2` (status = active) joined to `orders` by `customer_email`.
+
+API: `GET /api/shop/collected-products` returns `{ productIds: string[] }` for the authenticated user.
+
+## Artist Spotlight Banner
+
+A banner shows the **most recent artist spotlight** — the vendor whose artworks were most recently added to the catalog (via `artwork_series_members`).
+
+When the banner is selected/expanded:
+
+1. **Filter artworks** — Toggle to filter the selector to only spotlight artist's new drop.
+2. **New Drop badge** — Artworks in the spotlight series show an amber "New Drop" badge.
+3. **Artist info card** — Dropdown shows artist image, bio (from vendors/description), and thumbnails of artworks in the drop.
+
+API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, image, productIds, seriesName }`.
+
 ## API Endpoints (Products)
 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/shop/products/[handle]` | Full product for ArtworkDetail (on-demand) |
 | `GET /api/shop/artists/[slug]` | Artist bio/filter when arriving from `?artist=` link |
+| `GET /api/shop/collected-products` | Product IDs user owns (for Collected badge) |
+| `GET /api/shop/artist-spotlight` | Most recent vendor new drop (for spotlight banner) |
 
 ## Data Flow
 
 - **Initial load**: Lamp (`getProduct`), Season 1 & 2 collections (`getCollectionWithListProducts`) in parallel.
 - **Detail drawer**: When user opens artwork detail, full product fetched via `/api/shop/products/[handle]` and cached in memory.
+- **Collected IDs**: Fetched when authenticated; used for Collected badge in ArtworkStrip and OrderBar.
+- **Artist spotlight**: Fetched on mount; used for banner, filter, and New Drop badge.
 
 ## Version
 
 - Last updated: 2026-03-04
-- Version: 1.6.0
+- Version: 1.7.0
