@@ -8,9 +8,18 @@ Gift cards allow customers to purchase digital vouchers redeemable at checkout. 
 
 ## Architecture
 
-- **Purchase**: User selects amount ($25–$500), optionally enters recipient email, and completes Stripe Checkout (redirect).
-- **Provisioning**: On `checkout.session.completed`, webhook creates Stripe coupon + promotion code, stores in `gift_cards` table, and emails the code.
+- **Purchase**: User selects type (dollar amount, 1 Street Lamp, 1 Season 1 Artwork), recipient email, design, gift message, send date, sender name. Completes Stripe Checkout (redirect).
+- **Provisioning**: On `checkout.session.completed`, webhook creates Stripe coupon + promotion code, stores in `gift_cards` table. Emails immediately if "Today", or sets `scheduled` for future send date.
+- **Scheduled delivery**: Cron `/api/cron/send-scheduled-gift-cards` runs hourly; sends emails for `status='scheduled'` where `send_at <= now`.
 - **Redemption**: Existing promo flow via PromoCodeModal and `/api/checkout/validate-promo`; Stripe applies the discount at checkout.
+
+## Gift Card Types
+
+| Type | Amount | Redemption |
+|------|--------|------------|
+| `value` | $10–$500 (preset or custom) | $ off any purchase |
+| `street_lamp` | Current Street Lamp price from Shopify | Redeemable for 1 Street Lamp |
+| `season1_artwork` | $40 fixed | Redeemable for any Season 1 artwork |
 
 ## API Endpoints
 
@@ -18,12 +27,13 @@ Gift cards allow customers to purchase digital vouchers redeemable at checkout. 
 |----------|---------|
 | `POST /api/gift-cards/create-checkout` | Creates Stripe Checkout Session for gift card purchase |
 | `GET /api/gift-cards/by-session?session_id=xxx` | Returns gift card code for completed session (success page) |
+| `GET /api/gift-cards/lamp-price` | Returns current Street Lamp price from Shopify |
 
 ## Database
 
-- **Table**: `gift_cards` (see `supabase/migrations/20260305000000_gift_cards_table.sql`)
-- **Columns**: `code`, `stripe_coupon_id`, `stripe_promotion_code_id`, `amount_cents`, `purchaser_email`, `recipient_email`, `status`, `stripe_session_id`, etc.
-- **Statuses**: `issued`, `redeemed`, `provisioning_failed`
+- **Table**: `gift_cards` (see migrations `20260305000000`, `20260306000000`)
+- **Columns**: `code`, `stripe_coupon_id`, `amount_cents`, `purchaser_email`, `recipient_email`, `design`, `gift_message`, `send_at`, `sender_name`, `gift_card_type`, `status`, etc.
+- **Statuses**: `issued`, `scheduled`, `redeemed`, `provisioning_failed`
 
 ## Pages
 

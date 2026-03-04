@@ -12,11 +12,19 @@ const baseUrl =
 
 const MIN_AMOUNT_CENTS = 1000 // $10
 const MAX_AMOUNT_CENTS = 50000 // $500
+const SEASON1_ARTWORK_CENTS = 4000 // $40
+
+type GiftCardType = 'value' | 'street_lamp' | 'season1_artwork'
 
 interface CreateGiftCardCheckoutRequest {
   amountCents: number
+  giftCardType?: GiftCardType
   recipientEmail?: string
   customerEmail?: string
+  design?: string
+  giftMessage?: string
+  sendAt?: string
+  senderName?: string
 }
 
 /**
@@ -35,7 +43,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: CreateGiftCardCheckoutRequest = await request.json()
-    const { amountCents, recipientEmail, customerEmail } = body
+    const {
+      amountCents,
+      giftCardType = 'value',
+      recipientEmail,
+      customerEmail,
+      design,
+      giftMessage,
+      sendAt,
+      senderName,
+    } = body
 
     if (!amountCents || typeof amountCents !== 'number') {
       return NextResponse.json(
@@ -45,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const amount = Math.round(amountCents)
-    if (amount < MIN_AMOUNT_CENTS || amount > MAX_AMOUNT_CENTS) {
+    if (giftCardType === 'value' && (amount < MIN_AMOUNT_CENTS || amount > MAX_AMOUNT_CENTS)) {
       return NextResponse.json(
         {
           error: `Amount must be between $${(MIN_AMOUNT_CENTS / 100).toFixed(0)} and $${(MAX_AMOUNT_CENTS / 100).toFixed(0)}`,
@@ -54,9 +71,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const productLabel =
+      giftCardType === 'street_lamp'
+        ? '1 Street Lamp'
+        : giftCardType === 'season1_artwork'
+          ? '1 Season 1 Artwork ($40)'
+          : null
+
     const metadata: Record<string, string> = {
       source: 'gift_card_purchase',
       gift_card_amount_cents: String(amount),
+      gift_card_type: giftCardType,
     }
     if (recipientEmail?.trim()) {
       metadata.recipient_email = recipientEmail.trim().toLowerCase()
@@ -64,6 +89,10 @@ export async function POST(request: NextRequest) {
     if (customerEmail?.trim()) {
       metadata.collector_email = customerEmail.trim().toLowerCase()
     }
+    if (design?.trim()) metadata.gift_card_design = design.trim()
+    if (giftMessage?.trim()) metadata.gift_message = giftMessage.trim().slice(0, 500)
+    if (sendAt?.trim()) metadata.send_at = sendAt.trim()
+    if (senderName?.trim()) metadata.sender_name = senderName.trim().slice(0, 200)
 
     let stripeCustomerId: string | undefined
     if (customerEmail?.trim()) {
@@ -88,6 +117,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const lineItemName = productLabel
+      ? `Gift Card: ${productLabel}`
+      : `Gift Card - $${(amount / 100).toFixed(2)}`
+    const lineItemDesc = productLabel
+      ? `Redeemable for ${productLabel}. Code will be emailed after purchase.`
+      : 'Digital gift card redeemable at checkout. Code will be emailed after purchase.'
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card', 'link', 'paypal'],
@@ -97,10 +133,11 @@ export async function POST(request: NextRequest) {
             currency: 'usd',
             unit_amount: amount,
             product_data: {
-              name: `Gift Card - $${(amount / 100).toFixed(2)}`,
-              description: 'Digital gift card redeemable at checkout. Code will be emailed after purchase.',
+              name: lineItemName,
+              description: lineItemDesc,
               metadata: {
                 type: 'gift_card',
+                gift_card_type: giftCardType,
               },
             },
           },

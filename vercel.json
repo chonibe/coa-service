@@ -63,6 +63,10 @@
     {
       "path": "/api/cron/process-product-barcodes",
       "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/send-scheduled-gift-cards",
+      "schedule": "0 * * * *"
     }
   ]
 }

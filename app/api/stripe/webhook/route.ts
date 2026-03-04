@@ -313,6 +313,11 @@ async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Se
   const amountCents = parseInt(session.metadata?.gift_card_amount_cents || '0', 10)
   const purchaserEmail = (session.customer_details?.email || session.customer_email || session.metadata?.collector_email || '').toString().toLowerCase().trim()
   const recipientEmail = (session.metadata?.recipient_email || '').toString().toLowerCase().trim() || null
+  const giftCardType = (session.metadata?.gift_card_type || 'value') as string
+  const giftMessage = session.metadata?.gift_message || ''
+  const senderName = session.metadata?.sender_name || ''
+  const sendAtRaw = session.metadata?.send_at || ''
+  const sendAt = sendAtRaw ? new Date(sendAtRaw) : null
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'
 
   if (!amountCents || amountCents < 1000) {
@@ -335,6 +340,9 @@ async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Se
     return
   }
 
+  const now = new Date()
+  const isScheduled = sendAt && sendAt > now
+
   try {
     const coupon = await stripe.coupons.create({
       amount_off: amountCents,
@@ -356,39 +364,63 @@ async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Se
       currency: 'usd',
       purchaser_email: purchaserEmail,
       recipient_email: recipientEmail,
-      status: 'issued',
+      status: isScheduled ? 'scheduled' : 'issued',
       stripe_session_id: sessionId,
+      design: session.metadata?.gift_card_design || null,
+      gift_message: giftMessage || null,
+      send_at: sendAt ? sendAt.toISOString() : null,
+      sender_name: senderName || null,
+      gift_card_type: giftCardType || 'value',
     })
 
-    const emailTo = recipientEmail || purchaserEmail
-    const amountDollars = (amountCents / 100).toFixed(2)
-    await sendEmail({
-      to: emailTo,
-      subject: `Your $${amountDollars} Gift Card from The Street Collector`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-          <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
-            Your Gift Card
-          </h1>
-          <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 16px;">
-            Here's your $${amountDollars} gift card code. Use it at checkout when purchasing artwork from The Street Collector.
-          </p>
-          <p style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #1a1a1a; margin: 24px 0; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: center;">
-            ${code}
-          </p>
-          <p style="font-size: 14px; color: #777; line-height: 1.6;">
-            To redeem: Add items to your cart, go to checkout, and enter this code in the "Add Promo Code or Gift Card" field.
-          </p>
-          <a href="${baseUrl}/shop" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px;">
-            Shop Now
-          </a>
-          <p style="font-size: 12px; color: #999; margin-top: 24px;">
-            This code can only be used once. Questions? Contact us at ${baseUrl}/shop/contact
-          </p>
-        </div>
-      `,
-    })
-    console.log('[gift-card] Provisioned and emailed:', code)
+    if (!isScheduled) {
+      const emailTo = recipientEmail || purchaserEmail
+      const amountDollars = (amountCents / 100).toFixed(2)
+      const productLabel =
+        giftCardType === 'street_lamp'
+          ? '1 Street Lamp'
+          : giftCardType === 'season1_artwork'
+            ? 'any Season 1 artwork ($40 value)'
+            : `$${amountDollars}`
+      const fromBlock = senderName
+        ? `<p style="font-size: 14px; color: #555; font-style: italic; margin-bottom: 16px;">From: ${escapeHtml(senderName)}</p>`
+        : ''
+      const messageBlock = giftMessage
+        ? `<p style="font-size: 16px; color: #444; line-height: 1.6; margin: 16px 0; padding: 16px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid #1a1a1a;">${escapeHtml(giftMessage)}</p>`
+        : ''
+
+      await sendEmail({
+        to: emailTo,
+        subject: `Your Gift Card from The Street Collector${senderName ? ` — From ${senderName}` : ''}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 16px;">
+              Your Gift Card
+            </h1>
+            ${fromBlock}
+            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 16px;">
+              You&apos;ve received a gift card worth ${productLabel}. Use it at checkout when purchasing from The Street Collector.
+            </p>
+            ${messageBlock}
+            <p style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #1a1a1a; margin: 24px 0; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: center;">
+              ${code}
+            </p>
+            <p style="font-size: 14px; color: #777; line-height: 1.6;">
+              To redeem: Add items to your cart, go to checkout, and enter this code in the &quot;Add Promo Code or Gift Card&quot; field.
+            </p>
+            <a href="${baseUrl}/shop" style="display: inline-block; background: #1a1a1a; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px;">
+              Shop Now
+            </a>
+            <p style="font-size: 12px; color: #999; margin-top: 24px;">
+              This code can only be used once. Delivered by email, this gift card never expires. Questions? <a href="${baseUrl}/shop/contact">Contact us</a>
+            </p>
+          </div>
+        `,
+      })
+      console.log('[gift-card] Provisioned and emailed:', code)
+    } else {
+      console.log('[gift-card] Provisioned (scheduled for', sendAt?.toISOString(), '):', code)
+    }
   } catch (err: any) {
     console.error('[gift-card] Provisioning failed:', err)
     await supabase.from('gift_cards').insert({
@@ -419,6 +451,15 @@ async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Se
       `,
     })
   }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function randomAlphanumeric(length: number): string {

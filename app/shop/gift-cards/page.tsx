@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Gift, Loader2, ChevronRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
@@ -13,24 +13,80 @@ const PRESET_AMOUNTS = [
   { label: '$200', cents: 20000 },
 ]
 
+const GIFT_CARD_DESIGNS = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'minimal', label: 'Minimal' },
+  { id: 'festive', label: 'Festive' },
+]
+
 const MIN_CENTS = 1000
 const MAX_CENTS = 50000
+const SEASON1_ARTWORK_CENTS = 4000 // $40
+
+type GiftCardType = 'value' | 'street_lamp' | 'season1_artwork'
 
 export default function GiftCardsPage() {
   const { user, isAuthenticated } = useShopAuthContext()
+  const [giftCardType, setGiftCardType] = useState<GiftCardType>('value')
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
+  const [design, setDesign] = useState('classic')
   const [recipientEmail, setRecipientEmail] = useState('')
+  const [giftMessage, setGiftMessage] = useState('')
+  const [sendToday, setSendToday] = useState(true)
+  const [sendDate, setSendDate] = useState('')
+  const [senderName, setSenderName] = useState('')
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lampPrice, setLampPrice] = useState<number | null>(null)
 
   const customCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : 0
-  const amountCents = selectedAmount ?? (customCents >= MIN_CENTS ? customCents : 0)
-  const isValidAmount = amountCents >= MIN_CENTS && amountCents <= MAX_CENTS
+  const amountCents =
+    giftCardType === 'value'
+      ? selectedAmount ?? (customCents >= MIN_CENTS ? customCents : 0)
+      : giftCardType === 'street_lamp'
+        ? lampPrice ? Math.round(lampPrice * 100) : 0
+        : SEASON1_ARTWORK_CENTS
+
+  const isValid =
+    giftCardType === 'value'
+      ? amountCents >= MIN_CENTS && amountCents <= MAX_CENTS
+      : giftCardType === 'street_lamp'
+        ? lampPrice != null && lampPrice > 0
+        : true
+
+  const sendAt = sendToday ? null : sendDate ? new Date(sendDate).toISOString() : null
+
+  useEffect(() => {
+    if (giftCardType === 'street_lamp') {
+      fetch('/api/gift-cards/lamp-price')
+        .then((res) => res.json())
+        .then((data) => {
+          if (typeof data.price === 'number') setLampPrice(data.price)
+        })
+        .catch(() => setLampPrice(null))
+    } else {
+      setLampPrice(null)
+    }
+  }, [giftCardType])
 
   const handleBuy = async () => {
-    if (!isValidAmount) {
-      setError(`Amount must be between $${MIN_CENTS / 100} and $${MAX_CENTS / 100}`)
+    if (!recipientEmail?.trim()) {
+      setError('Please enter the recipient\'s email')
+      return
+    }
+    if (!sendToday && !sendDate) {
+      setError('Please select a date to send the gift card')
+      return
+    }
+    if (!isValid) {
+      setError(
+        giftCardType === 'value'
+          ? `Amount must be between $${MIN_CENTS / 100} and $${MAX_CENTS / 100}`
+          : giftCardType === 'street_lamp'
+            ? 'Street Lamp price not available. Please try again.'
+            : 'Please fill in required fields.'
+      )
       return
     }
 
@@ -43,8 +99,13 @@ export default function GiftCardsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amountCents: amountCents,
+          giftCardType: giftCardType,
           recipientEmail: recipientEmail.trim() || undefined,
           customerEmail: isAuthenticated && user?.email ? user.email : undefined,
+          design,
+          giftMessage: giftMessage.trim() || undefined,
+          sendAt: sendAt || undefined,
+          senderName: senderName.trim() || undefined,
         }),
       })
 
@@ -59,8 +120,8 @@ export default function GiftCardsPage() {
       } else {
         throw new Error('No checkout URL returned')
       }
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsCheckingOut(false)
     }
   }
@@ -73,10 +134,10 @@ export default function GiftCardsPage() {
             <Gift className="w-8 h-8 text-neutral-700 dark:text-neutral-300" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-neutral-950 dark:text-white text-center">
-            Buy a Gift Card
+            Digital Gift Card
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-2 text-center">
-            Give the gift of art. Digital gift cards redeemable at checkout.
+            Who&apos;s the lucky recipient?
           </p>
         </div>
 
@@ -88,54 +149,8 @@ export default function GiftCardsPage() {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
-              Choose amount
-            </label>
-            <div className="grid grid-cols-4 gap-3">
-              {PRESET_AMOUNTS.map(({ label, cents }) => (
-                <button
-                  key={cents}
-                  type="button"
-                  onClick={() => {
-                    setSelectedAmount(cents)
-                    setCustomAmount('')
-                  }}
-                  className={cn(
-                    'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
-                    selectedAmount === cents
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-900 dark:text-white'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="custom-amount" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Or enter custom amount ($10 – $500)
-            </label>
-            <Input
-              id="custom-amount"
-              type="number"
-              min="10"
-              max="500"
-              step="1"
-              placeholder="e.g. 75"
-              value={customAmount}
-              onChange={(e) => {
-                setCustomAmount(e.target.value)
-                setSelectedAmount(null)
-              }}
-              className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="recipient-email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Send to recipient (optional)
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Recipient&apos;s email
             </label>
             <Input
               id="recipient-email"
@@ -144,15 +159,207 @@ export default function GiftCardsPage() {
               value={recipientEmail}
               onChange={(e) => setRecipientEmail(e.target.value)}
               className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
+              required
             />
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-              Leave blank to send the code to your email
-            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+              Choose a design
+            </label>
+            <div className="flex gap-3">
+              {GIFT_CARD_DESIGNS.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDesign(d.id)}
+                  className={cn(
+                    'flex-1 py-3 px-4 rounded-lg border-2 text-center font-medium transition-colors',
+                    design === d.id
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
+                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-900 dark:text-white'
+                  )}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+              Choose a card value
+            </label>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGiftCardType('value')}
+                  className={cn(
+                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
+                    giftCardType === 'value'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
+                      : 'border-neutral-200 dark:border-neutral-700'
+                  )}
+                >
+                  Dollar amount
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGiftCardType('street_lamp')
+                    fetchLampPrice()
+                  }}
+                  className={cn(
+                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
+                    giftCardType === 'street_lamp'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
+                      : 'border-neutral-200 dark:border-neutral-700'
+                  )}
+                >
+                  1 Street Lamp
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGiftCardType('season1_artwork')}
+                  className={cn(
+                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
+                    giftCardType === 'season1_artwork'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
+                      : 'border-neutral-200 dark:border-neutral-700'
+                  )}
+                >
+                  1 Season 1 Artwork ($40)
+                </button>
+              </div>
+
+              {giftCardType === 'value' && (
+                <>
+                  <div className="grid grid-cols-4 gap-3">
+                    {PRESET_AMOUNTS.map(({ label, cents }) => (
+                      <button
+                        key={cents}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAmount(cents)
+                          setCustomAmount('')
+                        }}
+                        className={cn(
+                          'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
+                          selectedAmount === cents
+                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
+                            : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-900 dark:text-white'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <Input
+                    type="number"
+                    min="10"
+                    max="500"
+                    step="1"
+                    placeholder="Or custom amount ($10 – $500)"
+                    value={customAmount}
+                    onChange={(e) => {
+                      setCustomAmount(e.target.value)
+                      setSelectedAmount(null)
+                    }}
+                    className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
+                  />
+                </>
+              )}
+
+              {giftCardType === 'street_lamp' && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  {lampPrice != null
+                    ? `$${lampPrice.toFixed(2)} — Redeemable for 1 Street Lamp`
+                    : 'Loading price...'}
+                </p>
+              )}
+
+              {giftCardType === 'season1_artwork' && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  $40.00 — Redeemable for any Season 1 artwork
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="gift-message" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Gift message (optional)
+            </label>
+            <textarea
+              id="gift-message"
+              placeholder="Add a personal note"
+              value={giftMessage}
+              onChange={(e) => setGiftMessage(e.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-3 text-neutral-900 dark:text-white placeholder:text-neutral-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              When should we send the gift card?
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="send-when"
+                  checked={sendToday}
+                  onChange={() => setSendToday(true)}
+                  className="rounded-full"
+                />
+                <span>Today</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="send-when"
+                  checked={!sendToday}
+                  onChange={() => setSendToday(false)}
+                  className="rounded-full"
+                />
+                <span>Schedule</span>
+              </label>
+            </div>
+            {!sendToday && (
+              <Input
+                type="date"
+                value={sendDate}
+                onChange={(e) => setSendDate(e.target.value)}
+                min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                className="mt-2 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
+              />
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="sender-name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Who is it from?
+            </label>
+            <Input
+              id="sender-name"
+              type="text"
+              placeholder="Sender's name"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+              className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
+            />
           </div>
 
           <Button
             onClick={handleBuy}
-            disabled={!isValidAmount || isCheckingOut}
+            disabled={
+              !recipientEmail?.trim() ||
+              (!sendToday && !sendDate) ||
+              !isValid ||
+              isCheckingOut
+            }
             className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100"
           >
             {isCheckingOut ? (
@@ -169,12 +376,16 @@ export default function GiftCardsPage() {
           </Button>
         </div>
 
+        <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400 text-center">
+          Delivered by email, this gift card never expires.
+        </p>
+
         <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
           <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">How it works</h3>
           <ol className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 list-decimal list-inside">
-            <li>Choose your amount and complete checkout</li>
-            <li>Receive your unique gift card code by email</li>
-            <li>Redeem at checkout: add items, then enter the code in &quot;Add Promo Code or Gift Card&quot;</li>
+            <li>Complete checkout and we&apos;ll email the unique code {sendToday ? '' : 'on your chosen date'}
+            </li>
+            <li>Recipient enters the code in &quot;Add Promo Code or Gift Card&quot; at checkout</li>
           </ol>
         </div>
       </section>
