@@ -162,7 +162,7 @@ export default function CollectorProfilePage() {
             progress={data?.xpProgress || 0}
             size={80}
             strokeWidth={3}
-            color="#2c4bce"
+            color="#047AFF"
           >
             <div className="w-[68px] h-[68px] rounded-full bg-gradient-to-br from-[#390000] to-[#5a1a1a] flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-[#ffba94]" />
@@ -226,7 +226,7 @@ export default function CollectorProfilePage() {
               progress={proofProgress}
               size={52}
               strokeWidth={3}
-              color={proofProgress >= 100 ? '#00a341' : '#2c4bce'}
+              color={proofProgress >= 100 ? '#00a341' : '#047AFF'}
             >
               <Gift className={cn('w-5 h-5', proofProgress >= 100 ? 'text-impact-success' : 'text-impact-primary')} />
             </ProgressRing>

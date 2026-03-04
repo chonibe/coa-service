@@ -18,6 +18,7 @@ import {
 } from '@/lib/data/countries'
 import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { useSaveAddressToAccount } from '@/lib/shop/useSaveAddressToAccount'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 
 export interface InlineAddressFormProps {
@@ -27,6 +28,8 @@ export interface InlineAddressFormProps {
   submitLabel?: string
   /** When true, omits the Back button and uses compact single-column layout */
   compact?: boolean
+  /** When provided, saves address to user account (e.g. at checkout). Requires auth. */
+  persistAs?: 'shipping' | 'billing'
 }
 
 const emptyAddress: CheckoutAddress = {
@@ -63,8 +66,10 @@ export function InlineAddressForm({
   onBack,
   submitLabel = 'Continue to Payment',
   compact = false,
+  persistAs,
 }: InlineAddressFormProps) {
   const countryOptions = useShippingCountries()
+  const { saveShippingAddress, saveBillingAddress } = useSaveAddressToAccount()
   const [form, setForm] = React.useState<CheckoutAddress>(
     () => initialAddress ?? { ...emptyAddress }
   )
@@ -74,23 +79,43 @@ export function InlineAddressForm({
     if (initialAddress) setForm(initialAddress)
   }, [initialAddress])
 
-  /* Auto-set country from session geo (Vercel IP) when form has no address yet */
+  /* Auto-set country from session geo (Vercel IP) or browser locale when form has no address yet */
   React.useEffect(() => {
     if (initialAddress?.country) return
+    const applyCountry = (code: string) => {
+      const upper = code.toUpperCase()
+      if (countryOptions.some((c) => c.code === upper)) {
+        setForm((p) => ({ ...p, country: upper, phoneCountryCode: getPhoneCodeForCountry(upper), state: '' }))
+      }
+    }
     fetch('/api/geo/country')
       .then((r) => r.json())
       .then((data: { country: string | null }) => {
-        const code = data.country?.toUpperCase()
-        if (code && countryOptions.some((c) => c.code === code)) {
-          setForm((p) => ({
-            ...p,
-            country: code,
-            phoneCountryCode: getPhoneCodeForCountry(code),
-            state: '',
-          }))
+        if (data.country) {
+          applyCountry(data.country)
+          return
         }
+        let region: string | undefined
+        try {
+          region = typeof Intl !== 'undefined' && navigator.language
+            ? (new (Intl as any).Locale(navigator.language).region as string)
+            : navigator.language?.split('-')[1]
+        } catch {
+          region = navigator.language?.split('-')[1]
+        }
+        if (region) applyCountry(region)
       })
-      .catch(() => {})
+      .catch(() => {
+        let region: string | undefined
+        try {
+          region = typeof Intl !== 'undefined' && navigator.language
+            ? (new (Intl as any).Locale(navigator.language).region as string)
+            : navigator.language?.split('-')[1]
+        } catch {
+          region = navigator.language?.split('-')[1]
+        }
+        if (region) applyCountry(region)
+      })
   }, [initialAddress?.country, countryOptions])
 
   const handleCountryChange = (code: string) => {
@@ -134,6 +159,8 @@ export function InlineAddressForm({
       return
     }
     setError(null)
+    if (persistAs === 'shipping') saveShippingAddress(form)
+    else if (persistAs === 'billing') saveBillingAddress(form)
     onSubmit(form)
   }
 

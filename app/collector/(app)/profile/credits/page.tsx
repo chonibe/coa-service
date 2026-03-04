@@ -87,7 +87,7 @@ export default function CollectorCreditsPage() {
               progress={proofProgress}
               size={52}
               strokeWidth={3}
-              color={proofProgress >= 100 ? '#00a341' : '#2c4bce'}
+              color={proofProgress >= 100 ? '#00a341' : '#047AFF'}
             >
               <Gift className={cn('w-5 h-5', proofProgress >= 100 ? 'text-impact-success' : 'text-impact-primary')} />
             </ProgressRing>

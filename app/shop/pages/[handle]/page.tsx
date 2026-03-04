@@ -87,7 +87,7 @@ function PageContent({ title, body }: { title: string; body: string }) {
               className="prose prose-lg max-w-none
                 prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
                 prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-                prose-a:text-[#2c4bce] prose-a:no-underline hover:prose-a:underline
+                prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
                 prose-strong:text-[#1a1a1a]
                 prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
                 prose-img:rounded-xl

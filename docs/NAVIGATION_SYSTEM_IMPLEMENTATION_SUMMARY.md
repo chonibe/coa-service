@@ -151,7 +151,7 @@ lib/animations/navigation-animations.ts  ✅ Added 4 new animation hooks
 ### Color Scheme
 - **Background**: `#390000` (dark maroon)
 - **Text**: `#ffba94` (peach/salmon)
-- **Accent**: `#2c4bce` (blue)
+- **Accent**: `#047AFF` (blue)
 - **Success**: `#10b981` (green)
 - **Warning**: `#f0c417` (yellow)
 

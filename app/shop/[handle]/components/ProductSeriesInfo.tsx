@@ -56,7 +56,7 @@ export function ProductSeriesInfo({
         'border border-[#1a1a1a]/10',
         'rounded-[16px]',
         'transition-all duration-300',
-        'hover:border-[#2c4bce]/30 hover:shadow-md',
+        'hover:border-[#047AFF]/30 hover:shadow-md',
         className
       )}
     >
@@ -77,20 +77,20 @@ export function ProductSeriesInfo({
           <div className="flex-1 min-w-0">
             {/* Badge */}
             <div className="flex items-center gap-2 mb-2">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#2c4bce]/10 rounded-full">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#047AFF]/10 rounded-full">
                 <svg
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#2c4bce"
+                  stroke="#047AFF"
                   strokeWidth="2"
                   className="flex-shrink-0"
                 >
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <span className="text-xs font-medium text-[#2c4bce]">
+                <span className="text-xs font-medium text-[#047AFF]">
                   Part of a Series
                 </span>
               </div>
@@ -105,7 +105,7 @@ export function ProductSeriesInfo({
             </div>
 
             {/* Series Name */}
-            <h3 className="font-heading text-base sm:text-lg font-semibold text-[#1a1a1a] mb-1 group-hover:text-[#2c4bce] transition-colors">
+            <h3 className="font-heading text-base sm:text-lg font-semibold text-[#1a1a1a] mb-1 group-hover:text-[#047AFF] transition-colors">
               {series.name}
             </h3>
 
@@ -170,7 +170,7 @@ export function ProductSeriesInfo({
                       'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
                       isComplete
                         ? 'bg-gradient-to-r from-[#0a8754] to-[#0cc46e]'
-                        : 'bg-gradient-to-r from-[#2c4bce] to-[#4a6cf7]'
+                        : 'bg-gradient-to-r from-[#047AFF] to-[#4a6cf7]'
                     )}
                     style={{ width: `${collectorProgress!.owned_percentage}%` }}
                   />
@@ -210,7 +210,7 @@ export function ProductSeriesInfo({
             )}
 
             {/* View Collection Link */}
-            <div className="flex items-center gap-1.5 mt-3 text-sm font-medium text-[#2c4bce] group-hover:gap-2 transition-all">
+            <div className="flex items-center gap-1.5 mt-3 text-sm font-medium text-[#047AFF] group-hover:gap-2 transition-all">
               <span>{isGuest ? 'View Collection' : (hasProgress ? 'See Your Progress' : 'View Collection')}</span>
               <svg
                 width="16"

@@ -409,7 +409,7 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove() }}
-        className="absolute top-2 right-2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm text-[#f83a3a] hover:bg-rose-50 hover:scale-110 active:scale-95 transition-all touch-manipulation"
+        className="absolute top-2 right-2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm text-[#047AFF] hover:bg-[#047AFF]/10 hover:scale-110 active:scale-95 transition-all touch-manipulation"
         aria-label="Remove from wishlist"
       >
         <Heart size={18} className="fill-[#f83a3a] text-[#f83a3a]" />

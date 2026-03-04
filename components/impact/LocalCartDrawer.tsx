@@ -294,7 +294,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full text-center text-sm text-[#2c4bce] hover:underline"
+                  className="w-full text-center text-sm text-[#047AFF] hover:underline"
                 >
                   Continue Shopping
                 </button>

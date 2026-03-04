@@ -98,7 +98,9 @@ const PolarisSelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full cursor-default select-none items-center rounded-[var(--p-border-radius-100)] py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-[var(--p-color-bg-surface-secondary)] focus:text-[var(--p-color-text)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'relative flex w-full cursor-pointer select-none items-center rounded-[var(--p-border-radius-100)] py-1.5 pl-8 pr-2 text-sm outline-none transition-colors',
+      'hover:bg-[#047AFF]/5 hover:text-[#047AFF] data-[highlighted]:bg-[#047AFF]/5 data-[highlighted]:text-[#047AFF]',
+      'focus:bg-[#047AFF]/5 focus:text-[var(--p-color-text)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     {...props}

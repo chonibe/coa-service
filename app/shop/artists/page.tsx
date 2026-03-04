@@ -103,7 +103,7 @@ export default function ArtistsPage() {
                 </div>
                 
                 {/* Artist Name */}
-                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#2c4bce] transition-colors">
+                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
                   {artist.name}
                 </h3>
                 

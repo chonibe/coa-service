@@ -71,7 +71,7 @@ const badgeVariants = cva(
         
         // New/limited badge - for special items
         new: [
-          'bg-gradient-to-r from-[#2c4bce] to-[#803cee] text-white',
+          'bg-gradient-to-r from-[#047AFF] to-[#803cee] text-white',
         ].join(' '),
         
         // Low stock badge
@@ -234,7 +234,7 @@ ProductBadge.displayName = 'ProductBadge'
  * Status Badge - for order/item status
  */
 export interface StatusBadgeProps {
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'out_for_delivery' | 'cancelled' | 'refunded'
   className?: string
 }
 
@@ -248,6 +248,8 @@ const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
           return 'primary'
         case 'shipped':
           return 'secondary'
+        case 'out_for_delivery':
+          return 'primary'
         case 'delivered':
           return 'success'
         case 'cancelled':
@@ -257,8 +259,9 @@ const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
           return 'subdued'
       }
     }
-    
+
     const getLabel = () => {
+      if (status === 'out_for_delivery') return 'Out for Delivery'
       return status.charAt(0).toUpperCase() + status.slice(1)
     }
     

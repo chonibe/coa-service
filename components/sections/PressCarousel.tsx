@@ -235,7 +235,7 @@ export function PressCarousel({
                 className={cn(
                   'w-2 h-2 rounded-full transition-all',
                   index === currentIndex
-                    ? 'bg-[#2c4bce] w-6'
+                    ? 'bg-[#047AFF] w-6'
                     : 'bg-[#1a1a1a]/20 hover:bg-[#1a1a1a]/40'
                 )}
                 aria-label={`Go to quote ${index + 1}`}

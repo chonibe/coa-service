@@ -151,7 +151,7 @@ Comprehensive enhancement of the shop experience with two major components:
 ## 🎨 Design System Consistency
 
 ### Colors Used:
-- **Primary Blue:** #2c4bce (series badges, links)
+- **Primary Blue:** #047AFF (series badges, links)
 - **Success Green:** #0a8754 (success states, progress)
 - **Accent Yellow:** #f0c417 (add-to-cart button)
 - **Warning Yellow:** #f0c417 (low stock)

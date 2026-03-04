@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export interface PolarisSheetProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -12,6 +13,8 @@ export interface PolarisSheetProps extends React.HTMLAttributes<HTMLDivElement> 
   children?: React.ReactNode
   /** Optional class for the overlay container (e.g. z-[70] for high-z contexts) */
   overlayClassName?: string
+  /** When 'dark', adds dark class so children's dark: variants apply (needed when portaled to body) */
+  theme?: 'light' | 'dark'
 }
 
 const sideClasses = {
@@ -19,6 +22,13 @@ const sideClasses = {
   right: 'inset-y-0 right-0 h-full w-full max-w-sm rounded-l-[var(--p-border-radius-300)] border-l',
   bottom: 'inset-x-0 bottom-0 h-auto max-h-[90vh] w-full rounded-t-[var(--p-border-radius-300)] border-t',
   left: 'inset-y-0 left-0 h-full w-full max-w-sm rounded-r-[var(--p-border-radius-300)] border-r',
+} as const
+
+const slideVariants = {
+  left: { initial: { x: '-100%' }, animate: { x: 0 }, exit: { x: '-100%' } },
+  right: { initial: { x: '100%' }, animate: { x: 0 }, exit: { x: '100%' } },
+  top: { initial: { y: '-100%' }, animate: { y: 0 }, exit: { y: '-100%' } },
+  bottom: { initial: { y: '100%' }, animate: { y: 0 }, exit: { y: '100%' } },
 } as const
 
 // Sub-components for compatibility with shadcn-style imports
@@ -55,6 +65,7 @@ export function PolarisSheet({
   className,
   style,
   overlayClassName,
+  theme,
   ...props
 }: PolarisSheetProps) {
   React.useEffect(() => {
@@ -71,52 +82,66 @@ export function PolarisSheet({
     }
   }, [open, onClose])
 
-  if (!open) return null
-
+  const v = slideVariants[side]
   const overlay = (
-    <div
-      className={cn('fixed inset-0 z-50', overlayClassName)}
-      aria-modal="true"
-      role="dialog"
-      aria-label={title ?? 'Sheet'}
-    >
-      <button
-        type="button"
-        aria-hidden
-        tabIndex={-1}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      <div
-        className={cn(
-          'fixed z-50 flex flex-col overflow-auto border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] shadow-xl',
-          sideClasses[side],
-          className
-        )}
-        style={style}
-        onClick={(e) => e.stopPropagation()}
-        {...props}
-      >
-        {title && (
-          <div className="flex items-center justify-between border-b border-[var(--p-color-border)] px-6 py-4">
-            <h2 className="text-lg font-semibold font-[var(--font-fraunces),serif] text-[var(--p-color-text)]">
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded p-1 hover:bg-[var(--p-color-bg-surface-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-              aria-label="Close"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
-        <div className="flex-1 p-6">{children}</div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="sheet-overlay"
+          className={cn('fixed inset-0 z-50', overlayClassName)}
+          aria-modal="true"
+          role="dialog"
+          aria-label={title ?? 'Sheet'}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+            onClick={onClose}
+          />
+          <motion.div
+            key="sheet-panel"
+            className={cn(
+              'fixed z-50 flex flex-col overflow-auto border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] shadow-xl',
+              theme === 'dark' && 'dark border-white/10 bg-neutral-950',
+              sideClasses[side],
+              className
+            )}
+            style={style}
+            onClick={(e) => e.stopPropagation()}
+            initial={v.initial}
+            animate={v.animate}
+            exit={v.exit}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            {...props}
+          >
+            {title && (
+              <div className="flex items-center justify-between border-b border-[var(--p-color-border)] px-6 py-4">
+                <h2 className="text-lg font-semibold font-[var(--font-fraunces),serif] text-[var(--p-color-text)]">
+                  {title}
+                </h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded p-1 hover:bg-[var(--p-color-bg-surface-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                  aria-label="Close"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <div className="flex-1 p-6">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 
   if (typeof document !== 'undefined') {

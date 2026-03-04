@@ -22,7 +22,7 @@ const inputVariants = cva(
     'rounded-[8px]', // Impact theme input border radius
     'transition-all duration-200 ease-in-out',
     'placeholder:text-[#1a1a1a]/50',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c4bce] focus-visible:border-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
     'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ].join(' '),
@@ -158,7 +158,7 @@ const textareaVariants = cva(
     'px-4 py-3',
     'transition-all duration-200 ease-in-out',
     'placeholder:text-[#1a1a1a]/50',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c4bce] focus-visible:border-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
     'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
     'resize-y',
   ].join(' '),
@@ -269,7 +269,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               'rounded-[8px]',
               'h-[2.625rem] px-4 pr-10 sm:h-[3.125rem]',
               'transition-all duration-200 ease-in-out',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c4bce] focus-visible:border-transparent',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
               'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
               error && 'border-[#f83a3a] focus-visible:ring-[#f83a3a]',
               className

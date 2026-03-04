@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
       : 'Digital gift card redeemable at checkout. Code will be emailed after purchase.'
 
     const session = await stripe.checkout.sessions.create({
+      ui_mode: 'custom',
       mode: 'payment',
       payment_method_types: ['card', 'link', 'paypal'],
       line_items: [
@@ -145,10 +146,12 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata,
-      success_url: `${baseUrl}/shop/gift-cards/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/shop/gift-cards`,
+      return_url: `${baseUrl}/shop/gift-cards/success?session_id={CHECKOUT_SESSION_ID}`,
       allow_promotion_codes: false,
       billing_address_collection: 'auto',
+      payment_intent_data: {
+        setup_future_usage: 'off_session',
+      },
       ...(stripeCustomerId
         ? { customer: stripeCustomerId }
         : customerEmail?.trim()
@@ -156,7 +159,10 @@ export async function POST(request: NextRequest) {
           : {}),
     })
 
-    return NextResponse.json({ url: session.url, sessionId: session.id })
+    return NextResponse.json({
+      clientSecret: session.client_secret,
+      sessionId: session.id,
+    })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to create checkout'
     console.error('[gift-cards/create-checkout] Error:', err)

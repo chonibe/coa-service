@@ -2,8 +2,9 @@
 
 import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
+import { X, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
 import { Button } from '@/components/ui'
 import {
   Input,
@@ -23,6 +24,8 @@ import {
 } from '@/lib/data/countries'
 import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { useSaveAddressToAccount } from '@/lib/shop/useSaveAddressToAccount'
+import { useSavedAddresses } from '@/lib/shop/useSavedAddresses'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 import { GooglePlacesAddressInput } from './GooglePlacesAddressInput'
 
@@ -69,6 +72,11 @@ function isAddressComplete(addr: CheckoutAddress | null | undefined): boolean {
   return !!addr && validateAddress(addr) === null
 }
 
+function formatAddressShort(addr: CheckoutAddress): string {
+  const parts = [addr.addressLine1, addr.city, addr.state, addr.postalCode].filter(Boolean)
+  return parts.join(', ')
+}
+
 export function AddressModal({
   open,
   onOpenChange,
@@ -77,43 +85,85 @@ export function AddressModal({
   billingAddress,
   addressType = 'shipping',
 }: AddressModalProps) {
+  const { theme } = useExperienceTheme()
   const countryOptions = useShippingCountries()
+  const { saveShippingAddress, saveBillingAddress } = useSaveAddressToAccount()
+  const { addresses: savedAddresses } = useSavedAddresses()
   const ac = (field: string) => (addressType ? `${addressType} ${field}` : field)
+
+  const savedAddressesToShow = React.useMemo(() => {
+    return savedAddresses.map(({ id, address, label }) => ({
+      id,
+      addr: address,
+      label: label || `Saved address`,
+    }))
+  }, [savedAddresses])
   const [form, setForm] = React.useState<CheckoutAddress>(
     () => initialAddress ?? { ...emptyAddress }
   )
   const [validationError, setValidationError] = React.useState<string | null>(null)
   const [sameAsBilling, setSameAsBilling] = React.useState(false)
   const [addressExpanded, setAddressExpanded] = React.useState(false)
+  const [locationLoading, setLocationLoading] = React.useState(false)
+  const [locationError, setLocationError] = React.useState<string | null>(null)
   const hasValidBilling = isAddressComplete(billingAddress)
+
+  /* Apply dark mode to Google Places .pac-container (rendered to body) */
+  React.useEffect(() => {
+    if (open && theme === 'dark') {
+      document.body.setAttribute('data-pac-dark', 'true')
+      return () => document.body.removeAttribute('data-pac-dark')
+    }
+  }, [open, theme])
 
   React.useEffect(() => {
     if (open) {
       setForm(initialAddress ?? { ...emptyAddress })
       setValidationError(null)
       setSameAsBilling(false)
+      setLocationError(null)
       setAddressExpanded(!!(initialAddress?.addressLine1 || initialAddress?.city || initialAddress?.postalCode || initialAddress?.phoneNumber))
     }
   }, [open, initialAddress])
 
-  /* Auto-set country from session geo (Vercel IP) when form opens without an existing address */
+  /* Auto-set country from session geo (Vercel IP) or browser locale when form opens without an existing address */
   React.useEffect(() => {
     if (!open) return
     if (initialAddress?.country) return
+    const applyCountry = (code: string) => {
+      const upper = code.toUpperCase()
+      if (countryOptions.some((c) => c.code === upper)) {
+        setForm((p) => ({ ...p, country: upper, phoneCountryCode: getPhoneCodeForCountry(upper), state: '' }))
+      }
+    }
     fetch('/api/geo/country')
       .then((r) => r.json())
       .then((data: { country: string | null }) => {
-        const code = data.country?.toUpperCase()
-        if (code && countryOptions.some((c) => c.code === code)) {
-          setForm((p) => ({
-            ...p,
-            country: code,
-            phoneCountryCode: getPhoneCodeForCountry(code),
-            state: '',
-          }))
+        if (data.country) {
+          applyCountry(data.country)
+          return
         }
+        let region: string | undefined
+        try {
+          region = typeof Intl !== 'undefined' && navigator.language
+            ? (new (Intl as any).Locale(navigator.language).region as string)
+            : navigator.language?.split('-')[1]
+        } catch {
+          region = navigator.language?.split('-')[1]
+        }
+        if (region) applyCountry(region)
       })
-      .catch(() => {})
+      .catch(() => {
+        let region: string | undefined
+        try {
+          region = typeof Intl !== 'undefined' && navigator.language
+            ? (new (Intl as any).Locale(navigator.language).region as string)
+            : navigator.language?.split('-')[1]
+        } catch {
+          region = navigator.language?.split('-')[1]
+        }
+        if (region) applyCountry(region)
+      })
   }, [open, initialAddress, countryOptions])
 
   React.useEffect(() => {
@@ -189,6 +239,52 @@ export function AddressModal({
     setForm((p) => ({ ...p, country: code, phoneCountryCode: phoneCode, state: '' }))
   }
 
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Location services are not available')
+      return
+    }
+    setLocationLoading(true)
+    setLocationError(null)
+    setAddressExpanded(true)
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords
+          const res = await fetch(
+            `/api/geo/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`
+          )
+          if (!res.ok) throw new Error('Reverse geocode failed')
+          const data = await res.json()
+          const addr = data.address || {}
+          const house = [addr.house_number, addr.road].filter(Boolean).join(' ') || data.display_name?.split(',')[0] || ''
+          const city = addr.city || addr.town || addr.village || addr.municipality || ''
+          const state = addr.state || ''
+          const postalCode = addr.postcode || ''
+          const countryCode = (addr.country_code || '').toUpperCase()
+          const validCountry = countryCode && countryOptions.some((c) => c.code === countryCode) ? countryCode : undefined
+          setForm((p) => ({
+            ...p,
+            addressLine1: house || p.addressLine1,
+            city: city || p.city,
+            state: state || p.state,
+            postalCode: postalCode || p.postalCode,
+            ...(validCountry && { country: validCountry, phoneCountryCode: getPhoneCodeForCountry(validCountry), state: state || '' }),
+          }))
+        } catch {
+          setLocationError('Could not get address from location')
+        } finally {
+          setLocationLoading(false)
+        }
+      },
+      (err) => {
+        setLocationError(err.code === 1 ? 'Location permission denied' : 'Could not get your location')
+        setLocationLoading(false)
+      },
+      { timeout: 10000, maximumAge: 60000 }
+    )
+  }
+
   const statesForCountry = React.useMemo(
     () => getStatesForCountry(form.country),
     [form.country]
@@ -220,6 +316,8 @@ export function AddressModal({
   const handleDone = () => {
     if (sameAsBilling && hasValidBilling && billingAddress) {
       onSave(billingAddress)
+      if (addressType === 'shipping') saveShippingAddress(billingAddress)
+      else saveBillingAddress(billingAddress)
       onOpenChange(false)
       return
     }
@@ -230,6 +328,8 @@ export function AddressModal({
     }
     setValidationError(null)
     onSave(form)
+    if (addressType === 'shipping') saveShippingAddress(form)
+    else saveBillingAddress(form)
     onOpenChange(false)
   }
 
@@ -239,7 +339,8 @@ export function AddressModal({
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col bg-white',
+            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
+            theme === 'dark' ? 'bg-neutral-950' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -247,24 +348,34 @@ export function AddressModal({
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
           aria-describedby={undefined}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement
+            if (target.closest?.('.pac-container')) e.preventDefault()
+          }}
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement
+            if (target.closest?.('.pac-container')) e.preventDefault()
+          }}
         >
+          {/* Wrapper for dark mode - portaled content needs explicit theme */}
+          <div className={cn('flex flex-col h-full', theme === 'dark' && 'dark')}>
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-5">
+          <div className={cn('flex shrink-0 items-center justify-between border-b px-4 py-5', theme === 'dark' ? 'border-white/10' : 'border-neutral-100')}>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
               data-testid="address-dialog-close-button"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
             </button>
-            <Dialog.Title className="text-lg font-semibold text-neutral-950">Add Address</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold text-neutral-950 dark:text-white">Add Address</Dialog.Title>
             <button
               type="button"
               onClick={handleDone}
               data-testid="add-address-done-button"
-              className="text-sm font-medium text-pink-600 hover:text-pink-700"
+              className="text-sm font-medium text-[#047AFF] hover:text-[#0366d6]"
             >
               Done
             </button>
@@ -272,8 +383,43 @@ export function AddressModal({
 
           {/* Scrollable form */}
           <div className="flex-1 overflow-y-auto px-4 py-4">
+            {savedAddressesToShow.length > 0 && (
+              <div className="mb-4 space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  Choose from saved
+                </p>
+                <div className="space-y-2">
+                  {savedAddressesToShow.map(({ id, addr, label }) => {
+                    const addrWithEmail = {
+                      ...addr,
+                      email: addr.email?.trim() || initialAddress?.email?.trim() || form.email?.trim() || '',
+                    }
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          if (isAddressComplete(addrWithEmail)) {
+                            onSave(addrWithEmail)
+                            onOpenChange(false)
+                          } else {
+                            setForm(addrWithEmail)
+                          }
+                        }}
+                        className="w-full text-left rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 hover:border-[#047AFF]/50 dark:hover:border-[#60A5FA]/50 hover:bg-[#047AFF]/5 dark:hover:bg-[#60A5FA]/10 transition-colors"
+                      >
+                        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-0.5">{label}</p>
+                        <p className="text-sm text-neutral-900 dark:text-white truncate">{formatAddressShort(addr)}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 pt-1">Or enter a new address below</p>
+                <div className="border-t border-neutral-100 dark:border-white/10 my-4" />
+              </div>
+            )}
             {validationError && (
-              <div className="mb-4 rounded-lg bg-amber-100 px-4 py-3 text-sm text-amber-800">
+              <div className="mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
                 {validationError}
               </div>
             )}
@@ -284,7 +430,7 @@ export function AddressModal({
                   checked={sameAsBilling}
                   onCheckedChange={(c) => setSameAsBilling(!!c)}
                 />
-                <Label htmlFor="same-as-billing" className="text-sm text-neutral-700 cursor-pointer">
+                <Label htmlFor="same-as-billing" className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
                   Same as billing address
                 </Label>
               </div>
@@ -311,7 +457,7 @@ export function AddressModal({
                 ))}
               </select>
               <div>
-                <Label htmlFor="address-email" className="text-sm text-neutral-700">
+                <Label htmlFor="address-email" className="text-sm text-neutral-700 dark:text-neutral-300">
                   Email
                 </Label>
                 <Input
@@ -321,12 +467,12 @@ export function AddressModal({
                   autoComplete={ac('email')}
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  className="mt-1.5"
+                  className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                   placeholder="email@example.com"
                 />
               </div>
               <div>
-                <Label htmlFor="address-fullname" className="text-sm text-neutral-700">
+                <Label htmlFor="address-fullname" className="text-sm text-neutral-700 dark:text-neutral-300">
                   Full name
                 </Label>
                 <Input
@@ -335,19 +481,19 @@ export function AddressModal({
                   autoComplete={ac('name')}
                   value={form.fullName}
                   onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
-                  className="mt-1.5"
+                  className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                   placeholder="First and last name"
                 />
               </div>
               <div>
-                <Label htmlFor="address-country" className="text-sm text-neutral-700">
+                <Label htmlFor="address-country" className="text-sm text-neutral-700 dark:text-neutral-300">
                   Country or region
                 </Label>
                 <Select value={form.country} onValueChange={handleCountryChange}>
-                  <SelectTrigger id="address-country" className="mt-1.5">
+                  <SelectTrigger id="address-country" className={cn('mt-1.5', theme === 'dark' && '!border-neutral-600 !bg-neutral-900 !text-white')}>
                     <SelectValue placeholder="United States" />
                   </SelectTrigger>
-                  <SelectContent className="z-[200]">
+                  <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-neutral-900 !text-white')}>
                     {countryOptions.map((c) => (
                       <SelectItem key={c.code} value={c.code}>
                         {c.name}
@@ -357,9 +503,25 @@ export function AddressModal({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="address-line1" className="text-sm text-neutral-700">
-                  Address line 1
-                </Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="address-line1" className="text-sm text-neutral-700 dark:text-neutral-300">
+                    Address line 1
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={useCurrentLocation}
+                    disabled={locationLoading}
+                    title="Use current location"
+                    aria-label="Use current location"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#047AFF]/30 bg-[#047AFF]/5 px-2.5 py-1.5 text-xs text-[#047AFF] hover:bg-[#047AFF]/10 hover:border-[#047AFF]/50 font-medium disabled:opacity-50 transition-colors"
+                  >
+                    <MapPin className="w-4 h-4 shrink-0" aria-hidden />
+                    {locationLoading ? 'Locating…' : 'Current location'}
+                  </button>
+                </div>
+                {locationError && (
+                  <p className="text-xs text-amber-600 mt-0.5">{locationError}</p>
+                )}
                 <div
                   onFocus={() => setAddressExpanded(true)}
                   onClick={() => setAddressExpanded(true)}
@@ -407,6 +569,7 @@ export function AddressModal({
                       autoComplete={ac('address-line1')}
                       value={form.addressLine1}
                       onChange={(e) => setForm((p) => ({ ...p, addressLine1: e.target.value }))}
+                      className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                       placeholder="Street address"
                     />
                   )}
@@ -415,7 +578,7 @@ export function AddressModal({
               {addressExpanded && (
                 <>
                   <div>
-                    <Label htmlFor="address-line2" className="text-sm text-neutral-700">
+                    <Label htmlFor="address-line2" className="text-sm text-neutral-700 dark:text-neutral-300">
                       Address line 2
                     </Label>
                     <Input
@@ -426,12 +589,12 @@ export function AddressModal({
                       onChange={(e) =>
                         setForm((p) => ({ ...p, addressLine2: e.target.value || undefined }))
                       }
-                      className="mt-1.5"
+                      className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                       placeholder="Apt., suite, unit number, etc. (optional)"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="address-city" className="text-sm text-neutral-700">
+                    <Label htmlFor="address-city" className="text-sm text-neutral-700 dark:text-neutral-300">
                       City
                     </Label>
                     <Input
@@ -440,7 +603,7 @@ export function AddressModal({
                       autoComplete={ac('address-level2')}
                       value={form.city}
                       onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
-                      className="mt-1.5"
+                      className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                       placeholder="City"
                     />
                   </div>
@@ -453,10 +616,10 @@ export function AddressModal({
                         value={form.state || ''}
                         onValueChange={(v) => setForm((p) => ({ ...p, state: v }))}
                       >
-                        <SelectTrigger id="address-state" className="mt-1.5">
+                        <SelectTrigger id="address-state" className={cn('mt-1.5', theme === 'dark' && '!border-neutral-600 !bg-neutral-900 !text-white')}>
                           <SelectValue placeholder="Select state" />
                         </SelectTrigger>
-                        <SelectContent className="z-[200]">
+                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-neutral-900 !text-white')}>
                           {statesForCountry.map((s) => (
                             <SelectItem key={s.code} value={s.code}>
                               {s.name}
@@ -467,7 +630,7 @@ export function AddressModal({
                     </div>
                   ) : form.country ? (
                     <div>
-                      <Label htmlFor="address-state" className="text-sm text-neutral-700">
+                      <Label htmlFor="address-state" className="text-sm text-neutral-700 dark:text-neutral-300">
                         State / Province
                       </Label>
                       <Input
@@ -476,13 +639,13 @@ export function AddressModal({
                         autoComplete={ac('address-level1')}
                         value={form.state ?? ''}
                         onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
-                        className="mt-1.5"
+                        className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                         placeholder="State or province"
                       />
                     </div>
                   ) : null}
                   <div>
-                    <Label htmlFor="address-postal" className="text-sm text-neutral-700">
+                    <Label htmlFor="address-postal" className="text-sm text-neutral-700 dark:text-neutral-300">
                       ZIP / Postal code
                     </Label>
                     <Input
@@ -492,12 +655,12 @@ export function AddressModal({
                       autoComplete={ac('postal-code')}
                       value={form.postalCode}
                       onChange={(e) => setForm((p) => ({ ...p, postalCode: e.target.value }))}
-                      className="mt-1.5"
+                      className="mt-1.5 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                       placeholder="ZIP or postal code"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm text-neutral-700">Phone number</Label>
+                    <Label className="text-sm text-neutral-700 dark:text-neutral-300">Phone number</Label>
                     <div className="mt-1.5 flex gap-2">
                       <Select
                         value={form.phoneCountryCode}
@@ -505,10 +668,10 @@ export function AddressModal({
                           setForm((p) => ({ ...p, phoneCountryCode: v }))
                         }
                       >
-                        <SelectTrigger className="w-24 shrink-0">
+                        <SelectTrigger className={cn('w-24 shrink-0', theme === 'dark' && '!border-neutral-600 !bg-neutral-900 !text-white')}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="z-[200]">
+                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-neutral-900 !text-white')}>
                           {PHONE_DIAL_OPTIONS.map(({ dial }) => (
                             <SelectItem key={dial} value={dial}>
                               {dial}
@@ -521,7 +684,7 @@ export function AddressModal({
                         autoComplete={ac('tel')}
                         value={form.phoneNumber}
                         onChange={(e) => handlePhoneChange(e.target.value)}
-                        className="flex-1"
+                        className="flex-1 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
                         placeholder="Phone number"
                       />
                     </div>
@@ -529,6 +692,7 @@ export function AddressModal({
                 </>
               )}
             </div>
+          </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

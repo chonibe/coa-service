@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Plus } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Plus, TicketPercent } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
@@ -13,6 +13,30 @@ const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 const LOAD_MORE_PAGE_SIZE = 36
 
+const EXPERIENCE_CART_KEY = 'sc-experience-cart'
+
+function loadExperienceCart(ownsLamp: boolean): {
+  cartOrder: string[]
+  lampQuantity: number
+  lampPaywallSkipped: boolean
+} {
+  if (typeof window === 'undefined') {
+    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+  }
+  try {
+    const raw = localStorage.getItem(EXPERIENCE_CART_KEY)
+    if (!raw) return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+    const p = JSON.parse(raw) as Record<string, unknown>
+    return {
+      cartOrder: Array.isArray(p.cartOrder) ? p.cartOrder : [],
+      lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 0,
+      lampPaywallSkipped: !!p.lampPaywallSkipped,
+    }
+  } catch {
+    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+  }
+}
+
 const Spline3DPreview = dynamic(
   () =>
     import('@/app/template-preview/components/spline-3d-preview').then((m) => ({
@@ -20,11 +44,7 @@ const Spline3DPreview = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="relative w-full h-full flex items-center justify-center bg-neutral-900/80">
-        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      </div>
-    ),
+    loading: () => <SplinePreviewLoading />,
   }
 )
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
@@ -35,6 +55,7 @@ import { DiscountCelebration } from './DiscountCelebration'
 import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
@@ -45,6 +66,22 @@ import {
   DEFAULT_SIDE_POSITION,
   DEFAULT_SIDE_B_POSITION,
 } from '@/lib/experience-image-position'
+
+/** Loading fallback for Spline 3D preview — theme-aware */
+function SplinePreviewLoading() {
+  const { theme } = useExperienceTheme()
+  return (
+    <div className={cn(
+      'relative w-full h-full flex items-center justify-center',
+      theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
+    )}>
+      <div className={cn(
+        'w-8 h-8 border-2 rounded-full animate-spin',
+        theme === 'light' ? 'border-neutral-300 border-t-neutral-600' : 'border-white/30 border-t-white'
+      )} />
+    </div>
+  )
+}
 
 /** Always use the first/preview image of a product (featured or first in gallery). */
 function getFirstImage(product: ShopifyProduct | null | undefined): string | null {
@@ -174,13 +211,15 @@ export function Configurator({
   }, [imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>([])
-  const [cartOrder, setCartOrder] = useState<string[]>([])
+  const loadedCart = loadExperienceCart(quizAnswers.ownsLamp)
+  const [cartOrder, setCartOrder] = useState<string[]>(() => loadedCart.cartOrder)
   /** Non-lamp owners start at 0; they must add lamp via paywall first, then choose artwork */
-  const [lampQuantity, setLampQuantity] = useState(quizAnswers.ownsLamp ? 0 : 0)
+  const [lampQuantity, setLampQuantity] = useState(() => loadedCart.lampQuantity)
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
   const [detailProductFull, setDetailProductFull] = useState<ShopifyProduct | null>(null)
   const [detailProductLoading, setDetailProductLoading] = useState(false)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  const prefetchingRef = useRef<Set<string>>(new Set())
   /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = 50/50; 'full' = selector covers preview */
   const [selectorSheetState, setSelectorSheetState] = useState<'collapsed' | 'half' | 'full'>('half')
   const [lampVariant, setLampVariant] = useState<'light' | 'dark'>('dark')
@@ -260,6 +299,23 @@ export function Configurator({
   useEffect(() => {
     if (searchExpanded) searchInputRef.current?.focus()
   }, [searchExpanded])
+
+  // Prefetch full product when card enters view — so detail drawer opens instantly
+  const prefetchProduct = useCallback((handle: string) => {
+    if (!handle || handle === lamp.handle) return
+    if (fullProductCacheRef.current.has(handle)) return
+    if (prefetchingRef.current.has(handle)) return
+    prefetchingRef.current.add(handle)
+    fetch(`/api/shop/products/${encodeURIComponent(handle)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.product) {
+          const full = data.product as ShopifyProduct
+          fullProductCacheRef.current.set(handle, full)
+        }
+      })
+      .finally(() => { prefetchingRef.current.delete(handle) })
+  }, [lamp.handle])
 
   // Fetch full product on-demand when opening artwork detail (list products are lightweight)
   useEffect(() => {
@@ -346,7 +402,7 @@ export function Configurator({
   const orderItemCount = selectedProducts.length + lampQuantity
 
   /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp */
-  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(false)
+  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => loadedCart.lampPaywallSkipped)
   /** When user deselects lamp (quantity → 0), keep them on artworks */
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(n)
@@ -357,6 +413,25 @@ export function Configurator({
   const showLampPaywall = !quizAnswers.ownsLamp && lampQuantity === 0 && !lampPaywallSkipped
 
   const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar } = useExperienceOrder()
+  const { theme, setTheme } = useExperienceTheme()
+
+  // Persist cart state so it survives refresh
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(
+        EXPERIENCE_CART_KEY,
+        JSON.stringify({
+          cartOrder,
+          lampQuantity,
+          lampPaywallSkipped,
+        })
+      )
+    } catch {
+      // Ignore quota/parse errors
+    }
+  }, [cartOrder, lampQuantity, lampPaywallSkipped])
+
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
   }, [orderTotal, orderItemCount, setOrderSummary])
@@ -511,7 +586,7 @@ export function Configurator({
         layout={false}
         className={cn(
           'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
-          lampVariant === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#1A1A1A]',
+          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#1A1A1A]',
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
@@ -522,14 +597,17 @@ export function Configurator({
         )}
       >
         {((!isMobile) || selectorSheetState !== 'full') && (
-          <SplineWhenVisible className="relative w-full h-full">
+          <SplineWhenVisible className="relative w-full h-full" placeholder={<SplinePreviewLoading />}>
             <ComponentErrorBoundary
               componentName="Spline3DPreview"
               fallback={
-                <div className="flex h-full w-full items-center justify-center bg-neutral-900/80">
+                <div className={cn(
+                  'flex h-full w-full items-center justify-center',
+                  theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
+                )}>
                   <div className="text-center px-4">
-                    <p className="text-sm text-white/70">3D preview unavailable</p>
-                    <p className="text-xs text-white/50 mt-1">You can still browse and add artworks below.</p>
+                    <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
+                    <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
                   </div>
                 </div>
               }
@@ -538,6 +616,7 @@ export function Configurator({
               image1={image1}
               image2={image2}
               lampVariant={lampVariant}
+              previewTheme={theme}
             side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
             side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
             minimal
@@ -563,6 +642,15 @@ export function Configurator({
           </SplineWhenVisible>
         )}
 
+        {/* Light/dark mode toggle — overlay in Spline preview */}
+        <button
+          type="button"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          className="absolute top-3 right-3 z-10 inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-white/80 dark:hover:text-white bg-white/80 dark:bg-black/40 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+        >
+          {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
+        </button>
 
         {/* Rotate gesture hint — shows after user selects artwork, auto-dismisses */}
         <AnimatePresence>
@@ -575,7 +663,7 @@ export function Configurator({
             transition={{ delay: 0.8, duration: 0.3 }}
             className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full pointer-events-none"
             style={{
-              background: lampVariant === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.12)',
+              background: theme === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.12)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -584,11 +672,11 @@ export function Configurator({
               transition={{ duration: 2, repeat: 2, repeatDelay: 0.3, ease: 'easeInOut' }}
             >
               <RotateCw
-                className={cn('w-4 h-4', lampVariant === 'light' ? 'text-white' : 'text-white/90')}
+                className={cn('w-4 h-4', theme === 'light' ? 'text-white' : 'text-white/90')}
                 strokeWidth={2}
               />
             </motion.div>
-            <span className={cn('text-xs font-medium', lampVariant === 'light' ? 'text-white' : 'text-white/90')}>
+            <span className={cn('text-xs font-medium', theme === 'light' ? 'text-white' : 'text-white/90')}>
               {isMobile ? 'Touch & swipe to rotate' : 'Drag to rotate'}
             </span>
           </motion.div>
@@ -808,7 +896,7 @@ export function Configurator({
         {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
           <button
             onClick={cycleSelectorState}
-            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white border border-t-0 border-neutral-200 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 shadow-sm transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white dark:bg-neutral-800 border border-t-0 border-neutral-200 dark:border-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 shadow-sm transition-colors"
             aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
           >
             {selectorSheetState === 'half' ? (
@@ -824,7 +912,7 @@ export function Configurator({
       <motion.div
         layout={false}
         className={cn(
-          'relative flex flex-col bg-white overflow-hidden min-h-0 border-t border-neutral-100 md:border-t-0 transition-[height,flex] duration-200 ease-out',
+          'relative flex flex-col bg-white dark:bg-neutral-950 overflow-hidden min-h-0 border-t border-neutral-100 dark:border-neutral-800 md:border-t-0 transition-[height,flex] duration-200 ease-out',
             lampQuantity > 0 && 'border-t-0',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
@@ -843,44 +931,47 @@ export function Configurator({
               transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
               className="flex flex-col items-center gap-6 max-w-sm"
             >
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-neutral-100">
-                <svg viewBox="0 0 306 400" fill="currentColor" className="w-8 h-10 text-neutral-700 shrink-0" xmlns="http://www.w3.org/2000/svg">
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+                <svg viewBox="0 0 306 400" fill="currentColor" className="w-8 h-10 text-neutral-700 dark:text-neutral-300 shrink-0" xmlns="http://www.w3.org/2000/svg">
                   <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
                 </svg>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-center gap-2">
-                  <h2 className="text-xl font-semibold text-neutral-950">
+                  <h2 className="text-xl font-semibold text-neutral-950 dark:text-white">
                     Add your Street Lamp
                   </h2>
                   <button
                     type="button"
                     onClick={() => setDetailProduct(lamp)}
-                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                     aria-label="View lamp details"
                   >
                     <Info className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   Choose your lamp first, then personalize it with artwork.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => handleLampQuantityChange(1)}
-                className="inline-flex items-center gap-2 w-full justify-center px-6 py-4 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 active:scale-[0.98] transition-all"
+                className="inline-flex items-center gap-2 w-full justify-center px-6 py-4 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all"
               >
                 <Plus className="w-5 h-5" />
                 Add Street Lamp  ${lampPrice.toFixed(2)}
               </button>
-              <p className="text-xs text-neutral-600">
-                Volume discount : 7.5% Off the Street lamp - for each artwork you add
+              <p className="flex items-center gap-2 text-sm">
+                <TicketPercent className="w-4 h-4 shrink-0 text-emerald-400" aria-hidden />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent font-medium">
+                  7.5% Off the Street lamp - for each artwork you add
+                </span>
               </p>
               <button
                 type="button"
                 onClick={() => setLampPaywallSkipped(true)}
-                className="text-xs text-neutral-500 hover:text-neutral-700 transition-colors underline underline-offset-2"
+                className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors underline underline-offset-2"
               >
                 Skip — browse artworks without lamp
               </button>
@@ -899,19 +990,29 @@ export function Configurator({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               onClick={() => setPreviewEngaged(true)}
-              className="absolute inset-0 z-30 flex flex-1 flex-col items-center justify-center px-6 py-8 text-center bg-neutral-900/85 backdrop-blur-md cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="absolute inset-0 z-30 flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 bg-neutral-900/80 backdrop-blur-sm cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
               aria-label="Tap to start selecting artworks"
             >
-              <span className="flex items-center gap-2 flex-wrap justify-center px-4 text-center">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-white/40 bg-white/20 text-white text-xs font-bold shrink-0">
-                  Add
-                </span>
-                <span className="text-white/90 text-sm">to choose what goes on your lamp,</span>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
-                  <Eye className="w-3.5 h-3.5 text-white" aria-hidden />
-                </span>
-                <span className="text-white/90 text-sm">to Preview</span>
-              </span>
+              <div className="flex flex-col items-stretch gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 text-white text-xs font-bold shrink-0">
+                    Add
+                  </span>
+                  <span className="text-white/90 text-sm">to choose what goes on your lamp</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-white" aria-hidden />
+                  </span>
+                  <span className="text-white/90 text-sm">to Preview</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
+                    <Info className="w-3.5 h-3.5 text-white" aria-hidden />
+                  </span>
+                  <span className="text-white/90 text-sm">Tap Artwork for more info</span>
+                </div>
+              </div>
             </motion.button>
           )}
         </AnimatePresence>
@@ -936,9 +1037,9 @@ export function Configurator({
           onKeyDown={selectorSheetState === 'collapsed' && isMobile ? (e) => e.key === 'Enter' && cycleSelectorState() : undefined}
           className={cn(
             'flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
-            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100',
-            selectorSheetState === 'collapsed' && 'bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-white/50',
-            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 justify-center',
+            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100 dark:border-neutral-800',
+            selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-neutral-900/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
+            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 dark:active:bg-neutral-800/95 justify-center',
           )}
           style={selectorSheetState === 'collapsed' ? { backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } : undefined}
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
@@ -946,9 +1047,9 @@ export function Configurator({
           {selectorSheetState === 'collapsed' ? (
             /* Collapsed: Artworks bar with LayoutGrid, ChevronUp */
             <>
-              <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500" />
-              <span className="text-xs font-medium text-neutral-700">Artworks</span>
-              <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 md:hidden" />
+              <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
+              <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">Artworks</span>
+              <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 dark:text-neutral-400 md:hidden" />
             </>
           ) : (
             <>
@@ -956,15 +1057,15 @@ export function Configurator({
           {!isMobile && (
             <>
               {/* Season tabs — desktop only */}
-              <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
+              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveSeasonAndReset('season1')}
                   className={cn(
                     'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                     activeSeason === 'season1'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-700'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
                   )}
                 >
                   Season 1
@@ -975,8 +1076,8 @@ export function Configurator({
                   className={cn(
                     'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                     activeSeason === 'season2'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-700'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
                   )}
                 >
                   Season 2
@@ -991,14 +1092,14 @@ export function Configurator({
                 className={cn(
                   'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0 ml-auto',
                   hasActiveFilters(filters)
-                    ? 'bg-neutral-900 text-white border-neutral-900'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
+                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                 )}
                 aria-label="Open filters"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[10px] flex items-center justify-center font-bold leading-none">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
                     {activeFilterCount}
                   </span>
                 )}
@@ -1027,8 +1128,8 @@ export function Configurator({
                 className={cn(
                   '!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg text-[10px] font-medium leading-none flex-shrink-0',
                   initialFilters?.artists?.includes(a)
-                    ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                    : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-50'
+                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white hover:bg-neutral-800 dark:hover:bg-neutral-600'
+                    : 'bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-neutral-500 text-neutral-900 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                 )}
               >
                 {a} <X className="w-2 h-2" />
@@ -1038,7 +1139,7 @@ export function Configurator({
               <button
                 key={t}
                 onClick={() => setFilters({ ...filters, tags: filters.tags.filter((x) => x !== t) })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-neutral-500 text-neutral-900 dark:text-neutral-200 text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-neutral-700 flex-shrink-0"
               >
                 {t} <X className="w-2 h-2" />
               </button>
@@ -1046,7 +1147,7 @@ export function Configurator({
             {filters.priceRange && (
               <button
                 onClick={() => setFilters({ ...filters, priceRange: null })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-neutral-500 text-neutral-900 dark:text-neutral-200 text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-neutral-700 flex-shrink-0"
               >
                 {filters.priceRange[1] === Infinity ? `$${filters.priceRange[0]}+` : `$${filters.priceRange[0]}–$${filters.priceRange[1]}`}
                 <X className="w-2 h-2" />
@@ -1055,7 +1156,7 @@ export function Configurator({
             {filters.inStockOnly && (
               <button
                 onClick={() => setFilters({ ...filters, inStockOnly: false })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white border border-neutral-900 text-[10px] font-medium leading-none text-neutral-900 hover:bg-neutral-50 flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-neutral-500 text-neutral-900 dark:text-neutral-200 text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-neutral-700 flex-shrink-0"
               >
                 In stock <X className="w-2 h-2" />
               </button>
@@ -1070,7 +1171,7 @@ export function Configurator({
             )}
             <button
               onClick={() => handleFiltersChange(DEFAULT_FILTERS)}
-              className="text-[10px] text-neutral-400 hover:text-neutral-600 flex-shrink-0 px-1"
+              className="text-[10px] text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 flex-shrink-0 px-1"
             >
               Clear
             </button>
@@ -1081,7 +1182,7 @@ export function Configurator({
         <div
           ref={artworkStripScrollRef}
           className={cn(
-            'flex-1 overflow-y-auto overflow-x-hidden px-5 min-h-0',
+            'flex-1 overflow-y-auto overflow-x-hidden px-5 pt-3 min-h-0',
             isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
           )}
         >
@@ -1157,7 +1258,10 @@ export function Configurator({
               {lampQuantity > 0 && artworkCount > 0 && (
                 <div className="px-3 pt-1.5 pb-2 border-t border-neutral-600 bg-neutral-800/50">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-[11px] font-medium text-neutral-300">{discountBarLabel}</span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-300">
+                      <TicketPercent className="w-3 h-3 shrink-0" aria-hidden />
+                      {discountBarLabel}
+                    </span>
                     {lampSavings > 0 && (
                       <span className="text-[11px] font-semibold text-neutral-300 tabular-nums">-${lampSavings.toFixed(2)}</span>
                     )}
@@ -1193,6 +1297,7 @@ export function Configurator({
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}
             onViewDetail={setDetailProduct}
+            onPrefetchProduct={(p) => prefetchProduct(p.handle)}
             hasMore={pageInfo.hasNextPage}
             onLoadMore={() => loadMoreForSeason(activeSeason)}
             isLoadingMore={loadingMore}
@@ -1202,7 +1307,7 @@ export function Configurator({
 
         {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
         {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
-          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 bg-white">
+          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
             {/* Left: Filter */}
             <div className="flex-1 min-w-0 flex items-center justify-start">
               <button
@@ -1210,14 +1315,14 @@ export function Configurator({
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
                   hasActiveFilters(filters)
-                    ? 'bg-neutral-900 text-white border-neutral-900'
-                    : 'bg-white text-neutral-700 border-neutral-200'
+                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
+                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600'
                 )}
                 aria-label="Open filters"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white text-neutral-900 ring-1 ring-neutral-200 text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[9px] flex items-center justify-center font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -1279,18 +1384,18 @@ export function Configurator({
                 )}
               </AnimatePresence>
               )}
-              <div className="flex rounded-lg border border-neutral-200 p-0.5 bg-neutral-50 flex-shrink-0">
+              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-600 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveSeasonAndReset('season1')}
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season1'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
                 )}
               >
-                S1
+                Season 1
               </button>
               <button
                 type="button"
@@ -1298,16 +1403,16 @@ export function Configurator({
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season2'
-                    ? 'bg-white text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
                 )}
               >
-                S2
+                Season 2
               </button>
               </div>
               <button
                 onClick={cycleSelectorState}
-                className="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 shrink-0 transition-colors"
+                className="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white shrink-0 transition-colors"
                 aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
               >
                 {selectorSheetState === 'half' ? (

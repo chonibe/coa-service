@@ -51,6 +51,8 @@ interface Spline3DPreviewProps {
   imageScaleYB?: number
   /** Light or dark lamp variant. Toggles visibility of White vs Black (or Light vs Dark) scene groups. */
   lampVariant?: 'light' | 'dark'
+  /** Override for preview background (scene, loading, error). When set, controls background independently of lampVariant. */
+  previewTheme?: 'light' | 'dark'
   /** Override point light intensity (default: unchanged). E.g. 1.5 for brighter. */
   pointLightIntensity?: number
   /** Override point light position. */
@@ -87,6 +89,7 @@ export function Spline3DPreview({
   imageScaleXB,
   imageScaleYB,
   lampVariant = 'light',
+  previewTheme,
   pointLightIntensity,
   pointLightPosition,
   pointLightDistance,
@@ -1036,7 +1039,8 @@ export function Spline3DPreview({
       app.load(SCENE_PATH)
         .then(() => {
           splineAppRef.current = app
-          const hex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
+          const bgTheme = previewTheme ?? lampVariant
+          const hex = bgTheme === 'light' ? '#F5F5F5' : '#1A1A1A'
           if (typeof (app as any).setBackgroundColor === 'function') {
             ;(app as any).setBackgroundColor(hex)
           } else {
@@ -1961,11 +1965,12 @@ export function Spline3DPreview({
     applyPointLightOverrides()
   }, [pointLightIntensity, pointLightPosition, pointLightDistance, isLoading, applyPointLightOverrides])
 
-  // Sync Spline background with lampVariant
+  // Sync Spline background — use previewTheme when provided, else lampVariant
+  const sceneBgTheme = previewTheme ?? lampVariant
   const setBackgroundFromVariant = useCallback(() => {
     const app = splineAppRef.current
     if (!app || isLoading) return
-    const hex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
+    const hex = sceneBgTheme === 'light' ? '#F5F5F5' : '#1A1A1A'
     if (typeof (app as any).setBackgroundColor === 'function') {
       ;(app as any).setBackgroundColor(hex)
     } else {
@@ -1974,11 +1979,11 @@ export function Spline3DPreview({
         scene.background = new THREE.Color(hex)
       }
     }
-  }, [lampVariant, isLoading])
+  }, [sceneBgTheme, isLoading])
 
   useEffect(() => {
     setBackgroundFromVariant()
-  }, [lampVariant, isLoading, setBackgroundFromVariant])
+  }, [sceneBgTheme, isLoading, setBackgroundFromVariant])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })
@@ -2085,9 +2090,10 @@ export function Spline3DPreview({
   }, [animate, interactive, isLoading, error])
 
   if (minimal) {
-    const bgHex = lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A'
-    const loadingFg = lampVariant === 'light' ? 'text-neutral-500' : 'text-white/50'
-    const spinBorder = lampVariant === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
+    const bgTheme = previewTheme ?? lampVariant
+    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#1A1A1A'
+    const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
+    const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (
       <div ref={containerRef} className={cn(className, "relative w-full h-full")}>
         {/* Background layer - ensures toggle changes color even if WebGL overrides */}
@@ -2119,14 +2125,14 @@ export function Spline3DPreview({
                 className="w-48 h-48 object-contain rounded-lg mb-4 opacity-80"
               />
             )}
-            <p className={cn("text-sm text-center max-w-xs", lampVariant === 'light' ? 'text-neutral-600' : 'text-white/60')}>
+            <p className={cn("text-sm text-center max-w-xs", bgTheme === 'light' ? 'text-neutral-600' : 'text-white/60')}>
               3D preview unavailable — {error.includes('fetch') ? 'check your connection and refresh' : error}
             </p>
             <button
               onClick={() => { setError(null); setIsLoading(true); }}
               className={cn(
                 "mt-3 px-4 py-1.5 text-xs font-medium rounded-full transition-colors",
-                lampVariant === 'light'
+                bgTheme === 'light'
                   ? "bg-neutral-800 hover:bg-neutral-700 text-white"
                   : "bg-white/10 hover:bg-white/20 text-white"
               )}
@@ -2142,7 +2148,7 @@ export function Spline3DPreview({
             display: "block",
             width: "100%",
             height: "100%",
-            backgroundColor: lampVariant === 'light' ? '#F5F5F5' : '#1A1A1A',
+            backgroundColor: bgHex,
           }}
           width={800}
           height={600}

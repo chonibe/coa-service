@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { SectionWrapper, Container, Button } from '@/components/impact'
+import { SectionWrapper, Container } from '@/components/impact'
 
 /**
  * Video Player Section
@@ -29,12 +29,12 @@ export interface VideoPlayerProps {
     cta?: {
       text: string
       url: string
-      style?: 'primary' | 'outline' | 'secondary'
+      style?: 'primary' | 'outline' | 'secondary' | 'glassmorphism'
     }
     textColor?: string
     overlayColor?: string
     overlayOpacity?: number
-    position?: 'center' | 'bottom-left' | 'bottom-center'
+    position?: 'center' | 'lower-center' | 'bottom-left' | 'bottom-center'
     headlineSize?: 'default' | 'large'
   }
   size?: 'sm' | 'md' | 'lg' | 'full'
@@ -89,6 +89,7 @@ export function VideoPlayer({
   // Overlay position classes
   const positionClasses = {
     center: 'items-center justify-center text-center',
+    'lower-center': 'justify-end items-center text-center pb-[18vh] sm:pb-[4vh]',
     'bottom-left': 'items-end justify-start text-left pb-16 px-8',
     'bottom-center': 'items-end justify-center text-center pb-20',
   }
@@ -147,8 +148,8 @@ export function VideoPlayer({
                   className={cn(
                     'font-heading font-semibold tracking-[-0.02em] mb-4',
                     overlay.headlineSize === 'large'
-                      ? 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl'
-                      : 'text-impact-h0 xl:text-impact-h0-lg'
+                      ? 'text-6xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl sm:whitespace-nowrap'
+                      : 'text-impact-h0 xl:text-impact-h0-lg sm:whitespace-nowrap'
                   )}
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
@@ -160,13 +161,28 @@ export function VideoPlayer({
                   className={cn(
                     'mb-6',
                     overlay.headlineSize === 'large'
-                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                      ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
                       : 'text-lg sm:text-xl'
                   )}
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
                   {overlay.subheadline}
                 </p>
+              )}
+              {overlay.cta && (
+                <a
+                  href={overlay.cta.url}
+                  className={cn(
+                    'hidden sm:inline-flex items-center justify-center font-semibold rounded-lg transition-all mb-6',
+                    overlay.cta.style === 'glassmorphism'
+                      ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/30 shadow-lg'
+                      : overlay.cta.style === 'primary'
+                        ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-[#047AFF] text-white hover:opacity-90'
+                        : 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-white text-white hover:bg-white hover:text-[#1a1a1a]'
+                  )}
+                >
+                  {overlay.cta.text}
+                </a>
               )}
               {overlay.microCue && (
                 <a
@@ -175,17 +191,6 @@ export function VideoPlayer({
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
                   {overlay.microCue}
-                </a>
-              )}
-              {overlay.cta && (
-                <a href={overlay.cta.url}>
-                  <Button
-                    variant={overlay.cta.style || 'outline'}
-                    size="lg"
-                    className={overlay.cta.style === 'outline' ? 'border-white text-white hover:bg-white hover:text-[#1a1a1a]' : ''}
-                  >
-                    {overlay.cta.text}
-                  </Button>
                 </a>
               )}
             </div>

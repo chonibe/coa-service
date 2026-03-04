@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Home, CreditCard, Loader2, Tag } from 'lucide-react'
+import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import {
@@ -128,6 +129,7 @@ export function CheckoutLayout({
 
   const isAddressComplete = checkout.isAddressComplete()
   const effectiveDiscount = discount + promoDiscount
+  const finalTotal = total - promoDiscount
 
   const handlePayClick = async () => {
     if (disabled) return
@@ -145,7 +147,7 @@ export function CheckoutLayout({
   return (
     <div className="flex flex-col px-6">
       {!hideTitle && (
-        <h3 className="text-lg font-semibold text-neutral-950">Checkout</h3>
+        <h3 className="text-lg font-semibold text-neutral-950 dark:text-white">Checkout</h3>
       )}
 
       {topSection && <div className="mt-4">{topSection}</div>}
@@ -159,17 +161,17 @@ export function CheckoutLayout({
         }}
         className="mt-4 flex w-full items-center gap-3 py-4 text-left transition-colors hover:opacity-80"
       >
-        <Home className={cn('h-5 w-5 shrink-0', isAddressComplete ? 'text-neutral-500' : 'text-amber-600')} />
+        <Home className={cn('h-5 w-5 shrink-0', isAddressComplete ? 'text-neutral-500 dark:text-neutral-400' : 'text-amber-600 dark:text-amber-500')} />
         <div className="min-w-0 flex-1">
           {addressDisplay ? (
             <>
-              <p className="truncate font-medium text-neutral-950">{addressDisplay}</p>
+              <p className="truncate font-medium text-neutral-950 dark:text-white">{addressDisplay}</p>
               {countryName && (
-                <p className="text-xs text-neutral-600">{countryName}</p>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400">{countryName}</p>
               )}
             </>
           ) : (
-            <p className={cn('font-medium', isAddressComplete ? 'text-neutral-950' : 'text-amber-700')}>
+            <p className={cn('font-medium', isAddressComplete ? 'text-neutral-950 dark:text-white' : 'text-amber-700 dark:text-amber-400')}>
               Add Address
             </p>
           )}
@@ -183,7 +185,7 @@ export function CheckoutLayout({
           closeModals()
           openPaymentModal()
         }}
-        className="mt-4 flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-neutral-50"
+        className="mt-4 flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <PaymentButtonIcon method={paymentMethod} />
@@ -193,12 +195,12 @@ export function CheckoutLayout({
               : getPaymentMethodLabel(paymentMethod)}
           </span>
         </div>
-        <span className="text-sm font-medium text-neutral-400 shrink-0">
+        <span className="text-sm font-medium text-neutral-400 dark:text-neutral-500 shrink-0">
           Change
         </span>
       </button>
 
-      <div className="my-4 border-t border-neutral-200" />
+      <div className="my-4 border-t border-neutral-200 dark:border-white/10" />
 
       {/* Promo — between dividers */}
       <button
@@ -207,29 +209,29 @@ export function CheckoutLayout({
           closeModals()
           openPromoModal()
         }}
-        className="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-neutral-50"
+        className="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Tag className="h-5 w-5 shrink-0 text-neutral-600" />
-          <span className="font-medium text-neutral-950">
+          <Tag className="h-5 w-5 shrink-0 text-neutral-600 dark:text-neutral-400" />
+          <span className="font-medium text-neutral-950 dark:text-white">
             {promoCode ? promoCode : 'Add promo code'}
           </span>
         </div>
-        <span className="text-sm font-medium text-neutral-400 shrink-0">
+        <span className="text-sm font-medium text-neutral-400 dark:text-neutral-500 shrink-0">
           Change
         </span>
       </button>
 
-      <div className="my-4 border-t border-neutral-200" />
+      <div className="my-4 border-t border-neutral-200 dark:border-white/10" />
 
       {/* Order items (slot) */}
       {children}
 
       {/* Discount, Shipping, Total */}
-      <div className="mt-4 space-y-2 border-t border-neutral-200 pt-4">
+      <div className="mt-4 space-y-2 border-t border-neutral-200 dark:border-white/10 pt-4">
         {effectiveDiscount > 0 && !suppressDiscountInSummary && (
           <div className="flex justify-between text-sm">
-            <span className="text-neutral-600">
+            <span className="text-neutral-600 dark:text-neutral-400">
               Discount{discountLabel ? ` (${discountLabel})` : ''}
             </span>
             <span className="font-medium text-green-700">
@@ -238,20 +240,20 @@ export function CheckoutLayout({
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-neutral-600">Shipping</span>
-          <span className="font-medium text-neutral-950">
+          <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
+          <span className="font-medium text-neutral-950 dark:text-white">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
         </div>
         <div className="flex items-center justify-between pt-2">
-          <span className="font-semibold text-neutral-950">
+          <span className="font-semibold text-neutral-950 dark:text-white">
             Total
             {itemCount != null
               ? ` (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`
               : ''}
           </span>
-          <span className="text-lg font-bold text-neutral-950">
-            {renderTotal ? renderTotal(total) : `$${total.toFixed(2)}`}
+          <span className="text-lg font-bold text-neutral-950 dark:text-white">
+            {renderTotal ? renderTotal(finalTotal) : `$${Math.max(0, finalTotal).toFixed(2)}`}
           </span>
         </div>
       </div>
@@ -259,7 +261,7 @@ export function CheckoutLayout({
       {/* Payment button */}
       <div className="mt-4 space-y-2">
         {error && (
-          <p className="text-center text-xs text-red-500">{error}</p>
+          <p className="text-center text-xs text-red-500 dark:text-red-400">{error}</p>
         )}
         <motion.button
           type="button"
@@ -269,8 +271,8 @@ export function CheckoutLayout({
           className={cn(
             'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors',
             isCheckingOut || disabled
-              ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-              : 'bg-neutral-950 text-white hover:bg-neutral-800'
+              ? 'cursor-not-allowed bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+              : 'bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200'
           )}
         >
           {isCheckingOut ? (
@@ -333,9 +335,11 @@ export function CheckoutLayout({
         onOpenChange={(open) => !open && closeModals()}
         appliedCode={promoCode}
         appliedDiscount={promoDiscount}
-        onApply={(code) => {
+        onApply={async (code) => {
           setPromoCode(code)
-          setPromoDiscount(0) // Would come from API in Phase 2
+          const subtotalCents = Math.round(subtotal * 100)
+          const { valid, discountCents } = await validatePromo(code, subtotalCents)
+          setPromoDiscount(valid ? discountCents / 100 : 0)
           closeModals()
         }}
         onRemove={() => {

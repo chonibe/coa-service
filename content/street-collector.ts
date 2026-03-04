@@ -11,8 +11,8 @@ export const EXPERIENCE_URL = '/shop/experience'
 export const streetCollectorContent = {
   experienceUrl: EXPERIENCE_URL,
   hero: {
-    headline: 'Not just a lamp.',
-    subheadline: 'A living Art Collection',
+    headline: 'Not Just a Lamp',
+    subheadline: 'A living Art Collection.',
     microCue: "Discover this month's drop.",
     cta: {
       text: 'Start your collection',
@@ -264,6 +264,7 @@ export const streetCollectorContent = {
     linkText: 'Start your collection',
     linkHref: EXPERIENCE_URL,
     collections: [
+      { handle: 'jerome-masi', location: 'Annecy', collectionHref: 'https://thestreetcollector.com/collections/jerome-masi' },
       { handle: 'moritz-adam-schmitt', location: 'Cologne' },
       { handle: 'loreta-isac', location: 'Bucharest' },
       { handle: 'marc-david-spengler', location: 'Stuttgart' },

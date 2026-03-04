@@ -142,7 +142,7 @@ export default function DevAppPreviewPage() {
           {/* Profile hero */}
           <ContentCard padding="lg">
             <div className="flex items-center gap-4">
-              <ProgressRing progress={65} size={80} strokeWidth={3} color="#2c4bce">
+              <ProgressRing progress={65} size={80} strokeWidth={3} color="#047AFF">
                 <div className="w-[68px] h-[68px] rounded-full bg-gradient-to-br from-[#390000] to-[#5a1a1a] flex items-center justify-center">
                   <Sparkles className="w-7 h-7 text-[#ffba94]" />
                 </div>

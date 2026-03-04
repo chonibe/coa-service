@@ -10,7 +10,7 @@ import { buttonVariants } from './button-variants'
  * Impact Theme Button
  *
  * Matches the exact styling from the Shopify Impact theme:
- * - Primary: #2c4bce background, white text, 60px border radius
+ * - Primary: #047AFF background, white text, 60px border radius
  * - Secondary: #f0c417 background, #1a1a1a text
  * - Button hover effect: fade to 85% opacity
  */

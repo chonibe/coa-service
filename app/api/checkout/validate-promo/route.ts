@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json()
-    const { code } = body as { code?: string }
+    const { code, subtotalCents } = body as { code?: string; subtotalCents?: number }
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -63,12 +63,14 @@ export async function POST(request: NextRequest) {
 
     let discountCents = 0
     if (coupon.percent_off) {
-      // Percent off - we need subtotal to calculate; for now return 0, UI can show "X% off"
+      if (typeof subtotalCents === 'number' && subtotalCents > 0) {
+        discountCents = Math.round(subtotalCents * (coupon.percent_off / 100))
+      }
       return NextResponse.json({
         valid: true,
         message: `${coupon.percent_off}% off`,
         percentOff: coupon.percent_off,
-        discountCents: 0, // Calculated at checkout
+        discountCents,
       })
     }
     if (coupon.amount_off) {

@@ -101,7 +101,7 @@ export default function CollectorArtistsPage() {
                       progress={artist.completionRate}
                       size={56}
                       strokeWidth={3}
-                      color={artist.completionRate >= 100 ? '#00a341' : '#2c4bce'}
+                      color={artist.completionRate >= 100 ? '#00a341' : '#047AFF'}
                     >
                       <div className="w-[46px] h-[46px] rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                         <span className="text-lg font-bold text-gray-600 font-body">

@@ -43,7 +43,7 @@ The main shop landing page inspired by [thestreetcollector.com](https://thestree
 ### Styling
 
 - Background: `#f5f5f5`
-- Accent: `#2c4bce` (primary button/CTA)
+- Accent: `#047AFF` (primary button/CTA)
 - Uses Impact design tokens (Fraunces, Barlow) from `@/components/impact`
 
 ---

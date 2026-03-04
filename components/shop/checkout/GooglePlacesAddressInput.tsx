@@ -14,7 +14,7 @@ export interface AddressSuggestion {
 }
 
 const inputBase =
-  'flex h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
+  'flex h-10 w-full rounded-lg border border-neutral-200 dark:!border-neutral-600 bg-white dark:!bg-neutral-900 px-3 py-2 text-sm text-neutral-900 dark:!text-white placeholder:text-neutral-500 dark:placeholder:!text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
 
 export interface GooglePlacesAddressInputProps {
   id: string
@@ -26,6 +26,21 @@ export interface GooglePlacesAddressInputProps {
   className?: string
   disabled?: boolean
   autoComplete?: string
+}
+
+/** Extract postal/ZIP code from formatted address when address_components lacks it */
+function extractPostalFromFormatted(formatted: string): string {
+  if (!formatted?.trim()) return ''
+  // US ZIP: 12345 or 12345-6789
+  const us = formatted.match(/\b(\d{5}(?:-\d{4})?)\b/)
+  if (us) return us[1]
+  // UK postcode: SW1A 1AA, E1 6AN, etc.
+  const uk = formatted.match(/\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/i)
+  if (uk) return uk[1].trim()
+  // Generic 4–6 digit postal codes (common in many countries)
+  const generic = formatted.match(/\b(\d{4,6})\b/)
+  if (generic) return generic[1]
+  return ''
 }
 
 /** Parse Google Places address_components into structured address (includes postal_code/ZIP) */
@@ -40,16 +55,24 @@ function parsePlaceResult(place: google.maps.places.PlaceResult): AddressSuggest
   const route = get('route')
   const locality = get('locality') || get('sublocality') || get('sublocality_level_1')
   const state = getShort('administrative_area_level_1') || get('administrative_area_level_1')
-  const postalCode = get('postal_code') || get('postal_code_prefix')
+  const postalFromComponents = get('postal_code') || get('postal_code_prefix')
   const country = getShort('country')
 
   const addressLine1 = [streetNumber, route].filter(Boolean).join(' ') || place.name || ''
 
+  const formattedAddress = place.formatted_address || ''
+  const postalCode =
+    postalFromComponents || extractPostalFromFormatted(formattedAddress)
+
   if (!addressLine1 && !locality && !postalCode) return null
+
+  const placeName =
+    formattedAddress ||
+    [addressLine1, locality, state, postalCode, country].filter(Boolean).join(', ')
 
   return {
     id: place.place_id || `gp-${Date.now()}`,
-    place_name: place.formatted_address || [addressLine1, locality, state, postalCode, country].filter(Boolean).join(', '),
+    place_name: placeName,
     addressLine1,
     city: locality,
     state: state || undefined,
@@ -72,6 +95,10 @@ export function GooglePlacesAddressInput({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null)
   const [scriptLoaded, setScriptLoaded] = React.useState(false)
+  const onChangeRef = React.useRef(onChange)
+  const onSelectRef = React.useRef(onSelect)
+  onChangeRef.current = onChange
+  onSelectRef.current = onSelect
   const apiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
     process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
@@ -109,11 +136,11 @@ export function GooglePlacesAddressInput({
     autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, opts)
     const listener = autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current?.getPlace()
-      if (!place?.address_components?.length) return
+      if (!place) return
       const suggestion = parsePlaceResult(place)
       if (suggestion) {
-        onChange(suggestion.addressLine1)
-        onSelect?.(suggestion)
+        onChangeRef.current(suggestion.addressLine1)
+        onSelectRef.current?.(suggestion)
       }
     })
     return () => {
@@ -121,7 +148,7 @@ export function GooglePlacesAddressInput({
         google.maps.event.removeListener(listener)
       }
     }
-  }, [scriptLoaded, apiKey, country, onChange, onSelect])
+  }, [scriptLoaded, apiKey, country])
 
   if (!apiKey) return null
 
@@ -134,7 +161,7 @@ export function GooglePlacesAddressInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      autoComplete={autoComplete}
+      autoComplete="off"
       className={cn(inputBase, className)}
       role="combobox"
       aria-autocomplete="list"

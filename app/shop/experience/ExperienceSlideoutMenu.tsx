@@ -2,33 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { Menu, Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Info, Sun, Moon } from 'lucide-react'
-import { Sheet } from '@/components/ui'
-import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
+import { Menu, Info } from 'lucide-react'
 import { ExperienceCartChip } from './ExperienceCartChip'
+import { ShopSlideoutMenu } from '@/components/shop/navigation/ShopSlideoutMenu'
 import { useExperienceOrder } from './ExperienceOrderContext'
 import { useExperienceTheme } from './ExperienceThemeContext'
-import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
-import { openTawkChat } from '@/lib/tawk'
 import { cn } from '@/lib/utils'
-
-const MENU_ITEMS = [
-  { label: 'Buy Gift Card', href: '/shop/gift-cards', icon: Gift },
-  { label: 'Promo Codes', href: '/shop/cart', icon: TicketPercent },
-  { label: 'My Orders', href: '/shop/account', icon: Clock },
-  { label: 'Help Center', href: '/shop/faq', icon: HelpCircle },
-  { label: 'Chat with Us', href: '#', icon: MessageCircle, onClick: openTawkChat },
-] as const
 
 export function ExperienceSlideoutMenu() {
   const [open, setOpen] = useState(false)
-  const [authOpen, setAuthOpen] = useState(false)
+  const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount } = useExperienceOrder()
   const [shouldPulse, setShouldPulse] = useState(false)
   const prevLampQuantity = useRef(0)
-  const { orderBarProps } = useExperienceOrder()
-  const { theme, setTheme } = useExperienceTheme()
-  const { user, isAuthenticated, loading } = useShopAuthContext()
+  const { theme } = useExperienceTheme()
 
   const showLampCard = orderBarProps && typeof orderBarProps.lampPrice === 'number'
   const lamp = orderBarProps?.lamp
@@ -61,19 +47,10 @@ export function ExperienceSlideoutMenu() {
           <Menu size={24} className="shrink-0" />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          className="inline-flex items-center justify-center p-2 -m-2 text-neutral-600 hover:text-neutral-900 dark:text-white/80 dark:hover:text-white transition-colors cursor-pointer shrink-0 ml-1"
-        >
-          {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
-        </button>
-
-        {/* Spacer — pushes lamp + cart to the right when lamp shown */}
+        {/* Left spacer — on mobile: centers lamp; on desktop: pushes lamp+cart right */}
         {showLampCard && lamp && <div className="flex-1 min-w-0" />}
 
-        {/* Lamp + counter — right side next to cart (only after paywall) */}
+        {/* Lamp + counter — centered on mobile, right side on desktop (only after paywall) */}
         {showLampCard && lamp && (
           <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
@@ -126,118 +103,25 @@ export function ExperienceSlideoutMenu() {
           </div>
         )}
 
-        <div className={cn('flex items-center self-center shrink-0', showLampCard && lamp && 'ml-3')}>
+        {/* Right spacer — mobile only: centers lamp between menu and cart */}
+        {showLampCard && lamp && <div className="flex-1 min-w-0 md:hidden" />}
+
+        <div className={cn('flex items-center self-center shrink-0', showLampCard && lamp && 'md:ml-8')}>
           <ExperienceCartChip variant="light" className={cn(showLampCard && lamp ? '' : 'ml-auto')} />
         </div>
       </header>
 
-      <Sheet
+      <ShopSlideoutMenu
         open={open}
         onClose={() => setOpen(false)}
-        side="left"
-        overlayClassName="z-[70]"
-        className="!p-0 !h-[92vh] !top-[4vh] !bottom-auto"
         theme={theme}
-      >
-        <div className="flex flex-col h-full bg-white dark:bg-neutral-950">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
-            <span className="text-lg font-semibold text-neutral-900 dark:text-white">Menu</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close menu"
-              className="p-2 -m-2 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950">
-            {!loading && isAuthenticated && user ? (
-              <>
-                <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
-                  <span className="font-semibold">
-                    Welcome back{user.firstName ? `, ${user.firstName}` : ''}!
-                  </span>
-                  <br />
-                  <span className="text-neutral-600 dark:text-neutral-400 text-sm">Your progress is saved.</span>
-                </p>
-                <Link
-                  href="/shop/account"
-                  onClick={() => setOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#047AFF] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0366d6]"
-                >
-                  <User size={18} className="shrink-0" />
-                  View My Account
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
-                  <span className="font-semibold">Sign up</span>
-                  {' to save your progress &'}
-                  <br />
-                  track orders
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    setAuthOpen(true)
-                  }}
-                  className="flex w-full items-center justify-center rounded-lg bg-[#047AFF] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0366d6]"
-                >
-                  Login or Sign Up
-                </button>
-              </>
-            )}
-          </div>
-
-          <nav className="flex flex-col py-4">
-            {MENU_ITEMS.map((item) => {
-              const Icon = item.icon
-              const content = (
-                <span className="flex items-center gap-4">
-                  <Icon size={22} className="shrink-0 text-neutral-700 dark:text-neutral-300" strokeWidth={1.5} />
-                  <span className="text-neutral-900 dark:text-white font-medium">{item.label}</span>
-                </span>
-              )
-              if (item.onClick) {
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => {
-                      item.onClick?.()
-                      setOpen(false)
-                    }}
-                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
-                  >
-                    {content}
-                  </button>
-                )
-              }
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
-                >
-                  {content}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-      </Sheet>
-
-      <AuthSlideupMenu
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        redirectTo="/shop/experience"
+        authRedirectTo="/shop/experience"
+        promoCode={promoCode}
+        promoDiscount={promoDiscount}
+        onPromoChange={(code, discount) => { setPromoCode(code); setPromoDiscount(discount) }}
+        orderTotal={total}
+        volumeDiscountLabel={orderBarProps?.lampSavings != null && orderBarProps.lampSavings > 0 ? 'Volume Discount Applied' : undefined}
+        volumeDiscountDescription={orderBarProps?.lampSavings != null && orderBarProps.lampSavings > 0 ? 'Discount varies by size & material' : undefined}
       />
     </>
   )

@@ -349,7 +349,7 @@ export const simplyGiftBanner = {
   textColor: '#ffba94',
   ctaBackgroundColor: '#f0c417',
   ctaTextColor: '#1a1a1a',
-  ctaHoverBackgroundColor: '#2c4bce',
+  ctaHoverBackgroundColor: '#047AFF',
   ctaHoverTextColor: '#ffffff',
 } as const
 

@@ -10,6 +10,7 @@
 import React, {
   useContext,
   useState,
+  useEffect,
   useCallback,
   useMemo,
   type ReactNode,
@@ -46,11 +47,16 @@ export interface SavedCardInfo {
   last4: string
 }
 
+/** Display-friendly payment method from Stripe (google_pay, paypal, link, card) */
+export type PaymentMethodDisplayType = 'google_pay' | 'paypal' | 'link' | 'card'
+
 export interface CheckoutState {
   address: CheckoutAddress | null
   billingAddress: CheckoutAddress | null
   sameAsShipping: boolean
   paymentMethod: PaymentMethodType
+  /** Stripe-specific type for display (Google Pay, PayPal, Link, Card) */
+  paymentMethodDisplayType: PaymentMethodDisplayType | null
   /** Saved card when user enters card/Link in payment modal */
   savedCard: SavedCardInfo | null
   promoCode: string
@@ -68,6 +74,7 @@ interface CheckoutContextValue extends CheckoutState {
   setBillingAddress: (address: CheckoutAddress | null) => void
   setSameAsShipping: (v: boolean) => void
   setPaymentMethod: (method: PaymentMethodType) => void
+  setPaymentMethodDisplayType: (type: PaymentMethodDisplayType | null) => void
   setSavedCard: (card: SavedCardInfo | null) => void
   setPromoCode: (code: string) => void
   setPromoDiscount: (amount: number) => void
@@ -120,6 +127,7 @@ const initialState: CheckoutState = {
   billingAddress: null,
   sameAsShipping: true,
   paymentMethod: 'link',
+  paymentMethodDisplayType: null,
   savedCard: null,
   promoCode: '',
   promoDiscount: 0,
@@ -129,8 +137,84 @@ const initialState: CheckoutState = {
   paymentIntentClientSecret: null,
 }
 
-export function CheckoutProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CheckoutState>(initialState)
+const PERSISTED_PAYMENT_DISPLAY_TYPES = ['google_pay', 'paypal', 'link', 'card'] as const
+
+function loadPersistedCheckout(key: string): Partial<CheckoutState> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const p = JSON.parse(raw) as Record<string, unknown>
+    const out: Partial<CheckoutState> = {}
+    if (p.address && typeof p.address === 'object' && typeof (p.address as Record<string, unknown>).addressLine1 === 'string') {
+      out.address = p.address as CheckoutAddress
+    }
+    if (p.billingAddress && typeof p.billingAddress === 'object' && typeof (p.billingAddress as Record<string, unknown>).addressLine1 === 'string') {
+      out.billingAddress = p.billingAddress as CheckoutAddress
+    }
+    if (typeof p.sameAsShipping === 'boolean') out.sameAsShipping = p.sameAsShipping
+    if (p.paymentMethod && ['link', 'paypal', 'card'].includes(p.paymentMethod as string)) {
+      out.paymentMethod = p.paymentMethod as PaymentMethodType
+    }
+    if (p.paymentMethodDisplayType && PERSISTED_PAYMENT_DISPLAY_TYPES.includes(p.paymentMethodDisplayType as PaymentMethodDisplayType)) {
+      out.paymentMethodDisplayType = p.paymentMethodDisplayType as PaymentMethodDisplayType
+    }
+    if (p.savedCard && typeof p.savedCard === 'object') {
+      const sc = p.savedCard as Record<string, unknown>
+      if (typeof sc.brand === 'string' && typeof sc.last4 === 'string') {
+        out.savedCard = {
+          paymentMethodId: (sc.paymentMethodId as string) || '',
+          brand: sc.brand,
+          last4: sc.last4,
+        }
+      }
+    }
+    return Object.keys(out).length ? out : null
+  } catch {
+    return null
+  }
+}
+
+export function CheckoutProvider({
+  children,
+  /** When set, address/billingAddress/sameAsShipping are persisted to localStorage */
+  storageKey,
+}: {
+  children: ReactNode
+  storageKey?: string
+}) {
+  const [state, setState] = useState<CheckoutState>(() => {
+    const base = { ...initialState }
+    if (storageKey) {
+      const loaded = loadPersistedCheckout(storageKey)
+      if (loaded) {
+        if (loaded.address) base.address = loaded.address
+        if (loaded.billingAddress) base.billingAddress = loaded.billingAddress
+        if (loaded.sameAsShipping !== undefined) base.sameAsShipping = loaded.sameAsShipping
+        if (loaded.paymentMethod) base.paymentMethod = loaded.paymentMethod
+        if (loaded.paymentMethodDisplayType) base.paymentMethodDisplayType = loaded.paymentMethodDisplayType
+        if (loaded.savedCard) base.savedCard = loaded.savedCard
+      }
+    }
+    return base
+  })
+
+  // Persist address + payment when storageKey is set
+  useEffect(() => {
+    if (!storageKey || typeof window === 'undefined') return
+    try {
+      const toSave: Record<string, unknown> = {}
+      if (state.address) toSave.address = state.address
+      if (state.billingAddress) toSave.billingAddress = state.billingAddress
+      toSave.sameAsShipping = state.sameAsShipping
+      if (state.paymentMethod) toSave.paymentMethod = state.paymentMethod
+      if (state.paymentMethodDisplayType) toSave.paymentMethodDisplayType = state.paymentMethodDisplayType
+      if (state.savedCard) toSave.savedCard = state.savedCard
+      localStorage.setItem(storageKey, JSON.stringify(toSave))
+    } catch {
+      // Ignore quota errors
+    }
+  }, [storageKey, state.address, state.billingAddress, state.sameAsShipping, state.paymentMethod, state.paymentMethodDisplayType, state.savedCard])
 
   const setAddress = useCallback((address: CheckoutAddress | null) => {
     setState((s) => ({ ...s, address }))
@@ -146,6 +230,10 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
 
   const setPaymentMethod = useCallback((paymentMethod: PaymentMethodType) => {
     setState((s) => ({ ...s, paymentMethod }))
+  }, [])
+
+  const setPaymentMethodDisplayType = useCallback((paymentMethodDisplayType: PaymentMethodDisplayType | null) => {
+    setState((s) => ({ ...s, paymentMethodDisplayType }))
   }, [])
 
   const setSavedCard = useCallback((savedCard: SavedCardInfo | null) => {
@@ -217,6 +305,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setBillingAddress,
       setSameAsShipping,
       setPaymentMethod,
+      setPaymentMethodDisplayType,
       setSavedCard,
       setPromoCode,
       setPromoDiscount,
@@ -242,6 +331,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setBillingAddress,
       setSameAsShipping,
       setPaymentMethod,
+      setPaymentMethodDisplayType,
       setSavedCard,
       setPromoCode,
       setPromoDiscount,

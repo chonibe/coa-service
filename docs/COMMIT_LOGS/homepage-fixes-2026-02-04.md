@@ -66,7 +66,7 @@ const { products } = await getProducts({ first: 500 })
   - Larger click targets (p-5 → p-6 sm:p-7)
   - Rounded corners: 16px → 20px
   - Added border transitions with hover states
-  - Blue accent color (#2c4bce) for active states
+  - Blue accent color (#047AFF) for active states
   - Scale effect on open items (scale-110)
   - Smooth 500ms transitions
 - Added staggered fade-in animations using existing animation classes
@@ -78,15 +78,15 @@ const { products } = await getProducts({ first: 500 })
 // Active state with border and shadow
 className={cn(
   isOpen 
-    ? 'border-[#2c4bce] shadow-lg' 
+    ? 'border-[#047AFF] shadow-lg' 
     : 'border-transparent hover:border-[#1a1a1a]/10'
 )}
 
 // Icon with rotation and color change
 className={cn(
   isOpen 
-    ? 'bg-[#2c4bce] text-white rotate-45 scale-110' 
-    : 'bg-white text-[#1a1a1a] group-hover:bg-[#2c4bce]'
+    ? 'bg-[#047AFF] text-white rotate-45 scale-110' 
+    : 'bg-white text-[#1a1a1a] group-hover:bg-[#047AFF]'
 )}
 ```
 
@@ -181,6 +181,6 @@ None - all changes are additive or improve existing functionality
 
 ## Notes
 - All artists from `homepage.ts` now display (44 total)
-- FAQ section uses brand color (#2c4bce) for active states
+- FAQ section uses brand color (#047AFF) for active states
 - Product cards maintain fallback to standard card if vinyl effects disabled
 - Video player maintains backward compatibility with all existing usage

@@ -318,7 +318,7 @@ export default function ProductPage() {
               {product.vendor && (
                 <Link 
                   href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
-                  className="text-sm text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors uppercase tracking-wider"
+                  className="text-sm text-[#1a1a1a]/60 hover:text-[#047AFF] transition-colors uppercase tracking-wider"
                 >
                   {product.vendor}
                 </Link>
@@ -542,7 +542,7 @@ export default function ProductPage() {
               </h2>
               <Link
                 href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
-                className="text-sm font-medium text-[#2c4bce] hover:underline flex items-center gap-1"
+                className="text-sm font-medium text-[#047AFF] hover:underline flex items-center gap-1"
               >
                 View all
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

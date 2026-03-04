@@ -22,9 +22,18 @@ function isValidAddress(obj: unknown): obj is CheckoutAddress {
   )
 }
 
+async function getUserId(cookieStore: ReturnType<typeof cookies>) {
+  const supabase = createRouteClient(cookieStore)
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error || !session?.user?.id) return null
+  return session.user.id
+}
+
 /**
  * GET /api/shop/account/addresses
- * Returns saved shipping and billing addresses from collector_profiles.
+ * Returns all saved addresses from collector_addresses.
+ * Response: { addresses: [{ id, address, label?, createdAt }] }
+ * Also includes shippingAddress, billingAddress (first of each) for backward compat.
  */
 export async function GET() {
   try {
@@ -34,29 +43,38 @@ export async function GET() {
     const mockEnabled = process.env.MOCK_LOGIN_ENABLED === 'true'
 
     if (mockEmail && (isDev || mockEnabled)) {
-      return NextResponse.json({ shippingAddress: null, billingAddress: null })
+      return NextResponse.json({ addresses: [], shippingAddress: null, billingAddress: null })
     }
 
-    const supabase = createRouteClient(cookieStore)
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.user?.id) {
+    const userId = await getUserId(cookieStore)
+    if (!userId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const serviceClient = createServiceClient()
-    const { data: profile } = await serviceClient
-      .from('collector_profiles')
-      .select('default_shipping_address, default_billing_address')
-      .eq('user_id', session.user.id)
-      .maybeSingle()
+    const { data: rows, error } = await serviceClient
+      .from('collector_addresses')
+      .select('id, address, label, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
-    const shipping = (profile?.default_shipping_address as CheckoutAddress | null) ?? null
-    const billing = (profile?.default_billing_address as CheckoutAddress | null) ?? null
+    if (error) {
+      console.error('Addresses GET error:', error)
+      return NextResponse.json({ addresses: [], shippingAddress: null, billingAddress: null })
+    }
 
+    const addresses = (rows || []).map((r) => ({
+      id: r.id,
+      address: r.address as CheckoutAddress,
+      label: r.label as string | null,
+      createdAt: r.created_at,
+    })).filter((a) => isValidAddress(a.address))
+
+    const first = addresses[0]?.address ?? null
     return NextResponse.json({
-      shippingAddress: isValidAddress(shipping) ? shipping : null,
-      billingAddress: isValidAddress(billing) ? billing : null,
+      addresses,
+      shippingAddress: first,
+      billingAddress: addresses.length > 1 ? addresses[1].address : first,
     })
   } catch (error: any) {
     console.error('Addresses GET error:', error)
@@ -65,9 +83,55 @@ export async function GET() {
 }
 
 /**
+ * POST /api/shop/account/addresses
+ * Add a new address. Body: { address: CheckoutAddress, label?: string }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const mockEmail = cookieStore.get(MOCK_COOKIE)?.value
+    const isDev = process.env.NODE_ENV === 'development'
+    const mockEnabled = process.env.MOCK_LOGIN_ENABLED === 'true'
+
+    if (mockEmail && (isDev || mockEnabled)) {
+      return NextResponse.json({ success: true, id: 'mock-id' })
+    }
+
+    const userId = await getUserId(cookieStore)
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const address = body.address
+    const label = body.label ?? null
+
+    if (!isValidAddress(address)) {
+      return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
+    }
+
+    const serviceClient = createServiceClient()
+    const { data: inserted, error } = await serviceClient
+      .from('collector_addresses')
+      .insert({ user_id: userId, address, label })
+      .select('id')
+      .single()
+
+    if (error) {
+      console.error('Addresses POST error:', error)
+      return NextResponse.json({ error: 'Failed to save address' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, id: inserted?.id })
+  } catch (error: any) {
+    console.error('Addresses POST error:', error)
+    return NextResponse.json({ error: 'Failed to save address' }, { status: 500 })
+  }
+}
+
+/**
  * PUT /api/shop/account/addresses
- * Save shipping and/or billing address to collector_profiles.
- * Body: { shippingAddress?: CheckoutAddress, billingAddress?: CheckoutAddress }
+ * Backward compat: adds address(es) via POST. Body: { shippingAddress?, billingAddress? }
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -80,43 +144,106 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    const supabase = createRouteClient(cookieStore)
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.user?.id) {
+    const userId = await getUserId(cookieStore)
+    if (!userId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const body = await request.json()
-    const shippingAddress = body.shippingAddress
-    const billingAddress = body.billingAddress
+    const toAdd: CheckoutAddress[] = []
+    if (isValidAddress(body.shippingAddress)) toAdd.push(body.shippingAddress)
+    if (isValidAddress(body.billingAddress)) toAdd.push(body.billingAddress)
 
-    const updates: Record<string, unknown> = {}
-    if (shippingAddress !== undefined) {
-      updates.default_shipping_address = isValidAddress(shippingAddress) ? shippingAddress : null
-    }
-    if (billingAddress !== undefined) {
-      updates.default_billing_address = isValidAddress(billingAddress) ? billingAddress : null
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ success: true })
-    }
+    if (toAdd.length === 0) return NextResponse.json({ success: true })
 
     const serviceClient = createServiceClient()
-    const { error: updateError } = await serviceClient
-      .from('collector_profiles')
-      .update(updates)
-      .eq('user_id', session.user.id)
-
-    if (updateError) {
-      console.error('Addresses PUT error:', updateError)
-      return NextResponse.json({ error: 'Failed to save addresses' }, { status: 500 })
+    for (const addr of toAdd) {
+      await serviceClient.from('collector_addresses').insert({ user_id: userId, address: addr })
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Addresses PUT error:', error)
     return NextResponse.json({ error: 'Failed to save addresses' }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/shop/account/addresses
+ * Update an address. Body: { id: string, address?: CheckoutAddress, label?: string }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const userId = await getUserId(cookieStore)
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const id = body.id
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const updates: Record<string, unknown> = {}
+    if (body.address !== undefined) {
+      if (!isValidAddress(body.address)) {
+        return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
+      }
+      updates.address = body.address
+    }
+    if (body.label !== undefined) updates.label = body.label
+
+    if (Object.keys(updates).length === 0) return NextResponse.json({ success: true })
+
+    const serviceClient = createServiceClient()
+    const { error } = await serviceClient
+      .from('collector_addresses')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Addresses PATCH error:', error)
+      return NextResponse.json({ error: 'Failed to update address' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Addresses PATCH error:', error)
+    return NextResponse.json({ error: 'Failed to update address' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE /api/shop/account/addresses?id=uuid
+ * Remove an address.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const userId = await getUserId(cookieStore)
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const id = request.nextUrl.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const serviceClient = createServiceClient()
+    const { error } = await serviceClient
+      .from('collector_addresses')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Addresses DELETE error:', error)
+      return NextResponse.json({ error: 'Failed to delete address' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Addresses DELETE error:', error)
+    return NextResponse.json({ error: 'Failed to delete address' }, { status: 500 })
   }
 }

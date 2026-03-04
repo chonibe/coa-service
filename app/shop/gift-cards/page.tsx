@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Gift, Loader2, ChevronRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { GiftCardCheckoutDrawer } from './components/GiftCardCheckoutDrawer'
+import { GiftCardPreview } from './components/GiftCardPreview'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +41,9 @@ export default function GiftCardsPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lampPrice, setLampPrice] = useState<number | null>(null)
+  const [checkoutDrawerOpen, setCheckoutDrawerOpen] = useState(false)
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null)
+  const [checkoutLineLabel, setCheckoutLineLabel] = useState('')
 
   const customCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : 0
   const amountCents =
@@ -115,20 +120,40 @@ export default function GiftCardsPage() {
         throw new Error(data.error || 'Failed to create checkout')
       }
 
-      if (data.url) {
-        window.location.href = data.url
+      if (data.clientSecret) {
+        const label =
+          giftCardType === 'street_lamp'
+            ? 'Gift Card: 1 Street Lamp'
+            : giftCardType === 'season1_artwork'
+              ? 'Gift Card: 1 Season 1 Artwork ($40)'
+              : `Gift Card - $${(amountCents / 100).toFixed(2)}`
+        setCheckoutLineLabel(label)
+        setCheckoutClientSecret(data.clientSecret)
+        setCheckoutDrawerOpen(true)
       } else {
-        throw new Error('No checkout URL returned')
+        throw new Error('No checkout session returned')
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
       setIsCheckingOut(false)
     }
   }
 
+  const handleCheckoutSuccess = (redirectUrl: string) => {
+    window.location.href = redirectUrl
+  }
+
+  const amountDollars =
+    giftCardType === 'value'
+      ? (amountCents / 100).toFixed(2)
+      : giftCardType === 'street_lamp'
+        ? lampPrice != null ? lampPrice.toFixed(2) : '0.00'
+        : '40.00'
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
-      <section className="max-w-xl mx-auto px-4 py-16">
+      <section className="max-w-6xl mx-auto px-4 py-12 lg:py-16">
         <div className="flex flex-col items-center mb-10">
           <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
             <Gift className="w-8 h-8 text-neutral-700 dark:text-neutral-300" />
@@ -142,12 +167,14 @@ export default function GiftCardsPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
+          <div className="mb-6 max-w-2xl mx-auto p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
             {error}
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start max-w-5xl mx-auto">
+          {/* Selector column - order-2 on mobile so card preview shows first */}
+          <div className="space-y-6 order-2 lg:order-none">
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               Recipient&apos;s email
@@ -184,6 +211,9 @@ export default function GiftCardsPage() {
                 </button>
               ))}
             </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              Preview updates as you customize
+            </p>
           </div>
 
           <div>
@@ -206,10 +236,7 @@ export default function GiftCardsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setGiftCardType('street_lamp')
-                    fetchLampPrice()
-                  }}
+                  onClick={() => setGiftCardType('street_lamp')}
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'street_lamp'
@@ -376,9 +403,41 @@ export default function GiftCardsPage() {
           </Button>
         </div>
 
-        <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400 text-center">
-          Delivered by email, this gift card never expires.
-        </p>
+          {/* Preview column - order-1 on mobile so card shows at top */}
+          <div className="lg:sticky lg:top-24 order-1 lg:order-none">
+            <div className="flex flex-col items-center">
+              <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-4">
+                Card preview
+              </p>
+              <GiftCardPreview
+                design={design}
+                amountDollars={`$${amountDollars}`}
+                giftMessage={giftMessage || undefined}
+                senderName={senderName || undefined}
+                className="shadow-2xl"
+              />
+              <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-400 text-center max-w-xs">
+                Delivered by email, this gift card never expires.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {checkoutClientSecret && (
+          <GiftCardCheckoutDrawer
+            open={checkoutDrawerOpen}
+            onClose={() => {
+              setCheckoutDrawerOpen(false)
+              setCheckoutClientSecret(null)
+            }}
+            clientSecret={checkoutClientSecret}
+            amountCents={amountCents}
+            lineItemLabel={checkoutLineLabel}
+            customerEmail={isAuthenticated && user?.email ? user.email : undefined}
+            onSuccess={handleCheckoutSuccess}
+            onError={(msg) => setError(msg)}
+          />
+        )}
 
         <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
           <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">How it works</h3>

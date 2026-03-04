@@ -57,7 +57,7 @@ export function NavCart({
           <button
             type="button"
             onClick={onViewCart}
-            className="text-sm text-[#2c4bce] hover:underline"
+            className="text-sm text-[#047AFF] hover:underline"
           >
             View Full Cart
           </button>
@@ -73,13 +73,13 @@ export function NavCart({
                 ? `$${remainingForFreeShipping.toFixed(2)} away from free shipping`
                 : '🎉 You qualify for free shipping!'}
             </p>
-            <span className="text-xs font-semibold text-[#2c4bce]">
+            <span className="text-xs font-semibold text-[#047AFF]">
               {Math.round(progressToFreeShipping)}%
             </span>
           </div>
           <div className="w-full h-2 bg-white rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#2c4bce] to-[#4c6bfe] transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#047AFF] to-[#4c6bfe] transition-all duration-500"
               style={{ width: `${progressToFreeShipping}%` }}
             />
           </div>

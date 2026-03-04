@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
 import { Checkbox, Label } from '@/components/ui'
 import { PaymentStep } from './PaymentStep'
 import { AddressModal } from './AddressModal'
@@ -74,6 +75,7 @@ export function PaymentMethodsModal({
   onBillingAddressSave,
   preloadedClientSecret,
 }: PaymentMethodsModalProps) {
+  const { theme } = useExperienceTheme()
   const [billingModalOpen, setBillingModalOpen] = React.useState(false)
   const showBillingSection = onSameAsShippingChange != null && onBillingAddressSave != null
 
@@ -94,7 +96,8 @@ export function PaymentMethodsModal({
         <Dialog.Content
           forceMount
           className={cn(
-            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col bg-white',
+            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
+            theme === 'dark' ? 'bg-neutral-950' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -102,15 +105,17 @@ export function PaymentMethodsModal({
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
         >
+          {/* Wrapper for dark mode - portaled content needs explicit theme */}
+          <div className={cn('flex flex-col h-full', theme === 'dark' && 'dark')}>
           <VisuallyHidden>
             <Dialog.Title>Payment</Dialog.Title>
           </VisuallyHidden>
-          <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-5">
+          <div className={cn('flex shrink-0 items-center justify-between border-b px-4 py-5', theme === 'dark' ? 'border-white/10' : 'border-neutral-100')}>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
               data-testid="payment-dialog-close-button"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -120,7 +125,7 @@ export function PaymentMethodsModal({
               type="button"
               onClick={() => onOpenChange(false)}
               data-testid="add-credit-card-done-button"
-              className="text-sm font-medium text-pink-600 hover:text-pink-700"
+              className="text-sm font-medium text-[#047AFF] hover:text-[#0366d6]"
             >
               Done
             </button>
@@ -144,15 +149,15 @@ export function PaymentMethodsModal({
               preloadedClientSecret={preloadedClientSecret}
             />
             {showBillingSection && (
-              <div className="mt-6 border-t border-neutral-200 pt-6">
-                <h3 className="text-sm font-medium text-neutral-950">Billing address</h3>
+              <div className="mt-6 border-t border-neutral-200 dark:border-white/10 pt-6">
+                <h3 className="text-sm font-medium text-neutral-950 dark:text-white">Billing address</h3>
                 <div className="mt-3 flex items-center gap-2">
                   <Checkbox
                     id="same-as-address"
                     checked={sameAsShipping}
                     onCheckedChange={(c) => handleSameAsChange(!!c)}
                   />
-                  <Label htmlFor="same-as-address" className="text-sm text-neutral-700 cursor-pointer">
+                  <Label htmlFor="same-as-address" className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
                     Same as Address
                   </Label>
                 </div>
@@ -161,7 +166,7 @@ export function PaymentMethodsModal({
                     <button
                       type="button"
                       onClick={() => setBillingModalOpen(true)}
-                      className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+                      className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                     >
                       {billingAddress
                         ? `${billingAddress.addressLine1}, ${billingAddress.city}`
@@ -171,6 +176,7 @@ export function PaymentMethodsModal({
                 )}
               </div>
             )}
+          </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

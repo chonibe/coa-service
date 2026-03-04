@@ -56,7 +56,7 @@ export default function CollabPage() {
 
             <div className="grid sm:grid-cols-3 gap-8 mb-16">
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#2c4bce]/10 text-[#2c4bce] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   1
                 </div>
                 <h3 className="font-semibold text-[#1a1a1a] mb-2">Register</h3>
@@ -65,7 +65,7 @@ export default function CollabPage() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#2c4bce]/10 text-[#2c4bce] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   2
                 </div>
                 <h3 className="font-semibold text-[#1a1a1a] mb-2">Share</h3>
@@ -74,7 +74,7 @@ export default function CollabPage() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#2c4bce]/10 text-[#2c4bce] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   3
                 </div>
                 <h3 className="font-semibold text-[#1a1a1a] mb-2">Get Commissions</h3>

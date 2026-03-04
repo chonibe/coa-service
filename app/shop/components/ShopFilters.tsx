@@ -38,7 +38,7 @@ export function ShopFilters({
         <select
           defaultValue={currentCollection || ''}
           onChange={handleCollectionChange}
-          className="h-10 px-4 pr-10 text-sm bg-white border border-[#1a1a1a]/12 rounded-[8px] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2c4bce]"
+          className="h-10 px-4 pr-10 text-sm bg-white border border-[#1a1a1a]/12 rounded-[8px] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#047AFF]"
         >
           <option value="">All Collections</option>
           {collections.map((col) => (
@@ -59,7 +59,7 @@ export function ShopFilters({
         <select
           defaultValue={currentSort}
           onChange={handleSortChange}
-          className="h-10 px-4 pr-10 text-sm bg-white border border-[#1a1a1a]/12 rounded-[8px] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2c4bce]"
+          className="h-10 px-4 pr-10 text-sm bg-white border border-[#1a1a1a]/12 rounded-[8px] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#047AFF]"
         >
           <option value="best-selling">Best Selling</option>
           <option value="newest">Newest</option>

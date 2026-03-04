@@ -243,6 +243,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Look up and pre-apply promo code if provided
+    let discounts: Array<{ promotion_code: string }> | undefined
+    if (promoCode?.trim()) {
+      const trimmed = promoCode.trim().toUpperCase()
+      const { data: promoCodes } = await stripe!.promotionCodes.list({ code: trimmed, active: true })
+      const promo = promoCodes?.[0]
+      if (promo?.coupon?.valid) {
+        discounts = [{ promotion_code: promo.id }]
+      }
+    }
+
     // Restrict payment method if user selected one
     const paymentMethodTypes: Stripe.Checkout.SessionCreateParams['payment_method_types'] =
       paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal', 'link']
@@ -271,6 +282,7 @@ export async function POST(request: NextRequest) {
       }),
       billing_address_collection: 'required',
       allow_promotion_codes: true,
+      ...(discounts?.length ? { discounts } : {}),
     }
 
     const stripeSession = await stripe!.checkout.sessions.create(sessionParams)

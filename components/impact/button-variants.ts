@@ -7,7 +7,7 @@ import { cva } from 'class-variance-authority'
  * so it can be called from Server Components (e.g. for styling <a> elements).
  *
  * Matches the exact styling from the Shopify Impact theme:
- * - Primary: #2c4bce background, white text, 60px border radius
+ * - Primary: #047AFF background, white text, 60px border radius
  * - Secondary: #f0c417 background, #1a1a1a text
  * - Button hover effect: fade to 85% opacity
  */
@@ -24,10 +24,10 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: [
-          'bg-[#2c4bce] text-white',
+          'bg-[#047AFF] text-white',
           'rounded-[60px]',
           'hover:opacity-[0.85]',
-          'focus-visible:ring-[#2c4bce]',
+          'focus-visible:ring-[#047AFF]',
           'shadow-impact-sm hover:shadow-impact-md',
         ].join(' '),
         secondary: [
@@ -45,11 +45,11 @@ export const buttonVariants = cva(
           'focus-visible:ring-[#1a1a1a]',
         ].join(' '),
         'outline-primary': [
-          'bg-transparent text-[#2c4bce]',
+          'bg-transparent text-[#047AFF]',
           'rounded-[60px]',
-          'border-2 border-[#2c4bce]',
-          'hover:bg-[#2c4bce] hover:text-white',
-          'focus-visible:ring-[#2c4bce]',
+          'border-2 border-[#047AFF]',
+          'hover:bg-[#047AFF] hover:text-white',
+          'focus-visible:ring-[#047AFF]',
         ].join(' '),
         ghost: [
           'bg-transparent text-[#1a1a1a]',
@@ -58,10 +58,10 @@ export const buttonVariants = cva(
           'focus-visible:ring-[#1a1a1a]',
         ].join(' '),
         link: [
-          'bg-transparent text-[#2c4bce]',
+          'bg-transparent text-[#047AFF]',
           'underline-offset-4',
           'hover:underline',
-          'focus-visible:ring-[#2c4bce]',
+          'focus-visible:ring-[#047AFF]',
         ].join(' '),
         subdued: [
           'bg-[#1a1a1a]/5 text-[#1a1a1a]',

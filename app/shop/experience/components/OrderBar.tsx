@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon, TicketIcon } from '@heroicons/react/24/solid'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
-import { useExperienceOpenOrder } from '../ExperienceOrderContext'
+import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
+import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
@@ -82,8 +83,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [preloadedClientSecret, setPreloadedClientSecret] = useState<string | null>(null)
   const [promoModalOpen, setPromoModalOpen] = useState(false)
-  const [promoApplied, setPromoApplied] = useState('')
-  const [promoDiscount, setPromoDiscount] = useState(0)
+  const { promoCode: promoApplied, setPromoCode: setPromoApplied, promoDiscount, setPromoDiscount } = useExperienceOrder()
   const checkout = useCheckout()
 
   useExperienceOpenOrder(() => {
@@ -207,6 +207,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         items,
         customerEmail: checkout.address?.email,
         shippingAddress,
+        ...(promoApplied?.trim() && { promoCode: promoApplied.trim().toUpperCase() }),
       }),
     })
       .then(async (r) => {
@@ -220,7 +221,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     return () => {
       cancelled = true
     }
-  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address])
+  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address, promoApplied])
 
   const handleTestZeroOrder = useCallback(async () => {
     setError(null)
@@ -271,7 +272,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const hasAddress = checkout.isAddressComplete()
   const [paymentModalHasBeenOpened, setPaymentModalHasBeenOpened] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('google_pay')
 
   /* Auto-apply WELCOME10 for first-time users */
   React.useEffect(() => {
@@ -310,34 +310,38 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
       <span className="flex items-center gap-3">
-        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-pink-500' : 'text-neutral-500')} />
-        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900' : 'text-pink-600 font-medium'}>
+        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-[#047AFF]' : 'text-neutral-500')} />
+        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900 dark:text-white' : 'text-[#047AFF] dark:text-[#60A5FA] font-medium'}>
           {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
         </span>
       </span>
       {hasAddress && (
-        <span className="text-neutral-500 hover:text-neutral-700">Change</span>
+        <span className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">Change</span>
       )}
     </button>
   )
 
   const paymentMethodLabel = React.useMemo(() => {
-    switch (selectedPaymentMethod) {
+    if (checkout.savedCard && (checkout.paymentMethod === 'card' || checkout.paymentMethod === 'link')) {
+      const brand = checkout.savedCard.brand.charAt(0).toUpperCase() + checkout.savedCard.brand.slice(1)
+      return `${brand} ending in ${checkout.savedCard.last4}`
+    }
+    const displayType = checkout.paymentMethodDisplayType ?? 'google_pay'
+    switch (displayType) {
       case 'google_pay':
         return 'Google Pay'
       case 'paypal':
-      case 'external_paypal':
-        return 'PayPal'
+        return 'PayPal account'
       case 'link':
         return 'Link'
       case 'card':
         return 'Card'
       default:
-        return selectedPaymentMethod ? selectedPaymentMethod.replace(/_/g, ' ') : 'Payment'
+        return 'Payment'
     }
-  }, [selectedPaymentMethod])
+  }, [checkout.savedCard, checkout.paymentMethod, checkout.paymentMethodDisplayType])
 
-  const hasPaymentSelection = paymentModalHasBeenOpened
+  const hasPaymentSelection = paymentModalHasBeenOpened || !!checkout.paymentMethodDisplayType
   const paymentRow = (
     <button
       type="button"
@@ -346,19 +350,19 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
       <span className="flex items-center gap-3">
-        <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-pink-500' : 'text-neutral-500')} />
+        <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-neutral-400')} />
         <span
           data-testid="add-payment-method-button-text"
           className={cn(
             'font-medium',
-            !hasPaymentSelection ? 'text-pink-600' : 'text-neutral-900'
+            !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-900 dark:text-white'
           )}
         >
           {hasPaymentSelection ? paymentMethodLabel : 'Add payment method'}
         </span>
       </span>
       {hasPaymentSelection && (
-        <span className="text-neutral-400 hover:text-neutral-600 transition-colors">Change</span>
+        <span className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">Change</span>
       )}
     </button>
   )
@@ -369,11 +373,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       onClick={() => setPromoModalOpen(true)}
       className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
-      <span className="flex items-center gap-2 text-neutral-900">
-        <TicketIcon className="w-5 h-5 text-neutral-600 shrink-0" />
+      <span className="flex items-center gap-2 text-neutral-900 dark:text-white">
+        <TicketIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400 shrink-0" />
         Promo: {promoApplied || 'WELCOME10'}
       </span>
-      <span className="text-neutral-500 hover:text-neutral-700">Change</span>
+      <span className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">Change</span>
     </button>
   )
 
@@ -387,23 +391,23 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <div className="space-y-0.5">
             <div className="flex items-center justify-between gap-2 text-sm">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="w-7 h-7 flex items-center justify-center shrink-0">
-                  <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-700 shrink-0" xmlns="http://www.w3.org/2000/svg">
+                  <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-700 dark:text-neutral-300 shrink-0" xmlns="http://www.w3.org/2000/svg">
                     <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
                   </svg>
                 </div>
-                <span className="text-sm text-neutral-900 truncate">{lampQuantity} × Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
+                <span className="text-sm text-neutral-900 dark:text-white truncate">{lampQuantity} × Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0 tabular-nums text-sm">
                 {lampSavings > 0 ? (
                   <>
-                    <span className="text-sm line-through text-neutral-500">${lampOriginalTotal.toFixed(2)}</span>
+                    <span className="text-sm line-through text-neutral-500 dark:text-neutral-400">${lampOriginalTotal.toFixed(2)}</span>
                     <span className={cn('text-sm font-medium', lampTotal === 0 ? 'text-green-600' : 'text-green-700')}>
                       {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm text-neutral-700">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">
                     {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
                   </span>
                 )}
@@ -412,7 +416,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             {lampSavings > 0 && (
               <div className="flex items-center gap-2">
                 <div className="w-7 shrink-0" aria-hidden />
-                <TagIcon className="w-4 h-4 shrink-0 text-green-600" />
+                <TicketIcon className="w-4 h-4 shrink-0 text-green-600" aria-hidden />
                 <span className="text-sm text-green-600">
                   Volume discount : you&apos;re saving ${lampSavings.toFixed(2)}
                 </span>
@@ -423,7 +427,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         {selectedArtworks.map((art) => (
           <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100">
+              <div className="w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                 {art.featuredImage?.url ? (
                   <Image
                     src={art.featuredImage.url}
@@ -434,21 +438,21 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">
+                  <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 text-sm">
                     —
                   </div>
                 )}
               </div>
-              <span className={cn('truncate min-w-0 text-sm', !art.availableForSale && 'line-through text-neutral-500')}>
+              <span className={cn('truncate min-w-0 text-sm text-neutral-900 dark:text-white', !art.availableForSale && 'line-through text-neutral-500 dark:text-neutral-400')}>
                 {art.title}
               </span>
             </div>
-            <span className="text-sm text-neutral-700 tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
+            <span className="text-sm text-neutral-700 dark:text-neutral-300 tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
             <button
               type="button"
               onClick={() => onRemoveArtwork(art.id)}
               aria-label={`Remove ${art.title} from cart`}
-              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <XMarkIcon className="w-3 h-3" />
             </button>
@@ -458,9 +462,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}
-            className="flex items-center gap-2 text-sm text-pink-600 font-medium hover:text-pink-700"
+            className="flex items-center gap-2 text-sm text-[#047AFF] dark:text-[#60A5FA] font-medium hover:text-[#0366d6] dark:hover:text-[#93C5FD]"
           >
-            <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-600 shrink-0" xmlns="http://www.w3.org/2000/svg">
+              <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-600 dark:text-neutral-400 shrink-0" xmlns="http://www.w3.org/2000/svg">
               <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
             </svg>
             <span>+ Add lamp</span>
@@ -468,14 +472,20 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
       </div>
       <div className="space-y-2 text-sm pt-3">
+        {promoDiscount > 0 && promoApplied && (
+          <div className="flex justify-between text-sm text-green-600 dark:text-green-500">
+            <span>Promo ({promoApplied})</span>
+            <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
+          </div>
+        )}
         <div data-testid="delivery-summary-item" className="flex justify-between text-sm">
-          <span className="text-neutral-600">Shipping</span>
-          <span className="font-medium text-neutral-950">Free</span>
+          <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
+          <span className="font-medium text-neutral-950 dark:text-white">Free</span>
         </div>
         <div data-testid="total-summary-item" className="flex justify-between pt-2 text-sm">
-          <span className="font-semibold text-neutral-950">Total</span>
-          <span className="font-bold text-neutral-950 tabular-nums">
-            <AnimatedPrice value={total} />
+          <span className="font-semibold text-neutral-950 dark:text-white">Total</span>
+          <span className="font-bold text-neutral-950 dark:text-white tabular-nums">
+            <AnimatedPrice value={Math.max(0, total - promoDiscount)} />
           </span>
         </div>
       </div>
@@ -483,16 +493,18 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   )
 
   const getCheckoutButtonVariant = (): 'google_pay' | 'paypal' | 'default' => {
-    if (selectedPaymentMethod === 'google_pay') return 'google_pay'
-    if (selectedPaymentMethod === 'paypal' || selectedPaymentMethod === 'external_paypal')
+    const displayType = checkout.paymentMethodDisplayType
+    if (displayType === 'google_pay') return 'google_pay'
+    if (displayType === 'paypal')
       return 'paypal'
     return 'default'
   }
 
+  const finalTotal = Math.max(0, total - promoDiscount)
   const placeOrderButton = (
     <CheckoutButton
       variant={getCheckoutButtonVariant()}
-      amount={total}
+      amount={finalTotal}
       disabled={itemCount === 0 || !allAvailable}
       onClick={handlePlaceOrderClick}
       className="text-sm"
@@ -518,7 +530,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         initial={false}
         animate={{ x: drawerOpen ? 0 : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
+        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-neutral-950 shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
         style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
       >
         {/* Header - close button only */}
@@ -526,7 +538,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <button
             type="button"
             onClick={handleClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -538,18 +550,18 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <div className="px-6 pb-6">
             {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
-              <h3 className="text-sm font-semibold text-neutral-950 mb-3">Checkout</h3>
+              <h3 className="text-lg font-semibold text-neutral-950 dark:text-white mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
             </div>
             {/* Divider + Items section: Promo, order summary */}
-            <div className="border-t border-neutral-200 pt-5">
-              <div className="border-b border-neutral-200 pb-5 mb-4">
+            <div className="border-t border-neutral-200 dark:border-white/10 pt-5">
+              <div className="border-b border-neutral-200 dark:border-white/10 pb-5 mb-4">
                 {promoRow}
               </div>
               {orderSummary}
             </div>
-            {error && <p className="mt-2 text-center text-red-500">{error}</p>}
+            {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
             {placeOrderButton}
           </div>
         </div>
@@ -568,7 +580,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         onOpenChange={setPromoModalOpen}
         appliedCode={promoApplied}
         appliedDiscount={promoDiscount}
-        onApply={(code) => { setPromoApplied(code); setPromoDiscount(0) }}
+        onApply={async (code) => {
+          setPromoApplied(code)
+          const { valid, discountCents } = await validatePromo(code, Math.round(total * 100))
+          setPromoDiscount(valid ? discountCents / 100 : 0)
+        }}
         onRemove={() => { setPromoApplied(''); setPromoDiscount(0) }}
         volumeDiscountLabel={lampSavings > 0 ? 'Volume Discount Applied' : undefined}
         volumeDiscountDescription={lampSavings > 0 ? 'Volume discount : you\'re saving' : undefined}
@@ -612,7 +628,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           }
           onSuccess={handlePaymentSuccess}
           onError={(msg) => setError(msg)}
-          onPaymentMethodChange={(type) => setSelectedPaymentMethod(type)}
+          onPaymentMethodChange={(type) => {
+            const displayType = type === 'google_pay' ? 'google_pay' : type === 'paypal' || type === 'external_paypal' ? 'paypal' : type === 'link' ? 'link' : 'card'
+            if (type === 'google_pay' && checkout.paymentMethodDisplayType && checkout.paymentMethodDisplayType !== 'google_pay') return
+            const method: 'link' | 'paypal' | 'card' = displayType === 'google_pay' || displayType === 'link' ? 'link' : displayType === 'paypal' ? 'paypal' : 'card'
+            checkout.setPaymentMethod(method)
+            checkout.setPaymentMethodDisplayType(displayType)
+            if (displayType !== 'card' && displayType !== 'link') checkout.setSavedCard(null)
+          }}
           billingAddress={checkout.sameAsShipping ? null : checkout.billingAddress}
           sameAsShipping={checkout.sameAsShipping}
           onSameAsShippingChange={(v) => {
@@ -629,7 +652,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
 export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar(props, ref) {
   return (
-    <CheckoutProvider>
+    <CheckoutProvider storageKey="sc-experience-checkout">
       <CheckoutPiiPrefill />
       <OrderBarInner {...props} ref={ref} />
     </CheckoutProvider>

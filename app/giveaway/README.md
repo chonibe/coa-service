@@ -208,7 +208,7 @@ Fetch past giveaway results.
 
 The giveaway uses Street Collector's Impact theme design system:
 
-- **Primary Color**: `#2c4bce` (blue)
+- **Primary Color**: `#047AFF` (blue)
 - **Secondary Color**: `#f0c417` (yellow)
 - **Dark Background**: `#390000`
 - **Accent Text**: `#ffba94`

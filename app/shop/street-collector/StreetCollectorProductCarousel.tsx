@@ -71,7 +71,7 @@ function ProductCard({
             disabled={isAdding}
             className={cn(
               'absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full',
-              'bg-[#2c4bce] text-white text-sm font-medium',
+              'bg-[#047AFF] text-white text-sm font-medium',
               'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
               'hover:bg-[#2340ac] disabled:opacity-70'
             )}

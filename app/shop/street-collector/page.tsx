@@ -47,6 +47,7 @@ export default async function StreetCollectorPage() {
       // Fetch artist images from configured list
       featuredArtists = await Promise.all(
         streetCollectorContent.featuredArtists.collections.map(async (artist) => {
+          const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
           try {
             const col = await getCollection(artist.handle, { first: 1 }).catch(() => null)
             const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -65,6 +66,7 @@ export default async function StreetCollectorPage() {
               : col?.descriptionHtml
                 ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
                 : undefined,
+              href: collectionHref,
             }
           } catch {
             const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -76,6 +78,7 @@ export default async function StreetCollectorPage() {
                 .join(' '),
               location: artist.location,
               description: undefined,
+              href: collectionHref,
             }
           }
         })
@@ -139,13 +142,16 @@ export default async function StreetCollectorPage() {
         if (isHidden(a)) continue
         const key = a.name.toLowerCase().trim()
         const existing = nameToArtist.get(key)
+        const aWithHref = 'href' in a ? a : undefined
         if (!existing || richness(a) > richness(existing)) {
           nameToArtist.set(key, a)
+        } else if (aWithHref?.href) {
+          nameToArtist.set(key, { ...existing, href: aWithHref.href })
         }
       }
       featuredArtists = Array.from(nameToArtist.values())
-      // Start with Moritz Adam Schmitt (Cologne)
-      const leadHandle = 'moritz-adam-schmitt'
+      // Start with Jérôme Masi (Annecy)
+      const leadHandle = 'jerome-masi'
       const leadIdx = featuredArtists.findIndex(
         (a) => a.handle.replace(/-\d+$/, '').toLowerCase() === leadHandle
       )
@@ -167,6 +173,7 @@ export default async function StreetCollectorPage() {
       <FixedCTAButton
         text={streetCollectorContent.hero.cta.text}
         href={streetCollectorContent.experienceUrl}
+        logoUrl={HOME_LOGO_URL}
       />
       {/* API Warning (dev only) */}
       {apiError && process.env.NODE_ENV === 'development' && (
@@ -180,7 +187,13 @@ export default async function StreetCollectorPage() {
       )}
 
       {/* Hero - Video with logo overlay */}
-      <div className="relative">
+      <div id="street-collector-hero" className="relative">
+        {/* Sentinel for scroll-aware CTA (bottom of hero) */}
+        <div
+          id="street-collector-hero-sentinel"
+          className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+          aria-hidden
+        />
         {/* Logo overlay on hero */}
         <Link
           href="/shop/street-collector"
@@ -206,9 +219,9 @@ export default async function StreetCollectorPage() {
           overlay={{
             headline: streetCollectorContent.hero.headline,
             subheadline: streetCollectorContent.hero.subheadline,
-            microCue: streetCollectorContent.hero.microCue,
             ctaUrl: streetCollectorContent.experienceUrl,
-            position: 'center',
+            cta: { text: streetCollectorContent.hero.cta.text, url: streetCollectorContent.experienceUrl, style: 'glassmorphism' },
+            position: 'lower-center',
             headlineSize: 'large',
             textColor: '#ffffff',
             overlayColor: '#000000',

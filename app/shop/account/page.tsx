@@ -29,7 +29,7 @@ interface Order {
   shopifyOrderId: string
   orderNumber: string
   createdAt: string
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'out_for_delivery' | 'cancelled' | 'refunded'
   totalAmount: number
   currency: string
   lineItems?: Array<{
@@ -60,6 +60,8 @@ interface Order {
   }
   trackingNumber?: string
   trackingUrl?: string
+  /** Human-readable warehouse status (e.g. "In Transit", "Out for Delivery") when available */
+  warehouseStatusLabel?: string
 }
 
 export default function AccountPage() {
@@ -69,11 +71,10 @@ export default function AccountPage() {
   const [profileLoading, setProfileLoading] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<{
-    shippingAddress: CheckoutAddress | null
-    billingAddress: CheckoutAddress | null
+    addresses: Array<{ id: string; address: CheckoutAddress; label: string | null }>
   } | null>(null)
-  const [shippingModalOpen, setShippingModalOpen] = useState(false)
-  const [billingModalOpen, setBillingModalOpen] = useState(false)
+  const [addressModalOpen, setAddressModalOpen] = useState(false)
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
   const [addressesLoading, setAddressesLoading] = useState(false)
 
   const profile = user
@@ -93,8 +94,8 @@ export default function AccountPage() {
   const fetchAddresses = useCallback(() => {
     if (!isAuthenticated) return
     fetch('/api/shop/account/addresses')
-      .then((res) => (res.ok ? res.json() : { shippingAddress: null, billingAddress: null }))
-      .then((data) => setSavedAddresses(data))
+      .then((res) => (res.ok ? res.json() : { addresses: [] }))
+      .then((data) => setSavedAddresses({ addresses: data.addresses ?? [] }))
       .catch(() => setSavedAddresses(null))
   }, [isAuthenticated])
 
@@ -124,19 +125,34 @@ export default function AccountPage() {
     }
   }
 
-  const handleShippingSave = async (address: CheckoutAddress) => {
+  const handleAddressSave = async (address: CheckoutAddress) => {
     setAddressesLoading(true)
     try {
-      const res = await fetch('/api/shop/account/addresses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shippingAddress: address }),
-      })
-      if (res.ok) {
-        setShippingModalOpen(false)
-        fetchAddresses()
+      if (editingAddressId) {
+        const res = await fetch('/api/shop/account/addresses', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingAddressId, address }),
+        })
+        if (res.ok) {
+          setAddressModalOpen(false)
+          setEditingAddressId(null)
+          fetchAddresses()
+        } else {
+          alert('Failed to update address')
+        }
       } else {
-        alert('Failed to save address')
+        const res = await fetch('/api/shop/account/addresses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address }),
+        })
+        if (res.ok) {
+          setAddressModalOpen(false)
+          fetchAddresses()
+        } else {
+          alert('Failed to save address')
+        }
       }
     } catch (e) {
       console.error(e)
@@ -146,23 +162,16 @@ export default function AccountPage() {
     }
   }
 
-  const handleBillingSave = async (address: CheckoutAddress) => {
+  const handleDeleteAddress = async (id: string) => {
+    if (!confirm('Delete this address?')) return
     setAddressesLoading(true)
     try {
-      const res = await fetch('/api/shop/account/addresses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ billingAddress: address }),
-      })
-      if (res.ok) {
-        setBillingModalOpen(false)
-        fetchAddresses()
-      } else {
-        alert('Failed to save address')
-      }
+      const res = await fetch(`/api/shop/account/addresses?id=${id}`, { method: 'DELETE' })
+      if (res.ok) fetchAddresses()
+      else alert('Failed to delete address')
     } catch (e) {
       console.error(e)
-      alert('Failed to save address')
+      alert('Failed to delete address')
     } finally {
       setAddressesLoading(false)
     }
@@ -310,6 +319,20 @@ export default function AccountPage() {
                   Continue Shopping
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await fetch('/api/collector/logout', { method: 'POST', credentials: 'include' })
+                    window.location.href = '/shop'
+                  } catch {
+                    window.location.href = '/shop'
+                  }
+                }}
+              >
+                Logout
+              </Button>
             </div>
           </div>
 
@@ -320,7 +343,7 @@ export default function AccountPage() {
               onClick={() => setActiveTab('orders')}
               className={`px-6 py-2.5 text-sm font-medium rounded-[8px] transition-colors ${
                 activeTab === 'orders'
-                  ? 'bg-[#2c4bce] text-white'
+                  ? 'bg-[#047AFF] text-white'
                   : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
               }`}
             >
@@ -331,7 +354,7 @@ export default function AccountPage() {
               onClick={() => setActiveTab('profile')}
               className={`px-6 py-2.5 text-sm font-medium rounded-[8px] transition-colors ${
                 activeTab === 'profile'
-                  ? 'bg-[#2c4bce] text-white'
+                  ? 'bg-[#047AFF] text-white'
                   : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
               }`}
             >
@@ -373,6 +396,12 @@ export default function AccountPage() {
                             Order #{order.orderNumber}
                           </h3>
                           <StatusBadge status={order.status} />
+                          {order.warehouseStatusLabel &&
+                            ['shipped', 'out_for_delivery'].includes(order.status) && (
+                            <span className="text-sm text-[#1a1a1a]/60">
+                              · {order.warehouseStatusLabel}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-[#1a1a1a]/60 mt-1">
                           Placed on {formatDate(order.createdAt)}
@@ -436,7 +465,7 @@ export default function AccountPage() {
                               href={order.trackingUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#2c4bce] hover:underline"
+                              className="text-[#047AFF] hover:underline"
                             >
                               {order.trackingNumber}
                             </a>
@@ -525,201 +554,83 @@ export default function AccountPage() {
                 </CardContent>
               </Card>
 
-              {/* Addresses Section - saved in account or from most recent order */}
+              {/* Addresses Section - multiple saved addresses */}
               <Card variant="default" padding="lg">
                 <CardHeader title="Saved Addresses" />
                 <CardContent className="mt-6">
                   <p className="text-sm text-[#1a1a1a]/60 mb-4">
-                    Add and manage your default shipping and billing addresses. They will be used to prefill checkout.
+                    Add and manage your addresses. They will appear at checkout so you can choose quickly.
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-semibold text-[#1a1a1a] mb-2">
-                        Shipping Address
-                      </h3>
-                      {(() => {
-                        const addr = savedAddresses?.shippingAddress ?? orderAddrToCheckout(orders[0]?.shippingAddress, profile?.email ?? '')
-                        if (!addr?.addressLine1) {
-                          return (
-                            <div>
-                              <p className="text-sm text-[#1a1a1a]/60 mb-3">
-                                No shipping address yet.
-                              </p>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setShippingModalOpen(true)}
-                                disabled={addressesLoading}
-                              >
-                                Add Address
-                              </Button>
-                            </div>
-                          )
-                        }
-                        return (
-                          <div>
-                            <p className="text-sm text-[#1a1a1a]/80">
-                              {addr.fullName}<br />
-                              {addr.addressLine1}
-                              {addr.addressLine2 && <>, {addr.addressLine2}</>}<br />
-                              {addr.city}, {addr.state} {addr.postalCode}<br />
-                              {addr.country}
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-3"
-                              onClick={() => setShippingModalOpen(true)}
-                              disabled={addressesLoading}
-                            >
-                              Edit
-                            </Button>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-[#1a1a1a] mb-2">
-                        Billing Address
-                      </h3>
-                      {(() => {
-                        const orderBilling = orders[0]?.billingAddress ?? orders[0]?.shippingAddress
-                        const addr = savedAddresses?.billingAddress ?? orderAddrToCheckout(orderBilling, profile?.email ?? '')
-                        if (!addr?.addressLine1) {
-                          return (
-                            <div>
-                              <p className="text-sm text-[#1a1a1a]/60 mb-3">
-                                No billing address yet.
-                              </p>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setBillingModalOpen(true)}
-                                disabled={addressesLoading}
-                              >
-                                Add Address
-                              </Button>
-                            </div>
-                          )
-                        }
-                        return (
-                          <div>
-                            <p className="text-sm text-[#1a1a1a]/80">
-                              {addr.fullName}<br />
-                              {addr.addressLine1}
-                              {addr.addressLine2 && <>, {addr.addressLine2}</>}<br />
-                              {addr.city}, {addr.state} {addr.postalCode}<br />
-                              {addr.country}
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-3"
-                              onClick={() => setBillingModalOpen(true)}
-                              disabled={addressesLoading}
-                            >
-                              Edit
-                            </Button>
-                          </div>
-                        )
-                      })()}
-                    </div>
+                  <div className="space-y-4">
+                    {(savedAddresses?.addresses ?? []).map(({ id, address: addr }) => (
+                      <div
+                        key={id}
+                        className="flex items-start justify-between gap-4 rounded-lg border border-[#1a1a1a]/10 p-4"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#1a1a1a]">{addr.fullName}</p>
+                          <p className="text-sm text-[#1a1a1a]/80 mt-0.5">
+                            {addr.addressLine1}
+                            {addr.addressLine2 && `, ${addr.addressLine2}`}<br />
+                            {addr.city}, {addr.state} {addr.postalCode}, {addr.country}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingAddressId(id)
+                              setAddressModalOpen(true)
+                            }}
+                            disabled={addressesLoading}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteAddress(id)}
+                            disabled={addressesLoading}
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        setEditingAddressId(null)
+                        setAddressModalOpen(true)
+                      }}
+                      disabled={addressesLoading}
+                    >
+                      Add Address
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               <AddressModal
-                open={shippingModalOpen}
-                onOpenChange={setShippingModalOpen}
+                open={addressModalOpen}
+                onOpenChange={(open) => {
+                  setAddressModalOpen(open)
+                  if (!open) setEditingAddressId(null)
+                }}
                 initialAddress={
-                  savedAddresses?.shippingAddress ??
-                  orderAddrToCheckout(orders[0]?.shippingAddress, profile?.email ?? '') ??
-                  undefined
+                  editingAddressId
+                    ? savedAddresses?.addresses.find((a) => a.id === editingAddressId)?.address
+                    : undefined
                 }
-                onSave={handleShippingSave}
+                onSave={handleAddressSave}
                 addressType="shipping"
-                billingAddress={savedAddresses?.billingAddress ?? undefined}
-              />
-              <AddressModal
-                open={billingModalOpen}
-                onOpenChange={setBillingModalOpen}
-                initialAddress={
-                  savedAddresses?.billingAddress ??
-                  orderAddrToCheckout(orders[0]?.billingAddress ?? orders[0]?.shippingAddress, profile?.email ?? '') ??
-                  undefined
-                }
-                onSave={handleBillingSave}
-                addressType="billing"
               />
             </div>
           )}
 
-          {/* Quick Links */}
-          <div className="mt-8 grid sm:grid-cols-3 gap-4">
-            <Link href="/collector/dashboard" className="block">
-              <Card variant="interactive" padding="md" className="h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#2c4bce]/10 flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7" />
-                      <rect x="14" y="3" width="7" height="7" />
-                      <rect x="14" y="14" width="7" height="7" />
-                      <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-semibold text-[#1a1a1a]">
-                      My Collection
-                    </h3>
-                    <p className="text-sm text-[#1a1a1a]/60">
-                      View your artworks
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            <Link href="/shop" className="block">
-              <Card variant="interactive" padding="md" className="h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#f0c417]/20 flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b27300" strokeWidth="2">
-                      <path d="M5.5 10L3 21H21L18.5 10" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M8 10V8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8V10" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-semibold text-[#1a1a1a]">
-                      Shop
-                    </h3>
-                    <p className="text-sm text-[#1a1a1a]/60">
-                      Browse artworks
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            <a href="mailto:support@thestreetcollector.com" className="block">
-              <Card variant="interactive" padding="md" className="h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#00a341]/10 flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00a341" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-semibold text-[#1a1a1a]">
-                      Support
-                    </h3>
-                    <p className="text-sm text-[#1a1a1a]/60">
-                      Get help
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </a>
-          </div>
         </Container>
       </SectionWrapper>
     </main>

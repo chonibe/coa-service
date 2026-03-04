@@ -182,7 +182,7 @@ function ArtistCard({ artist }: { artist: FeaturedArtist }) {
       
       {/* Info */}
       <div className="text-center">
-        <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#2c4bce] transition-colors">
+        <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
           {artist.name}
         </h3>
         <p className="text-sm text-[#1a1a1a]/60 mt-1">

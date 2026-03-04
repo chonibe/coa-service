@@ -24,7 +24,7 @@ export const colors = {
   footerText: '#ffba94',
   
   // Button Colors
-  primaryButton: '#2c4bce',
+  primaryButton: '#047AFF',
   primaryButtonText: '#ffffff',
   secondaryButton: '#f0c417',
   secondaryButtonText: '#1a1a1a',

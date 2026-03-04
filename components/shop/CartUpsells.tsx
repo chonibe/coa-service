@@ -93,11 +93,11 @@ export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsPr
       {seriesUpsells.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2" className="flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2" className="flex-shrink-0">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
-            <h3 className="text-sm font-semibold text-[#2c4bce] uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-[#047AFF] uppercase tracking-wide">
               Complete the Series
             </h3>
           </div>
@@ -239,13 +239,13 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
           'group relative overflow-hidden rounded-lg bg-[#f5f5f5]',
           'hover:shadow-md transition-shadow duration-200',
           'cursor-pointer',
-          variant === 'series' && 'ring-1 ring-[#2c4bce]/20'
+          variant === 'series' && 'ring-1 ring-[#047AFF]/20'
         )}
       >
         {/* Series badge */}
         {variant === 'series' && product.seriesName && (
           <div className="absolute top-2 left-2 z-10">
-            <span className="text-[10px] font-medium text-white bg-[#2c4bce] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium text-white bg-[#047AFF] px-2 py-0.5 rounded-full">
               {product.seriesName}
             </span>
           </div>
@@ -295,7 +295,7 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
               'disabled:opacity-50 disabled:cursor-not-allowed',
               'flex items-center justify-center gap-1',
               variant === 'series'
-                ? 'bg-[#2c4bce] text-white hover:bg-[#1a3ab0]'
+                ? 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
                 : 'bg-[#f0c417] text-[#1a1a1a] hover:bg-[#e0b415]'
             )}
           >

@@ -81,7 +81,7 @@ const config: Config = {
           'header-text': '#ffba94',
           'footer-bg': '#390000',
           'footer-text': '#ffba94',
-          'primary': '#2c4bce',
+          'primary': '#047AFF',
           'primary-text': '#ffffff',
           'secondary': '#f0c417',
           'secondary-text': '#1a1a1a',

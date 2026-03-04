@@ -36,6 +36,8 @@ export interface Artist {
   imageUrl?: string
   /** Collection/artist description from Shopify */
   description?: string
+  /** Custom link URL (e.g. external collection page). When set, card links to this URL. */
+  href?: string
 }
 
 export interface ArtistCarouselProps {
@@ -382,24 +384,42 @@ export function ArtistCarousel({
                   </>
                 )
 
-                return showInfoSheet ? (
+                const cardHref = artist.href ?? (showInfoSheet ? undefined : `/shop?collection=${artist.handle}`)
+                const cardClassName = 'group flex-shrink-0 relative w-full'
+                const cardStyle = { width: `${cardWidth}px` }
+
+                if (cardHref) {
+                  return cardHref.startsWith('http') ? (
+                    <a
+                      key={`${artist.handle}-${index}`}
+                      href={cardHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cardClassName}
+                      style={cardStyle}
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <Link
+                      key={`${artist.handle}-${index}`}
+                      href={cardHref}
+                      className={cardClassName}
+                      style={cardStyle}
+                    >
+                      {cardContent}
+                    </Link>
+                  )
+                }
+                return (
                 <div
                   key={`${artist.handle}-${index}`}
                   onMouseEnter={() => setHoveredArtist(artist)}
-                  className="group flex-shrink-0 relative w-full"
-                  style={{ width: `${cardWidth}px` }}
+                  className={cardClassName}
+                  style={cardStyle}
                 >
                   {cardContent}
                 </div>
-                ) : (
-                <Link
-                  key={`${artist.handle}-${index}`}
-                  href={`/shop?collection=${artist.handle}`}
-                  className="group flex-shrink-0 relative"
-                  style={{ width: `${cardWidth}px` }}
-                >
-                  {cardContent}
-                </Link>
               )})}
             </div>
 

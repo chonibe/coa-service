@@ -31,7 +31,7 @@ export default function CareersPage() {
                   href={CAREERS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-14 px-8 text-lg font-semibold bg-[#2c4bce] text-white rounded-[60px] hover:opacity-[0.85] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c4bce] focus-visible:ring-offset-2"
+                  className="inline-flex items-center justify-center h-14 px-8 text-lg font-semibold bg-[#047AFF] text-white rounded-[60px] hover:opacity-[0.85] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2"
                 >
                   View Open Positions
                 </a>
@@ -46,7 +46,7 @@ export default function CareersPage() {
                 </p>
                 <a
                   href="mailto:info@thestreetlamp.com?subject=Careers%20Inquiry"
-                  className="inline-flex items-center justify-center h-11 px-6 text-base font-semibold bg-[#2c4bce] text-white rounded-[60px] hover:opacity-[0.85] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c4bce] focus-visible:ring-offset-2"
+                  className="inline-flex items-center justify-center h-11 px-6 text-base font-semibold bg-[#047AFF] text-white rounded-[60px] hover:opacity-[0.85] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2"
                 >
                   Email us about careers
                 </a>

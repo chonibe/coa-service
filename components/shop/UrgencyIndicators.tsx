@@ -117,7 +117,7 @@ export function ViewersCounter({ productId, className }: ViewersCounterProps) {
       ref={ref}
       className={cn(
         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
-        'bg-[#2c4bce]/10 text-[#2c4bce] text-sm font-medium',
+        'bg-[#047AFF]/10 text-[#047AFF] text-sm font-medium',
         className
       )}
     >

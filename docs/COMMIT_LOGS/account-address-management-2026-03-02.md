@@ -32,5 +32,8 @@ Allow users to add and edit shipping and billing addresses directly in their acc
 
 ## Deployment
 
-1. Run migration: `supabase db push` or apply migration to production Supabase
+1. **Run migration** (choose one):
+   - **Supabase Dashboard** (recommended): Project → SQL Editor → run the SQL from `supabase/migrations/20260302000000_add_collector_default_addresses.sql`
+   - **CLI** (if migration history is in sync): `supabase db push`
+   - **Node script** (from a network that can reach Supabase): `vercel env pull .env.local --environment=production` then `npm run migration:collector-addresses`
 2. Deploy as usual; no env changes required

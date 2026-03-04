@@ -35,7 +35,7 @@ export function ProgressRing({
   progress,
   size = 64,
   strokeWidth = 4,
-  color = '#2c4bce',
+  color = '#047AFF',
   trackColor = '#e5e7eb',
   showLabel = false,
   label,

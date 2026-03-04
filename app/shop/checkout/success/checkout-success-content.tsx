@@ -285,10 +285,10 @@ export function CheckoutSuccessContent() {
 
           {/* Series Progress */}
           {seriesProgress.length > 0 && (
-            <Card variant="default" padding="md" className="mb-6 border-[#2c4bce]/20 bg-gradient-to-r from-indigo-50 to-white">
+            <Card variant="default" padding="md" className="mb-6 border-[#047AFF]/20 bg-gradient-to-r from-indigo-50 to-white">
               <CardContent>
                 <h3 className="font-semibold text-[#1a1a1a] mb-4 flex items-center gap-2">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                   </svg>
@@ -321,7 +321,7 @@ export function CheckoutSuccessContent() {
                             <div className="flex-1 h-2 bg-[#e5e5e5] rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all ${
-                                  isComplete ? 'bg-[#0a8754]' : 'bg-[#2c4bce]'
+                                  isComplete ? 'bg-[#0a8754]' : 'bg-[#047AFF]'
                                 }`}
                                 style={{ width: `${pct}%` }}
                               />
@@ -353,7 +353,7 @@ export function CheckoutSuccessContent() {
 
           {/* Claim CTA for guests / View Collection for authenticated users */}
           {!isAuthenticated && (
-            <Card variant="default" padding="md" className="mb-6 border-[#2c4bce]/20 bg-gradient-to-r from-blue-50 to-white">
+            <Card variant="default" padding="md" className="mb-6 border-[#047AFF]/20 bg-gradient-to-r from-blue-50 to-white">
               <CardContent>
                 <div className="text-center">
                   <h3 className="font-semibold text-lg text-[#1a1a1a] mb-2">
@@ -378,8 +378,8 @@ export function CheckoutSuccessContent() {
             <CardHeader title="What's Next?" />
             <CardContent className="mt-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#2c4bce]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#2c4bce]">1</span>
+                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-[#047AFF]">1</span>
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a]">Order Confirmation</p>
@@ -389,8 +389,8 @@ export function CheckoutSuccessContent() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#2c4bce]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#2c4bce]">2</span>
+                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-[#047AFF]">2</span>
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a]">Production</p>
@@ -400,8 +400,8 @@ export function CheckoutSuccessContent() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#2c4bce]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#2c4bce]">3</span>
+                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-[#047AFF]">3</span>
                 </div>
                 <div>
                   <p className="font-medium text-[#1a1a1a]">Shipping</p>
@@ -438,7 +438,7 @@ export function CheckoutSuccessContent() {
           {/* Support */}
           <p className="text-center text-sm text-[#1a1a1a]/50 mt-8">
             Questions about your order?{' '}
-            <a href="mailto:support@thestreetcollector.com" className="text-[#2c4bce] hover:underline">
+            <a href="mailto:support@thestreetcollector.com" className="text-[#047AFF] hover:underline">
               Contact us
             </a>
           </p>

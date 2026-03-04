@@ -93,7 +93,7 @@
 ### ✅ Phase 9: Styling & Branding
 - [x] **styling-branding**: Apply Street Collector branding
   - Uses Impact theme design tokens
-  - Colors: #2c4bce (blue), #f0c417 (yellow), #390000 (dark)
+  - Colors: #047AFF (blue), #f0c417 (yellow), #390000 (dark)
   - Responsive design with Tailwind CSS
   - GSAP animations for smooth motion
   - Beautiful gradients and shadows

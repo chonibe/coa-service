@@ -43,6 +43,11 @@ interface ExperienceOrderContextValue extends ExperienceOrderState {
   setOrderBarProps: (props: OrderBarContextProps) => void
   /** Ref for OrderBar (e.g. testZeroOrder) – set when OrderBar mounts */
   orderBarRef: React.RefObject<OrderBarRefLike | null>
+  /** Shared promo state for OrderBar and menu PromoCodeModal */
+  promoCode: string
+  promoDiscount: number
+  setPromoCode: (code: string) => void
+  setPromoDiscount: (amount: number) => void
 }
 
 const defaultValue: ExperienceOrderContextValue = {
@@ -57,6 +62,10 @@ const defaultValue: ExperienceOrderContextValue = {
   orderBarProps: null,
   setOrderBarProps: () => {},
   orderBarRef: { current: null } as React.RefObject<OrderBarRefLike | null>,
+  promoCode: '',
+  promoDiscount: 0,
+  setPromoCode: () => {},
+  setPromoDiscount: () => {},
 }
 
 const ExperienceOrderContext = createContext<ExperienceOrderContextValue>(defaultValue)
@@ -64,6 +73,8 @@ const ExperienceOrderContext = createContext<ExperienceOrderContextValue>(defaul
 export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ExperienceOrderState>({ total: 0, itemCount: 0 })
   const [orderBarProps, setOrderBarPropsState] = useState<OrderBarContextProps | null>(null)
+  const [promoCode, setPromoCodeState] = useState('')
+  const [promoDiscount, setPromoDiscountState] = useState(0)
   const orderBarRef = useRef<OrderBarRefLike | null>(null)
 
   const setOrderSummary = useCallback((s: ExperienceOrderState) => {
@@ -77,6 +88,8 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   const setOrderBarProps = useCallback((props: OrderBarContextProps) => {
     setOrderBarPropsState(props)
   }, [])
+  const setPromoCode = useCallback((code: string) => setPromoCodeState(code), [])
+  const setPromoDiscount = useCallback((amount: number) => setPromoDiscountState(amount), [])
 
   const value: ExperienceOrderContextValue = {
     ...state,
@@ -85,6 +98,10 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
     orderBarProps,
     setOrderBarProps,
     orderBarRef,
+    promoCode,
+    promoDiscount,
+    setPromoCode,
+    setPromoDiscount,
   }
 
   return (

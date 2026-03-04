@@ -18,6 +18,8 @@ The Experience page (`/shop/experience`) lets users customize a Street Lamp with
 4. **Virtualized ArtworkStrip** – `@tanstack/react-virtual` renders only visible rows (~10–15 cards instead of 100+).
 5. **Reduced motion** – `whileHover` / `whileTap` removed from ArtworkCard to cut scroll-time JS work.
 6. **Error boundaries** – Configurator and Spline wrapped in `ComponentErrorBoundary` for graceful degradation.
+7. **Carousel image loading** – ArtworkStrip uses `getShopifyImageUrl(url, 500)` to request 500px-wide thumbnails from Shopify CDN, plus `priority` and `loading="eager"` for the first 6 cards to improve above-the-fold load time.
+8. **Detail preload** – When cards enter the virtualized view, Configurator prefetches full product data (`/api/shop/products/[handle]`) into cache so the detail drawer opens instantly when the user taps.
 
 ### Spline Scene Optimization (Optional)
 
@@ -34,7 +36,7 @@ See [Spline optimization docs](https://docs.spline.design/doc/-/doczPMIye7Ko).
 Current config has `images: { unoptimized: true }` in [next.config.js](../../../next.config.js).
 
 - **Re-enable optimization**: Set `unoptimized: false` and add `remotePatterns` for Shopify domains (e.g. `cdn.shopify.com`). Requires compatible image provider support.
-- **Keep unoptimized**: If external CDN constraints apply, keep `unoptimized: true` and consider Shopify URL size parameters (e.g. `_medium`, `_large`) where available to reduce transfer.
+- **Keep unoptimized**: If external CDN constraints apply, keep `unoptimized: true`. ArtworkStrip uses `lib/shopify/image-url.ts` to append `_500x` to Shopify CDN URLs for smaller, faster carousel thumbnails.
 
 ## Checkout & Payment (Stripe)
 
@@ -114,5 +116,5 @@ See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](
 
 ## Version
 
-- Last updated: 2026-03-03
-- Version: 1.5.0
+- Last updated: 2026-03-04
+- Version: 1.6.0

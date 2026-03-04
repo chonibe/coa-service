@@ -101,7 +101,7 @@ export function Spline3DViewer({
             {!isLoaded && !hasError && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#f5f5f5] rounded-[var(--radius)]" style={{ '--radius': `${borderRadius}px` } as React.CSSProperties}>
                 <div className="text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 border-4 border-[#2c4bce]/20 border-t-[#2c4bce] rounded-full animate-spin" />
+                  <div className="w-12 h-12 mx-auto mb-3 border-4 border-[#047AFF]/20 border-t-[#047AFF] rounded-full animate-spin" />
                   <p className="text-sm text-[#1a1a1a]/60">Loading 3D model...</p>
                 </div>
               </div>

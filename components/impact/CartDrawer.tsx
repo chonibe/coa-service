@@ -267,7 +267,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                       value={orderNotes}
                       onChange={(e) => onOrderNotesChange(e.target.value)}
                       placeholder="Special instructions for your order..."
-                      className="w-full px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c4bce] resize-none"
+                      className="w-full px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047AFF] resize-none"
                       rows={3}
                       maxLength={500}
                     />
@@ -289,12 +289,12 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                         value={promoCode}
                         onChange={(e) => onPromoCodeChange(e.target.value.toUpperCase())}
                         placeholder="Enter code"
-                        className="flex-1 px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c4bce] focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047AFF] focus:border-transparent"
                       />
                       <button
                         type="button"
                         onClick={onApplyPromo}
-                        className="px-4 py-2 text-sm font-medium text-[#2c4bce] border border-[#2c4bce]/30 hover:bg-[#2c4bce]/5 rounded-lg transition-colors whitespace-nowrap"
+                        className="px-4 py-2 text-sm font-medium text-[#047AFF] border border-[#047AFF]/30 hover:bg-[#047AFF]/5 rounded-lg transition-colors whitespace-nowrap"
                       >
                         Apply
                       </button>
@@ -333,7 +333,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full text-center text-sm text-[#2c4bce] hover:underline"
+                  className="w-full text-center text-sm text-[#047AFF] hover:underline"
                 >
                   Continue Shopping
                 </button>
@@ -460,7 +460,7 @@ const MiniCart = React.forwardRef<HTMLButtonElement, MiniCartProps>(
         ref={ref}
         type="button"
         onClick={onClick}
-        className="relative p-2 text-[#1a1a1a] hover:text-[#2c4bce] transition-colors"
+        className="relative p-2 text-[#1a1a1a] hover:text-[#047AFF] transition-colors"
         aria-label={`Cart with ${count} items`}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

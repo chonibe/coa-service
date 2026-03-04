@@ -36,7 +36,7 @@ export function ChatIconScrollReveal({ thresholdPx, className }: ChatIconScrollR
         'fixed top-4 right-4 sm:top-5 sm:right-6 z-50',
         'inline-flex items-center justify-center p-2.5 rounded-full',
         'bg-white/95 backdrop-blur-sm border border-[#1a1a1a]/10 shadow-md',
-        'text-[#1a1a1a]/80 hover:text-[#2c4bce] hover:bg-white transition-all duration-300',
+        'text-[#1a1a1a]/80 hover:text-[#047AFF] hover:bg-white transition-all duration-300',
         show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none',
         className
       )}

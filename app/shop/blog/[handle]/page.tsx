@@ -189,7 +189,7 @@ function ArticleContent({
                   <Link
                     key={tag}
                     href={`/shop/blog?tag=${encodeURIComponent(tag)}`}
-                    className="text-xs font-medium text-[#2c4bce] uppercase tracking-wider hover:underline"
+                    className="text-xs font-medium text-[#047AFF] uppercase tracking-wider hover:underline"
                   >
                     {tag}
                   </Link>
@@ -222,11 +222,11 @@ function ArticleContent({
               className="prose prose-lg max-w-none
                 prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
                 prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-                prose-a:text-[#2c4bce] prose-a:no-underline hover:prose-a:underline
+                prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
                 prose-strong:text-[#1a1a1a]
                 prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
                 prose-img:rounded-xl
-                prose-blockquote:border-l-[#2c4bce] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
+                prose-blockquote:border-l-[#047AFF] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
               "
               dangerouslySetInnerHTML={{ __html: contentHtml }}
             />
@@ -278,7 +278,7 @@ function ArticleContent({
                           </div>
                         )}
                       </div>
-                      <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#2c4bce] transition-colors">
+                      <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
                         {article.title}
                       </h3>
                       {article.excerpt && (

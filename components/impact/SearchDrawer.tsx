@@ -223,7 +223,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                   'bg-[#f5f5f5]',
                   'border-0 rounded-[60px]',
                   'placeholder:text-[#1a1a1a]/50',
-                  'focus:outline-none focus:ring-2 focus:ring-[#2c4bce]'
+                  'focus:outline-none focus:ring-2 focus:ring-[#047AFF]'
                 )}
               />
               <svg
@@ -240,7 +240,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
               </svg>
               {loading && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <div className="w-5 h-5 border-2 border-[#2c4bce]/20 border-t-[#2c4bce] rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-[#047AFF]/20 border-t-[#047AFF] rounded-full animate-spin" />
                 </div>
               )}
             </div>

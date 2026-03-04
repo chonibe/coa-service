@@ -9,6 +9,7 @@ import {
 } from '@stripe/react-stripe-js/checkout'
 import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -61,7 +62,7 @@ export interface PaymentStepProps {
 }
 
 /** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
-const appearance = {
+const appearanceLight = {
   theme: 'stripe' as const,
   variables: {
     borderRadius: '4px',
@@ -82,6 +83,37 @@ const appearance = {
     '.Tab--selected': {
       borderColor: '#0070ba',
       boxShadow: '0 0 0 2px #0070ba',
+    },
+  },
+}
+
+/** Dark mode appearance for Stripe card inputs – lighter backgrounds so PayPal/buttons stay visible */
+const appearanceDark = {
+  theme: 'stripe' as const,
+  variables: {
+    borderRadius: '4px',
+    colorPrimary: '#0070ba',
+    colorBackground: '#262626',
+    colorText: '#ffffff',
+    colorTextSecondary: '#a3a3a3',
+    colorDanger: '#f87171',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    spacingUnit: '4px',
+    buttonColorBackground: '#0070ba',
+    accessibleColorOnColorPrimary: '#ffffff',
+  },
+  rules: {
+    '.Tab': {
+      borderRadius: '4px',
+      padding: '14px 16px',
+      backgroundColor: '#2d2d2d',
+    },
+    '.Tab--selected': {
+      borderColor: '#0070ba',
+      boxShadow: '0 0 0 2px #0070ba',
+    },
+    '.Block': {
+      backgroundColor: '#262626',
     },
   },
 }
@@ -169,7 +201,7 @@ function PaymentFormInner({
 
   if (checkoutState.type === 'loading') {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500 dark:text-neutral-400">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading checkout...</span>
       </div>
@@ -179,7 +211,7 @@ function PaymentFormInner({
   if (checkoutState.type === 'error') {
     return (
       <div className="space-y-3 p-2">
-        <p className="text-sm text-red-500">{checkoutState.error?.message ?? 'Checkout failed to load'}</p>
+        <p className="text-sm text-red-500 dark:text-red-400">{checkoutState.error?.message ?? 'Checkout failed to load'}</p>
       </div>
     )
   }
@@ -198,8 +230,8 @@ function PaymentFormInner({
         </div>
         {paymentError && (
           <div className="space-y-2">
-            <p className="text-center text-xs text-red-500">{paymentError}</p>
-            <p className="text-center text-xs text-neutral-500">
+            <p className="text-center text-xs text-red-500 dark:text-red-400">{paymentError}</p>
+            <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
               Try a different payment method or card, then try again.
             </p>
           </div>
@@ -211,11 +243,11 @@ function PaymentFormInner({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Promo code - collapsible */}
-      <div className="border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 dark:border-white/20 rounded-lg overflow-hidden">
         <button
           type="button"
           onClick={() => setPromoOpen(!promoOpen)}
-          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
         >
           <span className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5" />
@@ -230,7 +262,7 @@ function PaymentFormInner({
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               placeholder="Enter code"
-              className="flex-1 h-8 rounded-md border border-neutral-200 px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-500"
             />
             <button
               type="button"
@@ -240,7 +272,7 @@ function PaymentFormInner({
                   setPromoOpen(false)
                 }
               }}
-              className="h-8 px-3 rounded-md bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors"
+              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
             >
               Apply
             </button>
@@ -251,26 +283,26 @@ function PaymentFormInner({
       {/* Order summary */}
       <div className="space-y-1.5 text-sm">
         <div className="flex justify-between">
-          <span className="text-neutral-600">
+          <span className="text-neutral-600 dark:text-neutral-400">
             Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})
           </span>
-          <span className="font-medium text-neutral-950">${subtotal.toFixed(2)}</span>
+          <span className="font-medium text-neutral-950 dark:text-white">${subtotal.toFixed(2)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between">
-            <span className="text-neutral-600">Discount</span>
-            <span className="font-medium text-green-700">-${discount.toFixed(2)}</span>
+            <span className="text-neutral-600 dark:text-neutral-400">Discount</span>
+            <span className="font-medium text-green-700 dark:text-green-400">-${discount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-neutral-600">Shipping</span>
-          <span className="font-medium text-neutral-950">
+          <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
+          <span className="font-medium text-neutral-950 dark:text-white">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
         </div>
-        <div className="flex items-center justify-between pt-1.5 border-t border-neutral-200">
-          <span className="font-semibold text-neutral-950">Total</span>
-          <span className="text-lg font-bold text-neutral-950">
+        <div className="flex items-center justify-between pt-1.5 border-t border-neutral-200 dark:border-white/10">
+          <span className="font-semibold text-neutral-950 dark:text-white">Total</span>
+          <span className="text-lg font-bold text-neutral-950 dark:text-white">
             {renderTotal ? renderTotal(total) : `$${total.toFixed(2)}`}
           </span>
         </div>
@@ -292,9 +324,9 @@ function PaymentFormInner({
       </div>
 
       {paymentError && (
-        <div className="space-y-2 rounded-lg bg-red-50 px-3 py-2">
-          <p className="text-sm text-red-600">{paymentError}</p>
-          <p className="text-xs text-neutral-600">
+        <div className="space-y-2 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2">
+          <p className="text-sm text-red-600 dark:text-red-400">{paymentError}</p>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400">
             Try a different payment method or card, then try again.
           </p>
         </div>
@@ -306,7 +338,7 @@ function PaymentFormInner({
           <button
             type="button"
             onClick={onBack}
-            className="flex-shrink-0 rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
           >
             Back
           </button>
@@ -317,8 +349,8 @@ function PaymentFormInner({
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
             loading
-              ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-              : 'bg-neutral-950 text-white hover:bg-neutral-800'
+              ? 'cursor-not-allowed bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+              : 'bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200'
           )}
         >
           {loading ? (
@@ -336,6 +368,7 @@ function PaymentFormInner({
 }
 
 export function PaymentStep(props: PaymentStepProps) {
+  const { theme } = useExperienceTheme()
   const { preloadedClientSecret, ...restProps } = props
   const [clientSecret, setClientSecret] = React.useState<string | null>(
     () => preloadedClientSecret ?? null
@@ -426,6 +459,8 @@ export function PaymentStep(props: PaymentStepProps) {
       </div>
     )
   }
+
+  const appearance = theme === 'dark' ? appearanceDark : appearanceLight
 
   return (
     <CheckoutProvider

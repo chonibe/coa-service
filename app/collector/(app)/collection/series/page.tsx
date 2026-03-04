@@ -112,7 +112,7 @@ export default function CollectorSeriesPage() {
                       progress={progress}
                       size={56}
                       strokeWidth={3}
-                      color={series.completed ? '#00a341' : '#2c4bce'}
+                      color={series.completed ? '#00a341' : '#047AFF'}
                     >
                       {series.thumbnailUrl ? (
                         <img

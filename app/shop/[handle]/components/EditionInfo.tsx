@@ -74,7 +74,7 @@ export function EditionInfo({
                 'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
                 isVeryScarce && 'bg-gradient-to-r from-[#f83a3a] to-[#ff6b6b]',
                 isLowStock && !isVeryScarce && 'bg-gradient-to-r from-[#f0c417] to-[#ffdd57]',
-                !isLowStock && 'bg-gradient-to-r from-[#2c4bce] to-[#4a6cf7]'
+                !isLowStock && 'bg-gradient-to-r from-[#047AFF] to-[#4a6cf7]'
               )}
               style={{ width: `${100 - percentageRemaining}%` }}
             />

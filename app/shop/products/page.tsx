@@ -220,7 +220,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <Container maxWidth="default">
             <Link
               href="/shop/products"
-              className="inline-flex items-center gap-1 py-2 text-sm text-[#2c4bce] hover:underline"
+              className="inline-flex items-center gap-1 py-2 text-sm text-[#047AFF] hover:underline"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -251,7 +251,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] tracking-[-0.01em]">
                 Browse by Series
               </h3>
-              <Link href="/shop/series" className="text-sm font-medium text-[#2c4bce] hover:underline">
+              <Link href="/shop/series" className="text-sm font-medium text-[#047AFF] hover:underline">
                 View all series
               </Link>
             </div>
@@ -263,7 +263,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   className="flex-shrink-0 group"
                 >
                   <div className="w-28 sm:w-36">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-[#1a1a1a]/5 group-hover:ring-[#2c4bce]/30 transition-all">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-[#1a1a1a]/5 group-hover:ring-[#047AFF]/30 transition-all">
                       {series.thumbnail_url ? (
                         <img
                           src={series.thumbnail_url}

@@ -37,22 +37,22 @@ export function ArtworkInfo({ product, lampSide1, lampSide2, onViewDetail }: Art
         )}
       >
         <div className="flex-1 space-y-0.5 min-w-0">
-          <h2 className="text-lg font-semibold text-neutral-900 tracking-tight leading-tight truncate">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-white tracking-tight leading-tight truncate">
             {product.title}
           </h2>
           {artist && (
-            <p className="text-sm text-neutral-500">by {artist}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">by {artist}</p>
           )}
           <div className="flex items-center gap-2 pt-0.5">
-            <span className="text-base font-medium text-neutral-900">{price}</span>
+            <span className="text-base font-medium text-neutral-900 dark:text-white">{price}</span>
             {isSoldOut && (
-              <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded-full">
                 Sold Out
               </span>
             )}
           </div>
           {(lampSide1 || lampSide2) && (
-            <p className="text-xs text-neutral-500 mt-1.5">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
               On lamp:{' '}
               {lampSide1 && <>Side A • {lampSide1.title}</>}
               {lampSide1 && lampSide2 && lampSide2.id !== lampSide1.id && ', '}
@@ -63,7 +63,7 @@ export function ArtworkInfo({ product, lampSide1, lampSide2, onViewDetail }: Art
           )}
         </div>
         {onViewDetail && (
-          <ChevronRight className="w-5 h-5 text-neutral-300 group-hover:text-neutral-500 transition-colors mt-1 flex-shrink-0" />
+          <ChevronRight className="w-5 h-5 text-neutral-300 dark:text-neutral-500 group-hover:text-neutral-500 dark:group-hover:text-neutral-300 transition-colors mt-1 flex-shrink-0" />
         )}
       </motion.div>
     </AnimatePresence>

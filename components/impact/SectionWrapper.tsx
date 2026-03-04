@@ -44,7 +44,7 @@ const sectionVariants = cva(
         muted: 'bg-[#f5f5f5]',
         dark: 'bg-[#1a1a1a] text-white',
         header: 'bg-[#390000] text-[#ffba94]',
-        primary: 'bg-[#2c4bce] text-white',
+        primary: 'bg-[#047AFF] text-white',
         secondary: 'bg-[#f0c417] text-[#1a1a1a]',
         transparent: 'bg-transparent',
         gradient: 'bg-gradient-to-b from-white to-[#f5f5f5]',

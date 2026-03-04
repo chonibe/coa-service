@@ -290,7 +290,7 @@ function ArtistCard({ artist, cardWidth, index }: ArtistCardProps) {
 
       {/* Artist Info */}
       <div className="text-left">
-        <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-1 group-hover:text-[#2c4bce] transition-colors">
+        <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-1 group-hover:text-[#047AFF] transition-colors">
           {artist.name}
         </h3>
         {artist.location && (

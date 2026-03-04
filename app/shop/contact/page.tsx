@@ -30,7 +30,7 @@ export default function ContactPage() {
                 <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Email</h2>
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
-                  className="text-[#2c4bce] hover:underline font-medium"
+                  className="text-[#047AFF] hover:underline font-medium"
                 >
                   {CONTACT_EMAIL}
                 </a>

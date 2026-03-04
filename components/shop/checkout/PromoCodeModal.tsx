@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
 import { Button, Input } from '@/components/ui'
 
 export interface PromoCodeModalProps {
@@ -19,11 +20,14 @@ export interface PromoCodeModalProps {
 }
 
 /** Static list of available promo codes for display (Stripe validates at checkout) */
-const AVAILABLE_PROMOS: { code: string; description: string }[] = [
-  { code: 'WELCOME', description: '25% off orders above $449' },
+const AVAILABLE_PROMOS: { code: string; description: string; isDefault?: boolean }[] = [
+  { code: 'WELCOME', description: '25% off orders above $449', isDefault: true },
   { code: 'WELCOME10', description: '10% off your first order' },
   { code: 'FREESHIP', description: 'Free shipping on orders over $50' },
 ]
+
+const ACCENT = 'text-rose-500'
+const ACCENT_BG = 'bg-rose-500'
 
 export function PromoCodeModal({
   open,
@@ -35,13 +39,16 @@ export function PromoCodeModal({
   volumeDiscountLabel,
   volumeDiscountDescription,
 }: PromoCodeModalProps) {
+  const { theme } = useExperienceTheme()
   const [inputValue, setInputValue] = React.useState('')
   const [error, setError] = React.useState<string | null>(null)
+  const [addCodeExpanded, setAddCodeExpanded] = React.useState(false)
 
   React.useEffect(() => {
     if (open) {
       setInputValue('')
       setError(null)
+      setAddCodeExpanded(false)
     }
   }, [open])
 
@@ -54,126 +61,153 @@ export function PromoCodeModal({
     setError(null)
     onApply(code)
     setInputValue('')
+    setAddCodeExpanded(false)
   }
 
   const handleApplyFromList = (code: string) => {
-    setInputValue(code)
-    onApply(code)
+    if (appliedCode === code) {
+      onRemove()
+    } else {
+      onApply(code)
+    }
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col bg-white',
-            'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
+            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
+            theme === 'dark' ? 'bg-neutral-950' : 'bg-white',
+            'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-5">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
-              aria-label="Close"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <Dialog.Title className="text-lg font-semibold text-neutral-950">Promo Codes</Dialog.Title>
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              data-testid="promo-code-done-button"
-              className="text-sm font-medium text-pink-600 hover:text-pink-700"
-            >
-              Done
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {volumeDiscountLabel && (
-              <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <p className="text-sm font-medium text-neutral-900">{volumeDiscountLabel}</p>
-                {volumeDiscountDescription && (
-                  <p className="text-xs text-neutral-600 mt-0.5">{volumeDiscountDescription}</p>
-                )}
-              </div>
-            )}
-
-            {appliedCode && (
-              <div className="mb-4 flex items-center justify-between rounded-lg bg-green-50 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-green-800">{appliedCode} applied</p>
-                  {appliedDiscount > 0 && (
-                    <p className="text-xs text-green-700">-${appliedDiscount.toFixed(2)}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={onRemove}
-                  className="text-sm font-medium text-green-700 underline hover:text-green-900"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {AVAILABLE_PROMOS.map((p) => (
-                <button
-                  key={p.code}
-                  type="button"
-                  onClick={() => handleApplyFromList(p.code)}
-                  data-testid={p.code}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
-                    appliedCode === p.code
-                      ? 'border-pink-300 bg-pink-50'
-                      : 'border-neutral-200 hover:bg-neutral-50'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={cn(
-                        'h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center',
-                        appliedCode === p.code ? 'border-pink-500 bg-pink-500' : 'border-neutral-300'
-                      )}
-                    >
-                      {appliedCode === p.code && (
-                        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </span>
-                    <div>
-                      <p className="font-medium text-neutral-950">{p.code} {appliedCode === p.code && '(applied)'}</p>
-                      <p className="text-xs text-neutral-600">{p.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+          {/* Wrapper for dark mode - portaled content needs explicit theme */}
+          <div className={cn('flex flex-col h-full', theme === 'dark' && 'dark')}>
+            {/* Header: X | Promo Codes | Done (pink accent) */}
+            <div className={cn('flex shrink-0 items-center justify-between border-b px-4 py-5', theme === 'dark' ? 'border-white/10' : 'border-neutral-100')}>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <Dialog.Title className="text-lg font-semibold text-neutral-950 dark:text-white">Promo Codes</Dialog.Title>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                data-testid="promo-code-done-button"
+                className={cn('text-sm font-medium', ACCENT, 'hover:opacity-90')}
+              >
+                Done
+              </button>
             </div>
 
-            <div className="mt-4" data-testid="add-promo-code">
-              <label htmlFor="promo-input" className="mb-2 block text-sm font-medium text-neutral-700">
-                Add Promo Code or Gift Card
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  id="promo-input"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Enter code"
-                  className="flex-1"
-                />
-                <Button onClick={handleApply}>Apply</Button>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {/* Volume Discount (non-interactive) */}
+              {volumeDiscountLabel && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{volumeDiscountLabel}</p>
+                  {volumeDiscountDescription && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">{volumeDiscountDescription}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Selectable promo cards - white cards with pink checkmark */}
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                {appliedCode && !AVAILABLE_PROMOS.some((p) => p.code === appliedCode) && (
+                  <button
+                    type="button"
+                    onClick={onRemove}
+                    data-testid="applied-custom-code"
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
+                      'bg-white dark:bg-neutral-900 border-rose-400/50 dark:border-rose-500/50 shadow-sm'
+                    )}
+                  >
+                    <span className={cn('h-5 w-5 shrink-0 rounded-full flex items-center justify-center', ACCENT_BG, 'text-white')}>
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-neutral-950 dark:text-white">{appliedCode} (applied)</p>
+                      {appliedDiscount > 0 && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">-${appliedDiscount.toFixed(2)}</p>
+                      )}
+                    </div>
+                  </button>
+                )}
+                {AVAILABLE_PROMOS.map((p) => {
+                  const isSelected = appliedCode === p.code
+                  return (
+                    <button
+                      key={p.code}
+                      type="button"
+                      onClick={() => handleApplyFromList(p.code)}
+                      data-testid={p.code}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
+                        'bg-white dark:bg-neutral-900',
+                        isSelected
+                          ? 'border-rose-400/50 dark:border-rose-500/50 shadow-sm'
+                          : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'h-5 w-5 shrink-0 rounded-full flex items-center justify-center',
+                          isSelected ? `${ACCENT_BG} text-white` : 'border-2 border-neutral-300 dark:border-neutral-600'
+                        )}
+                      >
+                        {isSelected && (
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-neutral-950 dark:text-white">
+                          {p.code}{p.isDefault ? ' (default)' : ''}
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{p.description}</p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
-              {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+
+              {/* Add Promo Code or Gift Card - collapsible link */}
+              <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-white/10" data-testid="add-promo-code">
+                <button
+                  type="button"
+                  onClick={() => setAddCodeExpanded(!addCodeExpanded)}
+                  className="text-sm font-medium text-neutral-900 dark:text-white underline underline-offset-2 hover:opacity-80"
+                >
+                  Add Promo Code or Gift Card
+                </button>
+                {addCodeExpanded && (
+                  <div className="mt-3 flex gap-2">
+                    <Input
+                      id="promo-input"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      placeholder="Enter code"
+                      className="flex-1 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
+                    />
+                    <Button onClick={handleApply}>Apply</Button>
+                  </div>
+                )}
+                {error && <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{error}</p>}
+              </div>
             </div>
           </div>
         </Dialog.Content>

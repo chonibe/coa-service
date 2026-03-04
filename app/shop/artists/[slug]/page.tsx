@@ -206,7 +206,7 @@ export default function ArtistPage() {
                   </span>
                   
                   {artist.series.length > 0 && (
-                    <span className="px-4 py-2 bg-[#2c4bce]/10 rounded-full text-sm font-semibold text-[#2c4bce]">
+                    <span className="px-4 py-2 bg-[#047AFF]/10 rounded-full text-sm font-semibold text-[#047AFF]">
                       {artist.series.length} {artist.series.length === 1 ? 'Series' : 'Series'}
                     </span>
                   )}
@@ -239,7 +239,7 @@ export default function ArtistPage() {
                       href={artist.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#1a1a1a]/15 text-sm font-medium text-[#1a1a1a]/70 hover:border-[#2c4bce] hover:text-[#2c4bce] transition-all"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#1a1a1a]/15 text-sm font-medium text-[#1a1a1a]/70 hover:border-[#047AFF] hover:text-[#047AFF] transition-all"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10" />
@@ -287,7 +287,7 @@ export default function ArtistPage() {
                   <Link
                     key={series.id}
                     href={`/shop/series/${series.id}`}
-                    className="group relative overflow-hidden bg-gradient-to-br from-[#f5f5f5] to-[#fafafa] border border-[#1a1a1a]/10 rounded-[16px] p-5 hover:border-[#2c4bce]/30 hover:shadow-md transition-all duration-300"
+                    className="group relative overflow-hidden bg-gradient-to-br from-[#f5f5f5] to-[#fafafa] border border-[#1a1a1a]/10 rounded-[16px] p-5 hover:border-[#047AFF]/30 hover:shadow-md transition-all duration-300"
                   >
                     <div className="flex items-start gap-4">
                       {/* Series Thumbnail */}
@@ -300,8 +300,8 @@ export default function ArtistPage() {
                           />
                         </div>
                       ) : (
-                        <div className="flex-shrink-0 w-16 h-16 rounded-[12px] bg-[#2c4bce]/10 flex items-center justify-center">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2">
+                        <div className="flex-shrink-0 w-16 h-16 rounded-[12px] bg-[#047AFF]/10 flex items-center justify-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                           </svg>
@@ -309,10 +309,10 @@ export default function ArtistPage() {
                       )}
 
                       <div className="flex-1 min-w-0">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#2c4bce]/10 rounded-full mb-2">
-                          <span className="text-xs font-medium text-[#2c4bce]">Series</span>
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#047AFF]/10 rounded-full mb-2">
+                          <span className="text-xs font-medium text-[#047AFF]">Series</span>
                         </div>
-                        <h3 className="font-heading text-base font-semibold text-[#1a1a1a] group-hover:text-[#2c4bce] transition-colors truncate">
+                        <h3 className="font-heading text-base font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors truncate">
                           {series.name}
                         </h3>
                         {series.description && (
@@ -320,7 +320,7 @@ export default function ArtistPage() {
                             {series.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-1.5 mt-2 text-sm font-medium text-[#2c4bce] group-hover:gap-2 transition-all">
+                        <div className="flex items-center gap-1.5 mt-2 text-sm font-medium text-[#047AFF] group-hover:gap-2 transition-all">
                           <span>Browse Series</span>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-hover:translate-x-1">
                             <path d="M5 12h14M12 5l7 7-7 7" />

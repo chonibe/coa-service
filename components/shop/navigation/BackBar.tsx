@@ -60,7 +60,7 @@ export function BackBar({
             }
           }}
           aria-label="Back"
-          className="absolute left-4 sm:left-6 inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#2c4bce] transition-transform hover:scale-110 cursor-pointer"
+          className="absolute left-4 sm:left-6 inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#047AFF] transition-transform hover:scale-110 cursor-pointer"
         >
           <ArrowLeft size={24} className="shrink-0" />
         </button>
@@ -89,7 +89,7 @@ export function BackBar({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-xs text-[#1a1a1a]/60 hover:text-[#2c4bce] transition-colors"
+                  className="text-xs text-[#1a1a1a]/60 hover:text-[#047AFF] transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -101,7 +101,7 @@ export function BackBar({
               type="button"
               onClick={openTawkChat}
               aria-label="Open chat"
-              className="inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#2c4bce] transition-colors hover:scale-110 cursor-pointer"
+              className="inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#047AFF] transition-colors hover:scale-110 cursor-pointer"
             >
               <MessageCircle size={22} className="shrink-0" aria-hidden />
             </button>

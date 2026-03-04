@@ -502,7 +502,7 @@ const AnnouncementBar = React.forwardRef<HTMLDivElement, AnnouncementBarProps>(
       <div
         ref={ref}
         className={cn(
-          'bg-[#2c4bce] text-white py-2 px-4',
+          'bg-[#047AFF] text-white py-2 px-4',
           'text-center text-sm',
           className
         )}

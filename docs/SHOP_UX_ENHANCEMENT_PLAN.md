@@ -291,11 +291,11 @@ components/
    {editionAvailability && (
      <div className="space-y-2">
        <p className="text-sm font-medium">
-         Next available: <span className="text-[#2c4bce]">#{editionAvailability.nextAvailable}</span> of {editionAvailability.total}
+         Next available: <span className="text-[#047AFF]">#{editionAvailability.nextAvailable}</span> of {editionAvailability.total}
        </p>
        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
          <div 
-           className="h-full bg-[#2c4bce] transition-all"
+           className="h-full bg-[#047AFF] transition-all"
            style={{ width: `${(editionAvailability.sold / editionAvailability.total) * 100}%` }}
          />
        </div>

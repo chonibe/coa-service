@@ -73,7 +73,7 @@ const cardVariants = cva(
         featured: [
           'rounded-[24px]',
           'shadow-impact-block',
-          'border-2 border-[#2c4bce]',
+          'border-2 border-[#047AFF]',
         ].join(' '),
       },
       padding: {

@@ -71,6 +71,15 @@ The `ChinaDivisionClient` class handles all interactions with the ChinaDivision 
    - Authentication: None required (public access)
    - Tracks access count and last accessed time
 
+#### Shop Account (My Account) Integration
+
+The **Shop Account Orders API** (`GET /api/shop/account/orders`) enriches order data with warehouse status when available:
+
+- Queries `warehouse_orders` by customer email to match orders
+- Uses warehouse `track_status` and `status` for more granular display (e.g. "Out for Delivery", "In Transit")
+- Falls back to warehouse `tracking_number` and `last_mile_tracking` when Shopify fulfillments don't have tracking yet
+- See: `app/api/shop/account/orders/route.ts`
+
 #### Customer Endpoints
 
 1. **GET `/api/customer/warehouse-orders`**

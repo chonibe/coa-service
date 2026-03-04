@@ -184,7 +184,7 @@ function ArticleCard({
             {article.tags.slice(0, 2).map(tag => (
               <span 
                 key={tag}
-                className="text-xs font-medium text-[#2c4bce] uppercase tracking-wider"
+                className="text-xs font-medium text-[#047AFF] uppercase tracking-wider"
               >
                 {tag}
               </span>
@@ -193,7 +193,7 @@ function ArticleCard({
         )}
         
         {/* Title */}
-        <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] group-hover:text-[#2c4bce] transition-colors">
+        <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
           {article.title}
         </h2>
         

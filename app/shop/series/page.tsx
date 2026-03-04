@@ -95,8 +95,8 @@ export default function SeriesListingPage() {
         <Container maxWidth="default">
           {seriesList.length === 0 ? (
             <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2c4bce]/10 rounded-full mb-6">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2c4bce" strokeWidth="2">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#047AFF]/10 rounded-full mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
@@ -138,7 +138,7 @@ function SeriesCard({ series }: { series: SeriesItem }) {
   return (
     <Link
       href={`/shop/series/${series.id}`}
-      className="group block overflow-hidden bg-white border border-[#1a1a1a]/10 rounded-[24px] hover:border-[#2c4bce]/30 hover:shadow-lg transition-all duration-300"
+      className="group block overflow-hidden bg-white border border-[#1a1a1a]/10 rounded-[24px] hover:border-[#047AFF]/30 hover:shadow-lg transition-all duration-300"
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f5f5]">
@@ -193,7 +193,7 @@ function SeriesCard({ series }: { series: SeriesItem }) {
           </span>
         </div>
 
-        <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] mb-2 group-hover:text-[#2c4bce] transition-colors">
+        <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] mb-2 group-hover:text-[#047AFF] transition-colors">
           {series.name}
         </h3>
 
@@ -218,7 +218,7 @@ function SeriesCard({ series }: { series: SeriesItem }) {
         )}
 
         {/* CTA */}
-        <div className="flex items-center gap-1.5 text-sm font-medium text-[#2c4bce] group-hover:gap-2.5 transition-all">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-[#047AFF] group-hover:gap-2.5 transition-all">
           <span>
             {hasProgress ? 'Continue Collecting' : 'Explore Series'}
           </span>

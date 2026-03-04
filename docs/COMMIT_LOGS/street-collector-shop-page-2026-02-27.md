@@ -32,7 +32,7 @@ Added a Street Collector–inspired shop landing page as the default `/shop` rou
 - `StreetCollectorProductCarousel` is a client component (cart add requires client context)
 - Collection fallbacks: season-2 → 2025-edition; season-1 → homepage bestSellers handle
 - Quick Add uses `CartContext.addItem()`; cart drawer opens on add
-- Background `#f5f5f5`, primary CTA `#2c4bce`
+- Background `#f5f5f5`, primary CTA `#047AFF`
 
 ## References
 

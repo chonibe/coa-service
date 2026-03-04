@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Sheet, Modal, Button, Input } from '@/components/ui'
+import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
 const DESKTOP_BREAKPOINT = 768
@@ -41,6 +42,7 @@ function isEmailRateLimitError(message: string): boolean {
 type Step = 'email' | 'code'
 
 export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT }: AuthSlideupMenuProps) {
+  const { theme } = useExperienceTheme()
   const router = useRouter()
   const supabase = createClient()
   const [step, setStep] = useState<Step>('email')
@@ -186,20 +188,20 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
     <div className="flex flex-col">
         {step === 'email' ? (
           <>
-            <h2 className="text-xl font-semibold text-neutral-900 mb-1">Login or Sign Up</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-1">Login or Sign Up</h2>
             <form onSubmit={handleEmailContinue} className="mt-4 space-y-4">
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 border-neutral-300"
+                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
                 autoComplete="email"
                 disabled={isLoading}
               />
               <Button
                 type="submit"
-                className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white font-semibold"
+                className="w-full h-12 bg-[#047AFF] hover:bg-[#0366d6] text-white font-semibold"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -211,22 +213,22 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
             </form>
 
             {error && (
-              <p className="text-sm text-red-600 mt-2" role="alert">
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2" role="alert">
                 {error}
               </p>
             )}
 
             <div className="relative flex items-center my-6">
-              <div className="flex-1 border-t border-neutral-200" />
-              <span className="px-3 text-sm text-neutral-500">or</span>
-              <div className="flex-1 border-t border-neutral-200" />
+              <div className="flex-1 border-t border-neutral-200 dark:border-white/10" />
+              <span className="px-3 text-sm text-neutral-500 dark:text-neutral-400">or</span>
+              <div className="flex-1 border-t border-neutral-200 dark:border-white/10" />
             </div>
 
             <div className="space-y-3">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 border-neutral-300 bg-white hover:bg-neutral-50 font-medium"
+                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
                 onClick={() => handleOAuth('google')}
               >
                 <GoogleIcon className="h-5 w-5 mr-3" />
@@ -235,7 +237,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 border-neutral-300 bg-white hover:bg-neutral-50 font-medium"
+                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
                 onClick={() => handleOAuth('facebook')}
               >
                 <FacebookIcon className="h-5 w-5 mr-3" />
@@ -243,11 +245,11 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               </Button>
             </div>
 
-            <p className="text-xs text-neutral-500 mt-6 text-center">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-6 text-center">
               By signing up you agree to our{' '}
-              <a href="/terms" className="underline hover:text-neutral-700">Terms of Use</a>
+              <a href="/terms" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">Terms of Use</a>
               {' '}and{' '}
-              <a href="/privacy" className="underline hover:text-neutral-700">Privacy Policy</a>.
+              <a href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">Privacy Policy</a>.
             </p>
           </>
         ) : (
@@ -255,15 +257,15 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4 -ml-1"
+              className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-4 -ml-1"
               aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-semibold text-neutral-900 mb-1">Code Sent to Email</h2>
-            <p className="text-sm text-neutral-600 mb-4">
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-1">Code Sent to Email</h2>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
               An email with the code has been sent to{' '}
-              <span className="font-medium text-neutral-900">{email}</span>
+              <span className="font-medium text-neutral-900 dark:text-white">{email}</span>
             </p>
 
             <form onSubmit={handleVerifyCode} className="space-y-4">
@@ -273,14 +275,14 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter Code"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 border-neutral-300 text-center text-lg tracking-widest"
+                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white text-center text-lg tracking-widest"
                 maxLength={6}
                 disabled={isLoading}
                 autoFocus
               />
               <Button
                 type="submit"
-                className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white font-semibold"
+                className="w-full h-12 bg-[#047AFF] hover:bg-[#0366d6] text-white font-semibold"
                 disabled={isLoading || code.length < 6}
               >
                 {isLoading ? (
@@ -298,15 +300,15 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               className={cn(
                 'text-sm underline mt-4',
                 resendCooldown > 0 || isLoading
-                  ? 'text-neutral-400 cursor-not-allowed'
-                  : 'text-neutral-600 hover:text-neutral-900'
+                  ? 'text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               )}
             >
               {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
             </button>
 
             {error && (
-              <p className="text-sm text-red-600 mt-2" role="alert">
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2" role="alert">
                 {error}
               </p>
             )}
@@ -322,7 +324,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         onClose={handleClose}
         size="medium"
         overlayClassName="z-[80]"
-        className="max-w-md border-neutral-200 bg-white shadow-xl"
+        className={cn('max-w-md border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl', theme === 'dark' && 'dark')}
       >
         {content}
       </Modal>
@@ -335,7 +337,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
       onClose={handleClose}
       side="bottom"
       overlayClassName="z-[80]"
-      className="max-h-[90vh] rounded-t-2xl border-t border-neutral-200 bg-white"
+      className={cn('max-h-[90vh] rounded-t-2xl border-t border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950', theme === 'dark' && 'dark')}
     >
       {content}
     </Sheet>
