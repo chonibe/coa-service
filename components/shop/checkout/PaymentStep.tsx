@@ -53,14 +53,16 @@ export interface PaymentStepProps {
   onSuccess: (redirectUrl: string) => void
   onError: (message: string) => void
   renderTotal?: (value: number) => React.ReactNode
-  /** Called when the selected payment method changes (e.g. "google_pay", "paypal", "card") */
-  onPaymentMethodChange?: (type: string) => void
+  /** Called when the selected payment method changes (e.g. "google_pay", "paypal", "card"). For card, optional cardInfo (brand, last4) when available. */
+  onPaymentMethodChange?: (type: string, cardInfo?: { brand: string; last4: string }) => void
   /** Called when the checkout session has expired; parent can reset to fetch a new session */
   onSessionExpired?: () => void
   /** Preloaded clientSecret from parent (e.g. from cart drawer preload) – skips fetch when valid */
   preloadedClientSecret?: string | null
   /** Client secret for success redirect (passed from parent) */
   clientSecret?: string | null
+  /** Ref for the form – parent can call requestSubmit() */
+  formRef?: React.RefObject<HTMLFormElement | null>
 }
 
 /** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
@@ -152,14 +154,23 @@ function PaymentFormInner({
   renderTotal,
   compact,
   formId,
+  formRef,
   onPaymentMethodChange,
   onSessionExpired,
   clientSecret,
 }: Omit<PaymentStepProps, 'customerEmail'>) {
   const handlePaymentChange = React.useCallback(
-    (event: { value?: { type?: string } }) => {
+    (event: { value?: { type?: string; paymentMethod?: { card?: { brand?: string; last4?: string } }; card?: { brand?: string; last4?: string } } }) => {
       const type = event?.value?.type
-      if (type && onPaymentMethodChange) onPaymentMethodChange(type)
+      if (!type || !onPaymentMethodChange) return
+      let cardInfo: { brand: string; last4: string } | undefined
+      if (type === 'card') {
+        const card = event.value?.paymentMethod?.card ?? event.value?.card
+        const brand = typeof card?.brand === 'string' ? card.brand : undefined
+        const last4 = typeof card?.last4 === 'string' ? card.last4 : undefined
+        if (brand && last4) cardInfo = { brand, last4 }
+      }
+      onPaymentMethodChange(type, cardInfo)
     },
     [onPaymentMethodChange]
   )
@@ -293,7 +304,12 @@ function PaymentFormInner({
 
   if (compact) {
     return (
-      <form id={formId} onSubmit={handleSubmit} className="space-y-4 stripe-payment-element">
+      <form
+        ref={formRef}
+        id={formId}
+        onSubmit={handleSubmit}
+        className="space-y-4 stripe-payment-element"
+      >
         <div className="min-h-[180px] w-full" role="region" aria-label="Payment details">
           <PaymentElement
             options={{

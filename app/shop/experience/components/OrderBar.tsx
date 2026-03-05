@@ -3,18 +3,18 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HomeIcon, CreditCardIcon, XMarkIcon, TagIcon, TicketIcon } from '@heroicons/react/24/solid'
+import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
 import { Package } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
-import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
+import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuizPrefill'
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
-import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
-import { PaymentMethodsModal } from '@/components/shop/checkout/PaymentMethodsModal'
+import { PaymentStep } from '@/components/shop/checkout/PaymentStep'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
+import { Checkbox, Label } from '@/components/ui'
 
 interface OrderBarProps {
   lamp: ShopifyProduct
@@ -90,10 +90,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [addressModalOpen, setAddressModalOpen] = useState(false)
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [paymentSectionExpanded, setPaymentSectionExpanded] = useState(false)
+  const [billingModalOpen, setBillingModalOpen] = useState(false)
   const [preloadedClientSecret, setPreloadedClientSecret] = useState<string | null>(null)
-  const [promoModalOpen, setPromoModalOpen] = useState(false)
-  const { promoCode: promoApplied, setPromoCode: setPromoApplied, promoDiscount, setPromoDiscount } = useExperienceOrder()
+  const [enteredCardInfo, setEnteredCardInfo] = useState<{ brand: string; last4: string } | null>(null)
+  const { promoDiscount } = useExperienceOrder()
   const checkout = useCheckout()
 
   useExperienceOpenOrder(() => {
@@ -217,7 +218,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         items,
         customerEmail: checkout.address?.email,
         shippingAddress,
-        ...(promoApplied?.trim() && { promoCode: promoApplied.trim().toUpperCase() }),
       }),
     })
       .then(async (r) => {
@@ -231,7 +231,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     return () => {
       cancelled = true
     }
-  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address, promoApplied])
+  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address])
 
   const handleTestZeroOrder = useCallback(async () => {
     setError(null)
@@ -298,34 +298,22 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   }
 
   const hasAddress = checkout.isAddressComplete()
-  const [paymentModalHasBeenOpened, setPaymentModalHasBeenOpened] = useState(false)
 
-  /* Auto-apply WELCOME10 for first-time users */
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return
-    const key = 'sc_welcome10_applied'
-    if (!localStorage.getItem(key) && drawerOpen && !promoApplied) {
-      setPromoApplied('WELCOME10')
-      localStorage.setItem(key, '1')
-    }
-  }, [drawerOpen, promoApplied])
-
-  const handlePaymentModalOpenChange = (open: boolean) => {
-    if (open) setPaymentModalHasBeenOpened(true)
-    setPaymentModalOpen(open)
-  }
-
+  const paymentFormRef = React.useRef<HTMLFormElement | null>(null)
   const handlePlaceOrderClick = () => {
     if (!hasAddress) {
       setAddressModalOpen(true)
       return
     }
-    if (!paymentModalHasBeenOpened) {
-      setPaymentModalHasBeenOpened(true)
-      setPaymentModalOpen(true)
+    if (!paymentSectionExpanded) {
+      setPaymentSectionExpanded(true)
       return
     }
-    ;(document.getElementById('checkout-payment-form') as HTMLFormElement | null)?.requestSubmit()
+    if (paymentFormRef.current) {
+      paymentFormRef.current.requestSubmit()
+    } else {
+      setPaymentSectionExpanded(true)
+    }
   }
 
   /* ─── Summary rows (Address, Payment, Promo) ─── */
@@ -354,6 +342,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       return `${brand} ending in ${checkout.savedCard.last4}`
     }
     const displayType = checkout.paymentMethodDisplayType ?? 'google_pay'
+    if ((displayType === 'card' || displayType === 'link') && enteredCardInfo) {
+      const brand = enteredCardInfo.brand.charAt(0).toUpperCase() + enteredCardInfo.brand.slice(1)
+      return `${brand} ending in ${enteredCardInfo.last4}`
+    }
     switch (displayType) {
       case 'google_pay':
         return 'Google Pay'
@@ -366,13 +358,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       default:
         return 'Payment'
     }
-  }, [checkout.savedCard, checkout.paymentMethod, checkout.paymentMethodDisplayType])
+  }, [checkout.savedCard, checkout.paymentMethod, checkout.paymentMethodDisplayType, enteredCardInfo])
 
-  const hasPaymentSelection = paymentModalHasBeenOpened || !!checkout.paymentMethodDisplayType
+  const hasPaymentSelection = paymentSectionExpanded || !!checkout.paymentMethodDisplayType
   const paymentRow = (
     <button
       type="button"
-      onClick={() => setPaymentModalOpen(true)}
+      onClick={() => setPaymentSectionExpanded((p) => !p)}
       data-testid="add-payment-method-button"
       className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
     >
@@ -388,23 +380,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           {hasPaymentSelection ? paymentMethodLabel : 'Add payment method'}
         </span>
       </span>
-      {hasPaymentSelection && (
-        <span className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">Change</span>
+      {(paymentSectionExpanded || hasPaymentSelection) && (
+        <span className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+          {paymentSectionExpanded ? 'Done' : 'Change'}
+        </span>
       )}
-    </button>
-  )
-
-  const promoRow = (
-    <button
-      type="button"
-      onClick={() => setPromoModalOpen(true)}
-      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
-    >
-      <span className="flex items-center gap-2 text-neutral-900 dark:text-white">
-        <TicketIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400 shrink-0" />
-        Promo: {promoApplied || 'WELCOME10'}
-      </span>
-      <span className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">Change</span>
     </button>
   )
 
@@ -507,12 +487,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
       </div>
       <div className="space-y-2 text-sm pt-3">
-        {promoDiscount > 0 && promoApplied && (
-          <div className="flex justify-between text-sm text-green-600 dark:text-green-500">
-            <span>Promo ({promoApplied})</span>
-            <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
-          </div>
-        )}
         <div data-testid="delivery-summary-item" className="flex justify-between text-sm">
           <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
           <span className="font-medium text-neutral-950 dark:text-white">Free</span>
@@ -547,7 +521,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   )
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[90]" aria-hidden={!drawerOpen}>
+    <div className={cn('fixed inset-0 z-[90]', drawerOpen ? 'pointer-events-auto' : 'pointer-events-none')} aria-hidden={!drawerOpen}>
       <AnimatePresence>
         {drawerOpen && (
           <motion.div
@@ -561,7 +535,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
       </AnimatePresence>
       <motion.div
-        data-wizard-order-bar
         initial={false}
         animate={{ x: drawerOpen ? 0 : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
@@ -580,20 +553,125 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           </button>
         </div>
 
-        {/* Single checkout screen - Top (compressed), divider, Items section */}
-        <div className="checkout-content right-drawer flex-1 overflow-y-auto overflow-x-hidden text-sm font-normal">
+        {/* Single checkout screen - Top (compressed), divider, Items section — min-h-0 enables scroll */}
+        <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal">
           <div className="px-6 pb-6">
             {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
               <h3 className="text-lg font-semibold text-neutral-950 dark:text-white mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
+              {/* Inline expandable payment section – stays mounted when collapsed so Place Order works */}
+              {itemCount > 0 && allAvailable && (
+                <div
+                  className={cn(
+                    'overflow-hidden transition-[max-height] duration-200 ease-out flex flex-col',
+                    paymentSectionExpanded ? 'max-h-[70vh]' : 'max-h-0'
+                  )}
+                  aria-hidden={!paymentSectionExpanded}
+                >
+                  <div className="pt-3 space-y-4 border-t border-neutral-200 dark:border-white/10 mt-2 overflow-y-auto min-h-0 max-h-[70vh]">
+                    <PaymentStep
+                      compact
+                      formId="checkout-payment-form"
+                      formRef={paymentFormRef}
+                      items={buildLineItems()}
+                      subtotal={lampTotal + artworksTotal}
+                      discount={lampSavings}
+                      shipping={0}
+                      total={total}
+                      itemCount={itemCount}
+                      customerEmail={checkout.address?.email}
+                      shippingAddress={
+                        checkout.address
+                          ? {
+                              email: checkout.address.email,
+                              fullName: checkout.address.fullName,
+                              country: checkout.address.country,
+                              addressLine1: checkout.address.addressLine1,
+                              addressLine2: checkout.address.addressLine2,
+                              city: checkout.address.city,
+                              state: checkout.address.state,
+                              postalCode: checkout.address.postalCode,
+                              phoneNumber: checkout.address.phoneNumber,
+                            }
+                          : {
+                              email: '',
+                              fullName: '',
+                              country: '',
+                              addressLine1: '',
+                              addressLine2: '',
+                              city: '',
+                              state: '',
+                              postalCode: '',
+                              phoneNumber: '',
+                            }
+                      }
+                      onSuccess={handlePaymentSuccess}
+                      onError={(msg) => setError(msg)}
+                      onPaymentMethodChange={(type, cardInfo) => {
+                        const displayType = type === 'google_pay' ? 'google_pay' : type === 'paypal' || type === 'external_paypal' ? 'paypal' : type === 'link' ? 'link' : 'card'
+                        if (type === 'google_pay' && checkout.paymentMethodDisplayType && checkout.paymentMethodDisplayType !== 'google_pay') return
+                        const method: 'link' | 'paypal' | 'card' = displayType === 'google_pay' || displayType === 'link' ? 'link' : displayType === 'paypal' ? 'paypal' : 'card'
+                        checkout.setPaymentMethod(method)
+                        checkout.setPaymentMethodDisplayType(displayType)
+                        if (displayType !== 'card' && displayType !== 'link') {
+                          checkout.setSavedCard(null)
+                          setEnteredCardInfo(null)
+                        } else if (cardInfo) {
+                          setEnteredCardInfo(cardInfo)
+                        } else {
+                          setEnteredCardInfo(null)
+                        }
+                      }}
+                      preloadedClientSecret={preloadedClientSecret}
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1" aria-hidden />
+                      <button
+                        type="button"
+                        onClick={() => setPaymentSectionExpanded(false)}
+                        data-testid="payment-done-button"
+                        className="text-sm font-medium text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD]"
+                      >
+                        Done
+                      </button>
+                    </div>
+                    <div className="border-t border-neutral-200 dark:border-white/10 pt-4 mt-2">
+                      <h3 className="text-sm font-medium text-neutral-950 dark:text-white mb-3">Billing address</h3>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="same-as-address-exp"
+                          checked={checkout.sameAsShipping}
+                          onCheckedChange={(c) => {
+                            checkout.setSameAsShipping(!!c)
+                            if (c) checkout.setBillingAddress(null)
+                          }}
+                        />
+                        <Label htmlFor="same-as-address-exp" className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                          Same as Address
+                        </Label>
+                      </div>
+                      {!checkout.sameAsShipping && (
+                        <div className="mt-3">
+                          <button
+                            type="button"
+                            onClick={() => setBillingModalOpen(true)}
+                            className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                          >
+                            {checkout.billingAddress
+                              ? `${checkout.billingAddress.addressLine1}, ${checkout.billingAddress.city}`
+                              : 'Add billing address'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            {/* Divider + Items section: Promo, order summary */}
+            {/* Divider + Items section: order summary */}
             <div className="border-t border-neutral-200 dark:border-white/10 pt-5">
-              <div className="border-b border-neutral-200 dark:border-white/10 pb-5 mb-4">
-                {promoRow}
-              </div>
               {orderSummary}
             </div>
             {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
@@ -610,77 +688,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         billingAddress={!checkout.sameAsShipping ? checkout.billingAddress : null}
       />
 
-      <PromoCodeModal
-        open={promoModalOpen}
-        onOpenChange={setPromoModalOpen}
-        appliedCode={promoApplied}
-        appliedDiscount={promoDiscount}
-        onApply={async (code) => {
-          setPromoApplied(code)
-          const { valid, discountCents } = await validatePromo(code, Math.round(total * 100))
-          setPromoDiscount(valid ? discountCents / 100 : 0)
+      <AddressModal
+        open={billingModalOpen}
+        onOpenChange={setBillingModalOpen}
+        initialAddress={checkout.sameAsShipping ? undefined : (checkout.billingAddress ?? undefined)}
+        onSave={(addr) => {
+          checkout.setBillingAddress(addr)
+          setBillingModalOpen(false)
         }}
-        onRemove={() => { setPromoApplied(''); setPromoDiscount(0) }}
-        volumeDiscountLabel={lampSavings > 0 ? 'Volume Discount Applied' : undefined}
-        volumeDiscountDescription={lampSavings > 0 ? 'Volume discount : you\'re saving' : undefined}
+        addressType="billing"
       />
-
-      {itemCount > 0 && allAvailable && (
-        <PaymentMethodsModal
-          open={paymentModalOpen}
-          onOpenChange={handlePaymentModalOpenChange}
-          items={buildLineItems()}
-          subtotal={lampTotal + artworksTotal}
-          discount={lampSavings}
-          shipping={0}
-          total={total}
-          itemCount={itemCount}
-          customerEmail={checkout.address?.email}
-          shippingAddress={
-            checkout.address
-              ? {
-                  email: checkout.address.email,
-                  fullName: checkout.address.fullName,
-                  country: checkout.address.country,
-                  addressLine1: checkout.address.addressLine1,
-                  addressLine2: checkout.address.addressLine2,
-                  city: checkout.address.city,
-                  state: checkout.address.state,
-                  postalCode: checkout.address.postalCode,
-                  phoneNumber: checkout.address.phoneNumber,
-                }
-              : {
-                  email: '',
-                  fullName: '',
-                  country: '',
-                  addressLine1: '',
-                  addressLine2: '',
-                  city: '',
-                  state: '',
-                  postalCode: '',
-                  phoneNumber: '',
-                }
-          }
-          onSuccess={handlePaymentSuccess}
-          onError={(msg) => setError(msg)}
-          onPaymentMethodChange={(type) => {
-            const displayType = type === 'google_pay' ? 'google_pay' : type === 'paypal' || type === 'external_paypal' ? 'paypal' : type === 'link' ? 'link' : 'card'
-            if (type === 'google_pay' && checkout.paymentMethodDisplayType && checkout.paymentMethodDisplayType !== 'google_pay') return
-            const method: 'link' | 'paypal' | 'card' = displayType === 'google_pay' || displayType === 'link' ? 'link' : displayType === 'paypal' ? 'paypal' : 'card'
-            checkout.setPaymentMethod(method)
-            checkout.setPaymentMethodDisplayType(displayType)
-            if (displayType !== 'card' && displayType !== 'link') checkout.setSavedCard(null)
-          }}
-          billingAddress={checkout.sameAsShipping ? null : checkout.billingAddress}
-          sameAsShipping={checkout.sameAsShipping}
-          onSameAsShippingChange={(v) => {
-            checkout.setSameAsShipping(v)
-            if (v) checkout.setBillingAddress(null)
-          }}
-          onBillingAddressSave={(addr) => checkout.setBillingAddress(addr)}
-          preloadedClientSecret={preloadedClientSecret}
-        />
-      )}
     </div>
   )
 })
@@ -689,6 +706,7 @@ export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar
   return (
     <CheckoutProvider storageKey="sc-experience-checkout">
       <CheckoutPiiPrefill />
+      <ExperienceQuizPrefill />
       <OrderBarInner {...props} ref={ref} />
     </CheckoutProvider>
   )
