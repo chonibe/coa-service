@@ -273,6 +273,23 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   }
 
   const handlePaymentSuccess = (redirectUrl: string) => {
+    if (!redirectUrl || typeof redirectUrl !== 'string') {
+      setError('Redirect URL was not received. Please try again.')
+      return
+    }
+    try {
+      fetch('/api/debug/checkout-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stage: 'redirect',
+          hasRedirectUrl: true,
+          message: 'navigating to PayPal',
+        }),
+      }).catch(() => {})
+    } catch {
+      /* ignore */
+    }
     window.location.href = redirectUrl
   }
 

@@ -1,17 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback, useLayoutEffect } from 'react'
+import { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronLeft, Lamp, ImageIcon, Info, ShoppingBag, CreditCard } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Lamp, ImageIcon, CreditCard, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const WIZARD_STORAGE_KEY = 'sc-experience-wizard-complete'
 
 export type WizardStepId =
   | 'spline-preview'
-  | 'artwork-tap'
-  | 'artwork-info'
-  | 'artwork-add'
+  | 'selector-add-eye'
+  | 'lamp-controls'
   | 'order-bar'
 
 interface WizardStep {
@@ -22,34 +21,39 @@ interface WizardStep {
   icon: React.ReactNode
 }
 
-const WIZARD_STEPS: WizardStep[] = [
+/** Steps shown when user is AT paywall (lamp not yet added) */
+const WIZARD_STEPS_AT_PAYWALL: WizardStep[] = [
   {
     id: 'spline-preview',
     target: 'data-wizard-spline',
-    title: '3D lamp preview',
-    description: 'Your lamp preview lives here. Tap any artwork to see it on the lamp in real time.',
-    icon: <Lamp className="w-5 h-5" />,
+    title: 'Drag and rotate',
+    description: 'Drag the model to spin it 360° and explore your lamp from every angle.',
+    icon: <RotateCw className="w-5 h-5" />,
+  },
+]
+
+/** Steps shown when user has PASSED paywall (lamp added or skipped) */
+const WIZARD_STEPS_PAST_PAYWALL: WizardStep[] = [
+  {
+    id: 'spline-preview',
+    target: 'data-wizard-spline',
+    title: 'Drag and rotate',
+    description: 'Drag the model to spin it 360° and explore your lamp from every angle.',
+    icon: <RotateCw className="w-5 h-5" />,
   },
   {
-    id: 'artwork-tap',
-    target: 'data-wizard-artwork-strip',
-    title: 'Preview on lamp',
-    description: 'Tap an artwork image to preview it on the 3D lamp. You can pick up to 2 artworks for each side.',
+    id: 'selector-add-eye',
+    target: 'data-wizard-first-card',
+    title: 'Add, Preview & Info',
+    description: 'Tap Add to add to order, Eye to preview on the lamp, and Info for full artwork details.',
     icon: <ImageIcon className="w-5 h-5" />,
   },
   {
-    id: 'artwork-info',
-    target: 'data-wizard-info-btn',
-    title: 'View artwork details',
-    description: 'Tap the info icon to see full details, artist bio, and description for any artwork.',
-    icon: <Info className="w-5 h-5" />,
-  },
-  {
-    id: 'artwork-add',
-    target: 'data-wizard-add-btn',
-    title: 'Add to your order',
-    description: 'Tap the + button to add artworks to your order. Add as many as you like!',
-    icon: <ShoppingBag className="w-5 h-5" />,
+    id: 'lamp-controls',
+    target: 'data-wizard-lamp-controls',
+    title: 'Street Lamp',
+    description: 'Add or remove lamps from your order using the + and − buttons here.',
+    icon: <Lamp className="w-5 h-5" />,
   },
   {
     id: 'order-bar',
@@ -105,12 +109,19 @@ function useElementRect(selector: string, active: boolean) {
 
 interface ExperienceWizardProps {
   onComplete?: () => void
+  /** When true, user has added lamp or skipped paywall — show full steps including selector and lamp controls */
+  pastLampPaywall?: boolean
 }
 
-export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
+export function ExperienceWizard({ onComplete, pastLampPaywall = false }: ExperienceWizardProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [isActive, setIsActive] = useState(false)
   const [mounted, setMounted] = useState(false)
+
+  const wizardSteps = useMemo(
+    () => (pastLampPaywall ? WIZARD_STEPS_PAST_PAYWALL : WIZARD_STEPS_AT_PAYWALL),
+    [pastLampPaywall]
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -122,19 +133,26 @@ export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
     }
   }, [])
 
-  const step = WIZARD_STEPS[stepIndex]
+  // Reset step index when switching from at-paywall to past-paywall (e.g. user adds lamp)
+  useEffect(() => {
+    if (pastLampPaywall && stepIndex >= wizardSteps.length) {
+      setStepIndex(Math.min(stepIndex, wizardSteps.length - 1))
+    }
+  }, [pastLampPaywall, wizardSteps.length, stepIndex])
+
+  const step = wizardSteps[stepIndex]
   const selector = step ? `[${step.target}]` : ''
   const rect = useElementRect(selector, isActive && !!step)
 
   const handleNext = useCallback(() => {
-    if (stepIndex >= WIZARD_STEPS.length - 1) {
+    if (stepIndex >= wizardSteps.length - 1) {
       localStorage.setItem(WIZARD_STORAGE_KEY, 'true')
       setIsActive(false)
       onComplete?.()
     } else {
       setStepIndex((i) => i + 1)
     }
-  }, [stepIndex, onComplete])
+  }, [stepIndex, onComplete, wizardSteps.length])
 
   const handleBack = useCallback(() => {
     if (stepIndex > 0) setStepIndex((i) => i - 1)
@@ -225,7 +243,16 @@ export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
           >
             <div className="p-4 flex items-start gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-600">
-                {step.icon}
+                {step.id === 'spline-preview' ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Lamp className="w-5 h-5" />
+                  </motion.div>
+                ) : (
+                  step.icon
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-neutral-900">{step.title}</p>
@@ -241,7 +268,7 @@ export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
             </div>
             <div className="flex items-center justify-between px-4 pb-4">
               <div className="flex items-center gap-2">
-                {WIZARD_STEPS.map((_, i) => (
+                {wizardSteps.map((_, i) => (
                   <div
                     key={i}
                     className={cn(
@@ -270,13 +297,13 @@ export function ExperienceWizard({ onComplete }: ExperienceWizardProps) {
                   onClick={handleNext}
                   className="px-4 py-1.5 text-sm font-semibold rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-1"
                 >
-                  {stepIndex >= WIZARD_STEPS.length - 1 ? 'Done' : 'Next'}
+                  {stepIndex >= wizardSteps.length - 1 ? 'Done' : 'Next'}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </motion.div>
-          <p className="text-center text-xs text-neutral-500 mt-2">Step {stepIndex + 1} of {WIZARD_STEPS.length}</p>
+          <p className="text-center text-xs text-neutral-500 mt-2">Step {stepIndex + 1} of {wizardSteps.length}</p>
         </div>
       </div>
     </AnimatePresence>

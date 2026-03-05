@@ -55,7 +55,7 @@ export function ExperienceSlideoutMenu() {
           <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
               {pastLampPaywall && (
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5" data-wizard-lamp-controls>
                   <button type="button" onClick={() => handleLampQuantityChange(Math.max(0, lampQuantity - 1))} className="w-5 h-5 flex items-center justify-center rounded text-[12px] font-medium bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 hover:border-neutral-300 dark:bg-white/10 dark:border-0 dark:hover:bg-white/20 dark:text-white transition-colors" aria-label="Decrease quantity">−</button>
                   <button type="button" onClick={() => handleLampQuantityChange(lampQuantity + 1)} className="w-5 h-5 flex items-center justify-center rounded text-[12px] font-medium bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 hover:border-neutral-300 dark:bg-white/10 dark:border-0 dark:hover:bg-white/20 dark:text-white transition-colors" aria-label="Increase quantity">+</button>
                   <button

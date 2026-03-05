@@ -1543,8 +1543,8 @@ export function Configurator({
         cartOrder={cartOrder}
       />
 
-      {/* First-session contextual wizard */}
-      <ExperienceWizard />
+      {/* First-session contextual wizard — paywall-aware steps */}
+      <ExperienceWizard pastLampPaywall={!showLampPaywall} />
 
       {/* Artwork / lamp detail drawer */}
       {detailProduct && (

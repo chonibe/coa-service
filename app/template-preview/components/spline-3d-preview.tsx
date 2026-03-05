@@ -4,12 +4,36 @@ import { useEffect, useRef, useState, useCallback } from "react"
 
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Application } from "@splinetool/runtime"
-import * as THREE from "three"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 
 const __SPLINE_DEV__ = process.env.NODE_ENV === "development"
 const splineLog = (...args: unknown[]) => __SPLINE_DEV__ && console.log('[Spline]', ...args)
+
+/** Get THREE.Color constructor from Spline scene to avoid bundling a second Three.js instance. */
+function getColorConstructor(scene: any, app?: any): new (hex: string) => { setHex?: (h: number) => void } | null {
+  // Try app.THREE first (some runtimes expose it)
+  const fromApp = (app as any)?.THREE?.Color ?? (app as any)?.constructor?.THREE?.Color
+  if (fromApp && typeof fromApp === 'function') return fromApp
+  if (!scene) return null
+  let ColorCtor: new (hex: string) => any = null
+  scene.traverse?.((obj: any) => {
+    if (ColorCtor) return
+    const c = obj?.material?.color ?? obj?.mesh?.material?.color
+    if (c && typeof c.constructor === 'function' && c.constructor.name === 'Color') {
+      ColorCtor = c.constructor
+    }
+  })
+  return ColorCtor
+}
+
+function setSceneBackground(scene: any, hex: string, app?: any): void {
+  if (!scene) return
+  const ColorCtor = getColorConstructor(scene, app)
+  if (ColorCtor) {
+    scene.background = new ColorCtor(hex)
+  }
+}
 const splineWarn = (...args: unknown[]) => __SPLINE_DEV__ && console.warn('[Spline]', ...args)
 const splineError = (...args: unknown[]) => __SPLINE_DEV__ && console.error('[Spline]', ...args)
 import { cn } from "@/lib/utils"
@@ -415,7 +439,7 @@ export function Spline3DPreview({
       return
     }
 
-    splineLog("[Spline3D] ✓ Using imported THREE.js")
+    splineLog("[Spline3D] ✓ Using scene from Spline runtime")
 
     // Scene uses "PC trans A" (child, has material) under "Panel Side A" (parent, no material).
     const hasMaterial = (obj: any) => {
@@ -1045,9 +1069,7 @@ export function Spline3DPreview({
             ;(app as any).setBackgroundColor(hex)
           } else {
             const scene = (app as any).scene || (app as any)._scene
-            if (scene) {
-              scene.background = new THREE.Color(hex)
-            }
+            setSceneBackground(scene, hex, app)
           }
           // Enable slight zoom on preview: find orbit controls and constrain zoom range
           try {
@@ -1975,9 +1997,7 @@ export function Spline3DPreview({
       ;(app as any).setBackgroundColor(hex)
     } else {
       const scene = (app as any).scene || (app as any)._scene
-      if (scene) {
-        scene.background = new THREE.Color(hex)
-      }
+      setSceneBackground(scene, hex, app)
     }
   }, [sceneBgTheme, isLoading])
 
@@ -2095,7 +2115,7 @@ export function Spline3DPreview({
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (
-      <div ref={containerRef} className={cn(className, "relative w-full h-full")}>
+      <div ref={containerRef} className={cn(className, "relative w-full h-full cursor-grab active:cursor-grabbing")}>
         {/* Background layer - ensures toggle changes color even if WebGL overrides */}
         <div
           className="absolute inset-0 -z-10"
@@ -2143,7 +2163,7 @@ export function Spline3DPreview({
         )}
         <canvas
           ref={canvasRef}
-          className="w-full h-full"
+          className="w-full h-full cursor-grab active:cursor-grabbing"
           style={{
             display: "block",
             width: "100%",

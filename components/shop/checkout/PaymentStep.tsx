@@ -59,6 +59,8 @@ export interface PaymentStepProps {
   onSessionExpired?: () => void
   /** Preloaded clientSecret from parent (e.g. from cart drawer preload) – skips fetch when valid */
   preloadedClientSecret?: string | null
+  /** Client secret for success redirect (passed from parent) */
+  clientSecret?: string | null
 }
 
 /** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
@@ -118,6 +120,24 @@ const appearanceDark = {
   },
 }
 
+async function logCheckoutError(payload: {
+  stage: string
+  resultType?: string
+  error?: string
+  message?: string
+  hasRedirectUrl?: boolean
+}) {
+  try {
+    await fetch('/api/debug/checkout-error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    /* ignore */
+  }
+}
+
 function PaymentFormInner({
   items,
   subtotal,
@@ -134,6 +154,7 @@ function PaymentFormInner({
   formId,
   onPaymentMethodChange,
   onSessionExpired,
+  clientSecret,
 }: Omit<PaymentStepProps, 'customerEmail'>) {
   const handlePaymentChange = React.useCallback(
     (event: { value?: { type?: string } }) => {
@@ -166,10 +187,18 @@ function PaymentFormInner({
     setPaymentError(null)
 
     try {
-      const result = await checkout.confirm()
+      // redirect: 'if_required' ensures we get redirectUrl for PayPal instead of Stripe
+      // auto-redirecting (which can fail inside modals). For card we get 'success'.
+      const result = await checkout.confirm({ redirect: 'if_required' })
 
       if (result.type === 'error') {
         const errMsg = result.error?.message ?? 'Payment failed'
+        console.error('[PayPal] confirm error:', errMsg, result)
+        logCheckoutError({
+          stage: 'confirm',
+          resultType: 'error',
+          error: errMsg,
+        })
         setPaymentError(errMsg)
         onError(errMsg)
         setLoading(false)
@@ -179,17 +208,63 @@ function PaymentFormInner({
       }
 
       if (result.type === 'redirect') {
+        const redirectUrl = result.redirectUrl
+        if (!redirectUrl || typeof redirectUrl !== 'string') {
+          const errMsg = 'PayPal redirect URL was not received. Please try again.'
+          console.error('[PayPal] redirect missing redirectUrl:', result)
+          logCheckoutError({
+            stage: 'confirm',
+            resultType: 'redirect',
+            hasRedirectUrl: false,
+            message: 'redirectUrl missing',
+          })
+          setPaymentError(errMsg)
+          onError(errMsg)
+          setLoading(false)
+          return
+        }
+        console.info('[PayPal] redirecting to:', redirectUrl.slice(0, 80) + '...')
         try {
           sessionStorage.setItem('sc_checkout_items', JSON.stringify(items))
           sessionStorage.setItem('sc_checkout_address', JSON.stringify(shippingAddress))
         } catch {
           /* ignore */
         }
-        onSuccess(result.redirectUrl)
+        onSuccess(redirectUrl)
         return
       }
+
+      if (result.type === 'success') {
+        const sessionId =
+          clientSecret && typeof clientSecret === 'string'
+            ? clientSecret.split('_secret_')[0] || null
+            : null
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+        const successUrl = sessionId
+          ? `${baseUrl}/shop/checkout/success?session_id=${sessionId}`
+          : `${baseUrl}/shop/checkout/success`
+        onSuccess(successUrl)
+        return
+      }
+
+      // Unexpected result type
+      console.error('[PayPal] unexpected result:', result)
+      logCheckoutError({
+        stage: 'confirm',
+        resultType: (result as { type?: string }).type ?? 'unknown',
+        message: 'unexpected result type',
+      })
+      setPaymentError('Unexpected response. Please try again.')
+      onError('Unexpected response. Please try again.')
+      setLoading(false)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
+      console.error('[PayPal] confirm throw:', err)
+      logCheckoutError({
+        stage: 'confirm',
+        error: msg,
+        message: err instanceof Error ? err.stack : String(err),
+      })
       setPaymentError(msg)
       onError(msg)
       const isExpired = /expired|session/i.test(msg)
@@ -471,7 +546,8 @@ export function PaymentStep(props: PaymentStepProps) {
       }}
     >
       <PaymentFormInner
-        {...props}
+        {...restProps}
+        clientSecret={clientSecret}
         onSessionExpired={props.onSessionExpired ?? resetAndRetry}
       />
     </CheckoutProvider>

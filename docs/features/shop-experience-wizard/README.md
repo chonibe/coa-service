@@ -2,13 +2,13 @@
 
 ## Overview
 
-A first-session contextual wizard that guides new users through the lamp customization experience. Highlights key UI elements and explains how to preview artworks on the 3D lamp, view artwork details, add items to the cart, and checkout.
+A first-session contextual wizard that guides new users through the lamp customization experience. Paywall-aware: at the lamp paywall, shows the 3D rotate step; after adding a lamp (or skipping), shows Add/Eye/Info, Street Lamp controls, and checkout.
 
 ## Purpose
 
 - **Reduce friction** for first-time visitors to `/shop/experience`
-- **Explain interaction model**: tap to preview on lamp vs. add to order
-- **Highlight** Spline 3D preview, artwork strip, info button, add-to-cart button, and order bar
+- **Explain interaction model**: drag/rotate 3D model, tap Add/Eye/Info on artworks, manage lamp quantity, checkout
+- **Paywall-aware**: Step 1 (3D rotate) shows at paywall with 360° spin animation; remaining steps show only after passing the paywall
 
 ## Technical Implementation
 
@@ -16,6 +16,7 @@ A first-session contextual wizard that guides new users through the lamp customi
 
 - **Component**: [`app/shop/experience/components/ExperienceWizard.tsx`](../../../app/shop/experience/components/ExperienceWizard.tsx)
 - **Integration**: Mounted in [`Configurator.tsx`](../../../app/shop/experience/components/Configurator.tsx) after quiz completion
+- **Props**: `pastLampPaywall` – when true, shows full steps (selector, lamp controls, order bar)
 
 ### Storage
 
@@ -23,24 +24,30 @@ A first-session contextual wizard that guides new users through the lamp customi
 - **When set**: On "Done" or "Skip tour"
 - **Behavior**: Wizard never shows again after completion
 
-### Wizard Steps
+### Wizard Steps (Paywall-Aware)
+
+**At paywall** (lamp not yet added):
 
 | Step | Target | Description |
 |------|--------|-------------|
-| 1 | 3D lamp preview | Explains that artworks appear on the lamp in real time |
-| 2 | Artwork strip | Tap an artwork to preview it on the lamp (up to 2 per side) |
-| 3 | Info button | Tap (i) for full details, artist bio, and description |
-| 4 | Add to cart | Tap + to add artworks to the order |
-| 5 | Order bar | Review order and checkout |
+| 1 | 3D lamp preview | Drag and rotate the model 360° — animated lamp icon in tooltip |
+
+**Past paywall** (lamp added or skipped):
+
+| Step | Target | Description |
+|------|--------|-------------|
+| 1 | 3D lamp preview | Drag and rotate the model 360° |
+| 2 | First artwork card | Add to order, Eye to preview on lamp, Info for details |
+| 3 | Lamp controls | Street Lamp +/− in header (ExperienceSlideoutMenu) |
+| 4 | Order bar | Review order and checkout |
 
 ### Data Attributes (Targets)
 
-Elements must include these attributes for the wizard to highlight them:
-
 - `data-wizard-spline` – 3D viewer container (Configurator)
-- `data-wizard-artwork-strip` – Artwork grid (ArtworkStrip)
+- `data-wizard-first-card` – First artwork card (ArtworkStrip) — highlights Add, Eye, Info
 - `data-wizard-info-btn` – Info button on first artwork card
 - `data-wizard-add-btn` – Add-to-cart button on first artwork card
+- `data-wizard-lamp-controls` – Lamp +/− controls in header (ExperienceSlideoutMenu)
 - `data-wizard-order-bar` – Desktop and mobile order bar (OrderBar)
 
 ### Responsive Behavior
@@ -75,5 +82,5 @@ Visitors arriving from artist Instagram pages can use pre-filtered links:
 
 ## Version
 
-- Last updated: 2026-02-24
-- Version: 1.1.0
+- Last updated: 2026-03-05
+- Version: 1.2.0

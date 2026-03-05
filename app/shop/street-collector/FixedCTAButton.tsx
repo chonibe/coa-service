@@ -56,7 +56,8 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
       >
         <Link
           href={href}
-          className="w-full flex items-center justify-center text-sm font-semibold rounded-lg px-5 py-2.5 text-white bg-[#047AFF] hover:bg-[#0366d6] shadow-lg transition-colors"
+          className="w-full flex items-center justify-center text-sm font-semibold rounded-lg px-5 py-2.5 shadow-lg transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#390000', color: '#FFBA94' }}
         >
           {text}
         </Link>
@@ -95,7 +96,8 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
         </div>
         <Link
           href={href}
-          className="inline-flex items-center justify-center text-sm sm:text-base font-semibold rounded-lg px-5 sm:px-6 py-2.5 sm:py-3 text-white bg-[#047AFF] hover:bg-[#0366d6] shadow-lg transition-colors shrink-0"
+          className="inline-flex items-center justify-center text-sm sm:text-base font-semibold rounded-lg px-5 sm:px-6 py-2.5 sm:py-3 shadow-lg transition-colors shrink-0 hover:opacity-90"
+          style={{ backgroundColor: '#390000', color: '#FFBA94' }}
         >
           {text}
         </Link>

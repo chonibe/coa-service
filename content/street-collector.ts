@@ -11,8 +11,8 @@ export const EXPERIENCE_URL = '/shop/experience'
 export const streetCollectorContent = {
   experienceUrl: EXPERIENCE_URL,
   hero: {
-    headline: 'Not Just a Lamp',
-    subheadline: 'A living Art Collection.',
+    headline: 'A living art collection.',
+    subheadline: 'Not just a lamp.',
     microCue: "Discover this month's drop.",
     cta: {
       text: 'Start your collection',

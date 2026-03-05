@@ -231,6 +231,7 @@ function ArtworkCard({
   return (
     <motion.div
       data-product-id={product.id}
+      data-wizard-first-card={isFirstCard ? '' : undefined}
       className={cn(
         'relative overflow-hidden transition-all duration-200 origin-center',
         roundLeft && roundRight && 'rounded-xl',
@@ -312,6 +313,7 @@ function ArtworkCard({
           </div>
         )}
         <button
+          data-wizard-info-btn={isFirstCard ? '' : undefined}
           type="button"
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); onViewDetail(product) }}
           className="absolute top-0.5 right-0.5 z-10 w-5 h-5 flex items-center justify-center text-white/80 hover:text-white transition-colors"

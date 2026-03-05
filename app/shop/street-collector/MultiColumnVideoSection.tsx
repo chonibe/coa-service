@@ -76,7 +76,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/shop/ex
                 >
                   <source
                     src={`/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
-                    type="video/mp4"
+                    type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
                   />
                   <img
                     src={prop.poster}
@@ -87,10 +87,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/shop/ex
               </div>
               {/* Card body */}
               <div className="flex flex-col gap-3 sm:gap-4 text-center w-full p-5 sm:p-6">
-                <h3 className={cn(
-                  'font-serif text-xl sm:text-2xl md:text-2xl lg:text-3xl font-normal tracking-tight',
-                  i === 0 ? 'text-sky-300' : i === 1 ? 'text-red-400' : 'text-orange-400'
-                )}>
+                <h3 className="font-serif text-xl sm:text-2xl md:text-2xl lg:text-3xl font-normal tracking-tight text-white">
                   {prop.title}
                 </h3>
                 <p className="text-base sm:text-lg leading-relaxed text-neutral-300 max-w-none">
