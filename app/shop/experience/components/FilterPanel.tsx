@@ -135,23 +135,23 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-neutral-950 shadow-xl flex flex-col"
+            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-[#150000] shadow-xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-white/10 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Filters</h3>
+                <SlidersHorizontal className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8]">Filters</h3>
               </div>
               <div className="flex items-center gap-3">
                 {hasActiveFilters(filters) && (
-                  <button onClick={clearAll} className="text-xs text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors">
+                  <button onClick={clearAll} className="text-xs text-neutral-500 hover:text-neutral-700 dark:text-[#c4a0a0] dark:hover:text-[#e8d4d4] transition-colors">
                     Clear all
                   </button>
                 )}
                 <button
                   onClick={onClose}
-                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-300 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-[#2a0000] text-neutral-400 dark:text-[#d4b8b8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -162,7 +162,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
               {/* Sort */}
               <section>
-                <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Sort by</h4>
+                <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Sort by</h4>
                 <div className="flex flex-wrap gap-2">
                   {SORT_OPTIONS.map((opt) => (
                     <button
@@ -172,7 +172,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                         'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
                           ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                          : 'bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                          : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
                       )}
                     >
                       {opt.label}
@@ -184,7 +184,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
               {/* Artists */}
               {allArtists.length > 1 && (
                 <section>
-                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Artist</h4>
+                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Artist</h4>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {allArtists.map(([artist, count]) => (
                       <label key={artist} className="flex items-center gap-2.5 cursor-pointer group">
@@ -192,10 +192,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                           type="checkbox"
                           checked={filters.artists.includes(artist)}
                           onChange={() => toggleArtist(artist)}
-                          className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-white focus:ring-neutral-500 dark:focus:ring-neutral-400"
+                          className="w-4 h-4 rounded border-neutral-300 dark:border-[#5c1515] text-neutral-900 dark:text-[#f0e8e8] focus:ring-neutral-500 dark:focus:ring-neutral-400"
                         />
-                        <span className="text-sm text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors flex-1">{artist}</span>
-                        <span className="text-xs text-neutral-400 dark:text-neutral-500">{count}</span>
+                        <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors flex-1">{artist}</span>
+                        <span className="text-xs text-neutral-400 dark:text-[#b89090]">{count}</span>
                       </label>
                     ))}
                   </div>
@@ -205,7 +205,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
               {/* Tags — hidden for now */}
               {false && allTags.length > 0 && (
                 <section>
-                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Tags</h4>
+                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Tags</h4>
                   <div className="flex flex-wrap gap-2">
                     {allTags.map(([tag, count]) => (
                       <button
@@ -215,7 +215,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                           'h-5 px-2 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           filters.tags.includes(tag)
                             ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                            : 'bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                            : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
                         )}
                       >
                         {tag} ({count})
@@ -227,7 +227,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
 
               {/* Price range */}
               <section>
-                <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Price</h4>
+                <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Price</h4>
                 <div className="flex flex-wrap gap-2">
                   {PRICE_PRESETS.map((preset) => {
                     const isActive =
@@ -241,7 +241,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                           'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           isActive
                             ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                            : 'bg-white dark:bg-neutral-800 border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                            : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
                         )}
                       >
                         {preset.label}
@@ -262,14 +262,14 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                   />
                   <span className={cn(
                     'relative inline-block w-10 h-5 flex-shrink-0 rounded-full border transition-colors duration-200',
-                    filters.inStockOnly ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white' : 'bg-neutral-200 dark:bg-neutral-700 border-neutral-200 dark:border-neutral-700'
+                    filters.inStockOnly ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white' : 'bg-neutral-200 dark:bg-[#3d0000] border-neutral-200 dark:border-neutral-700'
                   )}>
                     <span className={cn(
-                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white dark:bg-neutral-900 shadow-sm transition-transform duration-200',
+                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white dark:bg-[#1e0000] shadow-sm transition-transform duration-200',
                       filters.inStockOnly ? 'translate-x-5' : 'translate-x-0'
                     )} />
                   </span>
-                  <span className="text-sm text-neutral-700 dark:text-neutral-300">In stock only</span>
+                  <span className="text-sm text-neutral-700 dark:text-[#d4b8b8]">In stock only</span>
                 </label>
               </section>
 
@@ -279,7 +279,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             <div className="flex-shrink-0 p-4 border-t border-neutral-100 dark:border-white/10">
               <button
                 onClick={onClose}
-                className="w-full h-10 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+                className="w-full h-10 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-[#5c1515] transition-colors"
               >
                 Apply Filters
               </button>

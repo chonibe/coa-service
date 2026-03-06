@@ -244,7 +244,7 @@ function ArtworkCard({
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
         (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
-        isInCart && 'bg-[#e8f4ff] dark:bg-neutral-900',
+        isInCart && 'bg-[#e8f4ff] dark:bg-[#1e0000]',
         isInCart && !isMerged && 'scale-[0.95]',
       )}
     >
@@ -254,7 +254,7 @@ function ArtworkCard({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          isInCart ? 'bg-[#e8f4ff] dark:bg-neutral-950' : 'bg-neutral-100 dark:bg-neutral-800'
+          isInCart ? 'bg-[#e8f4ff] dark:bg-[#150000]' : 'bg-neutral-100 dark:bg-[#2a0000]'
         )}
         onClick={handleImageClick}
         role="button"
@@ -265,7 +265,7 @@ function ArtworkCard({
         {imageUrl ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-neutral-700/50 animate-pulse" />
+              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#3d0000]/50 animate-pulse" />
             )}
             <Image
               src={getShopifyImageUrl(imageUrl, 500) ?? imageUrl}
@@ -281,7 +281,7 @@ function ArtworkCard({
         ) : (
           <div className={cn(
             'w-full h-full flex items-center justify-center text-xs',
-            isInCart ? 'text-neutral-500' : 'text-neutral-300 dark:text-neutral-500'
+            isInCart ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
           )}>
             No image
           </div>
@@ -294,7 +294,7 @@ function ArtworkCard({
             'absolute top-0.5 right-0.5 z-10 flex items-center justify-center transition-all duration-200',
             isFirstCard && showHighlightAnimation && highlightStep === 1
               ? 'w-6 h-6 rounded-md ring-2 ring-inset ring-amber-600/70 text-orange-400 bg-amber-100/90 dark:bg-amber-900/30'
-              : 'w-6 h-6 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm text-neutral-700 dark:text-white hover:text-neutral-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/70'
+              : 'w-6 h-6 rounded-full bg-white/90 dark:bg-[#150000]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70'
           )}
           aria-label="View artwork details"
         >
@@ -332,8 +332,8 @@ function ArtworkCard({
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',
           isInCart
-            ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-neutral-900/80 backdrop-blur-xl backdrop-saturate-150'
-            : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-neutral-800/80 backdrop-blur-xl backdrop-saturate-150'
+            ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-[#1e0000]/80 backdrop-blur-xl backdrop-saturate-150'
+            : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#2a0000]/80 backdrop-blur-xl backdrop-saturate-150'
         )}
         style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
         onClick={(e) => {
@@ -345,16 +345,16 @@ function ArtworkCard({
         <div className="flex-1 min-w-0">
           <p className={cn(
             'text-xs font-medium truncate',
-            isInCart ? 'text-neutral-800 dark:text-white' : 'text-neutral-800 dark:text-neutral-100'
+            isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           <p className={cn(
             'text-xs',
-            isInCart ? 'text-neutral-600 dark:text-neutral-300' : 'text-neutral-500 dark:text-neutral-400'
+            isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]'
           )}>{formatPrice(product)}</p>
           {crewCount > 0 && (
             <p className={cn(
               'text-[10px] mt-0.5',
-              isInCart ? 'text-neutral-500 dark:text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
+              isInCart ? 'text-neutral-500 dark:text-[#c4a0a0]' : 'text-neutral-500 dark:text-[#c4a0a0]'
             )}>
               {crewCount} in your crew
             </p>
@@ -376,8 +376,8 @@ function ArtworkCard({
                 isLampSelection
                   ? 'text-blue-500'
                   : isInCart
-                    ? 'hover:bg-blue-200/40 dark:hover:bg-white/10 text-blue-700 dark:text-white/80 hover:text-blue-800 dark:hover:text-white'
-                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'
+                    ? 'hover:bg-blue-200/40 dark:hover:bg-white/10 text-blue-700 dark:text-[#f0e8e8]/80 hover:text-blue-800 dark:hover:text-[#f0e8e8]'
+                    : 'hover:bg-neutral-100 dark:hover:bg-[#3d0000] text-neutral-400 dark:text-[#c4a0a0] hover:text-neutral-600 dark:hover:text-[#e8d4d4]'
               )
             )}
             title={isLampSelection ? `Side ${lampPosition} on lamp` : 'Preview on lamp'}
@@ -410,7 +410,7 @@ function ArtworkCard({
               isFirstCard && showHighlightAnimation && highlightStep === 2 && 'ring-2 ring-inset ring-amber-600/70',
               isFirstCard && showHighlightAnimation && highlightStep === 2 && 'text-orange-400',
               isInCart && 'h-6 w-6 p-0',
-              !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-neutral-700/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white/80 dark:hover:bg-neutral-600/90',
+              !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#3d0000]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white/80 dark:hover:bg-neutral-600/90',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-neutral-200',
               isSoldOut && 'opacity-40 cursor-not-allowed'
@@ -640,7 +640,7 @@ export function ArtworkStrip({
           >
             <div className={cn(
               'relative',
-              shouldMerge ? 'flex rounded-xl border-2 border-blue-300 dark:border-[#047AFF] overflow-hidden bg-[#e8f4ff] dark:bg-neutral-900' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
+              shouldMerge ? 'flex rounded-xl border-2 border-blue-300 dark:border-[#047AFF] overflow-hidden bg-[#e8f4ff] dark:bg-[#1e0000]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
             )}>
               {shouldMerge && <MergeConfetti active={justMerged} />}
               {product1 && (
@@ -673,8 +673,8 @@ export function ArtworkStrip({
                 </div>
               )}
               {shouldMerge && product1 && (
-                <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-neutral-900 px-1.5 border-l border-r border-blue-200/60 dark:border-white/20">
-                  <span className="text-[10px] font-semibold text-neutral-700 dark:text-white/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
+                <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-[#1e0000] px-1.5 border-l border-r border-blue-200/60 dark:border-white/20">
+                  <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
                     {product1.vendor}
                   </span>
                 </div>

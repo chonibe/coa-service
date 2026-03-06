@@ -236,7 +236,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           exit={isSlideout ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
-            'relative z-10 bg-white dark:bg-neutral-950 overflow-hidden flex flex-col shadow-xl pointer-events-auto',
+            'relative z-10 bg-white dark:bg-[#150000] overflow-hidden flex flex-col shadow-xl pointer-events-auto',
             isSlideout ? 'w-full max-w-4xl h-[88dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
           )}
         >
@@ -267,7 +267,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
                     <div
                       ref={constraintsRef}
-                      className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-neutral-900 rounded-xl overflow-hidden shadow-inner"
+                      className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-[#1e0000] rounded-xl overflow-hidden shadow-inner"
                     >
                       <AnimatePresence initial={false} mode="sync">
                         <motion.div
@@ -363,16 +363,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {/* Header: artist, title, edition, price — immediate context */}
                   <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
                     {artist && (
-                      <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">
+                      <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
                         {artist}
                       </p>
                     )}
-                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mt-0.5 leading-tight">
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-[#f0e8e8] mt-0.5 leading-tight">
                       {product.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {editionSizeNum && editionSizeNum > 0 && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <span className="text-xs text-neutral-500 dark:text-[#c4a0a0]">
                           Edition of {editionSizeNum}
                         </span>
                       )}
@@ -425,7 +425,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 py-4">
                       {product.tags.slice(0, 10).map((tag) => (
-                        <span key={tag} className="text-[11px] bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 px-2.5 py-1 rounded-full">
+                        <span key={tag} className="text-[11px] bg-neutral-100 dark:bg-[#2a0000]/80 text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
                           {tag}
                         </span>
                       ))}
@@ -438,10 +438,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                            <Package className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                            <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
                             What&apos;s included
                           </span>
                         </div>
@@ -460,8 +460,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                               {productIncludes.map((item, i) => {
                                 const Icon = { lamp: Lamp, ruler: Ruler, cable: Cable, plug: Plug, book: BookOpen, magnet: Magnet, package: Package, gift: Gift, bag: ShoppingBag }[item.icon]
                                 return (
-                                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium">
-                                    <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
+                                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#2a0000] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium">
+                                    <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
                                     {item.label}
                                   </span>
                                 )
@@ -479,10 +479,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                            <List className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                            <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
                             Specifications
                           </span>
                         </div>
@@ -502,18 +502,18 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                 const SpecIcon = spec.icon ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon] : List
                                 const isSingleValue = spec.items.length === 1
                                 return (
-                                  <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-neutral-800/30 px-4 py-3">
+                                  <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#2a0000]/30 px-4 py-3">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-300 flex-shrink-0" />
-                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{spec.title}</h4>
+                                      <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
+                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">{spec.title}</h4>
                                     </div>
                                     {isSingleValue ? (
-                                      <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-snug">{spec.items[0]}</p>
+                                      <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
                                     ) : (
                                       <ul className="space-y-1.5">
                                         {spec.items.map((item, j) => (
-                                          <li key={j} className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed flex items-start gap-2">
-                                            <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-neutral-500 mt-1.5 flex-shrink-0" />
+                                          <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                                            <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
                                             <span>{item}</span>
                                           </li>
                                         ))}
@@ -529,8 +529,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     </div>
                   )}
                   {isLoadingDetails && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-                      <div className="w-4 h-4 border-2 border-neutral-300 dark:border-neutral-600 border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+                      <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#5c1515] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
                       <span className="text-xs">Loading details…</span>
                     </div>
                   )}
@@ -541,10 +541,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                            <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                            <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
                             Artwork details
                           </span>
                         </div>
@@ -559,7 +559,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed pt-1 pb-2">{description}</p>
+                            <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pt-1 pb-2">{description}</p>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -575,11 +575,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           {(artistData?.image || allImages[0]?.url) ? (
                             <Image src={artistData?.image || allImages[0]!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
                           ) : (
-                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
-                              <User className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                             </div>
                           )}
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
                             About {artistData?.name || artist}
                           </span>
                         </div>
@@ -596,26 +596,26 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           >
                             {artistLoading ? (
                               <div className="py-4 flex justify-center">
-                                <div className="w-5 h-5 border-2 border-neutral-200 dark:border-neutral-600 border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                                <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#5c1515] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                               </div>
                             ) : (
                               <div className="pt-1 pb-2 space-y-3">
                                 {artistData?.bio && (
-                                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">{artistData.bio}</p>
+                                  <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>
                                 )}
                                 {artistData?.instagram && (
                                   <a
                                     href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                                    className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"
                                   >
                                     <Instagram className="w-4 h-4" />
                                     @{artistData.instagram.replace(/^@/, '')}
                                   </a>
                                 )}
                                 {!artistData?.bio && !artistData?.instagram && (
-                                  <p className="text-sm text-neutral-400 dark:text-neutral-500">No bio available for this artist.</p>
+                                  <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>
                                 )}
                               </div>
                             )}
@@ -627,7 +627,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
 
                   {/* Fixed bar at bottom of right panel — scarcity + add button, flush with bottom to align with image carousel */}
-                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-neutral-950 pt-3 pb-5 space-y-2">
+                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#150000] pt-3 pb-5 space-y-2">
                     {!hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
@@ -646,9 +646,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       className={cn(
                         'w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
                         isSelected
-                          ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                          ? 'bg-neutral-100 dark:bg-[#2a0000] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#3d0000]'
                           : isSoldOut
-                            ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                            ? 'bg-neutral-100 dark:bg-[#2a0000] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
                             : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
                       )}
                     >
@@ -673,7 +673,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
               <div
                 ref={constraintsRef}
-                className="relative aspect-[4/5] bg-neutral-50 dark:bg-neutral-900 mx-4 rounded-lg overflow-hidden"
+                className="relative aspect-[4/5] bg-neutral-50 dark:bg-[#1e0000] mx-4 rounded-lg overflow-hidden"
               >
                 {/* Close button on top of card (mobile only) */}
                 {!isSlideout && (
@@ -792,7 +792,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             {product.tags && product.tags.length > 0 && (
               <div className="px-4 pt-6 pb-3 flex flex-wrap gap-1.5">
                 {product.tags.slice(0, 10).map((tag) => (
-                  <span key={tag} className="text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 px-2 py-0.5 rounded-full">
+                  <span key={tag} className="text-xs bg-neutral-100 dark:bg-[#2a0000] text-neutral-500 dark:text-[#c4a0a0] px-2 py-0.5 rounded-full">
                     {tag}
                   </span>
                 ))}
@@ -807,15 +807,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                      <Package className="w-4 h-4 text-neutral-400 dark:text-neutral-300" />
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                      <Package className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
                     </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
                       What&apos;s included
                     </span>
                   </div>
                   <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-neutral-300 transition-transform',
+                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
                     showIncludes && 'rotate-180'
                   )} />
                 </button>
@@ -844,9 +844,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           return (
                             <span
                               key={i}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-medium"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#2a0000] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
                             >
-                              <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
+                              <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
                               {item.label}
                             </span>
                           )
@@ -866,15 +866,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                      <List className="w-4 h-4 text-neutral-400 dark:text-neutral-300" />
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                      <List className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
                     </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
                       Specifications
                     </span>
                   </div>
                   <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-neutral-300 transition-transform',
+                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
                     showSpecs && 'rotate-180'
                   )} />
                 </button>
@@ -896,23 +896,23 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           return (
                             <div
                               key={i}
-                              className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-neutral-800/50 px-4 py-3"
+                              className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#2a0000]/50 px-4 py-3"
                             >
                               <div className="flex items-center gap-2 mb-2">
-                                <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-300 flex-shrink-0" />
-                                <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
+                                <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
                                   {spec.title}
                                 </h4>
                               </div>
                               {isSingleValue ? (
-                                <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-snug">
+                                <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">
                                   {spec.items[0]}
                                 </p>
                               ) : (
                                 <ul className="space-y-1.5">
                                   {spec.items.map((item, j) => (
-                                    <li key={j} className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed flex items-start gap-2">
-                                      <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-neutral-500 mt-1.5 flex-shrink-0" />
+                                    <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                                      <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
                                       <span>{item}</span>
                                     </li>
                                   ))}
@@ -930,8 +930,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
             {/* Loading indicator when fetching full product details */}
             {isLoadingDetails && (
-              <div className="px-4 py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-                <div className="w-4 h-4 border-2 border-neutral-300 dark:border-neutral-600 border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+              <div className="px-4 py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+                <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#5c1515] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
                 <span className="text-xs">Loading details…</span>
               </div>
             )}
@@ -947,15 +947,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-neutral-300" />
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
                     </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
                       Artwork details
                     </span>
                   </div>
                   <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-neutral-300 transition-transform',
+                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
                     showDescription && 'rotate-180'
                   )} />
                 </button>
@@ -969,7 +969,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed pb-3">{description}</p>
+                      <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pb-3">{description}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -993,16 +993,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-8 h-8 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                        <User className="w-4 h-4 text-neutral-400 dark:text-neutral-300" />
+                      <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#2a0000] flex items-center justify-center">
+                        <User className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
                       </div>
                     )}
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
                       About {artistData?.name || artist}
                     </span>
                   </div>
                   <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-neutral-300 transition-transform',
+                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
                     showArtistBio && 'rotate-180'
                   )} />
                 </button>
@@ -1018,26 +1018,26 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     >
                       {artistLoading ? (
                         <div className="py-4 flex justify-center">
-                          <div className="w-5 h-5 border-2 border-neutral-200 dark:border-neutral-600 border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#5c1515] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                         </div>
                       ) : (
                         <div className="pb-3 space-y-3">
                           {artistData?.bio && (
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">{artistData.bio}</p>
+                          <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>
                           )}
                           {artistData?.instagram && (
                             <a
                               href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                              className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"
                             >
                               <Instagram className="w-4 h-4" />
                               @{artistData.instagram.replace(/^@/, '')}
                             </a>
                           )}
                           {!artistData?.bio && !artistData?.instagram && (
-                            <p className="text-sm text-neutral-400 dark:text-neutral-500">No bio available for this artist.</p>
+                            <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>
                           )}
                         </div>
                       )}
@@ -1071,7 +1071,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
             <div
               className={cn(
-                'space-y-3 p-5 bg-white/90 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
+                'space-y-3 p-5 bg-white/90 dark:bg-[#150000]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
                 productBadges?.length ? 'pt-4' : 'pt-7'
               )}
               style={{ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' }}
@@ -1138,15 +1138,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <div className="space-y-2 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center min-w-0 w-full">
                   {artist && (
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
                       {artist}
                     </p>
                   )}
-                  <h2 className="text-sm font-semibold text-neutral-900 dark:text-white tracking-tight mt-0.5">
+                  <h2 className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8] tracking-tight mt-0.5">
                     {product.title}
                   </h2>
                   {editionSizeNum && editionSizeNum > 0 && (
-                    <span className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    <span className="mt-1 text-[10px] text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
                       Limited Edition of {editionSizeNum}
                     </span>
                   )}
@@ -1174,9 +1174,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               className={cn(
                 'w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
                 isSelected
-                  ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                  ? 'bg-neutral-100 dark:bg-[#2a0000] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#3d0000]'
                   : isSoldOut
-                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                    ? 'bg-neutral-100 dark:bg-[#2a0000] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
                     : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
               )}
             >
