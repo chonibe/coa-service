@@ -410,9 +410,9 @@ function ArtworkCard({
               isFirstCard && showHighlightAnimation && highlightStep === 2 && 'ring-2 ring-inset ring-amber-600/70',
               isFirstCard && showHighlightAnimation && highlightStep === 2 && 'text-orange-400',
               isInCart && 'h-6 w-6 p-0',
-              !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#3d0000]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white/80 dark:hover:bg-neutral-600/90',
+              !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#3d0000]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#8a2020] hover:bg-white/80 dark:hover:bg-[#4d0000]/90',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
-              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-neutral-200',
+              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-[#e8d4d4]',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}

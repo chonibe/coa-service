@@ -101,14 +101,14 @@ export function ArtistSpotlightBanner({
         onClick={handleClick}
         className={cn(
           'relative z-10 w-full rounded-xl transition-all duration-300 text-left overflow-hidden',
-          'bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80',
+          'bg-neutral-100 dark:bg-[#2a0000]/80 hover:bg-neutral-200/80 dark:hover:bg-[#3d0000]/80',
           expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
         {/* Collapsed row */}
         {!expanded && (
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-700">
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-[#3d0000]">
               {spotlight.image ? (
                 <Image
                   src={spotlight.image}
@@ -125,11 +125,11 @@ export function ArtistSpotlightBanner({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Artist Spotlight</p>
-              <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+              <p className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8] truncate">
                 {spotlight.vendorName}
               </p>
               {spotlight.seriesName && (
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                <p className="text-[11px] text-neutral-500 dark:text-[#c4a0a0] truncate">
                   {spotlight.seriesName}
                 </p>
               )}
@@ -163,7 +163,7 @@ export function ArtistSpotlightBanner({
         {expanded && (
           <div className="flex flex-col">
             <div className="flex items-start gap-4 p-4">
-              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-700">
+              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#3d0000]">
                 {spotlight.image ? (
                   <Image
                     src={spotlight.image}
@@ -183,11 +183,11 @@ export function ArtistSpotlightBanner({
                 <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                   Artist Spotlight
                 </p>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-[#f0e8e8]">
                   {spotlight.vendorName}
                 </h3>
                 {spotlight.seriesName && (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
                     {spotlight.seriesName}
                   </p>
                 )}
@@ -197,7 +197,7 @@ export function ArtistSpotlightBanner({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
+                    className="inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
                   >
                     <Instagram className="w-4 h-4 flex-shrink-0" />
                     <span>@{spotlight.instagram}</span>
@@ -208,7 +208,7 @@ export function ArtistSpotlightBanner({
             </div>
             {spotlight.bio && (
               <div className="px-4 pb-4 pt-0">
-                <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line">
                   {spotlight.bio}
                 </p>
               </div>

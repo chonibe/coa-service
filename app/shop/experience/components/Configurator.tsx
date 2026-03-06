@@ -1134,7 +1134,7 @@ export function Configurator({
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   {activeFilterCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-[#4d0000] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#8a2020] text-[10px] flex items-center justify-center font-bold leading-none">
                       {activeFilterCount}
                     </span>
                   )}
@@ -1261,7 +1261,7 @@ export function Configurator({
                 className={cn(
                   '!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg text-[10px] font-medium leading-none flex-shrink-0',
                   initialFilters?.artists?.includes(a)
-                    ? 'bg-neutral-900 dark:bg-[#3d0000] text-white hover:bg-neutral-800 dark:hover:bg-neutral-600'
+                    ? 'bg-neutral-900 dark:bg-[#3d0000] text-white hover:bg-neutral-800 dark:hover:bg-[#4d0000]'
                     : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-[#8a2020] text-neutral-900 dark:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
                 )}
               >
@@ -1535,7 +1535,7 @@ export function Configurator({
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-neutral-500 text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-[#4d0000] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#8a2020] text-[9px] flex items-center justify-center font-bold">
                     {activeFilterCount}
                   </span>
                 )}

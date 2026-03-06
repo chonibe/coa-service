@@ -39,14 +39,14 @@ export function ExperienceSlideoutMenu() {
       <header
         className={cn(
           'shrink-0 flex items-center h-14 sm:h-16 px-4 sm:px-6',
-          'bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-white/10 safe-area-inset-top'
+          'bg-white dark:bg-[#150000] border-b border-neutral-200 dark:border-white/10 safe-area-inset-top'
         )}
       >
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open menu"
-          className="inline-flex items-center justify-center p-2 -m-2 text-neutral-600 hover:text-neutral-900 dark:text-white/80 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center p-2 -m-2 text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] transition-colors cursor-pointer shrink-0"
         >
           <Menu size={24} className="shrink-0" />
         </button>
@@ -58,7 +58,7 @@ export function ExperienceSlideoutMenu() {
         {showLampCard && lamp && (
           <div className="lg:hidden flex items-center shrink-0">
             <div className={cn(
-              'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-neutral-700/70',
+              'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-[#3d0000]/70',
               highlightLampIcon && 'ring-2 ring-inset ring-amber-600/70'
             )}>
               <motion.div
@@ -69,8 +69,8 @@ export function ExperienceSlideoutMenu() {
                 className={cn(
                   'flex items-center gap-1 min-w-0 transition-colors cursor-pointer text-left relative py-0',
                   lampQuantity > 0
-                    ? 'text-neutral-800 dark:text-white hover:opacity-90'
-                    : 'text-neutral-600 dark:text-white/80 dark:hover:text-white'
+                    ? 'text-neutral-800 dark:text-[#f0e8e8] hover:opacity-90'
+                    : 'text-neutral-600 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8]'
                 )}
                 aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}`}
                 animate={
@@ -85,14 +85,14 @@ export function ExperienceSlideoutMenu() {
                 onAnimationComplete={() => setShouldPulse(false)}
               >
                 <span className="relative inline-flex">
-                  <span className={cn('absolute inset-0 flex items-center justify-center translate-x-0.5 text-[10px] font-bold tabular-nums pointer-events-none', lampQuantity > 0 ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#ffffff]')}>
+                  <span className={cn('absolute inset-0 flex items-center justify-center translate-x-0.5 text-[10px] font-bold tabular-nums pointer-events-none', lampQuantity > 0 ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#f0e8e8]')}>
                     {lampQuantity}
                   </span>
-                  <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-5 h-6 shrink-0', lampQuantity > 0 ? 'text-neutral-400 dark:text-neutral-300' : 'text-neutral-400 dark:text-white/60')} xmlns="http://www.w3.org/2000/svg">
+                  <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-5 h-6 shrink-0', lampQuantity > 0 ? 'text-neutral-400 dark:text-[#d4b8b8]' : 'text-neutral-400 dark:text-[#f0e8e8]/60')} xmlns="http://www.w3.org/2000/svg">
                     <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
                   </svg>
                 </span>
-                <span className={cn('text-[10px] font-medium truncate', lampQuantity > 0 ? 'text-neutral-800 dark:text-white' : 'text-neutral-600 dark:text-white/80')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
+                <span className={cn('text-[10px] font-medium truncate', lampQuantity > 0 ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-600 dark:text-[#f0e8e8]/80')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
               </motion.div>
               {pastLampPaywall && (
                 <div className="flex items-center gap-0.5 ml-0.5 shrink-0" data-wizard-lamp-controls>
@@ -113,7 +113,7 @@ export function ExperienceSlideoutMenu() {
                       'flex items-center justify-center transition-colors shrink-0',
                       lampQuantity > 0
                         ? 'h-5 w-5 p-0 text-[#047AFF] dark:text-[#60A5FA]'
-                        : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-[10px] font-medium'
+                        : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#2a0000] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#5c1515] hover:bg-neutral-100 dark:hover:bg-[#3d0000] text-[10px] font-medium'
                     )}
                     aria-label={lampQuantity > 0 ? 'Add another lamp' : 'Add lamp'}
                   >
@@ -129,7 +129,7 @@ export function ExperienceSlideoutMenu() {
             <button
               type="button"
               onClick={() => setDetailProduct?.(lamp)}
-              className="w-5 h-5 flex items-center justify-center rounded text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white transition-colors shrink-0 -mr-0.5"
+              className="w-5 h-5 flex items-center justify-center rounded text-neutral-500 hover:text-neutral-700 dark:text-[#c4a0a0] dark:hover:text-[#f0e8e8] transition-colors shrink-0 -mr-0.5"
               aria-label="View lamp details"
             >
               <Info className="w-3 h-3" />
