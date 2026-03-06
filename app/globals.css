@@ -460,10 +460,10 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --background: 0 100% 4%;          /* #150000 — page base */
     --foreground: 0 30% 93%;          /* #f0e8e8 — warm near-white */
 
-    --card: 0 100% 6%;                /* #1e0000 — card surface */
+    --card: 0 87% 6%;                 /* #1c0202 — card surface */
     --card-foreground: 0 30% 93%;
 
-    --popover: 0 100% 5%;             /* #1a0000 — popover/dropdown */
+    --popover: 0 87% 5%;              /* #180101 — popover/dropdown */
     --popover-foreground: 0 20% 75%;  /* #bfa8a8 — secondary popover text */
 
     /* --- Brand Primary (blue accent preserved) --- */
@@ -471,13 +471,13 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --primary-foreground: 0 0% 100%;
 
     /* --- Secondary / Muted / Accent surfaces --- */
-    --secondary: 0 100% 12%;          /* #3d0000 — secondary surface */
+    --secondary: 0 69% 10%;           /* #2b0808 — secondary surface */
     --secondary-foreground: 0 30% 90%; /* #ede0e0 */
 
-    --muted: 0 100% 9%;               /* #2d0000 — muted panel */
+    --muted: 0 75% 8%;                /* #230505 — muted panel */
     --muted-foreground: 0 23% 60%;    /* #9e7070 — muted text */
 
-    --accent: 0 100% 15%;             /* #4d0000 — hover / selection */
+    --accent: 0 62% 12%;              /* #330c0c — hover / selection */
     --accent-foreground: 0 30% 88%;   /* #e8d4d4 */
 
     /* --- Status --- */
@@ -485,9 +485,9 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --destructive-foreground: 0 0% 98%;
 
     /* --- Borders / Inputs / Focus --- */
-    --border: 0 80% 18%;              /* #5c0000 */
-    --input: 0 80% 16%;               /* #520000 */
-    --ring: 0 100% 60%;               /* #ff3333 — bright red focus ring */
+    --border: 0 54% 15%;              /* #3c1212 */
+    --input: 0 54% 13%;               /* #360e0e */
+    --ring: 0 90% 55%;                /* #f01a1a — focus ring */
 
     /* --- Charts --- */
     --chart-1: 212 70% 55%;
@@ -503,15 +503,15 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 
     /* Surface scale — step from base (#150000) */
     --experience-bg:            #150000;  /* step 1 — deepest base */
-    --experience-surface:       #1e0000;  /* step 2 — card/panel */
-    --experience-surface-2:     #2a0000;  /* step 3 — nested panel */
-    --experience-surface-3:     #3d0000;  /* step 4 — raised panel */
-    --experience-overlay:       #4d0000;  /* step 5 — overlay / sheet */
-    --experience-overlay-2:     #5c0000;  /* step 6 — elevated overlay */
+    --experience-surface:       #1c0202;  /* step 2 — card/panel */
+    --experience-surface-2:     #230505;  /* step 3 — nested panel */
+    --experience-surface-3:     #2b0808;  /* step 4 — raised panel */
+    --experience-overlay:       #330c0c;  /* step 5 — overlay / sheet */
+    --experience-overlay-2:     #3c1212;  /* step 6 — elevated overlay */
 
     /* Borders */
-    --experience-border:        #5c1515;  /* subtle border */
-    --experience-border-strong: #8a2020;  /* prominent border */
+    --experience-border:        #471a1a;  /* subtle border */
+    --experience-border-strong: #582020;  /* prominent border */
     --experience-border-focus:  #ff4444;  /* active / focus */
 
     /* Glow & ambient light */
@@ -533,10 +533,10 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     /* =========================================================================
      * POLARIS DESIGN TOKENS — adapted to #150000 palette
      * ========================================================================= */
-    --p-color-bg:                    #180000;
-    --p-color-bg-surface:            #1e0000;
-    --p-color-bg-surface-secondary:  #2d0000;
-    --p-color-border:                #4a0000;
+    --p-color-bg:                    #150000;
+    --p-color-bg-surface:            #1c0202;
+    --p-color-bg-surface-secondary:  #230505;
+    --p-color-border:                #2b0808;
     --p-color-text:                  #f5eeee;
     --p-color-text-secondary:        #c4a0a0;
     --p-color-bg-info:               #0c1a3d;
@@ -616,19 +616,19 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Dark-mode glass overrides — red-tinted for #150000 palette */
+/* Dark-mode glass overrides — subtle warm-dark for #150000 palette */
 .dark .glass {
-  background: rgba(30, 0, 0, 0.45);
+  background: rgba(28, 2, 2, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 68, 68, 0.18);
+  border: 1px solid rgba(200, 80, 80, 0.14);
 }
 
 .dark .glass-dark {
-  background: rgba(21, 0, 0, 0.7);
+  background: rgba(21, 0, 0, 0.72);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 32, 32, 0.12);
+  border: 1px solid rgba(180, 60, 60, 0.10);
 }
 
 /* Fade-in animation for content blocks */

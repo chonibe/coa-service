@@ -58,7 +58,7 @@ export function ExperienceSlideoutMenu() {
         {showLampCard && lamp && (
           <div className="lg:hidden flex items-center shrink-0">
             <div className={cn(
-              'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-[#3d0000]/70',
+              'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-[#2b0808]/70',
               highlightLampIcon && 'ring-2 ring-inset ring-amber-600/70'
             )}>
               <motion.div
@@ -113,7 +113,7 @@ export function ExperienceSlideoutMenu() {
                       'flex items-center justify-center transition-colors shrink-0',
                       lampQuantity > 0
                         ? 'h-5 w-5 p-0 text-[#047AFF] dark:text-[#60A5FA]'
-                        : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#2a0000] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#5c1515] hover:bg-neutral-100 dark:hover:bg-[#3d0000] text-[10px] font-medium'
+                        : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#230505] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#471a1a] hover:bg-neutral-100 dark:hover:bg-[#2b0808] text-[10px] font-medium'
                     )}
                     aria-label={lampQuantity > 0 ? 'Add another lamp' : 'Add lamp'}
                   >

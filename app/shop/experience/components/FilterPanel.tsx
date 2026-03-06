@@ -151,7 +151,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                 )}
                 <button
                   onClick={onClose}
-                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-[#2a0000] text-neutral-400 dark:text-[#d4b8b8] transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-[#230505] text-neutral-400 dark:text-[#d4b8b8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -172,7 +172,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                         'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
                           ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                          : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
+                          : 'bg-white dark:bg-[#230505] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#2b0808]'
                       )}
                     >
                       {opt.label}
@@ -215,7 +215,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                           'h-5 px-2 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           filters.tags.includes(tag)
                             ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                            : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
+                            : 'bg-white dark:bg-[#230505] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#2b0808]'
                         )}
                       >
                         {tag} ({count})
@@ -241,7 +241,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                           'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           isActive
                             ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                            : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
+                            : 'bg-white dark:bg-[#230505] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#2b0808]'
                         )}
                       >
                         {preset.label}
@@ -262,10 +262,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                   />
                   <span className={cn(
                     'relative inline-block w-10 h-5 flex-shrink-0 rounded-full border transition-colors duration-200',
-                    filters.inStockOnly ? 'bg-neutral-900 dark:bg-[#f0e8e8] border-neutral-900 dark:border-[#f0e8e8]' : 'bg-neutral-200 dark:bg-[#3d0000] border-neutral-200 dark:border-[#4d0000]'
+                    filters.inStockOnly ? 'bg-neutral-900 dark:bg-[#f0e8e8] border-neutral-900 dark:border-[#f0e8e8]' : 'bg-neutral-200 dark:bg-[#2b0808] border-neutral-200 dark:border-[#330c0c]'
                   )}>
                     <span className={cn(
-                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white dark:bg-[#1e0000] shadow-sm transition-transform duration-200',
+                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white dark:bg-[#1c0202] shadow-sm transition-transform duration-200',
                       filters.inStockOnly ? 'translate-x-5' : 'translate-x-0'
                     )} />
                   </span>

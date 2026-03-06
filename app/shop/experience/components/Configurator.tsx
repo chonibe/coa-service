@@ -1006,7 +1006,7 @@ export function Configurator({
         {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
           <button
             onClick={cycleSelectorState}
-            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white dark:bg-[#2a0000] border border-t-0 border-neutral-200 dark:border-[#5c1515] text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#3d0000] shadow-sm transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white dark:bg-[#230505] border border-t-0 border-neutral-200 dark:border-[#471a1a] text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#2b0808] shadow-sm transition-colors"
             aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
           >
             {selectorSheetState === 'half' ? (
@@ -1022,7 +1022,7 @@ export function Configurator({
       <motion.div
         layout={false}
         className={cn(
-          'relative flex flex-col bg-white dark:bg-[#150000] overflow-hidden min-h-0 border-t border-neutral-100 dark:border-[#5c0000] md:border-t-0 transition-[height,flex] duration-200 ease-out',
+          'relative flex flex-col bg-white dark:bg-[#150000] overflow-hidden min-h-0 border-t border-neutral-100 dark:border-[#3c1212] md:border-t-0 transition-[height,flex] duration-200 ease-out',
             lampQuantity > 0 && 'border-t-0',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
@@ -1041,7 +1041,7 @@ export function Configurator({
               transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
               className="flex flex-col items-center gap-6 max-w-sm"
             >
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-[#2a0000]">
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-[#230505]">
                 <svg viewBox="0 0 306 400" fill="currentColor" className="w-8 h-10 text-neutral-700 dark:text-[#d4b8b8] shrink-0" xmlns="http://www.w3.org/2000/svg">
                   <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
                 </svg>
@@ -1054,7 +1054,7 @@ export function Configurator({
                   <button
                     type="button"
                     onClick={() => setDetailProduct(lamp)}
-                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] hover:bg-neutral-100 dark:hover:bg-[#3d0000] transition-colors"
+                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] hover:bg-neutral-100 dark:hover:bg-[#2b0808] transition-colors"
                     aria-label="View lamp details"
                   >
                     <Info className="w-4 h-4" />
@@ -1100,8 +1100,8 @@ export function Configurator({
           onKeyDown={selectorSheetState === 'collapsed' && isMobile ? (e) => e.key === 'Enter' && cycleSelectorState() : undefined}
           className={cn(
             'relative flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
-            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100 dark:border-[#5c0000]',
-            selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-[#1e0000]/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
+            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100 dark:border-[#3c1212]',
+            selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-[#1c0202]/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
             selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 dark:active:bg-neutral-800/95 justify-center',
           )}
           style={selectorSheetState === 'collapsed' ? { backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } : undefined}
@@ -1126,27 +1126,27 @@ export function Configurator({
                   className={cn(
                     'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
                     hasActiveFilters(filters)
-                      ? 'bg-neutral-900 dark:bg-[#3d0000] text-white border-neutral-900 dark:border-[#4d0000]'
-                      : 'bg-white dark:bg-[#2a0000] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#5c1515] hover:border-neutral-300 dark:hover:border-[#8a2020] hover:bg-neutral-50 dark:hover:bg-[#3d0000]',
+                      ? 'bg-neutral-900 dark:bg-[#2b0808] text-white border-neutral-900 dark:border-[#330c0c]'
+                      : 'bg-white dark:bg-[#230505] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#471a1a] hover:border-neutral-300 dark:hover:border-[#582020] hover:bg-neutral-50 dark:hover:bg-[#2b0808]',
                     showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
                   )}
                   aria-label="Open filters"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   {activeFilterCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-[#4d0000] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#8a2020] text-[10px] flex items-center justify-center font-bold leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-[#330c0c] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#582020] text-[10px] flex items-center justify-center font-bold leading-none">
                       {activeFilterCount}
                     </span>
                   )}
                 </button>
-                <div className="flex rounded-lg border border-neutral-200 dark:border-[#4d0000] p-0.5 bg-neutral-50 dark:bg-[#2a0000]/50 flex-shrink-0">
+                <div className="flex rounded-lg border border-neutral-200 dark:border-[#330c0c] p-0.5 bg-neutral-50 dark:bg-[#230505]/50 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveSeasonAndReset('season1')}
                     className={cn(
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season1'
-                        ? 'bg-white dark:bg-[#3d0000] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                        ? 'bg-white dark:bg-[#2b0808] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
                         : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                     )}
                   >
@@ -1158,7 +1158,7 @@ export function Configurator({
                     className={cn(
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season2'
-                        ? 'bg-white dark:bg-[#3d0000] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                        ? 'bg-white dark:bg-[#2b0808] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
                         : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                     )}
                   >
@@ -1171,7 +1171,7 @@ export function Configurator({
               {lamp && typeof lampPrice === 'number' && !showLampPaywall && (
                 <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-0 ml-2">
                   <div className={cn(
-                    'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-[#3d0000]/70',
+                    'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-[#2b0808]/70',
                     showHighlightAnimation && highlightStep === 3 && 'ring-2 ring-inset ring-amber-600/70'
                   )}>
                     <div
@@ -1215,7 +1215,7 @@ export function Configurator({
                           'flex items-center justify-center transition-colors shrink-0',
                           lampQuantity > 0
                             ? 'h-5 w-5 p-0 text-[#047AFF] dark:text-[#60A5FA]'
-                            : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#2a0000] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#5c1515] hover:bg-neutral-100 dark:hover:bg-[#3d0000] text-[10px] font-medium'
+                            : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#230505] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#471a1a] hover:bg-neutral-100 dark:hover:bg-[#2b0808] text-[10px] font-medium'
                         )}
                         aria-label={lampQuantity > 0 ? 'Add another lamp' : 'Add lamp'}
                       >
@@ -1261,8 +1261,8 @@ export function Configurator({
                 className={cn(
                   '!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg text-[10px] font-medium leading-none flex-shrink-0',
                   initialFilters?.artists?.includes(a)
-                    ? 'bg-neutral-900 dark:bg-[#3d0000] text-white hover:bg-neutral-800 dark:hover:bg-[#4d0000]'
-                    : 'bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-[#8a2020] text-neutral-900 dark:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#3d0000]'
+                    ? 'bg-neutral-900 dark:bg-[#2b0808] text-white hover:bg-neutral-800 dark:hover:bg-[#330c0c]'
+                    : 'bg-white dark:bg-[#230505] border border-neutral-900 dark:border-[#582020] text-neutral-900 dark:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#2b0808]'
                 )}
               >
                 {a} <X className="w-2 h-2" />
@@ -1272,7 +1272,7 @@ export function Configurator({
               <button
                 key={t}
                 onClick={() => setFilters({ ...filters, tags: filters.tags.filter((x) => x !== t) })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-[#8a2020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#3d0000] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#230505] border border-neutral-900 dark:border-[#582020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#2b0808] flex-shrink-0"
               >
                 {t} <X className="w-2 h-2" />
               </button>
@@ -1280,7 +1280,7 @@ export function Configurator({
             {filters.priceRange && (
               <button
                 onClick={() => setFilters({ ...filters, priceRange: null })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-[#8a2020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#3d0000] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#230505] border border-neutral-900 dark:border-[#582020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#2b0808] flex-shrink-0"
               >
                 {filters.priceRange[1] === Infinity ? `$${filters.priceRange[0]}+` : `$${filters.priceRange[0]}–$${filters.priceRange[1]}`}
                 <X className="w-2 h-2" />
@@ -1289,7 +1289,7 @@ export function Configurator({
             {filters.inStockOnly && (
               <button
                 onClick={() => setFilters({ ...filters, inStockOnly: false })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#2a0000] border border-neutral-900 dark:border-[#8a2020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#3d0000] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#230505] border border-neutral-900 dark:border-[#582020] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#2b0808] flex-shrink-0"
               >
                 In stock <X className="w-2 h-2" />
               </button>
@@ -1519,7 +1519,7 @@ export function Configurator({
 
         {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
         {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
-          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-[#4d0000] bg-white dark:bg-[#1e0000]">
+          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-[#330c0c] bg-white dark:bg-[#1c0202]">
             {/* Left: Filter */}
             <div className="flex-shrink-0">
               <button
@@ -1527,15 +1527,15 @@ export function Configurator({
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
                   hasActiveFilters(filters)
-                    ? 'bg-neutral-900 dark:bg-[#3d0000] text-white border-neutral-900 dark:border-[#4d0000]'
-                    : 'bg-white dark:bg-[#2a0000] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#5c1515]',
+                    ? 'bg-neutral-900 dark:bg-[#2b0808] text-white border-neutral-900 dark:border-[#330c0c]'
+                    : 'bg-white dark:bg-[#230505] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#471a1a]',
                   showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
                 )}
                 aria-label="Open filters"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-[#4d0000] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#8a2020] text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-[#330c0c] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#582020] text-[9px] flex items-center justify-center font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -1544,7 +1544,7 @@ export function Configurator({
 
             {/* Center: Season tabs */}
             <div className="flex-1 min-w-0 flex items-center justify-center">
-              <div className="flex rounded-lg border border-neutral-200 dark:border-[#5c1515] p-0.5 bg-neutral-50 dark:bg-[#2a0000]/50 flex-shrink-0">
+              <div className="flex rounded-lg border border-neutral-200 dark:border-[#471a1a] p-0.5 bg-neutral-50 dark:bg-[#230505]/50 flex-shrink-0">
               {false && (
               <AnimatePresence initial={false} mode="wait">
                 {searchExpanded ? (
@@ -1604,7 +1604,7 @@ export function Configurator({
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season1'
-                    ? 'bg-white dark:bg-[#3d0000] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                    ? 'bg-white dark:bg-[#2b0808] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
                     : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                 )}
               >
@@ -1616,7 +1616,7 @@ export function Configurator({
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season2'
-                    ? 'bg-white dark:bg-[#3d0000] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                    ? 'bg-white dark:bg-[#2b0808] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
                     : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                 )}
               >
@@ -1633,7 +1633,7 @@ export function Configurator({
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 transition-colors',
                   showHighlightAnimation && highlightStep === 5 && isMobile
                     ? 'ring-2 ring-inset ring-amber-600/70 border-amber-500/50 bg-amber-50 dark:bg-amber-950/30'
-                    : 'border-neutral-200 dark:border-[#5c1515] bg-white dark:bg-[#2a0000] text-neutral-600 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#3d0000] hover:text-neutral-900 dark:hover:text-[#f0e8e8]'
+                    : 'border-neutral-200 dark:border-[#471a1a] bg-white dark:bg-[#230505] text-neutral-600 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#2b0808] hover:text-neutral-900 dark:hover:text-[#f0e8e8]'
                 )}
                 aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
               >
