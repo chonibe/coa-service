@@ -13,8 +13,8 @@ import {
 } from '@/lib/shopify/storefront-client'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
-import { MultiColumnVideoSection } from './MultiColumnVideoSection'
 import { MeetTheStreetLamp } from './MeetTheStreetLamp'
+import { ValuePropVideoCard } from './MultiColumnVideoSection'
 import { TestimonialCarousel } from './TestimonialCarousel'
 import { FixedCTAButton } from './FixedCTAButton'
 import { StreetCollectorFAQ } from './StreetCollectorFAQ'
@@ -193,7 +193,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5] pb-28 sm:pb-24">
+    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-3 sm:pb-2">
       {/* Fixed CTA - stays visible as user scrolls (replaces top nav) */}
       <FixedCTAButton
         text={streetCollectorContent.hero.cta.text}
@@ -202,9 +202,9 @@ export default async function StreetCollectorPage() {
       />
       {/* API Warning (dev only) */}
       {apiError && process.env.NODE_ENV === 'development' && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+        <div className="bg-amber-900/30 border-b border-amber-700/50 px-4 py-3">
           <Container maxWidth="default" paddingX="gutter">
-            <p className="text-sm text-amber-800">
+            <p className="text-sm text-amber-200">
               {apiError} Set NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN and SHOPIFY_SHOP.
             </p>
           </Container>
@@ -249,13 +249,14 @@ export default async function StreetCollectorPage() {
               text: streetCollectorContent.hero.cta.text,
               url: streetCollectorContent.experienceUrl,
               style: 'glassmorphism',
-              backgroundColor: '#390000',
-              color: '#FFBA94',
+              backgroundColor: '#FFBA94',
+              color: '#390000',
             },
-            position: 'lower-center',
+            position: 'top-center',
+            ctaPosition: 'bottom',
             headlineSize: 'medium',
             subheadlineFirst: true,
-            textColor: '#ffffff',
+            textColor: '#FFBA94',
             overlayColor: '#000000',
             overlayOpacity: 40,
           }}
@@ -276,86 +277,18 @@ export default async function StreetCollectorPage() {
         cueHref={streetCollectorContent.experienceUrl}
       />
 
-      {/* Value Props — multi-column videos (Inspire / Build collection / Support Artists) */}
-      <MultiColumnVideoSection
-        title={streetCollectorContent.valuePropsSectionTitle}
-        items={streetCollectorContent.valueProps.map((p) => ({
-          title: p.title,
-          description: p.description,
-          poster: p.poster,
-          video: p.video,
-        }))}
-        cue={streetCollectorContent.valuePropsCue}
-        cueHref={streetCollectorContent.experienceUrl}
-      />
-
-      {/* Trust Bar — Free shipping, Guarantee, Returns */}
-      <SectionWrapper spacing="xs" background="default">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 py-6 md:py-8">
-            {streetCollectorContent.trustBar.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 text-center flex flex-col items-center"
-              >
-                <div className="w-24 h-24 mb-5 flex items-center justify-center">
-                  {item.icon === 'shipping' && (
-                    <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200/80 flex items-center justify-center border border-neutral-200/60">
-                      <svg className="w-10 h-10 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Free</span>
-                    </div>
-                  )}
-                  {item.icon === 'guarantee' && (
-                    <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200/80 flex items-center justify-center border border-neutral-200/60">
-                      <svg className="w-10 h-10 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] font-bold tracking-tight text-white">12 mo</span>
-                    </div>
-                  )}
-                  {item.icon === 'returns' && (
-                    <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200/80 flex items-center justify-center border border-neutral-200/60">
-                      <svg className="w-10 h-10 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] font-bold tracking-tight text-white">30d</span>
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">{item.label}</h3>
-                <p className="text-sm sm:text-base text-neutral-600 leading-snug">{item.description ?? ''}</p>
-              </div>
-            ))}
-          </div>
-          {streetCollectorContent.trustBarCue && (
-            <div className="text-center pt-4">
-              <a
-                href={streetCollectorContent.experienceUrl}
-                className="text-base sm:text-lg text-neutral-600 hover:text-neutral-900 underline underline-offset-2 transition-colors"
-              >
-                {streetCollectorContent.trustBarCue}
-              </a>
-            </div>
-          )}
-        </Container>
-      </SectionWrapper>
-
-      {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
-      <TestimonialCarousel
-        title={streetCollectorContent.testimonials.title}
-        subtitle={streetCollectorContent.testimonials.subtitle}
-        testimonials={streetCollectorContent.testimonials.quotes}
-        fullWidth={true}
-      />
-
-      {/* In Collaboration With — Featured Artists (after reviews) */}
+      {/* Bringing art into everyday life + In Collaboration With — unified section */}
       {featuredArtists.length > 0 && (
         <ArtistCarousel
           title={streetCollectorContent.featuredArtists.title}
-          titleSize="3xl"
+          titleSize="2xl"
+          titleTag="h5"
+          namePosition="below"
           headerAlignment="center"
+          titleClassName="font-serif font-medium text-[#FFBA94]"
+          sectionBackground="header"
+          arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
+          className="bg-[#1a0a0a]"
           subtitle={streetCollectorContent.featuredArtists.subtitle}
           artists={featuredArtists}
           autoScroll={true}
@@ -366,31 +299,144 @@ export default async function StreetCollectorPage() {
           cardWidth={280}
           cardGap={24}
           fullWidth={true}
+          footerCue={streetCollectorContent.featuredArtistsCue}
+          footerScarcity={streetCollectorContent.featuredArtistsScarcity}
+          footerCueHref={streetCollectorContent.experienceUrl}
+          valueProps={[]}
+          leadingContent={
+            <div className="space-y-6 sm:space-y-8">
+              <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center">
+                {streetCollectorContent.valuePropsSectionTitle}
+              </h2>
+              <ValuePropVideoCard
+                items={streetCollectorContent.valueProps.map((p) => ({
+                  title: p.title,
+                  description: p.description,
+                  poster: p.poster,
+                  video: p.video,
+                }))}
+              />
+              {/* Banner on mobile only — directly under 3rd video */}
+              <div className="md:hidden">
+                <div className="w-full rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 p-6 sm:p-8">
+                  <div className="grid grid-cols-1 gap-6">
+                    {streetCollectorContent.valueProps.map((p, i) => (
+                      <div key={i} className="flex flex-col gap-2 text-center">
+                        <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-[#FFBA94] text-[#390000] font-body text-sm font-medium shrink-0 mx-auto">
+                          {i + 1}
+                        </span>
+                        <h3 className="font-body text-base sm:text-lg font-semibold text-[#FFBA94]">
+                          {p.title}
+                        </h3>
+                        <p className="font-body text-sm sm:text-base text-[#FFBA94]/90 leading-relaxed">
+                          {p.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
         />
       )}
 
-      {/* Artists momentum cue + scarcity */}
-      {(streetCollectorContent.featuredArtistsCue || streetCollectorContent.featuredArtistsScarcity) && (
-        <SectionWrapper spacing="sm" background="default">
-          <Container maxWidth="default" paddingX="gutter">
-            <div className="text-center space-y-2">
-              {streetCollectorContent.featuredArtistsCue && (
-                <a
-                  href={streetCollectorContent.experienceUrl}
-                  className="block text-base sm:text-lg text-neutral-600 hover:text-neutral-900 underline underline-offset-2 transition-colors"
-                >
-                  {streetCollectorContent.featuredArtistsCue}
-                </a>
-              )}
-              {streetCollectorContent.featuredArtistsScarcity && (
-                <p className="text-sm text-neutral-500">
-                  {streetCollectorContent.featuredArtistsScarcity}
-                </p>
-              )}
+      {/* Value prop banner — desktop only, under artist collaboration section */}
+      <section className="hidden md:block bg-[#1a0a0a] py-8 sm:py-10 md:py-12 overflow-hidden">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="relative pt-16">
+            {/* Image behind banner — only its top protrudes from under the banner */}
+            <img
+              src="https://thestreetcollector.com/cdn/shop/files/Group_8252.png?v=1771844884&width=1200"
+              alt=""
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[160px] object-cover object-top pointer-events-none z-0"
+              aria-hidden
+            />
+            {/* Banner card — overlaps image from below; image top peeks out above */}
+            <div className="relative z-10 -mt-28 w-full rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 p-6 sm:p-8 md:p-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                {streetCollectorContent.valueProps.map((p, i) => (
+                  <div key={i} className="flex flex-col gap-2 text-center md:text-left">
+                    <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-[#FFBA94] text-[#390000] font-body text-sm font-medium shrink-0 md:mx-0 mx-auto">
+                      {i + 1}
+                    </span>
+                    <h3 className="font-body text-base sm:text-lg font-semibold text-[#FFBA94]">
+                      {p.title}
+                    </h3>
+                    <p className="font-body text-sm sm:text-base text-[#FFBA94]/90 leading-relaxed">
+                      {p.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </Container>
-        </SectionWrapper>
-      )}
+          </div>
+        </Container>
+      </section>
+
+      {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
+      <TestimonialCarousel
+        title={streetCollectorContent.testimonials.title}
+        subtitle={streetCollectorContent.testimonials.subtitle}
+        testimonials={streetCollectorContent.testimonials.quotes}
+        fullWidth={true}
+      />
+
+      {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
+      <SectionWrapper spacing="xs" background="header" className="bg-[#2a0000]">
+        <Container maxWidth="default" paddingX="gutter">
+          <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8 md:mb-10">
+            We&apos;ve got you covered
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 py-6 md:py-8">
+            {streetCollectorContent.trustBar.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl bg-[#FFBA94]/10 p-6 sm:p-8 text-center flex flex-col items-center"
+              >
+                <div className="w-24 h-24 mb-5 flex items-center justify-center">
+                  {item.icon === 'shipping' && (
+                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
+                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+                      </svg>
+                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#390000]">Free</span>
+                    </div>
+                  )}
+                  {item.icon === 'guarantee' && (
+                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
+                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#390000]">12 mo</span>
+                    </div>
+                  )}
+                  {item.icon === 'returns' && (
+                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
+                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+                      </svg>
+                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#390000]">30d</span>
+                    </div>
+                  )}
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-[#FFBA94] mb-2">{item.label}</h3>
+                <p className="text-sm sm:text-base text-[#FFBA94]/90 leading-snug">{item.description ?? ''}</p>
+              </div>
+            ))}
+          </div>
+          {streetCollectorContent.trustBarCue && (
+            <div className="text-center pt-4">
+              <a
+                href={streetCollectorContent.experienceUrl}
+                className="text-base sm:text-lg text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
+              >
+                {streetCollectorContent.trustBarCue}
+              </a>
+            </div>
+          )}
+        </Container>
+      </SectionWrapper>
 
       {/* FAQ */}
       <StreetCollectorFAQ

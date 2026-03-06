@@ -77,9 +77,11 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 
 | Component | Path | Purpose |
 |-----------|------|---------|
+| `IntroQuiz` | [`app/shop/experience/components/IntroQuiz.tsx`](../../../app/shop/experience/components/IntroQuiz.tsx) | 4-step onboarding: lamp ownership, purpose (gift/self), name, optional email |
 | `ExperienceSlideoutMenu` | [`app/shop/experience/ExperienceSlideoutMenu.tsx`](../../../app/shop/experience/ExperienceSlideoutMenu.tsx) | Hamburger menu with auth slide-up |
 | `AuthSlideupMenu` | [`components/shop/auth/AuthSlideupMenu.tsx`](../../../components/shop/auth/AuthSlideupMenu.tsx) | Login/signup slide-up (Email OTP, Google, Facebook) |
 | `OrderBar` | [`app/shop/experience/components/OrderBar.tsx`](../../../app/shop/experience/components/OrderBar.tsx) | Drawer checkout with Address, Payment, Promo |
+| `ExperienceQuizPrefill` | [`components/shop/checkout/ExperienceQuizPrefill.tsx`](../../../components/shop/checkout/ExperienceQuizPrefill.tsx) | Pre-fills checkout address with quiz name/email |
 | `AddressModal` | [`components/shop/checkout/AddressModal.tsx`](../../../components/shop/checkout/AddressModal.tsx) | Shipping address form; "Same as billing" option |
 | `PaymentMethodsModal` | [`components/shop/checkout/PaymentMethodsModal.tsx`](../../../components/shop/checkout/PaymentMethodsModal.tsx) | Payment Element + billing section |
 | `PaymentStep` | [`components/shop/checkout/PaymentStep.tsx`](../../../components/shop/checkout/PaymentStep.tsx) | CheckoutProvider, Payment Element, error recovery |
@@ -96,11 +98,31 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 
 ### Stripe Configuration
 
-- Domain `app.thestreetcollector.com` registered for Google Pay
-- Payment methods enabled in Stripe Dashboard: card, link, paypal
+- **Payment method domains** — Google Pay, Link, and PayPal require domain registration. Register via:
+  - `POST /api/admin/register-payment-domains` (or `npm run register:payment-domains` with dev server running)
+  - Or manually at [Stripe Dashboard → Payment method domains](https://dashboard.stripe.com/settings/payment_method_domains)
+- Payment methods enabled in Stripe Dashboard: card, link, paypal, Google Pay
 - Environment variables: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
+**Google Pay not showing?** See [Google Pay troubleshooting in CHECKOUT_TEST_RUN](../../CHECKOUT_TEST_RUN.md#google-pay-not-showing).
+
 See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](../COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md) for earlier configuration details.
+
+## Intro Quiz Onboarding
+
+The experience starts with a 4-step intro quiz:
+
+| Step | Purpose flow | Content |
+|------|--------------|---------|
+| 1 | Both | "Let's get started" — Do you already have a Street Lamp? (Yes / I'm new here) + Skip for now |
+| 2 | Both | "Who is this for?" — For me / It's a gift |
+| 3 | Gift | "Let's create an awesome gift" — What's your name? + Continue |
+| 3 | Self | "Let's get to know you" — What's your name? + Continue |
+| 4 | Both | "Hey there, [Name]! 👋" — What's your email? (optional, can leave blank) + Continue + Terms of Use & Privacy Policy links |
+
+`QuizAnswers` includes `ownsLamp`, `purpose`, and optional `name` and `email`. Stored in `localStorage` under `sc-experience-quiz` for returning users. **Implementation**: [`app/shop/experience/components/IntroQuiz.tsx`](../../../app/shop/experience/components/IntroQuiz.tsx)
+
+**Checkout prefill**: When the user opens the checkout address modal, `name` and `email` from the quiz are used to pre-fill the address form (via `ExperienceQuizPrefill`). Logged-in user data takes precedence over quiz data when available.
 
 ## Collected Artworks (Logged-in Users)
 
@@ -145,5 +167,5 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 ## Version
 
-- Last updated: 2026-03-04
-- Version: 1.7.0
+- Last updated: 2026-03-05
+- Version: 1.8.0

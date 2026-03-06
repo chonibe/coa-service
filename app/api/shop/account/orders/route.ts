@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient as createRouteClient } from '@/lib/supabase-server'
 import { createClient as createServiceClient } from '@/lib/supabase/server'
@@ -6,6 +6,8 @@ import { mockAccountOrders } from '@/lib/mock-data'
 import { getTrackStatusLabel, getStatusLabel } from '@/lib/notifications/tracking-link'
 
 const MOCK_COOKIE = 'mock_user_email'
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 100
 
 /** Normalize order identifier for matching (strip #, trim) */
 function normalizeOrderId(val: string | null | undefined): string {
@@ -18,10 +20,11 @@ function normalizeOrderId(val: string | null | undefined): string {
  *
  * Returns order history for the authenticated customer from the orders table
  * (Shopify-synced data). Enriched with warehouse status when available.
- * Matches by customer_email. In development, supports mock orders via mock_user_email cookie.
+ * Matches by customer_email. Supports pagination via ?limit=&offset=.
+ * In development, supports mock orders via mock_user_email cookie.
  */
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const cookieStore = cookies()
     const mockEmail = cookieStore.get(MOCK_COOKIE)?.value
@@ -29,8 +32,15 @@ export async function GET() {
     const mockEnabled = process.env.MOCK_LOGIN_ENABLED === 'true'
 
     if (mockEmail && (isDev || mockEnabled)) {
-      return NextResponse.json({ orders: mockAccountOrders })
+      return NextResponse.json({ orders: mockAccountOrders, hasMore: false })
     }
+
+    const { searchParams } = request.nextUrl
+    const limit = Math.min(
+      Math.max(1, parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT),
+      MAX_LIMIT
+    )
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0)
 
     const supabase = createRouteClient(cookieStore)
 
@@ -66,16 +76,18 @@ export async function GET() {
       .ilike('customer_email', email)
       .is('cancelled_at', null)
       .order('processed_at', { ascending: false })
-      .limit(50)
+      .range(offset, offset + limit - 1)
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError)
-      return NextResponse.json({ orders: [] })
+      return NextResponse.json({ orders: [], hasMore: false })
     }
 
     if (!orders || orders.length === 0) {
-      return NextResponse.json({ orders: [] })
+      return NextResponse.json({ orders: [], hasMore: false })
     }
+
+    const hasMore = orders.length === limit
 
     const orderIds = orders.map((o) => o.id)
 
@@ -196,7 +208,7 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ orders: result })
+    return NextResponse.json({ orders: result, hasMore })
   } catch (error: unknown) {
     console.error('Orders fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })

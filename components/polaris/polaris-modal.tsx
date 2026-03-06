@@ -12,6 +12,8 @@ export interface PolarisModalProps extends React.HTMLAttributes<HTMLDivElement> 
   children?: React.ReactNode
   /** Optional class for the overlay container (e.g. z-[80] for high-z contexts) */
   overlayClassName?: string
+  /** When 'dark', adds dark class so content and CSS vars use dark theme (needed when portaled to body) */
+  theme?: 'light' | 'dark'
 }
 
 const sizeMap = {
@@ -30,6 +32,7 @@ export function PolarisModal({
   className,
   style,
   overlayClassName,
+  theme,
   ...props
 }: PolarisModalProps) {
   React.useEffect(() => {
@@ -65,7 +68,8 @@ export function PolarisModal({
       />
       <div
         className={cn(
-          'relative z-50 w-full overflow-hidden rounded-[var(--p-border-radius-300)] border border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] shadow-xl',
+          'relative z-50 w-full overflow-hidden rounded-[var(--p-border-radius-300)] border border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] text-[var(--p-color-text)] shadow-xl',
+          theme === 'dark' && 'dark !bg-neutral-950 !border-neutral-700',
           sizeMap[size],
           className
         )}
@@ -84,7 +88,7 @@ export function PolarisModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded p-1 hover:bg-[var(--p-color-bg-surface-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="rounded p-1 text-[var(--p-color-text)] hover:bg-[var(--p-color-bg-surface-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               aria-label="Close"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

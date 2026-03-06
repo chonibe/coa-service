@@ -92,7 +92,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-[#390000]', // Impact theme footer background
+          'bg-[#450000]', // Impact theme footer background (slightly lighter than #390000)
           'text-[#ffba94]', // Impact theme footer text
           newsletterEnabled ? 'pt-3 pb-8 sm:pt-4' : 'pt-12 pb-8 sm:pt-16',
           className
@@ -278,7 +278,7 @@ const SimpleFooter = React.forwardRef<HTMLElement, SimpleFooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-[#390000] text-[#ffba94]',
+          'bg-[#450000] text-[#ffba94]',
           'py-6',
           className
         )}

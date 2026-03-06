@@ -35,6 +35,10 @@ export interface OrderBarContextProps {
   pastLampPaywall?: boolean
   /** Set of product IDs user already owns (for "Collected" badge in order items) */
   collectedProductIds?: Set<string>
+  /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */
+  wizardHighlightStep?: number
+  /** Wizard: whether highlight animation is active */
+  wizardHighlightActive?: boolean
 }
 
 interface ExperienceOrderContextValue extends ExperienceOrderState {
@@ -50,6 +54,9 @@ interface ExperienceOrderContextValue extends ExperienceOrderState {
   promoDiscount: number
   setPromoCode: (code: string) => void
   setPromoDiscount: (amount: number) => void
+  /** Discount celebration: amount when adding first artwork (pops from under cart) */
+  discountCelebrationAmount: number | null
+  setDiscountCelebrationAmount: (amount: number | null) => void
 }
 
 const defaultValue: ExperienceOrderContextValue = {
@@ -68,6 +75,8 @@ const defaultValue: ExperienceOrderContextValue = {
   promoDiscount: 0,
   setPromoCode: () => {},
   setPromoDiscount: () => {},
+  discountCelebrationAmount: null,
+  setDiscountCelebrationAmount: () => {},
 }
 
 const ExperienceOrderContext = createContext<ExperienceOrderContextValue>(defaultValue)
@@ -77,6 +86,7 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   const [orderBarProps, setOrderBarPropsState] = useState<OrderBarContextProps | null>(null)
   const [promoCode, setPromoCodeState] = useState('')
   const [promoDiscount, setPromoDiscountState] = useState(0)
+  const [discountCelebrationAmount, setDiscountCelebrationAmountState] = useState<number | null>(null)
   const orderBarRef = useRef<OrderBarRefLike | null>(null)
 
   const setOrderSummary = useCallback((s: ExperienceOrderState) => {
@@ -92,6 +102,7 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   }, [])
   const setPromoCode = useCallback((code: string) => setPromoCodeState(code), [])
   const setPromoDiscount = useCallback((amount: number) => setPromoDiscountState(amount), [])
+  const setDiscountCelebrationAmount = useCallback((amount: number | null) => setDiscountCelebrationAmountState(amount), [])
 
   const value: ExperienceOrderContextValue = {
     ...state,
@@ -104,6 +115,8 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
     promoDiscount,
     setPromoCode,
     setPromoDiscount,
+    discountCelebrationAmount,
+    setDiscountCelebrationAmount,
   }
 
   return (

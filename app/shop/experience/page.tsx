@@ -19,6 +19,8 @@ export const metadata = {
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 const INITIAL_PRODUCTS_PER_SEASON = 36
+/** Artist collections to merge into Season 2 so their artworks appear in the selector */
+const SPOTLIGHT_COLLECTIONS_IN_SEASON2 = ['tyler-shelton'] as const
 
 interface ExperiencePageProps {
   searchParams: Promise<{ artist?: string; skipQuiz?: string }>
@@ -38,17 +40,34 @@ async function ExperienceProductsLoader({
   initialArtistSlug?: string
   skipQuiz: boolean
 }) {
-  const [season1Result, season2Result] = await Promise.all([
+  const [season1Result, season2Result, ...spotlightResults] = await Promise.all([
     getCollectionWithListProducts(SEASON_1_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
     }).catch(() => null),
     getCollectionWithListProducts(SEASON_2_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
     }).catch(() => null),
+    ...SPOTLIGHT_COLLECTIONS_IN_SEASON2.map((h) =>
+      getCollectionWithListProducts(h, { first: 12 }).catch(() => null)
+    ),
   ])
 
   const productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
-  const productsSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
+  const baseSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
+  const season2Ids = new Set(baseSeason2.map((p) => p.id))
+  const spotlightProducts: ShopifyProduct[] = []
+  for (const col of spotlightResults as Awaited<ReturnType<typeof getCollectionWithListProducts>>[]) {
+    const nodes = col?.products?.edges?.map((e) => e.node).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    ) ?? []
+    for (const p of nodes) {
+      if (!season2Ids.has(p.id)) {
+        season2Ids.add(p.id)
+        spotlightProducts.push(p)
+      }
+    }
+  }
+  const productsSeason2 = [...spotlightProducts, ...baseSeason2]
 
   const pageInfoSeason1: SeasonPageInfo = {
     hasNextPage: season1Result?.products?.pageInfo?.hasNextPage ?? false,

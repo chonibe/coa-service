@@ -72,7 +72,7 @@ export const streetCollectorContent = {
         'No AI. No screens. Just original art, delivered to your door.',
       poster:
         'https://thestreetcollector.com/cdn/shop/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
-      video: 'https://cdn.shopify.com/videos/c/o/v/992cbfacfba54746b7b733120537c523.mp4',
+      video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
     },
     {
       title: 'Live with it. Make it yours.',
@@ -89,15 +89,14 @@ export const streetCollectorContent = {
         'Every piece fuels the next one. Your purchase keeps culture alive.',
       poster:
         'https://thestreetcollector.com/cdn/shop/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
-      video:
-        'https://thestreetcollector.com/cdn/shop/videos/c/vp/026dcfa99353451aa897d2ca139ca81e/026dcfa99353451aa897d2ca139ca81e.HD-1080p-7.2Mbps-69787798.mp4?v=0',
+      video: 'https://cdn.shopify.com/videos/c/o/v/223348c706fe4ad298930c72e30d76b3.mp4',
     },
   ],
-  valuePropsCue: 'Browse current editions.',
+  valuePropsCue: '',
   /** Testimonials with media (video/image) from thestreetcollector.com AI testimonial carousel */
   testimonials: {
     title: 'Join 3000+ Collectors',
-    subtitle: 'Start your collection.',
+    subtitle: '',
     quotes: [
       {
         id: '1',
@@ -240,8 +239,8 @@ export const streetCollectorContent = {
     { label: 'Easy 30 days returns', description: 'No hassle if you change your mind.', icon: 'returns' },
   ],
   trustBarCue: 'Ready to start?',
-  featuredArtistsCue: 'View limited editions.',
-  featuredArtistsScarcity: 'Editions are limited. Once sold out, they do not return.',
+  featuredArtistsCue: '',
+  featuredArtistsScarcity: '', // Hidden for now: 'Editions are limited. Once sold out, they do not return.'
   collections: {
     freshArtDrops: {
       title: 'Fresh Art Drops',
@@ -355,7 +354,7 @@ export const streetCollectorContent = {
         title: 'About Artworks',
         items: [
           {
-            question: 'Can I change the artwork later?',
+            question: 'How do I swap around the artwork?',
             answer:
               'Yes. The press-and-click mechanism is built for fast swaps, so your display can evolve anytime.',
           },

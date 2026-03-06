@@ -5,6 +5,7 @@
 The main shop landing page inspired by [thestreetcollector.com](https://thestreetcollector.com/). This page serves as the default `/shop` route and provides a clean, conversion-focused layout.
 
 **Access:**
+- **Root:** `/` (app.thestreetcollector.com default — redirects here)
 - **Primary:** `/shop` (redirects here)
 - **Direct:** `/shop/street-collector`
 

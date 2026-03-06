@@ -320,7 +320,7 @@ async function handleGiftCardPurchase(supabase: any, session: Stripe.Checkout.Se
   const sendAt = sendAtRaw ? new Date(sendAtRaw) : null
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'
 
-  if (!amountCents || amountCents < 1000) {
+  if (!amountCents || amountCents < 10) {
     console.error('[gift-card] Invalid amount:', session.metadata?.gift_card_amount_cents)
     return
   }

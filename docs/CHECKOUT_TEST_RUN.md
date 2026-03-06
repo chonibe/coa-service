@@ -8,6 +8,21 @@ This guide covers how to test the Stripe checkout → Shopify order creation flo
 - [ ] **Shopify**: Admin API credentials configured (`SHOPIFY_SHOP`, `SHOPIFY_ACCESS_TOKEN`)
 - [ ] **Stripe** (for full flow): `STRIPE_SECRET_KEY` set (test mode key for local testing)
 - [ ] **Payment methods**: PayPal and Google Pay can be enabled in [Stripe Dashboard → Payment methods](https://dashboard.stripe.com/settings/payment_methods). Checkout supports card, PayPal, and Link (one-click/Google Pay) — see [`docs/COMMIT_LOGS/checkout-payment-methods-google-pay-paypal-2026-03-01.md`](COMMIT_LOGS/checkout-payment-methods-google-pay-paypal-2026-03-01.md)
+- [ ] **Google Pay domains**: Register domains at [Stripe Dashboard → Payment method domains](https://dashboard.stripe.com/settings/payment_method_domains), or run `POST /api/admin/register-payment-domains` to register them via API
+
+### Local development (localhost)
+
+Stripe **cannot register `localhost`** for payment method domains. On localhost you may see:
+
+- **Card input not accepting input** or Payment Element not loading properly
+- **PayPal / Google Pay tab** causing the payment modal to reset or fail
+
+**Recommended**: Use [ngrok](https://ngrok.com) for full payment testing:
+
+1. Run `ngrok http 3000` to get a public HTTPS URL (e.g. `https://abc123.ngrok.io`)
+2. Set `NEXT_PUBLIC_APP_URL=https://abc123.ngrok.io` in `.env.local`
+3. Run `POST /api/admin/register-payment-domains` (or `npm run register:payment-domains`) to register the ngrok domain
+4. Open the ngrok URL in your browser and test checkout
 
 ## Quick API Test (Zero-Order)
 
@@ -120,3 +135,27 @@ When the order is created in Shopify, Shopify sends `orders/create` to `/api/web
 | "Failed to create order"     | Shopify API credentials; variant IDs valid                            |
 | Stripe webhook not firing    | Stripe CLI running; `STRIPE_WEBHOOK_SECRET` matches `stripe listen`    |
 | Order not in Shopify         | Check server logs for Shopify API errors                              |
+| **Google Pay not showing**   | See [Google Pay Troubleshooting](#google-pay-not-showing) below       |
+
+### Google Pay not showing
+
+Google Pay requires domain registration before it appears in the Payment Element. Follow these steps:
+
+1. **Register domains with Stripe**
+   - Option A: Call `POST /api/admin/register-payment-domains` (with dev server running)
+   - Option B: Manually add domains at [Stripe Dashboard → Payment method domains](https://dashboard.stripe.com/settings/payment_method_domains)
+   - Register: `app.thestreetcollector.com`, `thestreetcollector.com`, `www.thestreetcollector.com` (and any other domains where checkout runs)
+
+2. **Enable Google Pay in Dashboard**
+   - [Stripe Dashboard → Settings → Payment methods](https://dashboard.stripe.com/settings/payment_methods) → enable **Google Pay**
+
+3. **Device & browser requirements**
+   - Use Chrome (or supported browser), not incognito
+   - Log in to a Google account with a card saved to Google Pay/Wallet
+   - Allow "sites to check if you have payment methods saved" (Chrome: Settings → Autofill → Payment methods)
+   - If logged into Link, it may take priority over Google Pay — try logging out of Link to test
+
+4. **Verify registration**
+   - `GET /api/admin/register-payment-domains` returns current domains and their status (`google_pay`, `link`, `paypal`)
+
+See [Stripe: Register domains for payment methods](https://docs.stripe.com/payments/payment-methods/pmd-registration) and [Testing wallets](https://docs.stripe.com/testing/wallets).

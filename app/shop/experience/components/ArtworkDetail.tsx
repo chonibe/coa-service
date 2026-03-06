@@ -35,11 +35,15 @@ interface ArtworkDetailProps {
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
   /** Override add button label (e.g. "Add Lamp to order" for lamp product) */
   addToOrderLabel?: string
+  /** When true, show "Collected" badge (user owns this from past orders) */
+  isCollected?: boolean
+  /** When true, show "New Drop" badge (part of artist spotlight) */
+  isNewDrop?: boolean
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order' }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -366,7 +370,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mt-0.5 leading-tight">
                       {product.title}
                     </h2>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       {editionSizeNum && editionSizeNum > 0 && (
                         <span className="text-xs text-neutral-500 dark:text-neutral-400">
                           Edition of {editionSizeNum}
@@ -377,8 +381,45 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           Sold out
                         </span>
                       )}
+                      {isCollected && !isSoldOut && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded">
+                          <Package className="w-3 h-3" strokeWidth={2} />
+                          Collected
+                        </span>
+                      )}
+                      {isNewDrop && !isSoldOut && !isCollected && (
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded">
+                          New Drop
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* Guarantee / returns / shipping badges — desktop */}
+                  {productBadges && productBadges.length > 0 && (
+                    <div className="flex flex-wrap gap-2 py-4 border-b border-neutral-100 dark:border-white/10">
+                      {productBadges.map((item, i) => {
+                        const Icon = { shield: Shield, rotate: RotateCcw, globe: Globe }[item.icon]
+                        const styles = item.icon === 'shield'
+                          ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300'
+                          : item.icon === 'rotate'
+                            ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300'
+                            : 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'
+                        return (
+                          <span
+                            key={i}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium',
+                              styles
+                            )}
+                          >
+                            <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                            {item.label}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
 
                   {/* Tags */}
                   {product.tags && product.tags.length > 0 && (
@@ -531,8 +572,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                       >
                         <div className="flex items-center gap-3">
-                          {allImages[0] ? (
-                            <Image src={allImages[0].url} alt={product.title} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
+                          {(artistData?.image || allImages[0]?.url) ? (
+                            <Image src={artistData?.image || allImages[0]!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
                           ) : (
                             <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
                               <User className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -943,10 +984,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    {allImages[0] ? (
+                    {(artistData?.image || allImages[0]?.url) ? (
                       <Image
-                        src={allImages[0].url}
-                        alt={product.title}
+                        src={artistData?.image || allImages[0]!.url}
+                        alt={artistData?.name || artist}
                         width={32}
                         height={32}
                         className="w-8 h-8 rounded-lg object-cover"
@@ -1112,6 +1153,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {isSoldOut && (
                     <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
                       Sold out
+                    </span>
+                  )}
+                  {isCollected && !isSoldOut && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
+                      <Package className="w-2.5 h-2.5" strokeWidth={2} />
+                      Collected
+                    </span>
+                  )}
+                  {isNewDrop && !isSoldOut && !isCollected && (
+                    <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
+                      New Drop
                     </span>
                   )}
                 </div>

@@ -80,6 +80,8 @@ By default, Supabase sends a **magic link** when using `signInWithOtp`. To send 
 - Do **not** include `{{ .ConfirmationURL }}` if you want OTP-only (no magic link)
 - OTP expires in 1 hour by default; configurable in **Auth → Providers → Email → Email OTP Expiration**
 
+**Street Collector branding**: To send OTP emails with Street Collector subject/body instead of Supabase's default, see [SUPABASE_OTP_EMAIL_CUSTOMIZATION.md](../../SUPABASE_OTP_EMAIL_CUSTOMIZATION.md) for full instructions (subject, body, custom SMTP sender).
+
 ### 2. Facebook OAuth
 
 1. Go to **Supabase Dashboard** → **Authentication** → **Providers**

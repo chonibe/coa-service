@@ -31,6 +31,9 @@ export interface AuthSlideupMenuProps {
 
 const COLLECTOR_REDIRECT = '/shop/experience'
 
+/** Set to true to show Facebook login option */
+const SHOW_FACEBOOK_LOGIN = false
+
 /** Supabase returns this when built-in email limit (2/hour) is hit. Custom SMTP fixes it. */
 const RATE_LIMIT_HINT = 'Email sending is temporarily limited. Try signing in with Google or Facebook instead, or try again in about an hour.'
 
@@ -85,7 +88,12 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
       })
 
       if (otpError) {
-        setError(isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message)
+        console.error('[AuthSlideupMenu] OTP error:', otpError)
+        const msg = isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message
+        const smtpHint = otpError.message?.toLowerCase().includes('500') || otpError.message?.toLowerCase().includes('internal')
+          ? ' Check Supabase SMTP settings (Auth → SMTP) if you recently changed them.'
+          : ''
+        setError(msg + smtpHint)
         setIsLoading(false)
         return
       }
@@ -117,7 +125,10 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         email: email.trim(),
         options: { shouldCreateUser: true },
       })
-      if (otpError) setError(isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message)
+      if (otpError) {
+        console.error('[AuthSlideupMenu] OTP resend error:', otpError)
+        setError(isEmailRateLimitError(otpError.message) ? RATE_LIMIT_HINT : otpError.message)
+      }
       else setResendCooldown(60)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -195,7 +206,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
+                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-400"
                 autoComplete="email"
                 disabled={isLoading}
               />
@@ -234,15 +245,17 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 <GoogleIcon className="h-5 w-5 mr-3" />
                 Continue with Google
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
-                onClick={() => handleOAuth('facebook')}
-              >
-                <FacebookIcon className="h-5 w-5 mr-3" />
-                Continue with Facebook
-              </Button>
+              {SHOW_FACEBOOK_LOGIN && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
+                  onClick={() => handleOAuth('facebook')}
+                >
+                  <FacebookIcon className="h-5 w-5 mr-3" />
+                  Continue with Facebook
+                </Button>
+              )}
             </div>
 
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-6 text-center">
@@ -275,7 +288,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter Code"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white text-center text-lg tracking-widest"
+                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-400 text-center text-lg tracking-widest"
                 maxLength={6}
                 disabled={isLoading}
                 autoFocus
@@ -317,6 +330,8 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
     </div>
   )
 
+  const isDark = theme === 'dark'
+
   if (isDesktop) {
     return (
       <Modal
@@ -324,7 +339,11 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         onClose={handleClose}
         size="medium"
         overlayClassName="z-[80]"
-        className={cn('max-w-md border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl', theme === 'dark' && 'dark')}
+        theme={theme}
+        className={cn(
+          'max-w-md border-neutral-200 shadow-xl',
+          isDark ? 'dark border-neutral-700' : 'bg-white'
+        )}
       >
         {content}
       </Modal>
@@ -337,7 +356,11 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
       onClose={handleClose}
       side="bottom"
       overlayClassName="z-[80]"
-      className={cn('max-h-[90vh] rounded-t-2xl border-t border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950', theme === 'dark' && 'dark')}
+      theme={theme}
+      className={cn(
+        'max-h-[90vh] rounded-t-2xl border-t border-neutral-200',
+        isDark ? 'dark border-neutral-700' : 'bg-white'
+      )}
     >
       {content}
     </Sheet>

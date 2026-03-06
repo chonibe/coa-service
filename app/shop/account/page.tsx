@@ -68,6 +68,9 @@ export default function AccountPage() {
   const { user, isAuthenticated, loading, refreshUser } = useShopAuthContext()
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [ordersHasMore, setOrdersHasMore] = useState(false)
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<{
@@ -81,14 +84,36 @@ export default function AccountPage() {
     ? { email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone }
     : null
 
-  // Fetch orders when authenticated
+  const PAGE_SIZE = 50
+
+  const fetchOrders = useCallback(
+    async (offset = 0, append = false) => {
+      if (!isAuthenticated) return
+      if (offset === 0) setOrdersLoading(true)
+      else setLoadMoreLoading(true)
+      try {
+        const res = await fetch(
+          `/api/shop/account/orders?limit=${PAGE_SIZE}&offset=${offset}`
+        )
+        const data = res.ok ? await res.json() : { orders: [], hasMore: false }
+        const list = data.orders || []
+        setOrders((prev) => (append ? [...prev, ...list] : list))
+        setOrdersHasMore(!!data.hasMore)
+      } catch {
+        if (!append) setOrders([])
+        setOrdersHasMore(false)
+      } finally {
+        setOrdersLoading(false)
+        setLoadMoreLoading(false)
+      }
+    },
+    [isAuthenticated]
+  )
+
   useEffect(() => {
     if (!isAuthenticated) return
-    fetch('/api/shop/account/orders')
-      .then((res) => (res.ok ? res.json() : { orders: [] }))
-      .then((data) => setOrders(data.orders || []))
-      .catch(() => setOrders([]))
-  }, [isAuthenticated])
+    fetchOrders(0, false)
+  }, [isAuthenticated, fetchOrders])
 
   // Fetch saved addresses when authenticated (profile tab / account)
   const fetchAddresses = useCallback(() => {
@@ -365,7 +390,14 @@ export default function AccountPage() {
           {/* Orders Tab */}
           {activeTab === 'orders' && (
             <div className="space-y-4">
-              {orders.length === 0 ? (
+              {ordersLoading && orders.length === 0 ? (
+                <Card variant="default" padding="lg" className="text-center">
+                  <div className="py-8 animate-pulse">
+                    <div className="h-6 bg-[#f5f5f5] rounded w-1/3 mx-auto mb-4" />
+                    <div className="h-4 bg-[#f5f5f5] rounded w-1/2 mx-auto" />
+                  </div>
+                </Card>
+              ) : orders.length === 0 ? (
                 <Card variant="default" padding="lg" className="text-center">
                   <div className="py-8">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f5f5f5] flex items-center justify-center">
@@ -386,8 +418,9 @@ export default function AccountPage() {
                   </div>
                 </Card>
               ) : (
-                orders.map((order) => (
-                  <Card key={order.id} variant="default" padding="md">
+                <>
+                  {orders.map((order) => (
+                    <Card key={order.id} variant="default" padding="md">
                     {/* Order Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#1a1a1a]/10">
                       <div>
@@ -494,8 +527,20 @@ export default function AccountPage() {
                       </div>
                     )}
                   </Card>
-                ))
-              )}
+                ))}
+                {ordersHasMore && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchOrders(orders.length, true)}
+                      disabled={loadMoreLoading}
+                    >
+                      {loadMoreLoading ? 'Loading...' : 'Load more orders'}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
             </div>
           )}
 

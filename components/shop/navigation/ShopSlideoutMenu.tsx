@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User } from 'lucide-react'
 import { Sheet } from '@/components/ui'
@@ -23,6 +23,8 @@ export interface ShopSlideoutMenuProps {
   onClose: () => void
   theme?: 'light' | 'dark'
   authRedirectTo?: string
+  /** When set, show logo linking to this href instead of "Menu" title in header */
+  logoHref?: string
   /** For experience page: promo/order state from OrderContext */
   promoCode?: string
   promoDiscount?: number
@@ -30,27 +32,51 @@ export interface ShopSlideoutMenuProps {
   orderTotal?: number
   volumeDiscountLabel?: string
   volumeDiscountDescription?: string
+  /** When false, hide Promo Codes menu item (e.g. until configured in Stripe) */
+  showPromoCodes?: boolean
 }
 
 /**
  * Shared slideout menu used by Experience header and street-collector top bar.
  * Same menu content: auth, Buy Gift Card, Promo Codes, My Orders, Help Center, Chat.
  */
+const LOGO_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
+const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
+
+function getQuizName(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(QUIZ_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { name?: string }
+    return parsed.name?.trim() || null
+  } catch {
+    return null
+  }
+}
+
 export function ShopSlideoutMenu({
   open,
   onClose,
   theme = 'light',
   authRedirectTo = '/shop/experience',
+  logoHref,
   promoCode: controlledPromoCode,
   promoDiscount: controlledPromoDiscount,
   onPromoChange,
   orderTotal = 0,
   volumeDiscountLabel,
   volumeDiscountDescription,
+  showPromoCodes = false,
 }: ShopSlideoutMenuProps) {
   const [authOpen, setAuthOpen] = useState(false)
   const [promoModalOpen, setPromoModalOpen] = useState(false)
+  const [quizName, setQuizName] = useState<string | null>(null)
   const { user, isAuthenticated, loading } = useShopAuthContext()
+
+  useEffect(() => {
+    if (open) setQuizName(getQuizName())
+  }, [open])
 
   const useControlledPromo = onPromoChange != null
   const [localPromoCode, setLocalPromoCode] = useState('')
@@ -90,7 +116,20 @@ export function ShopSlideoutMenu({
       >
         <div className="flex flex-col h-full bg-white dark:bg-neutral-950">
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
-            <span className="text-lg font-semibold text-neutral-900 dark:text-white">Menu</span>
+            <Link
+              href={logoHref ?? '/shop/street-collector'}
+              onClick={onClose}
+              className="flex items-center shrink-0"
+              aria-label="Street Collector home"
+            >
+              <img
+                src={LOGO_URL}
+                alt="Street Collector"
+                className="h-8 w-auto object-contain"
+                width={80}
+                height={32}
+              />
+            </Link>
             <button
               type="button"
               onClick={onClose}
@@ -125,6 +164,10 @@ export function ShopSlideoutMenu({
             ) : (
               <>
                 <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
+                  {quizName && (
+                    <span className="font-semibold">Hi {quizName} 👋</span>
+                  )}
+                  {quizName && <br />}
                   <span className="font-semibold">Sign up</span>
                   {' to save your progress &'}
                   <br />
@@ -145,7 +188,7 @@ export function ShopSlideoutMenu({
           </div>
 
           <nav className="flex flex-col py-4">
-            {MENU_ITEMS.map((item) => {
+            {MENU_ITEMS.filter((item) => showPromoCodes || !('openPromoModal' in item && item.openPromoModal)).map((item) => {
               const Icon = item.icon
               const content = (
                 <span className="flex items-center gap-4">
@@ -204,16 +247,18 @@ export function ShopSlideoutMenu({
         redirectTo={authRedirectTo}
       />
 
-      <PromoCodeModal
-        open={promoModalOpen}
-        onOpenChange={setPromoModalOpen}
-        appliedCode={promoCode}
-        appliedDiscount={promoDiscount}
-        onApply={handlePromoApply}
-        onRemove={handlePromoRemove}
-        volumeDiscountLabel={volumeDiscountLabel}
-        volumeDiscountDescription={volumeDiscountDescription}
-      />
+      {showPromoCodes && (
+        <PromoCodeModal
+          open={promoModalOpen}
+          onOpenChange={setPromoModalOpen}
+          appliedCode={promoCode}
+          appliedDiscount={promoDiscount}
+          onApply={handlePromoApply}
+          onRemove={handlePromoRemove}
+          volumeDiscountLabel={volumeDiscountLabel}
+          volumeDiscountDescription={volumeDiscountDescription}
+        />
+      )}
     </>
   )
 }

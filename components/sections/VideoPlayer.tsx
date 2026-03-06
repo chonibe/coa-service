@@ -36,10 +36,12 @@ export interface VideoPlayerProps {
     textColor?: string
     overlayColor?: string
     overlayOpacity?: number
-    position?: 'center' | 'lower-center' | 'bottom-left' | 'bottom-center'
+    position?: 'center' | 'lower-center' | 'bottom-left' | 'bottom-center' | 'top-center'
     headlineSize?: 'default' | 'large' | 'medium'
     /** When true, renders subheadline first (small) then headline (big). Default false = headline first. */
     subheadlineFirst?: boolean
+    /** When 'bottom', CTA renders at bottom of hero (e.g. with title at top). Default 'with-title'. */
+    ctaPosition?: 'with-title' | 'bottom'
   }
   size?: 'sm' | 'md' | 'lg' | 'full'
   fullWidth?: boolean
@@ -96,6 +98,7 @@ export function VideoPlayer({
     'lower-center': 'justify-end items-center text-center pb-[18vh] sm:pb-[4vh]',
     'bottom-left': 'items-end justify-start text-left pb-16 px-8',
     'bottom-center': 'items-end justify-center text-center pb-20',
+    'top-center': 'justify-start items-center text-center pt-20 sm:pt-24',
   }
 
   return (
@@ -138,16 +141,136 @@ export function VideoPlayer({
       )}
 
       {/* Content */}
-      {overlay && (overlay.headline || overlay.subheadline || overlay.cta) && (
+      {overlay && (overlay.headline || overlay.subheadline || overlay.cta) && (() => {
+        const isCtaAtBottom = overlay.ctaPosition === 'bottom' && overlay.position === 'top-center'
+        return (
         <div
           className={cn(
             'absolute inset-0 flex flex-col',
-            positionClasses[overlay.position || 'center']
+            isCtaAtBottom
+              ? 'justify-between items-center'
+              : positionClasses[overlay.position || 'center']
           )}
         >
-          <Container maxWidth="default" paddingX="gutter" className="flex justify-center">
-            <div className="max-w-2xl mx-auto w-full text-center">
-              {overlay.subheadlineFirst ? (
+          {isCtaAtBottom ? (
+            <>
+              {/* Title block at top */}
+              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-20 sm:pt-24">
+                <div className="max-w-2xl mx-auto w-full text-center">
+                  {overlay.subheadlineFirst ? (
+                    <>
+                      {overlay.subheadline && (
+                        <p
+                          className={cn(
+                            'mb-2',
+                            overlay.headlineSize === 'large'
+                              ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
+                              : overlay.headlineSize === 'medium'
+                                ? 'text-lg sm:text-xl md:text-xl'
+                                : 'text-lg sm:text-xl'
+                          )}
+                          style={{ color: overlay.textColor || '#ffffff' }}
+                        >
+                          {overlay.subheadline}
+                        </p>
+                      )}
+                      {overlay.headline && (
+                        <h1
+                          className={cn(
+                            'font-heading font-semibold tracking-[-0.02em]',
+                            overlay.headlineSize === 'large'
+                              ? 'text-6xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl sm:whitespace-nowrap'
+                              : overlay.headlineSize === 'medium'
+                                ? 'text-3xl sm:text-4xl md:text-4xl lg:text-5xl'
+                                : 'text-impact-h0 xl:text-impact-h0-lg sm:whitespace-nowrap'
+                          )}
+                          style={{ color: overlay.textColor || '#ffffff' }}
+                        >
+                          {overlay.headline}
+                        </h1>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {overlay.headline && (
+                        <h1
+                          className={cn(
+                            'font-heading font-semibold tracking-[-0.02em] mb-8 sm:mb-10',
+                            overlay.headlineSize === 'large'
+                              ? 'text-6xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl sm:whitespace-nowrap'
+                              : overlay.headlineSize === 'medium'
+                                ? 'text-3xl sm:text-4xl md:text-4xl lg:text-5xl'
+                                : 'text-impact-h0 xl:text-impact-h0-lg sm:whitespace-nowrap'
+                          )}
+                          style={{ color: overlay.textColor || '#ffffff' }}
+                        >
+                          {overlay.headline}
+                        </h1>
+                      )}
+                      {overlay.subheadline && (
+                        <p
+                          className={cn(
+                            overlay.headlineSize === 'large'
+                              ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
+                              : overlay.headlineSize === 'medium'
+                                ? 'text-lg sm:text-xl md:text-xl'
+                                : 'text-lg sm:text-xl'
+                          )}
+                          style={{ color: overlay.textColor || '#ffffff' }}
+                        >
+                          {overlay.subheadline}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Container>
+              {/* CTA block at bottom */}
+              {(overlay.cta || overlay.microCue) && (
+                <Container maxWidth="default" paddingX="gutter" className="flex justify-center pb-[18vh] sm:pb-[4vh]">
+                  <div className="max-w-2xl mx-auto w-full text-center flex flex-col items-center gap-4">
+                    {overlay.cta && (
+                      <a
+                        href={overlay.cta.url}
+                        className={cn(
+                          'hidden sm:inline-flex items-center justify-center font-semibold rounded-lg transition-all',
+                          overlay.cta.backgroundColor || overlay.cta.color
+                            ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base shadow-lg hover:opacity-90'
+                            : overlay.cta.style === 'glassmorphism'
+                              ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/30 shadow-lg'
+                              : overlay.cta.style === 'primary'
+                                ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-[#047AFF] text-white hover:opacity-90'
+                                : 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-white text-white hover:bg-white hover:text-[#1a1a1a]'
+                        )}
+                        style={
+                          overlay.cta.backgroundColor || overlay.cta.color
+                            ? {
+                                backgroundColor: overlay.cta.backgroundColor,
+                                color: overlay.cta.color,
+                              }
+                            : undefined
+                        }
+                      >
+                        {overlay.cta.text}
+                      </a>
+                    )}
+                    {overlay.microCue && (
+                      <a
+                        href={overlay.ctaUrl || overlay.cta?.url || '#'}
+                        className="text-sm sm:text-base opacity-90 hover:opacity-100 underline underline-offset-2 transition-opacity"
+                        style={{ color: overlay.textColor || '#ffffff' }}
+                      >
+                        {overlay.microCue}
+                      </a>
+                    )}
+                  </div>
+                </Container>
+              )}
+            </>
+          ) : (
+            <Container maxWidth="default" paddingX="gutter" className="flex justify-center">
+              <div className="max-w-2xl mx-auto w-full text-center">
+                {overlay.subheadlineFirst ? (
                 <>
                   {overlay.subheadline && (
                     <p
@@ -250,8 +373,10 @@ export function VideoPlayer({
               )}
             </div>
           </Container>
+          )}
         </div>
-      )}
+      )
+    })()}
 
       {/* Play button overlay */}
       {showPlayButton && (

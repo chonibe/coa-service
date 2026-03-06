@@ -30,6 +30,7 @@
     "supabase:redirects": "node -r dotenv/config scripts/add-supabase-redirects.js",
     "supabase:config-push": "supabase config push",
     "supabase:link": "supabase link --project-ref ldmppmnpgdxueebkkpid",
+    "supabase:update-otp-email": "node -r dotenv/config scripts/supabase-update-otp-email-template.js",
     "migration:phase3-phase4": "node scripts/apply-phase3-phase4-migration.js",
     "test:graphql": "jest --testNamePattern='GraphQL'",
     "test:auth": "jest --testNamePattern='Authentication'",
@@ -48,6 +49,7 @@
     "update:barcodes": "tsx scripts/update-shopify-barcodes.js",
     "register:webhooks": "tsx scripts/register-shopify-product-webhook.js",
     "process:barcodes": "curl -X POST http://localhost:3000/api/admin/process-all-barcodes -H \"Content-Type: application/json\" -d '{\"limit\": 100}'",
+    "register:payment-domains": "curl -s -X POST http://localhost:3000/api/admin/register-payment-domains -H \"Content-Type: application/json\" | jq . 2>/dev/null || curl -s -X POST http://localhost:3000/api/admin/register-payment-domains -H \"Content-Type: application/json\"",
     "test:webhooks": "tsx scripts/test-barcode-webhooks.js"
   },
   "lint-staged": {

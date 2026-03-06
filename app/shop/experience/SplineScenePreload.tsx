@@ -17,6 +17,7 @@ export function SplineScenePreload() {
     link.rel = 'preload'
     link.href = SCENE_PATH
     link.as = 'fetch'
+    link.crossOrigin = 'anonymous'
     document.head.appendChild(link)
     return () => {
       link.remove()

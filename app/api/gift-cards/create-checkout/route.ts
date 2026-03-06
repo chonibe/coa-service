@@ -10,7 +10,7 @@ const baseUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
   'http://localhost:3000'
 
-const MIN_AMOUNT_CENTS = 1000 // $10
+const MIN_AMOUNT_CENTS = 10 // $0.10 (for testing)
 const MAX_AMOUNT_CENTS = 50000 // $500
 const SEASON1_ARTWORK_CENTS = 4000 // $40
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     if (giftCardType === 'value' && (amount < MIN_AMOUNT_CENTS || amount > MAX_AMOUNT_CENTS)) {
       return NextResponse.json(
         {
-          error: `Amount must be between $${(MIN_AMOUNT_CENTS / 100).toFixed(0)} and $${(MAX_AMOUNT_CENTS / 100).toFixed(0)}`,
+          error: `Amount must be between $${(MIN_AMOUNT_CENTS / 100).toFixed(1)} and $${(MAX_AMOUNT_CENTS / 100).toFixed(0)}`,
         },
         { status: 400 }
       )

@@ -151,8 +151,9 @@ export async function POST(request: NextRequest) {
       ...(stripeCustomerId ? { customer: stripeCustomerId } : (email ? { customer_email: email } : {})),
       payment_method_types: ['card', 'link', 'paypal'],
       automatic_tax: { enabled: false },
-      allow_promotion_codes: true,
-      ...(discounts?.length ? { discounts } : {}),
+      ...(discounts?.length
+        ? { discounts }
+        : { allow_promotion_codes: true }),
       billing_address_collection: 'auto',
       payment_intent_data: {
         setup_future_usage: 'off_session',

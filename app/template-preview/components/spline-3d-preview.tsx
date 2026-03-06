@@ -8,7 +8,8 @@ import { Application } from "@splinetool/runtime"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
 
 const __SPLINE_DEV__ = process.env.NODE_ENV === "development"
-const splineLog = (...args: unknown[]) => __SPLINE_DEV__ && console.log('[Spline]', ...args)
+const __SPLINE_VERBOSE__ = process.env.NEXT_PUBLIC_SPLINE_VERBOSE === '1'
+const splineLog = (...args: unknown[]) => __SPLINE_DEV__ && __SPLINE_VERBOSE__ && console.log('[Spline]', ...args)
 
 /** Get THREE.Color constructor from Spline scene to avoid bundling a second Three.js instance. */
 function getColorConstructor(scene: any, app?: any): new (hex: string) => { setHex?: (h: number) => void } | null {
@@ -87,6 +88,8 @@ interface Spline3DPreviewProps {
   animate?: boolean
   /** When true with animate, rotation follows cursor for interactivity. */
   interactive?: boolean
+  /** Increment to reset lamp rotation and camera to start state (e.g. when deselecting eye preview) */
+  resetTrigger?: number
 }
 
 export function Spline3DPreview({ 
@@ -119,6 +122,7 @@ export function Spline3DPreview({
   pointLightDistance,
   animate = false,
   interactive = false,
+  resetTrigger = 0,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -993,6 +997,32 @@ export function Spline3DPreview({
     const flipA = flipForSide === 'A' || flipForSide === 'both'
     const flipBResolved = flipForSideB ?? (flipForSide === 'B' || flipForSide === 'both')
 
+    /** Clear panel texture layers to base/empty state when no image is selected */
+    const clearPanelToBaseState = (obj: any, label: string) => {
+      if (!obj) return
+      const material = obj.material || obj.mesh?.material
+      if (!material?.layers) return
+      let cleared = 0
+      for (let i = 0; i < material.layers.length; i++) {
+        const layer = material.layers[i]
+        if (layer.type === 'texture' && layer.texture) {
+          if (layer.texture?.image != null) {
+            layer.texture.image = null
+            cleared++
+          } else if (layer.texture != null) {
+            layer.texture = null
+            cleared++
+          }
+          if (layer.texture?.needsUpdate !== undefined) layer.texture.needsUpdate = true
+        }
+      }
+      if (cleared > 0) {
+        material.needsUpdate = true
+        if (material.version !== undefined) material.version++
+        splineLog(`[Spline3D] Cleared ${label} to base state (${cleared} layer(s))`)
+      }
+    }
+
     const sideALayerLayout = { projection: undefined as number | undefined, axis: undefined as string | undefined }
     if (imgA && objA) {
       side1ObjectRef.current = objA
@@ -1002,6 +1032,7 @@ export function Spline3DPreview({
       splineLog(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
     } else {
       side1ObjectRef.current = null
+      if (objA && !imgA) clearPanelToBaseState(objA, "Side A")
       if (imgA) splineWarn(`[Spline3D] Side A object not found or has no material`)
     }
 
@@ -1018,7 +1049,13 @@ export function Spline3DPreview({
       splineLog(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
     } else {
       side2ObjectRef.current = null
+      if (objB && !imgB) clearPanelToBaseState(objB, "Side B")
       if (imgB) splineWarn(`[Spline3D] Side B object not found or has no material`)
+    }
+
+    // Force Spline runtime to refresh after clearing panels
+    if ((!imgA || !imgB) && (objA || objB) && app.update && typeof app.update === 'function') {
+      app.update()
     }
 
     // Force render
@@ -1029,33 +1066,70 @@ export function Spline3DPreview({
 
   // Load Spline scene
   useEffect(() => {
-    if (typeof window === "undefined" || !canvasRef.current) return
+    if (typeof window === "undefined" || !canvasRef.current || !containerRef.current) return
 
     setIsLoading(true)
     setError(null)
 
     const canvas = canvasRef.current
+    const container = containerRef.current
+    const forceCursorGrab = () => canvas.style.setProperty('cursor', 'grab', 'important')
+    const forceCursorGrabbing = () => canvas.style.setProperty('cursor', 'grabbing', 'important')
 
-    // Set canvas size
+    // Set canvas size — On mobile use viewport-based sizing (container rect is unreliable during flex transitions).
+    // Hide canvas during resize on mobile to prevent "bottom-left stays, right expands" visual glitch.
+    const isMobile = () => window.innerWidth < 768
     const setCanvasSize = () => {
-      const rect = canvas.getBoundingClientRect()
-      const width = Math.max(rect.width || canvas.clientWidth || 800, 100)
-      const height = Math.max(rect.height || canvas.clientHeight || 600, 100)
-      
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width
-        canvas.height = height
-      }
+      requestAnimationFrame(() => {
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const absMax = 1200
+        const maxW = Math.min(vw, absMax)
+        const maxH = Math.min(vh, absMax)
+
+        let width: number
+        let height: number
+
+        if (isMobile()) {
+          // Mobile: use viewport fractions — container rect is unreliable during selector transitions
+          width = Math.round(Math.min(vw, 600))
+          height = Math.round(Math.min(vh * 0.55, 600)) // ~55dvh when collapsed
+          width = Math.min(Math.max(width, 100), maxW)
+          height = Math.min(Math.max(height, 100), maxH)
+        } else {
+          const rect = container.getBoundingClientRect()
+          const rawW = rect.width || 0
+          const rawH = rect.height || 0
+          const valid = rawW > 0 && rawH > 0 && rawW < vw * 2 && rawH < vh * 2
+          width = valid
+            ? Math.round(Math.min(Math.max(rawW, 100), maxW))
+            : Math.min(800, maxW)
+          height = valid
+            ? Math.round(Math.min(Math.max(rawH, 100), maxH))
+            : Math.min(600, maxH)
+        }
+
+        if (canvas.width !== width || canvas.height !== height) {
+          if (isMobile()) {
+            canvas.style.opacity = '0'
+            canvas.style.transition = 'opacity 0.05s'
+          }
+          canvas.width = width
+          canvas.height = height
+          if (isMobile()) {
+            requestAnimationFrame(() => {
+              canvas.style.opacity = '1'
+              canvas.style.transition = ''
+            })
+          }
+        }
+      })
     }
-    
-    setCanvasSize()
-    
-    // Resize observer
-    let resizeObserver: ResizeObserver | null = null
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(setCanvasSize)
-      resizeObserver.observe(canvas)
-    }
+
+    // Resize ONLY when chevron collapses/expands the selector — no window resize, no stabilization
+    const EXPERIENCE_SELECTOR_SETTLED = 'experience-selector-settled'
+    const handleSelectorSettled = () => setCanvasSize()
+    window.addEventListener(EXPERIENCE_SELECTOR_SETTLED, handleSelectorSettled)
 
     try {
       const app = new Application(canvas, { renderMode: 'continuous' })
@@ -1063,6 +1137,11 @@ export function Spline3DPreview({
       app.load(SCENE_PATH)
         .then(() => {
           splineAppRef.current = app
+          // Override Spline's cursor hiding – force grab cursor to stay visible
+          canvas.style.setProperty('cursor', 'grab', 'important')
+          canvas.addEventListener('mousedown', forceCursorGrabbing)
+          canvas.addEventListener('mouseup', forceCursorGrab)
+          canvas.addEventListener('mouseleave', forceCursorGrab)
           const bgTheme = previewTheme ?? lampVariant
           const hex = bgTheme === 'light' ? '#F5F5F5' : '#1A1A1A'
           if (typeof (app as any).setBackgroundColor === 'function') {
@@ -1927,10 +2006,10 @@ export function Spline3DPreview({
     }
 
     return () => {
-      if (resizeObserver) {
-        resizeObserver.disconnect()
-      }
-      
+      window.removeEventListener(EXPERIENCE_SELECTOR_SETTLED, handleSelectorSettled)
+      canvas.removeEventListener('mousedown', forceCursorGrabbing)
+      canvas.removeEventListener('mouseup', forceCursorGrab)
+      canvas.removeEventListener('mouseleave', forceCursorGrab)
       if (splineAppRef.current) {
         try {
           splineAppRef.current.dispose?.()
@@ -2009,6 +2088,42 @@ export function Spline3DPreview({
   const cursorTargetRef = useRef({ x: 0, y: 0 })
   const cursorCurrentRef = useRef({ x: 0, y: 0 })
   const isPointerOverRef = useRef(false)
+
+  // Reset lamp to start state when resetTrigger increments (e.g. deselecting eye preview)
+  useEffect(() => {
+    if (resetTrigger <= 0 || isLoading || error) return
+    const app = splineAppRef.current as any
+    if (!app) return
+    const scene = app.scene || app._scene
+    if (!scene) return
+    cursorTargetRef.current = { x: 0, y: 0 }
+    cursorCurrentRef.current = { x: 0, y: 0 }
+    isPointerOverRef.current = false
+    const lampNames = ['Assembly Small Lamp 2025 v62', 'Assembly Small Lamp', 'Assembly', 'Lamp', 'White', 'Black']
+    let target: any = null
+    for (const name of lampNames) {
+      const obj = app.findObjectByName?.(name)
+      if (obj) { target = obj; break }
+    }
+    if (!target && scene.children?.length > 0) {
+      const first = scene.children.find((c: any) => c.type !== 'Camera' && c.name)
+      target = first || scene
+    }
+    if (!target) return
+    const rotatable = (target?.rotation && target) || (target?.mesh?.rotation && target.mesh) || target?.object3D || target
+    if (rotatable?.rotation) {
+      rotatable.rotation.x = 0
+      rotatable.rotation.y = 0
+      rotatable.rotation.z = 0
+    }
+    try {
+      const a = app as any
+      const controls = a.controls || a._controls || a.orbitControls || a.cameraControls ||
+        (a.manager && (a.manager.controls || a.manager._controls)) ||
+        (a._manager && (a._manager.controls || a._manager._controls))
+      if (controls?.reset) (controls as any).reset()
+    } catch (_) { /* camera reset unavailable */ }
+  }, [resetTrigger, isLoading, error])
 
   useEffect(() => {
     if (!animate || isLoading || error) return
@@ -2111,11 +2226,11 @@ export function Spline3DPreview({
 
   if (minimal) {
     const bgTheme = previewTheme ?? lampVariant
-    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#1A1A1A'
+    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#150000'
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (
-      <div ref={containerRef} className={cn(className, "relative w-full h-full cursor-grab active:cursor-grabbing")}>
+      <div ref={containerRef} className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden [&_canvas]:!cursor-grab [&_canvas:active]:!cursor-grabbing cursor-grab active:cursor-grabbing")}>
         {/* Background layer - ensures toggle changes color even if WebGL overrides */}
         <div
           className="absolute inset-0 -z-10"
@@ -2163,12 +2278,15 @@ export function Spline3DPreview({
         )}
         <canvas
           ref={canvasRef}
-          className="w-full h-full cursor-grab active:cursor-grabbing"
+          className="w-full h-full max-w-full max-h-full !cursor-grab active:!cursor-grabbing"
           style={{
             display: "block",
             width: "100%",
             height: "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
             backgroundColor: bgHex,
+            cursor: "grab",
           }}
           width={800}
           height={600}

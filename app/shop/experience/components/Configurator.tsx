@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, RotateCw, Info, Check, Plus, TicketPercent } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
@@ -14,26 +14,33 @@ const SEASON_2_HANDLE = '2025-edition'
 const LOAD_MORE_PAGE_SIZE = 36
 
 const EXPERIENCE_CART_KEY = 'sc-experience-cart'
+const WIZARD_COMPLETED_KEY = 'sc-experience-wizard-completed'
 
 function loadExperienceCart(ownsLamp: boolean): {
   cartOrder: string[]
   lampQuantity: number
   lampPaywallSkipped: boolean
+  wizardCompleted: boolean
 } {
   if (typeof window === 'undefined') {
-    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false, wizardCompleted: false }
   }
   try {
     const raw = localStorage.getItem(EXPERIENCE_CART_KEY)
-    if (!raw) return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
-    const p = JSON.parse(raw) as Record<string, unknown>
-    return {
-      cartOrder: Array.isArray(p.cartOrder) ? p.cartOrder : [],
-      lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 0,
-      lampPaywallSkipped: !!p.lampPaywallSkipped,
-    }
+    const cart = !raw
+      ? { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+      : (() => {
+          const p = JSON.parse(raw) as Record<string, unknown>
+          return {
+            cartOrder: Array.isArray(p.cartOrder) ? p.cartOrder : [],
+            lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 0,
+            lampPaywallSkipped: !!p.lampPaywallSkipped,
+          }
+        })()
+    const wizardCompleted = localStorage.getItem(WIZARD_COMPLETED_KEY) === '1'
+    return { ...cart, wizardCompleted }
   } catch {
-    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false }
+    return { cartOrder: [], lampQuantity: 0, lampPaywallSkipped: false, wizardCompleted: false }
   }
 }
 
@@ -53,8 +60,6 @@ import { ArtworkStrip } from './ArtworkStrip'
 
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
-import { DiscountCelebration } from './DiscountCelebration'
-import { ExperienceWizard } from './ExperienceWizard'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
@@ -223,6 +228,7 @@ export function Configurator({
   }, [imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>([])
+  const [splineResetTrigger, setSplineResetTrigger] = useState(0)
   const loadedCart = loadExperienceCart(quizAnswers.ownsLamp)
   const [cartOrder, setCartOrder] = useState<string[]>(() => loadedCart.cartOrder)
   /** Non-lamp owners start at 0; they must add lamp via paywall first, then choose artwork */
@@ -252,6 +258,11 @@ export function Configurator({
   // Cycle selector state: collapsed -> half -> full -> collapsed (mobile only)
   const cycleSelectorState = useCallback(() => {
     setSelectorSheetState((s) => (s === 'collapsed' ? 'half' : s === 'half' ? 'full' : 'collapsed'))
+    // Notify Spline to resize only when chevron collapses/expands — after transition settles
+    const delay = typeof window !== 'undefined' && window.innerWidth < 768 ? 600 : 400
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('experience-selector-settled'))
+    }, delay)
   }, [])
 
   const previewVisible = !isMobile || selectorSheetState !== 'full'
@@ -268,20 +279,30 @@ export function Configurator({
   const [filterOpen, setFilterOpen] = useState(false)
   const [scrollToProductId, setScrollToProductId] = useState<string | null>(null)
   const [ratingsVersion, setRatingsVersion] = useState(0)
-  const [rotateHintDismissed, setRotateHintDismissed] = useState(false)
-  const [previewEngaged, setPreviewEngaged] = useState(false)
+  const [previewEngaged, setPreviewEngaged] = useState(() => loadedCart.wizardCompleted)
+  const [highlightStep, setHighlightStep] = useState(0)
+  const highlightStepRef = useRef(highlightStep)
+  highlightStepRef.current = highlightStep
+  const [triedSteps, setTriedSteps] = useState<[boolean, boolean, boolean, boolean, boolean, boolean]>([false, false, false, false, false, false])
+  const handleOpenFilter = useCallback(() => {
+    setFilterOpen(true)
+    setTriedSteps((prev) => {
+      const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]
+      next[4] = true
+      return next
+    })
+    if (highlightStepRef.current === 4) setHighlightStep(5)
+  }, [])
 
-  // Lift dark overlay when user selects artworks
-  useEffect(() => {
-    if (lampPreviewOrder.length > 0) setPreviewEngaged(true)
-  }, [lampPreviewOrder.length])
-
-  // Auto-dismiss rotate hint after 5 seconds
-  useEffect(() => {
-    if (rotateHintDismissed) return
-    const t = setTimeout(() => setRotateHintDismissed(true), 5000)
-    return () => clearTimeout(t)
-  }, [rotateHintDismissed])
+  const handleCycleSelectorState = useCallback(() => {
+    cycleSelectorState()
+    setTriedSteps((prev) => {
+      const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]
+      next[5] = true
+      return next
+    })
+    if (highlightStepRef.current === 5) setPreviewEngaged(true)
+  }, [cycleSelectorState])
 
   // Apply initial artist filter when arriving from artist link (e.g. Instagram)
   useEffect(() => {
@@ -326,18 +347,25 @@ export function Configurator({
     }
   }, [spotlightData, filters.artists])
 
-  // When spotlight is selected: filter to that artist and switch to the series that has their artworks
-  const handleSpotlightSelect = useCallback(() => {
+  // When spotlight is expanded: filter to that artist and switch series. When collapsed: remove filter.
+  const handleSpotlightSelect = useCallback((isExpanding: boolean) => {
     if (!spotlightData) return
-    const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
-    const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
-    const inSeason2 = productsSeason2.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
-    if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
-    else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
-    setFilters((prev) => {
-      if (prev.artists.includes(spotlightData.vendorName)) return prev
-      return { ...prev, artists: [...prev.artists, spotlightData.vendorName] }
-    })
+    if (isExpanding) {
+      const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
+      const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
+      const inSeason2 = productsSeason2.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
+      if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
+      else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
+      setFilters((prev) => {
+        if (prev.artists.includes(spotlightData.vendorName)) return prev
+        return { ...prev, artists: [...prev.artists, spotlightData.vendorName] }
+      })
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        artists: prev.artists.filter((a) => a !== spotlightData.vendorName),
+      }))
+    }
   }, [spotlightData, productsSeason1, productsSeason2, activeSeason])
 
   useEffect(() => {
@@ -492,13 +520,18 @@ export function Configurator({
   /** When user deselects lamp (quantity → 0), keep them on artworks */
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(n)
+    if (n > 0) {
+      setTriedSteps((prev) => { const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]; next[3] = true; return next })
+      if (highlightStepRef.current === 3) setHighlightStep(4)
+    }
     if (n === 0 && !quizAnswers.ownsLamp) setLampPaywallSkipped(true)
-  }, [quizAnswers.ownsLamp])
+  }, [])
 
   /** Paywall: non-lamp owners must add lamp first — unless they skip or deselect */
   const showLampPaywall = !quizAnswers.ownsLamp && lampQuantity === 0 && !lampPaywallSkipped
+  const showHighlightAnimation = previewVisible && !previewEngaged && !showLampPaywall
 
-  const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar } = useExperienceOrder()
+  const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar, setDiscountCelebrationAmount } = useExperienceOrder()
   const { theme, setTheme } = useExperienceTheme()
 
   // Persist cart state so it survives refresh
@@ -517,6 +550,18 @@ export function Configurator({
       // Ignore quota/parse errors
     }
   }, [cartOrder, lampQuantity, lampPaywallSkipped])
+
+  // Persist wizard completed so it stays closed across sessions
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (previewEngaged) {
+        localStorage.setItem(WIZARD_COMPLETED_KEY, '1')
+      }
+    } catch {
+      // Ignore quota errors
+    }
+  }, [previewEngaged])
 
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
@@ -546,6 +591,8 @@ export function Configurator({
       lampProgressPercent: lampQuantity > 0 ? (lampProgress[lampProgress.length - 1] ?? 0) : 0,
       pastLampPaywall: !showLampPaywall,
       collectedProductIds,
+      wizardHighlightStep: highlightStep,
+      wizardHighlightActive: showHighlightAnimation,
     })
   }, [
     lamp,
@@ -565,6 +612,8 @@ export function Configurator({
     lampSavings,
     showLampPaywall,
     collectedProductIds,
+    highlightStep,
+    showHighlightAnimation,
     setOrderBarProps,
   ])
 
@@ -600,14 +649,16 @@ export function Configurator({
   const handleLampSelect = useCallback((product: ShopifyProduct) => {
     setLampPreviewOrder((prev) => {
       const idx = prev.indexOf(product.id)
-      if (idx >= 0) return prev.filter((id) => id !== product.id)
+      if (idx >= 0) {
+        setSplineResetTrigger((t) => t + 1)
+        return prev.filter((id) => id !== product.id)
+      }
       if (prev.length >= 2) return [product.id, prev[0]]
       return [...prev, product.id]
     })
   }, [])
 
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
-  const [discountCelebrationAmount, setDiscountCelebrationAmount] = useState<number | null>(null)
 
   const handleAddToCart = useCallback((product: ShopifyProduct) => {
     const isAdding = !cartOrder.includes(product.id)
@@ -629,7 +680,7 @@ export function Configurator({
         if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
       }
     }
-  }, [cartOrder, lampQuantity, lampPrice])
+  }, [cartOrder, lampQuantity, lampPrice, setDiscountCelebrationAmount])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -674,13 +725,14 @@ export function Configurator({
         layout={false}
         className={cn(
           'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
-          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#1A1A1A]',
+          'max-w-[100vw] max-h-[100dvh] min-w-0',
+          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#150000]',
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
-          /* Mobile: 3 states — larger preview when selector collapsed */
+          /* Mobile: 3 states — larger preview when selector collapsed; 30/70 default, 25/75 when wizard */
           selectorSheetState === 'collapsed' && 'min-h-[55dvh] flex-1',
-          selectorSheetState === 'half' && 'flex-[4] min-h-0 basis-0',
+          selectorSheetState === 'half' && (showHighlightAnimation ? 'flex-[25] min-h-0 basis-0' : 'flex-[3] min-h-0 basis-0'),
           selectorSheetState === 'full' && 'h-0 min-h-0 overflow-hidden md:!h-full md:!min-h-0 md:!basis-auto'
         )}
       >
@@ -725,6 +777,7 @@ export function Configurator({
             imageOffsetYB={imageOffsetYB}
             imageScaleXB={imageScaleXB}
             imageScaleYB={imageScaleYB}
+            resetTrigger={splineResetTrigger}
           />
             </ComponentErrorBoundary>
           </SplineWhenVisible>
@@ -739,37 +792,6 @@ export function Configurator({
         >
           {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
         </button>
-
-        {/* Rotate gesture hint — shows after user selects artwork, auto-dismisses */}
-        <AnimatePresence>
-        {previewVisible && lampPreviewOrder.length > 0 && !rotateHintDismissed && (
-          <motion.div
-            key="rotate-hint"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.8, duration: 0.3 }}
-            className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-2 rounded-full pointer-events-none"
-            style={{
-              background: theme === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.12)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: 2, repeatDelay: 0.3, ease: 'easeInOut' }}
-            >
-              <RotateCw
-                className={cn('w-4 h-4', theme === 'light' ? 'text-white' : 'text-white/90')}
-                strokeWidth={2}
-              />
-            </motion.div>
-            <span className={cn('text-xs font-medium', theme === 'light' ? 'text-white' : 'text-white/90')}>
-              {isMobile ? 'Touch & swipe to rotate' : 'Drag to rotate'}
-            </span>
-          </motion.div>
-        )}
-        </AnimatePresence>
 
         {/* No collapse button — tap the selector bar to switch */}
 
@@ -1004,9 +1026,9 @@ export function Configurator({
             lampQuantity > 0 && 'border-t-0',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
-          /* Mobile: 3 states — when collapsed, keep expand tab visible (min 56px) */
+          /* Mobile: 3 states — when collapsed, keep expand tab visible (min 56px); 70/30 default, 75/25 when wizard */
           selectorSheetState === 'collapsed' && 'min-h-[56px] flex-shrink-0 md:h-auto md:min-h-0',
-          selectorSheetState === 'half' && 'flex-[6] min-h-0 basis-0',
+          selectorSheetState === 'half' && (showHighlightAnimation ? 'flex-[75] min-h-0 basis-0' : 'flex-[7] min-h-0 basis-0'),
           selectorSheetState === 'full' && 'flex-1 min-h-0'
         )}
       >
@@ -1045,6 +1067,7 @@ export function Configurator({
               <button
                 type="button"
                 onClick={() => handleLampQuantityChange(1)}
+                style={{ touchAction: 'manipulation' }}
                 className="inline-flex items-center gap-2 w-full justify-center px-6 py-4 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all"
               >
                 <Plus className="w-5 h-5" />
@@ -1059,6 +1082,7 @@ export function Configurator({
               <button
                 type="button"
                 onClick={() => setLampPaywallSkipped(true)}
+                style={{ touchAction: 'manipulation' }}
                 className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors underline underline-offset-2"
               >
                 Skip — browse artworks without lamp
@@ -1067,55 +1091,6 @@ export function Configurator({
           </div>
         ) : (
         <>
-        {/* Add + Eye to Preview overlay — covers whole selector like paywall */}
-        <AnimatePresence>
-          {previewVisible && !previewEngaged && !showLampPaywall && (
-            <motion.button
-              type="button"
-              key="preview-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setPreviewEngaged(true)}
-              className="absolute inset-0 z-30 flex flex-1 flex-col items-center justify-center gap-3 px-6 py-8 bg-neutral-900/80 backdrop-blur-sm cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-              aria-label="Tap to start selecting artworks"
-            >
-              <div className="flex flex-col items-stretch gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 text-white text-xs font-bold shrink-0">
-                    Add
-                  </span>
-                  <span className="text-white/90 text-sm">to choose what goes on your lamp</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
-                    <Eye className="w-3.5 h-3.5 text-white" aria-hidden />
-                  </span>
-                  <span className="text-white/90 text-sm">to Preview</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/40 bg-white/20 shrink-0">
-                    <Info className="w-3.5 h-3.5 text-white" aria-hidden />
-                  </span>
-                  <span className="text-white/90 text-sm">Tap Artwork for more info</span>
-                </div>
-              </div>
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        {/* Discount celebration — slide up at top of selector, next to Artworks icon */}
-        <AnimatePresence>
-          {discountCelebrationAmount !== null && (
-            <DiscountCelebration
-              key="discount-celebration"
-              amount={discountCelebrationAmount}
-              onComplete={() => setDiscountCelebrationAmount(null)}
-            />
-          )}
-        </AnimatePresence>
-
         {/* Top bar: Season tabs, filter, search (desktop); Artworks bar (mobile collapsed). Hidden on mobile when expanded — controls are in bottom bar. */}
         {(!isMobile || selectorSheetState === 'collapsed') && (
         <div
@@ -1144,52 +1119,124 @@ export function Configurator({
           {/* Top bar: on desktop = full; on mobile = just chevron (season/filter/search in bottom bar) */}
           {!isMobile && (
             <>
-              {/* Filter — desktop only, left */}
-              <button
-                onClick={() => setFilterOpen(true)}
-                className={cn(
-                  'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
-                  hasActiveFilters(filters)
-                    ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
-                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                )}
-                aria-label="Open filters"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Season tabs — desktop only, centered */}
-              <div className="absolute left-1/2 -translate-x-1/2 flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
+              {/* Left: Filter + Season tabs */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <button
-                  type="button"
-                  onClick={() => setActiveSeasonAndReset('season1')}
+                  onClick={handleOpenFilter}
                   className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                    activeSeason === 'season1'
-                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
-                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                    'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+                    hasActiveFilters(filters)
+                      ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
+                      : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700',
+                    showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
                   )}
+                  aria-label="Open filters"
                 >
-                  Season 1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSeasonAndReset('season2')}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                    activeSeason === 'season2'
-                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
-                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-neutral-600 text-neutral-900 dark:text-white ring-1 ring-neutral-200 dark:ring-neutral-500 text-[10px] flex items-center justify-center font-bold leading-none">
+                      {activeFilterCount}
+                    </span>
                   )}
-                >
-                  Season 2
                 </button>
+                <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 bg-neutral-50 dark:bg-neutral-800/50 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeasonAndReset('season1')}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                      activeSeason === 'season1'
+                        ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                        : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                    )}
+                  >
+                    Season 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeasonAndReset('season2')}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                      activeSeason === 'season2'
+                        ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                        : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                    )}
+                  >
+                    Season 2
+                  </button>
+                </div>
               </div>
+
+              {/* Right: Street lamp module — lg+ only (below lg, lamp lives in header to avoid touching seasons) */}
+              {lamp && typeof lampPrice === 'number' && !showLampPaywall && (
+                <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-0 ml-2">
+                  <div className={cn(
+                    'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-neutral-700/70',
+                    showHighlightAnimation && highlightStep === 3 && 'ring-2 ring-inset ring-amber-600/70'
+                  )}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setDetailProduct(lamp)}
+                      onKeyDown={(e) => e.key === 'Enter' && setDetailProduct(lamp)}
+                      className={cn(
+                        'flex items-center gap-1.5 min-w-0 transition-colors cursor-pointer text-left relative py-1',
+                        lampQuantity > 0
+                          ? 'text-neutral-800 dark:text-white hover:opacity-90'
+                          : 'text-neutral-600 dark:text-white/80 dark:hover:text-white'
+                      )}
+                      aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}`}
+                    >
+                      <span className="relative inline-flex">
+                        <span className={cn('absolute inset-0 flex items-center justify-center translate-x-0.5 text-[10px] font-bold tabular-nums pointer-events-none', lampQuantity > 0 ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#ffffff]')}>
+                          {lampQuantity}
+                        </span>
+                        <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-5 h-6 shrink-0', lampQuantity > 0 ? 'text-neutral-400 dark:text-neutral-300' : 'text-neutral-400 dark:text-white/60')} xmlns="http://www.w3.org/2000/svg">
+                          <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+                        </svg>
+                      </span>
+                      <span className={cn('text-[10px] font-medium truncate', lampQuantity > 0 ? 'text-neutral-800 dark:text-white' : 'text-neutral-600 dark:text-white/80')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 ml-0.5" data-wizard-lamp-controls>
+                      {lampQuantity > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleLampQuantityChange(Math.max(0, lampQuantity - 1))}
+                          className="h-5 w-5 flex items-center justify-center p-0 text-[#047AFF] dark:text-[#60A5FA] hover:opacity-80 transition-opacity"
+                          aria-label="Decrease lamp quantity"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleLampQuantityChange(lampQuantity + 1)}
+                        className={cn(
+                          'flex items-center justify-center transition-colors shrink-0',
+                          lampQuantity > 0
+                            ? 'h-5 w-5 p-0 text-[#047AFF] dark:text-[#60A5FA]'
+                            : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-[10px] font-medium'
+                        )}
+                        aria-label={lampQuantity > 0 ? 'Add another lamp' : 'Add lamp'}
+                      >
+                        {lampQuantity > 0 ? (
+                          <Plus className="w-3.5 h-3.5" />
+                        ) : (
+                          <span>Add</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDetailProduct(lamp)}
+                    className="w-5 h-5 flex items-center justify-center rounded text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white transition-colors shrink-0 -mr-1"
+                    aria-label="View lamp details"
+                  >
+                    <Info className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </>
           )}
             </>
@@ -1272,20 +1319,79 @@ export function Configurator({
             isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
           )}
         >
-          {/* Artist Spotlight banner — most recent vendor new drop */}
-          {spotlightData && spotlightData.productIds.length > 0 && (
+          {/* Wizard explanation card — replaces spotlight when guiding user; otherwise show Artist Spotlight */}
+          {showHighlightAnimation ? (
+            <div className="sticky top-0 z-20 mb-3 px-2.5 py-2 rounded-lg bg-orange-500 dark:bg-orange-600 border border-orange-400 dark:border-orange-500 shadow-lg" aria-live="polite">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  {highlightStep === 0 && <Eye className="w-5 h-5 shrink-0 text-white" aria-hidden />}
+                  {highlightStep === 1 && <Info className="w-5 h-5 shrink-0 text-white" aria-hidden />}
+                  {highlightStep === 2 && (
+                    <span className="inline-flex items-center justify-center px-2 py-1 rounded text-xs font-medium bg-white/20 text-white shrink-0">
+                      Add
+                    </span>
+                  )}
+                  {highlightStep === 3 && (
+                    <svg viewBox="0 0 306 400" fill="currentColor" className="w-5 h-6 shrink-0 text-white" aria-hidden xmlns="http://www.w3.org/2000/svg">
+                      <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+                    </svg>
+                  )}
+                  {highlightStep === 4 && <SlidersHorizontal className="w-5 h-5 shrink-0 text-white" aria-hidden />}
+                  {highlightStep === 5 && (selectorSheetState === 'half' ? <ChevronUp className="w-5 h-5 shrink-0 text-white" aria-hidden /> : <ChevronDown className="w-5 h-5 shrink-0 text-white" aria-hidden />)}
+                  <p className="text-xs font-semibold text-white truncate flex items-center gap-1">
+                    {highlightStep === 0 && 'Tap to preview the artwork on the 3d viewer'}
+                    {highlightStep === 1 && 'Tap for more info about the artwork & artist'}
+                    {highlightStep === 2 && (
+                      <>
+                        Tap to add to your cart <ShoppingCart className="w-4 h-4 shrink-0" aria-hidden />
+                      </>
+                    )}
+                    {highlightStep === 3 && 'Tap the + - to add or remove Street lamps'}
+                    {highlightStep === 4 && 'Tap the filter to narrow by artist, price & more'}
+                    {highlightStep === 5 && 'Tap to expand / collapse view'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (highlightStep < 5) setHighlightStep((s) => s + 1)
+                      else if (triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5]) setPreviewEngaged(true)
+                      else setHighlightStep(0)
+                    }}
+                    className="flex items-center gap-0.5 text-white/90 hover:text-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                    aria-label={highlightStep < 5 ? 'Next tip' : triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5] ? 'Got it' : 'Next tip'}
+                  >
+                    {highlightStep < 5 || !(triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5]) ? (
+                      <>Next <ChevronRight className="w-3 h-3" /></>
+                    ) : (
+                      'Got it'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewEngaged(true)}
+                    className="w-5 h-5 flex items-center justify-center text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                    aria-label="Skip tips"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : spotlightData && spotlightData.productIds.length > 0 ? (
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
               onSelect={handleSpotlightSelect}
             />
-          )}
+          ) : null}
           {/* Street lamp — hidden; now in top toolbar only */}
           <div className="hidden">
             <div className={cn(
                 'flex flex-col gap-0 w-full overflow-hidden',
                 lampQuantity > 0
-                  ? 'bg-[#1A1A1A] rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
+                  ? 'bg-[#150000] rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
                   : 'bg-neutral-100 rounded-lg'
               )}>
               <div className={cn(
@@ -1393,6 +1499,16 @@ export function Configurator({
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}
             onViewDetail={setDetailProduct}
+            highlightStep={highlightStep}
+            showHighlightAnimation={showHighlightAnimation}
+            onStepTried={(step: 0 | 1 | 2) => {
+              setTriedSteps((prev) => {
+                const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]
+                next[step] = true
+                return next
+              })
+              if (highlightStep === step) setHighlightStep((s) => (s < 5 ? s + 1 : s))
+            }}
             onPrefetchProduct={(p) => prefetchProduct(p.handle)}
             hasMore={pageInfo.hasNextPage}
             onLoadMore={() => loadMoreForSeason(activeSeason)}
@@ -1407,12 +1523,13 @@ export function Configurator({
             {/* Left: Filter */}
             <div className="flex-shrink-0">
               <button
-                onClick={() => setFilterOpen(true)}
+                onClick={handleOpenFilter}
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
                   hasActiveFilters(filters)
                     ? 'bg-neutral-900 dark:bg-neutral-700 text-white border-neutral-900 dark:border-neutral-700'
-                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600'
+                    : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-600',
+                  showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
                 )}
                 aria-label="Open filters"
               >
@@ -1511,8 +1628,13 @@ export function Configurator({
             {/* Right: Expand/collapse chevron */}
             <div className="flex-shrink-0">
               <button
-                onClick={cycleSelectorState}
-                className="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white shrink-0 transition-colors"
+                onClick={handleCycleSelectorState}
+                className={cn(
+                  'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 transition-colors',
+                  showHighlightAnimation && highlightStep === 5 && isMobile
+                    ? 'ring-2 ring-inset ring-amber-600/70 border-amber-500/50 bg-amber-50 dark:bg-amber-950/30'
+                    : 'border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
+                )}
                 aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
               >
                 {selectorSheetState === 'half' ? (
@@ -1543,15 +1665,14 @@ export function Configurator({
         cartOrder={cartOrder}
       />
 
-      {/* First-session contextual wizard — paywall-aware steps */}
-      <ExperienceWizard pastLampPaywall={!showLampPaywall} />
-
       {/* Artwork / lamp detail drawer */}
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
+          isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
+          isNewDrop={!!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
           productBadges={
             detailProduct.id === lamp.id
               ? [

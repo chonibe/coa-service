@@ -4,12 +4,11 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, Heart, Info, Package } from 'lucide-react'
+import { Check, Eye, Heart, Info } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import { cn } from '@/lib/utils'
-import { ScarcityBadge } from './ScarcityBadge'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -153,6 +152,11 @@ interface ArtworkCardProps {
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
   onViewDetail: (product: ShopifyProduct) => void
+  /** 0=info, 1=eye, 2=add */
+  highlightStep?: number
+  showHighlightAnimation?: boolean
+  /** Called when user tries a step (Info=0, Eye=1, Add=2) on first card */
+  onStepTried?: (step: 0 | 1 | 2) => void
 }
 
 function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
@@ -181,6 +185,9 @@ function ArtworkCard({
   onLampSelect,
   onAddToCart,
   onViewDetail,
+  highlightStep = 0,
+  showHighlightAnimation = false,
+  onStepTried,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
@@ -221,7 +228,6 @@ function ArtworkCard({
     e.stopPropagation()
     if (isSoldOut) return
     handleLampSelect()
-    onViewDetail(product)
   }
 
   const isMerged = isInCart && (mergeWithLeft || mergeWithRight)
@@ -231,13 +237,13 @@ function ArtworkCard({
   return (
     <motion.div
       data-product-id={product.id}
-      data-wizard-first-card={isFirstCard ? '' : undefined}
+      data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
-        'relative overflow-hidden transition-all duration-200 origin-center',
+        'relative transition-all duration-200 origin-center',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
-        isInCart && 'overflow-visible',
+        (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
         isInCart && 'bg-[#e8f4ff] dark:bg-neutral-900',
         isInCart && !isMerged && 'scale-[0.95]',
       )}
@@ -253,8 +259,8 @@ function ArtworkCard({
         onClick={handleImageClick}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLampSelect(); onViewDetail(product) } }}
-        title="Tap for details + lamp preview"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLampSelect() } }}
+        title="Tap to preview on lamp"
       >
         {imageUrl ? (
           <>
@@ -280,46 +286,29 @@ function ArtworkCard({
             No image
           </div>
         )}
-        {isSoldOut && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-xs font-semibold text-white bg-black/60 px-2 py-1 rounded-full">
-              Sold Out
-            </span>
-          </div>
-        )}
-        {isCollected && !isSoldOut && (
-          <div
-            className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/90 text-white backdrop-blur-sm"
-            title="Already in your collection"
-          >
-            <Package className="w-3 h-3" strokeWidth={2} />
-            <span className="text-[10px] font-medium">Collected</span>
-          </div>
-        )}
-        {isNewDrop && !isSoldOut && !isCollected && (
-          <div
-            className="absolute top-1.5 right-10 z-10 px-1.5 py-0.5 rounded-md bg-amber-500/95 text-white text-[10px] font-semibold backdrop-blur-sm"
-            title="New drop from spotlight artist"
-          >
-            New Drop
-          </div>
-        )}
-        {!isSoldOut && (
-          <div className="absolute bottom-1.5 left-1.5">
-            <ScarcityBadge
-              availableForSale={product.availableForSale}
-              variant="compact"
-            />
-          </div>
-        )}
         <button
-          data-wizard-info-btn={isFirstCard ? '' : undefined}
+          data-highlight-btn={isFirstCard ? 'info' : undefined}
           type="button"
-          onClick={(e) => { e.stopPropagation(); e.preventDefault(); onViewDetail(product) }}
-          className="absolute top-0.5 right-0.5 z-10 w-5 h-5 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(1); onViewDetail(product) }}
+          className={cn(
+            'absolute top-0.5 right-0.5 z-10 flex items-center justify-center transition-all duration-200',
+            isFirstCard && showHighlightAnimation && highlightStep === 1
+              ? 'w-6 h-6 rounded-md ring-2 ring-inset ring-amber-600/70 text-orange-400 bg-amber-100/90 dark:bg-amber-900/30'
+              : 'w-6 h-6 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm text-neutral-700 dark:text-white hover:text-neutral-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/70'
+          )}
           aria-label="View artwork details"
         >
-          <Info className="w-3.5 h-3.5" />
+          {isFirstCard && showHighlightAnimation && highlightStep === 1 ? (
+            <motion.span
+              animate={{ scale: [1, 1.25, 1], opacity: [1, 0.85, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex items-center justify-center"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </motion.span>
+          ) : (
+            <Info className="w-3.5 h-3.5" />
+          )}
         </button>
         {showWishlistHearts && (
           <button
@@ -373,17 +362,23 @@ function ArtworkCard({
         </div>
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
+            data-highlight-btn={isFirstCard ? 'eye' : undefined}
             type="button"
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleLampSelect() }}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(0); handleLampSelect() }}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
             className={cn(
-              'w-5 h-5 flex items-center justify-center rounded-full transition-colors',
-              isLampSelection
-                ? 'text-blue-500'
-                : isInCart
-                  ? 'hover:bg-blue-200/40 dark:hover:bg-white/10 text-blue-700 dark:text-white/80 hover:text-blue-800 dark:hover:text-white'
-                  : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'
+              'flex items-center justify-center rounded-full transition-all duration-200',
+              isFirstCard && showHighlightAnimation && highlightStep === 0
+                ? 'w-6 h-6 ring-2 ring-inset ring-amber-600/70 text-orange-400'
+                : 'w-5 h-5',
+              !(isFirstCard && showHighlightAnimation && highlightStep === 0) && (
+                isLampSelection
+                  ? 'text-blue-500'
+                  : isInCart
+                    ? 'hover:bg-blue-200/40 dark:hover:bg-white/10 text-blue-700 dark:text-white/80 hover:text-blue-800 dark:hover:text-white'
+                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200'
+              )
             )}
             title={isLampSelection ? `Side ${lampPosition} on lamp` : 'Preview on lamp'}
             aria-label={isLampSelection ? `Side ${lampPosition} on lamp preview` : 'Preview on lamp'}
@@ -392,21 +387,32 @@ function ArtworkCard({
               <span className="w-5 h-5 flex items-center justify-center rounded-full bg-green-600 text-white text-[11px] font-bold tabular-nums">
                 {lampPosition}
               </span>
+            ) : isFirstCard && showHighlightAnimation && highlightStep === 0 ? (
+              <motion.span
+                animate={{ scale: [1, 1.25, 1], opacity: [1, 0.85, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex items-center justify-center"
+              >
+                <Eye className="w-3 h-3" />
+              </motion.span>
             ) : (
               <Eye className="w-3 h-3" />
             )}
           </button>
           <button
-            data-wizard-add-btn={isFirstCard ? '' : undefined}
+            data-highlight-btn={isFirstCard ? 'add' : undefined}
             type="button"
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onAddToCart(product) }}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(2); onAddToCart(product) }}
             disabled={isSoldOut}
             title={isInCart ? 'Remove from order' : 'Add artwork to order'}
             className={cn(
-              'flex items-center justify-center transition-colors shrink-0 overflow-visible',
-              isInCart
-                ? 'h-6 w-6 p-0 text-[#047AFF]'
-                : 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-neutral-700/80 backdrop-blur-xl text-neutral-600 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white/80 dark:hover:bg-neutral-600/90',
+              'flex items-center justify-center transition-all duration-200 shrink-0 overflow-visible',
+              isFirstCard && showHighlightAnimation && highlightStep === 2 && 'ring-2 ring-inset ring-amber-600/70',
+              isFirstCard && showHighlightAnimation && highlightStep === 2 && 'text-orange-400',
+              isInCart && 'h-6 w-6 p-0',
+              !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-neutral-700/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white/80 dark:hover:bg-neutral-600/90',
+              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
+              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-neutral-200',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}
@@ -414,6 +420,14 @@ function ArtworkCard({
           >
             {isInCart ? (
               <SparkleCheck justAdded={justAdded} />
+            ) : isFirstCard && showHighlightAnimation && highlightStep === 2 ? (
+              <motion.span
+                animate={{ scale: [1, 1.15, 1], opacity: [1, 0.9, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className="text-xs font-medium"
+              >
+                Add
+              </motion.span>
             ) : (
               <span className="text-xs font-medium">Add</span>
             )}
@@ -442,6 +456,12 @@ interface ArtworkStripProps {
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
   onViewDetail: (product: ShopifyProduct) => void
+  /** 0=info, 1=eye, 2=add — which button to highlight (cycling) */
+  highlightStep?: number
+  /** When true, show highlight animation on first card */
+  showHighlightAnimation?: boolean
+  /** Called when user tries a step (Info=0, Eye=1, Add=2) on first card */
+  onStepTried?: (step: 0 | 1 | 2) => void
   /** Prefetch full product when card enters view (for instant detail drawer) */
   onPrefetchProduct?: (product: ShopifyProduct) => void
   /** When true, show load-more sentinel and call onLoadMore when it enters viewport */
@@ -476,6 +496,9 @@ export function ArtworkStrip({
   onLampSelect,
   onAddToCart,
   onViewDetail,
+  highlightStep = 0,
+  showHighlightAnimation = false,
+  onStepTried,
   onPrefetchProduct,
   hasMore = false,
   onLoadMore,
@@ -504,6 +527,9 @@ export function ArtworkStrip({
     overscan: 3,
   })
 
+  const virtualRows = rowVirtualizer.getVirtualItems()
+  const sentinelInWindow = virtualRows.some((vr) => vr.index >= rowCount)
+
   useEffect(() => {
     if (!hasMore || !onLoadMore || isLoadingMore) return
     const el = loadMoreSentinelRef.current
@@ -517,7 +543,7 @@ export function ArtworkStrip({
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [hasMore, onLoadMore, isLoadingMore])
+  }, [hasMore, onLoadMore, isLoadingMore, sentinelInWindow])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -529,7 +555,6 @@ export function ArtworkStrip({
   }, [scrollToProductId, products, rowVirtualizer])
 
   // Prefetch full product data when cards enter the virtualized view
-  const virtualRows = rowVirtualizer.getVirtualItems()
   useEffect(() => {
     if (!onPrefetchProduct) return
     virtualRows.forEach((vr) => {
@@ -606,7 +631,8 @@ export function ArtworkStrip({
             data-index={virtualRow.index}
             className={cn(
               'absolute top-0 left-0 w-full',
-              shouldMerge ? 'py-2 md:py-2' : 'pb-2 md:pb-3'
+              shouldMerge ? 'py-2 md:py-2' : 'pb-2 md:pb-3',
+              virtualRow.index === 0 && showHighlightAnimation && 'z-10'
             )}
             style={{
               transform: `translateY(${virtualRow.start}px)`,
@@ -640,6 +666,9 @@ export function ArtworkStrip({
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}
                     onViewDetail={onViewDetail}
+                    highlightStep={highlightStep}
+                    showHighlightAnimation={showHighlightAnimation}
+                    onStepTried={onStepTried}
                   />
                 </div>
               )}
@@ -672,6 +701,9 @@ export function ArtworkStrip({
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}
                     onViewDetail={onViewDetail}
+                    highlightStep={highlightStep}
+                    showHighlightAnimation={showHighlightAnimation}
+                    onStepTried={onStepTried}
                   />
                 </div>
               )}

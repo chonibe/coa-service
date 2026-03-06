@@ -28,8 +28,8 @@ interface ArtistSpotlightBannerProps {
     images?: { edges?: Array<{ node?: { url?: string } }> } | null
     priceRange?: { minVariantPrice?: { amount?: string } } | null
   }>
-  /** Called when banner is clicked — filter to artist and/or switch series */
-  onSelect?: () => void
+  /** Called when banner is clicked — (isExpanding) filter when true, remove filter when false */
+  onSelect?: (isExpanding: boolean) => void
 }
 
 export function ArtistSpotlightBanner({
@@ -45,18 +45,63 @@ export function ArtistSpotlightBanner({
   const twoArtworks = spotlightProducts.slice(0, 2)
 
   const handleClick = () => {
-    onSelect?.()
-    setExpanded((e) => !e)
+    const willBeExpanded = !expanded
+    setExpanded(willBeExpanded)
+    onSelect?.(willBeExpanded)
   }
 
   return (
-    <div className="mb-3">
+    <div className="mb-3 relative">
+      <style>{`
+        @keyframes spotlight-border {
+          from { stroke-dashoffset: 956; }
+          to { stroke-dashoffset: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .spotlight-border-path { animation: none !important; }
+        }
+      `}</style>
+      {/* SVG stroke — light segment travels around the border (collapsed only) */}
+      {!expanded && (
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+        viewBox="0 0 400 72"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id="spotlight-fade" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgb(251,191,36)" stopOpacity="0" />
+            <stop offset="15%" stopColor="rgb(251,191,36)" stopOpacity="0.5" />
+            <stop offset="35%" stopColor="rgb(251,191,36)" stopOpacity="0.95" />
+            <stop offset="65%" stopColor="rgb(251,191,36)" stopOpacity="0.95" />
+            <stop offset="85%" stopColor="rgb(251,191,36)" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="rgb(251,191,36)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <rect
+          x="1"
+          y="1"
+          width="398"
+          height="70"
+          rx="11"
+          ry="11"
+          fill="none"
+          stroke="url(#spotlight-fade)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray="320 158 320 158"
+          className="spotlight-border-path"
+          style={{ animation: 'spotlight-border 14s linear infinite' }}
+        />
+      </svg>
+      )}
       <button
         type="button"
         onClick={handleClick}
         className={cn(
-          'w-full rounded-xl border transition-all duration-300 text-left overflow-hidden',
-          'bg-neutral-100 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80',
+          'relative z-10 w-full rounded-xl transition-all duration-300 text-left overflow-hidden',
+          'bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80',
           expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
@@ -93,7 +138,7 @@ export function ArtistSpotlightBanner({
               {twoArtworks.map((p) => (
                 <div
                   key={p.id}
-                  className="w-8 h-8 rounded-md overflow-hidden bg-neutral-200 dark:bg-neutral-700"
+                  className="w-8 h-8 rounded-md overflow-hidden"
                 >
                   {firstImage(p) ? (
                     <Image

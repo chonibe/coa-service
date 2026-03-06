@@ -21,7 +21,7 @@ const GIFT_CARD_DESIGNS = [
   { id: 'festive', label: 'Festive' },
 ]
 
-const MIN_CENTS = 1000
+const MIN_CENTS = 10 // $0.10 (for testing)
 const MAX_CENTS = 50000
 const SEASON1_ARTWORK_CENTS = 4000 // $40
 
@@ -87,7 +87,7 @@ export default function GiftCardsPage() {
     if (!isValid) {
       setError(
         giftCardType === 'value'
-          ? `Amount must be between $${MIN_CENTS / 100} and $${MAX_CENTS / 100}`
+          ? `Amount must be between $${(MIN_CENTS / 100).toFixed(1)} and $${(MAX_CENTS / 100).toFixed(0)}`
           : giftCardType === 'street_lamp'
             ? 'Street Lamp price not available. Please try again.'
             : 'Please fill in required fields.'
@@ -284,10 +284,10 @@ export default function GiftCardsPage() {
                   </div>
                   <Input
                     type="number"
-                    min="10"
+                    min="0.1"
                     max="500"
-                    step="1"
-                    placeholder="Or custom amount ($10 – $500)"
+                    step="0.1"
+                    placeholder="Or custom amount ($0.10 – $500)"
                     value={customAmount}
                     onChange={(e) => {
                       setCustomAmount(e.target.value)

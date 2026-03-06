@@ -98,25 +98,25 @@ export function MeetTheStreetLamp({
               onClick={() => handleSelectIndex(index)}
               className={cn(
                 'relative w-full text-left py-3 md:py-4 pl-5 transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2',
-                isActive ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#390000]',
+                isActive ? 'text-[#FFBA94]' : 'text-[#FFBA94]/60 hover:text-[#FFBA94]/80'
               )}
             >
               {isActive && (
                 <span
-                  className="absolute left-0 top-0 bottom-0 w-[4px] rounded-full bg-neutral-200 overflow-hidden"
+                  className="absolute left-0 top-0 bottom-0 w-[4px] rounded-full bg-[#FFBA94]/20 overflow-hidden"
                   style={{ width: PROGRESS_BAR_WIDTH }}
                   aria-hidden
                 >
                   <span
-                    className="absolute left-0 top-0 w-full bg-neutral-900 transition-all duration-150 ease-linear"
+                    className="absolute left-0 top-0 w-full bg-[#FFBA94] transition-all duration-150 ease-linear"
                     style={{ height: `${progress}%` }}
                   />
                 </span>
               )}
               {!isActive && (
                 <span
-                  className="absolute left-0 top-0 bottom-0 w-[4px] rounded-full bg-neutral-200"
+                  className="absolute left-0 top-0 bottom-0 w-[4px] rounded-full bg-[#FFBA94]/20"
                   style={{ width: PROGRESS_BAR_WIDTH }}
                   aria-hidden
                 />
@@ -136,10 +136,10 @@ export function MeetTheStreetLamp({
         key={activeIndex}
         className="animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
-        <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-2">
+        <h3 className="text-xl sm:text-2xl font-semibold text-[#FFBA94] mb-2">
           {stages[activeIndex]?.title}
         </h3>
-        <p className="text-base text-neutral-600 leading-relaxed max-w-md mx-auto px-2">
+        <p className="text-base text-[#FFBA94]/80 leading-relaxed max-w-md mx-auto px-2">
           {stages[activeIndex]?.description}
         </p>
       </div>
@@ -152,7 +152,7 @@ export function MeetTheStreetLamp({
             onClick={() => handleSelectIndex(i)}
             className={cn(
               'min-w-0 min-h-0 p-0 rounded-full transition-colors shrink-0',
-              i === activeIndex ? 'bg-neutral-700' : 'bg-neutral-200 hover:bg-neutral-300'
+              i === activeIndex ? 'bg-[#FFBA94]' : 'bg-[#FFBA94]/30 hover:bg-[#FFBA94]/50'
             )}
             style={{ width: 4, height: 4 }}
             aria-label={`Go to step ${i + 1}`}
@@ -160,9 +160,9 @@ export function MeetTheStreetLamp({
         ))}
       </div>
       {/* Progress bar */}
-      <div className="w-full max-w-[120px] h-0.5 bg-neutral-200 rounded-full overflow-hidden mt-3">
+      <div className="w-full max-w-[120px] h-0.5 bg-[#FFBA94]/20 rounded-full overflow-hidden mt-3">
         <div
-          className="h-full bg-neutral-900 rounded-full transition-all duration-150 ease-linear"
+          className="h-full bg-[#FFBA94] rounded-full transition-all duration-150 ease-linear"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -170,13 +170,13 @@ export function MeetTheStreetLamp({
   )
 
   const titleBlock = (
-    <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-neutral-900 mb-4 md:mb-6 tracking-tight text-center lg:text-left">
+    <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] mb-4 md:mb-6 tracking-tight text-center lg:text-left">
       {title}
     </h2>
   )
 
   return (
-    <section className={cn('w-full py-8 sm:py-10 md:py-16 bg-white', className)}>
+    <section className={cn('w-full py-8 sm:py-10 md:py-16 bg-[#150000]', className)}>
       <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
         {/* Mobile: title, video, then centered rotating stage text slideshow */}
         {!isDesktop && (
@@ -211,7 +211,7 @@ export function MeetTheStreetLamp({
             {titleBlock}
             {stageList}
           </div>
-          <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-100 aspect-[4/5] max-h-[640px]">
+          <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-800 aspect-[4/5] max-h-[640px]">
             <video
               ref={videoRef}
               key={`desktop-${videoUrl}`}
@@ -235,7 +235,7 @@ export function MeetTheStreetLamp({
           <div className="text-center mt-8 md:mt-10">
             <a
               href={cueHref}
-              className="text-base sm:text-lg text-neutral-600 hover:text-neutral-900 underline underline-offset-2 transition-colors"
+              className="text-base sm:text-lg text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
             >
               {cue}
             </a>

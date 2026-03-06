@@ -17,7 +17,7 @@ Gift cards allow customers to purchase digital vouchers redeemable at checkout. 
 
 | Type | Amount | Redemption |
 |------|--------|------------|
-| `value` | $10–$500 (preset or custom) | $ off any purchase |
+| `value` | $0.10–$500 (preset or custom; $0.10 for testing) | $ off any purchase |
 | `street_lamp` | Current Street Lamp price from Shopify | Redeemable for 1 Street Lamp |
 | `season1_artwork` | $40 fixed | Redeemable for any Season 1 artwork |
 
@@ -51,7 +51,7 @@ Gift cards allow customers to purchase digital vouchers redeemable at checkout. 
 - **Idempotency**: Webhook checks for existing `gift_cards` row by `stripe_session_id` before provisioning.
 - **Failure handling**: If Stripe coupon/promo creation fails, inserts `provisioning_failed` row and emails purchaser with delay notice.
 - **Code format**: `GC-XXXXXXXX` (8 alphanumeric chars).
-- **Amount limits**: $10–$500 (1000–50000 cents).
+- **Amount limits**: $0.10–$500 (10–50000 cents; $0.10 minimum for testing).
 
 ## Version
 

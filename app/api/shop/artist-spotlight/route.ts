@@ -1,20 +1,28 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagram } from '@/lib/shopify/artist-image'
-import { getCollection, getProducts, getProductsByVendor } from '@/lib/shopify/storefront-client'
+import { getCollection, getCollectionWithListProducts, getProducts, getProductsByVendor } from '@/lib/shopify/storefront-client'
 
 /**
  * Artist Spotlight API
  *
  * Returns the most recent "artist spotlight" — the vendor with the most recently
- * activated product. Tries Shopify first (most recently created active product),
- * then falls back to Supabase artwork_series_members.
+ * activated product. Tries override first (Tyler Shelton), then Shopify, then Supabase.
  * Used for the experience selector banner: filter artworks, "New Drop" badge, artist info card.
  */
+
+/** Spotlight override: vendor name and/or collection handle to try */
+const SPOTLIGHT_OVERRIDE = { vendorName: 'Tyler Shelton', collectionHandle: 'tyler-shelton' }
 
 export async function GET() {
   try {
     const supabase = createClient()
+
+    // 0. Override: try configured artist first (vendor name, then collection by handle)
+    const overrideResult =
+      (await tryVendorSpotlight(supabase, SPOTLIGHT_OVERRIDE.vendorName)) ??
+      (await tryCollectionSpotlight(supabase, SPOTLIGHT_OVERRIDE.collectionHandle))
+    if (overrideResult) return NextResponse.json(overrideResult)
 
     // 1. Try Shopify: most recently created/activated product (Storefront returns published only)
     const shopifyResult = await tryShopifySpotlight(supabase)
@@ -28,6 +36,93 @@ export async function GET() {
   } catch (error) {
     console.error('[artist-spotlight] Error:', error)
     return NextResponse.json(null)
+  }
+}
+
+type SpotlightResult = {
+  vendorName: string
+  vendorSlug: string
+  bio?: string
+  instagram?: string
+  image?: string
+  productIds: string[]
+  seriesName?: string
+}
+
+/** Build spotlight from products by vendor name */
+async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, vendorName: string): Promise<SpotlightResult | null> {
+  try {
+    const { products: vendorProducts } = await getProductsByVendor(vendorName, {
+      first: 4,
+      sortKey: 'CREATED_AT',
+      reverse: true,
+    })
+    const filtered = (vendorProducts || []).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    if (filtered.length === 0) return null
+
+    const productIds = filtered
+      .slice(0, 4)
+      .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
+      .filter(Boolean)
+    const newest = filtered[0]
+
+    const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
+    const handle = vendorSlug || slugify(vendorName)
+    const artistImage = image || (await getArtistImageByHandle(handle))
+    const collectionBio = !bio ? await getCollectionDescription(handle) : undefined
+    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) : undefined
+
+    return {
+      vendorName,
+      vendorSlug: handle,
+      bio: bio || collectionBio,
+      instagram: instagram || collectionInstagram,
+      image: artistImage || newest.featuredImage?.url || newest.images?.edges?.[0]?.node?.url,
+      productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
+      seriesName: undefined,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Build spotlight from collection by handle (when vendor name doesn't match) */
+async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>, collectionHandle: string): Promise<SpotlightResult | null> {
+  try {
+    const col = await getCollectionWithListProducts(collectionHandle, { first: 8 })
+    if (!col?.products?.edges?.length) return null
+
+    const nodes = col.products.edges.map((e) => e.node).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    if (nodes.length === 0) return null
+
+    const vendorName = nodes[0].vendor || col.title || collectionHandle.replace(/-/g, ' ')
+    const productIds = nodes
+      .slice(0, 4)
+      .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
+      .filter(Boolean)
+    const newest = nodes[0]
+
+    const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
+    const handle = vendorSlug || slugify(vendorName) || collectionHandle
+    const artistImage = image || (await getArtistImageByHandle(handle))
+    const collectionBio = !bio ? await getCollectionDescription(handle) : undefined
+    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) : undefined
+
+    return {
+      vendorName,
+      vendorSlug: handle,
+      bio: bio || collectionBio,
+      instagram: instagram || collectionInstagram,
+      image: artistImage || col.image?.url || newest.featuredImage?.url || newest.images?.edges?.[0]?.node?.url,
+      productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
+      seriesName: col.title !== vendorName ? col.title : undefined,
+    }
+  } catch {
+    return null
   }
 }
 

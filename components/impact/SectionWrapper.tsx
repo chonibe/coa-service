@@ -44,6 +44,7 @@ const sectionVariants = cva(
         muted: 'bg-[#f5f5f5]',
         dark: 'bg-[#1a1a1a] text-white',
         header: 'bg-[#390000] text-[#ffba94]',
+        headerSubtle: 'bg-[#390000]/10 text-[#390000]',
         primary: 'bg-[#047AFF] text-white',
         secondary: 'bg-[#f0c417] text-[#1a1a1a]',
         transparent: 'bg-transparent',
@@ -136,8 +137,14 @@ export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement>
   title: string
   subtitle?: string
   alignment?: 'left' | 'center' | 'right'
-    titleSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
+  titleSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
+  /** HTML element for title (default: h2). Use h5 for smaller headings. */
+  titleTag?: 'h2' | 'h3' | 'h4' | 'h5'
   action?: React.ReactNode
+  /** Show squiggle underline under title (default: false) */
+  showSquiggle?: boolean
+  /** Optional override for title text color (e.g. text-[#390000]) */
+  titleClassName?: string
 }
 
 const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
@@ -148,7 +155,10 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
       subtitle,
       alignment = 'center',
       titleSize = 'lg',
+      titleTag = 'h2',
       action,
+      showSquiggle = false,
+      titleClassName,
       ...props
     },
     ref
@@ -167,7 +177,8 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
       '2xl': 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl',
       '3xl': 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl',
     }
-    
+    const h5SizeClasses = 'text-base sm:text-lg font-medium'
+    const TitleTag = titleTag
     return (
       <div
         ref={ref}
@@ -192,13 +203,14 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
                 alignment === 'right' && 'inline-block text-right'
               )}
             >
-              <h2 className={cn(
-                'font-heading font-semibold text-[#1a1a1a] tracking-[-0.02em]',
-                titleSizeClasses[titleSize]
+              <TitleTag className={cn(
+                'font-heading font-semibold tracking-[-0.02em]',
+                titleClassName ?? 'text-[#1a1a1a]',
+                titleTag === 'h5' ? h5SizeClasses : titleSizeClasses[titleSize]
               )}>
                 {title}
-              </h2>
-              <TitleSquiggle className="mt-1 text-[#1a1a1a]/40" />
+              </TitleTag>
+              {showSquiggle && <TitleSquiggle className="mt-1 text-[#1a1a1a]/40" />}
             </div>
             {subtitle && (
               <p className={cn(

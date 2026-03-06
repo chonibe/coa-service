@@ -2,12 +2,12 @@
 
 ## 🌐 Landing Funnel
 ### Inputs
-- Routes: `app/page.tsx` (root), `app/login/page.tsx`
+- Routes: `app/page.tsx` (root → redirects to `/shop/street-collector`), `app/login/page.tsx` (login funnel)
 - Legacy entries: `/admin/login`, `/vendor/login` → redirect handlers
 - Session status API: `/api/auth/status`
 
 ### Process
-1. Root server component wraps `LoginClient` in `Suspense`.
+1. Login page (`/login`) server component wraps `LoginClient` in `Suspense`.
 2. Client performs session probe via `/api/auth/status` to fast-path already signed-in users (admin → `/admin/dashboard`, vendor → `/vendor/dashboard`).
 3. Presents single card with CTA buttons:
    - **Continue with Google** → `/api/auth/google/start`

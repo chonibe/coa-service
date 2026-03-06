@@ -1,6 +1,7 @@
 /**
  * Tawk.to chat - lazy-loaded to avoid i18next initialization errors.
  * Script injects on first user click instead of page load.
+ * We prevent Tawk from changing document.title (e.g. "1 new message") - it's annoying.
  */
 
 const TAWK_SCRIPT_SRC = 'https://embed.tawk.to/69a429d6e79dd41c3844154b/1jikk6s6e'
@@ -15,6 +16,30 @@ declare global {
     }
     Tawk_LoadStart?: Date
   }
+}
+
+/** Keeps document.title unchanged - prevents Tawk "1 new message" etc. in tab */
+function preventTawkTitleChanges() {
+  if (typeof document === 'undefined') return
+  const titleEl = document.querySelector('title')
+  if (!titleEl) return
+
+  const originalTitle = document.title
+
+  const observer = new MutationObserver(() => {
+    const current = document.title
+    // Revert if Tawk changed it to notification-style text (e.g. "1 new message", "(2) Page Title")
+    if (
+      current !== originalTitle &&
+      (/^\d+\s*(new|unread)\s*message/i.test(current) ||
+        /^\(\d+\)\s/.test(current) ||
+        /new\s*message/i.test(current))
+    ) {
+      document.title = originalTitle
+    }
+  })
+
+  observer.observe(titleEl, { childList: true, characterData: true, subtree: true })
 }
 
 function hidePoweredBy() {
@@ -41,6 +66,7 @@ function injectTawkScript(openOnLoad: boolean): void {
 
   window.Tawk_API.onLoad = () => {
     window.Tawk_API?.hideWidget?.()
+    preventTawkTitleChanges()
     hidePoweredBy()
     setInterval(hidePoweredBy, 500)
     if (openOnLoad) {

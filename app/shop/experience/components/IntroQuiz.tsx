@@ -7,6 +7,10 @@ import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
 export interface QuizAnswers {
   ownsLamp: boolean
   purpose: 'self' | 'gift'
+  /** User's name from onboarding (gift giver or self) */
+  name?: string
+  /** Optional email from onboarding */
+  email?: string
 }
 
 interface IntroQuizProps {
@@ -20,25 +24,43 @@ const fadeUp = {
 }
 
 export function IntroQuiz({ onComplete }: IntroQuizProps) {
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [ownsLamp, setOwnsLamp] = useState<boolean | null>(null)
+  const [purpose, setPurpose] = useState<'self' | 'gift' | null>(null)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
 
   const handleStep1 = (owns: boolean) => {
     setOwnsLamp(owns)
     setStep(2)
   }
 
-  const handleStep2 = (purpose: 'self' | 'gift') => {
-    onComplete({ ownsLamp: ownsLamp!, purpose })
+  const handleStep2 = (p: 'self' | 'gift') => {
+    setPurpose(p)
+    setStep(3)
+  }
+
+  const handleStep3 = () => {
+    setStep(4)
+  }
+
+  const handleStep4 = () => {
+    onComplete({ ownsLamp: ownsLamp!, purpose: purpose!, name: name.trim() || undefined, email: email.trim() || undefined })
+  }
+
+  const handleBack = () => {
+    if (step === 2) setStep(1)
+    else if (step === 3) setStep(2)
+    else if (step === 4) setStep(3)
   }
 
   return (
-    <div className="relative flex h-full items-center justify-center bg-neutral-950 px-4">
-      {/* Back button for step 2 */}
-      {step === 2 && (
+    <div className="relative flex h-full items-center justify-center bg-[#390000] px-4">
+      {/* Back button for steps 2–4 */}
+      {step >= 2 && (
         <button
-          onClick={() => setStep(1)}
-          className="absolute top-6 left-6 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/25 hover:bg-white/35 text-white transition-colors border border-white/20"
+          onClick={handleBack}
+          className="absolute top-6 left-6 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-[#FFBA94]/25 hover:bg-[#FFBA94]/35 text-[#FFBA94] transition-colors border border-[#FFBA94]/20"
           aria-label="Go back"
         >
           <ArrowLeft className="w-4 h-4 shrink-0" />
@@ -56,29 +78,29 @@ export function IntroQuiz({ onComplete }: IntroQuizProps) {
             className="flex flex-col items-center gap-10 max-w-lg w-full"
           >
             <div className="text-center">
-              <p className="text-sm uppercase tracking-widest text-white/40 mb-3">Step 1 of 2</p>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 1 of 4</p>
+              <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
                 Let&rsquo;s get started
               </h1>
-              <p className="text-white/50 mt-2 text-lg">Do you already have a Street Lamp?</p>
+              <p className="text-[#FFBA94]/50 mt-2 text-lg">Do you already have a Street Lamp?</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
               <motion.button
-                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,186,148,0.2)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => handleStep1(true)}
-                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-white/10 border border-white/20 text-white transition-colors cursor-pointer"
+                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] transition-colors cursor-pointer"
               >
                 <Lightbulb className="w-8 h-8" />
                 <span className="text-sm font-medium">Yes, I do</span>
               </motion.button>
 
               <motion.button
-                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,186,148,0.2)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => handleStep1(false)}
-                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-white/10 border border-white/20 text-white transition-colors cursor-pointer"
+                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] transition-colors cursor-pointer"
               >
                 <Sparkles className="w-8 h-8" />
                 <span className="text-sm font-medium">I&rsquo;m new here</span>
@@ -87,7 +109,7 @@ export function IntroQuiz({ onComplete }: IntroQuizProps) {
 
             <button
               onClick={() => onComplete({ ownsLamp: false, purpose: 'self' })}
-              className="text-xs text-white/50 hover:text-white/70 transition-colors"
+              className="text-xs text-[#FFBA94]/50 hover:text-[#FFBA94]/70 transition-colors"
             >
               Skip for now
             </button>
@@ -104,33 +126,115 @@ export function IntroQuiz({ onComplete }: IntroQuizProps) {
             className="flex flex-col items-center gap-10 max-w-lg w-full"
           >
             <div className="text-center">
-              <p className="text-sm uppercase tracking-widest text-white/40 mb-3">Step 2 of 2</p>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 2 of 4</p>
+              <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
                 Who is this for?
               </h1>
-              <p className="text-white/50 mt-2 text-lg">Help us personalize your experience</p>
+              <p className="text-[#FFBA94]/50 mt-2 text-lg">Help us personalize your experience</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
               <motion.button
-                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,186,148,0.2)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => handleStep2('self')}
-                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-white/10 border border-white/20 text-white transition-colors cursor-pointer"
+                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] transition-colors cursor-pointer"
               >
                 <User className="w-8 h-8" />
                 <span className="text-sm font-medium">For me</span>
               </motion.button>
 
               <motion.button
-                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,186,148,0.2)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => handleStep2('gift')}
-                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-white/10 border border-white/20 text-white transition-colors cursor-pointer"
+                className="flex flex-col items-center justify-center gap-3 aspect-square rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] transition-colors cursor-pointer"
               >
                 <Gift className="w-8 h-8" />
                 <span className="text-sm font-medium">It&rsquo;s a gift</span>
               </motion.button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 3 && (
+          <motion.div
+            key="step3"
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex flex-col items-center gap-10 max-w-lg w-full"
+          >
+            <div className="text-center w-full">
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 3 of 4</p>
+              <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
+                {purpose === 'gift' ? "Let's create an awesome gift" : "Let's get to know you"}
+              </h1>
+              <p className="text-[#FFBA94]/50 mt-4 text-lg">What&rsquo;s your name?</p>
+            </div>
+
+            <div className="w-full max-w-sm flex flex-col gap-4">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="What's your name?"
+                className="w-full px-4 py-3 rounded-xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] placeholder:text-[#FFBA94]/60 focus:outline-none focus:ring-2 focus:ring-[#FFBA94]/40 focus:border-transparent"
+                autoComplete="name"
+              />
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleStep3}
+                className="w-full py-3.5 rounded-xl bg-[#FFBA94] hover:bg-[#FFBA94]/90 text-[#390000] font-semibold transition-colors"
+              >
+                Continue
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 4 && (
+          <motion.div
+            key="step4"
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex flex-col items-center gap-10 max-w-lg w-full"
+          >
+            <div className="text-center w-full">
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 4 of 4</p>
+              <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
+                Hey there{name.trim() ? `, ${name.trim()}` : ''}! 👋
+              </h1>
+              <p className="text-[#FFBA94]/50 mt-4 text-lg">What&rsquo;s your email?</p>
+            </div>
+
+            <div className="w-full max-w-sm flex flex-col gap-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="What's your email?"
+                className="w-full px-4 py-3 rounded-xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] placeholder:text-[#FFBA94]/60 focus:outline-none focus:ring-2 focus:ring-[#FFBA94]/40 focus:border-transparent"
+                autoComplete="email"
+              />
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleStep4}
+                className="w-full py-3.5 rounded-xl bg-[#FFBA94] hover:bg-[#FFBA94]/90 text-[#390000] font-semibold transition-colors"
+              >
+                Continue
+              </motion.button>
+              <p className="text-center text-xs text-[#FFBA94]/60 mt-2">
+                By continuing, you indicate that you have read and agree to our{' '}
+                <a href="/policies/terms-of-service" className="underline hover:text-[#FFBA94]/90">Terms of Use</a>
+                {' & '}
+                <a href="/policies/privacy-policy" className="underline hover:text-[#FFBA94]/90">Privacy Policy</a>
+              </p>
             </div>
           </motion.div>
         )}

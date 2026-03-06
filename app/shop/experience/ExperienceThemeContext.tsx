@@ -46,7 +46,7 @@ export function ExperienceThemeProvider({ children }: { children: React.ReactNod
 export function useExperienceTheme() {
   const ctx = useContext(ExperienceThemeContext)
   if (!ctx) {
-    return { theme: 'dark' as const, setTheme: () => {} }
+    return { theme: 'light' as const, setTheme: () => {} }
   }
   return ctx
 }

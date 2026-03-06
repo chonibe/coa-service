@@ -53,6 +53,8 @@ export interface PaymentMethodsModalProps {
   onBillingAddressSave?: (addr: CheckoutAddress) => void
   /** Preloaded checkout session clientSecret – starts loading immediately when cart opens */
   preloadedClientSecret?: string | null
+  /** Ref for the payment form – parent can call requestSubmit() to trigger submit */
+  formRef?: React.RefObject<HTMLFormElement | null>
 }
 
 export function PaymentMethodsModal({
@@ -74,6 +76,7 @@ export function PaymentMethodsModal({
   onSameAsShippingChange,
   onBillingAddressSave,
   preloadedClientSecret,
+  formRef,
 }: PaymentMethodsModalProps) {
   const { theme } = useExperienceTheme()
   const [billingModalOpen, setBillingModalOpen] = React.useState(false)
@@ -94,7 +97,20 @@ export function PaymentMethodsModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
-          forceMount
+          aria-describedby={undefined}
+          onPointerDownOutside={(e) => {
+            // Prevent closing when user clicks Stripe Payment Element iframe (PayPal/GPay tab can trigger outside detection)
+            const target = e.target as HTMLElement
+            if (target?.tagName === 'IFRAME' || target?.closest?.('.stripe-payment-element, [data-stripe-payment]')) {
+              e.preventDefault()
+            }
+          }}
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement
+            if (target?.tagName === 'IFRAME' || target?.closest?.('.stripe-payment-element, [data-stripe-payment]')) {
+              e.preventDefault()
+            }
+          }}
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
             theme === 'dark' ? 'bg-neutral-950' : 'bg-white',
@@ -105,8 +121,8 @@ export function PaymentMethodsModal({
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
         >
-          {/* Wrapper for dark mode - portaled content needs explicit theme */}
-          <div className={cn('flex flex-col h-full', theme === 'dark' && 'dark')}>
+          {/* Wrapper for dark mode - min-h-0 lets flex children scroll properly */}
+          <div className={cn('flex flex-col h-full min-h-0', theme === 'dark' && 'dark')}>
           <VisuallyHidden>
             <Dialog.Title>Payment</Dialog.Title>
           </VisuallyHidden>
@@ -122,19 +138,20 @@ export function PaymentMethodsModal({
             </button>
             <span className="flex-1" aria-hidden />
             <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              data-testid="add-credit-card-done-button"
-              className="text-sm font-medium text-[#047AFF] hover:text-[#0366d6]"
+              type="submit"
+              form="checkout-payment-form"
+              data-testid="place-order-in-modal-button"
+              className="text-sm font-semibold text-white bg-[#047AFF] hover:bg-[#0366d6] px-4 py-2 rounded-lg"
             >
-              Done
+              Place Order
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4" data-testid="stripe-payment-element-loaded">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4" data-testid="stripe-payment-element-loaded">
             <PaymentStep
               compact
               formId="checkout-payment-form"
+              formRef={formRef}
               items={items}
               subtotal={subtotal}
               discount={discount}
