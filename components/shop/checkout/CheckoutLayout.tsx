@@ -161,13 +161,13 @@ export function CheckoutLayout({
         }}
         className="mt-4 flex w-full items-center gap-3 py-4 text-left transition-colors hover:opacity-80"
       >
-        <Home className={cn('h-5 w-5 shrink-0', isAddressComplete ? 'text-neutral-500 dark:text-neutral-400' : 'text-amber-600 dark:text-amber-500')} />
+        <Home className={cn('h-5 w-5 shrink-0', isAddressComplete ? 'text-neutral-500 dark:text-[#c4a0a0]' : 'text-amber-600 dark:text-amber-500')} />
         <div className="min-w-0 flex-1">
           {addressDisplay ? (
             <>
               <p className="truncate font-medium text-neutral-950 dark:text-white">{addressDisplay}</p>
               {countryName && (
-                <p className="text-xs text-neutral-600 dark:text-neutral-400">{countryName}</p>
+                <p className="text-xs text-neutral-600 dark:text-[#c4a0a0]">{countryName}</p>
               )}
             </>
           ) : (
@@ -195,7 +195,7 @@ export function CheckoutLayout({
               : getPaymentMethodLabel(paymentMethod)}
           </span>
         </div>
-        <span className="text-sm font-medium text-neutral-400 dark:text-neutral-500 shrink-0">
+        <span className="text-sm font-medium text-neutral-400 dark:text-[#b89090] shrink-0">
           Change
         </span>
       </button>
@@ -212,12 +212,12 @@ export function CheckoutLayout({
         className="flex w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Tag className="h-5 w-5 shrink-0 text-neutral-600 dark:text-neutral-400" />
+          <Tag className="h-5 w-5 shrink-0 text-neutral-600 dark:text-[#c4a0a0]" />
           <span className="font-medium text-neutral-950 dark:text-white">
             {promoCode ? promoCode : 'Add promo code'}
           </span>
         </div>
-        <span className="text-sm font-medium text-neutral-400 dark:text-neutral-500 shrink-0">
+        <span className="text-sm font-medium text-neutral-400 dark:text-[#b89090] shrink-0">
           Change
         </span>
       </button>
@@ -231,7 +231,7 @@ export function CheckoutLayout({
       <div className="mt-4 space-y-2 border-t border-neutral-200 dark:border-white/10 pt-4">
         {effectiveDiscount > 0 && !suppressDiscountInSummary && (
           <div className="flex justify-between text-sm">
-            <span className="text-neutral-600 dark:text-neutral-400">
+            <span className="text-neutral-600 dark:text-[#c4a0a0]">
               Discount{discountLabel ? ` (${discountLabel})` : ''}
             </span>
             <span className="font-medium text-green-700">
@@ -240,7 +240,7 @@ export function CheckoutLayout({
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
+          <span className="text-neutral-600 dark:text-[#c4a0a0]">Shipping</span>
           <span className="font-medium text-neutral-950 dark:text-white">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
@@ -271,8 +271,8 @@ export function CheckoutLayout({
           className={cn(
             'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors',
             isCheckingOut || disabled
-              ? 'cursor-not-allowed bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
-              : 'bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200'
+              ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#230505] text-neutral-500 dark:text-[#c4a0a0]'
+              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#150000] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
           )}
         >
           {isCheckingOut ? (

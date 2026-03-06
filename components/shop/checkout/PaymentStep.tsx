@@ -287,7 +287,7 @@ function PaymentFormInner({
 
   if (checkoutState.type === 'loading') {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500 dark:text-neutral-400">
+      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500 dark:text-[#c4a0a0]">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading checkout...</span>
       </div>
@@ -322,7 +322,7 @@ function PaymentFormInner({
         {paymentError && (
           <div className="space-y-2">
             <p className="text-center text-xs text-red-500 dark:text-red-400">{paymentError}</p>
-            <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-center text-xs text-neutral-500 dark:text-[#c4a0a0]">
               Try a different payment method or card, then try again.
             </p>
           </div>
@@ -338,7 +338,7 @@ function PaymentFormInner({
         <button
           type="button"
           onClick={() => setPromoOpen(!promoOpen)}
-          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors"
         >
           <span className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5" />
@@ -353,7 +353,7 @@ function PaymentFormInner({
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               placeholder="Enter code"
-              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-500"
+              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1c0202] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#582020]"
             />
             <button
               type="button"
@@ -363,7 +363,7 @@ function PaymentFormInner({
                   setPromoOpen(false)
                 }
               }}
-              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors"
             >
               Apply
             </button>
@@ -374,19 +374,19 @@ function PaymentFormInner({
       {/* Order summary */}
       <div className="space-y-1.5 text-sm">
         <div className="flex justify-between">
-          <span className="text-neutral-600 dark:text-neutral-400">
+          <span className="text-neutral-600 dark:text-[#c4a0a0]">
             Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})
           </span>
           <span className="font-medium text-neutral-950 dark:text-white">${subtotal.toFixed(2)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between">
-            <span className="text-neutral-600 dark:text-neutral-400">Discount</span>
+            <span className="text-neutral-600 dark:text-[#c4a0a0]">Discount</span>
             <span className="font-medium text-green-700 dark:text-green-400">-${discount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-neutral-600 dark:text-neutral-400">Shipping</span>
+          <span className="text-neutral-600 dark:text-[#c4a0a0]">Shipping</span>
           <span className="font-medium text-neutral-950 dark:text-white">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
@@ -417,7 +417,7 @@ function PaymentFormInner({
       {paymentError && (
         <div className="space-y-2 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2">
           <p className="text-sm text-red-600 dark:text-red-400">{paymentError}</p>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400">
+          <p className="text-xs text-neutral-600 dark:text-[#c4a0a0]">
             Try a different payment method or card, then try again.
           </p>
         </div>
@@ -429,7 +429,7 @@ function PaymentFormInner({
           <button
             type="button"
             onClick={onBack}
-            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors"
           >
             Back
           </button>
@@ -440,8 +440,8 @@ function PaymentFormInner({
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
             loading
-              ? 'cursor-not-allowed bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
-              : 'bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200'
+              ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#230505] text-neutral-500 dark:text-[#c4a0a0]'
+              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#150000] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
           )}
         >
           {loading ? (

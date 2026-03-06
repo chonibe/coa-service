@@ -206,7 +206,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-400"
+                className="h-12 border-neutral-300 dark:border-[#471a1a] dark:bg-[#1c0202] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090]"
                 autoComplete="email"
                 disabled={isLoading}
               />
@@ -231,7 +231,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
 
             <div className="relative flex items-center my-6">
               <div className="flex-1 border-t border-neutral-200 dark:border-white/10" />
-              <span className="px-3 text-sm text-neutral-500 dark:text-neutral-400">or</span>
+              <span className="px-3 text-sm text-neutral-500 dark:text-[#c4a0a0]">or</span>
               <div className="flex-1 border-t border-neutral-200 dark:border-white/10" />
             </div>
 
@@ -239,7 +239,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
+                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#230505] hover:bg-neutral-50 dark:hover:bg-[#2b0808] font-medium dark:text-[#f0e8e8]"
                 onClick={() => handleOAuth('google')}
               >
                 <GoogleIcon className="h-5 w-5 mr-3" />
@@ -249,7 +249,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium dark:text-white"
+                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#230505] hover:bg-neutral-50 dark:hover:bg-[#2b0808] font-medium dark:text-[#f0e8e8]"
                   onClick={() => handleOAuth('facebook')}
                 >
                   <FacebookIcon className="h-5 w-5 mr-3" />
@@ -258,11 +258,11 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               )}
             </div>
 
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-6 text-center">
+            <p className="text-xs text-neutral-500 dark:text-[#c4a0a0] mt-6 text-center">
               By signing up you agree to our{' '}
-              <a href="/terms" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">Terms of Use</a>
+              <a href="/terms" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Terms of Use</a>
               {' '}and{' '}
-              <a href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-neutral-300">Privacy Policy</a>.
+              <a href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Privacy Policy</a>.
             </p>
           </>
         ) : (
@@ -270,13 +270,13 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-4 -ml-1"
+              className="flex items-center gap-2 text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] mb-4 -ml-1"
               aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-1">Code Sent to Email</h2>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] mb-4">
               An email with the code has been sent to{' '}
               <span className="font-medium text-neutral-900 dark:text-white">{email}</span>
             </p>
@@ -288,7 +288,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter Code"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-400 text-center text-lg tracking-widest"
+                className="h-12 border-neutral-300 dark:border-[#471a1a] dark:bg-[#1c0202] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090] text-center text-lg tracking-widest"
                 maxLength={6}
                 disabled={isLoading}
                 autoFocus
@@ -313,8 +313,8 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               className={cn(
                 'text-sm underline mt-4',
                 resendCooldown > 0 || isLoading
-                  ? 'text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  ? 'text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
+                  : 'text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8]'
               )}
             >
               {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}

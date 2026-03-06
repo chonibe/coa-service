@@ -174,7 +174,7 @@ export function PaymentMethodsModal({
                     checked={sameAsShipping}
                     onCheckedChange={(c) => handleSameAsChange(!!c)}
                   />
-                  <Label htmlFor="same-as-address" className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                  <Label htmlFor="same-as-address" className="text-sm text-neutral-700 dark:text-[#d4b8b8] cursor-pointer">
                     Same as Address
                   </Label>
                 </div>
@@ -183,7 +183,7 @@ export function PaymentMethodsModal({
                     <button
                       type="button"
                       onClick={() => setBillingModalOpen(true)}
-                      className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                      className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50"
                     >
                       {billingAddress
                         ? `${billingAddress.addressLine1}, ${billingAddress.city}`

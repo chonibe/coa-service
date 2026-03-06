@@ -385,7 +385,7 @@ export function AddressModal({
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4">
             {savedAddressesToShow.length > 0 && (
               <div className="mb-4 space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-[#c4a0a0]">
                   Choose from saved
                 </p>
                 <div className="space-y-2">
@@ -408,13 +408,13 @@ export function AddressModal({
                         }}
                         className="w-full text-left rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 hover:border-[#047AFF]/50 dark:hover:border-[#60A5FA]/50 hover:bg-[#047AFF]/5 dark:hover:bg-[#60A5FA]/10 transition-colors"
                       >
-                        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-0.5">{label}</p>
+                        <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] mb-0.5">{label}</p>
                         <p className="text-sm text-neutral-900 dark:text-white truncate">{formatAddressShort(addr)}</p>
                       </button>
                     )
                   })}
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 pt-1">Or enter a new address below</p>
+                <p className="text-xs text-neutral-500 dark:text-[#c4a0a0] pt-1">Or enter a new address below</p>
                 <div className="border-t border-neutral-100 dark:border-white/10 my-4" />
               </div>
             )}
@@ -430,7 +430,7 @@ export function AddressModal({
                   checked={sameAsBilling}
                   onCheckedChange={(c) => setSameAsBilling(!!c)}
                 />
-                <Label htmlFor="same-as-billing" className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                <Label htmlFor="same-as-billing" className="text-sm text-neutral-700 dark:text-[#d4b8b8] cursor-pointer">
                   Same as billing address
                 </Label>
               </div>
@@ -457,7 +457,7 @@ export function AddressModal({
                 ))}
               </select>
               <div>
-                <Label htmlFor="address-email" className="text-sm text-neutral-700 dark:text-neutral-300">
+                <Label htmlFor="address-email" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                   Email
                 </Label>
                 <Input
@@ -472,7 +472,7 @@ export function AddressModal({
                 />
               </div>
               <div>
-                <Label htmlFor="address-fullname" className="text-sm text-neutral-700 dark:text-neutral-300">
+                <Label htmlFor="address-fullname" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                   Full name
                 </Label>
                 <Input
@@ -486,7 +486,7 @@ export function AddressModal({
                 />
               </div>
               <div>
-                <Label htmlFor="address-country" className="text-sm text-neutral-700 dark:text-neutral-300">
+                <Label htmlFor="address-country" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                   Country or region
                 </Label>
                 <Select value={form.country} onValueChange={handleCountryChange}>
@@ -504,7 +504,7 @@ export function AddressModal({
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="address-line1" className="text-sm text-neutral-700 dark:text-neutral-300">
+                  <Label htmlFor="address-line1" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                     Address line 1
                   </Label>
                   <button
@@ -578,7 +578,7 @@ export function AddressModal({
               {addressExpanded && (
                 <>
                   <div>
-                    <Label htmlFor="address-line2" className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <Label htmlFor="address-line2" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                       Address line 2
                     </Label>
                     <Input
@@ -594,7 +594,7 @@ export function AddressModal({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="address-city" className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <Label htmlFor="address-city" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                       City
                     </Label>
                     <Input
@@ -630,7 +630,7 @@ export function AddressModal({
                     </div>
                   ) : form.country ? (
                     <div>
-                      <Label htmlFor="address-state" className="text-sm text-neutral-700 dark:text-neutral-300">
+                      <Label htmlFor="address-state" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                         State / Province
                       </Label>
                       <Input
@@ -645,7 +645,7 @@ export function AddressModal({
                     </div>
                   ) : null}
                   <div>
-                    <Label htmlFor="address-postal" className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <Label htmlFor="address-postal" className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
                       ZIP / Postal code
                     </Label>
                     <Input
@@ -660,7 +660,7 @@ export function AddressModal({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm text-neutral-700 dark:text-neutral-300">Phone number</Label>
+                    <Label className="text-sm text-neutral-700 dark:text-[#d4b8b8]">Phone number</Label>
                     <div className="mt-1.5 flex gap-2">
                       <Select
                         value={form.phoneCountryCode}

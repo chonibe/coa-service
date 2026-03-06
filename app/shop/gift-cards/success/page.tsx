@@ -73,10 +73,10 @@ function GiftCardSuccessContent() {
 
   if (status === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading your gift card...</p>
+          <p className="text-neutral-600 dark:text-[#c4a0a0]">Loading your gift card...</p>
         </div>
       </main>
     )
@@ -84,7 +84,7 @@ function GiftCardSuccessContent() {
 
   if (status === 'pending') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000] px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-amber-600 dark:text-amber-400" />
@@ -92,10 +92,10 @@ function GiftCardSuccessContent() {
           <h1 className="text-2xl font-bold text-neutral-950 dark:text-white mb-2">
             Almost ready
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+          <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
             {error}
           </p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-[#b89090]">
             Check your email for the gift card code. If you don&apos;t see it within a few minutes, check your spam folder.
           </p>
           <Link href="/shop" className="inline-block mt-6 text-[#047AFF] hover:underline font-medium">
@@ -108,16 +108,16 @@ function GiftCardSuccessContent() {
 
   if (status === 'error') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000] px-4">
         <div className="max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-neutral-950 dark:text-white mb-2">
             Something went wrong
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+          <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
             {error}
           </p>
           <Link href="/shop/contact">
-            <Button className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
+            <Button className="bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]">
               Contact Support
             </Button>
           </Link>
@@ -127,7 +127,7 @@ function GiftCardSuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-16 px-4">
+    <main className="min-h-screen bg-neutral-50 dark:bg-[#150000] py-16 px-4">
       <div className="max-w-lg mx-auto text-center">
         <div className="w-20 h-20 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
           <Gift className="w-10 h-10 text-green-600 dark:text-green-400" />
@@ -135,7 +135,7 @@ function GiftCardSuccessContent() {
         <h1 className="text-3xl font-bold text-neutral-950 dark:text-white mb-2">
           Gift card purchased!
         </h1>
-        <p className="text-neutral-600 dark:text-neutral-400 mb-8">
+        <p className="text-neutral-600 dark:text-[#c4a0a0] mb-8">
           {data?.recipientEmail
             ? `A $${((data?.amountCents ?? 0) / 100).toFixed(2)} gift card has been sent to ${data.recipientEmail}`
             : `Your $${((data?.amountCents ?? 0) / 100).toFixed(2)} gift card code is below. We've also sent it to your email.`}
@@ -143,11 +143,11 @@ function GiftCardSuccessContent() {
 
         {data?.code && (
           <div className="mb-8">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-2">
               Gift card code
             </label>
             <div className="flex items-center justify-center gap-3">
-              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-950 dark:text-white">
+              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-white dark:bg-[#1c0202] border-2 border-neutral-200 dark:border-[#471a1a] rounded-lg text-neutral-950 dark:text-white">
                 {data.code}
               </code>
               <button
@@ -157,14 +157,14 @@ function GiftCardSuccessContent() {
                   'p-3 rounded-lg border-2 transition-colors',
                   copied
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500'
+                    : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020]'
                 )}
                 aria-label="Copy code"
               >
                 {copied ? (
                   <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
                 ) : (
-                  <Copy className="w-6 h-6 text-neutral-600 dark:text-neutral-400" />
+                  <Copy className="w-6 h-6 text-neutral-600 dark:text-[#c4a0a0]" />
                 )}
               </button>
             </div>
@@ -173,7 +173,7 @@ function GiftCardSuccessContent() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/shop">
-            <Button className="w-full sm:w-auto bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
+            <Button className="w-full sm:w-auto bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]">
               Continue shopping
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
@@ -193,7 +193,7 @@ export default function GiftCardSuccessPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+        <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000]">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
         </main>
       }

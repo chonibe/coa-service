@@ -79,7 +79,7 @@ export function PromoCodeModal({
         <Dialog.Content
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
-            theme === 'dark' ? 'bg-neutral-950' : 'bg-white',
+            theme === 'dark' ? 'bg-[#150000]' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -94,7 +94,7 @@ export function PromoCodeModal({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#230505] hover:text-neutral-700 dark:hover:text-[#d4b8b8]"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -114,9 +114,9 @@ export function PromoCodeModal({
               {/* Volume Discount (non-interactive) */}
               {volumeDiscountLabel && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{volumeDiscountLabel}</p>
+                  <p className="text-sm font-medium text-neutral-600 dark:text-[#c4a0a0]">{volumeDiscountLabel}</p>
                   {volumeDiscountDescription && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">{volumeDiscountDescription}</p>
+                    <p className="text-xs text-neutral-500 dark:text-[#b89090] mt-0.5">{volumeDiscountDescription}</p>
                   )}
                 </div>
               )}
@@ -130,7 +130,7 @@ export function PromoCodeModal({
                     data-testid="applied-custom-code"
                     className={cn(
                       'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                      'bg-white dark:bg-neutral-900 border-rose-400/50 dark:border-rose-500/50 shadow-sm'
+                      'bg-white dark:bg-[#1c0202] border-rose-400/50 dark:border-rose-500/50 shadow-sm'
                     )}
                   >
                     <span className={cn('h-5 w-5 shrink-0 rounded-full flex items-center justify-center', ACCENT_BG, 'text-white')}>
@@ -141,7 +141,7 @@ export function PromoCodeModal({
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-neutral-950 dark:text-white">{appliedCode} (applied)</p>
                       {appliedDiscount > 0 && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">-${appliedDiscount.toFixed(2)}</p>
+                        <p className="text-xs text-neutral-500 dark:text-[#c4a0a0]">-${appliedDiscount.toFixed(2)}</p>
                       )}
                     </div>
                   </button>
@@ -156,16 +156,16 @@ export function PromoCodeModal({
                       data-testid={p.code}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                        'bg-white dark:bg-neutral-900',
+                        'bg-white dark:bg-[#1c0202]',
                         isSelected
                           ? 'border-rose-400/50 dark:border-rose-500/50 shadow-sm'
-                          : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                          : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-300 dark:hover:border-[#582020]'
                       )}
                     >
                       <span
                         className={cn(
                           'h-5 w-5 shrink-0 rounded-full flex items-center justify-center',
-                          isSelected ? `${ACCENT_BG} text-white` : 'border-2 border-neutral-300 dark:border-neutral-600'
+                          isSelected ? `${ACCENT_BG} text-white` : 'border-2 border-neutral-300 dark:border-[#471a1a]'
                         )}
                       >
                         {isSelected && (
@@ -178,7 +178,7 @@ export function PromoCodeModal({
                         <p className="font-medium text-neutral-950 dark:text-white">
                           {p.code}{p.isDefault ? ' (default)' : ''}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{p.description}</p>
+                        <p className="text-xs text-neutral-500 dark:text-[#c4a0a0]">{p.description}</p>
                       </div>
                     </button>
                   )
@@ -201,7 +201,7 @@ export function PromoCodeModal({
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Enter code"
-                      className="flex-1 dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white dark:placeholder:!text-neutral-400"
+                      className="flex-1 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                     />
                     <Button onClick={handleApply}>Apply</Button>
                   </div>

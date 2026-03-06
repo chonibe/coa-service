@@ -155,13 +155,13 @@ export default function GiftCardsPage() {
     <main className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
       <section className="max-w-6xl mx-auto px-4 py-12 lg:py-16">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
-            <Gift className="w-8 h-8 text-neutral-700 dark:text-neutral-300" />
+          <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-[#230505] flex items-center justify-center mb-4">
+            <Gift className="w-8 h-8 text-neutral-700 dark:text-[#d4b8b8]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-neutral-950 dark:text-white text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-neutral-950 dark:text-[#f0e8e8] text-center">
             Digital Gift Card
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mt-2 text-center">
+          <p className="text-neutral-600 dark:text-[#c4a0a0] mt-2 text-center">
             Who&apos;s the lucky recipient?
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function GiftCardsPage() {
           {/* Selector column - order-2 on mobile so card preview shows first */}
           <div className="space-y-6 order-2 lg:order-none">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-2">
               Recipient&apos;s email
             </label>
             <Input
@@ -191,7 +191,7 @@ export default function GiftCardsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-3">
               Choose a design
             </label>
             <div className="flex gap-3">
@@ -203,21 +203,21 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-3 px-4 rounded-lg border-2 text-center font-medium transition-colors',
                     design === d.id
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-900 dark:text-white'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
+                      : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020] text-neutral-900 dark:text-[#f0e8e8]'
                   )}
                 >
                   {d.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-500 dark:text-[#c4a0a0] mt-1">
               Preview updates as you customize
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-3">
               Choose a card value
             </label>
             <div className="space-y-3">
@@ -228,8 +228,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'value'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-700'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
+                      : 'border-neutral-200 dark:border-[#471a1a]'
                   )}
                 >
                   Dollar amount
@@ -240,8 +240,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'street_lamp'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-700'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
+                      : 'border-neutral-200 dark:border-[#471a1a]'
                   )}
                 >
                   1 Street Lamp
@@ -252,8 +252,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'season1_artwork'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                      : 'border-neutral-200 dark:border-neutral-700'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
+                      : 'border-neutral-200 dark:border-[#471a1a]'
                   )}
                 >
                   1 Season 1 Artwork ($40)
@@ -274,8 +274,8 @@ export default function GiftCardsPage() {
                         className={cn(
                           'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
                           selectedAmount === cents
-                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                            : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-900 dark:text-white'
+                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
+                            : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020] text-neutral-900 dark:text-[#f0e8e8]'
                         )}
                       >
                         {label}
@@ -299,7 +299,7 @@ export default function GiftCardsPage() {
               )}
 
               {giftCardType === 'street_lamp' && (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
                   {lampPrice != null
                     ? `$${lampPrice.toFixed(2)} — Redeemable for 1 Street Lamp`
                     : 'Loading price...'}
@@ -307,7 +307,7 @@ export default function GiftCardsPage() {
               )}
 
               {giftCardType === 'season1_artwork' && (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
                   $40.00 — Redeemable for any Season 1 artwork
                 </p>
               )}
@@ -315,7 +315,7 @@ export default function GiftCardsPage() {
           </div>
 
           <div>
-            <label htmlFor="gift-message" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label htmlFor="gift-message" className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-2">
               Gift message (optional)
             </label>
             <textarea
@@ -324,12 +324,12 @@ export default function GiftCardsPage() {
               value={giftMessage}
               onChange={(e) => setGiftMessage(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-3 text-neutral-900 dark:text-white placeholder:text-neutral-400"
+              className="w-full rounded-lg border border-neutral-200 dark:border-[#471a1a] bg-white dark:bg-[#1c0202] px-4 py-3 text-neutral-900 dark:text-[#f0e8e8] placeholder:text-[#b89090]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-2">
               When should we send the gift card?
             </label>
             <div className="flex gap-4">
@@ -366,7 +366,7 @@ export default function GiftCardsPage() {
           </div>
 
           <div>
-            <label htmlFor="sender-name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label htmlFor="sender-name" className="block text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] mb-2">
               Who is it from?
             </label>
             <Input
@@ -387,7 +387,7 @@ export default function GiftCardsPage() {
               !isValid ||
               isCheckingOut
             }
-            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100"
+            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
           >
             {isCheckingOut ? (
               <>
@@ -406,7 +406,7 @@ export default function GiftCardsPage() {
           {/* Preview column - order-1 on mobile so card shows at top */}
           <div className="lg:sticky lg:top-24 order-1 lg:order-none">
             <div className="flex flex-col items-center">
-              <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-4">
+              <p className="text-sm font-medium text-neutral-600 dark:text-[#c4a0a0] mb-4">
                 Card preview
               </p>
               <GiftCardPreview
@@ -416,7 +416,7 @@ export default function GiftCardsPage() {
                 senderName={senderName || undefined}
                 className="shadow-2xl"
               />
-              <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-400 text-center max-w-xs">
+              <p className="mt-4 text-xs text-neutral-500 dark:text-[#c4a0a0] text-center max-w-xs">
                 Delivered by email, this gift card never expires.
               </p>
             </div>
@@ -439,9 +439,9 @@ export default function GiftCardsPage() {
           />
         )}
 
-        <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
-          <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">How it works</h3>
-          <ol className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 list-decimal list-inside">
+        <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-[#230505]/50">
+          <h3 className="font-semibold text-neutral-900 dark:text-[#f0e8e8] mb-2">How it works</h3>
+          <ol className="text-sm text-neutral-600 dark:text-[#c4a0a0] space-y-1 list-decimal list-inside">
             <li>Complete checkout and we&apos;ll email the unique code {sendToday ? '' : 'on your chosen date'}
             </li>
             <li>Recipient enters the code in &quot;Add Promo Code or Gift Card&quot; at checkout</li>

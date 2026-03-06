@@ -32,7 +32,7 @@ export function CheckoutButton({
       : variant === 'paypal'
         ? {
             className:
-              'bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 active:scale-[0.98] transition-all duration-200 ease-out border border-neutral-300 dark:border-neutral-600',
+              'bg-neutral-200 dark:bg-[#2b0808] hover:bg-neutral-300 dark:hover:bg-[#330c0c] active:scale-[0.98] transition-all duration-200 ease-out border border-neutral-300 dark:border-[#471a1a]',
           }
         : {
             className:
@@ -66,7 +66,7 @@ export function CheckoutButton({
         'w-full py-3.5 rounded-lg text-base font-semibold flex items-center justify-center gap-2 mt-4',
         'transition-all duration-200',
         disabled
-          ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 cursor-not-allowed'
+          ? 'bg-neutral-200 dark:bg-[#230505] text-neutral-500 dark:text-[#c4a0a0] cursor-not-allowed'
           : config.className,
         className
       )}
