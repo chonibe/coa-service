@@ -35,7 +35,7 @@ export function SplineWhenVisible({ children, placeholder, className, ...rest }:
   }, [])
 
   const defaultPlaceholder = (
-    <div className="relative w-full h-full flex items-center justify-center bg-neutral-200/80 dark:bg-[#151212]/80">
+    <div className="relative w-full h-full flex items-center justify-center bg-neutral-200/80 dark:bg-[#171515]/80">
       <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
     </div>
   )

@@ -108,7 +108,7 @@ export function PolarisSheet({
             key="sheet-panel"
             className={cn(
               'fixed z-50 flex flex-col overflow-auto border-[var(--p-color-border)] bg-[var(--p-color-bg-surface)] shadow-xl',
-              theme === 'dark' && 'dark !bg-[#151212] !border-[#3e3838]',
+              theme === 'dark' && 'dark !bg-[#171515] !border-[#3e3838]',
               sideClasses[side],
               className
             )}

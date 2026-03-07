@@ -236,7 +236,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           exit={isSlideout ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
-            'relative z-10 bg-white dark:bg-[#151212] overflow-hidden flex flex-col shadow-xl pointer-events-auto',
+            'relative z-10 bg-white dark:bg-[#171515] overflow-hidden flex flex-col shadow-xl pointer-events-auto',
             isSlideout ? 'w-full max-w-4xl h-[88dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
           )}
         >
@@ -367,7 +367,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         {artist}
                       </p>
                     )}
-                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-[#f0e8e8] mt-0.5 leading-tight">
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-experience-highlight mt-0.5 leading-tight">
                       {product.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -441,7 +441,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
                             <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
                             What&apos;s included
                           </span>
                         </div>
@@ -482,7 +482,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
                             <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
                             Specifications
                           </span>
                         </div>
@@ -505,7 +505,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                   <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/30 px-4 py-3">
                                     <div className="flex items-center gap-2 mb-2">
                                       <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">{spec.title}</h4>
+                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-experience-highlight uppercase tracking-wider">{spec.title}</h4>
                                     </div>
                                     {isSingleValue ? (
                                       <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
@@ -544,7 +544,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
                             <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                           </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
                             Artwork details
                           </span>
                         </div>
@@ -579,7 +579,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                               <User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                             </div>
                           )}
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
                             About {artistData?.name || artist}
                           </span>
                         </div>
@@ -627,7 +627,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
 
                   {/* Fixed bar at bottom of right panel — scarcity + add button, flush with bottom to align with image carousel */}
-                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#151212] pt-3 pb-5 space-y-2">
+                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
                     {!hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
@@ -1071,7 +1071,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
             <div
               className={cn(
-                'space-y-3 p-5 bg-white/90 dark:bg-[#151212]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
+                'space-y-3 p-5 bg-white/90 dark:bg-[#171515]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
                 productBadges?.length ? 'pt-4' : 'pt-7'
               )}
               style={{ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' }}

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss"
+import tailwindcssAnimate from "tailwindcss-animate"
 
 const config: Config = {
   darkMode: ["class"],
@@ -93,6 +94,12 @@ const config: Config = {
           'badge': '#803cee',
           'checkout-accent': '#f0c417',
         },
+        // Experience dark mode — FFBA94 palette for highlights
+        'experience': {
+          'highlight': '#FFBA94',
+          'highlight-muted': '#e8a87a',
+          'highlight-soft': '#ffc9a8',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -182,7 +189,7 @@ const config: Config = {
     },
   },
   plugins: [
-    require("tailwindcss-animate"),
+    tailwindcssAnimate,
     // Scrollbar hide utility
     function({ addUtilities }: any) {
       addUtilities({

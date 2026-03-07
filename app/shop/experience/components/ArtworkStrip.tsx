@@ -254,7 +254,7 @@ function ArtworkCard({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          isInCart ? 'bg-[#e8f4ff] dark:bg-[#151212]' : 'bg-neutral-100 dark:bg-[#201c1c]'
+          isInCart ? 'bg-[#e8f4ff] dark:bg-[#171515]' : 'bg-neutral-100 dark:bg-[#201c1c]'
         )}
         onClick={handleImageClick}
         role="button"
@@ -294,7 +294,7 @@ function ArtworkCard({
             'absolute top-0.5 right-0.5 z-10 flex items-center justify-center transition-all duration-200',
             isFirstCard && showHighlightAnimation && highlightStep === 1
               ? 'w-6 h-6 rounded-md ring-2 ring-inset ring-amber-600/70 text-orange-400 bg-amber-100/90 dark:bg-amber-900/30'
-              : 'w-6 h-6 rounded-full bg-white/90 dark:bg-[#151212]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70'
+              : 'w-6 h-6 rounded-full bg-white/90 dark:bg-[#171515]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70'
           )}
           aria-label="View artwork details"
         >

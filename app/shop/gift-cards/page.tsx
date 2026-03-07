@@ -203,7 +203,7 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-3 px-4 rounded-lg border-2 text-center font-medium transition-colors',
                     design === d.id
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                       : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                   )}
                 >
@@ -228,7 +228,7 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'value'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                       : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
@@ -240,7 +240,7 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'street_lamp'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                       : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
@@ -252,7 +252,7 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'season1_artwork'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                       : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
@@ -274,7 +274,7 @@ export default function GiftCardsPage() {
                         className={cn(
                           'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
                           selectedAmount === cents
-                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                             : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                         )}
                       >
@@ -387,7 +387,7 @@ export default function GiftCardsPage() {
               !isValid ||
               isCheckingOut
             }
-            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
+            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
           >
             {isCheckingOut ? (
               <>

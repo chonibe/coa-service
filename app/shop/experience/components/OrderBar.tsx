@@ -331,7 +331,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         </span>
       </span>
       {hasAddress && (
-        <span className="text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#d4b8b8]">Change</span>
+        <span className="text-neutral-500 dark:text-experience-highlight/80 hover:text-neutral-700 dark:hover:text-[#FFBA94]">Change</span>
       )}
     </button>
   )
@@ -538,7 +538,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         initial={false}
         animate={{ x: drawerOpen ? 0 : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#151212] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
+        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
         style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
       >
         {/* Header - close button only */}
@@ -558,7 +558,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <div className="px-6 pb-6">
             {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#f0e8e8] mb-3">Checkout</h3>
+              <h3 className="text-lg font-semibold text-neutral-950 dark:text-experience-highlight mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
               {/* Inline expandable payment section – stays mounted when collapsed so Place Order works */}

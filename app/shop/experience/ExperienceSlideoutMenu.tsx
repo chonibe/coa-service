@@ -39,7 +39,7 @@ export function ExperienceSlideoutMenu() {
       <header
         className={cn(
           'shrink-0 flex items-center h-14 sm:h-16 px-4 sm:px-6',
-          'bg-white dark:bg-[#151212] border-b border-neutral-200 dark:border-white/10 safe-area-inset-top'
+          'bg-white dark:bg-[#171515] border-b border-neutral-200 dark:border-white/10 safe-area-inset-top'
         )}
       >
         <button

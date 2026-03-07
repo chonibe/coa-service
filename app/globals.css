@@ -456,14 +456,14 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
      * Warm charcoal, barely perceptible red tint
      * ========================================================================= */
 
-    /* --- Backgrounds (stepped, very subtle warmth) --- */
-    --background: 0 10% 6%;           /* #151212 — page base */
-    --foreground: 0 15% 92%;          /* #ebe8e8 — near-white */
+    /* --- Backgrounds (stepped, subtle warmth + hint of #1c0202) --- */
+    --background: 0 14% 6.5%;          /* #171515 — base with touch of #1c0202 */
+    --foreground: 0 15% 92%;           /* #ebe8e8 — near-white */
 
-    --card: 0 10% 7%;                 /* #1a1616 — card surface */
+    --card: 0 12% 7.5%;               /* #1a1616 — card surface */
     --card-foreground: 0 15% 92%;
 
-    --popover: 0 10% 6%;              /* #151212 — popover/dropdown */
+    --popover: 0 12% 6.5%;            /* #171515 — popover/dropdown */
     --popover-foreground: 0 12% 72%;  /* #b8b0b0 — secondary popover text */
 
     /* --- Brand Primary (blue accent preserved) --- */
@@ -500,8 +500,8 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
      * EXPERIENCE-SPECIFIC DESIGN TOKENS — very subtle red
      * ========================================================================= */
 
-    /* Surface scale — R slightly > G,B for barely perceptible warmth */
-    --experience-bg:            #151212;  /* step 1 */
+    /* Surface scale — subtle warmth, base has touch of #1c0202 */
+    --experience-bg:            #171515;  /* step 1 — base + hint of #1c0202 */
     --experience-surface:       #1a1616;  /* step 2 */
     --experience-surface-2:     #201c1c;  /* step 3 */
     --experience-surface-3:     #262222;  /* step 4 */
@@ -524,6 +524,11 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --experience-text-muted:   #a09c9c;
     --experience-text-subtle:   #787474;
 
+    /* FFBA94 highlight palette — peach/coral for highlights, labels, emphasis */
+    --experience-highlight:        #FFBA94;   /* primary highlight */
+    --experience-highlight-muted:   #e8a87a;   /* softer highlight */
+    --experience-highlight-soft:   #ffc9a8;   /* hover / bright */
+
     /* Accent / interactive */
     --experience-accent:        #c44;
     --experience-accent-soft:   rgba(180, 60, 60, 0.12);
@@ -532,7 +537,7 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     /* =========================================================================
      * POLARIS DESIGN TOKENS — very subtle red
      * ========================================================================= */
-    --p-color-bg:                    #151212;
+    --p-color-bg:                    #171515;
     --p-color-bg-surface:            #1a1616;
     --p-color-bg-surface-secondary:  #201c1c;
     --p-color-border:                #342e2e;

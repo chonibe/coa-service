@@ -135,7 +135,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-[#151212] shadow-xl flex flex-col"
+            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-[#171515] shadow-xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-white/10 flex-shrink-0">
@@ -171,7 +171,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                       className={cn(
                         'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
-                          ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                          ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                           : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
                       )}
                     >
@@ -214,7 +214,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                         className={cn(
                           'h-5 px-2 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           filters.tags.includes(tag)
-                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                             : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
                         )}
                       >
@@ -240,7 +240,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                         className={cn(
                           'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                           isActive
-                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
                             : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
                         )}
                       >
@@ -279,7 +279,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             <div className="flex-shrink-0 p-4 border-t border-neutral-100 dark:border-white/10">
               <button
                 onClick={onClose}
-                className="w-full h-10 rounded-lg bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212] text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-[#4a4444] transition-colors"
+                className="w-full h-10 rounded-lg bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-[#4a4444] transition-colors"
               >
                 Apply Filters
               </button>

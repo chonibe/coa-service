@@ -272,7 +272,7 @@ export function CheckoutLayout({
             'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors',
             isCheckingOut || disabled
               ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0]'
-              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#151212] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
+              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
           )}
         >
           {isCheckingOut ? (

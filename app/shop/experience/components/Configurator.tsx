@@ -726,7 +726,7 @@ export function Configurator({
         className={cn(
           'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
           'max-w-[100vw] max-h-[100dvh] min-w-0',
-          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#151212]',
+          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]',
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
@@ -788,7 +788,7 @@ export function Configurator({
           type="button"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          className="absolute top-3 right-3 z-10 inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#151212]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+          className="absolute top-3 right-3 z-10 inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
         >
           {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
         </button>
@@ -1022,7 +1022,7 @@ export function Configurator({
       <motion.div
         layout={false}
         className={cn(
-          'relative flex flex-col bg-white dark:bg-[#151212] overflow-hidden min-h-0 border-t border-neutral-100 dark:border-[#342e2e] md:border-t-0 transition-[height,flex] duration-200 ease-out',
+          'relative flex flex-col bg-white dark:bg-[#171515] overflow-hidden min-h-0 border-t border-neutral-100 dark:border-[#342e2e] md:border-t-0 transition-[height,flex] duration-200 ease-out',
             lampQuantity > 0 && 'border-t-0',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
@@ -1111,7 +1111,7 @@ export function Configurator({
             /* Collapsed: Artworks bar with LayoutGrid, ChevronUp */
             <>
               <LayoutGrid className="w-4 h-4 shrink-0 text-neutral-500 dark:text-[#c4a0a0]" />
-              <span className="text-xs font-medium text-neutral-700 dark:text-[#d4b8b8]">Artworks</span>
+              <span className="text-xs font-medium text-neutral-700 dark:text-experience-highlight">Artworks</span>
               <ChevronUp className="w-3 h-3 shrink-0 text-neutral-500 dark:text-[#c4a0a0] md:hidden" />
             </>
           ) : (
@@ -1391,7 +1391,7 @@ export function Configurator({
             <div className={cn(
                 'flex flex-col gap-0 w-full overflow-hidden',
                 lampQuantity > 0
-                  ? 'bg-[#151212] rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
+                  ? 'bg-[#171515] rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
                   : 'bg-neutral-100 rounded-lg'
               )}>
               <div className={cn(

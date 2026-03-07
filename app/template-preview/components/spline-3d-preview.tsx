@@ -1143,7 +1143,7 @@ export function Spline3DPreview({
           canvas.addEventListener('mouseup', forceCursorGrab)
           canvas.addEventListener('mouseleave', forceCursorGrab)
           const bgTheme = previewTheme ?? lampVariant
-          const hex = bgTheme === 'light' ? '#F5F5F5' : '#151212'
+          const hex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
           if (typeof (app as any).setBackgroundColor === 'function') {
             ;(app as any).setBackgroundColor(hex)
           } else {
@@ -2071,7 +2071,7 @@ export function Spline3DPreview({
   const setBackgroundFromVariant = useCallback(() => {
     const app = splineAppRef.current
     if (!app || isLoading) return
-    const hex = sceneBgTheme === 'light' ? '#F5F5F5' : '#151212'
+    const hex = sceneBgTheme === 'light' ? '#F5F5F5' : '#171515'
     if (typeof (app as any).setBackgroundColor === 'function') {
       ;(app as any).setBackgroundColor(hex)
     } else {
@@ -2226,7 +2226,7 @@ export function Spline3DPreview({
 
   if (minimal) {
     const bgTheme = previewTheme ?? lampVariant
-    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#151212'
+    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (

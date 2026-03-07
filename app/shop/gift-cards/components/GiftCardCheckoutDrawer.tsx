@@ -64,7 +64,7 @@ export function GiftCardCheckoutDrawer({
       className="!p-0 !max-w-md"
       theme="light"
     >
-      <div className="flex flex-col h-full bg-white dark:bg-[#151212]">
+      <div className="flex flex-col h-full bg-white dark:bg-[#171515]">
         <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 dark:border-white/10 px-4 py-4">
           <h2 className="text-lg font-semibold text-neutral-950 dark:text-white">
             Complete payment

@@ -114,7 +114,7 @@ export function ShopSlideoutMenu({
         className="!p-0 !h-[92vh] !top-[4vh] !bottom-auto"
         theme={theme}
       >
-        <div className="flex flex-col h-full bg-white dark:bg-[#151212]">
+        <div className="flex flex-col h-full bg-white dark:bg-[#171515]">
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
             <Link
               href={logoHref ?? '/shop/street-collector'}
@@ -142,7 +142,7 @@ export function ShopSlideoutMenu({
             </button>
           </div>
 
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-[#151212]">
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-[#171515]">
             {!loading && isAuthenticated && user ? (
               <>
                 <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">

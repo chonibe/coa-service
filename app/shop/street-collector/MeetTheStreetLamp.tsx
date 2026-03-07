@@ -176,7 +176,7 @@ export function MeetTheStreetLamp({
   )
 
   return (
-    <section className={cn('w-full py-8 sm:py-10 md:py-16 bg-[#151212]', className)}>
+    <section className={cn('w-full py-8 sm:py-10 md:py-16 bg-[#171515]', className)}>
       <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
         {/* Mobile: title, video, then centered rotating stage text slideshow */}
         {!isDesktop && (

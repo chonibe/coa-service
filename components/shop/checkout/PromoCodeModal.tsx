@@ -79,7 +79,7 @@ export function PromoCodeModal({
         <Dialog.Content
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
-            theme === 'dark' ? 'bg-[#151212]' : 'bg-white',
+            theme === 'dark' ? 'bg-[#171515]' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
