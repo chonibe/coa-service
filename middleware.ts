@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
     // Malformed query string (e.g. bad encoding from fbclid) — skip affiliate cookie, continue
   }
 
-  // Redirect bare domain to www so /products/* and /collections/* rewrites are served
+  // Redirect bare domain to www so requests reach our app
   const host = request.headers.get('host') ?? ''
   if (host === BARE_DOMAIN) {
     try {
@@ -53,11 +53,29 @@ export async function middleware(request: NextRequest) {
       if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
       return redirect
     } catch {
-      // If URL construction fails (e.g. very long search), redirect without query to avoid 422
       const redirect = NextResponse.redirect(new URL(`https://www.${BARE_DOMAIN}${request.nextUrl.pathname}`), 308)
       if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
       return redirect
     }
+  }
+
+  const pathname = request.nextUrl.pathname
+  const search = request.nextUrl.search
+
+  // Explicit redirects for Shopify-style URLs (affiliate/artist links) so they always reach the right page
+  if (pathname.startsWith('/products/')) {
+    const rest = pathname.slice('/products/'.length)
+    const dest = new URL(`/shop/${rest}${search}`, request.url)
+    const redirect = NextResponse.redirect(dest, 308)
+    if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+    return redirect
+  }
+  if (pathname.startsWith('/collections/')) {
+    const rest = pathname.slice('/collections/'.length)
+    const dest = new URL(`/shop/artists/${rest}${search}`, request.url)
+    const redirect = NextResponse.redirect(dest, 308)
+    if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+    return redirect
   }
 
   const supabaseResponse = await updateSession(request)
