@@ -340,7 +340,7 @@ export function AddressModal({
         <Dialog.Content
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
-            theme === 'dark' ? 'bg-[#150000]' : 'bg-white',
+            theme === 'dark' ? 'bg-[#151212]' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -365,7 +365,7 @@ export function AddressModal({
               type="button"
               onClick={() => onOpenChange(false)}
               data-testid="address-dialog-close-button"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#230505] hover:text-neutral-700 dark:hover:text-[#d4b8b8]"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#201c1c] hover:text-neutral-700 dark:hover:text-[#d4b8b8]"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -467,7 +467,7 @@ export function AddressModal({
                   autoComplete={ac('email')}
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                  className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                   placeholder="email@example.com"
                 />
               </div>
@@ -481,7 +481,7 @@ export function AddressModal({
                   autoComplete={ac('name')}
                   value={form.fullName}
                   onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
-                  className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                  className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                   placeholder="First and last name"
                 />
               </div>
@@ -490,10 +490,10 @@ export function AddressModal({
                   Country or region
                 </Label>
                 <Select value={form.country} onValueChange={handleCountryChange}>
-                  <SelectTrigger id="address-country" className={cn('mt-1.5', theme === 'dark' && '!border-[#471a1a] !bg-[#1c0202] !text-[#f0e8e8]')}>
+                  <SelectTrigger id="address-country" className={cn('mt-1.5', theme === 'dark' && '!border-[#3e3838] !bg-[#1a1616] !text-[#f0e8e8]')}>
                     <SelectValue placeholder="United States" />
                   </SelectTrigger>
-                  <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1c0202] !text-[#f0e8e8]')}>
+                  <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1a1616] !text-[#f0e8e8]')}>
                     {countryOptions.map((c) => (
                       <SelectItem key={c.code} value={c.code}>
                         {c.name}
@@ -569,7 +569,7 @@ export function AddressModal({
                       autoComplete={ac('address-line1')}
                       value={form.addressLine1}
                       onChange={(e) => setForm((p) => ({ ...p, addressLine1: e.target.value }))}
-                      className="dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                      className="dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                       placeholder="Street address"
                     />
                   )}
@@ -589,7 +589,7 @@ export function AddressModal({
                       onChange={(e) =>
                         setForm((p) => ({ ...p, addressLine2: e.target.value || undefined }))
                       }
-                      className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                      className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                       placeholder="Apt., suite, unit number, etc. (optional)"
                     />
                   </div>
@@ -603,7 +603,7 @@ export function AddressModal({
                       autoComplete={ac('address-level2')}
                       value={form.city}
                       onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
-                      className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                      className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                       placeholder="City"
                     />
                   </div>
@@ -616,10 +616,10 @@ export function AddressModal({
                         value={form.state || ''}
                         onValueChange={(v) => setForm((p) => ({ ...p, state: v }))}
                       >
-                        <SelectTrigger id="address-state" className={cn('mt-1.5', theme === 'dark' && '!border-[#471a1a] !bg-[#1c0202] !text-[#f0e8e8]')}>
+                        <SelectTrigger id="address-state" className={cn('mt-1.5', theme === 'dark' && '!border-[#3e3838] !bg-[#1a1616] !text-[#f0e8e8]')}>
                           <SelectValue placeholder="Select state" />
                         </SelectTrigger>
-                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1c0202] !text-[#f0e8e8]')}>
+                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1a1616] !text-[#f0e8e8]')}>
                           {statesForCountry.map((s) => (
                             <SelectItem key={s.code} value={s.code}>
                               {s.name}
@@ -639,7 +639,7 @@ export function AddressModal({
                         autoComplete={ac('address-level1')}
                         value={form.state ?? ''}
                         onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
-                        className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                        className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                         placeholder="State or province"
                       />
                     </div>
@@ -655,7 +655,7 @@ export function AddressModal({
                       autoComplete={ac('postal-code')}
                       value={form.postalCode}
                       onChange={(e) => setForm((p) => ({ ...p, postalCode: e.target.value }))}
-                      className="mt-1.5 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                      className="mt-1.5 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                       placeholder="ZIP or postal code"
                     />
                   </div>
@@ -668,10 +668,10 @@ export function AddressModal({
                           setForm((p) => ({ ...p, phoneCountryCode: v }))
                         }
                       >
-                        <SelectTrigger className={cn('w-24 shrink-0', theme === 'dark' && '!border-[#471a1a] !bg-[#1c0202] !text-[#f0e8e8]')}>
+                        <SelectTrigger className={cn('w-24 shrink-0', theme === 'dark' && '!border-[#3e3838] !bg-[#1a1616] !text-[#f0e8e8]')}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1c0202] !text-[#f0e8e8]')}>
+                        <SelectContent className={cn('z-[200]', theme === 'dark' && '!border-white/10 !bg-[#1a1616] !text-[#f0e8e8]')}>
                           {PHONE_DIAL_OPTIONS.map(({ dial }) => (
                             <SelectItem key={dial} value={dial}>
                               {dial}
@@ -684,7 +684,7 @@ export function AddressModal({
                         autoComplete={ac('tel')}
                         value={form.phoneNumber}
                         onChange={(e) => handlePhoneChange(e.target.value)}
-                        className="flex-1 dark:!border-[#471a1a] dark:!bg-[#1c0202] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
+                        className="flex-1 dark:!border-[#3e3838] dark:!bg-[#1a1616] dark:!text-[#f0e8e8] dark:placeholder:!text-[#b89090]"
                         placeholder="Phone number"
                       />
                     </div>

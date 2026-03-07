@@ -436,7 +436,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           return (
           <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#230505]">
+              <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
                 {art.featuredImage?.url ? (
                   <Image
                     src={art.featuredImage.url}
@@ -467,7 +467,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               type="button"
               onClick={() => onRemoveArtwork(art.id)}
               aria-label={`Remove ${art.title} from cart`}
-              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 dark:text-[#b89090] hover:text-neutral-700 dark:hover:text-[#d4b8b8] hover:bg-neutral-100 dark:hover:bg-[#230505] transition-colors"
+              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 dark:text-[#b89090] hover:text-neutral-700 dark:hover:text-[#d4b8b8] hover:bg-neutral-100 dark:hover:bg-[#201c1c] transition-colors"
             >
               <XMarkIcon className="w-3 h-3" />
             </button>
@@ -538,7 +538,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         initial={false}
         animate={{ x: drawerOpen ? 0 : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#150000] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
+        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#151212] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
         style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
       >
         {/* Header - close button only */}
@@ -546,7 +546,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <button
             type="button"
             onClick={handleClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-[#d4b8b8] dark:hover:bg-[#230505] transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-[#d4b8b8] dark:hover:bg-[#201c1c] transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -657,7 +657,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                           <button
                             type="button"
                             onClick={() => setBillingModalOpen(true)}
-                            className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50"
+                            className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50"
                           >
                             {checkout.billingAddress
                               ? `${checkout.billingAddress.addressLine1}, ${checkout.billingAddress.city}`

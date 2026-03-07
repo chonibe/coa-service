@@ -101,14 +101,14 @@ export function ArtistSpotlightBanner({
         onClick={handleClick}
         className={cn(
           'relative z-10 w-full rounded-xl transition-all duration-300 text-left overflow-hidden',
-          'bg-neutral-100 dark:bg-[#230505]/80 hover:bg-neutral-200/80 dark:hover:bg-[#2b0808]/80',
+          'bg-neutral-100 dark:bg-[#201c1c]/80 hover:bg-neutral-200/80 dark:hover:bg-[#262222]/80',
           expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
         {/* Collapsed row */}
         {!expanded && (
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-[#2b0808]">
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-[#262222]">
               {spotlight.image ? (
                 <Image
                   src={spotlight.image}
@@ -163,7 +163,7 @@ export function ArtistSpotlightBanner({
         {expanded && (
           <div className="flex flex-col">
             <div className="flex items-start gap-4 p-4">
-              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#2b0808]">
+              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#262222]">
                 {spotlight.image ? (
                   <Image
                     src={spotlight.image}

@@ -338,7 +338,7 @@ function PaymentFormInner({
         <button
           type="button"
           onClick={() => setPromoOpen(!promoOpen)}
-          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors"
+          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors"
         >
           <span className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5" />
@@ -353,7 +353,7 @@ function PaymentFormInner({
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               placeholder="Enter code"
-              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1c0202] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#582020]"
+              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1a1616] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#4a4444]"
             />
             <button
               type="button"
@@ -363,7 +363,7 @@ function PaymentFormInner({
                   setPromoOpen(false)
                 }
               }}
-              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors"
+              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors"
             >
               Apply
             </button>
@@ -429,7 +429,7 @@ function PaymentFormInner({
           <button
             type="button"
             onClick={onBack}
-            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors"
           >
             Back
           </button>
@@ -440,8 +440,8 @@ function PaymentFormInner({
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
             loading
-              ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#230505] text-neutral-500 dark:text-[#c4a0a0]'
-              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#150000] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
+              ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0]'
+              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#151212] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
           )}
         >
           {loading ? (

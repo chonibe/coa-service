@@ -91,7 +91,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     return (
       <div
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-4 py-1.5 bg-white/80 dark:bg-[#150000]/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-white/10 transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-4 py-1.5 bg-white/80 dark:bg-[#151212]/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-white/10 transition-transform duration-300 ease-out',
           !showTopBar && '-translate-y-full'
         )}
         style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}

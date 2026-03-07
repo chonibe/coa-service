@@ -114,7 +114,7 @@ export function ShopSlideoutMenu({
         className="!p-0 !h-[92vh] !top-[4vh] !bottom-auto"
         theme={theme}
       >
-        <div className="flex flex-col h-full bg-white dark:bg-[#150000]">
+        <div className="flex flex-col h-full bg-white dark:bg-[#151212]">
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
             <Link
               href={logoHref ?? '/shop/street-collector'}
@@ -134,7 +134,7 @@ export function ShopSlideoutMenu({
               type="button"
               onClick={onClose}
               aria-label="Close menu"
-              className="p-2 -m-2 text-neutral-500 hover:text-neutral-900 dark:text-[#c4a0a0] dark:hover:text-[#f0e8e8] rounded-lg hover:bg-neutral-100 dark:hover:bg-[#230505] transition-colors"
+              className="p-2 -m-2 text-neutral-500 hover:text-neutral-900 dark:text-[#c4a0a0] dark:hover:text-[#f0e8e8] rounded-lg hover:bg-neutral-100 dark:hover:bg-[#201c1c] transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -142,7 +142,7 @@ export function ShopSlideoutMenu({
             </button>
           </div>
 
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-[#150000]">
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-[#151212]">
             {!loading && isAuthenticated && user ? (
               <>
                 <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
@@ -205,7 +205,7 @@ export function ShopSlideoutMenu({
                       onClose()
                       setPromoModalOpen(true)
                     }}
-                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
                   >
                     {content}
                   </button>
@@ -220,7 +220,7 @@ export function ShopSlideoutMenu({
                       item.onClick!()
                       onClose()
                     }}
-                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
                   >
                     {content}
                   </button>
@@ -231,7 +231,7 @@ export function ShopSlideoutMenu({
                   key={item.label}
                   href={'href' in item ? item.href : '#'}
                   onClick={onClose}
-                  className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#230505]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                  className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
                 >
                   {content}
                 </Link>

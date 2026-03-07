@@ -452,91 +452,90 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 
   .dark {
     /* =========================================================================
-     * EXPERIENCE DARK MODE — Base: #150000 (HSL 0 100% 4%)
-     * Full stepped palette derived from deep crimson base
+     * EXPERIENCE DARK MODE — Very subtle red (R slightly > G,B)
+     * Warm charcoal, barely perceptible red tint
      * ========================================================================= */
 
-    /* --- Backgrounds (stepped from #150000 upward) --- */
-    --background: 0 100% 4%;          /* #150000 — page base */
-    --foreground: 0 30% 93%;          /* #f0e8e8 — warm near-white */
+    /* --- Backgrounds (stepped, very subtle warmth) --- */
+    --background: 0 10% 6%;           /* #151212 — page base */
+    --foreground: 0 15% 92%;          /* #ebe8e8 — near-white */
 
-    --card: 0 87% 6%;                 /* #1c0202 — card surface */
-    --card-foreground: 0 30% 93%;
+    --card: 0 10% 7%;                 /* #1a1616 — card surface */
+    --card-foreground: 0 15% 92%;
 
-    --popover: 0 87% 5%;              /* #180101 — popover/dropdown */
-    --popover-foreground: 0 20% 75%;  /* #bfa8a8 — secondary popover text */
+    --popover: 0 10% 6%;              /* #151212 — popover/dropdown */
+    --popover-foreground: 0 12% 72%;  /* #b8b0b0 — secondary popover text */
 
     /* --- Brand Primary (blue accent preserved) --- */
     --primary: 212 100% 55%;          /* #0d85ff — brand blue */
     --primary-foreground: 0 0% 100%;
 
     /* --- Secondary / Muted / Accent surfaces --- */
-    --secondary: 0 69% 10%;           /* #2b0808 — secondary surface */
-    --secondary-foreground: 0 30% 90%; /* #ede0e0 */
+    --secondary: 0 9% 10%;            /* #262222 — secondary surface */
+    --secondary-foreground: 0 15% 90%;
 
-    --muted: 0 75% 8%;                /* #230505 — muted panel */
-    --muted-foreground: 0 23% 60%;    /* #9e7070 — muted text */
+    --muted: 0 10% 9%;               /* #201c1c — muted panel */
+    --muted-foreground: 0 8% 58%;     /* #8f8888 — muted text */
 
-    --accent: 0 62% 12%;              /* #330c0c — hover / selection */
-    --accent-foreground: 0 30% 88%;   /* #e8d4d4 */
+    --accent: 0 8% 11%;               /* #2c2828 — hover / selection */
+    --accent-foreground: 0 15% 88%;
 
     /* --- Status --- */
-    --destructive: 0 84% 55%;         /* #f52222 */
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 98%;
 
     /* --- Borders / Inputs / Focus --- */
-    --border: 0 54% 15%;              /* #3c1212 */
-    --input: 0 54% 13%;               /* #360e0e */
-    --ring: 0 90% 55%;                /* #f01a1a — focus ring */
+    --border: 0 6% 15%;              /* #342e2e */
+    --input: 0 6% 13%;               /* #2e2828 */
+    --ring: 0 70% 50%;               /* #c44 — focus ring */
 
     /* --- Charts --- */
     --chart-1: 212 70% 55%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 0 75% 55%;
+    --chart-5: 0 50% 50%;
 
     /* =========================================================================
-     * EXPERIENCE-SPECIFIC DESIGN TOKENS
-     * Granular shades for component-level theming in the shop experience
+     * EXPERIENCE-SPECIFIC DESIGN TOKENS — very subtle red
      * ========================================================================= */
 
-    /* Surface scale — step from base (#150000) */
-    --experience-bg:            #150000;  /* step 1 — deepest base */
-    --experience-surface:       #1c0202;  /* step 2 — card/panel */
-    --experience-surface-2:     #230505;  /* step 3 — nested panel */
-    --experience-surface-3:     #2b0808;  /* step 4 — raised panel */
-    --experience-overlay:       #330c0c;  /* step 5 — overlay / sheet */
-    --experience-overlay-2:     #3c1212;  /* step 6 — elevated overlay */
+    /* Surface scale — R slightly > G,B for barely perceptible warmth */
+    --experience-bg:            #151212;  /* step 1 */
+    --experience-surface:       #1a1616;  /* step 2 */
+    --experience-surface-2:     #201c1c;  /* step 3 */
+    --experience-surface-3:     #262222;  /* step 4 */
+    --experience-overlay:       #2c2828;  /* step 5 */
+    --experience-overlay-2:     #342e2e;  /* step 6 */
 
     /* Borders */
-    --experience-border:        #471a1a;  /* subtle border */
-    --experience-border-strong: #582020;  /* prominent border */
-    --experience-border-focus:  #ff4444;  /* active / focus */
+    --experience-border:        #3e3838;
+    --experience-border-strong: #4a4444;
+    --experience-border-focus:  #c44;
 
     /* Glow & ambient light */
-    --experience-glow:          #ff2020;
-    --experience-glow-soft:     rgba(255, 32, 32, 0.12);
-    --experience-glow-ambient:  rgba(255, 20, 20, 0.06);
+    --experience-glow:          #a03030;
+    --experience-glow-soft:     rgba(120, 40, 40, 0.08);
+    --experience-glow-ambient:   rgba(80, 30, 30, 0.04);
 
     /* Text scale */
-    --experience-text:          #f0e8e8;  /* primary text */
-    --experience-text-secondary:#d4b8b8;  /* secondary text */
-    --experience-text-muted:    #b89090;  /* muted / placeholder */
-    --experience-text-subtle:   #8a6060;  /* subtle / disabled */
+    --experience-text:          #ebe8e8;
+    --experience-text-secondary:#c8c4c4;
+    --experience-text-muted:   #a09c9c;
+    --experience-text-subtle:   #787474;
 
     /* Accent / interactive */
-    --experience-accent:        #ff4444;  /* interactive accent */
-    --experience-accent-soft:   rgba(255, 68, 68, 0.15);
-    --experience-accent-hover:  #ff6666;  /* hover state */
+    --experience-accent:        #c44;
+    --experience-accent-soft:   rgba(180, 60, 60, 0.12);
+    --experience-accent-hover:  #d55;
 
     /* =========================================================================
-     * POLARIS DESIGN TOKENS — adapted to #150000 palette
+     * POLARIS DESIGN TOKENS — very subtle red
      * ========================================================================= */
-    --p-color-bg:                    #150000;
-    --p-color-bg-surface:            #1c0202;
-    --p-color-bg-surface-secondary:  #230505;
-    --p-color-border:                #2b0808;
+    --p-color-bg:                    #151212;
+    --p-color-bg-surface:            #1a1616;
+    --p-color-bg-surface-secondary:  #201c1c;
+    --p-color-border:                #342e2e;
     --p-color-text:                  #f5eeee;
     --p-color-text-secondary:        #c4a0a0;
     --p-color-bg-info:               #0c1a3d;

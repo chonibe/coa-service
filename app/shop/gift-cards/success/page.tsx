@@ -73,7 +73,7 @@ function GiftCardSuccessContent() {
 
   if (status === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000]">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#151212]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
           <p className="text-neutral-600 dark:text-[#c4a0a0]">Loading your gift card...</p>
@@ -84,7 +84,7 @@ function GiftCardSuccessContent() {
 
   if (status === 'pending') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#151212] px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-amber-600 dark:text-amber-400" />
@@ -108,7 +108,7 @@ function GiftCardSuccessContent() {
 
   if (status === 'error') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#151212] px-4">
         <div className="max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-neutral-950 dark:text-white mb-2">
             Something went wrong
@@ -117,7 +117,7 @@ function GiftCardSuccessContent() {
             {error}
           </p>
           <Link href="/shop/contact">
-            <Button className="bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]">
+            <Button className="bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]">
               Contact Support
             </Button>
           </Link>
@@ -127,7 +127,7 @@ function GiftCardSuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-[#150000] py-16 px-4">
+    <main className="min-h-screen bg-neutral-50 dark:bg-[#151212] py-16 px-4">
       <div className="max-w-lg mx-auto text-center">
         <div className="w-20 h-20 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
           <Gift className="w-10 h-10 text-green-600 dark:text-green-400" />
@@ -147,7 +147,7 @@ function GiftCardSuccessContent() {
               Gift card code
             </label>
             <div className="flex items-center justify-center gap-3">
-              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-white dark:bg-[#1c0202] border-2 border-neutral-200 dark:border-[#471a1a] rounded-lg text-neutral-950 dark:text-white">
+              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-white dark:bg-[#1a1616] border-2 border-neutral-200 dark:border-[#3e3838] rounded-lg text-neutral-950 dark:text-white">
                 {data.code}
               </code>
               <button
@@ -157,7 +157,7 @@ function GiftCardSuccessContent() {
                   'p-3 rounded-lg border-2 transition-colors',
                   copied
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020]'
+                    : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444]'
                 )}
                 aria-label="Copy code"
               >
@@ -173,7 +173,7 @@ function GiftCardSuccessContent() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/shop">
-            <Button className="w-full sm:w-auto bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]">
+            <Button className="w-full sm:w-auto bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]">
               Continue shopping
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
@@ -193,7 +193,7 @@ export default function GiftCardSuccessPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#150000]">
+        <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#151212]">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
         </main>
       }

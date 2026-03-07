@@ -206,7 +206,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 border-neutral-300 dark:border-[#471a1a] dark:bg-[#1c0202] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090]"
+                className="h-12 border-neutral-300 dark:border-[#3e3838] dark:bg-[#1a1616] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090]"
                 autoComplete="email"
                 disabled={isLoading}
               />
@@ -239,7 +239,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#230505] hover:bg-neutral-50 dark:hover:bg-[#2b0808] font-medium dark:text-[#f0e8e8]"
+                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#201c1c] hover:bg-neutral-50 dark:hover:bg-[#262222] font-medium dark:text-[#f0e8e8]"
                 onClick={() => handleOAuth('google')}
               >
                 <GoogleIcon className="h-5 w-5 mr-3" />
@@ -249,7 +249,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#230505] hover:bg-neutral-50 dark:hover:bg-[#2b0808] font-medium dark:text-[#f0e8e8]"
+                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#201c1c] hover:bg-neutral-50 dark:hover:bg-[#262222] font-medium dark:text-[#f0e8e8]"
                   onClick={() => handleOAuth('facebook')}
                 >
                   <FacebookIcon className="h-5 w-5 mr-3" />
@@ -288,7 +288,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
                 placeholder="Enter Code"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 border-neutral-300 dark:border-[#471a1a] dark:bg-[#1c0202] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090] text-center text-lg tracking-widest"
+                className="h-12 border-neutral-300 dark:border-[#3e3838] dark:bg-[#1a1616] dark:text-[#f0e8e8] dark:placeholder:text-[#b89090] text-center text-lg tracking-widest"
                 maxLength={6}
                 disabled={isLoading}
                 autoFocus

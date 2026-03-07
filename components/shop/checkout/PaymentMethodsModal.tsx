@@ -113,7 +113,7 @@ export function PaymentMethodsModal({
           }}
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
-            theme === 'dark' ? 'bg-[#150000]' : 'bg-white',
+            theme === 'dark' ? 'bg-[#151212]' : 'bg-white',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -131,7 +131,7 @@ export function PaymentMethodsModal({
               type="button"
               onClick={() => onOpenChange(false)}
               data-testid="payment-dialog-close-button"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#230505] hover:text-neutral-700 dark:hover:text-[#d4b8b8]"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:hover:bg-[#201c1c] hover:text-neutral-700 dark:hover:text-[#d4b8b8]"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -183,7 +183,7 @@ export function PaymentMethodsModal({
                     <button
                       type="button"
                       onClick={() => setBillingModalOpen(true)}
-                      className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#230505]/50"
+                      className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50"
                     >
                       {billingAddress
                         ? `${billingAddress.addressLine1}, ${billingAddress.city}`

@@ -155,7 +155,7 @@ export default function GiftCardsPage() {
     <main className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
       <section className="max-w-6xl mx-auto px-4 py-12 lg:py-16">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-[#230505] flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center mb-4">
             <Gift className="w-8 h-8 text-neutral-700 dark:text-[#d4b8b8]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-neutral-950 dark:text-[#f0e8e8] text-center">
@@ -203,8 +203,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-3 px-4 rounded-lg border-2 text-center font-medium transition-colors',
                     design === d.id
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                      : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020] text-neutral-900 dark:text-[#f0e8e8]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                   )}
                 >
                   {d.label}
@@ -228,8 +228,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'value'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                      : 'border-neutral-200 dark:border-[#471a1a]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
                   Dollar amount
@@ -240,8 +240,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'street_lamp'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                      : 'border-neutral-200 dark:border-[#471a1a]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
                   1 Street Lamp
@@ -252,8 +252,8 @@ export default function GiftCardsPage() {
                   className={cn(
                     'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
                     giftCardType === 'season1_artwork'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                      : 'border-neutral-200 dark:border-[#471a1a]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                      : 'border-neutral-200 dark:border-[#3e3838]'
                   )}
                 >
                   1 Season 1 Artwork ($40)
@@ -274,8 +274,8 @@ export default function GiftCardsPage() {
                         className={cn(
                           'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
                           selectedAmount === cents
-                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000]'
-                            : 'border-neutral-200 dark:border-[#471a1a] hover:border-neutral-400 dark:hover:border-[#582020] text-neutral-900 dark:text-[#f0e8e8]'
+                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212]'
+                            : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                         )}
                       >
                         {label}
@@ -324,7 +324,7 @@ export default function GiftCardsPage() {
               value={giftMessage}
               onChange={(e) => setGiftMessage(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-neutral-200 dark:border-[#471a1a] bg-white dark:bg-[#1c0202] px-4 py-3 text-neutral-900 dark:text-[#f0e8e8] placeholder:text-[#b89090]"
+              className="w-full rounded-lg border border-neutral-200 dark:border-[#3e3838] bg-white dark:bg-[#1a1616] px-4 py-3 text-neutral-900 dark:text-[#f0e8e8] placeholder:text-[#b89090]"
             />
           </div>
 
@@ -387,7 +387,7 @@ export default function GiftCardsPage() {
               !isValid ||
               isCheckingOut
             }
-            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#150000] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
+            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#151212] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
           >
             {isCheckingOut ? (
               <>
@@ -439,7 +439,7 @@ export default function GiftCardsPage() {
           />
         )}
 
-        <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-[#230505]/50">
+        <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-[#201c1c]/50">
           <h3 className="font-semibold text-neutral-900 dark:text-[#f0e8e8] mb-2">How it works</h3>
           <ol className="text-sm text-neutral-600 dark:text-[#c4a0a0] space-y-1 list-decimal list-inside">
             <li>Complete checkout and we&apos;ll email the unique code {sendToday ? '' : 'on your chosen date'}
