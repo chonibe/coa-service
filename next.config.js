@@ -89,10 +89,17 @@ const nextConfig = {
   // Add this to help with potential issues
   reactStrictMode: true,
   async redirects() {
+    const faviconCdnUrl = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
     return [
       {
         source: "/favicon.ico",
-        destination: "https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=32",
+        destination: `/api/proxy-image?url=${encodeURIComponent(faviconCdnUrl)}`,
+        permanent: false,
+      },
+      // Affiliate product links → main page (/); cookie is set in middleware for Experience vendor filter
+      {
+        source: "/products/:path*",
+        destination: "/",
         permanent: false,
       },
     ]
@@ -120,16 +127,8 @@ const nextConfig = {
   // This helps with potential CORS issues in development
   async rewrites() {
     return [
-      // Base address: / shows street-collector content so URL stays https://app.thestreetcollector.com
-      {
-        source: "/",
-        destination: "/shop/street-collector",
-      },
-      // Shopify-style URLs (affiliate/artist links): /products/* -> /shop/*, query string preserved
-      {
-        source: "/products/:path*",
-        destination: "/shop/:path*",
-      },
+      // Root / is the main page (app/page.tsx re-exports street-collector); no redirect to /shop/street-collector
+      // /products/* is redirected to /shop/street-collector via redirects() (affiliate links)
       // /collections/* (e.g. /collections/kymo-one) -> artist profile at /shop/artists/*
       {
         source: "/collections/:path*",

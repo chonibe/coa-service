@@ -3,6 +3,7 @@ import "./globals.css"
 import { Fraunces, Barlow } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "./providers"
+import { getProxiedImageUrl } from "@/lib/proxy-cdn-url"
 import { SkipLink } from "@/components/accessibility/skip-link"
 import { GoogleAnalytics } from "@/components/google-analytics"
 
@@ -19,10 +20,17 @@ const barlow = Barlow({
   display: "swap",
 })
 
+/** Logo icon (Group_707) used for favicon — same as street-collector/header */
+const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
+
 export const metadata = {
   title: "Limited Edition Certificate System",
   description: "Manage and verify limited edition certificates",
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: getProxiedImageUrl(FAVICON_LOGO_URL),
+    apple: getProxiedImageUrl(FAVICON_LOGO_URL),
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

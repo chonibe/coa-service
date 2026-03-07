@@ -250,7 +250,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             quantity: 1,
             image: lamp.featuredImage?.url ?? undefined,
           }],
-          cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/shop/experience` : undefined,
+          cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/experience` : undefined,
         }),
       })
       const data = await response.json()
@@ -393,7 +393,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const orderSummary = (
     <div className="order-summary-container space-y-3">
       {/* Compact cart lines */}
-      <div className="pt-2 space-y-2 max-h-[18vh] overflow-y-auto">
+      <div className="pt-2 space-y-2 max-h-[18vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
           <div className="space-y-0.5">
             <div className="flex items-center justify-between gap-2 text-sm">
@@ -554,11 +554,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         </div>
 
         {/* Single checkout screen - Top (compressed), divider, Items section — min-h-0 enables scroll */}
-        <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal">
+        <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal scrollbar-prominent">
           <div className="px-6 pb-6">
             {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-experience-highlight mb-3">Checkout</h3>
+              <h3 className="text-lg font-semibold text-[#FFBA94] mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
               {/* Inline expandable payment section – stays mounted when collapsed so Place Order works */}
@@ -570,7 +570,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                   )}
                   aria-hidden={!paymentSectionExpanded}
                 >
-                  <div className="pt-3 space-y-4 border-t border-neutral-200 dark:border-white/10 mt-2 overflow-y-auto min-h-0 max-h-[70vh]">
+                  <div className="pt-3 space-y-4 border-t border-neutral-200 dark:border-white/10 mt-2 overflow-y-auto min-h-0 max-h-[70vh] scrollbar-prominent">
                     <PaymentStep
                       compact
                       formId="checkout-payment-form"
@@ -638,7 +638,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                       </button>
                     </div>
                     <div className="border-t border-neutral-200 dark:border-white/10 pt-4 mt-2">
-                      <h3 className="text-sm font-medium text-neutral-950 dark:text-[#f0e8e8] mb-3">Billing address</h3>
+                      <h3 className="text-sm font-medium text-[#FFBA94] mb-3">Billing address</h3>
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id="same-as-address-exp"
@@ -676,6 +676,18 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             </div>
             {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
             {placeOrderButton}
+            {/* Trust chips under Place Order */}
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+                Free Worldwide Shipping
+              </span>
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+                12 months guarantee
+              </span>
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+                Easy 30 days returns
+              </span>
+            </div>
           </div>
         </div>
       </motion.div>

@@ -25,11 +25,11 @@ function useIsDesktop() {
 export interface AuthSlideupMenuProps {
   open: boolean
   onClose: () => void
-  /** Redirect path after successful login (default: /shop/experience) */
+  /** Redirect path after successful login (default: /experience) */
   redirectTo?: string
 }
 
-const COLLECTOR_REDIRECT = '/shop/experience'
+const COLLECTOR_REDIRECT = '/experience'
 
 /** Set to true to show Facebook login option */
 const SHOW_FACEBOOK_LOGIN = false

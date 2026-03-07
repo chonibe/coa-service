@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 
 /**
  * Short redirect for artist experience links.
- * /e/artist-slug → /shop/experience?artist=artist-slug
+ * /e/artist-slug → /experience?artist=artist-slug
  * Use in Instagram bios and link-in-bio for compact URLs.
  */
 export default async function ArtistExperienceRedirect({
@@ -12,5 +12,5 @@ export default async function ArtistExperienceRedirect({
 }) {
   const { slug } = await params
   const encoded = encodeURIComponent(slug.trim())
-  redirect(`/shop/experience?artist=${encoded}`)
+  redirect(`/experience?artist=${encoded}`)
 }

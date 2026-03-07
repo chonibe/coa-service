@@ -13,6 +13,7 @@ import {
 } from '@/lib/shopify/storefront-client'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { MeetTheStreetLamp } from './MeetTheStreetLamp'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
 import { TestimonialCarousel } from './TestimonialCarousel'
@@ -20,7 +21,7 @@ import { FixedCTAButton } from './FixedCTAButton'
 import { StreetCollectorFAQ } from './StreetCollectorFAQ'
 import { ArtistCarousel } from '@/components/sections/ArtistCarousel'
 
-const HOME_LOGO_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
+const HOME_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Revolutionizing The Urban Art World',
@@ -193,7 +194,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-3 sm:pb-2">
+    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-0">
       {/* Fixed CTA - stays visible as user scrolls (replaces top nav) */}
       <FixedCTAButton
         text={streetCollectorContent.hero.cta.text}
@@ -236,7 +237,7 @@ export default async function StreetCollectorPage() {
         <VideoPlayer
           video={{
             url: `/api/proxy-video?url=${encodeURIComponent(streetCollectorContent.hero.video)}`,
-            poster: streetCollectorContent.hero.image,
+            poster: getProxiedImageUrl(streetCollectorContent.hero.image),
             autoplay: true,
             loop: true,
             muted: true,
@@ -272,7 +273,7 @@ export default async function StreetCollectorPage() {
         stages={streetCollectorContent.meetTheLamp.stages}
         desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
         mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
-        poster={streetCollectorContent.meetTheLamp.poster}
+        poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
       />
@@ -282,7 +283,7 @@ export default async function StreetCollectorPage() {
         <ArtistCarousel
           title={streetCollectorContent.featuredArtists.title}
           titleSize="2xl"
-          titleTag="h5"
+          titleTag="h2"
           namePosition="below"
           headerAlignment="center"
           titleClassName="font-serif font-medium text-[#FFBA94]"
@@ -312,7 +313,7 @@ export default async function StreetCollectorPage() {
                 items={streetCollectorContent.valueProps.map((p) => ({
                   title: p.title,
                   description: p.description,
-                  poster: p.poster,
+                  poster: getProxiedImageUrl(p.poster),
                   video: p.video,
                 }))}
               />
@@ -341,19 +342,19 @@ export default async function StreetCollectorPage() {
         />
       )}
 
-      {/* Value prop banner — desktop only, under artist collaboration section */}
-      <section className="hidden md:block bg-[#1a0a0a] py-8 sm:py-10 md:py-12 overflow-hidden">
+      {/* Value prop banner — desktop only. Image right above the banner card. */}
+      <section className="hidden md:block bg-[#1a0a0a] pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
         <Container maxWidth="default" paddingX="gutter">
-          <div className="relative pt-16">
-            {/* Image behind banner — only its top protrudes from under the banner */}
+          <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
+            {/* Image right above the banner */}
             <img
-              src="https://thestreetcollector.com/cdn/shop/files/Group_8252.png?v=1771844884&width=1200"
+              src="https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200"
               alt=""
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[160px] object-cover object-top pointer-events-none z-0"
+              className="w-full max-w-4xl h-[280px] object-cover object-top pointer-events-none mx-auto block"
               aria-hidden
             />
-            {/* Banner card — overlaps image from below; image top peeks out above */}
-            <div className="relative z-10 -mt-28 w-full rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 p-6 sm:p-8 md:p-10">
+            {/* Banner card — directly below the image */}
+            <div className="w-full rounded-b-2xl rounded-t-none bg-[#1a0a0a] p-6 sm:p-8 md:p-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 {streetCollectorContent.valueProps.map((p, i) => (
                   <div key={i} className="flex flex-col gap-2 text-center md:text-left">

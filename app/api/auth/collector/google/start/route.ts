@@ -5,7 +5,7 @@ import { LOGIN_INTENT_COOKIE, COLLECTOR_REDIRECT_COOKIE } from "@/lib/vendor-aut
 
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl
-  const redirect = searchParams.get("redirect") || "/shop/experience"
+  const redirect = searchParams.get("redirect") || "/experience"
 
   // Use main callback URL so Google OAuth redirect works properly
   let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin

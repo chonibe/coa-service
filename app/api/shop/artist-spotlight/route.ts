@@ -14,9 +14,19 @@ import { getCollection, getCollectionWithListProducts, getProducts, getProductsB
 /** Spotlight override: vendor name and/or collection handle to try */
 const SPOTLIGHT_OVERRIDE = { vendorName: 'Tyler Shelton', collectionHandle: 'tyler-shelton' }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createClient()
+
+    // When ?artist= is provided (e.g. from affiliate link), use that artist as spotlight first
+    const { searchParams } = new URL(request.url)
+    const requestedArtist = searchParams.get('artist')?.trim() || searchParams.get('vendor')?.trim()
+    if (requestedArtist) {
+      const byCollection = await tryCollectionSpotlight(supabase, requestedArtist)
+      if (byCollection) return NextResponse.json(byCollection)
+      const byVendor = await tryVendorSpotlight(supabase, requestedArtist)
+      if (byVendor) return NextResponse.json(byVendor)
+    }
 
     // 0. Override: try configured artist first (vendor name, then collection by handle)
     const overrideResult =

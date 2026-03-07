@@ -6,7 +6,7 @@
  */
 
 /** Single destination for all CTAs and momentum cues */
-export const EXPERIENCE_URL = '/shop/experience'
+export const EXPERIENCE_URL = '/experience'
 
 export const streetCollectorContent = {
   experienceUrl: EXPERIENCE_URL,
@@ -19,12 +19,12 @@ export const streetCollectorContent = {
       url: EXPERIENCE_URL,
     },
     /** Hero video from thestreetcollector.com CTA section */
-    video: 'https://thestreetcollector.com/cdn/shop/videos/c/vp/684cd0c8b42142fdad8e4db442befa6e/684cd0c8b42142fdad8e4db442befa6e.HD-1080p-7.2Mbps-71666969.mp4?v=0',
-    /** From og:image - Lamp_Reward_White.png (poster/fallback) */
-    image: 'https://thestreetcollector.com/cdn/shop/files/Lamp_Reward_White.png?v=1721632485&width=2048',
+    video: 'https://cdn.shopify.com/videos/c/o/v/638abe675ef54a34b73593eeb95897f8.mp4',
+    /** Hero video poster/preview image */
+    image: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/684cd0c8b42142fdad8e4db442befa6e.thumbnail.0000000000_800x.jpg?v=1770544655',
   },
-  /** Logo from favicon/apple-touch (Group_707.png) */
-  logo: 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=2008',
+  /** Logo (Street Collector branding) */
+  logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941',
   /** Meet the Street Lamp — one video, stages rotate via progress bar on texts */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
@@ -33,7 +33,7 @@ export const streetCollectorContent = {
     /** Mobile video URL */
     mobileVideo: 'https://cdn.shopify.com/videos/c/o/v/52f4f4d4f3ac49c5b24dd536bc55328c.mp4',
     /** Poster for video (shared) */
-    poster: 'https://thestreetcollector.com/cdn/shop/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
+    poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
     stages: [
       {
         title: 'Choose your art',
@@ -71,7 +71,7 @@ export const streetCollectorContent = {
       description:
         'No AI. No screens. Just original art, delivered to your door.',
       poster:
-        'https://thestreetcollector.com/cdn/shop/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
+        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
       video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
     },
     {
@@ -79,16 +79,16 @@ export const streetCollectorContent = {
       description:
         'Slide it in. Light it up. Swap in seconds. Art that evolves with you.',
       poster:
-        'https://thestreetcollector.com/cdn/shop/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
+        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
       video:
-        'https://thestreetcollector.com/cdn/shop/videos/c/vp/78fe4304b80245be921122d1cc75f389/78fe4304b80245be921122d1cc75f389.HD-1080p-7.2Mbps-69787802.mp4?v=0',
+        'https://cdn.shopify.com/videos/c/o/v/78fe4304b80245be921122d1cc75f389.mp4',
     },
     {
       title: 'Support artists directly.',
       description:
         'Every piece fuels the next one. Your purchase keeps culture alive.',
       poster:
-        'https://thestreetcollector.com/cdn/shop/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
+        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
       video: 'https://cdn.shopify.com/videos/c/o/v/223348c706fe4ad298930c72e30d76b3.mp4',
     },
   ],
@@ -106,8 +106,8 @@ export const streetCollectorContent = {
         rating: 5,
         media: {
           type: 'video' as const,
-          poster: 'https://thestreetcollector.com/cdn/shop/files/preview_images/1eaf8197dddc4b9f852534a2932d51cb.thumbnail.0000000000_800x.jpg?v=1770573388',
-          video: 'https://thestreetcollector.com/cdn/shop/videos/c/vp/1eaf8197dddc4b9f852534a2932d51cb/1eaf8197dddc4b9f852534a2932d51cb.HD-1080p-2.5Mbps-71761612.mp4?v=0',
+          poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/1eaf8197dddc4b9f852534a2932d51cb.thumbnail.0000000000_800x.jpg?v=1770573388',
+          video: 'https://cdn.shopify.com/videos/c/o/v/1eaf8197dddc4b9f852534a2932d51cb.mp4',
         },
       },
       {
@@ -117,8 +117,8 @@ export const streetCollectorContent = {
         rating: 5,
         media: {
           type: 'video' as const,
-          poster: 'https://thestreetcollector.com/cdn/shop/files/preview_images/481c3eb1bcef489d84d3b69c881c431b.thumbnail.0000000000_800x.jpg?v=1770565793',
-          video: 'https://thestreetcollector.com/cdn/shop/videos/c/vp/481c3eb1bcef489d84d3b69c881c431b/481c3eb1bcef489d84d3b69c881c431b.HD-1080p-2.5Mbps-71736275.mp4?v=0',
+          poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/481c3eb1bcef489d84d3b69c881c431b.thumbnail.0000000000_800x.jpg?v=1770565793',
+          video: 'https://cdn.shopify.com/videos/c/o/v/481c3eb1bcef489d84d3b69c881c431b.mp4',
         },
       },
       {
@@ -129,8 +129,8 @@ export const streetCollectorContent = {
         rating: 5,
         media: {
           type: 'video' as const,
-          poster: 'https://thestreetcollector.com/cdn/shop/files/preview_images/e16722752a44428689d98ffecf6fa016.thumbnail.0000000000_800x.jpg?v=1770571582',
-          video: 'https://thestreetcollector.com/cdn/shop/videos/c/vp/e16722752a44428689d98ffecf6fa016/e16722752a44428689d98ffecf6fa016.HD-1080p-4.8Mbps-71755744.mp4?v=0',
+          poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/e16722752a44428689d98ffecf6fa016.thumbnail.0000000000_800x.jpg?v=1770571582',
+          video: 'https://cdn.shopify.com/videos/c/o/v/e16722752a44428689d98ffecf6fa016.mp4',
         },
       },
       {
@@ -139,7 +139,7 @@ export const streetCollectorContent = {
         content:
           'The ritual of turning them on every morning, dimming them down at night and changing them out for a fresh perspective, served to be a unique and unexpected comfort through sometimes daily turmoil, muck and mud.',
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg?v=1770570908&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg?v=1770570908&width=800' },
       },
       {
         id: '5',
@@ -147,7 +147,7 @@ export const streetCollectorContent = {
         content:
           "Everything about it from the design to the concept is just perfect. Through this project, I discovered some truly exceptional artists, and I'm blown away by the talent featured. Honestly, every artist involved is astounding.",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/unnamed_4.webp?v=1770560487&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_4.webp?v=1770560487&width=800' },
       },
       {
         id: '6',
@@ -155,7 +155,7 @@ export const streetCollectorContent = {
         content:
           "I thought the idea was great and was happy to participate in the Kickstarter project. I'd say the main critic that I have would be that there are so many beautiful artworks to choose from that it makes it hard to decide which one to order 😊 I'm very very happy with the result and the lamp that I now have !",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/unnamed_9.webp?v=1770565576&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_9.webp?v=1770565576&width=800' },
       },
       {
         id: '7',
@@ -163,7 +163,7 @@ export const streetCollectorContent = {
         content:
           "I just received the most wonderful 'Street lamp ' I ordered! It is well made, the packaging is sooo glamorous, the design is above and beyond and the ART IS AMAZING !! Definitely worth every penny! Loving it!",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/unnamed_1.webp?v=1770565151&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_1.webp?v=1770565151&width=800' },
       },
       {
         id: '8',
@@ -171,7 +171,7 @@ export const streetCollectorContent = {
         content:
           "Such prestige and chiq with this product! Every single bit lovely and lushhhh and the concept innovative I can't wait to see where they get to and watch them grow I'm sure they will! And am so honored to be in on it getting the first edition:)))\nAlso super easy process getting it♥️",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/unnamed_8.webp?v=1770560501&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_8.webp?v=1770560501&width=800' },
       },
       {
         id: '9',
@@ -179,14 +179,14 @@ export const streetCollectorContent = {
         content:
           "An amazing product, full of elegant style, sophisticated and of course designed to a high standard. When I first saw the product at the exhibition, I already knew I wanted one!",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/526673363_768940875492834_8870128180377304790_n.jpg?v=1770565371&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/526673363_768940875492834_8870128180377304790_n.jpg?v=1770565371&width=800' },
       },
       {
         id: '10',
         author: 'Cedric D.',
         content: 'I was already a fan from the beginning, but am even more so since receiving the lamp. I fear I have found a new addiction.',
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/unnamed_6.webp?v=1770560524&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_6.webp?v=1770560524&width=800' },
       },
       {
         id: '11',
@@ -194,7 +194,7 @@ export const streetCollectorContent = {
         content:
           "One of my favorite pieces in the apartment! I first came across it on Kickstarter and was drawn to the design right away. Now that it's here, it really adds something special to the space. Friends always notice it and have something nice to say.",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/525311351_18376112389131295_7956798693182725256_n_1.webp?v=1770569671&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/525311351_18376112389131295_7956798693182725256_n_1.webp?v=1770569671&width=800' },
       },
       {
         id: '12',
@@ -202,14 +202,14 @@ export const streetCollectorContent = {
         content:
           "I received my package today and can say that it was one of the most exciting unboxing experiences that I've had in quite some time. The lamp and artworks are stunning-absolutely exceeded my expectations. It is a straight-up honor to have this incredible art in my home.",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th.jpg?v=1770570885&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th.jpg?v=1770570885&width=800' },
       },
       {
         id: '13',
         author: 'Jerome M.',
         content: "New toy in the house. Thank you!\nJust received the lamp and I'm so happy with it!",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/618474944_25709629031983045_2543883703158680136_n.jpg?v=1770208979&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/618474944_25709629031983045_2543883703158680136_n.jpg?v=1770208979&width=800' },
       },
       {
         id: '14',
@@ -219,8 +219,8 @@ export const streetCollectorContent = {
         rating: 5,
         media: {
           type: 'video' as const,
-          poster: 'https://thestreetcollector.com/cdn/shop/files/preview_images/e4c389d4b826457b91d26a849ddb61be.thumbnail.0000000000_800x.jpg?v=1770571269',
-          video: 'https://thestreetcollector.com/cdn/shop/videos/c/vp/e4c389d4b826457b91d26a849ddb61be/e4c389d4b826457b91d26a849ddb61be.HD-1080p-2.5Mbps-71754641.mp4?v=0',
+          poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/e4c389d4b826457b91d26a849ddb61be.thumbnail.0000000000_800x.jpg?v=1770571269',
+          video: 'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
         },
       },
       {
@@ -229,7 +229,7 @@ export const streetCollectorContent = {
         content:
           "Our family LOVES the lamp, and it is a centre piece in our living room so that our guests and our family can enjoy it together. We received it just in time for the holiday season and were blown away by the creativity and beauty.",
         rating: 5,
-        media: { type: 'image' as const, src: 'https://thestreetcollector.com/cdn/shop/files/WhatsApp_Image_2026-02-07_at_4.38.11_PM.jpg?v=1770570289&width=800' },
+        media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/WhatsApp_Image_2026-02-07_at_4.38.11_PM.jpg?v=1770570289&width=800' },
       },
     ],
   },

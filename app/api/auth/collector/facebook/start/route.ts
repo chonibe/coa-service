@@ -5,7 +5,7 @@ import { LOGIN_INTENT_COOKIE } from "@/lib/vendor-auth"
 
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = request.nextUrl
-  const redirect = searchParams.get("redirect") || "/shop/experience"
+  const redirect = searchParams.get("redirect") || "/experience"
 
   let appUrl = process.env.NEXT_PUBLIC_APP_URL || origin
   appUrl = (appUrl || "").replace(/\/$/, "")

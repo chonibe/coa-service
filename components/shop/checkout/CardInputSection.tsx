@@ -29,7 +29,7 @@ function SetupFormInner({ customerEmail, onSuccess, onError }: SetupFormInnerPro
       const { error, setupIntent } = await stripe.confirmSetup({
         elements,
         confirmParams: {
-          return_url: typeof window !== 'undefined' ? `${window.location.origin}/shop/experience` : undefined,
+          return_url: typeof window !== 'undefined' ? `${window.location.origin}/experience` : undefined,
         },
         redirect: 'if_required',
       })

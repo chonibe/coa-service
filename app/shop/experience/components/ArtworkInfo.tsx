@@ -37,7 +37,7 @@ export function ArtworkInfo({ product, lampSide1, lampSide2, onViewDetail }: Art
         )}
       >
         <div className="flex-1 space-y-0.5 min-w-0">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-experience-highlight tracking-tight leading-tight truncate">
+          <h2 className="text-lg font-semibold text-[#FFBA94] tracking-tight leading-tight truncate">
             {product.title}
           </h2>
           {artist && (

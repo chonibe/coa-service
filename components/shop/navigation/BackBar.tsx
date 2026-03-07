@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { ArrowLeft, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { openTawkChat } from '@/lib/tawk'
 
-const HOME_ICON_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
+const HOME_ICON_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
 
 export interface LegalLink {
   label: string
@@ -71,7 +72,7 @@ export function BackBar({
           className="inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-110"
         >
           <img
-            src={iconUrl}
+            src={getProxiedImageUrl(iconUrl)}
             alt=""
             width={32}
             height={32}

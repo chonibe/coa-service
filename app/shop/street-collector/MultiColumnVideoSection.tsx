@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 
 /** Video aspect ratio 4×5 (width:height) so they render the same size. */
 const VIDEO_ASPECT_RATIO = 4 / 5
@@ -40,14 +41,14 @@ export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
                 loop
                 preload="metadata"
                 autoPlay
-                poster={prop.poster}
+                poster={getProxiedImageUrl(prop.poster)}
                 className="absolute inset-0 h-full w-full object-cover"
               >
                 <source
                   src={`/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
                   type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
                 />
-                <img src={prop.poster} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={getProxiedImageUrl(prop.poster)} alt="" className="absolute inset-0 h-full w-full object-cover" />
               </video>
             </div>
           </div>
@@ -81,7 +82,7 @@ interface MultiColumnVideoSectionProps {
  * Card contains only videos; titles and descriptions sit below the card.
  * Mobile: stacked vertically; desktop: 3-col grid. Video ratio 4×5.
  */
-export function MultiColumnVideoSection({ title, items, cue, cueHref = '/shop/experience', showTiles = true, className }: MultiColumnVideoSectionProps) {
+export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experience', showTiles = true, className }: MultiColumnVideoSectionProps) {
   return (
     <section
       className={cn(
@@ -125,7 +126,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/shop/ex
                     loop
                     preload="metadata"
                     autoPlay
-                    poster={prop.poster}
+                    poster={getProxiedImageUrl(prop.poster)}
                     className="absolute inset-0 h-full w-full object-cover"
                   >
                     <source
@@ -133,7 +134,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/shop/ex
                       type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
                     />
                     <img
-                      src={prop.poster}
+                      src={getProxiedImageUrl(prop.poster)}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover"
                     />

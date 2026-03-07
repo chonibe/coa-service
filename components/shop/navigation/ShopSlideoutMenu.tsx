@@ -6,6 +6,7 @@ import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User } from 'luc
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { openTawkChat } from '@/lib/tawk'
@@ -40,7 +41,7 @@ export interface ShopSlideoutMenuProps {
  * Shared slideout menu used by Experience header and street-collector top bar.
  * Same menu content: auth, Buy Gift Card, Promo Codes, My Orders, Help Center, Chat.
  */
-const LOGO_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
+const LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
 function getQuizName(): string | null {
@@ -59,7 +60,7 @@ export function ShopSlideoutMenu({
   open,
   onClose,
   theme = 'light',
-  authRedirectTo = '/shop/experience',
+  authRedirectTo = '/experience',
   logoHref,
   promoCode: controlledPromoCode,
   promoDiscount: controlledPromoDiscount,
@@ -123,7 +124,7 @@ export function ShopSlideoutMenu({
               aria-label="Street Collector home"
             >
               <img
-                src={LOGO_URL}
+                src={getProxiedImageUrl(LOGO_URL)}
                 alt="Street Collector"
                 className="h-8 w-auto object-contain"
                 width={80}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import {
   Container,
   SectionWrapper,
@@ -29,6 +30,36 @@ import {
 
 const CREDITS_PER_DOLLAR = 10
 
+/** Mock order + series progress for /shop/checkout/success?demo=1 (configure/preview the page) */
+const MOCK_ORDER: OrderDetails = {
+  id: 'pi_mock_demo_1234567890',
+  status: 'complete',
+  paymentStatus: 'paid',
+  customerEmail: 'collector@example.com',
+  amountTotal: 24900, // $249.00
+  currency: 'usd',
+  lineItems: [
+    { description: 'Street Lamp — Artwork Insert: "Sunset Boulevard" by Artist Name', quantity: 1, amount: 19900, imageUrl: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/684cd0c8b42142fdad8e4db442befa6e.thumbnail.0000000000_800x.jpg?v=1770544655' },
+    { description: 'Premium Matte Frame', quantity: 1, amount: 5000, imageUrl: undefined },
+  ],
+  shippingDetails: {
+    name: 'Jane Collector',
+    address: {
+      line1: '123 Art Street',
+      line2: 'Apt 4B',
+      city: 'Brooklyn',
+      state: 'NY',
+      postal_code: '11201',
+      country: 'US',
+    },
+  },
+}
+
+const MOCK_SERIES_PROGRESS: SeriesProgressItem[] = [
+  { seriesName: '2025 Edition', seriesId: '2025-edition', totalArtworks: 12, ownedCount: 2, thumbnailUrl: null },
+  { seriesName: 'Urban Legends', seriesId: 'urban-legends', totalArtworks: 8, ownedCount: 1, thumbnailUrl: null },
+]
+
 interface OrderDetails {
   id: string
   status: string
@@ -40,6 +71,7 @@ interface OrderDetails {
     description: string
     quantity: number
     amount: number
+    imageUrl?: string
   }>
   shippingDetails?: {
     name?: string
@@ -67,6 +99,7 @@ export function CheckoutSuccessContent() {
   const sessionId = searchParams.get('session_id')
   const paymentIntentId = searchParams.get('payment_intent')
   const orderParam = sessionId || paymentIntentId
+  const isDemo = searchParams.get('demo') === '1' || searchParams.get('demo') === 'true'
 
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -76,6 +109,13 @@ export function CheckoutSuccessContent() {
 
   useEffect(() => {
     async function fetchOrderDetails() {
+      if (isDemo) {
+        setOrder(MOCK_ORDER)
+        setSeriesProgress(MOCK_SERIES_PROGRESS)
+        setLoading(false)
+        return
+      }
+
       if (!orderParam) {
         setError('No session or payment ID provided')
         setLoading(false)
@@ -132,7 +172,7 @@ export function CheckoutSuccessContent() {
     fetch('/api/auth/roles', { credentials: 'include' })
       .then(res => { if (res.ok) setIsAuthenticated(true) })
       .catch(() => {})
-  }, [orderParam, sessionId, paymentIntentId])
+  }, [orderParam, sessionId, paymentIntentId, isDemo])
 
   // Format price
   const formatPrice = (amount: number, currency: string) => {
@@ -193,6 +233,14 @@ export function CheckoutSuccessContent() {
     <main className="min-h-screen bg-[#f5f5f5]">
       <SectionWrapper spacing="md" background="muted">
         <Container maxWidth="narrow">
+          {/* Demo mode banner — only when ?demo=1 */}
+          {isDemo && (
+            <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+              <strong>Preview mode</strong> — Showing mock order and payment ID so you can configure this page. Use{' '}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">/shop/checkout/success?demo=1</code>{' '}
+              anytime to preview.
+            </div>
+          )}
           {/* Success Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#00a341] flex items-center justify-center">
@@ -219,12 +267,21 @@ export function CheckoutSuccessContent() {
               {/* Line Items */}
               <div className="space-y-4 pb-6 border-b border-[#1a1a1a]/10">
                 {order.lineItems?.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
+                  <div key={index} className="flex items-center gap-4">
+                    {item.imageUrl && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#e5e5e5] flex-shrink-0">
+                        <img
+                          src={getProxiedImageUrl(item.imageUrl)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium text-[#1a1a1a]">{item.description}</p>
                       <p className="text-sm text-[#1a1a1a]/60">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-semibold text-[#1a1a1a]">
+                    <p className="font-semibold text-[#1a1a1a] flex-shrink-0">
                       {formatPrice(item.amount, order.currency)}
                     </p>
                   </div>
@@ -258,117 +315,6 @@ export function CheckoutSuccessContent() {
                   {order.shippingDetails.address.postal_code}
                 </p>
                 <p className="text-[#1a1a1a]/70">{order.shippingDetails.address.country}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Credits Earned */}
-          {order.amountTotal > 0 && (
-            <Card variant="default" padding="md" className="mb-6 border-amber-200 bg-gradient-to-r from-amber-50 to-white">
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">&#x1FA99;</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-[#1a1a1a] text-lg">
-                      You earned {Math.round((order.amountTotal / 100) * CREDITS_PER_DOLLAR).toLocaleString()} credits!
-                    </p>
-                    <p className="text-sm text-[#1a1a1a]/60">
-                      Worth ${((order.amountTotal / 100) * CREDITS_PER_DOLLAR * 0.10).toFixed(2)} towards future purchases. 10 credits = $1.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Series Progress */}
-          {seriesProgress.length > 0 && (
-            <Card variant="default" padding="md" className="mb-6 border-[#047AFF]/20 bg-gradient-to-r from-indigo-50 to-white">
-              <CardContent>
-                <h3 className="font-semibold text-[#1a1a1a] mb-4 flex items-center gap-2">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                  </svg>
-                  Series Progress
-                </h3>
-                <div className="space-y-4">
-                  {seriesProgress.map((sp) => {
-                    const pct = sp.totalArtworks > 0
-                      ? Math.round((sp.ownedCount / sp.totalArtworks) * 100)
-                      : 0
-                    const isComplete = sp.ownedCount >= sp.totalArtworks && sp.totalArtworks > 0
-                    return (
-                      <Link
-                        key={sp.seriesId}
-                        href={`/shop/series/${sp.seriesId}`}
-                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-[#f5f5f5]/60 transition-colors group"
-                      >
-                        {sp.thumbnailUrl && (
-                          <img
-                            src={sp.thumbnailUrl}
-                            alt={sp.seriesName}
-                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-[#1a1a1a] text-sm truncate">
-                            {sp.seriesName}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex-1 h-2 bg-[#e5e5e5] rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  isComplete ? 'bg-[#0a8754]' : 'bg-[#047AFF]'
-                                }`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-[#1a1a1a]/60 whitespace-nowrap">
-                              {sp.ownedCount}/{sp.totalArtworks}
-                            </span>
-                          </div>
-                          {isComplete ? (
-                            <p className="text-xs text-[#0a8754] font-medium mt-1">
-                              Series complete! Bonus credits earned.
-                            </p>
-                          ) : (
-                            <p className="text-xs text-[#1a1a1a]/50 mt-1">
-                              {sp.totalArtworks - sp.ownedCount} more to complete the series
-                            </p>
-                          )}
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" className="opacity-30 group-hover:opacity-60 transition-opacity flex-shrink-0">
-                          <path d="M9 18l6-6-6-6" />
-                        </svg>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Claim CTA for guests / View Collection for authenticated users */}
-          {!isAuthenticated && (
-            <Card variant="default" padding="md" className="mb-6 border-[#047AFF]/20 bg-gradient-to-r from-blue-50 to-white">
-              <CardContent>
-                <div className="text-center">
-                  <h3 className="font-semibold text-lg text-[#1a1a1a] mb-2">
-                    Claim Your Collection
-                  </h3>
-                  <p className="text-sm text-[#1a1a1a]/60 mb-4">
-                    Create a free account to track your artworks, use your credits, and unlock exclusive perks.
-                    Check your email for a claim link, or sign in now.
-                  </p>
-                  <Link href={`/login?redirect=/collector/dashboard&intent=collector`}>
-                    <Button variant="primary" size="lg">
-                      Create Free Account
-                    </Button>
-                  </Link>
-                </div>
               </CardContent>
             </Card>
           )}
@@ -424,11 +370,11 @@ export function CheckoutSuccessContent() {
             ) : (
               <Link href={`/login?redirect=/collector/dashboard&intent=collector`}>
                 <Button variant="primary" size="lg">
-                  Claim Your Collection
+                  Sign in
                 </Button>
               </Link>
             )}
-            <Link href="/shop">
+            <Link href="/experience">
               <Button variant="outline" size="lg">
                 Continue Shopping
               </Button>

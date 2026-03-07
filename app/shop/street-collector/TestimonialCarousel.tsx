@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { SectionWrapper, Container } from '@/components/impact'
 
 export type TestimonialMedia =
@@ -123,7 +124,7 @@ export function TestimonialCarousel({
   }
 
   return (
-    <SectionWrapper spacing="sm" fullWidth={fullWidth} background="header" className={cn('bg-[#2a0000]', className)}>
+    <SectionWrapper spacing="sm" fullWidth={fullWidth} background="header" className={cn('bg-[#1a0a0a]', className)}>
       <Container maxWidth="default" paddingX="gutter">
         {(title || subtitle) && (
           <div className="text-center mb-6 sm:mb-8 px-0">
@@ -241,18 +242,18 @@ function TestimonialCard({ item }: { item: TestimonialCardItem }) {
               loop
               autoPlay
               preload="metadata"
-              poster={media.poster}
+              poster={getProxiedImageUrl(media.poster)}
               className="absolute inset-0 w-full h-full object-cover"
             >
               <source
                 src={`/api/proxy-video?url=${encodeURIComponent(media.video)}`}
                 type="video/mp4"
               />
-              <img src={media.poster} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={getProxiedImageUrl(media.poster)} alt="" className="absolute inset-0 w-full h-full object-cover" />
             </video>
           ) : (
             <img
-              src={media.src}
+              src={getProxiedImageUrl(media.src)}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
               loading="lazy"

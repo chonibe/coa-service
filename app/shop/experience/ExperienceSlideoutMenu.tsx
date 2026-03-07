@@ -159,7 +159,7 @@ export function ExperienceSlideoutMenu() {
         open={open}
         onClose={() => setOpen(false)}
         theme={theme}
-        authRedirectTo="/shop/experience"
+        authRedirectTo="/experience"
         logoHref="/shop/street-collector"
         promoCode={promoCode}
         promoDiscount={promoDiscount}

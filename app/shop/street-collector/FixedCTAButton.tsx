@@ -6,7 +6,9 @@ import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ShopSlideoutMenu } from '@/components/shop/navigation/ShopSlideoutMenu'
 
-const DEFAULT_LOGO_URL = 'https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=100'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+
+const DEFAULT_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
 
 interface FixedCTAButtonProps {
   text: string
@@ -78,7 +80,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
       >
         <Link
           href={href}
-          className="w-full flex items-center justify-center text-sm font-semibold rounded-lg px-5 py-2.5 shadow-lg transition-colors hover:opacity-90"
+          className="w-full flex items-center justify-center min-h-[52px] text-sm font-semibold rounded-lg px-5 py-3.5 shadow-lg transition-colors hover:opacity-90"
           style={{ backgroundColor: '#FFBA94', color: '#390000' }}
         >
           {text}
@@ -102,7 +104,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
             aria-label="Street Collector Home"
             className="inline-flex items-center justify-center p-1 -m-1 transition-transform hover:scale-105"
           >
-            <img src={logoUrl} alt="" width={24} height={24} className="shrink-0 w-6 h-6 object-contain" />
+            <img src={getProxiedImageUrl(logoUrl)} alt="" width={24} height={24} className="shrink-0 w-6 h-6 object-contain" />
           </Link>
           <button
             type="button"

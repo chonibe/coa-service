@@ -9,7 +9,6 @@ import { openTawkChat } from '@/lib/tawk'
 import { PaymentIcons } from './PaymentIcons'
 import { Input } from './Input'
 import { Button } from './Button'
-import { ScrollReveal } from '@/components/blocks'
 
 /**
  * Impact Theme Footer
@@ -92,8 +91,9 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-[#450000]', // Impact theme footer background (slightly lighter than #390000)
+          'bg-[#251212]', // Slightly brighter dark warm (was #1a0a0a)
           'text-[#ffba94]', // Impact theme footer text
+          'mt-0 flex-shrink-0 -mt-8 sm:mt-0', // Pull up on mobile to remove white stripe above; no gap on desktop
           newsletterEnabled ? 'pt-3 pb-8 sm:pt-4' : 'pt-12 pb-8 sm:pt-16',
           className
         )}
@@ -160,58 +160,57 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             </div>
           )}
 
-          {/* Main footer content - 4 column layout with stagger animation */}
-          <ScrollReveal animation="stagger" staggerAmount={0.1} start="top 90%">
-            <div className={cn('grid gap-10 sm:gap-8 lg:grid-cols-12 lg:gap-12', newsletterEnabled && 'pt-8')}>
-              {/* Navigation sections */}
-              <div className={cn(aboutTitle ? 'lg:col-span-8' : 'lg:col-span-12')}>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-10 sm:gap-8 lg:gap-12">
-                  {sections.map((section) => (
-                    <div key={section.title}>
-                      <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
-                        {section.title}
-                      </h3>
-                      <ul className="space-y-3">
-                        {(section.links || []).map((link) => (
-                          <li key={link.href}>
-                            <Link
-                              href={link.href}
-                              className="text-sm text-[#ffba94]/70 hover:text-[#ffba94] transition-colors"
-                            >
-                              {link.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                  {/* Need Help quadrant - opens Tawk chat */}
-                  <div>
+          {/* Main footer content - no scroll animation so items show immediately (fixes mobile) */}
+          <div className={cn('grid gap-10 sm:gap-8 lg:grid-cols-12 lg:gap-12', newsletterEnabled && 'pt-8')}>
+            {/* Navigation sections */}
+            <div className={cn(aboutTitle ? 'lg:col-span-8' : 'lg:col-span-12')}>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-10 sm:gap-8 lg:gap-12">
+                {sections.map((section) => (
+                  <div key={section.title}>
                     <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
-                      Need Help?
+                      {section.title}
                     </h3>
-                    <p className="text-sm text-[#ffba94]/70 mb-5">
-                      Talk to our real support team every day 7am to midnight EST
-                    </p>
-                    <button
-                      type="button"
-                      onClick={openTawkChat}
-                      className={cn(
-                        'inline-flex items-center justify-center',
-                        'px-5 py-2.5 rounded-full',
-                        'bg-[#ffba94] text-[#390000]',
-                        'text-sm font-medium',
-                        'hover:opacity-90 transition-opacity'
-                      )}
-                    >
-                      Chat with Us
-                    </button>
+                    <ul className="space-y-3">
+                      {(section.links || []).map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="text-sm text-[#ffba94]/70 hover:text-[#ffba94] transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                ))}
+                {/* Need Help quadrant - opens Tawk chat */}
+                <div>
+                  <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
+                    Need Help?
+                  </h3>
+                  <p className="text-sm text-[#ffba94]/70 mb-5">
+                    Talk to our real support team every day 7am to midnight EST
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openTawkChat}
+                    className={cn(
+                      'inline-flex items-center justify-center',
+                      'px-5 py-2.5 rounded-full',
+                      'bg-[#ffba94] text-[#390000]',
+                      'text-sm font-medium',
+                      'hover:opacity-90 transition-opacity'
+                    )}
+                  >
+                    Chat with Us
+                  </button>
                 </div>
+              </div>
             </div>
-            
-              {/* About Section - optional */}
-              {aboutTitle && (
+
+            {/* About Section - optional */}
+            {aboutTitle && (
               <div className="lg:col-span-4">
                 <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
                   {aboutTitle}
@@ -222,9 +221,8 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   </p>
                 )}
               </div>
-              )}
-            </div>
-          </ScrollReveal>
+            )}
+          </div>
           
           {/* Payment Icons */}
           {showPaymentIcons && (

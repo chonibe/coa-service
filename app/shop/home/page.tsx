@@ -198,7 +198,7 @@ export default async function ShopHomePage() {
           <Container maxWidth="default" paddingX="gutter">
             <div className="flex flex-col items-center text-center py-4">
               <p className="text-sm text-slate-500 mb-3">Preview artwork live on the 3D lamp</p>
-              <Link href="/shop/experience">
+              <Link href="/experience">
                 <Button variant="default" size="lg">
                   Customize Your Lamp
                 </Button>

@@ -238,6 +238,7 @@ export function ExperienceClient({
                 quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
                 onRetakeQuiz={handleRetakeQuiz}
                 initialFilters={initialFilters}
+                initialArtistSlug={initialArtistSlug}
               />
             </motion.div>
           )}

@@ -13,6 +13,26 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Prominent scrollbar for cart/checkout when many items (dark theme friendly) */
+  .scrollbar-prominent {
+    scrollbar-width: auto;
+    scrollbar-color: #FFBA94 #2a2525;
+  }
+  .scrollbar-prominent::-webkit-scrollbar {
+    width: 10px;
+  }
+  .scrollbar-prominent::-webkit-scrollbar-track {
+    background: #2a2525;
+    border-radius: 5px;
+  }
+  .scrollbar-prominent::-webkit-scrollbar-thumb {
+    background: #FFBA94;
+    border-radius: 5px;
+  }
+  .scrollbar-prominent::-webkit-scrollbar-thumb:hover {
+    background: #ffc9a8;
+  }
 }
 
 @keyframes lamp-discount-pulse {
@@ -57,10 +77,15 @@
   }
 }
 
-/* Accessibility: Enhanced focus indicators */
+/* Accessibility: Enhanced focus indicators (keyboard only; avoid bright outline on mobile tap) */
 *:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+/* Remove default mobile tap highlight (the grey/orange flash); we use focus-visible for keyboard only */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Ensure minimum touch target size for mobile (44x44px) */
@@ -487,7 +512,7 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     /* --- Borders / Inputs / Focus --- */
     --border: 0 6% 15%;              /* #342e2e */
     --input: 0 6% 13%;               /* #2e2828 */
-    --ring: 0 70% 50%;               /* #c44 — focus ring */
+    --ring: 0 5% 28%;                /* muted dark — focus ring (was #c44 red; avoid bright outline on mobile tap) */
 
     /* --- Charts --- */
     --chart-1: 212 70% 55%;

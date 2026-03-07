@@ -367,7 +367,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         {artist}
                       </p>
                     )}
-                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-experience-highlight mt-0.5 leading-tight">
+                    <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">
                       {product.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -900,7 +900,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                                <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
+                                <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
                                   {spec.title}
                                 </h4>
                               </div>
@@ -1142,7 +1142,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       {artist}
                     </p>
                   )}
-                  <h2 className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8] tracking-tight mt-0.5">
+                  <h2 className="text-sm font-semibold text-[#FFBA94] tracking-tight mt-0.5">
                     {product.title}
                   </h2>
                   {editionSizeNum && editionSizeNum > 0 && (

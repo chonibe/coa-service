@@ -71,12 +71,12 @@ export function ArtistSpotlightBanner({
       >
         <defs>
           <linearGradient id="spotlight-fade" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgb(251,191,36)" stopOpacity="0" />
-            <stop offset="15%" stopColor="rgb(251,191,36)" stopOpacity="0.5" />
-            <stop offset="35%" stopColor="rgb(251,191,36)" stopOpacity="0.95" />
-            <stop offset="65%" stopColor="rgb(251,191,36)" stopOpacity="0.95" />
-            <stop offset="85%" stopColor="rgb(251,191,36)" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="rgb(251,191,36)" stopOpacity="0" />
+            <stop offset="0%" stopColor="#FFBA94" stopOpacity="0" />
+            <stop offset="15%" stopColor="#FFBA94" stopOpacity="0.5" />
+            <stop offset="35%" stopColor="#FFBA94" stopOpacity="0.95" />
+            <stop offset="65%" stopColor="#FFBA94" stopOpacity="0.95" />
+            <stop offset="85%" stopColor="#FFBA94" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#FFBA94" stopOpacity="0" />
           </linearGradient>
         </defs>
         <rect
@@ -125,7 +125,7 @@ export function ArtistSpotlightBanner({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Artist Spotlight</p>
-              <p className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8] truncate">
+              <p className="text-sm font-semibold text-[#FFBA94] truncate">
                 {spotlight.vendorName}
               </p>
               {spotlight.seriesName && (
@@ -183,7 +183,7 @@ export function ArtistSpotlightBanner({
                 <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                   Artist Spotlight
                 </p>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-[#f0e8e8]">
+                <h3 className="text-lg font-semibold text-[#FFBA94]">
                   {spotlight.vendorName}
                 </h3>
                 {spotlight.seriesName && (

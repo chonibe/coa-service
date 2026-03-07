@@ -640,7 +640,7 @@ export function ArtworkStrip({
           >
             <div className={cn(
               'relative',
-              shouldMerge ? 'flex rounded-xl border-2 border-blue-300 dark:border-[#047AFF] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
+              shouldMerge ? 'flex rounded-xl border-2 border-[#FFBA94] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
             )}>
               {shouldMerge && <MergeConfetti active={justMerged} />}
               {product1 && (
@@ -673,7 +673,7 @@ export function ArtworkStrip({
                 </div>
               )}
               {shouldMerge && product1 && (
-                <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-[#1a1616] px-1.5 border-l border-r border-blue-200/60 dark:border-white/20">
+                <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-[#1a1616] px-1.5 border-l border-r border-[#FFBA94]/30 dark:border-[#FFBA94]/20">
                   <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
                     {product1.vendor}
                   </span>

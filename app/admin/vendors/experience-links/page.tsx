@@ -43,7 +43,7 @@ export default function ExperienceLinksPage() {
     fetchArtists()
   }, [fetchArtists])
 
-  const fullUrl = (slug: string) => `${baseUrl}/shop/experience?artist=${encodeURIComponent(slug)}`
+  const fullUrl = (slug: string) => `${baseUrl}/experience?artist=${encodeURIComponent(slug)}`
   const shortUrl = (slug: string) => `${baseUrl}/e/${slug}`
 
   const copyToClipboard = async (text: string, slug: string) => {
@@ -158,7 +158,7 @@ export default function ExperienceLinksPage() {
         </Card>
 
         <p className="text-sm text-muted-foreground">
-          <strong>Full link:</strong> <code>/shop/experience?artist=artist-slug</code> — use in Instagram bio or link in bio services.
+          <strong>Full link:</strong> <code>/experience?artist=artist-slug</code> — use in Instagram bio or link in bio services.
           <br />
           <strong>Short link:</strong> <code>/e/artist-slug</code> — redirects to the same experience. Ideal when character count matters.
         </p>

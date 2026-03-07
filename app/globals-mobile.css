@@ -69,13 +69,16 @@ select {
   font-size: 16px;
 }
 
-/* Mobile-optimized focus states */
+/* Mobile: no visible outline on tap (avoids bright selection border). Keyboard focus still uses :focus-visible. */
 @media (hover: none) and (pointer: coarse) {
-  button:focus,
-  a:focus,
-  input:focus,
-  textarea:focus,
-  select:focus {
+  /* Tap focus should not show outline; only keyboard focus-visible should */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+  /* Keep outline for inputs when focused so users see where they're typing */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }

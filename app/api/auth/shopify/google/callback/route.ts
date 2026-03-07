@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       { domain: cookieDomain },
     )
 
-    const postLoginRedirect = request.cookies.get("shopify_login_redirect")?.value || "/shop/experience"
-    const redirectPath = postLoginRedirect.startsWith("/") ? postLoginRedirect : "/shop/experience"
+    const postLoginRedirect = request.cookies.get("shopify_login_redirect")?.value || "/experience"
+    const redirectPath = postLoginRedirect.startsWith("/") ? postLoginRedirect : "/experience"
     const response = NextResponse.redirect(new URL(redirectPath, request.url))
 
     response.cookies.set("shopify_customer_id", customerId.toString(), {

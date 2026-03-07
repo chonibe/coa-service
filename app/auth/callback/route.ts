@@ -289,7 +289,7 @@ async function processUserLogin(
         deleteCookie(signupResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
         deleteCookie(signupResponse, COLLECTOR_REDIRECT_COOKIE)
 
-        // Set active_role cookie for new collector signup (redirectPath may be /shop/experience)
+        // Set active_role cookie for new collector signup (redirectPath may be /experience)
         signupResponse.cookies.set('active_role', 'collector', {
           path: '/',
           httpOnly: false,

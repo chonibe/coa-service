@@ -52,7 +52,7 @@ export default function ZeroOrderPage() {
       <main className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
         <div className="text-center max-w-md">
           <p className="text-neutral-600 mb-4">No session ID. Go back and try checkout again.</p>
-          <Link href="/shop/experience" className="text-neutral-900 font-medium underline">
+          <Link href="/experience" className="text-neutral-900 font-medium underline">
             Back to experience
           </Link>
         </div>
@@ -95,7 +95,7 @@ export default function ZeroOrderPage() {
               Check Shopify Admin → Orders (not Draft orders). Tag: headless, zero-dollar-test
             </p>
             <Link
-              href="/shop/experience"
+              href="/experience"
               className="text-sm font-medium text-neutral-900 underline mt-2"
             >
               Back to experience
@@ -118,7 +118,7 @@ export default function ZeroOrderPage() {
         )}
 
         <Link
-          href="/shop/experience"
+          href="/experience"
           className="block text-center text-sm text-neutral-500 hover:text-neutral-700 mt-6"
         >
           Cancel and go back

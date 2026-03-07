@@ -212,10 +212,16 @@ export async function GET(request: NextRequest) {
           customerEmail: metadata.collector_identifier || metadata.collector_email || '',
           amountTotal: pi.amount_received || pi.amount,
           currency: pi.currency || 'usd',
-          lineItems: purchase?.metadata?.line_items || variants.map((v: { variantId: string; quantity: number }) => ({
+          lineItems: (purchase?.metadata?.line_items || variants.map((v: { variantId: string; quantity: number }) => ({
             description: `Variant ${v.variantId}`,
             quantity: v.quantity,
             amount: Math.round((pi.amount_received || pi.amount || 0) / variants.reduce((s: number, x: { quantity: number }) => s + x.quantity, 0)) * (v.quantity || 1),
+            imageUrl: undefined,
+          }))).map((li: { description?: string; quantity?: number; amount?: number; imageUrl?: string }) => ({
+            description: li.description ?? '',
+            quantity: li.quantity ?? 1,
+            amount: li.amount ?? 0,
+            imageUrl: li.imageUrl,
           })),
           shippingDetails: null,
           metadata: metadata,
@@ -232,7 +238,7 @@ export async function GET(request: NextRequest) {
     }
     
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['line_items', 'customer', 'payment_intent'],
+      expand: ['line_items', 'line_items.data.price', 'customer', 'payment_intent'],
     })
     
     // Fetch series progress for purchased items (non-blocking)
@@ -257,11 +263,16 @@ export async function GET(request: NextRequest) {
         customerEmail: session.customer_details?.email || session.customer_email,
         amountTotal: session.amount_total,
         currency: session.currency,
-        lineItems: session.line_items?.data.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          amount: item.amount_total,
-        })),
+        lineItems: session.line_items?.data.map(item => {
+          const price = item.price as Stripe.Price & { product_data?: { images?: string[] } } | undefined
+          const imageUrl = price?.product_data?.images?.[0] ?? undefined
+          return {
+            description: item.description,
+            quantity: item.quantity,
+            amount: item.amount_total,
+            imageUrl,
+          }
+        }),
         shippingDetails: session.shipping_details,
         metadata: session.metadata,
       },

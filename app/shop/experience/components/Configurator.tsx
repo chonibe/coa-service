@@ -108,6 +108,8 @@ interface ConfiguratorProps {
   onRetakeQuiz: () => void
   /** Pre-filter by artist when arriving from artist link (e.g. Instagram) */
   initialFilters?: Pick<FilterState, 'artists'> | null
+  /** Affiliate/vendor slug for initial artist spotlight (from cookie/URL); spotlight stays until user removes filter */
+  initialArtistSlug?: string | null
 }
 
 export function Configurator({
@@ -119,6 +121,7 @@ export function Configurator({
   quizAnswers,
   onRetakeQuiz,
   initialFilters,
+  initialArtistSlug,
 }: ConfiguratorProps) {
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
@@ -454,10 +457,13 @@ export function Configurator({
     return () => { cancelled = true }
   }, [isAuthenticated])
 
-  // Fetch artist spotlight (most recent vendor new drop)
+  // Fetch artist spotlight: use affiliate artist when present so spotlight starts as that artist until user removes filter
   useEffect(() => {
     let cancelled = false
-    fetch('/api/shop/artist-spotlight')
+    const url = initialArtistSlug
+      ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
+      : '/api/shop/artist-spotlight'
+    fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && data?.vendorName && Array.isArray(data?.productIds)) {
@@ -468,7 +474,7 @@ export function Configurator({
       })
       .catch(() => setSpotlightData(null))
     return () => { cancelled = true }
-  }, [])
+  }, [initialArtistSlug])
 
   // Fetch crew counts when authenticated (for taste-similar social proof)
   useEffect(() => {
@@ -704,7 +710,7 @@ export function Configurator({
     return (
       <div className="flex h-full items-center justify-center text-white">
         <div className="text-center max-w-md px-6">
-          <h1 className="text-2xl font-semibold mb-3">No artworks available</h1>
+          <h1 className="text-2xl font-semibold mb-3 text-[#FFBA94]">No artworks available</h1>
           <p className="text-neutral-400 mb-6">Check back soon for new releases.</p>
           <Link
             href="/shop"
@@ -1048,7 +1054,7 @@ export function Configurator({
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-center gap-2">
-                  <h2 className="text-xl font-semibold text-neutral-950 dark:text-[#f0e8e8]">
+                  <h2 className="text-xl font-semibold text-[#FFBA94]">
                     Add your Street Lamp
                   </h2>
                   <button

@@ -8,6 +8,8 @@ import {
 import {
   getAffiliateArtistSlugFromSearchParams,
   AFFILIATE_ARTIST_COOKIE_NAME,
+  AFFILIATE_SESSION_COOKIE_NAME,
+  buildAffiliateQueryString,
 } from '@/lib/affiliate-tracking'
 
 function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
@@ -29,16 +31,37 @@ function setAffiliateCookie(response: NextResponse, slug: string): void {
   })
 }
 
+/** Set cookie with affiliate query string so server can attribute session for tracking */
+function setAffiliateSessionCookie(response: NextResponse, queryString: string): void {
+  if (!queryString) return
+  response.cookies.set(AFFILIATE_SESSION_COOKIE_NAME, queryString, {
+    path: '/',
+    maxAge: AFFILIATE_COOKIE_MAX_AGE,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
+}
+
 export async function middleware(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
   let affiliateSlug: string | undefined
+  let affiliateQueryString: string | undefined
   try {
-    const searchParams = request.nextUrl.searchParams
     const raw = getAffiliateArtistSlugFromSearchParams({
       artist: searchParams.get('artist'),
       utm_campaign: searchParams.get('utm_campaign'),
     })
     // Only use slug if safe length (avoid oversized/malformed params affecting response)
     if (raw && raw.length <= 200) affiliateSlug = raw
+    // Build affiliate query string for session tracking (artist + UTM params)
+    const qs = buildAffiliateQueryString({
+      artist: searchParams.get('artist') || (raw ?? undefined),
+      utm_source: searchParams.get('utm_source'),
+      utm_medium: searchParams.get('utm_medium'),
+      utm_campaign: searchParams.get('utm_campaign'),
+      utm_content: searchParams.get('utm_content'),
+    })
+    if (qs) affiliateQueryString = qs
   } catch {
     // Malformed query string (e.g. bad encoding from fbclid) — skip affiliate cookie, continue
   }
@@ -51,10 +74,12 @@ export async function middleware(request: NextRequest) {
       const wwwUrl = new URL(`https://www.${BARE_DOMAIN}${path}`)
       const redirect = NextResponse.redirect(wwwUrl, 308)
       if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
       return redirect
     } catch {
       const redirect = NextResponse.redirect(new URL(`https://www.${BARE_DOMAIN}${request.nextUrl.pathname}`), 308)
       if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
       return redirect
     }
   }
@@ -62,12 +87,12 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const search = request.nextUrl.search
 
-  // Explicit redirects for Shopify-style URLs (affiliate/artist links) so they always reach the right page
+  // Affiliate product links → main page (/); set cookie so Experience applies vendor filter when they open it
   if (pathname.startsWith('/products/')) {
-    const rest = pathname.slice('/products/'.length)
-    const dest = new URL(`/shop/${rest}${search}`, request.url)
+    const dest = new URL('/', request.url)
     const redirect = NextResponse.redirect(dest, 308)
     if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
     return redirect
   }
   if (pathname.startsWith('/collections/')) {
@@ -75,13 +100,15 @@ export async function middleware(request: NextRequest) {
     const dest = new URL(`/shop/artists/${rest}${search}`, request.url)
     const redirect = NextResponse.redirect(dest, 308)
     if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
     return redirect
   }
 
   const supabaseResponse = await updateSession(request)
 
-  // Set affiliate cookie on any request with artist/utm_campaign so experience vendor filter can use it
+  // Set affiliate cookies on any request with artist/utm so experience and server can track
   if (affiliateSlug) setAffiliateCookie(supabaseResponse, affiliateSlug)
+  if (affiliateQueryString) setAffiliateSessionCookie(supabaseResponse, affiliateQueryString)
 
   if (request.method === 'OPTIONS') {
     const corsResponse = handleCorsPreflight(request)

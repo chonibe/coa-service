@@ -141,7 +141,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-white/10 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8]">Filters</h3>
+                <h3 className="text-sm font-semibold text-[#FFBA94]">Filters</h3>
               </div>
               <div className="flex items-center gap-3">
                 {hasActiveFilters(filters) && (

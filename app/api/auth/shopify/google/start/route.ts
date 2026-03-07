@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const state = crypto.randomBytes(16).toString("hex")
     const redirectBackUrl = `${appUrl}/api/auth/shopify/google/callback`
-    const redirectParam = request.nextUrl.searchParams.get("redirect") || "/shop/experience"
+    const redirectParam = request.nextUrl.searchParams.get("redirect") || "/experience"
 
     const loginUrl = new URL(`https://${shopDomain}/account/login`)
     const returnUrl = `https://${shopDomain}/pages/street-collector-auth?redirect_uri=${encodeURIComponent(

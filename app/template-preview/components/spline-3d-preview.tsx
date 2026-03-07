@@ -37,6 +37,20 @@ function setSceneBackground(scene: any, hex: string, app?: any): void {
 }
 const splineWarn = (...args: unknown[]) => __SPLINE_DEV__ && console.warn('[Spline]', ...args)
 const splineError = (...args: unknown[]) => __SPLINE_DEV__ && console.error('[Spline]', ...args)
+
+/** Use proxy for external image URLs so canvas/WebGL can use them without CORS. */
+function getImageLoadUrl(imageUrl: string): string {
+  if (!imageUrl || typeof window === 'undefined') return imageUrl
+  if (imageUrl.startsWith('data:')) return imageUrl
+  try {
+    const parsed = new URL(imageUrl)
+    const sameOrigin = parsed.origin === window.location.origin
+    if (sameOrigin) return imageUrl
+    return `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`
+  } catch {
+    return imageUrl
+  }
+}
 import { cn } from "@/lib/utils"
 import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
 interface Spline3DPreviewProps {
@@ -140,7 +154,17 @@ export function Spline3DPreview({
   // Pre-discovered panel object refs (populated on scene load)
   const discoveredPanelsRef = useRef<{ sideA: any; sideB: any }>({ sideA: null, sideB: null })
 
+  // Base (default) texture image state when preview loads — captured once, restored when artwork is deselected
+  const baseTextureSideARef = useRef<{ data: Uint8Array; width: number; height: number; magFilter?: number; minFilter?: number; wrapping?: number } | null>(null)
+  const baseTextureSideBRef = useRef<{ data: Uint8Array; width: number; height: number; magFilter?: number; minFilter?: number; wrapping?: number } | null>(null)
+  // Skip redundant apply when images haven't changed (prevents flash from duplicate runs).
+  const lastAppliedImagesRef = useRef<{ image1: string | null; image2: string | null }>({ image1: null, image2: null })
+  // Ignore first effect's load completion when React Strict Mode double-invokes (prevents double load / flash).
+  const loadEffectIdRef = useRef(0)
+
   const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
+  /** Base image shown when an artwork is deselected (served from public). */
+  const BASE_IMAGE_URL = '/internal.png'
 
   
   // Store discovered layers for toggling
@@ -426,6 +450,10 @@ export function Spline3DPreview({
   // Clone mesh, create new material with UV texture, toggle visibility
   const updateTextures = useCallback(async () => {
     if (!splineAppRef.current || isLoading) return
+    if (lastAppliedImagesRef.current.image1 === image1 && lastAppliedImagesRef.current.image2 === image2) {
+      splineLog("[Spline3D] Skipping redundant texture update (images unchanged)")
+      return
+    }
 
     splineLog("[Spline3D] Adding image layers to materials:", { 
       hasImage1: !!image1, 
@@ -594,14 +622,31 @@ export function Spline3DPreview({
           layerDetails: layerInfo
         })
 
-        // Load image element first
-        const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const img = new Image()
-          img.crossOrigin = "anonymous"
-          img.onload = () => resolve(img)
-          img.onerror = reject
-          img.src = imageUrl
-        })
+        // Load image element first (use proxy for external URLs to avoid CORS with canvas)
+        const loadUrl = getImageLoadUrl(imageUrl)
+        splineLog(`[Spline3D] Loading image for ${label}: ${loadUrl === imageUrl ? 'direct' : 'via proxy'}`)
+        const loadImage = (url: string): Promise<HTMLImageElement> =>
+          new Promise((resolve, reject) => {
+            const img = new Image()
+            img.crossOrigin = url.startsWith('data:') ? '' : 'anonymous'
+            img.onload = () => resolve(img)
+            img.onerror = (e) => {
+              splineError(`[Spline3D] Image load failed for ${label}`, e)
+              reject(e)
+            }
+            img.src = url
+          })
+        let imageElement: HTMLImageElement
+        try {
+          imageElement = await loadImage(loadUrl)
+        } catch {
+          // Retry once (e.g. proxy cold start or transient failure); add cache-bust for proxy
+          const retryUrl = loadUrl.includes('api/proxy-image')
+            ? `${loadUrl}${loadUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`
+            : loadUrl
+          splineLog(`[Spline3D] Retrying image load for ${label}`)
+          imageElement = await loadImage(retryUrl)
+        }
 
         // Draw to canvas: scale + position, optionally flip (avoids texture repeat/splitting)
         const scale = Math.max(0.5, Math.min(2, pos.scale))
@@ -997,33 +1042,102 @@ export function Spline3DPreview({
     const flipA = flipForSide === 'A' || flipForSide === 'both'
     const flipBResolved = flipForSideB ?? (flipForSide === 'B' || flipForSide === 'both')
 
-    /** Clear panel texture layers to base/empty state when no image is selected */
-    const clearPanelToBaseState = (obj: any, label: string) => {
-      if (!obj) return
-      const material = obj.material || obj.mesh?.material
-      if (!material?.layers) return
-      let cleared = 0
-      for (let i = 0; i < material.layers.length; i++) {
-        const layer = material.layers[i]
-        if (layer.type === 'texture' && layer.texture) {
-          if (layer.texture?.image != null) {
-            layer.texture.image = null
-            cleared++
-          } else if (layer.texture != null) {
-            layer.texture = null
-            cleared++
-          }
-          if (layer.texture?.needsUpdate !== undefined) layer.texture.needsUpdate = true
+    type BaseTextureState = { data: Uint8Array; width: number; height: number; magFilter?: number; minFilter?: number; wrapping?: number } | null
+
+    /** Load base image from URL (e.g. /internal.png) for use when artwork is deselected. */
+    const loadBaseImageFromUrl = async (): Promise<BaseTextureState> => {
+      const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve(img)
+        img.onerror = (e) => {
+          splineError('[Spline3D] Base image load failed', e)
+          reject(e)
         }
-      }
-      if (cleared > 0) {
-        material.needsUpdate = true
-        if (material.version !== undefined) material.version++
-        splineLog(`[Spline3D] Cleared ${label} to base state (${cleared} layer(s))`)
+        img.src = BASE_IMAGE_URL
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = imageElement.width
+      canvas.height = imageElement.height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(imageElement, 0, 0)
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((b) => resolve(b!), 'image/png')
+      )
+      const data = new Uint8Array(await blob!.arrayBuffer())
+      splineLog(`[Spline3D] Loaded base image from ${BASE_IMAGE_URL}: ${canvas.width}x${canvas.height}`)
+      return {
+        data,
+        width: canvas.width,
+        height: canvas.height,
+        magFilter: 1006,
+        minFilter: 1008,
+        wrapping: 1000,
       }
     }
 
+    /** Ensure base texture is set: prefer BASE_IMAGE_URL, else capture from scene when both sides have no selection. */
+    const ensureBaseTextureLoaded = async () => {
+      if (baseTextureSideARef.current != null && baseTextureSideBRef.current != null) return
+      try {
+        const base = await loadBaseImageFromUrl()
+        if (!baseTextureSideARef.current) baseTextureSideARef.current = { ...base, data: new Uint8Array(base.data) }
+        if (!baseTextureSideBRef.current) baseTextureSideBRef.current = { ...base, data: new Uint8Array(base.data) }
+      } catch {
+        splineWarn('[Spline3D] Base image load failed; will fall back to scene capture if both sides empty')
+      }
+    }
+
+    /** Capture base from scene only when no BASE_IMAGE_URL (otherwise we'd overwrite refs with wrong data after user had selected). */
+    const captureBaseIfNeeded = (obj: any, label: string, baseRef: { current: BaseTextureState }) => {
+      if (BASE_IMAGE_URL || !obj || baseRef.current || imgA || imgB) return
+      const material = obj.material || obj.mesh?.material
+      if (!material?.layers) return
+      for (let i = 0; i < material.layers.length; i++) {
+        const layer = material.layers[i]
+        if (layer.type !== 'texture' || !layer.texture?.image?.data?.length) continue
+        const img = layer.texture.image
+        baseRef.current = {
+          data: new Uint8Array(img.data),
+          width: img.width,
+          height: img.height,
+          magFilter: img.magFilter,
+          minFilter: img.minFilter,
+          wrapping: img.wrapping,
+        }
+        splineLog(`[Spline3D] Captured base artwork for ${label}`)
+        break
+      }
+    }
+
+    await ensureBaseTextureLoaded()
+    /** Restore panel to saved base texture (deselect → show default again). Uses a copy of base data so each panel keeps its own. */
+    const restorePanelToBaseState = (obj: any, label: string, baseRef: { current: BaseTextureState }) => {
+      if (!obj || !baseRef.current) return
+      const material = obj.material || obj.mesh?.material
+      if (!material?.layers) return
+      const base = baseRef.current
+      const dataCopy = new Uint8Array(base.data)
+      for (let i = 0; i < material.layers.length; i++) {
+        const layer = material.layers[i]
+        if (layer.type !== 'texture' || !layer.texture?.image) continue
+        const img = layer.texture.image
+        img.data = dataCopy
+        img.width = base.width
+        img.height = base.height
+        if (base.magFilter != null) img.magFilter = base.magFilter
+        if (base.minFilter != null) img.minFilter = base.minFilter
+        if (base.wrapping != null) img.wrapping = base.wrapping
+        if (layer.texture.needsUpdate !== undefined) layer.texture.needsUpdate = true
+        if (img.needsUpdate !== undefined) img.needsUpdate = true
+        splineLog(`[Spline3D] Restored ${label} to base artwork`)
+      }
+      material.needsUpdate = true
+      if (material.version !== undefined) material.version++
+    }
+
     const sideALayerLayout = { projection: undefined as number | undefined, axis: undefined as string | undefined }
+    if (objA) captureBaseIfNeeded(objA, "Side A", baseTextureSideARef)
     if (imgA && objA) {
       side1ObjectRef.current = objA
       const success = await addImageLayerToMaterial(objA, imgA, "Side A", flipA ? 'horizontal' : 'none', posA, {
@@ -1032,7 +1146,7 @@ export function Spline3DPreview({
       splineLog(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
     } else {
       side1ObjectRef.current = null
-      if (objA && !imgA) clearPanelToBaseState(objA, "Side A")
+      if (objA && !imgA) restorePanelToBaseState(objA, "Side A", baseTextureSideARef)
       if (imgA) splineWarn(`[Spline3D] Side A object not found or has no material`)
     }
 
@@ -1041,6 +1155,7 @@ export function Spline3DPreview({
         ? { projection: sideALayerLayout.projection, axis: sideALayerLayout.axis }
         : null
 
+    if (objB) captureBaseIfNeeded(objB, "Side B", baseTextureSideBRef)
     if (imgB && objB) {
       side2ObjectRef.current = objB
       const success = await addImageLayerToMaterial(objB, imgB, "Side B", flipBResolved, posB, {
@@ -1049,7 +1164,7 @@ export function Spline3DPreview({
       splineLog(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
     } else {
       side2ObjectRef.current = null
-      if (objB && !imgB) clearPanelToBaseState(objB, "Side B")
+      if (objB && !imgB) restorePanelToBaseState(objB, "Side B", baseTextureSideBRef)
       if (imgB) splineWarn(`[Spline3D] Side B object not found or has no material`)
     }
 
@@ -1062,12 +1177,14 @@ export function Spline3DPreview({
     if (app.renderer && scene && app.camera && typeof app.renderer.render === "function") {
       app.renderer.render(scene, app.camera)
     }
+    lastAppliedImagesRef.current = { image1, image2 }
   }, [image1, image2, side1ObjectId, side2ObjectId, side1ObjectName, side2ObjectName, isLoading, onPanelsFound, swapLampSides, flipForSide, flipForSideB, imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   // Load Spline scene
   useEffect(() => {
     if (typeof window === "undefined" || !canvasRef.current || !containerRef.current) return
 
+    const thisRunId = ++loadEffectIdRef.current
     setIsLoading(true)
     setError(null)
 
@@ -1136,6 +1253,10 @@ export function Spline3DPreview({
 
       app.load(SCENE_PATH)
         .then(() => {
+          if (loadEffectIdRef.current !== thisRunId) {
+            try { app.dispose?.() } catch { /* ignore */ }
+            return
+          }
           splineAppRef.current = app
           // Override Spline's cursor hiding – force grab cursor to stay visible
           canvas.style.setProperty('cursor', 'grab', 'important')
@@ -1169,6 +1290,7 @@ export function Spline3DPreview({
             }
           } catch (_) { /* camera controls unavailable */ }
           setTimeout(() => {
+            if (loadEffectIdRef.current !== thisRunId) return
             setIsLoading(false)
             
             // Search entire scene for all objects (for toggling)
@@ -1987,14 +2109,10 @@ export function Spline3DPreview({
               splineLog(`[Spline3D] Total objects found: ${allObjects.length}`)
               splineLog(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
             }, 500)
-            
-            // Update textures after initialization
-            setTimeout(() => {
-              updateTextures()
-            }, 1000)
           }, 1000)
         })
         .catch((err) => {
+          if (loadEffectIdRef.current !== thisRunId) return
           splineError("[Spline3D] Error loading scene:", err)
           setError(`Failed to load 3D scene: ${err.message || err}`)
           setIsLoading(false)
@@ -2022,11 +2140,51 @@ export function Spline3DPreview({
     }
   }, [])
 
+  // Preload base image (internal.png) on mount so restore-to-base works before first texture update.
   useEffect(() => {
-    if (splineAppRef.current && !isLoading) {
-      updateTextures()
+    if (typeof window === 'undefined' || baseTextureSideARef.current != null) return
+    const url = BASE_IMAGE_URL
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0)
+        canvas.toBlob((blob) => {
+          if (!blob) return
+          blob.arrayBuffer().then((buf) => {
+            const data = new Uint8Array(buf)
+            const base = { data, width: canvas.width, height: canvas.height, magFilter: 1006, minFilter: 1008, wrapping: 1000 }
+            if (!baseTextureSideARef.current) baseTextureSideARef.current = { ...base, data: new Uint8Array(data) }
+            if (!baseTextureSideBRef.current) baseTextureSideBRef.current = { ...base, data: new Uint8Array(data) }
+            splineLog('[Spline3D] Preloaded base image for restore')
+          })
+        }, 'image/png')
+      } catch (e) {
+        splineError('[Spline3D] Base image preload failed', e)
+      }
     }
+    img.onerror = () => splineError('[Spline3D] Base image load failed', url)
+    img.src = url
+  }, [])
+
+  // Run textures when images or load state change
+  useEffect(() => {
+    if (!splineAppRef.current || isLoading) return
+    updateTextures()
   }, [image1, image2, isLoading, updateTextures])
+
+  // Single delayed run so materials have time to be ready (avoids multiple re-applies that cause flashing).
+  useEffect(() => {
+    if (!splineAppRef.current || isLoading || (!image1 && !image2)) return
+    const t = setTimeout(() => {
+      if (splineAppRef.current) updateTextures()
+    }, 400)
+    return () => clearTimeout(t)
+  }, [isLoading, image1, image2, updateTextures])
 
   const applyPointLightOverrides = useCallback(() => {
     const app = splineAppRef.current as any

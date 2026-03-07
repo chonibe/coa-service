@@ -51,7 +51,7 @@ export function MeetTheStreetLamp({
   mobileVideo,
   poster,
   cue,
-  cueHref = '/shop/experience',
+  cueHref = '/experience',
   className,
 }: MeetTheStreetLampProps) {
   const [activeIndex, setActiveIndex] = useState(0)
