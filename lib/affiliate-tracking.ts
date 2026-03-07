@@ -5,6 +5,8 @@
  */
 
 export const AFFILIATE_ARTIST_STORAGE_KEY = 'sc_affiliate_artist'
+/** Cookie name for affiliate artist (same value as sessionStorage key); 7-day expiry when set in middleware */
+export const AFFILIATE_ARTIST_COOKIE_NAME = 'sc_affiliate_artist'
 
 /**
  * Parse artist slug from utm_campaign (e.g. "artist_kymo" -> "kymo").

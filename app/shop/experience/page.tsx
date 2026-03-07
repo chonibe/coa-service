@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import {
   getProduct,
   getCollectionWithListProducts,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { getAffiliateArtistSlugFromSearchParams } from '@/lib/affiliate-tracking'
+import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME } from '@/lib/affiliate-tracking'
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
 
@@ -94,11 +95,13 @@ async function ExperienceProductsLoader({
 
 async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   const resolved = await searchParams
-  const initialArtistSlug =
-    getAffiliateArtistSlugFromSearchParams({
-      artist: resolved?.artist,
-      utm_campaign: resolved?.utm_campaign,
-    }) ?? undefined
+  const fromParams = getAffiliateArtistSlugFromSearchParams({
+    artist: resolved?.artist,
+    utm_campaign: resolved?.utm_campaign,
+  })
+  const cookieStore = await cookies()
+  const fromCookie = cookieStore.get(AFFILIATE_ARTIST_COOKIE_NAME)?.value?.trim()
+  const initialArtistSlug = (fromParams ?? fromCookie) || undefined
   const skipQuiz = resolved?.skipQuiz === '1'
 
   const lamp = await getProduct('street_lamp').catch(() => null)

@@ -88,6 +88,15 @@ const nextConfig = {
   },
   // Add this to help with potential issues
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: "/favicon.ico",
+        destination: "https://thestreetcollector.com/cdn/shop/files/Group_707.png?v=1767356535&width=32",
+        permanent: false,
+      },
+    ]
+  },
   // Webpack configuration for web components support
   webpack: (config, { isServer }) => {
     if (!isServer) {
