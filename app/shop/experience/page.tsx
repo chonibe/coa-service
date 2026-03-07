@@ -5,6 +5,7 @@ import {
   getCollectionWithListProducts,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
+import { getAffiliateArtistSlugFromSearchParams } from '@/lib/affiliate-tracking'
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
 
@@ -23,7 +24,7 @@ const INITIAL_PRODUCTS_PER_SEASON = 36
 const SPOTLIGHT_COLLECTIONS_IN_SEASON2 = ['tyler-shelton'] as const
 
 interface ExperiencePageProps {
-  searchParams: Promise<{ artist?: string; skipQuiz?: string }>
+  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string }>
 }
 
 interface SeasonPageInfo {
@@ -93,7 +94,11 @@ async function ExperienceProductsLoader({
 
 async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   const resolved = await searchParams
-  const initialArtistSlug = resolved?.artist?.trim() || undefined
+  const initialArtistSlug =
+    getAffiliateArtistSlugFromSearchParams({
+      artist: resolved?.artist,
+      utm_campaign: resolved?.utm_campaign,
+    }) ?? undefined
   const skipQuiz = resolved?.skipQuiz === '1'
 
   const lamp = await getProduct('street_lamp').catch(() => null)
@@ -102,7 +107,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
         <div className="text-center max-w-md px-6">
-          <h1 className="text-2xl font-semibold mb-3">Unavailable</h1>
+          <h1 className="text-2xl font-semibold mb-3 text-white dark:text-[#FFBA94]">Unavailable</h1>
           <p className="text-neutral-400 mb-6">
             Could not load the lamp product. Please try again later.
           </p>

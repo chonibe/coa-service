@@ -28,6 +28,7 @@ const Configurator = dynamic(() => import('./Configurator').then((m) => ({ defau
   ),
 })
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
@@ -137,11 +138,12 @@ export function ExperienceClient({
     setMounted(true)
   }, [skipQuiz])
 
-  // Resolve artist slug to vendor name for initial filter
+  // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
   useEffect(() => {
-    if (!initialArtistSlug || !mounted) return
+    const slug = initialArtistSlug || (mounted ? getStoredAffiliateArtist() : null)
+    if (!slug || !mounted) return
     let cancelled = false
-    fetch(`/api/shop/artists/${encodeURIComponent(initialArtistSlug)}`)
+    fetch(`/api/shop/artists/${encodeURIComponent(slug)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data?.name) return

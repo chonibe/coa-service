@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { Suspense, useState, useCallback, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Footer } from '@/components/impact'
+import { AffiliatePersistence } from './components/AffiliatePersistence'
 import { CartProvider, useCart } from '@/lib/shop/CartContext'
 import { WishlistProvider } from '@/lib/shop/WishlistContext'
 import { ShopAuthProvider } from '@/lib/shop/ShopAuthContext'
@@ -43,7 +44,7 @@ const defaultNavigation = [
       { label: 'New Releases', href: `/shop/products?collection=${homepageContent.newReleases.collectionHandle}` },
       { label: 'Best Sellers', href: `/shop/products?collection=${homepageContent.bestSellers.collectionHandle}` },
       { label: 'Street Lamp', href: '/shop/street_lamp' },
-      { label: 'Customize Your Lamp', href: '/shop/experience' },
+      { label: 'Customize Your Lamp', href: '/experience' },
     ]
   },
   { 
@@ -107,7 +108,7 @@ const footerSections = hasUsefulFooterSections
 function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const isExperiencePage = pathname?.startsWith('/shop/experience')
+  const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   const cart = useCart()
   const [cartLoading, setCartLoading] = useState(false)
@@ -262,6 +263,9 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Suspense fallback={null}>
+        <AffiliatePersistence />
+      </Suspense>
       {/* Skip to content link for accessibility */}
       <a
         href="#main-content"
