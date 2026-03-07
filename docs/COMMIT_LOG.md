@@ -1,5 +1,34 @@
 # Commit Log
 
+## Commit: feat(theme): add #1c0202 to base and #FFBA94 highlight palette (2026-03-06)
+
+**Ref:** `d9179ccd6`
+
+### Summary
+Added subtle `#1c0202` warmth to the dark mode base and introduced the `#FFBA94` highlight palette for section headers, labels, and accent text across the experience and shop components.
+
+### Implementation Checklist
+
+- [x] [app/globals.css](app/globals.css) – Base moved to `#171515` (with `#1c0202` warmth); added `--experience-highlight`, `--experience-highlight-muted`, `--experience-highlight-soft` tokens
+- [x] [tailwind.config.ts](tailwind.config.ts) – Added `experience.highlight`, `experience.highlight-muted`, `experience.highlight-soft`; fixed `require()` → ES import for tailwindcss-animate
+- [x] [app/shop/experience/components/ArtworkDetail.tsx](app/shop/experience/components/ArtworkDetail.tsx) – Section headers (Includes, Specifications, About the Artist) use highlight color
+- [x] [app/shop/experience/components/ArtworkInfo.tsx](app/shop/experience/components/ArtworkInfo.tsx) – Artist name uses highlight color
+- [x] [app/shop/experience/components/OrderBar.tsx](app/shop/experience/components/OrderBar.tsx) – Labels (Shipping, Total, Checkout) use highlight color
+- [x] [app/shop/experience/components/Configurator.tsx](app/shop/experience/components/Configurator.tsx) – Selected “Artworks” tab uses highlight color
+- [x] Experience, shop, gift-cards, Spline, PolarisSheet – Replaced `dark:bg-neutral-*` with stepped palette (`#171515`, `#1a1616`, `#201c1c`, etc.)
+
+### Palette Reference
+| Token | Hex | Use |
+|-------|-----|-----|
+| Base | `#171515` | Page background, dialogs, menus |
+| Highlight | `#FFBA94` | Section headers, labels, accent text |
+| Surface steps | `#1a1616`–`#4a4444` | Cards, panels, borders |
+
+### Verification
+- Dark mode components use new palette; highlight text visible and consistent
+
+---
+
 ## Standardize on order_line_items_v2 (YYYY-MM-DD)
 
 ### Summary
