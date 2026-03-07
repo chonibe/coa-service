@@ -13,7 +13,17 @@ function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
   return to
 }
 
+const BARE_DOMAIN = 'thestreetcollector.com'
+
 export async function middleware(request: NextRequest) {
+  // Redirect bare domain to www so /products/* and /collections/* rewrites are served
+  const host = request.headers.get('host') ?? ''
+  if (host === BARE_DOMAIN) {
+    const path = request.nextUrl.pathname + request.nextUrl.search
+    const wwwUrl = new URL(`https://www.${BARE_DOMAIN}${path}`)
+    return NextResponse.redirect(wwwUrl, 308)
+  }
+
   const supabaseResponse = await updateSession(request)
 
   if (request.method === 'OPTIONS') {

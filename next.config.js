@@ -111,6 +111,30 @@ const nextConfig = {
   // This helps with potential CORS issues in development
   async rewrites() {
     return [
+      // Base address: / shows street-collector content so URL stays https://app.thestreetcollector.com
+      {
+        source: "/",
+        destination: "/shop/street-collector",
+      },
+      // Shopify-style URLs (affiliate/artist links): /products/* -> /shop/*, query string preserved
+      {
+        source: "/products/:path*",
+        destination: "/shop/:path*",
+      },
+      // /collections/* (e.g. /collections/kymo-one) -> artist profile at /shop/artists/*
+      {
+        source: "/collections/:path*",
+        destination: "/shop/artists/:path*",
+      },
+      // Experience at /experience (no /shop prefix) — https://app.thestreetcollector.com/experience
+      {
+        source: "/experience",
+        destination: "/shop/experience",
+      },
+      {
+        source: "/experience/:path*",
+        destination: "/shop/experience/:path*",
+      },
       {
         source: "/api/:path*",
         destination: "/api/:path*",
