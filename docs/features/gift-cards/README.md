@@ -8,26 +8,26 @@ Gift cards allow customers to purchase digital vouchers redeemable at checkout. 
 
 ## Architecture
 
-- **Purchase**: User selects type (dollar amount, 1 Street Lamp, 1 Season 1 Artwork), recipient email, design, gift message, send date, sender name. Completes Stripe Checkout (redirect).
+- **Purchase**: User selects dollar amount (presets or custom $0.10–$500), recipient email, design, gift message, send date, sender name. Completes Stripe Checkout (redirect). Gift cards are **dollar-value only** (no item-based options).
 - **Provisioning**: On `checkout.session.completed`, webhook creates Stripe coupon + promotion code, stores in `gift_cards` table. Emails immediately if "Today", or sets `scheduled` for future send date.
 - **Scheduled delivery**: Cron `/api/cron/send-scheduled-gift-cards` runs hourly; sends emails for `status='scheduled'` where `send_at <= now`.
 - **Redemption**: Existing promo flow via PromoCodeModal and `/api/checkout/validate-promo`; Stripe applies the discount at checkout.
+- **Rate limiting**: `POST /api/gift-cards/create-checkout` is limited to 10 requests per minute per IP ([`lib/rate-limit.ts`](../../../lib/rate-limit.ts)).
 
 ## Gift Card Types
 
-| Type | Amount | Redemption |
-|------|--------|------------|
-| `value` | $0.10–$500 (preset or custom; $0.10 for testing) | $ off any purchase |
-| `street_lamp` | Current Street Lamp price from Shopify | Redeemable for 1 Street Lamp |
-| `season1_artwork` | $40 fixed | Redeemable for any Season 1 artwork |
+Gift cards are **dollar-value only**. The API accepts only a dollar amount; server enforces $0.10–$500 (MIN_AMOUNT_CENTS / MAX_AMOUNT_CENTS). Legacy `gift_card_type` values (`street_lamp`, `season1_artwork`) may still exist in the database for older records; webhook and cron support them for display in emails.
+
+| Type (legacy/new) | Amount | Redemption |
+|-------------------|--------|------------|
+| `value` (only option for new purchases) | $0.10–$500 (preset or custom) | $ off any purchase |
 
 ## API Endpoints
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/gift-cards/create-checkout` | Creates Stripe Checkout Session for gift card purchase |
+| `POST /api/gift-cards/create-checkout` | Creates Stripe Checkout Session for gift card purchase (rate-limited) |
 | `GET /api/gift-cards/by-session?session_id=xxx` | Returns gift card code for completed session (success page) |
-| `GET /api/gift-cards/lamp-price` | Returns current Street Lamp price from Shopify |
 
 ## Database
 

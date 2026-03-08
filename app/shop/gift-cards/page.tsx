@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Gift, Loader2, ChevronRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { GiftCardCheckoutDrawer } from './components/GiftCardCheckoutDrawer'
@@ -23,13 +23,9 @@ const GIFT_CARD_DESIGNS = [
 
 const MIN_CENTS = 10 // $0.10 (for testing)
 const MAX_CENTS = 50000
-const SEASON1_ARTWORK_CENTS = 4000 // $40
-
-type GiftCardType = 'value' | 'street_lamp' | 'season1_artwork'
 
 export default function GiftCardsPage() {
   const { user, isAuthenticated } = useShopAuthContext()
-  const [giftCardType, setGiftCardType] = useState<GiftCardType>('value')
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
   const [design, setDesign] = useState('classic')
@@ -40,40 +36,14 @@ export default function GiftCardsPage() {
   const [senderName, setSenderName] = useState('')
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lampPrice, setLampPrice] = useState<number | null>(null)
   const [checkoutDrawerOpen, setCheckoutDrawerOpen] = useState(false)
   const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null)
   const [checkoutLineLabel, setCheckoutLineLabel] = useState('')
 
   const customCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : 0
-  const amountCents =
-    giftCardType === 'value'
-      ? selectedAmount ?? (customCents >= MIN_CENTS ? customCents : 0)
-      : giftCardType === 'street_lamp'
-        ? lampPrice ? Math.round(lampPrice * 100) : 0
-        : SEASON1_ARTWORK_CENTS
-
-  const isValid =
-    giftCardType === 'value'
-      ? amountCents >= MIN_CENTS && amountCents <= MAX_CENTS
-      : giftCardType === 'street_lamp'
-        ? lampPrice != null && lampPrice > 0
-        : true
-
+  const amountCents = selectedAmount ?? (customCents >= MIN_CENTS ? customCents : 0)
+  const isValid = amountCents >= MIN_CENTS && amountCents <= MAX_CENTS
   const sendAt = sendToday ? null : sendDate ? new Date(sendDate).toISOString() : null
-
-  useEffect(() => {
-    if (giftCardType === 'street_lamp') {
-      fetch('/api/gift-cards/lamp-price')
-        .then((res) => res.json())
-        .then((data) => {
-          if (typeof data.price === 'number') setLampPrice(data.price)
-        })
-        .catch(() => setLampPrice(null))
-    } else {
-      setLampPrice(null)
-    }
-  }, [giftCardType])
 
   const handleBuy = async () => {
     if (!recipientEmail?.trim()) {
@@ -86,11 +56,7 @@ export default function GiftCardsPage() {
     }
     if (!isValid) {
       setError(
-        giftCardType === 'value'
-          ? `Amount must be between $${(MIN_CENTS / 100).toFixed(1)} and $${(MAX_CENTS / 100).toFixed(0)}`
-          : giftCardType === 'street_lamp'
-            ? 'Street Lamp price not available. Please try again.'
-            : 'Please fill in required fields.'
+        `Amount must be between $${(MIN_CENTS / 100).toFixed(1)} and $${(MAX_CENTS / 100).toFixed(0)}`
       )
       return
     }
@@ -103,8 +69,7 @@ export default function GiftCardsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amountCents: amountCents,
-          giftCardType: giftCardType,
+          amountCents,
           recipientEmail: recipientEmail.trim() || undefined,
           customerEmail: isAuthenticated && user?.email ? user.email : undefined,
           design,
@@ -121,13 +86,7 @@ export default function GiftCardsPage() {
       }
 
       if (data.clientSecret) {
-        const label =
-          giftCardType === 'street_lamp'
-            ? 'Gift Card: 1 Street Lamp'
-            : giftCardType === 'season1_artwork'
-              ? 'Gift Card: 1 Season 1 Artwork ($40)'
-              : `Gift Card - $${(amountCents / 100).toFixed(2)}`
-        setCheckoutLineLabel(label)
+        setCheckoutLineLabel(`Gift Card - $${(amountCents / 100).toFixed(2)}`)
         setCheckoutClientSecret(data.clientSecret)
         setCheckoutDrawerOpen(true)
       } else {
@@ -144,12 +103,7 @@ export default function GiftCardsPage() {
     window.location.href = redirectUrl
   }
 
-  const amountDollars =
-    giftCardType === 'value'
-      ? (amountCents / 100).toFixed(2)
-      : giftCardType === 'street_lamp'
-        ? lampPrice != null ? lampPrice.toFixed(2) : '0.00'
-        : '40.00'
+  const amountDollars = (amountCents / 100).toFixed(2)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
@@ -221,96 +175,39 @@ export default function GiftCardsPage() {
               Choose a card value
             </label>
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setGiftCardType('value')}
-                  className={cn(
-                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
-                    giftCardType === 'value'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                      : 'border-neutral-200 dark:border-[#3e3838]'
-                  )}
-                >
-                  Dollar amount
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGiftCardType('street_lamp')}
-                  className={cn(
-                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
-                    giftCardType === 'street_lamp'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                      : 'border-neutral-200 dark:border-[#3e3838]'
-                  )}
-                >
-                  1 Street Lamp
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGiftCardType('season1_artwork')}
-                  className={cn(
-                    'flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium',
-                    giftCardType === 'season1_artwork'
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                      : 'border-neutral-200 dark:border-[#3e3838]'
-                  )}
-                >
-                  1 Season 1 Artwork ($40)
-                </button>
-              </div>
-
-              {giftCardType === 'value' && (
-                <>
-                  <div className="grid grid-cols-4 gap-3">
-                    {PRESET_AMOUNTS.map(({ label, cents }) => (
-                      <button
-                        key={cents}
-                        type="button"
-                        onClick={() => {
-                          setSelectedAmount(cents)
-                          setCustomAmount('')
-                        }}
-                        className={cn(
-                          'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
-                          selectedAmount === cents
-                            ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                            : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <Input
-                    type="number"
-                    min="0.1"
-                    max="500"
-                    step="0.1"
-                    placeholder="Or custom amount ($0.10 – $500)"
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value)
-                      setSelectedAmount(null)
+              <div className="grid grid-cols-4 gap-3">
+                {PRESET_AMOUNTS.map(({ label, cents }) => (
+                  <button
+                    key={cents}
+                    type="button"
+                    onClick={() => {
+                      setSelectedAmount(cents)
+                      setCustomAmount('')
                     }}
-                    className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
-                  />
-                </>
-              )}
-
-              {giftCardType === 'street_lamp' && (
-                <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
-                  {lampPrice != null
-                    ? `$${lampPrice.toFixed(2)} — Redeemable for 1 Street Lamp`
-                    : 'Loading price...'}
-                </p>
-              )}
-
-              {giftCardType === 'season1_artwork' && (
-                <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
-                  $40.00 — Redeemable for any Season 1 artwork
-                </p>
-              )}
+                    className={cn(
+                      'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
+                      selectedAmount === cents
+                        ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
+                        : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                min="0.1"
+                max="500"
+                step="0.1"
+                placeholder="Or custom amount ($0.10 – $500)"
+                value={customAmount}
+                onChange={(e) => {
+                  setCustomAmount(e.target.value)
+                  setSelectedAmount(null)
+                }}
+                className="dark:!border-neutral-600 dark:!bg-neutral-900 dark:!text-white"
+              />
             </div>
           </div>
 

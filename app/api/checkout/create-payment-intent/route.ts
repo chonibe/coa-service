@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
@@ -31,6 +32,8 @@ interface CreatePaymentIntentRequest {
   }
 }
 
+const PAYMENT_INTENT_RATE_LIMIT = 20 // requests per minute per IP
+
 /**
  * POST /api/checkout/create-payment-intent
  *
@@ -38,6 +41,15 @@ interface CreatePaymentIntentRequest {
  * Supports card (incl. Google Pay wallets), Link, and PayPal.
  */
 export async function POST(request: NextRequest) {
+  const id = getClientIdentifier(request)
+  const rate = checkRateLimit(id, PAYMENT_INTENT_RATE_LIMIT)
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   if (!stripe) {
     return NextResponse.json(
       { error: 'Payment is not configured' },

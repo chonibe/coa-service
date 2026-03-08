@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
@@ -12,13 +13,10 @@ const baseUrl =
 
 const MIN_AMOUNT_CENTS = 10 // $0.10 (for testing)
 const MAX_AMOUNT_CENTS = 50000 // $500
-const SEASON1_ARTWORK_CENTS = 4000 // $40
 
-type GiftCardType = 'value' | 'street_lamp' | 'season1_artwork'
-
+/** Gift cards are dollar-value only (no item-based options). */
 interface CreateGiftCardCheckoutRequest {
   amountCents: number
-  giftCardType?: GiftCardType
   recipientEmail?: string
   customerEmail?: string
   design?: string
@@ -33,7 +31,18 @@ interface CreateGiftCardCheckoutRequest {
  * Creates a Stripe Checkout Session for gift card purchase (redirect flow).
  * On payment success, webhook provisions Stripe coupon + promotion code and emails the code.
  */
+const GIFT_CARD_RATE_LIMIT = 10 // requests per minute per IP
+
 export async function POST(request: NextRequest) {
+  const id = getClientIdentifier(request)
+  const rate = checkRateLimit(id, GIFT_CARD_RATE_LIMIT)
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   if (!stripe) {
     return NextResponse.json(
       { error: 'Payment is not configured' },
@@ -45,7 +54,6 @@ export async function POST(request: NextRequest) {
     const body: CreateGiftCardCheckoutRequest = await request.json()
     const {
       amountCents,
-      giftCardType = 'value',
       recipientEmail,
       customerEmail,
       design,
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     const amount = Math.round(amountCents)
-    if (giftCardType === 'value' && (amount < MIN_AMOUNT_CENTS || amount > MAX_AMOUNT_CENTS)) {
+    if (amount < MIN_AMOUNT_CENTS || amount > MAX_AMOUNT_CENTS) {
       return NextResponse.json(
         {
           error: `Amount must be between $${(MIN_AMOUNT_CENTS / 100).toFixed(1)} and $${(MAX_AMOUNT_CENTS / 100).toFixed(0)}`,
@@ -71,17 +79,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const productLabel =
-      giftCardType === 'street_lamp'
-        ? '1 Street Lamp'
-        : giftCardType === 'season1_artwork'
-          ? '1 Season 1 Artwork ($40)'
-          : null
-
     const metadata: Record<string, string> = {
       source: 'gift_card_purchase',
       gift_card_amount_cents: String(amount),
-      gift_card_type: giftCardType,
+      gift_card_type: 'value',
     }
     if (recipientEmail?.trim()) {
       metadata.recipient_email = recipientEmail.trim().toLowerCase()
@@ -117,12 +118,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const lineItemName = productLabel
-      ? `Gift Card: ${productLabel}`
-      : `Gift Card - $${(amount / 100).toFixed(2)}`
-    const lineItemDesc = productLabel
-      ? `Redeemable for ${productLabel}. Code will be emailed after purchase.`
-      : 'Digital gift card redeemable at checkout. Code will be emailed after purchase.'
+    const lineItemName = `Gift Card - $${(amount / 100).toFixed(2)}`
+    const lineItemDesc = 'Digital gift card redeemable at checkout. Code will be emailed after purchase.'
 
     const session = await stripe.checkout.sessions.create({
       ui_mode: 'custom',
@@ -138,7 +135,7 @@ export async function POST(request: NextRequest) {
               description: lineItemDesc,
               metadata: {
                 type: 'gift_card',
-                gift_card_type: giftCardType,
+                gift_card_type: 'value',
               },
             },
           },

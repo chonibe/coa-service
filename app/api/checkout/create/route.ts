@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
+import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -54,7 +55,18 @@ interface CreateCheckoutRequest {
  * - Partial credit + Stripe payment (member with credits)
  * - Full credit payment (member with enough credits)
  */
+const CHECKOUT_RATE_LIMIT = 20 // requests per minute per IP
+
 export async function POST(request: NextRequest) {
+  const id = getClientIdentifier(request)
+  const rate = checkRateLimit(id, CHECKOUT_RATE_LIMIT)
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   if (!stripe) {
     console.error('[checkout/create] STRIPE_SECRET_KEY not configured')
     return NextResponse.json(

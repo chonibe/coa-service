@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import Stripe from 'stripe'
 import { createAndCompleteOrder } from '@/lib/stripe/fulfill-embedded-payment'
 
@@ -35,6 +36,8 @@ interface CompleteOrderRequest {
   shippingAddress: ShippingAddressInput
 }
 
+const COMPLETE_ORDER_RATE_LIMIT = 30 // requests per minute per IP
+
 /**
  * POST /api/checkout/complete-order
  *
@@ -43,6 +46,15 @@ interface CompleteOrderRequest {
  * the success page calls this endpoint after verifying the payment.
  */
 export async function POST(request: NextRequest) {
+  const id = getClientIdentifier(request)
+  const rate = checkRateLimit(id, COMPLETE_ORDER_RATE_LIMIT)
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   if (!stripe) {
     return NextResponse.json({ error: 'Payment not configured' }, { status: 503 })
   }
