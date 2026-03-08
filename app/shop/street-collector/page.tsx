@@ -21,7 +21,7 @@ import { FixedCTAButton } from './FixedCTAButton'
 import { StreetCollectorFAQ } from './StreetCollectorFAQ'
 import { ArtistCarousel } from '@/components/sections/ArtistCarousel'
 
-const HOME_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
+const HOME_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Revolutionizing The Urban Art World',

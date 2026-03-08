@@ -41,7 +41,7 @@ export interface ShopSlideoutMenuProps {
  * Shared slideout menu used by Experience header and street-collector top bar.
  * Same menu content: auth, Buy Gift Card, Promo Codes, My Orders, Help Center, Chat.
  */
-const LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
+const LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
 function getQuizName(): string | null {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const ALLOWED_ORIGINS = ['https://thestreetcollector.com', 'https://cdn.shopify.com']
+const ALLOWED_ORIGINS = ['https://thestreetcollector.com', 'https://www.thestreetcollector.com', 'https://cdn.shopify.com']
 
 function isAllowedUrl(url: string): boolean {
   try {

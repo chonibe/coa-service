@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { openTawkChat } from '@/lib/tawk'
 
-const HOME_ICON_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
+const HOME_ICON_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
 
 export interface LegalLink {
   label: string

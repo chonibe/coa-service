@@ -89,7 +89,7 @@ const nextConfig = {
   // Add this to help with potential issues
   reactStrictMode: true,
   async redirects() {
-    const faviconCdnUrl = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/IMG_20251221_155559_681.webp?v=1767355941'
+    const faviconCdnUrl = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
     return [
       {
         source: "/favicon.ico",

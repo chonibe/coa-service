@@ -22,8 +22,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const requestedArtist = searchParams.get('artist')?.trim() || searchParams.get('vendor')?.trim()
     if (requestedArtist) {
-      const byCollection = await tryCollectionSpotlight(supabase, requestedArtist)
-      if (byCollection) return NextResponse.json(byCollection)
+      // Try collection by exact handle, then common variants (e.g. kymo → kymo-one)
+      const handlesToTry = [requestedArtist, `${requestedArtist}-one`]
+      for (const h of handlesToTry) {
+        const byCollection = await tryCollectionSpotlight(supabase, h)
+        if (byCollection) return NextResponse.json(byCollection)
+      }
       const byVendor = await tryVendorSpotlight(supabase, requestedArtist)
       if (byVendor) return NextResponse.json(byVendor)
     }
@@ -59,14 +63,32 @@ type SpotlightResult = {
   seriesName?: string
 }
 
-/** Build spotlight from products by vendor name */
-async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, vendorName: string): Promise<SpotlightResult | null> {
+/** Title-case a slug for Shopify vendor name (e.g. kymo → Kymo) */
+function slugToVendorName(slug: string): string {
+  return slug
+    .replace(/-/g, ' ')
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
+
+/** Build spotlight from products by vendor name (or slug; will try title-case if needed) */
+async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, vendorNameOrSlug: string): Promise<SpotlightResult | null> {
   try {
-    const { products: vendorProducts } = await getProductsByVendor(vendorName, {
+    let vendorName = vendorNameOrSlug
+    let { products: vendorProducts } = await getProductsByVendor(vendorNameOrSlug, {
       first: 4,
       sortKey: 'CREATED_AT',
       reverse: true,
     })
+    // Shopify vendor is often title-case; try slug as title-case if no products
+    if ((!vendorProducts || vendorProducts.length === 0) && vendorNameOrSlug.includes('-')) {
+      vendorName = slugToVendorName(vendorNameOrSlug)
+      const next = await getProductsByVendor(vendorName, { first: 4, sortKey: 'CREATED_AT', reverse: true })
+      vendorProducts = next?.products ?? []
+    } else if (vendorProducts?.length) {
+      vendorName = vendorProducts[0].vendor || vendorNameOrSlug
+    }
     const filtered = (vendorProducts || []).filter(
       (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
     )
@@ -80,9 +102,12 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
 
     const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
     const handle = vendorSlug || slugify(vendorName)
-    const artistImage = image || (await getArtistImageByHandle(handle))
-    const collectionBio = !bio ? await getCollectionDescription(handle) : undefined
-    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) : undefined
+    // Try handle and handle-one so we get collection image/description when handle is e.g. kymo-one
+    const artistImage = image ||
+      (await getArtistImageByHandle(handle)) ||
+      (handle !== `${vendorNameOrSlug}-one` ? await getArtistImageByHandle(`${vendorNameOrSlug}-one`) : undefined)
+    const collectionBio = !bio ? await getCollectionDescription(handle) || await getCollectionDescription(`${vendorNameOrSlug}-one`) : undefined
+    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) || await getCollectionInstagram(`${vendorNameOrSlug}-one`) : undefined
 
     return {
       vendorName,
@@ -116,18 +141,24 @@ async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>,
       .filter(Boolean)
     const newest = nodes[0]
 
+    // Prefer collection's own image, description, and Instagram (we already have col)
+    const imageFromCol = col.image?.url
+    const bioFromCol = col.description?.trim() ||
+      (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '')
+    const instagramFromCol = col.metafield?.value?.trim() ? parseInstagramHandle(col.metafield.value) : undefined
+
     const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
     const handle = vendorSlug || slugify(vendorName) || collectionHandle
-    const artistImage = image || (await getArtistImageByHandle(handle))
-    const collectionBio = !bio ? await getCollectionDescription(handle) : undefined
-    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) : undefined
+    const artistImage = image || imageFromCol || (await getArtistImageByHandle(handle))
+    const collectionBio = bio || bioFromCol || (!bio && !bioFromCol ? await getCollectionDescription(handle) : undefined)
+    const collectionInstagram = instagram || instagramFromCol || (!instagram && !instagramFromCol ? await getCollectionInstagram(handle) : undefined)
 
     return {
       vendorName,
       vendorSlug: handle,
-      bio: bio || collectionBio,
-      instagram: instagram || collectionInstagram,
-      image: artistImage || col.image?.url || newest.featuredImage?.url || newest.images?.edges?.[0]?.node?.url,
+      bio: bio || bioFromCol || collectionBio,
+      instagram: instagram || instagramFromCol || collectionInstagram,
+      image: image || imageFromCol || artistImage || newest.featuredImage?.url || newest.images?.edges?.[0]?.node?.url,
       productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
       seriesName: col.title !== vendorName ? col.title : undefined,
     }
