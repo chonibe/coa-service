@@ -129,11 +129,7 @@ const nextConfig = {
     return [
       // Root / is the main page (app/page.tsx re-exports street-collector); no redirect to /shop/street-collector
       // /products/* is redirected to /shop/street-collector via redirects() (affiliate links)
-      // /collections/* (e.g. /collections/kymo-one) -> artist profile at /shop/artists/*
-      {
-        source: "/collections/:path*",
-        destination: "/shop/artists/:path*",
-      },
+      // /collections/* is handled in middleware (redirect to / with affiliate cookie from path); no rewrite so middleware runs
       // Experience at /experience (no /shop prefix) — https://app.thestreetcollector.com/experience
       {
         source: "/experience",

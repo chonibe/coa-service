@@ -95,12 +95,20 @@ export async function middleware(request: NextRequest) {
     if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
     return redirect
   }
+  // Collection links → main landing (/); set cookie from collection handle so Experience gets artist filter (same as /products/*)
   if (pathname.startsWith('/collections/')) {
-    const rest = pathname.slice('/collections/'.length)
-    const dest = new URL(`/shop/artists/${rest}${search}`, request.url)
+    const rest = pathname.slice('/collections/'.length).replace(/\/.*$/, '') // first segment only (e.g. tiago-hesp)
+    const slugFromPath = rest && rest.length <= 200 ? rest : undefined
+    const dest = new URL('/', request.url)
     const redirect = NextResponse.redirect(dest, 308)
-    if (affiliateSlug) setAffiliateCookie(redirect, affiliateSlug)
-    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    const cookieSlug = affiliateSlug || slugFromPath
+    if (cookieSlug) setAffiliateCookie(redirect, cookieSlug)
+    if (affiliateQueryString || slugFromPath) {
+      setAffiliateSessionCookie(
+        redirect,
+        affiliateQueryString || buildAffiliateQueryString({ artist: slugFromPath })
+      )
+    }
     return redirect
   }
 

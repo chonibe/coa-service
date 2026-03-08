@@ -11,9 +11,9 @@ When a request **reaches this app** (on Vercel), the following happen:
 2. **Main page**  
    The root **/** is the main landing page (same content as the street-collector experience). When you land on **thestreetcollector.com** or **www.thestreetcollector.com**, you see this at `/` with no redirect to `/shop/street-collector`.
 
-3. **Shopify-style URLs → app routes** (middleware + Vercel redirects):
-   - **Product links** `/products/:handle` (e.g. `/products/hands?utm_campaign=artist_kymo`) → **main landing page** (`/`). The affiliate cookie is set on the redirect so when the user opens the Experience, the vendor filter is pre-applied.
-   - **Collection links** `/collections/:handle` → `/shop/artists/:handle` (artist profile page). Query preserved; affiliate cookie set.
+3. **Shopify-style URLs → app routes** (middleware; keep /collections out of Vercel edge redirects so middleware can set the cookie):
+   - **Product links** `/products/:handle` → **main landing** (`/`). Affiliate cookie is set so the Experience gets the vendor filter.
+   - **Collection links** `/collections/:handle` (e.g. `/collections/tiago-hesp`) → **main landing** (`/`). The collection handle is used as the artist slug for the cookie so when the user opens the Experience, the vendor filter and spotlight are applied. Query params preserved.
 
 4. **Favicon**  
    `/favicon.ico` redirects to the CDN logo.

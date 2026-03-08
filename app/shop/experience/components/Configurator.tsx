@@ -66,6 +66,7 @@ import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
+import { clearAffiliateTracking } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import {
   loadImagePosition,
@@ -146,6 +147,8 @@ export function Configurator({
   const pageInfo = activeSeason === 'season1' ? pageInfoSeason1 : pageInfoSeason2
 
   const artworkStripScrollRef = useRef<HTMLDivElement>(null)
+  /** True when current spotlight was loaded from affiliate (initialArtistSlug); switch to default when user removes filter */
+  const spotlightFromAffiliateRef = useRef(false)
 
   const loadMoreForSeason = useCallback(async (season: SeasonTab) => {
     const info = season === 'season1' ? pageInfoSeason1 : pageInfoSeason2
@@ -468,13 +471,36 @@ export function Configurator({
       .then((data) => {
         if (!cancelled && data?.vendorName && Array.isArray(data?.productIds)) {
           setSpotlightData(data)
+          spotlightFromAffiliateRef.current = !!initialArtistSlug
+        } else {
+          setSpotlightData(null)
+          spotlightFromAffiliateRef.current = false
+        }
+      })
+      .catch(() => {
+        setSpotlightData(null)
+        spotlightFromAffiliateRef.current = false
+      })
+    return () => { cancelled = true }
+  }, [initialArtistSlug])
+
+  // When user removes the affiliate artist from the filter, switch to default spotlight and clear affiliate so refresh/reopen doesn't re-apply
+  useEffect(() => {
+    if (!spotlightData || !spotlightFromAffiliateRef.current) return
+    if (filters.artists.includes(spotlightData.vendorName)) return
+    spotlightFromAffiliateRef.current = false
+    clearAffiliateTracking()
+    fetch('/api/shop/artist-spotlight')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.vendorName && Array.isArray(data?.productIds)) {
+          setSpotlightData(data)
         } else {
           setSpotlightData(null)
         }
       })
       .catch(() => setSpotlightData(null))
-    return () => { cancelled = true }
-  }, [initialArtistSlug])
+  }, [filters.artists, spotlightData])
 
   // Fetch crew counts when authenticated (for taste-similar social proof)
   useEffect(() => {

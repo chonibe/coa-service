@@ -103,6 +103,23 @@ export function getStoredAffiliateSession(): AffiliateSessionData | null {
 }
 
 /**
+ * Clear affiliate tracking from session and cookies so the next load/refresh
+ * does not re-apply the affiliate filter or spotlight. Call when the user
+ * removes the affiliate artist from the filter.
+ */
+export function clearAffiliateTracking(): void {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.removeItem(AFFILIATE_ARTIST_STORAGE_KEY)
+    sessionStorage.removeItem(AFFILIATE_SESSION_URL_KEY)
+    document.cookie = `${AFFILIATE_ARTIST_COOKIE_NAME}=; path=/; max-age=0`
+    document.cookie = `${AFFILIATE_SESSION_COOKIE_NAME}=; path=/; max-age=0`
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * Build affiliate query string for cookie (server-side). Truncated to stay within cookie size.
  */
 export function buildAffiliateQueryString(params: {
