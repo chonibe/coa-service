@@ -81,7 +81,7 @@ export const streetCollectorContent = {
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
       video:
-        'https://cdn.shopify.com/videos/c/o/v/78fe4304b80245be921122d1cc75f389.mp4',
+        'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
     },
     {
       title: 'Support artists directly.',
