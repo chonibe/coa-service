@@ -1,12 +1,14 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
+import { getCollectionProductHandlesByHandle } from '@/lib/shopify/admin-collection-products'
 import {
   getProduct,
   getCollectionWithListProducts,
+  getProductsByHandles,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME } from '@/lib/affiliate-tracking'
+import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME, AFFILIATE_DISMISSED_COOKIE_NAME, AFFILIATE_PRODUCT_COOKIE_NAME } from '@/lib/affiliate-tracking'
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
 
@@ -25,7 +27,7 @@ const INITIAL_PRODUCTS_PER_SEASON = 36
 const SPOTLIGHT_COLLECTIONS_IN_SEASON2 = ['tyler-shelton'] as const
 
 interface ExperiencePageProps {
-  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string }>
+  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string; unlisted?: string }>
 }
 
 interface SeasonPageInfo {
@@ -37,11 +39,18 @@ async function ExperienceProductsLoader({
   lamp,
   initialArtistSlug,
   skipQuiz,
+  forceUnlisted,
 }: {
   lamp: ShopifyProduct
   initialArtistSlug?: string
   skipQuiz: boolean
+  forceUnlisted?: boolean
 }) {
+  // When user has direct link (?artist=handle), include that collection so its products appear in the selector (e.g. unlisted)
+  const extraHandles = initialArtistSlug
+    ? [initialArtistSlug, `${initialArtistSlug}-one`]
+    : []
+  const collectionsToMerge = [...new Set([...SPOTLIGHT_COLLECTIONS_IN_SEASON2, ...extraHandles])]
   const [season1Result, season2Result, ...spotlightResults] = await Promise.all([
     getCollectionWithListProducts(SEASON_1_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
@@ -49,7 +58,7 @@ async function ExperienceProductsLoader({
     getCollectionWithListProducts(SEASON_2_HANDLE, {
       first: INITIAL_PRODUCTS_PER_SEASON,
     }).catch(() => null),
-    ...SPOTLIGHT_COLLECTIONS_IN_SEASON2.map((h) =>
+    ...collectionsToMerge.map((h) =>
       getCollectionWithListProducts(h, { first: 12 }).catch(() => null)
     ),
   ])
@@ -58,7 +67,8 @@ async function ExperienceProductsLoader({
   const baseSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
   const season2Ids = new Set(baseSeason2.map((p) => p.id))
   const spotlightProducts: ShopifyProduct[] = []
-  for (const col of spotlightResults as Awaited<ReturnType<typeof getCollectionWithListProducts>>[]) {
+  const collectionResults = spotlightResults as Awaited<ReturnType<typeof getCollectionWithListProducts>>[]
+  for (const col of collectionResults) {
     const nodes = col?.products?.edges?.map((e) => e.node).filter(
       (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
     ) ?? []
@@ -66,6 +76,29 @@ async function ExperienceProductsLoader({
       if (!season2Ids.has(p.id)) {
         season2Ids.add(p.id)
         spotlightProducts.push(p)
+      }
+    }
+    // Unlisted products are omitted from collection.products in Storefront API; fetch by handle
+    let handles: string[] = []
+    const handlesStr = col?.productHandlesMetafield?.value?.trim()
+    if (handlesStr) {
+      handles = handlesStr.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+    }
+    if (handles.length === 0 && col?.handle) {
+      // No metafield: use Admin API to get product handles (includes unlisted) for early-access collections
+      handles = await getCollectionProductHandlesByHandle(col.handle)
+    }
+    if (handles.length > 0) {
+      try {
+        const byHandles = await getProductsByHandles(handles)
+        for (const p of byHandles) {
+          if (p.handle === 'street_lamp' || p.handle?.startsWith('street-lamp')) continue
+          if (season2Ids.has(p.id)) continue
+          season2Ids.add(p.id)
+          spotlightProducts.push(p)
+        }
+      } catch {
+        // ignore
       }
     }
   }
@@ -89,6 +122,7 @@ async function ExperienceProductsLoader({
       pageInfoSeason2={pageInfoSeason2}
       initialArtistSlug={initialArtistSlug}
       skipQuiz={skipQuiz}
+      forceUnlisted={forceUnlisted}
     />
   )
 }
@@ -100,9 +134,27 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
     utm_campaign: resolved?.utm_campaign,
   })
   const cookieStore = await cookies()
-  const fromCookie = cookieStore.get(AFFILIATE_ARTIST_COOKIE_NAME)?.value?.trim()
-  const initialArtistSlug = (fromParams ?? fromCookie) || undefined
+  const dismissed = cookieStore.get(AFFILIATE_DISMISSED_COOKIE_NAME)?.value
+  const fromCookie = dismissed ? undefined : cookieStore.get(AFFILIATE_ARTIST_COOKIE_NAME)?.value?.trim()
+  let initialArtistSlug = (fromParams ?? fromCookie) || undefined
+
+  // When user landed on /products/:handle without artist/utm (e.g. ?fbclid= only), resolve artist from product vendor
+  if (!initialArtistSlug && !dismissed) {
+    const productHandle = cookieStore.get(AFFILIATE_PRODUCT_COOKIE_NAME)?.value?.trim()
+    if (productHandle) {
+      const product = await getProduct(productHandle).catch(() => null)
+      if (product?.vendor) {
+        initialArtistSlug = product.vendor
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .replace(/^-|-$/g, '') || undefined
+      }
+    }
+  }
+
   const skipQuiz = resolved?.skipQuiz === '1'
+  const forceUnlisted = ['1', 'true', 'yes'].includes((resolved?.unlisted ?? '').toLowerCase())
 
   const lamp = await getProduct('street_lamp').catch(() => null)
 
@@ -131,6 +183,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
         lamp={lamp}
         initialArtistSlug={initialArtistSlug}
         skipQuiz={skipQuiz}
+        forceUnlisted={forceUnlisted}
       />
     </Suspense>
   )

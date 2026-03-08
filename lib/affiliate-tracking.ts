@@ -13,7 +13,12 @@ export const AFFILIATE_ARTIST_COOKIE_NAME = 'sc_affiliate_artist'
 export const AFFILIATE_SESSION_URL_KEY = 'sc_affiliate_session_url'
 /** Cookie name for affiliate query string so server can attribute sessions (7-day when set in middleware) */
 export const AFFILIATE_SESSION_COOKIE_NAME = 'sc_affiliate_session'
+/** Cookie set when user removes affiliate filter; next load ignores affiliate so reset happens on second session */
+export const AFFILIATE_DISMISSED_COOKIE_NAME = 'sc_affiliate_dismissed'
+/** Cookie for product handle when user lands on /products/:handle without artist/utm; experience resolves vendor → spotlight */
+export const AFFILIATE_PRODUCT_COOKIE_NAME = 'sc_affiliate_product'
 const AFFILIATE_SESSION_COOKIE_MAX_LENGTH = 600
+const AFFILIATE_DISMISSED_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 /**
  * Parse artist slug from utm_campaign (e.g. "artist_kymo" -> "kymo").
@@ -103,9 +108,8 @@ export function getStoredAffiliateSession(): AffiliateSessionData | null {
 }
 
 /**
- * Clear affiliate tracking from session and cookies so the next load/refresh
- * does not re-apply the affiliate filter or spotlight. Call when the user
- * removes the affiliate artist from the filter.
+ * Clear affiliate tracking from session and cookies. Used by middleware when
+ * the dismissed cookie is present so the second session has no affiliate.
  */
 export function clearAffiliateTracking(): void {
   if (typeof window === 'undefined') return
@@ -114,6 +118,20 @@ export function clearAffiliateTracking(): void {
     sessionStorage.removeItem(AFFILIATE_SESSION_URL_KEY)
     document.cookie = `${AFFILIATE_ARTIST_COOKIE_NAME}=; path=/; max-age=0`
     document.cookie = `${AFFILIATE_SESSION_COOKIE_NAME}=; path=/; max-age=0`
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Set "dismissed" cookie when user removes the affiliate filter in the first session.
+ * Next load (refresh or second session) will ignore affiliate and show default spotlight;
+ * middleware will clear affiliate cookies when it sees dismissed, so second session has no filter.
+ */
+export function setAffiliateDismissedCookie(): void {
+  if (typeof window === 'undefined') return
+  try {
+    document.cookie = `${AFFILIATE_DISMISSED_COOKIE_NAME}=1; path=/; max-age=${AFFILIATE_DISMISSED_MAX_AGE}; SameSite=Lax`
   } catch {
     // ignore
   }

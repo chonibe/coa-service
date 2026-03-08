@@ -104,6 +104,8 @@ interface Spline3DPreviewProps {
   interactive?: boolean
   /** Increment to reset lamp rotation and camera to start state (e.g. when deselecting eye preview) */
   resetTrigger?: number
+  /** When true, render with transparent background for AR/camera-feed compositing (camera feed shown behind) */
+  cameraFeedMode?: boolean
 }
 
 export function Spline3DPreview({ 
@@ -137,6 +139,7 @@ export function Spline3DPreview({
   animate = false,
   interactive = false,
   resetTrigger = 0,
+  cameraFeedMode = false,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -161,6 +164,8 @@ export function Spline3DPreview({
   const lastAppliedImagesRef = useRef<{ image1: string | null; image2: string | null }>({ image1: null, image2: null })
   // Ignore first effect's load completion when React Strict Mode double-invokes (prevents double load / flash).
   const loadEffectIdRef = useRef(0)
+  const cameraFeedModeRef = useRef(cameraFeedMode)
+  cameraFeedModeRef.current = cameraFeedMode
 
   const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
   /** Base image shown when an artwork is deselected (served from public). */
@@ -1249,6 +1254,11 @@ export function Spline3DPreview({
     window.addEventListener(EXPERIENCE_SELECTOR_SETTLED, handleSelectorSettled)
 
     try {
+      // Force WebGL context with alpha so we can use transparent clear color for AR camera-feed mode.
+      // Must be done before Application() so Spline reuses this context.
+      if (!canvas.getContext('webgl2', { alpha: true }) && !canvas.getContext('webgl', { alpha: true })) {
+        // fallback: try without alpha so scene still loads
+      }
       const app = new Application(canvas, { renderMode: 'continuous' })
 
       app.load(SCENE_PATH)
@@ -1263,13 +1273,34 @@ export function Spline3DPreview({
           canvas.addEventListener('mousedown', forceCursorGrabbing)
           canvas.addEventListener('mouseup', forceCursorGrab)
           canvas.addEventListener('mouseleave', forceCursorGrab)
-          const bgTheme = previewTheme ?? lampVariant
-          const hex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
-          if (typeof (app as any).setBackgroundColor === 'function') {
-            ;(app as any).setBackgroundColor(hex)
-          } else {
+          const useTransparentBg = cameraFeedModeRef.current
+          if (useTransparentBg) {
             const scene = (app as any).scene || (app as any)._scene
-            setSceneBackground(scene, hex, app)
+            if (scene) scene.background = null
+            const renderer = (app as any).renderer
+            if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
+            if (renderer && typeof renderer.clear === 'function') {
+              if (!rendererClearOriginalRef.current) rendererClearOriginalRef.current = renderer.clear.bind(renderer)
+              const gl = renderer.getContext?.()
+              renderer.clear = function (color = true, depth = true, stencil = true) {
+                if (!gl) return
+                let mask = 0
+                if (color) mask |= gl.COLOR_BUFFER_BIT
+                if (depth) mask |= gl.DEPTH_BUFFER_BIT
+                if (stencil) mask |= gl.STENCIL_BUFFER_BIT
+                gl.clear(mask)
+                if (color && gl.clearBufferfv) gl.clearBufferfv(gl.COLOR, 0, [0, 0, 0, 0])
+              }
+            }
+          } else {
+            const bgTheme = previewTheme ?? lampVariant
+            const hex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
+            if (typeof (app as any).setBackgroundColor === 'function') {
+              ;(app as any).setBackgroundColor(hex)
+            } else {
+              const scene = (app as any).scene || (app as any)._scene
+              setSceneBackground(scene, hex, app)
+            }
           }
           // Enable slight zoom on preview: find orbit controls and constrain zoom range
           try {
@@ -1289,10 +1320,19 @@ export function Spline3DPreview({
               }
             }
           } catch (_) { /* camera controls unavailable */ }
+          const reapplyTransparentBgIfAr = () => {
+            if (!cameraFeedModeRef.current || !app) return
+            const scene = (app as any).scene || (app as any)._scene
+            const renderer = (app as any).renderer
+            if (scene) scene.background = null
+            if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
+          }
           setTimeout(() => {
             if (loadEffectIdRef.current !== thisRunId) return
             setIsLoading(false)
-            
+            reapplyTransparentBgIfAr()
+            requestAnimationFrame(() => reapplyTransparentBgIfAr())
+            setTimeout(() => reapplyTransparentBgIfAr(), 100)
             // Search entire scene for all objects (for toggling)
             const searchEntireSceneForObjects = (): ObjectInfo[] => {
               const app = splineAppRef.current as any
@@ -2224,23 +2264,50 @@ export function Spline3DPreview({
     applyPointLightOverrides()
   }, [pointLightIntensity, pointLightPosition, pointLightDistance, isLoading, applyPointLightOverrides])
 
-  // Sync Spline background — use previewTheme when provided, else lampVariant
+  // Sync Spline background — use previewTheme when provided, else lampVariant; transparent when cameraFeedMode.
+  // Spline runtime overrides renderer.clear to use clearBufferfv(COLOR, 1, [0,0,0,1]) — we must override that to [0,0,0,0] for transparency.
+  const rendererClearOriginalRef = useRef<((color?: boolean, depth?: boolean, stencil?: boolean) => void) | null>(null)
   const sceneBgTheme = previewTheme ?? lampVariant
   const setBackgroundFromVariant = useCallback(() => {
-    const app = splineAppRef.current
+    const app = splineAppRef.current as any
     if (!app || isLoading) return
-    const hex = sceneBgTheme === 'light' ? '#F5F5F5' : '#171515'
-    if (typeof (app as any).setBackgroundColor === 'function') {
-      ;(app as any).setBackgroundColor(hex)
+    const renderer = app.renderer
+    if (cameraFeedModeRef.current) {
+      const scene = app.scene || app._scene
+      if (scene) scene.background = null
+      if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
+      if (renderer && typeof renderer.clear === 'function') {
+        if (!rendererClearOriginalRef.current) rendererClearOriginalRef.current = renderer.clear.bind(renderer)
+        const gl = renderer.getContext?.()
+        renderer.clear = function (color = true, depth = true, stencil = true) {
+          if (!gl) return
+          let mask = 0
+          if (color) mask |= gl.COLOR_BUFFER_BIT
+          if (depth) mask |= gl.DEPTH_BUFFER_BIT
+          if (stencil) mask |= gl.STENCIL_BUFFER_BIT
+          gl.clear(mask)
+          if (color && gl.clearBufferfv) gl.clearBufferfv(gl.COLOR, 0, [0, 0, 0, 0])
+        }
+      }
     } else {
-      const scene = (app as any).scene || (app as any)._scene
-      setSceneBackground(scene, hex, app)
+      const hex = sceneBgTheme === 'light' ? '#F5F5F5' : '#171515'
+      if (typeof app.setBackgroundColor === 'function') {
+        app.setBackgroundColor(hex)
+      } else {
+        const scene = app.scene || app._scene
+        setSceneBackground(scene, hex, app)
+      }
+      if (renderer?.setClearColor) renderer.setClearColor(0x000000, 1)
+      if (renderer && rendererClearOriginalRef.current) {
+        renderer.clear = rendererClearOriginalRef.current
+        rendererClearOriginalRef.current = null
+      }
     }
-  }, [sceneBgTheme, isLoading])
+  }, [sceneBgTheme, isLoading, cameraFeedMode])
 
   useEffect(() => {
     setBackgroundFromVariant()
-  }, [sceneBgTheme, isLoading, setBackgroundFromVariant])
+  }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })
@@ -2384,12 +2451,12 @@ export function Spline3DPreview({
 
   if (minimal) {
     const bgTheme = previewTheme ?? lampVariant
-    const bgHex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
+    const bgHex = cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515')
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     return (
       <div ref={containerRef} className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden [&_canvas]:!cursor-grab [&_canvas:active]:!cursor-grabbing cursor-grab active:cursor-grabbing")}>
-        {/* Background layer - ensures toggle changes color even if WebGL overrides */}
+        {/* Background layer - transparent in cameraFeedMode so video shows through */}
         <div
           className="absolute inset-0 -z-10"
           style={{ backgroundColor: bgHex }}
@@ -2443,7 +2510,7 @@ export function Spline3DPreview({
             height: "100%",
             maxWidth: "100%",
             maxHeight: "100%",
-            backgroundColor: bgHex,
+            backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             cursor: "grab",
           }}
           width={800}

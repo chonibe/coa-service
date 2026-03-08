@@ -176,6 +176,28 @@ export async function GET(
     }
 
     if (vendorProducts.length === 0) {
+      // Last resort: collection may exist in Shopify by handle but not in vendor_collections (e.g. unlisted)
+      const fallbackHandles = [slug, slug.replace(/-\d+$/, ''), `${slug.replace(/-\d+$/, '')}-one`]
+      for (const h of [...new Set(fallbackHandles)].filter(Boolean)) {
+        try {
+          const col = await getCollection(h, { first: 1 })
+          if (col?.title) {
+            const name = vendorName || col.title || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+            const products = col.products?.edges?.map((e) => e.node) ?? []
+            const artist = {
+              name,
+              slug,
+              bio: vendorBio || (col.description?.trim() || (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '') || undefined),
+              image: col.image?.url,
+              instagram: vendorInstagram || (await getCollectionInstagram(h)) || undefined,
+              products,
+            }
+            return NextResponse.json(artist)
+          }
+        } catch {
+          continue
+        }
+      }
       return NextResponse.json(
         { error: 'Artist not found', products: [] },
         { status: 404 }

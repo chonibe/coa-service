@@ -14,6 +14,10 @@ export interface SpotlightData {
   instagram?: string
   productIds: string[]
   seriesName?: string
+  /** URL from collection metafield custom.gif — when set, show GIF image overlay on collapsed card */
+  gifUrl?: string
+  /** When true, collection is unlisted (early access); card uses distinct glow and artworks show "Early access" */
+  unlisted?: boolean
 }
 
 interface ArtistSpotlightBannerProps {
@@ -78,6 +82,14 @@ export function ArtistSpotlightBanner({
             <stop offset="85%" stopColor="#FFBA94" stopOpacity="0.5" />
             <stop offset="100%" stopColor="#FFBA94" stopOpacity="0" />
           </linearGradient>
+          <linearGradient id="spotlight-fade-unlisted" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#A78BFA" stopOpacity="0" />
+            <stop offset="15%" stopColor="#A78BFA" stopOpacity="0.5" />
+            <stop offset="35%" stopColor="#C4B5FD" stopOpacity="0.95" />
+            <stop offset="65%" stopColor="#C4B5FD" stopOpacity="0.95" />
+            <stop offset="85%" stopColor="#A78BFA" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
+          </linearGradient>
         </defs>
         <rect
           x="1"
@@ -87,7 +99,7 @@ export function ArtistSpotlightBanner({
           rx="11"
           ry="11"
           fill="none"
-          stroke="url(#spotlight-fade)"
+          stroke={spotlight.unlisted ? 'url(#spotlight-fade-unlisted)' : 'url(#spotlight-fade)'}
           strokeWidth="2"
           strokeLinecap="round"
           strokeDasharray="320 158 320 158"
@@ -105,6 +117,21 @@ export function ArtistSpotlightBanner({
           expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
+        {/* GIF overlay when collapsed — image URL from collection metafield custom.gif (16:9) */}
+        {!expanded && spotlight.gifUrl && (
+          <div
+            className="absolute top-2 right-12 z-20 pointer-events-none w-20 aspect-video rounded-lg overflow-hidden bg-neutral-200/80 dark:bg-[#262222]/80"
+            aria-hidden
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={spotlight.gifUrl}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Collapsed row */}
         {!expanded && (
           <div className="flex items-center gap-3">
@@ -124,7 +151,12 @@ export function ArtistSpotlightBanner({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Artist Spotlight</p>
+              <p className={cn(
+                'text-xs font-medium',
+                spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
+              )}>
+                {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
+              </p>
               <p className="text-sm font-semibold text-[#FFBA94] truncate">
                 {spotlight.vendorName}
               </p>
@@ -180,8 +212,11 @@ export function ArtistSpotlightBanner({
                 )}
               </div>
               <div className="flex-1 min-w-0 flex flex-col gap-1">
-                <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-                  Artist Spotlight
+                <p className={cn(
+                  'text-[10px] font-medium uppercase tracking-wider',
+                  spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
+                )}>
+                  {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                 </p>
                 <h3 className="text-lg font-semibold text-[#FFBA94]">
                   {spotlight.vendorName}

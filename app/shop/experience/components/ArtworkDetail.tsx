@@ -39,11 +39,13 @@ interface ArtworkDetailProps {
   isCollected?: boolean
   /** When true, show "New Drop" badge (part of artist spotlight) */
   isNewDrop?: boolean
+  /** When true, show "Early access" badge (unlisted spotlight) instead of "New Drop" */
+  isEarlyAccess?: boolean
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -387,9 +389,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           Collected
                         </span>
                       )}
-                      {isNewDrop && !isSoldOut && !isCollected && (
-                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded">
-                          New Drop
+                      {(isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected && (
+                        <span className={cn(
+                          'text-xs font-semibold px-2 py-0.5 rounded',
+                          isEarlyAccess
+                            ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30'
+                            : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+                        )}>
+                          {isEarlyAccess ? 'Early access' : 'New Drop'}
                         </span>
                       )}
                     </div>
@@ -1161,9 +1168,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       Collected
                     </span>
                   )}
-                  {isNewDrop && !isSoldOut && !isCollected && (
-                    <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
-                      New Drop
+                  {(isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected && (
+                    <span className={cn(
+                      'text-[10px] font-semibold px-1.5 py-0.5 rounded w-fit mt-1',
+                      isEarlyAccess
+                        ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30'
+                        : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+                    )}>
+                      {isEarlyAccess ? 'Early access' : 'New Drop'}
                     </span>
                   )}
                 </div>

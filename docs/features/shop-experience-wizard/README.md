@@ -41,6 +41,14 @@ A first-session contextual wizard that guides new users through the lamp customi
 | 3 | Lamp controls | Street Lamp +/− in header (ExperienceSlideoutMenu) |
 | 4 | Order bar | Review order and checkout |
 
+### AR Camera Toggle
+
+Users can switch the 3D preview to an AR-style view with the device camera feed behind the lamp:
+
+- **Toggle**: Camera icon button (top-right of 3D preview, left of the light/dark theme toggle). Only shown when the camera API is supported (HTTPS).
+- **Behavior**: On first tap, the app requests camera permission and starts the stream; the Spline scene background becomes transparent so the lamp appears over the live camera feed. Tap again to turn off and release the camera.
+- **Implementation**: [`useCameraFeed`](../../../app/shop/experience/hooks/useCameraFeed.ts) hook; [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx) `cameraFeedMode` prop. See [Experience AR Camera](../experience-ar-camera/README.md) for details.
+
 ### Data Attributes (Targets)
 
 - `data-wizard-spline` – 3D viewer container (Configurator)
@@ -70,6 +78,7 @@ A first-session contextual wizard that guides new users through the lamp customi
 4. Walk through all 5 steps; verify each target is highlighted correctly
 5. Test "Skip tour" and "Done" both dismiss and persist completion
 6. Confirm wizard does not reappear on refresh
+7. **AR camera**: On HTTPS, tap the camera icon; grant camera permission and confirm the lamp appears over the live feed. Tap again to turn off; confirm stream stops and no leaks.
 
 ## Artist Link Support
 
@@ -82,5 +91,5 @@ Visitors arriving from artist Instagram pages can use pre-filtered links:
 
 ## Version
 
-- Last updated: 2026-03-05
-- Version: 1.2.0
+- Last updated: 2026-03-08
+- Version: 1.3.0

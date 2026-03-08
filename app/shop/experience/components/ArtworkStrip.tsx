@@ -148,6 +148,8 @@ interface ArtworkCardProps {
   isCollected?: boolean
   /** When true, artwork is part of the current artist spotlight "New Drop" */
   isNewDrop?: boolean
+  /** When true, spotlight is unlisted (early access); show "Early access" instead of "New Drop" */
+  isEarlyAccess?: boolean
   onPreview: (index: number) => void
   onLampSelect: (product: ShopifyProduct) => void
   onAddToCart: (product: ShopifyProduct) => void
@@ -181,6 +183,7 @@ function ArtworkCard({
   mergeWithRight = false,
   isCollected = false,
   isNewDrop = false,
+  isEarlyAccess = false,
   onPreview,
   onLampSelect,
   onAddToCart,
@@ -285,6 +288,16 @@ function ArtworkCard({
           )}>
             No image
           </div>
+        )}
+        {(isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected && (
+          <span className={cn(
+            'absolute top-2 left-2 z-10 text-[10px] font-semibold px-1.5 py-0.5 rounded',
+            isEarlyAccess
+              ? 'text-violet-800 dark:text-violet-200 bg-violet-100/95 dark:bg-violet-900/50'
+              : 'text-amber-800 dark:text-amber-200 bg-amber-100/95 dark:bg-amber-900/50'
+          )}>
+            {isEarlyAccess ? 'Early access' : 'New Drop'}
+          </span>
         )}
         <button
           data-highlight-btn={isFirstCard ? 'info' : undefined}
@@ -472,6 +485,8 @@ interface ArtworkStripProps {
   collectedProductIds?: Set<string>
   /** Product IDs in the "New Drop" spotlight series (for badge) */
   newDropProductIds?: Set<string>
+  /** When true, spotlight is unlisted; show "Early access" on spotlight artworks instead of "New Drop" */
+  spotlightUnlisted?: boolean
 }
 
 function formatPrice(product: ShopifyProduct): string {
@@ -505,6 +520,7 @@ export function ArtworkStrip({
   isLoadingMore = false,
   collectedProductIds,
   newDropProductIds,
+  spotlightUnlisted = false,
 }: ArtworkStripProps) {
   const isProductCollected = useCallback((productId: string) => {
     if (!collectedProductIds?.size) return false
@@ -662,6 +678,7 @@ export function ArtworkStrip({
                     mergeWithRight={shouldMerge}
                     isCollected={isProductCollected(product1.id)}
                     isNewDrop={isProductNewDrop(product1.id)}
+                    isEarlyAccess={spotlightUnlisted && isProductNewDrop(product1.id)}
                     onPreview={onPreview}
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}
@@ -697,6 +714,7 @@ export function ArtworkStrip({
                     mergeWithLeft={shouldMerge}
                     isCollected={isProductCollected(product2.id)}
                     isNewDrop={isProductNewDrop(product2.id)}
+                    isEarlyAccess={spotlightUnlisted && isProductNewDrop(product2.id)}
                     onPreview={onPreview}
                     onLampSelect={onLampSelect}
                     onAddToCart={onAddToCart}

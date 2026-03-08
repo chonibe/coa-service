@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart, Camera } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
@@ -66,7 +66,7 @@ import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
-import { clearAffiliateTracking } from '@/lib/affiliate-tracking'
+import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import {
   loadImagePosition,
@@ -74,6 +74,8 @@ import {
   DEFAULT_SIDE_POSITION,
   DEFAULT_SIDE_B_POSITION,
 } from '@/lib/experience-image-position'
+import { useCameraFeed } from '../hooks/useCameraFeed'
+import { SplineScenePreload } from '../SplineScenePreload'
 
 /** Loading fallback for Spline 3D preview — theme-aware */
 function SplinePreviewLoading() {
@@ -111,6 +113,8 @@ interface ConfiguratorProps {
   initialFilters?: Pick<FilterState, 'artists'> | null
   /** Affiliate/vendor slug for initial artist spotlight (from cookie/URL); spotlight stays until user removes filter */
   initialArtistSlug?: string | null
+  /** When true, request spotlight with ?unlisted=1 so API returns unlisted (early access UI) */
+  forceUnlisted?: boolean
 }
 
 export function Configurator({
@@ -123,6 +127,7 @@ export function Configurator({
   onRetakeQuiz,
   initialFilters,
   initialArtistSlug,
+  forceUnlisted = false,
 }: ConfiguratorProps) {
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
@@ -137,6 +142,8 @@ export function Configurator({
     instagram?: string
     productIds: string[]
     seriesName?: string
+    gifUrl?: string
+    unlisted?: boolean
   } | null>(null)
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
@@ -463,9 +470,10 @@ export function Configurator({
   // Fetch artist spotlight: use affiliate artist when present so spotlight starts as that artist until user removes filter
   useEffect(() => {
     let cancelled = false
-    const url = initialArtistSlug
+    let url = initialArtistSlug
       ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
       : '/api/shop/artist-spotlight'
+    if (forceUnlisted && initialArtistSlug) url += '&unlisted=1'
     fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -482,24 +490,15 @@ export function Configurator({
         spotlightFromAffiliateRef.current = false
       })
     return () => { cancelled = true }
-  }, [initialArtistSlug])
+  }, [initialArtistSlug, forceUnlisted])
 
-  // When user removes the affiliate artist from the filter, switch to default spotlight and clear affiliate so refresh/reopen doesn't re-apply
+  // When user removes the affiliate artist from the filter (first session): only set "dismissed" cookie.
+  // Spotlight stays as affiliate for the rest of the first session. Next load (refresh or second session)
+  // will see dismissed and not apply filter; middleware will clear affiliate cookies then.
   useEffect(() => {
     if (!spotlightData || !spotlightFromAffiliateRef.current) return
     if (filters.artists.includes(spotlightData.vendorName)) return
-    spotlightFromAffiliateRef.current = false
-    clearAffiliateTracking()
-    fetch('/api/shop/artist-spotlight')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.vendorName && Array.isArray(data?.productIds)) {
-          setSpotlightData(data)
-        } else {
-          setSpotlightData(null)
-        }
-      })
-      .catch(() => setSpotlightData(null))
+    setAffiliateDismissedCookie()
   }, [filters.artists, spotlightData])
 
   // Fetch crew counts when authenticated (for taste-similar social proof)
@@ -565,6 +564,26 @@ export function Configurator({
 
   const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar, setDiscountCelebrationAmount } = useExperienceOrder()
   const { theme, setTheme } = useExperienceTheme()
+  const [arCameraOn, setArCameraOn] = useState(false)
+  const { videoRef, status: cameraStatus, error: cameraError, requestAccess, stopStream, isSupported: isCameraSupported } = useCameraFeed()
+
+  const handleArCameraToggle = useCallback(() => {
+    if (arCameraOn) {
+      stopStream()
+      setArCameraOn(false)
+    } else {
+      setArCameraOn(true)
+      requestAccess()
+    }
+  }, [arCameraOn, stopStream, requestAccess])
+
+  const isArModeActive = arCameraOn && cameraStatus === 'active'
+
+  useEffect(() => {
+    if (arCameraOn && (cameraStatus === 'denied' || cameraStatus === 'error')) {
+      setArCameraOn(false)
+    }
+  }, [arCameraOn, cameraStatus])
 
   // Persist cart state so it survives refresh
   useEffect(() => {
@@ -758,7 +777,7 @@ export function Configurator({
         className={cn(
           'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
           'max-w-[100vw] max-h-[100dvh] min-w-0',
-          theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]',
+          isArModeActive ? 'bg-transparent' : (theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]'),
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
@@ -769,61 +788,100 @@ export function Configurator({
         )}
       >
         {((!isMobile) || selectorSheetState !== 'full') && (
-          <SplineWhenVisible className="relative w-full h-full" placeholder={<SplinePreviewLoading />}>
-            <ComponentErrorBoundary
-              componentName="Spline3DPreview"
-              fallback={
-                <div className={cn(
-                  'flex h-full w-full items-center justify-center',
-                  theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
-                )}>
-                  <div className="text-center px-4">
-                    <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
-                    <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
+          <div className="relative w-full h-full">
+            <SplineScenePreload />
+            {isArModeActive && (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 w-full h-full object-cover [transform:scaleX(-1)]"
+                aria-hidden
+              />
+            )}
+            <SplineWhenVisible className="relative w-full h-full" placeholder={<SplinePreviewLoading />}>
+              <ComponentErrorBoundary
+                componentName="Spline3DPreview"
+                fallback={
+                  <div className={cn(
+                    'flex h-full w-full items-center justify-center',
+                    theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
+                  )}>
+                    <div className="text-center px-4">
+                      <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
+                      <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
+                    </div>
                   </div>
-                </div>
-              }
-            >
-              <Spline3DPreview
-              image1={image1}
-              image2={image2}
-              lampVariant={lampVariant}
-              previewTheme={theme}
-            side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
-            side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
-            minimal
-            animate
-            interactive
-            className="relative w-full h-full"
-            onPanelsFound={setPanelStatus}
-            swapLampSides
-            flipForSide="B"
-            flipForSideB="horizontal"
-            imageScale={imageScale}
-            imageOffsetX={imageOffsetX}
-            imageOffsetY={imageOffsetY}
-            imageScaleX={imageScaleX}
-            imageScaleY={imageScaleY}
-            imageScaleB={imageScaleB}
-            imageOffsetXB={imageOffsetXB}
-            imageOffsetYB={imageOffsetYB}
-            imageScaleXB={imageScaleXB}
-            imageScaleYB={imageScaleYB}
-            resetTrigger={splineResetTrigger}
-          />
-            </ComponentErrorBoundary>
-          </SplineWhenVisible>
+                }
+              >
+                <Spline3DPreview
+                  image1={image1}
+                  image2={image2}
+                  lampVariant={lampVariant}
+                  previewTheme={theme}
+                  side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
+                  side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
+                  minimal
+                  animate
+                  interactive
+                  className="relative w-full h-full"
+                  onPanelsFound={setPanelStatus}
+                  swapLampSides
+                  flipForSide="B"
+                  flipForSideB="horizontal"
+                  imageScale={imageScale}
+                  imageOffsetX={imageOffsetX}
+                  imageOffsetY={imageOffsetY}
+                  imageScaleX={imageScaleX}
+                  imageScaleY={imageScaleY}
+                  imageScaleB={imageScaleB}
+                  imageOffsetXB={imageOffsetXB}
+                  imageOffsetYB={imageOffsetYB}
+                  imageScaleXB={imageScaleXB}
+                  imageScaleYB={imageScaleYB}
+                  resetTrigger={splineResetTrigger}
+                  cameraFeedMode={isArModeActive}
+                />
+              </ComponentErrorBoundary>
+            </SplineWhenVisible>
+          </div>
         )}
 
-        {/* Light/dark mode toggle — overlay in Spline preview */}
-        <button
-          type="button"
-          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          className="absolute top-3 right-3 z-10 inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
-        >
-          {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
-        </button>
+        {/* AR camera + Light/dark mode toggles — overlay in Spline preview */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+          {isCameraSupported && (
+            <button
+              type="button"
+              onClick={handleArCameraToggle}
+              disabled={cameraStatus === 'loading'}
+              aria-label={arCameraOn ? 'Turn off camera view' : 'View with camera (AR preview)'}
+              aria-pressed={arCameraOn}
+              title={cameraStatus === 'denied' || cameraStatus === 'error' ? (cameraError ?? 'Camera unavailable') : undefined}
+              className={cn(
+                'inline-flex items-center justify-center p-2 rounded-lg backdrop-blur-sm transition-colors cursor-pointer',
+                arCameraOn
+                  ? 'text-amber-600 dark:text-amber-400 bg-amber-500/20 dark:bg-amber-400/20 hover:bg-amber-500/30'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60',
+                (cameraStatus === 'denied' || cameraStatus === 'error') && 'opacity-70'
+              )}
+            >
+              {cameraStatus === 'loading' ? (
+                <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden />
+              ) : (
+                <Camera size={20} className="shrink-0" />
+              )}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+          >
+            {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
+          </button>
+        </div>
 
         {/* No collapse button — tap the selector bar to switch */}
 
@@ -1411,7 +1469,7 @@ export function Configurator({
                 </div>
               </div>
             </div>
-          ) : spotlightData && spotlightData.productIds.length > 0 ? (
+          ) : spotlightData ? (
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
@@ -1527,6 +1585,7 @@ export function Configurator({
             crewCountMap={crewCountMap}
             collectedProductIds={collectedProductIds}
             newDropProductIds={spotlightData ? new Set(spotlightData.productIds) : undefined}
+            spotlightUnlisted={spotlightData?.unlisted}
             onPreview={handlePreview}
             onLampSelect={handleLampSelect}
             onAddToCart={handleAddToCart}
@@ -1705,6 +1764,7 @@ export function Configurator({
           isLoadingDetails={detailProductLoading}
           isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
           isNewDrop={!!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
+          isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
           productBadges={
             detailProduct.id === lamp.id
               ? [

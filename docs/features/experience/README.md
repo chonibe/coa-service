@@ -146,7 +146,13 @@ When the banner is selected/expanded:
 2. **New Drop badge** — Artworks in the spotlight series show an amber "New Drop" badge.
 3. **Artist info card** — Dropdown shows artist image, bio (from vendors/description), and thumbnails of artworks in the drop.
 
-API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, image, productIds, seriesName }`.
+API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, image, productIds, seriesName, gifUrl?, unlisted? }`.
+
+**Unlisted collections**: Set collection metafield `custom.unlisted` to a truthy value (e.g. `true` or `1`) so the collection is **not** chosen as the default spotlight on the experience page. It remains reachable via direct link: `/shop/experience?artist=<handle>` or `/collections/<handle>`. When `?artist=` is provided, the API returns that collection’s spotlight even if unlisted. When no `?artist=` is given, override, Shopify, and Supabase candidates are skipped if `unlisted` is true. The experience page merges the `initialArtistSlug` collection into the product list when present so unlisted collections’ products appear when opened by link. Implementation: [`app/api/shop/artist-spotlight/route.ts`](../../../app/api/shop/artist-spotlight/route.ts); [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (`unlistedMetafield`); [`app/shop/experience/page.tsx`](../../../app/shop/experience/page.tsx) (merge by `initialArtistSlug`).
+
+**GIF overlay**: When the collection has metafield `custom.gif` set to a URL and the banner is **collapsed**, that GIF image is shown as a small overlay on the card (top-right). The API returns `gifUrl` with the metafield value; vendor and collection spotlight paths both support it. Implementation: [`ArtistSpotlightBanner.tsx`](../../../app/shop/experience/components/ArtistSpotlightBanner.tsx); [`app/api/shop/artist-spotlight/route.ts`](../../../app/api/shop/artist-spotlight/route.ts) and [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (collection fragment `gifMetafield`).
+
+**Unlisted products (early access)**: The Storefront API omits [unlisted products](https://shopify.dev/docs/apps/build/product-merchandising/unlisted-products) from `collection.products`. To show them, the app uses the **Shopify Admin API** to read the collection’s product handles (including unlisted), then fetches each product by handle via Storefront. **Public** Storefront tokens often return `null` for unlisted products even when querying by handle; set **`SHOPIFY_STOREFRONT_PRIVATE_TOKEN`** (a private Storefront API token, server-only) so unlisted products are returned. Optional: set `custom.product_handles` on the collection to override or limit which products are shown. Implementation: [`lib/shopify/admin-collection-products.ts`](../../../lib/shopify/admin-collection-products.ts); [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (`getProductsByHandles` private-token fallback); experience page and artist-spotlight API call it when Storefront returns 0 products for a collection.
 
 ## API Endpoints (Products)
 
@@ -167,5 +173,5 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 ## Version
 
-- Last updated: 2026-03-05
-- Version: 1.8.0
+- Last updated: 2026-03-08
+- Version: 1.8.1

@@ -15,6 +15,8 @@
 const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY_SHOP || ''
 // Storefront API token (not Admin API token which starts with shpat_)
 const STOREFRONT_TOKEN = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
+// Optional private Storefront token (server-only). Use for fetching unlisted products; public tokens return null for product(handle: "x") when product is unlisted.
+const STOREFRONT_PRIVATE_TOKEN = process.env.SHOPIFY_STOREFRONT_PRIVATE_TOKEN || ''
 const API_VERSION = '2024-01'
 
 const STOREFRONT_URL = `https://${SHOPIFY_SHOP}/api/${API_VERSION}/graphql.json`
@@ -136,6 +138,30 @@ export async function storefrontQuery<T>(
     throw new Error('No data returned from Storefront API')
   }
 
+  return json.data
+}
+
+/**
+ * Run a Storefront query with a specific token (e.g. private token for unlisted products).
+ */
+async function storefrontQueryWithToken<T>(
+  token: string,
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  if (!SHOPIFY_SHOP || !token) throw new Error('Storefront: shop and token required')
+  const response = await fetch(STOREFRONT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': token,
+    },
+    body: JSON.stringify({ query, variables }),
+    next: { revalidate: 60 },
+  })
+  const json: GraphQLResponse<T> = await response.json()
+  if (json.errors) throw new Error(json.errors[0]?.message || 'GraphQL error')
+  if (!json.data) throw new Error('No data from Storefront API')
   return json.data
 }
 
@@ -268,6 +294,12 @@ export interface ShopifyCollection {
   image: ShopifyImage | null
   /** Collection metafield custom.instagram (handle or URL) */
   metafield?: { value?: string } | null
+  /** Collection metafield custom.gif — URL for GIF overlay on artist spotlight card when collapsed */
+  gifMetafield?: { value?: string } | null
+  /** Collection metafield custom.unlisted — when truthy, hide from default experience spotlight (only via direct link) */
+  unlistedMetafield?: { value?: string } | null
+  /** Collection metafield custom.product_handles — comma-separated product handles for unlisted products (Storefront omits unlisted from collection.products) */
+  productHandlesMetafield?: { value?: string } | null
   products: {
     edges: Array<{ node: ShopifyProduct }>
     pageInfo: {
@@ -538,6 +570,15 @@ const COLLECTION_FRAGMENT = `
     metafield(namespace: "custom", key: "instagram") {
       value
     }
+    metafield(namespace: "custom", key: "gif") {
+      value
+    }
+    metafield(namespace: "custom", key: "unlisted") {
+      value
+    }
+    metafield(namespace: "custom", key: "product_handles") {
+      value
+    }
   }
 `
 
@@ -563,10 +604,13 @@ export async function getProduct(handle: string): Promise<ShopifyProduct | null>
 }
 
 /**
- * Get multiple products by handles
+ * Get multiple products by handles.
+ * When products are unlisted, the public Storefront token often returns null; if
+ * SHOPIFY_STOREFRONT_PRIVATE_TOKEN is set, we retry with it so unlisted products are returned.
  */
 export async function getProductsByHandles(handles: string[]): Promise<ShopifyProduct[]> {
-  // Build a query that fetches multiple products by alias
+  if (handles.length === 0) return []
+
   const aliases = handles.map((handle, i) => `
     product_${i}: product(handle: "${handle}") {
       ...ProductFields
@@ -580,8 +624,23 @@ export async function getProductsByHandles(handles: string[]): Promise<ShopifyPr
     }
   `
 
-  const data = await storefrontQuery<Record<string, ShopifyProduct | null>>(query)
-  return Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+  let data = await storefrontQuery<Record<string, ShopifyProduct | null>>(query)
+  let products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+
+  // Public tokens return null for unlisted products; retry with private token if configured
+  if (products.length === 0 && handles.length > 0 && STOREFRONT_PRIVATE_TOKEN) {
+    try {
+      data = await storefrontQueryWithToken<Record<string, ShopifyProduct | null>>(
+        STOREFRONT_PRIVATE_TOKEN,
+        query
+      )
+      products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+    } catch {
+      // keep original empty result
+    }
+  }
+
+  return products
 }
 
 /**

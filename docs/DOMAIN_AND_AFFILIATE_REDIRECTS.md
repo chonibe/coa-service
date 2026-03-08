@@ -18,6 +18,43 @@ When a request **reaches this app** (on Vercel), the following happen:
 4. **Favicon**  
    `/favicon.ico` redirects to the CDN logo.
 
+5. **thestreetlamp.com → thestreetcollector.com**  
+   If the request host is `thestreetlamp.com` or `www.thestreetlamp.com`, middleware redirects (308) to `https://www.thestreetcollector.com` with the same path and query. So links like `https://www.thestreetlamp.com/products/year-of-the-snake?fbclid=...` end up on the canonical site and get the product/artist cookie and landing behaviour.
+
+## Redirecting thestreetlamp.com (Shopify) to thestreetcollector.com
+
+**thestreetlamp.com is on Shopify**, so you cannot point that domain to Vercel. Use one of these approaches instead.
+
+### Option A: Domain forwarding at the registrar (whole domain)
+
+If you want **all** traffic from thestreetlamp.com to go to thestreetcollector.com (and are okay with thestreetlamp.com no longer serving the Shopify store):
+
+1. **Where the domain is registered** (GoDaddy, Namecheap, Cloudflare, etc.), open the DNS or domain settings for **thestreetlamp.com**.
+2. **Enable domain forwarding / URL redirect** (name varies by provider):
+   - **Forward to:** `https://www.thestreetcollector.com`
+   - **Redirect type:** 301 (permanent).
+   - If the option exists, choose **“Forward with path”** or **“Redirect with path and query”** so that  
+     `thestreetlamp.com/products/year-of-the-snake?fbclid=...`  
+     becomes  
+     `https://www.thestreetcollector.com/products/year-of-the-snake?fbclid=...`
+3. Do the same for **www.thestreetlamp.com** if your registrar treats it separately.
+4. After propagation, opening any thestreetlamp.com link will land on thestreetcollector.com with the same path and query; the app will then redirect to `/` and set the product/artist cookie so the Experience shows the right spotlight.
+
+**Note:** After this, thestreetlamp.com will no longer load the Shopify store. Use this only if you are retiring that store or moving everything to thestreetcollector.com.
+
+### Option B: Redirects inside Shopify (per product/collection)
+
+To send only **specific** product or collection URLs from Shopify to thestreetcollector.com:
+
+1. In **Shopify Admin**: **Online Store** → **Navigation** → **URL Redirects** (or **Settings** → **Online Store** → **Redirects**, depending on your theme/version).
+2. **Create a redirect** (or import via CSV):
+   - **Redirect from:** `/products/year-of-the-snake` (path only, no domain).
+   - **Redirect to:** `https://www.thestreetcollector.com/products/year-of-the-snake`
+3. Repeat for each product/collection handle you want (e.g. `/products/...`, `/collections/...`). Use **Bulk import** (CSV with “Redirect from” and “Redirect to”) if you have many.
+4. Query strings (e.g. `?fbclid=...`) are usually preserved by Shopify when redirecting; the app will then apply the product cookie and spotlight.
+
+**Note:** Shopify’s redirect tool may in some cases only allow redirecting broken (404) URLs. If you cannot redirect a live product URL to an external site, use Option A (domain forwarding) for those links instead.
+
 ## If redirects don’t happen
 
 Redirects only run when the request is handled by this Next.js app on Vercel.

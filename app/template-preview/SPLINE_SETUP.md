@@ -112,6 +112,15 @@ This guide explains how to set up your Spline 3D scene to receive images from th
 
 **Note:** The component will try to find objects by ID first, then fall back to name if ID is not provided or not found.
 
+### Optional: Camera feed (AR preview) mode
+
+When the experience page uses the AR camera toggle, it passes `cameraFeedMode={true}` so the 3D preview renders with a **transparent background** and the device camera feed shows behind the lamp:
+
+- **Prop**: `cameraFeedMode?: boolean` (default `false`)
+- **When `true`**: The component sets `scene.background = null` and `renderer.setClearColor(0x000000, 0)` so the canvas is transparent and the parent can show a `<video>` (camera stream) behind it.
+- **When `false`**: Normal solid background (light or dark theme).
+- **Usage**: Only the experience Configurator uses this; the template preview page does not. See [Experience AR Camera](../../docs/features/experience-ar-camera/README.md) for full implementation details.
+
 ## How It Works
 
 The component uses Spline's Runtime API to directly update Image Layers. When you upload images:
@@ -309,18 +318,19 @@ public/
 
 ### `_debouncedCallUserAPI is not a function` Error
 
-If the scene uses Spline's Real-Time API or API Request actions, you may see:
+If the scene uses Spline's Real-Time API or API Request actions, you might see:
 
 ```
 TypeError: this._debouncedCallUserAPI is not a function
 ```
 
-**Fix applied:** This project includes a [patch-package](https://github.com/ds300/patch-package) patch for `@splinetool/runtime` that corrects a constructor-order bug. The patch is in `patches/@splinetool+runtime+1.12.60.patch` and runs automatically via `postinstall`.
+This comes from a constructor-order bug in `@splinetool/runtime`: the User API handler calls `prefetch()` before `_debouncedCallUserAPI` is assigned.
 
-If the error persists:
-1. Run `npm install` to ensure the patch is applied
-2. Clear `.next` and restart dev: `npm run clear-cache && npm run dev`
-3. **Alternative:** Re-export the scene from Spline Editor and remove any Real-Time API / API Request actions if you don't need them
+**Fix in this project:** A patch is applied via `patch-package` (see `patches/@splinetool+runtime+1.12.67.patch`). It assigns `_debouncedCallUserAPI` and runs `_updateDebouncedCallUserAPI()` before any code path that can call `prefetch()`. After `npm install`, the patch is applied automatically via the `postinstall` script.
+
+If you upgrade `@splinetool/runtime` and the patch no longer applies:
+- Either wait for an updated patch (bump the patch for the new version), or
+- Remove "API Request" / "Real-Time API" actions from the scene in the Spline Editor and re-export the `.splinecode` if you do not need those features.
 
 ## Support
 

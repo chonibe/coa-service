@@ -9,10 +9,13 @@
  * @module lib/shop/useShopAuth
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Role, Permission } from '@/lib/rbac'
 import type { MembershipTierId } from '@/lib/membership/tiers'
+
+const AUTH_THROTTLE_MS = 5000
+const AUTH_429_RETRY_AFTER_MS = 3000
 
 export interface ShopUser {
   id: string
@@ -55,8 +58,16 @@ export function useShopAuth(): UseShopAuthReturn {
   const [user, setUser] = useState<ShopUser | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const lastCheckRef = useRef(0)
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(async (isRetryAfter429 = false) => {
+    const now = Date.now()
+    if (!isRetryAfter429 && now - lastCheckRef.current < AUTH_THROTTLE_MS) {
+      return
+    }
+    lastCheckRef.current = now
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -87,6 +98,11 @@ export function useShopAuth(): UseShopAuthReturn {
 
       try {
         const [authRes, memberRes, balanceRes] = await Promise.all([authPromise, memberPromise, balancePromise])
+
+        if (authRes.status === 429 && !isRetryAfter429) {
+          retryTimeoutRef.current = setTimeout(() => checkAuth(true), AUTH_429_RETRY_AFTER_MS)
+          return
+        }
 
         if (authRes.ok) {
           const authData = await authRes.json()
@@ -153,7 +169,13 @@ export function useShopAuth(): UseShopAuthReturn {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = null
+      }
+    }
   }, [checkAuth, supabase])
 
   // Permission check helper

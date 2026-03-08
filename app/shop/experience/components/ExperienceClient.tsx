@@ -82,6 +82,8 @@ interface ExperienceClientProps {
   initialArtistSlug?: string
   /** When true, skip intro quiz and go straight to configurator (default: true when artist link) */
   skipQuiz?: boolean
+  /** When true, request spotlight with unlisted=1 so API returns unlisted (early access UI) */
+  forceUnlisted?: boolean
 }
 
 function loadQuizAnswers(): QuizAnswers | null {
@@ -103,6 +105,7 @@ export function ExperienceClient({
   pageInfoSeason2,
   initialArtistSlug,
   skipQuiz = false,
+  forceUnlisted = false,
 }: ExperienceClientProps) {
   const router = useRouter()
   const { orderBarProps, setOrderBarProps, orderBarRef } = useExperienceOrder()
@@ -239,6 +242,7 @@ export function ExperienceClient({
                 onRetakeQuiz={handleRetakeQuiz}
                 initialFilters={initialFilters}
                 initialArtistSlug={initialArtistSlug}
+                forceUnlisted={forceUnlisted}
               />
             </motion.div>
           )}

@@ -336,6 +336,9 @@ export default async function StreetCollectorPage() {
                     ))}
                   </div>
                 </div>
+                <p className="font-body text-lg sm:text-xl text-[#FFBA94] text-center mt-6">
+                  Buy the lamp once, change the artwork anytime.
+                </p>
               </div>
             </div>
           }
@@ -371,6 +374,9 @@ export default async function StreetCollectorPage() {
                 ))}
               </div>
             </div>
+            <p className="font-body text-lg sm:text-xl md:text-2xl text-[#FFBA94] text-center mt-6 md:mt-8">
+              Buy the lamp once, change the artwork anytime.
+            </p>
           </div>
         </Container>
       </section>
