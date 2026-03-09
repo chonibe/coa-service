@@ -24,6 +24,11 @@ try {
   console.warn("React Query not installed. Run: npm install @tanstack/react-query @tanstack/react-query-devtools")
 }
 
+/** Real PostHog keys are phc_ followed by 32+ chars. Placeholders like phc_your_project_api_key must be skipped. */
+function isValidPostHogKey(key: string | undefined): key is string {
+  return !!key && key.startsWith("phc_") && key.length > 40 && !key.includes("your_project")
+}
+
 /** PostHog: session replay, heatmaps, autocapture, user journeys. Key from window (runtime) or build-time env. */
 function PostHogWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -35,7 +40,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
       (typeof window !== "undefined" && (window as unknown as { __POSTHOG_HOST__?: string }).__POSTHOG_HOST__) ||
       process.env.NEXT_PUBLIC_POSTHOG_HOST ||
       "https://us.i.posthog.com"
-    if (key) {
+    if (isValidPostHogKey(key)) {
       posthog.init(key, {
         api_host: host,
         capture_pageview: false,
@@ -51,6 +56,8 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
         capture_pageleave: true,
         capture_dead_clicks: true,
         rageclick: true,
+        advanced_disable_decide: true,
+        __preview_remote_config: false,
       })
     }
   }, [])
@@ -58,7 +65,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
     const key =
       (typeof window !== "undefined" && (window as unknown as { __POSTHOG_KEY__?: string }).__POSTHOG_KEY__) ||
       process.env.NEXT_PUBLIC_POSTHOG_KEY
-    if (pathname && key) {
+    if (pathname && isValidPostHogKey(key)) {
       posthog.capture("$pageview", {
         path: pathname,
         $current_url: typeof window !== "undefined" ? window.location.href : pathname,

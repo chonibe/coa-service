@@ -24,6 +24,12 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 3. **Verify events:** Use the [PostHog MCP](https://posthog.com/docs/model-context-protocol) (`event-definitions-list`, `projects-get`) to confirm events are ingested. If `ingested_event: false`, tracking is not receiving data — check the key and redeploy.
 4. **Local dev:** Pull env from Vercel (`vercel env pull`) so `.env.local` matches production.
 
+5. **config.js 404 / flags 401:** The SDK loads config from `us-assets.i.posthog.com/array/.../config` and `/flags`. If you see 404 or 401 errors, event capture can fail. The app uses `advanced_disable_decide: true` in PostHog init to skip these requests and rely on explicit client-side config (session_recording, heatmaps, autocapture, etc.). Events are sent to `/batch` and should still be ingested. If you need feature flags or remote config, remove that option and ensure your PostHog project and token are valid.
+
+6. **"API key invalid or expired" / "request missing data payload":** Ensure you use the **Project API Key** (starts with `phc_`, ~50 chars) from [PostHog → Project Settings](https://app.posthog.com/project/settings), not a personal API key or the placeholder `phc_your_project_api_key`. Invalid keys cause 401/404 and malformed requests. The app skips PostHog init when the key looks like a placeholder.
+
+7. **"Uncaught SyntaxError: Invalid or unexpected token":** If the key is injected with a trailing newline or invalid character (common when pasting from Vercel/env), the inline script breaks. The layout now uses `JSON.stringify` and `.trim()` to sanitize the key. If it persists, re-paste the key in Vercel env vars (ensure no trailing spaces/newlines) and redeploy.
+
 ## Connection
 
 - **Measurement ID:** Set `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-V9LJ3T3LK8` in `.env` and in Vercel (already in `.env.example`).

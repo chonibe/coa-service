@@ -105,12 +105,14 @@ function wishlistReducer(state: WishlistState, action: WishlistAction): Wishlist
 
 // ── Server sync helpers ──
 
-async function fetchServerWishlist(): Promise<WishlistItem[] | null> {
+type ServerWishlistResult = { items: WishlistItem[]; authenticated: boolean } | null
+
+async function fetchServerWishlist(): Promise<ServerWishlistResult> {
   try {
     const res = await fetch('/api/collector/wishlist', { credentials: 'include' })
     if (!res.ok) return null
     const data = await res.json()
-    return (data.items || []).map((item: any) => ({
+    const items = (data.items || []).map((item: any) => ({
       productId: item.product_id,
       variantId: item.variant_id || '',
       handle: item.handle,
@@ -120,6 +122,7 @@ async function fetchServerWishlist(): Promise<WishlistItem[] | null> {
       artistName: item.artist_name,
       addedAt: new Date(item.added_at).getTime(),
     }))
+    return { items, authenticated: !!data.authenticated }
   } catch {
     return null
   }
@@ -201,23 +204,24 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to load wishlist from localStorage:', error)
       }
 
-      // Try server sync (authenticated users)
-      const serverItems = await fetchServerWishlist()
+      // Try server sync (authenticated users only)
+      const result = await fetchServerWishlist()
       if (cancelled) return
 
-      if (serverItems !== null) {
+      if (result !== null && result.authenticated) {
         // User is authenticated — merge local into server
-        const merged = await mergeLocalToServer(localItems, serverItems)
+        const merged = await mergeLocalToServer(localItems, result.items)
         if (!cancelled) {
           dispatch({ type: 'LOAD_WISHLIST', payload: merged })
           dispatch({ type: 'SET_SYNCED', payload: true })
-          // Update localStorage to reflect merged state
           try {
             localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(merged))
-          } catch {}
+          } catch {
+            /* localStorage may be full or unavailable */
+          }
         }
       }
-      // If server fetch returned null, user is a guest — localStorage-only is fine
+      // If not authenticated or fetch failed — localStorage-only (no server POSTs)
     }
 
     loadWishlist()

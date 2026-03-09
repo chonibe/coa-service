@@ -29,7 +29,7 @@ export async function GET() {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ items: [] })
+      return NextResponse.json({ items: [], authenticated: false })
     }
 
     const { data: items, error } = await supabase
@@ -44,7 +44,7 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch wishlist" }, { status: 500 })
     }
 
-    return NextResponse.json({ items: items || [] })
+    return NextResponse.json({ items: items || [], authenticated: true })
   } catch (error) {
     console.error("[wishlist/GET] Exception:", error)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })

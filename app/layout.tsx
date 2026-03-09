@@ -45,11 +45,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
           />
         )}
-        {/* PostHog: inject key at runtime so it works even when client bundle was built before env was set */}
-        {process.env.NEXT_PUBLIC_POSTHOG_KEY && (
+        {/* PostHog: inject key at runtime so it works even when client bundle was built before env was set. Skip placeholders. */}
+        {process.env.NEXT_PUBLIC_POSTHOG_KEY?.startsWith("phc_") &&
+          process.env.NEXT_PUBLIC_POSTHOG_KEY.length > 40 &&
+          !process.env.NEXT_PUBLIC_POSTHOG_KEY.includes("your_project") && (
           <script
             dangerouslySetInnerHTML={{
-              __html: `window.__POSTHOG_KEY__="${process.env.NEXT_PUBLIC_POSTHOG_KEY.replace(/"/g, '\\"')}";window.__POSTHOG_HOST__="${(process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com").replace(/"/g, '\\"')}";`,
+              __html: `window.__POSTHOG_KEY__=${JSON.stringify((process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "").trim())};window.__POSTHOG_HOST__=${JSON.stringify((process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com").trim())};`,
             }}
           />
         )}
