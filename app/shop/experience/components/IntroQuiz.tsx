@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
+import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
 
 export interface QuizAnswers {
   ownsLamp: boolean
@@ -45,6 +46,10 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
 
   const step = isUrlMode ? urlStep : internalStep
 
+  useEffect(() => {
+    captureFunnelEvent(FunnelEvents.experience_quiz_started, {})
+  }, [])
+
   // Sync partialAnswers into state when in URL mode (e.g. back/forward)
   useEffect(() => {
     if (!isUrlMode) return
@@ -81,12 +86,17 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   }
 
   const handleStep4 = () => {
-    onComplete({
+    const answers = {
       ownsLamp: ownsLamp ?? false,
       purpose: purpose ?? 'self',
       name: name.trim() || undefined,
       email: email.trim() || undefined,
+    }
+    captureFunnelEvent(FunnelEvents.experience_quiz_completed, {
+      owns_lamp: answers.ownsLamp,
+      purpose: answers.purpose,
     })
+    onComplete(answers)
   }
 
   const handleBack = () => {
@@ -163,7 +173,14 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
                 </button>
               )}
               <button
-                onClick={() => onComplete({ ownsLamp: false, purpose: 'self' })}
+                onClick={() => {
+                  captureFunnelEvent(FunnelEvents.experience_quiz_completed, {
+                    owns_lamp: false,
+                    purpose: 'self',
+                    skipped: true,
+                  })
+                  onComplete({ ownsLamp: false, purpose: 'self' })
+                }}
                 className="text-xs text-[#FFBA94]/50 hover:text-[#FFBA94]/70 transition-colors"
               >
                 Skip for now

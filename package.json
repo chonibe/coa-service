@@ -134,6 +134,7 @@
     "node-cron": "^3.0.3",
     "path": "latest",
     "pg": "^8.15.6",
+    "posthog-js": "^1.360.0",
     "qrcode.react": "^4.2.0",
     "react": "^19",
     "react-confetti": "^6.4.0",

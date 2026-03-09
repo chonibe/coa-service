@@ -1,6 +1,30 @@
 # Analytics events map: Shop & Experience
 
-Map of GA4 events by page and component so we can track user activity across the shop and experience flows. **Tracked** = event is sent today; **Not tracked** = opportunity to add.
+Map of GA4 and **PostHog** events by page and component so we can track user activity, journeys, and funnel drop-off. **Tracked** = event is sent today; **Not tracked** = opportunity to add.
+
+---
+
+## PostHog: journeys, funnels, session replay, heatmaps
+
+PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **session replay**, **heatmaps**, **autocapture**, **pageleave**, **dead clicks**, and **rageclick**. Logged-in shop users are **identified** via `PostHogIdentify` (same file). E-commerce events are mirrored from GA4 to PostHog in [`lib/google-analytics.ts`](../../lib/google-analytics.ts); funnel events are in [`lib/posthog.ts`](../../lib/posthog.ts).
+
+### Funnel events (for drop-off analysis)
+
+| Event | When | Implementation |
+|-------|------|----------------|
+| `vendor_onboarding_started` | Vendor opens onboarding wizard | [`app/vendor/components/onboarding-wizard.tsx`](../../app/vendor/components/onboarding-wizard.tsx) |
+| `vendor_onboarding_step_completed` | Vendor completes a step (Next) | Same |
+| `vendor_onboarding_completed` | Vendor completes onboarding | Same |
+| `collector_onboarding_started` | Collector opens onboarding | [`app/collector/components/onboarding-wizard.tsx`](../../app/collector/components/onboarding-wizard.tsx) |
+| `collector_onboarding_step_completed` | Collector leaves a step (time spent) | Same |
+| `collector_onboarding_completed` | Collector completes onboarding | Same |
+| `collector_onboarding_skipped` | Collector skips onboarding | Same |
+| `experience_quiz_started` | User sees experience intro quiz | [`app/shop/experience/components/IntroQuiz.tsx`](../../app/shop/experience/components/IntroQuiz.tsx) |
+| `experience_quiz_completed` | User completes or skips quiz | Same |
+| `experience_started` | Configurator is shown | [`app/shop/experience/components/ExperienceClient.tsx`](../../app/shop/experience/components/ExperienceClient.tsx) |
+| `experience_filter_applied` | User applies filter (artist, tag, price, sort, etc.) | [`app/shop/experience/components/FilterPanel.tsx`](../../app/shop/experience/components/FilterPanel.tsx) |
+
+In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experience_quiz_completed` → `experience_started` → `add_to_cart` → `begin_checkout` → `purchase`) and **paths** to find blockages and improve conversion.
 
 ---
 

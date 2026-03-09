@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { captureFunnelEvent, FunnelEvents } from "@/lib/posthog"
 import { Progress } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -83,6 +84,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     },
   ]
 
+  // Funnel: started (once on mount)
+  useEffect(() => {
+    captureFunnelEvent(FunnelEvents.collector_onboarding_started, { total_steps: steps.length })
+  }, [])
+
   // Track step time and send analytics
   useEffect(() => {
     stepTimeRef.current = Date.now()
@@ -90,6 +96,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       const timeSpent = Math.floor((Date.now() - stepTimeRef.current) / 1000)
       if (timeSpent > 0 && currentStep > 0 && currentStep < steps.length) {
         trackStepTime(currentStep, steps[currentStep].title, timeSpent, false)
+        captureFunnelEvent(FunnelEvents.collector_onboarding_step_completed, {
+          step: currentStep + 1,
+          step_name: steps[currentStep].title,
+          time_spent_seconds: timeSpent,
+        })
       }
     }
   }, [currentStep])
@@ -200,6 +211,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
         throw new Error("Failed to complete onboarding")
       }
 
+      captureFunnelEvent(FunnelEvents.collector_onboarding_completed, { total_steps: steps.length })
       onComplete()
     } catch (err: any) {
       setError(err.message || "Failed to complete onboarding")
@@ -209,6 +221,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
   const handleSkip = async () => {
     setIsSubmitting(true)
+    captureFunnelEvent(FunnelEvents.collector_onboarding_skipped, { at_step: currentStep + 1 })
     try {
       // Mark as skipped
       await fetch("/api/collector/onboarding/skip", {

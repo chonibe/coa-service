@@ -6,6 +6,7 @@ import { X, SlidersHorizontal } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn } from '@/lib/utils'
+import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
 
 export interface FilterState {
   artists: string[]
@@ -66,6 +67,23 @@ const SORT_OPTIONS: Array<{ value: FilterState['sortBy']; label: string }> = [
   { value: 'added-to-cart', label: 'Added to cart' },
 ]
 
+function applyFilterAndTrack(
+  onChange: (filters: FilterState) => void,
+  next: FilterState,
+  changeType: string
+) {
+  captureFunnelEvent(FunnelEvents.experience_filter_applied, {
+    filter_type: changeType,
+    has_artists: next.artists.length > 0,
+    has_tags: next.tags.length > 0,
+    has_price_range: next.priceRange !== null,
+    sort_by: next.sortBy,
+    in_stock_only: next.inStockOnly,
+    min_star_rating: next.minStarRating ?? undefined,
+  })
+  onChange(next)
+}
+
 export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0, cartOrder = [], onOpenWishlist }: FilterPanelProps) {
   const allArtists = useMemo(() => {
     const map = new Map<string, number>()
@@ -98,14 +116,14 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
     const next = filters.artists.includes(artist)
       ? filters.artists.filter((a) => a !== artist)
       : [...filters.artists, artist]
-    onChange({ ...filters, artists: next })
+    applyFilterAndTrack(onChange, { ...filters, artists: next }, 'artists')
   }
 
   const toggleTag = (tag: string) => {
     const next = filters.tags.includes(tag)
       ? filters.tags.filter((t) => t !== tag)
       : [...filters.tags, tag]
-    onChange({ ...filters, tags: next })
+    applyFilterAndTrack(onChange, { ...filters, tags: next }, 'tags')
   }
 
   const setPriceRange = (range: [number, number] | null) => {
@@ -114,10 +132,10 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
       range &&
       filters.priceRange[0] === range[0] &&
       filters.priceRange[1] === range[1]
-    onChange({ ...filters, priceRange: isSame ? null : range })
+    applyFilterAndTrack(onChange, { ...filters, priceRange: isSame ? null : range }, 'price_range')
   }
 
-  const clearAll = () => onChange(DEFAULT_FILTERS)
+  const clearAll = () => applyFilterAndTrack(onChange, DEFAULT_FILTERS, 'clear')
 
   return (
     <AnimatePresence>
@@ -167,7 +185,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                   {SORT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => onChange({ ...filters, sortBy: opt.value })}
+                      onClick={() => applyFilterAndTrack(onChange, { ...filters, sortBy: opt.value }, 'sort')}
                       className={cn(
                         'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
@@ -257,7 +275,7 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                   <input
                     type="checkbox"
                     checked={filters.inStockOnly}
-                    onChange={(e) => onChange({ ...filters, inStockOnly: e.target.checked })}
+                    onChange={(e) => applyFilterAndTrack(onChange, { ...filters, inStockOnly: e.target.checked }, 'in_stock_only')}
                     className="sr-only"
                   />
                   <span className={cn(

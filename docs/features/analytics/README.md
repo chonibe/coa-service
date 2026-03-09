@@ -1,8 +1,28 @@
-# Analytics (Google Analytics 4)
+# Analytics (GA4 + PostHog)
 
 ## Overview
 
-The app uses **Google Analytics 4 (GA4)** with measurement ID `G-V9LJ3T3LK8`. Events are sent via gtag.js from the client; the GA4 setup script can create custom dimensions, metrics, audiences, and **conversion events** in the property via the Analytics Admin API.
+The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics and **PostHog** for session replay, product analytics, and heatmaps. GA4 events are sent via gtag.js; PostHog is initialized in the client provider and captures pageviews and autocapture events.
+
+## PostHog (session replay, heatmaps, user journeys, funnels)
+
+- **Env:** Set `NEXT_PUBLIC_POSTHOG_KEY` (project API key from [PostHog](https://posthog.com)) and optionally `NEXT_PUBLIC_POSTHOG_HOST` (default `https://us.i.posthog.com`) in `.env.local` and in Vercel.
+- **Implementation:** [`app/providers.tsx`](../../app/providers.tsx) – `PostHogWrapper` initializes PostHog with direct API host (`us.i.posthog.com`). CSP in [`next.config.js`](../../next.config.js) allows PostHog domains. Features: **session replay**, **heatmaps**, **autocapture**, **pageleave**, **dead clicks**, **rageclick**. `PostHogIdentify` identifies logged-in shop users so journeys and funnels are tied to users. Root layout injects the key at runtime so tracking works even when the client bundle was built before the env was set.
+- **E-commerce:** All GA4 e-commerce events (`view_item`, `add_to_cart`, `begin_checkout`, `add_payment_info`, `purchase`, `search`) are mirrored to PostHog from [`lib/google-analytics.ts`](../../lib/google-analytics.ts) (PostHog receives them even when GA is disabled).
+- **Funnel events:** [`lib/posthog.ts`](../../lib/posthog.ts) defines `FunnelEvents` and `captureFunnelEvent()` for onboarding and experience (vendor/collector onboarding steps, experience quiz, experience started, filter applied). Use these in PostHog to build **funnels** and **paths** and find drop-off.
+- **Event map:** [Events map: Shop & Experience](./EVENTS_MAP.md) lists all events and where they fire; PostHog funnel events are documented there.
+- **Usage:** Use `usePostHog()` from `posthog-js/react` in client components, or `captureFunnelEvent(name, props)` / helpers from `lib/posthog.ts`.
+
+### PostHog troubleshooting
+
+1. **Get your project key:** [PostHog → Project Settings](https://app.posthog.com/project/settings) → copy the **Project API Key** (`phc_...`).
+2. **Set env vars:** Add to `.env.local` and Vercel:
+   ```env
+   NEXT_PUBLIC_POSTHOG_KEY=phc_your_actual_key
+   NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+   ```
+3. **Verify events:** Use the [PostHog MCP](https://posthog.com/docs/model-context-protocol) (`event-definitions-list`, `projects-get`) to confirm events are ingested. If `ingested_event: false`, tracking is not receiving data — check the key and redeploy.
+4. **Local dev:** Pull env from Vercel (`vercel env pull`) so `.env.local` matches production.
 
 ## Connection
 

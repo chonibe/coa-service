@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { captureFunnelEvent, FunnelEvents } from "@/lib/posthog"
 
 
 
@@ -198,6 +199,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     }
 
     loadProgress()
+    captureFunnelEvent(FunnelEvents.vendor_onboarding_started, {})
   }, [initialData])
 
   // Track step time
@@ -379,6 +381,11 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     if (validateStep()) {
       setCompletedSteps((prev) => new Set([...prev, currentStep]))
       if (currentStep < steps.length - 1) {
+        captureFunnelEvent(FunnelEvents.vendor_onboarding_step_completed, {
+          step: currentStep + 1,
+          step_name: steps[currentStep].title,
+          total_steps: steps.length - 1,
+        })
         setCurrentStep(currentStep + 1)
         window.scrollTo({ top: 0, behavior: "smooth" })
       }
@@ -423,6 +430,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         credentials: "include",
       })
 
+      captureFunnelEvent(FunnelEvents.vendor_onboarding_completed, { total_steps: steps.length - 1 })
       setCurrentStep(steps.length - 1)
       setCompletedSteps((prev) => new Set([...prev, currentStep]))
 

@@ -22,6 +22,7 @@ import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
+import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
@@ -216,6 +217,17 @@ export function ExperienceClient({
     linkSignupFired.current = true
     fetch('/api/experience/quiz-signup/link', { method: 'POST', credentials: 'include' }).catch(() => {})
   }, [mounted, isAuthenticated])
+
+  // Funnel: experience started (configurator shown)
+  const experienceStartedFired = useRef(false)
+  useEffect(() => {
+    if (!mounted || !quizAnswers || experienceStartedFired.current) return
+    experienceStartedFired.current = true
+    captureFunnelEvent(FunnelEvents.experience_started, {
+      owns_lamp: quizAnswers.ownsLamp,
+      purpose: quizAnswers.purpose,
+    })
+  }, [mounted, quizAnswers])
 
   // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
   useEffect(() => {

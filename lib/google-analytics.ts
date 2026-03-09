@@ -6,6 +6,15 @@ declare global {
   }
 }
 
+// Mirror e-commerce events to PostHog for journey/funnel analysis (no-op if PostHog not inited)
+function toPostHog() {
+  try {
+    return require('@/lib/posthog')
+  } catch {
+    return null
+  }
+}
+
 // Google Analytics configuration
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
@@ -148,8 +157,13 @@ export interface PurchaseData {
 
 // E-commerce Tracking Functions
 
-// Track product view
+// Track product view (PostHog receives regardless of GA; GA when enabled)
 export const trackViewItem = (item: ProductItem) => {
+  try {
+    toPostHog()?.captureViewItem(item)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -163,8 +177,13 @@ export const trackViewItem = (item: ProductItem) => {
   }
 }
 
-// Track add to cart
+// Track add to cart (PostHog receives regardless of GA; GA when enabled)
 export const trackAddToCart = (item: ProductItem) => {
+  try {
+    toPostHog()?.captureAddToCart(item)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -180,6 +199,11 @@ export const trackAddToCart = (item: ProductItem) => {
 
 // Track remove from cart
 export const trackRemoveFromCart = (item: ProductItem) => {
+  try {
+    toPostHog()?.captureRemoveFromCart(item)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -195,6 +219,11 @@ export const trackRemoveFromCart = (item: ProductItem) => {
 
 // Track begin checkout
 export const trackBeginCheckout = (items: ProductItem[], value?: number, currency = 'USD') => {
+  try {
+    toPostHog()?.captureBeginCheckout(items, value, currency)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -210,6 +239,11 @@ export const trackBeginCheckout = (items: ProductItem[], value?: number, currenc
 
 // Track add payment info
 export const trackAddPaymentInfo = (paymentType: string, items: ProductItem[], value?: number, currency = 'USD') => {
+  try {
+    toPostHog()?.captureAddPaymentInfo(paymentType, items, value, currency)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -226,6 +260,14 @@ export const trackAddPaymentInfo = (paymentType: string, items: ProductItem[], v
 
 // Track purchase completion
 export const trackPurchase = (purchaseData: PurchaseData) => {
+  try {
+    toPostHog()?.capturePurchase({
+      ...purchaseData,
+      items_count: purchaseData.items.length,
+    })
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
@@ -245,6 +287,11 @@ export const trackPurchase = (purchaseData: PurchaseData) => {
 
 // Track search
 export const trackSearch = (searchTerm: string) => {
+  try {
+    toPostHog()?.captureSearch(searchTerm)
+  } catch {
+    // ignore
+  }
   if (!isGAEnabled() || !isGtagLoaded()) return
 
   try {
