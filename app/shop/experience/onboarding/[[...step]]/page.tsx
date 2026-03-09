@@ -16,7 +16,7 @@ export default async function ExperienceOnboardingPage({ searchParams }: Onboard
     artist: resolvedSearch?.artist,
     utm_campaign: resolvedSearch?.utm_campaign,
   })
-  const initialArtistSlug = fromParams ?? resolvedSearch?.vendor?.trim() || undefined
+  const initialArtistSlug = (fromParams ?? resolvedSearch?.vendor?.trim()) || undefined
 
   const lamp = await getProduct('street_lamp').catch(() => null)
 
