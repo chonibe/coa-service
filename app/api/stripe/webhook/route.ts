@@ -280,6 +280,7 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       if (stripeCustomerId && purchaserEmail) {
         await supabase.from('collector_profiles').update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() }).ilike('email', purchaserEmail)
         await supabase.from('collectors').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
+        await supabase.from('experience_quiz_signups').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
       }
 
       // ── Post-Purchase Bridge: Create/link collector identity ──

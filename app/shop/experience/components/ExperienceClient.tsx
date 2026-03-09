@@ -162,6 +162,14 @@ export function ExperienceClient({
     }
   }, [initialArtistSlug])
 
+  // Link experience_quiz_signups to current user when authenticated (adds collector_user_id to table)
+  const linkSignupFired = useRef(false)
+  useEffect(() => {
+    if (!mounted || !isAuthenticated || linkSignupFired.current) return
+    linkSignupFired.current = true
+    fetch('/api/experience/quiz-signup/link', { method: 'POST', credentials: 'include' }).catch(() => {})
+  }, [mounted, isAuthenticated])
+
   // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
   useEffect(() => {
     const slug = initialArtistSlug || (mounted ? getStoredAffiliateArtist() : null)
