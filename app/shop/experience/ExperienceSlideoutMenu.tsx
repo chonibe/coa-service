@@ -8,10 +8,11 @@ import { DiscountCelebration } from './components/DiscountCelebration'
 import { ShopSlideoutMenu } from '@/components/shop/navigation/ShopSlideoutMenu'
 import { useExperienceOrder } from './ExperienceOrderContext'
 import { useExperienceTheme } from './ExperienceThemeContext'
+import { useExperienceAuthContext } from './ExperienceAuthContext'
 import { cn } from '@/lib/utils'
 
 export function ExperienceSlideoutMenu() {
-  const [open, setOpen] = useState(false)
+  const { menuOpen: open, setMenuOpen: setOpen, openAuthWhenMenuOpens, setOpenAuthWhenMenuOpens, onboardingRedirectPath } = useExperienceAuthContext()
   const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount, discountCelebrationAmount, setDiscountCelebrationAmount } = useExperienceOrder()
   const [shouldPulse, setShouldPulse] = useState(false)
   const prevLampQuantity = useRef(0)
@@ -159,7 +160,9 @@ export function ExperienceSlideoutMenu() {
         open={open}
         onClose={() => setOpen(false)}
         theme={theme}
-        authRedirectTo="/experience"
+        authRedirectTo={onboardingRedirectPath ?? '/experience'}
+        openAuthWhenOpened={openAuthWhenMenuOpens}
+        onAuthOpened={() => setOpenAuthWhenMenuOpens(false)}
         logoHref="/shop/street-collector"
         promoCode={promoCode}
         promoDiscount={promoDiscount}

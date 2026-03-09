@@ -25,6 +25,8 @@ interface IntroQuizProps {
   onNext?: (nextStep: 2 | 3 | 4, partial: IntroQuizPartialAnswers) => void
   /** Called when user taps back (URL mode only). Parent should navigate to previous step. */
   onBack?: () => void
+  /** When set, step 1 shows "Already have an account? Log in" and calls this when clicked (skip onboarding for returning users) */
+  onOpenLogin?: () => void
 }
 
 const fadeUp = {
@@ -33,7 +35,7 @@ const fadeUp = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } },
 }
 
-export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, onBack }: IntroQuizProps) {
+export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, onBack, onOpenLogin }: IntroQuizProps) {
   const isUrlMode = urlStep != null
   const [internalStep, setInternalStep] = useState<1 | 2 | 3 | 4>(1)
   const [ownsLamp, setOwnsLamp] = useState<boolean | null>(partialAnswers?.ownsLamp ?? null)
@@ -150,12 +152,23 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
               </motion.button>
             </div>
 
-            <button
-              onClick={() => onComplete({ ownsLamp: false, purpose: 'self' })}
-              className="text-xs text-[#FFBA94]/50 hover:text-[#FFBA94]/70 transition-colors"
-            >
-              Skip for now
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              {onOpenLogin && (
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="text-sm text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
+                >
+                  Already have an account? Log in
+                </button>
+              )}
+              <button
+                onClick={() => onComplete({ ownsLamp: false, purpose: 'self' })}
+                className="text-xs text-[#FFBA94]/50 hover:text-[#FFBA94]/70 transition-colors"
+              >
+                Skip for now
+              </button>
+            </div>
           </motion.div>
         )}
 

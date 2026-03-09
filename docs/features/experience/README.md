@@ -114,10 +114,12 @@ The experience onboarding is a **4-step flow on dedicated URLs** so each step ca
 
 | Step | URL | Content |
 |------|-----|---------|
-| 1 | `/shop/experience/onboarding` | "Let's get started" — Do you already have a Street Lamp? (Yes / I'm new here) + Skip for now |
+| 1 | `/shop/experience/onboarding` | "Let's get started" — Do you already have a Street Lamp? (Yes / I'm new here) + "Already have an account? Log in" + Skip for now |
 | 2 | `/shop/experience/onboarding/2` | "Who is this for?" — For me / It's a gift |
 | 3 | `/shop/experience/onboarding/3` | "Let's create an awesome gift" or "Let's get to know you" — What's your name? + Continue |
 | 4 | `/shop/experience/onboarding/4` | "Hey there, [Name]! 👋" — What's your email? (optional) + Continue + Terms & Privacy links |
+
+**Returning users (log in to skip):** On step 1, an "Already have an account? Log in" link opens the slideout auth (email OTP, Google, etc.). After successful login, the user is redirected to `/shop/experience?fromOnboardingLogin=1`. The experience page treats them as having completed the quiz with "owns lamp" and shows the configurator without re-running steps 2–4. Implemented via `ExperienceAuthContext` (open menu + auth from onboarding), `ShopSlideoutMenu` props `openAuthWhenOpened` / `onAuthOpened`, and `ExperienceClient` handling of `fromOnboardingLogin` + `useShopAuthContext().isAuthenticated`.
 
 - **Entry**: Visiting `/shop/experience` without a completed quiz redirects to `/shop/experience/onboarding` (query params such as `artist`, `utm_campaign` are preserved).
 - **Flow**: Steps 1–4 navigate to the next URL; partial answers are stored in `localStorage` (`sc-experience-quiz`). After step 4, the user is sent to `/shop/experience` (configurator).

@@ -19,6 +19,7 @@ const Configurator = dynamic(() => import('./Configurator').then((m) => ({ defau
   ),
 })
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import type { FilterState } from './FilterPanel'
@@ -78,6 +79,8 @@ interface ExperienceClientProps {
   forceUnlisted?: boolean
   /** Query params to preserve when redirecting to onboarding (e.g. artist, utm_campaign) for trackable URLs */
   onboardingQueryParams?: Record<string, string>
+  /** When true, user just logged in from onboarding; if authenticated, save quiz (owns lamp) and skip onboarding */
+  fromOnboardingLogin?: boolean
 }
 
 function loadQuizAnswers(): QuizAnswers | null {
@@ -103,16 +106,43 @@ export function ExperienceClient({
   skipQuiz = false,
   forceUnlisted = false,
   onboardingQueryParams = {},
+  fromOnboardingLogin = false,
 }: ExperienceClientProps) {
   const router = useRouter()
   const { orderBarProps, setOrderBarProps, orderBarRef } = useExperienceOrder()
+  const { isAuthenticated, loading: authLoading } = useShopAuthContext()
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers | null>(null)
   const [mounted, setMounted] = useState(false)
   const [redirectingToOnboarding, setRedirectingToOnboarding] = useState(false)
   const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
 
-  // When user needs onboarding, redirect to onboarding URLs so each step is trackable
+  // When user just logged in from onboarding: if authenticated, save quiz (owns lamp) and show configurator
   useEffect(() => {
+    if (!fromOnboardingLogin || authLoading) return
+    if (isAuthenticated) {
+      const loggedInAnswers: QuizAnswers = { ownsLamp: true, purpose: 'self' }
+      try {
+        localStorage.setItem(
+          QUIZ_STORAGE_KEY,
+          JSON.stringify({ ...loggedInAnswers, completedAt: new Date().toISOString() })
+        )
+      } catch {
+        // ignore
+      }
+      setQuizAnswers(loggedInAnswers)
+      setMounted(true)
+      const q = new URLSearchParams(onboardingQueryParams).toString()
+      router.replace(q ? `/shop/experience?${q}` : '/shop/experience')
+    } else {
+      setRedirectingToOnboarding(true)
+      const q = new URLSearchParams(onboardingQueryParams).toString()
+      router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
+    }
+  }, [fromOnboardingLogin, isAuthenticated, authLoading, router, onboardingQueryParams])
+
+  // When user needs onboarding (no fromOnboardingLogin flow), redirect to onboarding URLs so each step is trackable
+  useEffect(() => {
+    if (fromOnboardingLogin) return
     const saved = loadQuizAnswers()
     if (saved || skipQuiz) {
       setQuizAnswers(saved ?? { ownsLamp: false, purpose: 'self' })
@@ -122,7 +152,7 @@ export function ExperienceClient({
       const q = new URLSearchParams(onboardingQueryParams).toString()
       router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
     }
-  }, [skipQuiz, router, onboardingQueryParams])
+  }, [skipQuiz, router, onboardingQueryParams, fromOnboardingLogin])
 
   const affiliateLandingFired = useRef(false)
   useEffect(() => {

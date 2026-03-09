@@ -24,6 +24,10 @@ export interface ShopSlideoutMenuProps {
   onClose: () => void
   theme?: 'light' | 'dark'
   authRedirectTo?: string
+  /** When true, open auth slideup as soon as the menu opens (e.g. from onboarding "Log in") */
+  openAuthWhenOpened?: boolean
+  /** Called after opening auth when openAuthWhenOpened was true (so parent can clear the flag) */
+  onAuthOpened?: () => void
   /** When set, show logo linking to this href instead of "Menu" title in header */
   logoHref?: string
   /** For experience page: promo/order state from OrderContext */
@@ -61,6 +65,8 @@ export function ShopSlideoutMenu({
   onClose,
   theme = 'light',
   authRedirectTo = '/experience',
+  openAuthWhenOpened = false,
+  onAuthOpened,
   logoHref,
   promoCode: controlledPromoCode,
   promoDiscount: controlledPromoDiscount,
@@ -78,6 +84,13 @@ export function ShopSlideoutMenu({
   useEffect(() => {
     if (open) setQuizName(getQuizName())
   }, [open])
+
+  useEffect(() => {
+    if (open && openAuthWhenOpened) {
+      setAuthOpen(true)
+      onAuthOpened?.()
+    }
+  }, [open, openAuthWhenOpened, onAuthOpened])
 
   const useControlledPromo = onPromoChange != null
   const [localPromoCode, setLocalPromoCode] = useState('')

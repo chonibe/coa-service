@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { useExperienceAuthContext } from '../ExperienceAuthContext'
 import { createClient } from '@/lib/supabase/client'
 import type { QuizAnswers } from './IntroQuiz'
 import type { IntroQuizPartialAnswers } from './IntroQuiz'
@@ -72,6 +73,7 @@ export function ExperienceOnboardingClient({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { setOrderBarProps, orderBarRef } = useExperienceOrder()
+  const { openAuth } = useExperienceAuthContext()
 
   const step = useMemo(() => getStepFromPathname(pathname), [pathname])
   const [partialAnswers, setPartialAnswers] = useState<IntroQuizPartialAnswers>(loadPartialAnswers)
@@ -157,6 +159,7 @@ export function ExperienceOnboardingClient({
           onNext={handleNext}
           onBack={handleBack}
           onComplete={handleComplete}
+          onOpenLogin={() => openAuth()}
         />
       </div>
       <OrderBar

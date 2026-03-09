@@ -100,7 +100,7 @@ const INITIAL_PRODUCTS_PER_SEASON = 36
 const SPOTLIGHT_COLLECTIONS_IN_SEASON2 = ['tyler-shelton'] as const
 
 interface ExperiencePageProps {
-  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string; unlisted?: string }>
+  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string; unlisted?: string; fromOnboardingLogin?: string }>
 }
 
 interface SeasonPageInfo {
@@ -114,12 +114,14 @@ async function ExperienceProductsLoader({
   skipQuiz,
   forceUnlisted,
   onboardingQueryParams,
+  fromOnboardingLogin,
 }: {
   lamp: ShopifyProduct
   initialArtistSlug?: string
   skipQuiz: boolean
   forceUnlisted?: boolean
   onboardingQueryParams?: Record<string, string>
+  fromOnboardingLogin?: boolean
 }) {
   // When user has direct link (?artist=handle), include that collection so its products appear in the selector (e.g. unlisted)
   const extraHandles = initialArtistSlug
@@ -203,6 +205,7 @@ async function ExperienceProductsLoader({
       skipQuiz={skipQuiz}
       forceUnlisted={forceUnlisted}
       onboardingQueryParams={onboardingQueryParams}
+      fromOnboardingLogin={fromOnboardingLogin}
     />
   )
 }
@@ -235,6 +238,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
 
   const skipQuiz = resolved?.skipQuiz === '1'
   const forceUnlisted = ['1', 'true', 'yes'].includes((resolved?.unlisted ?? '').toLowerCase())
+  const fromOnboardingLogin = resolved?.fromOnboardingLogin === '1'
 
   const onboardingQueryParams: Record<string, string> = {}
   if (resolved?.artist) onboardingQueryParams.artist = resolved.artist
@@ -270,6 +274,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
         skipQuiz={skipQuiz}
         forceUnlisted={forceUnlisted}
         onboardingQueryParams={onboardingQueryParams}
+        fromOnboardingLogin={fromOnboardingLogin}
       />
     </Suspense>
   )
