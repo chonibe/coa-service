@@ -117,6 +117,8 @@ interface ConfiguratorProps {
   initialArtistSlug?: string | null
   /** When true, request spotlight with ?unlisted=1 so API returns unlisted (early access UI) */
   forceUnlisted?: boolean
+  /** When true, always show lamp paywall when user has no lamp (A/B skip variant must see paywall) */
+  forceShowLampPaywall?: boolean
 }
 
 export function Configurator({
@@ -130,6 +132,7 @@ export function Configurator({
   initialFilters,
   initialArtistSlug,
   forceUnlisted = false,
+  forceShowLampPaywall = false,
 }: ConfiguratorProps) {
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
@@ -555,8 +558,8 @@ export function Configurator({
   const orderTotal = lampTotal + artworksTotal
   const orderItemCount = selectedProducts.length + lampQuantity
 
-  /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp */
-  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => loadedCart.lampPaywallSkipped)
+  /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp. A/B skip variant always starts false so they must see paywall first. */
+  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => (forceShowLampPaywall ? false : loadedCart.lampPaywallSkipped))
   /** When user deselects lamp (quantity → 0), keep them on artworks */
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(n)

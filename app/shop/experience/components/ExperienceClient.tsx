@@ -25,6 +25,24 @@ import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
+const AB_COOKIE_NAME = 'sc_experience_ab'
+const AB_COOKIE_MAX_AGE_DAYS = 30
+
+type ABVariant = 'onboarding' | 'skip'
+
+function getABVariantFromCookie(): ABVariant | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp(`(?:^|; )${AB_COOKIE_NAME}=([^;]*)`))
+  const v = match?.[1]?.trim()
+  if (v === 'onboarding' || v === 'skip') return v
+  return null
+}
+
+function setABVariantCookie(variant: ABVariant) {
+  if (typeof document === 'undefined') return
+  const maxAge = AB_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60
+  document.cookie = `${AB_COOKIE_NAME}=${variant}; path=/; max-age=${maxAge}; samesite=lax`
+}
 
 function ExperienceConfiguratorWithBoundary(
   props: React.ComponentProps<typeof Configurator>
@@ -115,6 +133,34 @@ export function ExperienceClient({
   const [mounted, setMounted] = useState(false)
   const [redirectingToOnboarding, setRedirectingToOnboarding] = useState(false)
   const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
+  const [abVariant, setABVariant] = useState<ABVariant | null>(null)
+
+  // A/B test: assign variant (onboarding vs skip) once per visitor; persist in cookie and record for analysis
+  const abAssigned = useRef(false)
+  useEffect(() => {
+    if (abAssigned.current) return
+    abAssigned.current = true
+    let variant = getABVariantFromCookie()
+    if (!variant) {
+      variant = Math.random() < 0.5 ? 'skip' : 'onboarding'
+      setABVariantCookie(variant)
+      if (isGAEnabled()) {
+        trackEnhancedEvent('experience_ab_assigned', { variant, test: 'experience_onboarding' })
+        try {
+          window.gtag?.('set', 'user_properties', { experience_ab_variant: variant })
+        } catch {
+          // ignore
+        }
+      }
+      fetch('/api/experience/ab-assignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant }),
+        credentials: 'include',
+      }).catch(() => {})
+    }
+    setABVariant(variant)
+  }, [])
 
   // When user just logged in from onboarding: if authenticated, save quiz (owns lamp) and show configurator
   useEffect(() => {
@@ -140,11 +186,12 @@ export function ExperienceClient({
     }
   }, [fromOnboardingLogin, isAuthenticated, authLoading, router, onboardingQueryParams])
 
-  // When user needs onboarding (no fromOnboardingLogin flow), redirect to onboarding URLs so each step is trackable
+  // When user needs onboarding (no fromOnboardingLogin flow), redirect to onboarding or show configurator (A/B: half skip)
+  const effectiveSkipQuiz = skipQuiz || abVariant === 'skip'
   useEffect(() => {
-    if (fromOnboardingLogin) return
+    if (fromOnboardingLogin || abVariant === null) return
     const saved = loadQuizAnswers()
-    if (saved || skipQuiz) {
+    if (saved || effectiveSkipQuiz) {
       setQuizAnswers(saved ?? { ownsLamp: false, purpose: 'self' })
       setMounted(true)
     } else {
@@ -152,7 +199,7 @@ export function ExperienceClient({
       const q = new URLSearchParams(onboardingQueryParams).toString()
       router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
     }
-  }, [skipQuiz, router, onboardingQueryParams, fromOnboardingLogin])
+  }, [effectiveSkipQuiz, abVariant, router, onboardingQueryParams, fromOnboardingLogin])
 
   const affiliateLandingFired = useRef(false)
   useEffect(() => {
@@ -210,7 +257,8 @@ export function ExperienceClient({
     router.push(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
   }, [router, onboardingQueryParams])
 
-  if (!mounted || redirectingToOnboarding) {
+  const waitingForAB = !fromOnboardingLogin && abVariant === null
+  if (!mounted || redirectingToOnboarding || waitingForAB) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-950">
         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -251,6 +299,7 @@ export function ExperienceClient({
             initialFilters={initialFilters}
             initialArtistSlug={initialArtistSlug}
             forceUnlisted={forceUnlisted}
+            forceShowLampPaywall={abVariant === 'skip'}
           />
         </motion.div>
       </div>

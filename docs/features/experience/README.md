@@ -121,7 +121,8 @@ The experience onboarding is a **4-step flow on dedicated URLs** so each step ca
 
 **Returning users (log in to skip):** On step 1, an "Already have an account? Log in" link opens the slideout auth (email OTP, Google, etc.). After successful login, the user is redirected to `/shop/experience?fromOnboardingLogin=1`. The experience page treats them as having completed the quiz with "owns lamp" and shows the configurator without re-running steps 2–4. Implemented via `ExperienceAuthContext` (open menu + auth from onboarding), `ShopSlideoutMenu` props `openAuthWhenOpened` / `onAuthOpened`, and `ExperienceClient` handling of `fromOnboardingLogin` + `useShopAuthContext().isAuthenticated`.
 
-- **Entry**: Visiting `/shop/experience` without a completed quiz redirects to `/shop/experience/onboarding` (query params such as `artist`, `utm_campaign` are preserved).
+- **A/B test (onboarding vs skip):** Half of visitors are assigned to see the onboarding flow; half skip straight to the configurator. Assignment is random on first visit, persisted in cookie `sc_experience_ab` (30 days), and recorded in GA4 (`experience_ab_assigned` event + user property `experience_ab_variant`) and in `experience_ab_assignments` for analysis. Compare conversion and engagement by segmenting on `experience_ab_variant`. See [Experience A/B test](#experience-ab-test-onboarding-vs-skip) below.
+- **Entry**: Visiting `/shop/experience` without a completed quiz: if A/B variant is **onboarding**, redirect to `/shop/experience/onboarding` (query params such as `artist`, `utm_campaign` are preserved). If variant is **skip**, show configurator with default quiz state (no redirect).
 - **Flow**: Steps 1–4 navigate to the next URL; partial answers are stored in `localStorage` (`sc-experience-quiz`). After step 4, the user is sent to `/shop/experience` (configurator).
 - **Lamp paywall**: If they answered "I'm new here" (no lamp), the **Add your Street Lamp** paywall is shown inside the configurator (same page). Actions are tracked via GA4: `experience_lamp_paywall_add_to_cart` when they add the lamp, `experience_lamp_paywall_skip` when they skip.
 - **Completion**: After step 4, answers are saved to `experience_quiz_signups` (when email is provided).
@@ -130,6 +131,20 @@ The experience onboarding is a **4-step flow on dedicated URLs** so each step ca
 `QuizAnswers` includes `ownsLamp`, `purpose`, and optional `name` and `email`. Completed quiz is stored in `localStorage` for returning users.
 
 **Checkout prefill**: When the user opens the checkout address modal, `name` and `email` from the quiz are used to pre-fill the address form (via `ExperienceQuizPrefill`). Logged-in user data takes precedence over quiz data when available.
+
+### Experience A/B Test (onboarding vs skip)
+
+Half of visitors see the 4-step onboarding; half skip to the configurator. This allows comparing conversion and engagement between cohorts.
+
+| Variant | Behavior |
+|--------|----------|
+| `onboarding` | Redirect to `/shop/experience/onboarding` if no completed quiz (current flow). |
+| `skip` | Skip onboarding; show configurator with default state (same as `?skipQuiz=1`). |
+
+- **Assignment**: On first visit to `/shop/experience`, client reads cookie `sc_experience_ab`. If missing, assigns 50/50 (`Math.random() < 0.5 ? 'skip' : 'onboarding'`), sets cookie (30 days), fires GA4 event `experience_ab_assigned` and user property `experience_ab_variant`, and calls `POST /api/experience/ab-assignment` with `{ variant }`.
+- **Persistence**: Cookie ensures the same visitor always gets the same variant. DB table `experience_ab_assignments` stores each new assignment for server-side reporting (admin-only SELECT).
+- **Analysis**: In GA4, create a segment or exploration filtered by user property `experience_ab_variant` = `onboarding` vs `skip` to compare funnel (e.g. add to cart, begin_checkout, purchase). Query `experience_ab_assignments` for raw counts by variant and date.
+- **Implementation**: [`ExperienceClient`](../../../app/shop/experience/components/ExperienceClient.tsx) (cookie, assignment, `effectiveSkipQuiz`), [`app/api/experience/ab-assignment/route.ts`](../../../app/api/experience/ab-assignment/route.ts), migration [`20260309200000_experience_ab_assignments.sql`](../../../supabase/migrations/20260309200000_experience_ab_assignments.sql).
 
 ### Intro Quiz Signups (Tracking & Marketing)
 

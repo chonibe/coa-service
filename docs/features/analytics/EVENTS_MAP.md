@@ -73,6 +73,7 @@ Map of GA4 events by page and component so we can track user activity across the
 | Order bar – payment | `add_payment_info` | **Tracked** | OrderBar — `trackAddPaymentInfo(...)` in `onPaymentMethodChange`. |
 | Configurator – lamp paywall | `experience_lamp_paywall_add_to_cart` | **Tracked** | Configurator — when user clicks "Add Street Lamp" on paywall (`trackEnhancedEvent`, params: `source: 'configurator'`). |
 | Configurator – lamp paywall | `experience_lamp_paywall_skip` | **Tracked** | Configurator — when user clicks "Skip — browse artworks without lamp" (`trackEnhancedEvent`, params: `source: 'configurator'`). |
+| Experience – A/B test | `experience_ab_assigned` | **Tracked** | [`ExperienceClient`](../../../app/shop/experience/components/ExperienceClient.tsx) — when visitor is assigned to variant `onboarding` or `skip` (50/50). Params: `variant`, `test: 'experience_onboarding'`. User property `experience_ab_variant` is also set for segmenting all subsequent events. |
 | Experience → success | `purchase` | **Not tracked** (on success page) | Same as shop: purchase tracked on `/track/[token]` when user has order token. |
 
 ---
