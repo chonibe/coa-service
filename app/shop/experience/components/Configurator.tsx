@@ -64,7 +64,7 @@ import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type Filt
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
-import { trackViewItem, trackAddToCart, trackSearch } from '@/lib/google-analytics'
+import { trackViewItem, trackAddToCart, trackSearch, trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
@@ -1167,7 +1167,10 @@ export function Configurator({
               </div>
               <button
                 type="button"
-                onClick={() => handleLampQuantityChange(1)}
+                onClick={() => {
+                  if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_add_to_cart', { source: 'configurator' })
+                  handleLampQuantityChange(1)
+                }}
                 style={{ touchAction: 'manipulation' }}
                 className="inline-flex items-center gap-2 w-full justify-center px-6 py-4 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all"
               >
@@ -1182,7 +1185,10 @@ export function Configurator({
               </p>
               <button
                 type="button"
-                onClick={() => setLampPaywallSkipped(true)}
+                onClick={() => {
+                  if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_skip', { source: 'configurator' })
+                  setLampPaywallSkipped(true)
+                }}
                 style={{ touchAction: 'manipulation' }}
                 className="text-xs text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] transition-colors underline underline-offset-2"
               >

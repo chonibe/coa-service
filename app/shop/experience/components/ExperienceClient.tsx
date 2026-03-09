@@ -80,8 +80,6 @@ interface ExperienceClientProps {
   onboardingQueryParams?: Record<string, string>
 }
 
-const EXPERIENCE_CART_KEY = 'sc-experience-cart'
-
 function loadQuizAnswers(): QuizAnswers | null {
   if (typeof window === 'undefined') return null
   try {
@@ -90,21 +88,6 @@ function loadQuizAnswers(): QuizAnswers | null {
     return JSON.parse(raw) as QuizAnswers
   } catch {
     return null
-  }
-}
-
-function loadExperienceCart(): { lampQuantity: number; lampPaywallSkipped: boolean } {
-  if (typeof window === 'undefined') return { lampQuantity: 0, lampPaywallSkipped: false }
-  try {
-    const raw = localStorage.getItem(EXPERIENCE_CART_KEY)
-    if (!raw) return { lampQuantity: 0, lampPaywallSkipped: false }
-    const p = JSON.parse(raw) as Record<string, unknown>
-    return {
-      lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 0,
-      lampPaywallSkipped: !!p.lampPaywallSkipped,
-    }
-  } catch {
-    return { lampQuantity: 0, lampPaywallSkipped: false }
   }
 }
 
@@ -140,17 +123,6 @@ export function ExperienceClient({
       router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
     }
   }, [skipQuiz, router, onboardingQueryParams])
-
-  // When user doesn't own a lamp and hasn't passed the paywall, redirect to step 5 (trackable URL)
-  useEffect(() => {
-    if (!mounted || !quizAnswers) return
-    if (quizAnswers.ownsLamp) return
-    const cart = loadExperienceCart()
-    if (cart.lampQuantity > 0 || cart.lampPaywallSkipped) return
-    setRedirectingToOnboarding(true)
-    const q = new URLSearchParams(onboardingQueryParams).toString()
-    router.replace(q ? `${ONBOARDING_PATH}/5?${q}` : `${ONBOARDING_PATH}/5`)
-  }, [mounted, quizAnswers, router, onboardingQueryParams])
 
   const affiliateLandingFired = useRef(false)
   useEffect(() => {

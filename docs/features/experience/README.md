@@ -110,7 +110,7 @@ See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](
 
 ## Intro Quiz Onboarding
 
-The experience onboarding is a **5-step flow on dedicated URLs** so each step can be tracked (analytics, conversion by step):
+The experience onboarding is a **4-step flow on dedicated URLs** so each step can be tracked (analytics, conversion by step):
 
 | Step | URL | Content |
 |------|-----|---------|
@@ -118,11 +118,11 @@ The experience onboarding is a **5-step flow on dedicated URLs** so each step ca
 | 2 | `/shop/experience/onboarding/2` | "Who is this for?" — For me / It's a gift |
 | 3 | `/shop/experience/onboarding/3` | "Let's create an awesome gift" or "Let's get to know you" — What's your name? + Continue |
 | 4 | `/shop/experience/onboarding/4` | "Hey there, [Name]! 👋" — What's your email? (optional) + Continue + Terms & Privacy links |
-| 5 | `/shop/experience/onboarding/5` | **Add your Street Lamp** — Paywall for users who don't own a lamp: Add Street Lamp (price) or "Skip — browse artworks without lamp" |
 
 - **Entry**: Visiting `/shop/experience` without a completed quiz redirects to `/shop/experience/onboarding` (query params such as `artist`, `utm_campaign` are preserved).
-- **Flow**: Steps 1–4 navigate to the next URL; partial answers are stored in `localStorage` (`sc-experience-quiz`). After step 4, the user is sent to `/shop/experience`. If they answered "I'm new here" (no lamp), they are immediately redirected to **step 5** (`/shop/experience/onboarding/5`) so the lamp paywall has its own trackable URL. On "Add Street Lamp" or "Skip", cart state is updated in `localStorage` (`sc-experience-cart`) and the user is sent to `/shop/experience` (configurator).
-- **Completion**: After step 4, answers are saved to `experience_quiz_signups` (when email is provided). Step 5 is shown only when `ownsLamp` is false and the user has not yet added a lamp or skipped the paywall.
+- **Flow**: Steps 1–4 navigate to the next URL; partial answers are stored in `localStorage` (`sc-experience-quiz`). After step 4, the user is sent to `/shop/experience` (configurator).
+- **Lamp paywall**: If they answered "I'm new here" (no lamp), the **Add your Street Lamp** paywall is shown inside the configurator (same page). Actions are tracked via GA4: `experience_lamp_paywall_add_to_cart` when they add the lamp, `experience_lamp_paywall_skip` when they skip.
+- **Completion**: After step 4, answers are saved to `experience_quiz_signups` (when email is provided).
 - **Implementation**: [`app/shop/experience/onboarding/[[...step]]/page.tsx`](../../../app/shop/experience/onboarding/[[...step]]/page.tsx), [`ExperienceOnboardingClient.tsx`](../../../app/shop/experience/components/ExperienceOnboardingClient.tsx), [`IntroQuiz.tsx`](../../../app/shop/experience/components/IntroQuiz.tsx) (URL-driven via `step`, `partialAnswers`, `onNext`, `onBack`).
 
 `QuizAnswers` includes `ownsLamp`, `purpose`, and optional `name` and `email`. Completed quiz is stored in `localStorage` for returning users.
