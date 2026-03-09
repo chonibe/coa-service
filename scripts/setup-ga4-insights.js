@@ -99,6 +99,15 @@ const CUSTOM_METRICS = [
   }
 ]
 
+// Key e-commerce events to mark as conversions in GA4 (sent by the app via gtag)
+const CONVERSION_EVENTS = [
+  'purchase',
+  'begin_checkout',
+  'add_to_cart',
+  'add_payment_info',
+  'view_item'
+]
+
 const AUDIENCES = [
   {
     name: 'Cart Abandoners - 7 Days',
@@ -287,10 +296,13 @@ class GA4SetupManager {
         process.exit(1)
       }
 
-      // Initialize auth
+      // Initialize auth (analytics.edit required for conversion events)
       this.auth = new google.auth.GoogleAuth({
         keyFile: SERVICE_ACCOUNT_KEY_PATH,
-        scopes: ['https://www.googleapis.com/auth/analytics.admin']
+        scopes: [
+          'https://www.googleapis.com/auth/analytics.admin',
+          'https://www.googleapis.com/auth/analytics.edit'
+        ]
       })
 
       // Initialize Analytics Admin API
@@ -387,6 +399,30 @@ class GA4SetupManager {
     }
   }
 
+  async createConversionEvents() {
+    console.log('\n🎯 Creating Conversion Events (marking key events as conversions)...')
+
+    for (const eventName of CONVERSION_EVENTS) {
+      try {
+        const request = {
+          parent: `properties/${this.propertyId}`,
+          requestBody: {
+            eventName
+          }
+        }
+
+        const response = await this.analyticsAdmin.properties.conversionEvents.create(request)
+        console.log(`✅ Created conversion event: ${eventName} (${response.data.name})`)
+      } catch (error) {
+        if (error.code === 409 || (error.message && error.message.includes('already exists'))) {
+          console.log(`⚠️  Conversion event already exists: ${eventName}`)
+        } else {
+          console.error(`❌ Failed to create conversion event ${eventName}:`, error.message)
+        }
+      }
+    }
+  }
+
   async validateSetup() {
     console.log('\n🔍 Validating GA4 Setup...')
 
@@ -475,6 +511,7 @@ class GA4SetupManager {
     await this.createCustomDimensions()
     await this.createCustomMetrics()
     await this.createAudiences()
+    await this.createConversionEvents()
     await this.validateSetup()
     await this.generateExplorationConfigs()
 

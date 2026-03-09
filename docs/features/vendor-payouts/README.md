@@ -19,6 +19,7 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 - ✅ **Automatic Refund Deduction**: Automatically deducts vendor share when orders are refunded
 - ✅ **PDF Invoice Generation**: Professional self-billing invoices for tax compliance
 - ✅ **USD Currency Support**: All payouts processed in USD
+- ✅ **Affiliate Commission**: 10% on lamp sales from artist referral links (see [Affiliate Program](../affiliate-program/README.md))
 - ✅ **Refund Processing UI**: Admin interface for processing refunds from order details
 - ✅ **Negative Balance Warnings**: Alerts for vendors who owe money from refunds
 - ✅ **PayPal Status Checking**: Manual status check for PayPal batch payouts
@@ -34,7 +35,7 @@ The Vendor Payout System is a comprehensive solution for calculating and process
 - **`product_vendor_payouts`**: Per-product payout configuration
 - **`vendor_payouts`**: Payout batch records with PayPal tracking
 - **`vendor_payout_items`**: Individual line item payment tracking
-- **`vendor_ledger_entries`**: Complete transaction ledger (payouts, refunds, adjustments)
+- **`collector_ledger_entries`**: Unified ledger for USD balance (payouts, affiliate commission, withdrawals, refunds, adjustments)
 
 #### Key Fields
 

@@ -28,6 +28,7 @@ import {
   CreditCard,
   Copy,
   ExternalLink,
+  Link2,
   Upload,
   Eye,
   HelpCircle,
@@ -81,6 +82,89 @@ interface ProfileFormState {
   bio: string
   artist_history: string
   instagram_url: string
+}
+
+function AffiliateLinkCard({ toast }: { toast: ReturnType<typeof useToast>["toast"] }) {
+  const [affiliate, setAffiliate] = useState<{
+    slug: string | null
+    affiliateUrl: string | null
+    shortUrl: string | null
+    message?: string
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/vendor/affiliate", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        setAffiliate(data)
+      })
+      .catch(() => setAffiliate({ slug: null, affiliateUrl: null, shortUrl: null }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleCopy = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      toast({ title: "Copied!", description: "Affiliate link copied to clipboard" })
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading || !affiliate) return null
+  if (affiliate.message && !affiliate.affiliateUrl) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            Affiliate Link
+          </CardTitle>
+          <CardDescription>{affiliate.message}</CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+  if (!affiliate.affiliateUrl) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Link2 className="h-5 w-5" />
+          Affiliate Link
+        </CardTitle>
+        <CardDescription>
+          Share this link to earn 10% commission on lamp sales
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            readOnly
+            value={affiliate.shortUrl || affiliate.affiliateUrl}
+            className="font-mono text-sm"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleCopy(affiliate.shortUrl || affiliate.affiliateUrl || "")}
+            aria-label="Copy affiliate link"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Use in your Instagram bio, link-in-bio, or anywhere you share your profile. When someone buys a lamp after clicking, you earn 10%.
+        </p>
+      </CardContent>
+    </Card>
+  )
 }
 
 const COUNTRIES = [
@@ -314,13 +398,15 @@ export default function VendorProfilePage() {
 
   const validateInstagramUrl = (url: string): boolean => {
     if (!url) return true // Optional field
-    const instagramRegex = /(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|instagr\.am)\/.+/
-    return instagramRegex.test(url)
+    const trimmed = url.trim()
+    if (trimmed.length > 200) return false
+    const normalized = trimmed.replace(/^https?:\/\//i, '').replace(/^www\./i, '')
+    return (normalized.startsWith('instagram.com/') || normalized.startsWith('instagr.am/')) && /^[\w.]+$/.test(normalized.split('/')[1] ?? '')
   }
 
   const validatePhone = (phone: string): boolean => {
     if (!phone) return true // Optional field
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/
+    const phoneRegex = /^[\d\s\-+()]+$/
     return phoneRegex.test(phone) && phone.replace(/\D/g, "").length >= 10
   }
 
@@ -1229,6 +1315,7 @@ export default function VendorProfilePage() {
 
         {/* Right Sidebar - Settings */}
         <div className="space-y-6">
+          <AffiliateLinkCard toast={toast} />
           <Card>
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
@@ -1397,7 +1484,7 @@ export default function VendorProfilePage() {
                         <CardHeader>
                           <CardTitle>Payment Information</CardTitle>
                           <CardDescription>
-                            Tell us how you'd like to get paid - we'll make sure your earnings reach you
+                            Tell us how you&apos;d like to get paid - we&apos;ll make sure your earnings reach you
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">

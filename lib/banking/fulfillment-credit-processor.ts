@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { depositCreditsFromPurchase } from './credit-deposit';
 import { depositPayoutEarnings } from './payout-deposit';
+import { depositAffiliateCommission } from './affiliate-commission';
+import { isLampLineItem } from '@/lib/affiliate';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -34,10 +36,10 @@ export async function processFulfillmentCredits(
       return;
     }
 
-    // Get order details to find customer
+    // Get order details to find customer and affiliate
     const { data: order, error: orderError } = await client
       .from('orders')
-      .select('id, customer_id, account_number, customer_email')
+      .select('id, customer_id, account_number, customer_email, affiliate_vendor_id, raw_shopify_order_data')
       .eq('id', lineItem.order_id)
       .single();
 
@@ -96,7 +98,7 @@ export async function processFulfillmentCredits(
     // Also deposit USD payout earnings if this line item belongs to a vendor
     const { data: lineItemWithVendor } = await client
       .from('order_line_items_v2')
-      .select('vendor_name, price')
+      .select('vendor_name, price, sku, name')
       .eq('line_item_id', lineItemId)
       .single();
 
@@ -118,6 +120,32 @@ export async function processFulfillmentCredits(
           `Failed to deposit payout earnings for line item ${lineItemId}:`,
           payoutResult.error
         );
+      }
+    }
+
+    // Affiliate commission: 10% for lamp sales when order was referred by artist link
+    const affiliateVendorId = order?.affiliate_vendor_id
+    if (affiliateVendorId && lineItemWithVendor && isLampLineItem(
+      lineItemWithVendor,
+      order?.raw_shopify_order_data ?? null,
+      lineItemId
+    )) {
+      const affiliateResult = await depositAffiliateCommission(
+        lineItemId,
+        lineItem.order_id,
+        affiliateVendorId,
+        Number(lineItemWithVendor.price) || 0,
+        client
+      )
+      if (affiliateResult.success && affiliateResult.usdDeposited > 0) {
+        console.log(
+          `Deposited $${affiliateResult.usdDeposited} affiliate commission for line item ${lineItemId}`
+        )
+      } else if (!affiliateResult.success) {
+        console.error(
+          `Failed to deposit affiliate commission for line item ${lineItemId}:`,
+          affiliateResult.error
+        )
       }
     }
   } catch (error: any) {

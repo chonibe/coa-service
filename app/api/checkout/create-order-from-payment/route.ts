@@ -45,13 +45,15 @@ export async function POST(request: NextRequest) {
     }).filter((v: { variantId: string }) => v.variantId)
 
     const address = shipping_address
+    const affiliateVendorId = metadata.affiliate_vendor_id ? parseInt(metadata.affiliate_vendor_id, 10) : undefined
 
     const { draftOrderId, orderId } = await createAndCompleteOrder(
       variants,
       address,
       pi.id,
       pi.amount_received || 0,
-      pi.currency || 'usd'
+      pi.currency || 'usd',
+      affiliateVendorId
     )
 
     const supabase = createClient()

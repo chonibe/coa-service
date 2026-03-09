@@ -225,6 +225,9 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
         } : undefined,
         email: customer?.email || '',
         note: `Stripe Payment ID: ${session.payment_intent}\nStripe Session ID: ${session.id}\nSource: Headless Storefront`,
+        note_attributes: session.metadata?.affiliate_vendor_id
+          ? [{ name: 'affiliate_vendor_id', value: String(session.metadata.affiliate_vendor_id) }]
+          : undefined,
         tags: 'headless,stripe-checkout',
         use_customer_default_address: false,
       },

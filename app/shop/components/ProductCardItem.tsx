@@ -3,12 +3,14 @@
 import { ProductCard, ProductBadge, Badge } from '@/components/impact'
 import { VinylArtworkCard } from '@/components/vinyl'
 import { useCart } from '@/lib/shop/CartContext'
-import { 
-  formatPrice, 
-  isOnSale, 
+import {
+  formatPrice,
+  isOnSale,
   getDiscountPercentage,
-  type ShopifyProduct 
+  type ShopifyProduct
 } from '@/lib/shopify/storefront-client'
+import { trackAddToCart } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useState } from 'react'
 
 /**
@@ -104,7 +106,11 @@ export function ProductCardItem({
         image: product.featuredImage?.url,
         artistName: product.vendor,
       })
-      
+
+      // E-commerce: track add_to_cart
+      const item = storefrontProductToItem(product, variant, 1)
+      trackAddToCart(item)
+
       // Brief delay for visual feedback
       setTimeout(() => {
         setIsAdding(false)

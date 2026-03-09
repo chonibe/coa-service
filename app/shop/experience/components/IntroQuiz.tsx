@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
 
@@ -13,8 +13,18 @@ export interface QuizAnswers {
   email?: string
 }
 
+export type IntroQuizPartialAnswers = Partial<Pick<QuizAnswers, 'ownsLamp' | 'purpose'>> & { name?: string; email?: string }
+
 interface IntroQuizProps {
   onComplete: (answers: QuizAnswers) => void
+  /** When set, quiz is driven by URL: only this step is shown and navigation uses onNext/onBack */
+  step?: 1 | 2 | 3 | 4
+  /** Pre-filled values when using URL mode (e.g. from localStorage) */
+  partialAnswers?: IntroQuizPartialAnswers
+  /** Called when user continues to next step (URL mode only). Parent should navigate and pass updated partialAnswers next render. */
+  onNext?: (nextStep: 2 | 3 | 4, partial: IntroQuizPartialAnswers) => void
+  /** Called when user taps back (URL mode only). Parent should navigate to previous step. */
+  onBack?: () => void
 }
 
 const fadeUp = {
@@ -23,35 +33,68 @@ const fadeUp = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } },
 }
 
-export function IntroQuiz({ onComplete }: IntroQuizProps) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
-  const [ownsLamp, setOwnsLamp] = useState<boolean | null>(null)
-  const [purpose, setPurpose] = useState<'self' | 'gift' | null>(null)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, onBack }: IntroQuizProps) {
+  const isUrlMode = urlStep != null
+  const [internalStep, setInternalStep] = useState<1 | 2 | 3 | 4>(1)
+  const [ownsLamp, setOwnsLamp] = useState<boolean | null>(partialAnswers?.ownsLamp ?? null)
+  const [purpose, setPurpose] = useState<'self' | 'gift' | null>(partialAnswers?.purpose ?? null)
+  const [name, setName] = useState(partialAnswers?.name ?? '')
+  const [email, setEmail] = useState(partialAnswers?.email ?? '')
+
+  const step = isUrlMode ? urlStep : internalStep
+
+  // Sync partialAnswers into state when in URL mode (e.g. back/forward)
+  useEffect(() => {
+    if (!isUrlMode) return
+    if (partialAnswers?.ownsLamp !== undefined) setOwnsLamp(partialAnswers.ownsLamp)
+    if (partialAnswers?.purpose !== undefined) setPurpose(partialAnswers.purpose)
+    if (partialAnswers?.name !== undefined) setName(partialAnswers.name)
+    if (partialAnswers?.email !== undefined) setEmail(partialAnswers.email)
+  }, [isUrlMode, partialAnswers?.ownsLamp, partialAnswers?.purpose, partialAnswers?.name, partialAnswers?.email])
 
   const handleStep1 = (owns: boolean) => {
+    if (isUrlMode && onNext) {
+      onNext(2, { ...partialAnswers, ownsLamp: owns })
+      return
+    }
     setOwnsLamp(owns)
-    setStep(2)
+    setInternalStep(2)
   }
 
   const handleStep2 = (p: 'self' | 'gift') => {
+    if (isUrlMode && onNext) {
+      onNext(3, { ...partialAnswers, ownsLamp: ownsLamp ?? false, purpose: p })
+      return
+    }
     setPurpose(p)
-    setStep(3)
+    setInternalStep(3)
   }
 
   const handleStep3 = () => {
-    setStep(4)
+    if (isUrlMode && onNext) {
+      onNext(4, { ...partialAnswers, ownsLamp: ownsLamp ?? false, purpose: purpose ?? 'self', name: name.trim() || undefined })
+      return
+    }
+    setInternalStep(4)
   }
 
   const handleStep4 = () => {
-    onComplete({ ownsLamp: ownsLamp!, purpose: purpose!, name: name.trim() || undefined, email: email.trim() || undefined })
+    onComplete({
+      ownsLamp: ownsLamp ?? false,
+      purpose: purpose ?? 'self',
+      name: name.trim() || undefined,
+      email: email.trim() || undefined,
+    })
   }
 
   const handleBack = () => {
-    if (step === 2) setStep(1)
-    else if (step === 3) setStep(2)
-    else if (step === 4) setStep(3)
+    if (isUrlMode && onBack) {
+      onBack()
+      return
+    }
+    if (internalStep === 2) setInternalStep(1)
+    else if (internalStep === 3) setInternalStep(2)
+    else if (internalStep === 4) setInternalStep(3)
   }
 
   return (

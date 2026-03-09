@@ -110,19 +110,34 @@ See [docs/COMMIT_LOGS/experience-checkout-stripe-payment-methods-2026-03-01.md](
 
 ## Intro Quiz Onboarding
 
-The experience starts with a 4-step intro quiz:
+The experience onboarding is a **5-step flow on dedicated URLs** so each step can be tracked (analytics, conversion by step):
 
-| Step | Purpose flow | Content |
-|------|--------------|---------|
-| 1 | Both | "Let's get started" — Do you already have a Street Lamp? (Yes / I'm new here) + Skip for now |
-| 2 | Both | "Who is this for?" — For me / It's a gift |
-| 3 | Gift | "Let's create an awesome gift" — What's your name? + Continue |
-| 3 | Self | "Let's get to know you" — What's your name? + Continue |
-| 4 | Both | "Hey there, [Name]! 👋" — What's your email? (optional, can leave blank) + Continue + Terms of Use & Privacy Policy links |
+| Step | URL | Content |
+|------|-----|---------|
+| 1 | `/shop/experience/onboarding` | "Let's get started" — Do you already have a Street Lamp? (Yes / I'm new here) + Skip for now |
+| 2 | `/shop/experience/onboarding/2` | "Who is this for?" — For me / It's a gift |
+| 3 | `/shop/experience/onboarding/3` | "Let's create an awesome gift" or "Let's get to know you" — What's your name? + Continue |
+| 4 | `/shop/experience/onboarding/4` | "Hey there, [Name]! 👋" — What's your email? (optional) + Continue + Terms & Privacy links |
+| 5 | `/shop/experience/onboarding/5` | **Add your Street Lamp** — Paywall for users who don't own a lamp: Add Street Lamp (price) or "Skip — browse artworks without lamp" |
 
-`QuizAnswers` includes `ownsLamp`, `purpose`, and optional `name` and `email`. Stored in `localStorage` under `sc-experience-quiz` for returning users. **Implementation**: [`app/shop/experience/components/IntroQuiz.tsx`](../../../app/shop/experience/components/IntroQuiz.tsx)
+- **Entry**: Visiting `/shop/experience` without a completed quiz redirects to `/shop/experience/onboarding` (query params such as `artist`, `utm_campaign` are preserved).
+- **Flow**: Steps 1–4 navigate to the next URL; partial answers are stored in `localStorage` (`sc-experience-quiz`). After step 4, the user is sent to `/shop/experience`. If they answered "I'm new here" (no lamp), they are immediately redirected to **step 5** (`/shop/experience/onboarding/5`) so the lamp paywall has its own trackable URL. On "Add Street Lamp" or "Skip", cart state is updated in `localStorage` (`sc-experience-cart`) and the user is sent to `/shop/experience` (configurator).
+- **Completion**: After step 4, answers are saved to `experience_quiz_signups` (when email is provided). Step 5 is shown only when `ownsLamp` is false and the user has not yet added a lamp or skipped the paywall.
+- **Implementation**: [`app/shop/experience/onboarding/[[...step]]/page.tsx`](../../../app/shop/experience/onboarding/[[...step]]/page.tsx), [`ExperienceOnboardingClient.tsx`](../../../app/shop/experience/components/ExperienceOnboardingClient.tsx), [`IntroQuiz.tsx`](../../../app/shop/experience/components/IntroQuiz.tsx) (URL-driven via `step`, `partialAnswers`, `onNext`, `onBack`).
+
+`QuizAnswers` includes `ownsLamp`, `purpose`, and optional `name` and `email`. Completed quiz is stored in `localStorage` for returning users.
 
 **Checkout prefill**: When the user opens the checkout address modal, `name` and `email` from the quiz are used to pre-fill the address form (via `ExperienceQuizPrefill`). Logged-in user data takes precedence over quiz data when available.
+
+### Intro Quiz Signups (Tracking & Marketing)
+
+When the user completes the intro quiz and provides an **email**, the signup is persisted to the database for tracking and marketing:
+
+- **Table**: `public.experience_quiz_signups`  
+  - Columns: `id`, `email`, `name`, `owns_lamp`, `purpose` (`'self'` \| `'gift'`), `source` (default `'experience'`), `affiliate_artist_slug` (when user arrived via `?artist=`), `created_at`  
+  - Migrations: [`20260309000002_experience_quiz_signups.sql`](../../../supabase/migrations/20260309000002_experience_quiz_signups.sql), [`20260309000003_experience_quiz_signups_allow_insert.sql`](../../../supabase/migrations/20260309000003_experience_quiz_signups_allow_insert.sql) (RLS allows anon/authenticated INSERT).
+- **Client**: [`ExperienceOnboardingClient.tsx`](../../../app/shop/experience/components/ExperienceOnboardingClient.tsx) uses the **Supabase browser client** ([`lib/supabase/client.ts`](../../../lib/supabase/client.ts)) in `handleComplete` (after step 4) to insert into `experience_quiz_signups` when `email` is present (fire-and-forget). Admins can query the table (RLS allows `SELECT` for admin role) for exports and marketing.
+- **API** (optional): `POST /api/experience/quiz-signup` is available for server-side or server-action use; the onboarding flow uses the client directly.
 
 ## Collected Artworks (Logged-in Users)
 
@@ -152,7 +167,7 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 **GIF overlay**: When the collection has metafield `custom.gif` set to a URL and the banner is **collapsed**, that GIF image is shown as a small overlay on the card (top-right). The API returns `gifUrl` with the metafield value; vendor and collection spotlight paths both support it. Implementation: [`ArtistSpotlightBanner.tsx`](../../../app/shop/experience/components/ArtistSpotlightBanner.tsx); [`app/api/shop/artist-spotlight/route.ts`](../../../app/api/shop/artist-spotlight/route.ts) and [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (collection fragment `gifMetafield`).
 
-**Unlisted products (early access)**: The Storefront API omits [unlisted products](https://shopify.dev/docs/apps/build/product-merchandising/unlisted-products) from `collection.products`. To show them, the app uses the **Shopify Admin API** to read the collection’s product handles (including unlisted), then fetches each product by handle via Storefront. **Public** Storefront tokens often return `null` for unlisted products even when querying by handle; set **`SHOPIFY_STOREFRONT_PRIVATE_TOKEN`** (a private Storefront API token, server-only) so unlisted products are returned. Optional: set `custom.product_handles` on the collection to override or limit which products are shown. Implementation: [`lib/shopify/admin-collection-products.ts`](../../../lib/shopify/admin-collection-products.ts); [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (`getProductsByHandles` private-token fallback); experience page and artist-spotlight API call it when Storefront returns 0 products for a collection.
+**Unlisted products (early access)**: The Storefront API omits [unlisted products](https://shopify.dev/docs/apps/build/product-merchandising/unlisted-products) from `collection.products`. To show them, the app uses the **Shopify Admin API** to read the collection’s product handles (including unlisted), then fetches each product by handle via Storefront. **Public** Storefront tokens often return `null` for unlisted products even when querying by handle; set **`SHOPIFY_STOREFRONT_PRIVATE_TOKEN`** (a private Storefront API token, server-only) so unlisted products are returned. Optional: set `custom.product_handles` on the collection to override or limit which products are shown. Implementation: [`lib/shopify/admin-collection-products.ts`](../../../lib/shopify/admin-collection-products.ts); [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (`getProductsByHandles` private-token fallback); experience page and artist-spotlight API call it when Storefront returns 0 products for a collection. **Online Store only in default experience:** Products not active on the Online Store channel (e.g. COA app channel only) are excluded from the normal experience; the default spotlight and product list use only Storefront (Online Store). Admin/COA fallback runs only for `?artist=<handle>` early-access links, so artists with no Online Store products do not appear as the default spotlight.
 
 ## API Endpoints (Products)
 
@@ -173,5 +188,5 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 ## Version
 
-- Last updated: 2026-03-08
-- Version: 1.8.1
+- Last updated: 2026-03-09
+- Version: 1.11.0

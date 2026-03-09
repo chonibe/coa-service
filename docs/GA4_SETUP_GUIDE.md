@@ -25,9 +25,9 @@ This guide walks you through setting up Google Analytics 4 for your art marketpl
 ### 3. Environment Variables
 Add these to your `.env.local`:
 ```bash
-# GA4 Configuration
-GOOGLE_ANALYTICS_PROPERTY_ID=properties/252918461
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-LLPL68MSTS
+# GA4 Configuration (use your property's numeric ID from Admin → Property settings)
+GOOGLE_ANALYTICS_PROPERTY_ID=properties/YOUR_PROPERTY_ID
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-V9LJ3T3LK8
 GA_SERVICE_ACCOUNT_KEY_PATH=./ga-service-account.json
 
 # Optional: Google OAuth (for enhanced features)
@@ -41,7 +41,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 ### Step 1: Run Automated GA4 Setup
 ```bash
-# This creates all custom dimensions, metrics, and audiences automatically
+# Creates custom dimensions, metrics, audiences, and conversion events (purchase, begin_checkout, add_to_cart, add_payment_info, view_item)
 npm run setup:ga4
 ```
 

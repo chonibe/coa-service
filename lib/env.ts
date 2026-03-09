@@ -26,7 +26,7 @@ export const VENDOR_SESSION_SECRET = () =>
 // Shopify API credentials
 export const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || ""
 export const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN || ""
-export const SHOPIFY_WEBHOOK_SECRET = process.env.SHOPIFY_WEBHOOK_SECRET || ""
+export const SHOPIFY_WEBHOOK_SECRET = process.env.SHOPIFY_WEBHOOK_SECRET || process.env.SHOPIFY_API_SECRET || ""
 export const CRON_SECRET = process.env.CRON_SECRET || ""
 export const CERTIFICATE_METAFIELD_ID = process.env.CERTIFICATE_METAFIELD_ID || null
 

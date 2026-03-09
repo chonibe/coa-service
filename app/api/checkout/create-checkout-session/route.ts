@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
+import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
@@ -68,6 +70,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const supabase = createClient()
+    const cookieStore = await cookies()
+    const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
+    const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
+
     const body: CreateCheckoutSessionRequest = await request.json()
     const { items, customerEmail, shippingAddress, promoCode } = body
 
@@ -97,6 +104,7 @@ export async function POST(request: NextRequest) {
       shopify_variant_ids: shopifyVariantsCompact,
       collector_email: email,
       collector_identifier: email,
+      ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       items_json: JSON.stringify(
         items.map((i) => ({
           variantId: i.variantId,
@@ -124,7 +132,6 @@ export async function POST(request: NextRequest) {
     // Look up existing Stripe customer so returning users can reuse saved payment methods
     let stripeCustomerId: string | undefined
     if (email?.trim()) {
-      const supabase = createClient()
       const normalizedEmail = email.toLowerCase().trim()
       const { data: profile } = await supabase
         .from('collector_profiles')

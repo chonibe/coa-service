@@ -89,6 +89,16 @@ Visitors arriving from artist Instagram pages can use pre-filtered links:
 
 **Admin**: Create and copy links from **Admin → Vendors → Experience Links**. Each artist has a slug derived from their name (e.g. `jane-doe`). Copy the full or short URL for Instagram link-in-bio.
 
+### URL metadata and social previews
+
+When the URL includes an artist (e.g. `?artist=jack-jc-art` or `?vendor=...`), the page metadata is generated dynamically so that shared links show the correct preview:
+
+- **Title**: "Early access — Artist Name | Street Collector" for unlisted/early-access artists, or "Artist Spotlight — Artist Name | Street Collector" otherwise
+- **Description**: Artist bio (trimmed) or a short line such as "Early access to artworks by Artist Name. Customize your Street Lamp with their art."
+- **Image**: The artist's profile/collection image (from [artist-spotlight API](../../../app/api/shop/artist-spotlight/route.ts))
+
+This applies to Open Graph (Facebook, WhatsApp, iMessage, etc.) and Twitter Card previews. Implemented via `generateMetadata` in [`app/shop/experience/page.tsx`](../../../app/shop/experience/page.tsx), which calls the artist-spotlight API server-side to resolve the artist and image.
+
 ## Version
 
 - Last updated: 2026-03-08

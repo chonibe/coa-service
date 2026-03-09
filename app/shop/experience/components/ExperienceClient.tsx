@@ -1,23 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { QuizAnswers } from './IntroQuiz'
 import { OrderBar } from './OrderBar'
-
-const IntroQuiz = dynamic(() => import('./IntroQuiz').then((m) => ({ default: m.IntroQuiz })), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-950">
-      <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-    </div>
-  ),
-})
 
 const Configurator = dynamic(() => import('./Configurator').then((m) => ({ default: m.Configurator })), {
   ssr: false,
@@ -29,6 +20,7 @@ const Configurator = dynamic(() => import('./Configurator').then((m) => ({ defau
 })
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
+import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
@@ -84,7 +76,11 @@ interface ExperienceClientProps {
   skipQuiz?: boolean
   /** When true, request spotlight with unlisted=1 so API returns unlisted (early access UI) */
   forceUnlisted?: boolean
+  /** Query params to preserve when redirecting to onboarding (e.g. artist, utm_campaign) for trackable URLs */
+  onboardingQueryParams?: Record<string, string>
 }
+
+const EXPERIENCE_CART_KEY = 'sc-experience-cart'
 
 function loadQuizAnswers(): QuizAnswers | null {
   if (typeof window === 'undefined') return null
@@ -97,6 +93,23 @@ function loadQuizAnswers(): QuizAnswers | null {
   }
 }
 
+function loadExperienceCart(): { lampQuantity: number; lampPaywallSkipped: boolean } {
+  if (typeof window === 'undefined') return { lampQuantity: 0, lampPaywallSkipped: false }
+  try {
+    const raw = localStorage.getItem(EXPERIENCE_CART_KEY)
+    if (!raw) return { lampQuantity: 0, lampPaywallSkipped: false }
+    const p = JSON.parse(raw) as Record<string, unknown>
+    return {
+      lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 0,
+      lampPaywallSkipped: !!p.lampPaywallSkipped,
+    }
+  } catch {
+    return { lampQuantity: 0, lampPaywallSkipped: false }
+  }
+}
+
+const ONBOARDING_PATH = '/shop/experience/onboarding'
+
 export function ExperienceClient({
   lamp,
   productsSeason1,
@@ -106,40 +119,46 @@ export function ExperienceClient({
   initialArtistSlug,
   skipQuiz = false,
   forceUnlisted = false,
+  onboardingQueryParams = {},
 }: ExperienceClientProps) {
   const router = useRouter()
   const { orderBarProps, setOrderBarProps, orderBarRef } = useExperienceOrder()
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers | null>(null)
-  const [showQuiz, setShowQuiz] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [redirectingToOnboarding, setRedirectingToOnboarding] = useState(false)
   const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
 
-  // When on quiz, set empty OrderBar props so the drawer can open (cart chip works)
-  useEffect(() => {
-    if (showQuiz && lamp) {
-      setOrderBarProps({
-        lamp,
-        selectedArtworks: [],
-        lampQuantity: 0,
-        onLampQuantityChange: () => {},
-        onRemoveArtwork: () => {},
-        onSelectArtwork: undefined,
-        onViewLampDetail: undefined,
-        isGift: false,
-      })
-    }
-  }, [showQuiz, lamp, setOrderBarProps])
-
+  // When user needs onboarding, redirect to onboarding URLs so each step is trackable
   useEffect(() => {
     const saved = loadQuizAnswers()
     if (saved || skipQuiz) {
       setQuizAnswers(saved ?? { ownsLamp: false, purpose: 'self' })
-      setShowQuiz(false)
+      setMounted(true)
     } else {
-      setShowQuiz(true)
+      setRedirectingToOnboarding(true)
+      const q = new URLSearchParams(onboardingQueryParams).toString()
+      router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
     }
-    setMounted(true)
-  }, [skipQuiz])
+  }, [skipQuiz, router, onboardingQueryParams])
+
+  // When user doesn't own a lamp and hasn't passed the paywall, redirect to step 5 (trackable URL)
+  useEffect(() => {
+    if (!mounted || !quizAnswers) return
+    if (quizAnswers.ownsLamp) return
+    const cart = loadExperienceCart()
+    if (cart.lampQuantity > 0 || cart.lampPaywallSkipped) return
+    setRedirectingToOnboarding(true)
+    const q = new URLSearchParams(onboardingQueryParams).toString()
+    router.replace(q ? `${ONBOARDING_PATH}/5?${q}` : `${ONBOARDING_PATH}/5`)
+  }, [mounted, quizAnswers, router, onboardingQueryParams])
+
+  const affiliateLandingFired = useRef(false)
+  useEffect(() => {
+    if (initialArtistSlug && isGAEnabled() && !affiliateLandingFired.current) {
+      affiliateLandingFired.current = true
+      trackEnhancedEvent('affiliate_landing', { affiliate_slug: initialArtistSlug, page: 'experience' })
+    }
+  }, [initialArtistSlug])
 
   // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
   useEffect(() => {
@@ -175,21 +194,13 @@ export function ExperienceClient({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [router])
 
-  const handleQuizComplete = (answers: QuizAnswers) => {
-    localStorage.setItem(
-      QUIZ_STORAGE_KEY,
-      JSON.stringify({ ...answers, completedAt: new Date().toISOString() })
-    )
-    setQuizAnswers(answers)
-    setShowQuiz(false)
-  }
-
   const handleRetakeQuiz = useCallback(() => {
     localStorage.removeItem(QUIZ_STORAGE_KEY)
-    setShowQuiz(true)
-  }, [])
+    const q = new URLSearchParams(onboardingQueryParams).toString()
+    router.push(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
+  }, [router, onboardingQueryParams])
 
-  if (!mounted) {
+  if (!mounted || redirectingToOnboarding) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-950">
         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -212,41 +223,26 @@ export function ExperienceClient({
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 min-h-0">
-        <AnimatePresence mode="wait">
-          {showQuiz ? (
-            <motion.div
-              key="quiz"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="h-full"
-            >
-              <IntroQuiz onComplete={handleQuizComplete} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="configurator"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="h-full"
-            >
-              <ExperienceConfiguratorWithBoundary
-                lamp={lamp}
-                productsSeason1={productsSeason1}
-                productsSeason2={productsSeason2}
-                pageInfoSeason1={pageInfoSeason1}
-                pageInfoSeason2={pageInfoSeason2}
-                quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
-                onRetakeQuiz={handleRetakeQuiz}
-                initialFilters={initialFilters}
-                initialArtistSlug={initialArtistSlug}
-                forceUnlisted={forceUnlisted}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          key="configurator"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="h-full"
+        >
+          <ExperienceConfiguratorWithBoundary
+            lamp={lamp}
+            productsSeason1={productsSeason1}
+            productsSeason2={productsSeason2}
+            pageInfoSeason1={pageInfoSeason1}
+            pageInfoSeason2={pageInfoSeason2}
+            quizAnswers={quizAnswers ?? { ownsLamp: false, purpose: 'self' }}
+            onRetakeQuiz={handleRetakeQuiz}
+            initialFilters={initialFilters}
+            initialArtistSlug={initialArtistSlug}
+            forceUnlisted={forceUnlisted}
+          />
+        </motion.div>
       </div>
       {/* OrderBar is always mounted so cart chip opens drawer even during quiz */}
       {effectiveOrderBarProps && (

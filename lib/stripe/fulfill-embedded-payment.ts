@@ -28,7 +28,8 @@ export async function createAndCompleteOrder(
   address: ShippingAddressInput,
   paymentIntentId: string,
   amountTotalCents: number,
-  currency: string
+  currency: string,
+  affiliateVendorId?: number | null
 ): Promise<{ draftOrderId: string; orderId: string | null }> {
   const nameParts = (address.fullName || '').trim().split(/\s+/)
   const firstName = nameParts[0] || ''
@@ -64,6 +65,9 @@ export async function createAndCompleteOrder(
       },
       email: address.email || 'guest@checkout.local',
       note: `Stripe PaymentIntent: ${paymentIntentId}\nSource: Headless Storefront (Embedded)`,
+      note_attributes: affiliateVendorId
+        ? [{ name: 'affiliate_vendor_id', value: String(affiliateVendorId) }]
+        : undefined,
       tags: 'headless,stripe-embedded',
       use_customer_default_address: false,
     },

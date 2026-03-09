@@ -88,7 +88,12 @@ export async function calculateUnifiedCollectorBalance(
     } else if (currency === 'USD') {
       usdBalance += amount;
       // All positive USD entries count towards total earned
-      if (amount > 0 && (entry.transaction_type === 'payout_earned' || entry.transaction_type === 'adjustment')) {
+      if (
+        amount > 0 &&
+        (entry.transaction_type === 'payout_earned' ||
+          entry.transaction_type === 'affiliate_commission' ||
+          entry.transaction_type === 'adjustment')
+      ) {
         totalUsdEarned += amount;
       }
     }

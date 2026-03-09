@@ -8,6 +8,8 @@ import { Package } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
+import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuizPrefill'
@@ -97,8 +99,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const { promoDiscount } = useExperienceOrder()
   const checkout = useCheckout()
 
+  const firedBeginCheckoutRef = useRef(false)
+  const firedAddPaymentInfoRef = useRef(false)
+
   useExperienceOpenOrder(() => {
     setDrawerOpen(true)
+    firedBeginCheckoutRef.current = false
+    firedAddPaymentInfoRef.current = false
   })
 
   const lampPrice = parsePrice(lamp)
@@ -123,6 +130,28 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const total = lampTotal + artworksTotal
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
+
+  // E-commerce: track begin_checkout when order drawer opens with items
+  useEffect(() => {
+    if (!drawerOpen) {
+      firedBeginCheckoutRef.current = false
+      return
+    }
+    if (itemCount === 0) return
+    if (firedBeginCheckoutRef.current) return
+    firedBeginCheckoutRef.current = true
+    const items = lampQuantity > 0
+      ? [
+          storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
+          ...selectedArtworks.map((p) =>
+            storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
+          ),
+        ]
+      : selectedArtworks.map((p) =>
+          storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
+        )
+    trackBeginCheckout(items, total, 'USD')
+  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total])
 
   const buildLineItems = useCallback(() => {
     const items: Array<{
@@ -622,6 +651,21 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                           setEnteredCardInfo(cardInfo)
                         } else {
                           setEnteredCardInfo(null)
+                        }
+                        // E-commerce: track add_payment_info once per checkout session
+                        if (!firedAddPaymentInfoRef.current && selectedArtworks.length + lampQuantity > 0) {
+                          firedAddPaymentInfoRef.current = true
+                          const items = lampQuantity > 0
+                            ? [
+                                storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
+                                ...selectedArtworks.map((p) =>
+                                  storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
+                                ),
+                              ]
+                            : selectedArtworks.map((p) =>
+                                storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
+                              )
+                          trackAddPaymentInfo(displayType, items, total, 'USD')
                         }
                       }}
                       preloadedClientSecret={preloadedClientSecret}

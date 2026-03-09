@@ -8,18 +8,15 @@ import { getProductsByHandles } from '@/lib/shopify/storefront-client'
  * GET /api/debug/collection-products?handle=jack-jc-art
  * Returns Storefront product count, Admin API handles, and whether we can fetch those products.
  */
+const DEFAULT_DEBUG_HANDLE = 'jack-jc-art'
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const handle = searchParams.get('handle')?.trim()
-  if (!handle) {
-    return NextResponse.json(
-      { error: 'Missing handle', usage: '/api/debug/collection-products?handle=jack-jc-art' },
-      { status: 400 }
-    )
-  }
+  const handle = searchParams.get('handle')?.trim() || DEFAULT_DEBUG_HANDLE
 
   try {
     const adminConfigured = isAdminCollectionApiAvailable()
+    const privateTokenSet = Boolean(process.env.SHOPIFY_STOREFRONT_PRIVATE_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN)
 
     const [storefrontCollection, adminHandles] = await Promise.all([
       getCollection(handle, { first: 100 }),
@@ -34,7 +31,7 @@ export async function GET(request: Request) {
     const handlesToFetch = adminHandles.length > 0 ? adminHandles : storefrontHandles
     let productsFetched: { count: number; handles: string[] } = { count: 0, handles: [] }
     if (handlesToFetch.length > 0) {
-      const fetched = await getProductsByHandles(handlesToFetch)
+      const fetched = await getProductsByHandles(handlesToFetch, { preferPrivateToken: adminHandles.length > 0 })
       productsFetched = {
         count: fetched.length,
         handles: fetched.map((p) => p.handle).filter(Boolean) as string[],
@@ -43,11 +40,14 @@ export async function GET(request: Request) {
 
     const hint =
       adminHandles.length > 0 && productsFetched.count === 0
-        ? 'Set SHOPIFY_STOREFRONT_PRIVATE_TOKEN (private Storefront API token) so unlisted products can be fetched by handle.'
+        ? privateTokenSet
+          ? 'Private token is set but Storefront returned 0 products. Check token has unlisted access (e.g. private/custom app token).'
+          : 'Set SHOPIFY_STOREFRONT_PRIVATE_TOKEN in Vercel (Production). For local: vercel env pull .env.local --environment=production'
         : undefined
 
     return NextResponse.json({
       handle,
+      privateTokenSet,
       storefront: {
         collectionFound: !!storefrontCollection,
         collectionId: storefrontCollection?.id ?? null,

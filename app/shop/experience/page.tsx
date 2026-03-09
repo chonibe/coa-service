@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+import type { Metadata } from 'next'
 import { getCollectionProductHandlesByHandle } from '@/lib/shopify/admin-collection-products'
 import {
   getProduct,
@@ -14,10 +15,82 @@ import { ExperienceLoadingSkeleton } from './loading'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = {
-  title: 'Customize Your Lamp | Street Collector',
-  description:
-    'Build your Street Lamp with artwork you love. Preview art live on the 3D lamp and checkout in one tap.',
+const DEFAULT_TITLE = 'Customize Your Lamp | Street Collector'
+const DEFAULT_DESCRIPTION =
+  'Build your Street Lamp with artwork you love. Preview art live on the 3D lamp and checkout in one tap.'
+
+/** Build base URL for server-side fetch (OG image URLs must be absolute) */
+async function getBaseUrl(): Promise<string> {
+  const h = await headers()
+  const host = h.get('host')
+  const proto = h.get('x-forwarded-proto') || 'https'
+  if (host) return `${proto}://${host}`
+  return process.env.NEXT_PUBLIC_APP_URL || ''
+}
+
+export async function generateMetadata(props: {
+  searchParams: Promise<{ artist?: string; vendor?: string; [key: string]: string | undefined }>
+}): Promise<Metadata> {
+  const searchParams = await props.searchParams
+  const artistSlug = searchParams?.artist?.trim() || searchParams?.vendor?.trim()
+  if (!artistSlug) {
+    return {
+      title: DEFAULT_TITLE,
+      description: DEFAULT_DESCRIPTION,
+    }
+  }
+
+  const base = await getBaseUrl()
+  if (!base) {
+    return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }
+  }
+
+  try {
+    const res = await fetch(`${base}/api/shop/artist-spotlight?artist=${encodeURIComponent(artistSlug)}`, {
+      next: { revalidate: 60 },
+    })
+    const spotlight = res.ok ? (await res.json()) : null
+    if (!spotlight?.vendorName) {
+      return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }
+    }
+
+    const titleSuffix = ' | Street Collector'
+    const isEarlyAccess = Boolean(spotlight.unlisted)
+    const title = isEarlyAccess
+      ? `Early access — ${spotlight.vendorName}${titleSuffix}`
+      : `Artist Spotlight — ${spotlight.vendorName}${titleSuffix}`
+    const description =
+      spotlight.bio?.replace(/\s+/g, ' ').trim().slice(0, 160) ||
+      (isEarlyAccess
+        ? `Early access to artworks by ${spotlight.vendorName}. Customize your Street Lamp with their art.`
+        : `Artist spotlight: ${spotlight.vendorName}. Build your Street Lamp with their artwork.`)
+
+    const imageUrl = spotlight.image?.startsWith('http')
+      ? spotlight.image
+      : spotlight.image && base
+        ? `${base}${spotlight.image.startsWith('/') ? '' : '/'}${spotlight.image}`
+        : undefined
+
+    const metadata: Metadata = {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: 'website',
+        ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630, alt: spotlight.vendorName }] }),
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        ...(imageUrl && { images: [imageUrl] }),
+      },
+    }
+    return metadata
+  } catch {
+    return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }
+  }
 }
 
 const SEASON_1_HANDLE = 'season-1'
@@ -40,11 +113,13 @@ async function ExperienceProductsLoader({
   initialArtistSlug,
   skipQuiz,
   forceUnlisted,
+  onboardingQueryParams,
 }: {
   lamp: ShopifyProduct
   initialArtistSlug?: string
   skipQuiz: boolean
   forceUnlisted?: boolean
+  onboardingQueryParams?: Record<string, string>
 }) {
   // When user has direct link (?artist=handle), include that collection so its products appear in the selector (e.g. unlisted)
   const extraHandles = initialArtistSlug
@@ -68,7 +143,11 @@ async function ExperienceProductsLoader({
   const season2Ids = new Set(baseSeason2.map((p) => p.id))
   const spotlightProducts: ShopifyProduct[] = []
   const collectionResults = spotlightResults as Awaited<ReturnType<typeof getCollectionWithListProducts>>[]
-  for (const col of collectionResults) {
+  const earlyAccessHandles = new Set(extraHandles)
+  for (let i = 0; i < collectionResults.length; i++) {
+    const col = collectionResults[i]
+    const collectionHandle = collectionsToMerge[i]
+    const isEarlyAccessCollection = earlyAccessHandles.has(collectionHandle)
     const nodes = col?.products?.edges?.map((e) => e.node).filter(
       (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
     ) ?? []
@@ -78,19 +157,19 @@ async function ExperienceProductsLoader({
         spotlightProducts.push(p)
       }
     }
-    // Unlisted products are omitted from collection.products in Storefront API; fetch by handle
+    // Only fetch via Admin/COA for early-access (?artist=) collections; normal experience shows Online Store channel only
+    if (!isEarlyAccessCollection) continue
     let handles: string[] = []
     const handlesStr = col?.productHandlesMetafield?.value?.trim()
     if (handlesStr) {
       handles = handlesStr.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
     }
     if (handles.length === 0 && col?.handle) {
-      // No metafield: use Admin API to get product handles (includes unlisted) for early-access collections
       handles = await getCollectionProductHandlesByHandle(col.handle)
     }
     if (handles.length > 0) {
       try {
-        const byHandles = await getProductsByHandles(handles)
+        const byHandles = await getProductsByHandles(handles, { preferPrivateToken: true })
         for (const p of byHandles) {
           if (p.handle === 'street_lamp' || p.handle?.startsWith('street-lamp')) continue
           if (season2Ids.has(p.id)) continue
@@ -123,6 +202,7 @@ async function ExperienceProductsLoader({
       initialArtistSlug={initialArtistSlug}
       skipQuiz={skipQuiz}
       forceUnlisted={forceUnlisted}
+      onboardingQueryParams={onboardingQueryParams}
     />
   )
 }
@@ -156,6 +236,11 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   const skipQuiz = resolved?.skipQuiz === '1'
   const forceUnlisted = ['1', 'true', 'yes'].includes((resolved?.unlisted ?? '').toLowerCase())
 
+  const onboardingQueryParams: Record<string, string> = {}
+  if (resolved?.artist) onboardingQueryParams.artist = resolved.artist
+  if (resolved?.utm_campaign) onboardingQueryParams.utm_campaign = resolved.utm_campaign
+  if (resolved?.vendor) onboardingQueryParams.vendor = resolved.vendor
+
   const lamp = await getProduct('street_lamp').catch(() => null)
 
   if (!lamp) {
@@ -184,6 +269,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
         initialArtistSlug={initialArtistSlug}
         skipQuiz={skipQuiz}
         forceUnlisted={forceUnlisted}
+        onboardingQueryParams={onboardingQueryParams}
       />
     </Suspense>
   )

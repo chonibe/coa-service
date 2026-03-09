@@ -64,6 +64,8 @@ import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type Filt
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
+import { trackViewItem, trackAddToCart, trackSearch } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
@@ -449,6 +451,13 @@ export function Configurator({
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
 
+  // E-commerce: track view_item when previewed artwork changes
+  useEffect(() => {
+    if (!previewed) return
+    const variant = previewed.variants?.edges?.[0]?.node
+    trackViewItem(storefrontProductToItem(previewed, variant, 1))
+  }, [previewed?.id, previewIndex])
+
   // Fetch collected product IDs when authenticated (for "Collected" badge)
   useEffect(() => {
     if (!isAuthenticated) {
@@ -719,6 +728,8 @@ export function Configurator({
       return [...prev, product.id]
     })
     if (isAdding) {
+      const variant = product.variants?.edges?.[0]?.node
+      trackAddToCart(storefrontProductToItem(product, variant, 1))
       setLastAddedProductId(product.id)
       setLampPreviewOrder((prev) => {
         const idx = prev.indexOf(product.id)
@@ -1654,6 +1665,9 @@ export function Configurator({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onBlur={() => !searchQuery && setSearchExpanded(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && searchQuery.trim()) trackSearch(searchQuery.trim())
+                      }}
                       placeholder="Search…"
                       className="w-full h-full pl-8 pr-8 text-sm bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none"
                     />

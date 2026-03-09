@@ -33,7 +33,7 @@ import { PayoutTrendsChart } from "@/components/payouts/payout-trends-chart"
 import { ProductPerformanceHeatmap } from "@/components/payouts/product-performance-heatmap"
 import { PayoutMetricsCards } from "@/components/payouts/payout-metrics-cards"
 import { MetricCard } from "@/components/vendor/metric-card"
-import { ShoppingCart, DollarSign, TrendingUp, Clock } from "lucide-react"
+import { ShoppingCart, DollarSign, TrendingUp, Clock, Link2 } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Alert, AlertDescription, AlertTitle, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui"
 const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#f43f5e"]
@@ -77,6 +77,10 @@ export default function AnalyticsPage() {
     totalRevenue: 0,
     totalPayout: 0,
   })
+  const [affiliateMetrics, setAffiliateMetrics] = useState({
+    totalEarned: 0,
+    referredSales: 0,
+  })
   const { toast } = useToast()
 
   const formatCurrency = (value: number) =>
@@ -116,6 +120,7 @@ export default function AnalyticsPage() {
       setSalesByProduct(data.salesByProduct || [])
       setSalesHistory(data.salesHistory || [])
       setTotalItems(data.totalItems || 0)
+      setAffiliateMetrics(data.affiliate || { totalEarned: 0, referredSales: 0 })
     } catch (err) {
       console.error("Error fetching analytics data:", err)
       setError(err instanceof Error ? err.message : "Failed to load analytics data")
@@ -387,6 +392,14 @@ export default function AnalyticsPage() {
                     className="border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-900/30"
                   />
                 )}
+
+                <MetricCard
+                  title="Affiliate Earnings"
+                  value={formatCurrency(affiliateMetrics.totalEarned)}
+                  icon={Link2}
+                  description={`${affiliateMetrics.referredSales} lamp sales from your referral link`}
+                  variant="outline"
+                />
               </>
             )}
           </div>

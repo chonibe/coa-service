@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
+import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -77,6 +79,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
     const ctx = await getUserContext(supabase)
+
+    // Resolve affiliate from cookie (for referral attribution)
+    const cookieStore = await cookies()
+    const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
+    const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
 
     // Parse request body
     const body: CreateCheckoutRequest = await request.json()
@@ -168,7 +175,10 @@ export async function POST(request: NextRequest) {
           subtotal_cents: subtotalCents,
           credits_discount_cents: creditDiscountCents,
           stripe_charge_cents: 0,
-          metadata: actualCreditsToUse > 0 ? { credit_only: true } : { zero_dollar_test: true },
+          metadata: {
+        ...(actualCreditsToUse > 0 ? { credit_only: true } : { zero_dollar_test: true }),
+        ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
+      },
         })
         .select()
         .single()
@@ -284,6 +294,7 @@ export async function POST(request: NextRequest) {
         collector_identifier: email || '',
         ...(orderNotes && { order_notes: orderNotes }),
         ...(promoCode && { promo_code: promoCode }),
+        ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       },
       ...(stripeCustomerId && { customer: stripeCustomerId }),
       ...(email && !stripeCustomerId && { customer_email: email }),
@@ -312,7 +323,10 @@ export async function POST(request: NextRequest) {
       credits_discount_cents: creditDiscountCents,
       stripe_charge_cents: stripeChargeCents,
       stripe_payment_intent_id: stripeSession.payment_intent as string | undefined,
-      metadata: { shopify_variants: items.map(i => ({ variantId: i.variantId, variantGid: i.variantGid, quantity: i.quantity, productHandle: i.handle })) },
+      metadata: {
+        shopify_variants: items.map(i => ({ variantId: i.variantId, variantGid: i.variantGid, quantity: i.quantity, productHandle: i.handle })),
+        ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
+      },
     })
 
     return NextResponse.json({

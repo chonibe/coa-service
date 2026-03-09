@@ -25,6 +25,17 @@ This function:
    - `amount = payoutAmount` (positive)
    - `line_item_id` for traceability
 
+### Affiliate Commission (Lamp Referrals)
+
+When a **lamp** line item is fulfilled and the order has `affiliate_vendor_id` (customer came via artist's referral link), `depositAffiliateCommission()` in [`lib/banking/affiliate-commission.ts`](../../../lib/banking/affiliate-commission.ts) inserts a ledger entry with:
+
+- `transaction_type = 'affiliate_commission'`
+- `currency = 'USD'`
+- `amount = priceInUSD * 0.10` (10% commission)
+- `collector_identifier` = affiliate vendor's `auth_id`
+
+Affiliate commission is included in the vendor's available balance. See [Affiliate Program](../../features/affiliate-program/README.md) for full details.
+
 ## How Money Leaves the Ledger
 
 When a vendor **redeems their balance** (requests a payout), the redeem endpoint calls `recordPayoutWithdrawal()` in [`lib/banking/payout-withdrawal.ts`](../../../lib/banking/payout-withdrawal.ts).

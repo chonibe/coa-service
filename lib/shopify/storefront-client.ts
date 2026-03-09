@@ -15,8 +15,6 @@
 const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY_SHOP || ''
 // Storefront API token (not Admin API token which starts with shpat_)
 const STOREFRONT_TOKEN = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
-// Optional private Storefront token (server-only). Use for fetching unlisted products; public tokens return null for product(handle: "x") when product is unlisted.
-const STOREFRONT_PRIVATE_TOKEN = process.env.SHOPIFY_STOREFRONT_PRIVATE_TOKEN || ''
 const API_VERSION = '2024-01'
 
 const STOREFRONT_URL = `https://${SHOPIFY_SHOP}/api/${API_VERSION}/graphql.json`
@@ -605,11 +603,18 @@ export async function getProduct(handle: string): Promise<ShopifyProduct | null>
 
 /**
  * Get multiple products by handles.
- * When products are unlisted, the public Storefront token often returns null; if
- * SHOPIFY_STOREFRONT_PRIVATE_TOKEN is set, we retry with it so unlisted products are returned.
+ * When products are unlisted, the public Storefront token often returns null. Use
+ * options.preferPrivateToken when handles came from Admin API (unlisted) so we use
+ * SHOPIFY_STOREFRONT_PRIVATE_TOKEN first. Otherwise we retry with it if the first request returns 0 or throws.
  */
-export async function getProductsByHandles(handles: string[]): Promise<ShopifyProduct[]> {
+export async function getProductsByHandles(
+  handles: string[],
+  options?: { preferPrivateToken?: boolean }
+): Promise<ShopifyProduct[]> {
   if (handles.length === 0) return []
+
+  // Prefer dedicated private token; fall back to SHOPIFY_STOREFRONT_ACCESS_TOKEN (often the private/custom app token in Vercel)
+  const privateToken = process.env.SHOPIFY_STOREFRONT_PRIVATE_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
 
   const aliases = handles.map((handle, i) => `
     product_${i}: product(handle: "${handle}") {
@@ -624,19 +629,35 @@ export async function getProductsByHandles(handles: string[]): Promise<ShopifyPr
     }
   `
 
-  let data = await storefrontQuery<Record<string, ShopifyProduct | null>>(query)
-  let products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+  let data: Record<string, ShopifyProduct | null>
+  let products: ShopifyProduct[]
 
-  // Public tokens return null for unlisted products; retry with private token if configured
-  if (products.length === 0 && handles.length > 0 && STOREFRONT_PRIVATE_TOKEN) {
+  const runWithToken = (token: string) =>
+    storefrontQueryWithToken<Record<string, ShopifyProduct | null>>(token, query)
+
+  if (options?.preferPrivateToken && privateToken) {
     try {
-      data = await storefrontQueryWithToken<Record<string, ShopifyProduct | null>>(
-        STOREFRONT_PRIVATE_TOKEN,
-        query
-      )
+      data = await runWithToken(privateToken)
+      products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+      return products
+    } catch {
+      // fall through to default token
+    }
+  }
+
+  try {
+    data = await storefrontQuery<Record<string, ShopifyProduct | null>>(query)
+    products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
+  } catch {
+    products = []
+  }
+
+  if (products.length === 0 && handles.length > 0 && privateToken) {
+    try {
+      data = await runWithToken(privateToken)
       products = Object.values(data).filter((p): p is ShopifyProduct => p !== null)
     } catch {
-      // keep original empty result
+      // keep previous result
     }
   }
 

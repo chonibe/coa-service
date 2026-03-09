@@ -20,6 +20,7 @@ export type CollectorTransactionType =
   | 'perk_redemption'
   | 'payout_earned'      // USD deposited when line items are fulfilled
   | 'payout_withdrawal'  // USD withdrawn when payout is processed
+  | 'affiliate_commission' // USD earned by artist on lamp sales from their referral link (10%)
   | 'payout_reversal'    // USD restored when payout is rejected or fails
   | 'payout_balance_purchase' // USD spent from payout balance for store purchases
   | 'refund_deduction'   // USD deducted for refunds

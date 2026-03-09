@@ -23,6 +23,8 @@ import { ScrollingText } from '@/components/sections'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylProductCard } from '@/components/shop'
 import { useCart } from '@/lib/shop/CartContext'
+import { trackViewItem, trackAddToCart } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { ProductCreditsCallout } from '@/components/shop/ProductCreditsCallout'
 import {
   ProductGallery,
@@ -122,17 +124,24 @@ export default function ProductPage() {
   // Update selected variant when options change
   useEffect(() => {
     if (!product) return
-    
+
     const matchingVariant = product.variants?.edges?.find(({ node }) => {
       return node.selectedOptions.every(
         (opt) => selectedOptions[opt.name] === opt.value
       )
     })
-    
+
     if (matchingVariant) {
       setSelectedVariant(matchingVariant.node)
     }
   }, [selectedOptions, product])
+
+  // E-commerce: track view_item when product is loaded
+  useEffect(() => {
+    if (!product || !selectedVariant) return
+    const item = storefrontProductToItem(product, selectedVariant, 1)
+    trackViewItem(item)
+  }, [product?.id, selectedVariant?.id])
 
   // Handle option change
   const handleOptionChange = (optionName: string, value: string) => {
@@ -145,10 +154,10 @@ export default function ProductPage() {
   // Handle add to cart with enhanced states
   const handleAddToCart = () => {
     if (!selectedVariant || !product) return
-    
+
     setCartButtonState('loading')
     setAddingToCart(true)
-    
+
     // Add to cart using context
     cart.addItem({
       productId: product.id,
@@ -161,7 +170,11 @@ export default function ProductPage() {
       image: selectedVariant.image?.url || product.featuredImage?.url,
       artistName: product.vendor,
     })
-    
+
+    // E-commerce: track add_to_cart
+    const item = storefrontProductToItem(product, selectedVariant, quantity)
+    trackAddToCart(item)
+
     // Show success state
     setTimeout(() => {
       setCartButtonState('success')

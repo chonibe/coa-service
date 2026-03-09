@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 import { createAndCompleteOrder } from '@/lib/stripe/fulfill-embedded-payment'
+import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
@@ -46,6 +48,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const supabase = createClient()
+    const cookieStore = await cookies()
+    const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
+    const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
+
     const body: ConfirmPaymentRequest = await request.json()
     const { items, paymentMethodId, shippingAddress } = body
 
@@ -73,6 +80,7 @@ export async function POST(request: NextRequest) {
         source: 'headless_storefront_embedded',
         shopify_variant_ids: shopifyVariantsCompact,
         collector_identifier: shippingAddress.email || '',
+        ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       },
       return_url: `${baseUrl}/shop/checkout/success`,
     })
@@ -88,7 +96,8 @@ export async function POST(request: NextRequest) {
         shippingAddress,
         paymentIntent.id,
         subtotalCents,
-        'usd'
+        'usd',
+        affiliateVendorId ?? undefined
       )
 
       const supabase = createClient()

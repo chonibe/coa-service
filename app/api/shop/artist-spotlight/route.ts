@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagram } from '@/lib/shopify/artist-image'
-import { getCollectionProductHandlesByHandle } from '@/lib/shopify/admin-collection-products'
+import { getCollectionProductHandlesByHandle, getCollectionGifUrlByAdmin, resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
 import { getCollection, getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles } from '@/lib/shopify/storefront-client'
 
 /**
@@ -24,10 +24,10 @@ export async function GET(request: Request) {
     const requestedArtist = searchParams.get('artist')?.trim() || searchParams.get('vendor')?.trim()
     const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
     if (requestedArtist) {
-      // Try collection by exact handle, then common variants (e.g. kymo → kymo-one)
+      // Try collection by exact handle, then common variants (e.g. kymo → kymo-one). Allow Admin/COA fallback for early-access.
       const handlesToTry = [requestedArtist, `${requestedArtist}-one`]
       for (const h of handlesToTry) {
-        const byCollection = await tryCollectionSpotlight(supabase, h)
+        const byCollection = await tryCollectionSpotlight(supabase, h, { allowEarlyAccessFallback: true })
         if (byCollection) {
           const payload = forceUnlisted ? { ...byCollection, unlisted: true } : byCollection
           return NextResponse.json(payload)
@@ -40,10 +40,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // 0. Override: try configured artist first (vendor name, then collection by handle); skip if unlisted
+    // 0. Override: try configured artist first (vendor name, then collection by handle); skip if unlisted. No Admin fallback — Online Store only.
     const overrideResult =
       (await tryVendorSpotlight(supabase, SPOTLIGHT_OVERRIDE.vendorName)) ??
-      (await tryCollectionSpotlight(supabase, SPOTLIGHT_OVERRIDE.collectionHandle))
+      (await tryCollectionSpotlight(supabase, SPOTLIGHT_OVERRIDE.collectionHandle, { allowEarlyAccessFallback: false }))
     if (overrideResult && !overrideResult.unlisted) return NextResponse.json(overrideResult)
 
     // 1. Try Shopify: most recently created/activated product (Storefront returns published only); skip if unlisted
@@ -137,8 +137,14 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
   }
 }
 
-/** Build spotlight from collection by handle (when vendor name doesn't match) */
-async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>, collectionHandle: string): Promise<SpotlightResult | null> {
+/** Build spotlight from collection by handle (when vendor name doesn't match).
+ * When allowEarlyAccessFallback is false (default experience), only use Storefront products — no Admin/COA fallback.
+ * When true (?artist= early-access link), fetch via Admin + Storefront so COA-only products appear. */
+async function tryCollectionSpotlight(
+  supabase: ReturnType<typeof createClient>,
+  collectionHandle: string,
+  options?: { allowEarlyAccessFallback?: boolean }
+): Promise<SpotlightResult | null> {
   try {
     const col = await getCollectionWithListProducts(collectionHandle, { first: 8 })
     if (!col) return null
@@ -146,8 +152,7 @@ async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>,
     let nodes = (col.products?.edges?.map((e) => e.node) ?? []).filter(
       (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
     )
-    // Unlisted products are omitted from collection.products in Storefront API; use metafield or Admin API
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && options?.allowEarlyAccessFallback) {
       let handles: string[] = []
       if (col.productHandlesMetafield?.value?.trim()) {
         handles = col.productHandlesMetafield.value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
@@ -156,10 +161,11 @@ async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>,
         handles = await getCollectionProductHandlesByHandle(col.handle)
       }
       if (handles.length > 0) {
-        const byHandles = await getProductsByHandles(handles)
+        const byHandles = await getProductsByHandles(handles, { preferPrivateToken: true })
         nodes = byHandles.filter((p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp'))
       }
     }
+    if (nodes.length === 0) return null
 
     const vendorName = (nodes[0]?.vendor) || col.title || collectionHandle.replace(/-/g, ' ')
     const productIds = nodes
@@ -173,7 +179,15 @@ async function tryCollectionSpotlight(supabase: ReturnType<typeof createClient>,
     const bioFromCol = col.description?.trim() ||
       (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '')
     const instagramFromCol = col.metafield?.value?.trim() ? parseInstagramHandle(col.metafield.value) : undefined
-    const gifUrl = col.gifMetafield?.value?.trim() || undefined
+    let gifUrl = col.gifMetafield?.value?.trim() || undefined
+    if (!gifUrl && col.id) {
+      const fromAdmin = await getCollectionGifUrlByAdmin(col.id)
+      if (fromAdmin) gifUrl = fromAdmin
+    }
+    if (gifUrl?.startsWith('gid://')) {
+      const resolved = await resolveMediaGidToUrl(gifUrl)
+      if (resolved) gifUrl = resolved
+    }
     const unlisted = Boolean(col.unlistedMetafield?.value?.trim())
 
     const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)

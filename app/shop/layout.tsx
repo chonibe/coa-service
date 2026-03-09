@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useState, useCallback, useEffect } from 'react'
+import Script from 'next/script'
 import { useRouter, usePathname } from 'next/navigation'
 import { Footer } from '@/components/impact'
 import { AffiliatePersistence } from './components/AffiliatePersistence'
@@ -318,6 +319,28 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Hotjar tracking — loads only on shop pages
+function HotjarScript() {
+  return (
+    <Script
+      id="hotjar-init"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
+(function(h,o,t,j,a,r){
+  h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+  h._hjSettings={hjid:6663456,hjsv:6};
+  a=o.getElementsByTagName('head')[0];
+  r=o.createElement('script');r.async=1;
+  r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+  a.appendChild(r);
+})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+        `.trim(),
+      }}
+    />
+  )
+}
+
 // Main layout with CartProvider and WishlistProvider wrappers
 export default function ShopLayout({
   children,
@@ -328,6 +351,7 @@ export default function ShopLayout({
     <CartProvider>
       <WishlistProvider>
         <ShopAuthProvider>
+          <HotjarScript />
           <ShopLayoutInner>
             {children}
           </ShopLayoutInner>

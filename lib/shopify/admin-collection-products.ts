@@ -20,6 +20,74 @@ export function isAdminCollectionApiAvailable(): boolean {
 }
 
 /**
+ * Resolve a Shopify media GID (e.g. gid://shopify/MediaImage/123) to an image URL via Admin API.
+ */
+export async function resolveMediaGidToUrl(gid: string): Promise<string | null> {
+  if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN || !gid?.startsWith('gid://')) return null
+  try {
+    const query = `
+      query getMediaUrl($id: ID!) {
+        node(id: $id) {
+          ... on MediaImage {
+            image { url }
+          }
+          ... on GenericFile {
+            url
+          }
+        }
+      }
+    `
+    const response = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2024-01/graphql.json`, {
+      method: 'POST',
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ query, variables: { id: gid } }),
+      next: { revalidate: 60 },
+    })
+    if (!response.ok) return null
+    const json = await response.json()
+    const node = json?.data?.node
+    const url = node?.image?.url ?? node?.url
+    return typeof url === 'string' ? url.trim() || null : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Fetch collection metafield custom.gif via Admin API (works even when Storefront doesn't expose it).
+ * If the metafield value is a media GID (e.g. gid://shopify/MediaImage/...), resolves it to the image URL.
+ * collectionId: Storefront GID (e.g. gid://shopify/Collection/123) or numeric id.
+ */
+export async function getCollectionGifUrlByAdmin(collectionId: string): Promise<string | null> {
+  if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) return null
+  const gid = collectionId.startsWith('gid://') ? collectionId : `gid://shopify/Collection/${collectionId}`
+  try {
+    const query = `
+      query getCollectionGif($id: ID!) {
+        collection(id: $id) {
+          metafield(namespace: "custom", key: "gif") { value }
+        }
+      }
+    `
+    const response = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2024-01/graphql.json`, {
+      method: 'POST',
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ query, variables: { id: gid } }),
+      next: { revalidate: 60 },
+    })
+    if (!response.ok) return null
+    const json = await response.json()
+    const value = json?.data?.collection?.metafield?.value?.trim()
+    if (!value) return null
+    if (value.startsWith('http://') || value.startsWith('https://')) return value
+    const resolved = await resolveMediaGidToUrl(value)
+    return resolved ?? value
+  } catch {
+    return null
+  }
+}
+
+/**
  * Get collection ID by handle via REST (list collections and find by handle).
  */
 async function getCollectionIdByHandleREST(handle: string): Promise<string | null> {

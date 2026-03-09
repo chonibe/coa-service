@@ -148,6 +148,11 @@ export async function syncShopifyOrder(
     const shopifyTags = (order.tags || "").toLowerCase()
     const archived = shopifyTags.includes("archived") || order.closed_at !== null || order.cancel_reason !== null
 
+    const affiliateAttr = (order.note_attributes as Array<{ name?: string; value?: string }> | undefined)?.find(
+      (a) => a.name === 'affiliate_vendor_id'
+    )
+    const affiliateVendorId = affiliateAttr?.value ? parseInt(affiliateAttr.value, 10) : null
+
     const orderData = {
       id: orderId,
       order_number: order.order_number?.toString() || orderName.replace('#', ''),
@@ -170,6 +175,7 @@ export async function syncShopifyOrder(
       customer_id: order.customer?.id?.toString() || null,
       shopify_id: orderId,
       created_at: order.created_at,
+      ...(affiliateVendorId && !isNaN(affiliateVendorId) && { affiliate_vendor_id: affiliateVendorId }),
     }
 
     const { error: orderError } = await supabase.from('orders').upsert(orderData)

@@ -143,6 +143,11 @@ export async function POST(request: NextRequest) {
     }
     const effectiveShipping = shippingAddress || defaultShipping
 
+    const sessionMetadata = (checkoutSession.metadata as Record<string, unknown>) || {}
+    const affiliateVendorId = sessionMetadata.affiliate_vendor_id
+      ? parseInt(String(sessionMetadata.affiliate_vendor_id), 10)
+      : undefined
+
     const draftOrderData = {
       draft_order: {
         line_items: lineItems.map(item => ({
@@ -177,6 +182,9 @@ export async function POST(request: NextRequest) {
         note: creditsToDeduct > 0
           ? `Credit Purchase\nSession ID: ${sessionId}\nCredits Used: ${creditsToDeduct}\nSource: Headless Storefront`
           : `Zero Dollar Test Order\nSession ID: ${sessionId}\nSource: Headless Storefront`,
+        note_attributes: affiliateVendorId && !isNaN(affiliateVendorId)
+          ? [{ name: 'affiliate_vendor_id', value: String(affiliateVendorId) }]
+          : undefined,
         tags: creditsToDeduct > 0 ? 'headless,credit-purchase' : 'headless,zero-dollar-test',
         use_customer_default_address: false,
       },

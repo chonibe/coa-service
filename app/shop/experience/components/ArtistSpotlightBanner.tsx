@@ -65,8 +65,7 @@ export function ArtistSpotlightBanner({
           .spotlight-border-path { animation: none !important; }
         }
       `}</style>
-      {/* SVG stroke — light segment travels around the border (collapsed only) */}
-      {!expanded && (
+      {/* SVG stroke — light segment travels around the border (collapsed + expanded) */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
         viewBox="0 0 400 72"
@@ -101,13 +100,13 @@ export function ArtistSpotlightBanner({
           fill="none"
           stroke={spotlight.unlisted ? 'url(#spotlight-fade-unlisted)' : 'url(#spotlight-fade)'}
           strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeDasharray="320 158 320 158"
           className="spotlight-border-path"
           style={{ animation: 'spotlight-border 14s linear infinite' }}
         />
       </svg>
-      )}
       <button
         type="button"
         onClick={handleClick}
@@ -117,10 +116,10 @@ export function ArtistSpotlightBanner({
           expanded ? 'p-0' : 'px-3 py-2.5'
         )}
       >
-        {/* GIF overlay when collapsed — image URL from collection metafield custom.gif (16:9) */}
+        {/* GIF overlay when collapsed — centered */}
         {!expanded && spotlight.gifUrl && (
           <div
-            className="absolute top-2 right-12 z-20 pointer-events-none w-20 aspect-video rounded-lg overflow-hidden bg-neutral-200/80 dark:bg-[#262222]/80"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none w-20 aspect-video rounded-lg overflow-hidden"
             aria-hidden
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -191,55 +190,68 @@ export function ArtistSpotlightBanner({
           </div>
         )}
 
-        {/* Expanded card: large profile, title, description */}
+        {/* Expanded card: equal-width for title and GIF; on mobile stack (both rows full width); chevron stays top-right. */}
         {expanded && (
           <div className="flex flex-col">
-            <div className="flex items-start gap-4 p-4">
-              <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#262222]">
-                {spotlight.image ? (
-                  <Image
-                    src={spotlight.image}
-                    alt={spotlight.vendorName}
-                    width={112}
-                    height={112}
-                    className="object-cover w-full h-full"
-                    sizes="112px"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Sparkles className="w-12 h-12 text-amber-500" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 flex flex-col gap-1">
-                <p className={cn(
-                  'text-[10px] font-medium uppercase tracking-wider',
-                  spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
-                )}>
-                  {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
-                </p>
-                <h3 className="text-lg font-semibold text-[#FFBA94]">
-                  {spotlight.vendorName}
-                </h3>
-                {spotlight.seriesName && (
-                  <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
-                    {spotlight.seriesName}
+            <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 p-4">
+              {/* Title row/column: flex-1 so equal to GIF column, not prioritising GIF */}
+              <div className="flex items-start gap-3 min-w-0 flex-1 w-full sm:w-auto">
+                <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#262222]">
+                  {spotlight.image ? (
+                    <Image
+                      src={spotlight.image}
+                      alt={spotlight.vendorName}
+                      width={112}
+                      height={112}
+                      className="object-cover w-full h-full"
+                      sizes="112px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Sparkles className="w-12 h-12 text-amber-500" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <p className={cn(
+                    'text-[10px] font-medium uppercase tracking-wider',
+                    spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
+                  )}>
+                    {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                   </p>
-                )}
-                {spotlight.instagram && (
-                  <a
-                    href={`https://instagram.com/${spotlight.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
-                  >
-                    <Instagram className="w-4 h-4 flex-shrink-0" />
-                    <span>@{spotlight.instagram}</span>
-                  </a>
-                )}
+                  <h3 className="text-lg font-semibold text-[#FFBA94]">
+                    {spotlight.vendorName}
+                  </h3>
+                  {spotlight.seriesName && (
+                    <p className="text-sm text-neutral-500 dark:text-[#c4a0a0]">
+                      {spotlight.seriesName}
+                    </p>
+                  )}
+                  {spotlight.instagram && (
+                    <a
+                      href={`https://instagram.com/${spotlight.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
+                    >
+                      <Instagram className="w-4 h-4 flex-shrink-0" />
+                      <span>@{spotlight.instagram}</span>
+                    </a>
+                  )}
+                </div>
               </div>
-              <ChevronDown className="w-5 h-5 flex-shrink-0 text-neutral-500 rotate-180 transition-transform duration-300" />
+              {/* GIF: much smaller on mobile, equal width on sm+ */}
+              {spotlight.gifUrl && (
+                <div className="w-full max-w-[120px] sm:max-w-none sm:flex-1 sm:min-w-0 min-h-0 rounded-xl overflow-hidden aspect-video flex-shrink-0 sm:self-stretch self-end" aria-hidden>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={spotlight.gifUrl} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+            {/* Chevron at card top-right: in first row on mobile, after GIF on sm+ */}
+            <div className="absolute top-4 right-4 sm:top-4 sm:right-4 z-10 pointer-events-none">
+              <ChevronDown className="w-5 h-5 text-neutral-500 rotate-180 transition-transform duration-300" aria-hidden />
             </div>
             {spotlight.bio && (
               <div className="px-4 pb-4 pt-0">

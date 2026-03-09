@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Container,
@@ -12,8 +12,11 @@ import {
 import { VinylProductCard } from '@/components/shop'
 import { ScrollReveal } from '@/components/blocks'
 import { useCart } from '@/lib/shop/CartContext'
+import { trackAddToCart, trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getPage, hasPage } from '@/content/shopify-content'
+import { AFFILIATE_REF_COOKIE, AFFILIATE_REF_MAX_AGE_DAYS } from '@/lib/affiliate'
 
 /**
  * Artist/Vendor Profile Page — Enriched (Track B1)
@@ -51,10 +54,27 @@ interface ArtistProfile {
 
 export default function ArtistPage() {
   const params = useParams<{ slug: string }>()
+  const searchParams = useSearchParams()
   const cart = useCart()
   const [artist, setArtist] = useState<ArtistProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+
+  const affiliateLandingFired = useRef(false)
+
+  // Set affiliate ref cookie when ?ref= is present (for referral tracking)
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref?.trim() && params?.slug) {
+      const maxAge = AFFILIATE_REF_MAX_AGE_DAYS * 24 * 60 * 60
+      document.cookie = `${AFFILIATE_REF_COOKIE}=${encodeURIComponent(ref.trim())}; path=/; max-age=${maxAge}; samesite=lax`
+      // Track affiliate landing once for GA attribution
+      if (isGAEnabled() && !affiliateLandingFired.current) {
+        affiliateLandingFired.current = true
+        trackEnhancedEvent('affiliate_landing', { affiliate_ref: ref.trim(), page: 'artist', artist_slug: params.slug })
+      }
+    }
+  }, [searchParams, params?.slug])
   
   useEffect(() => {
     async function fetchArtist() {
@@ -364,6 +384,7 @@ export default function ArtistPage() {
                           image: prod.featuredImage?.url,
                           artistName: prod.vendor,
                         })
+                        trackAddToCart(storefrontProductToItem(prod, variant, 1))
                       }
                     }}
                     enableFlip={true}

@@ -135,11 +135,42 @@ export async function GET(request: NextRequest) {
 
     const analytics = buildAnalytics(items, payoutSettings, productDetails)
 
+    // Affiliate metrics: total commission earned and referred lamp sales count
+    let affiliateTotalEarned = 0
+    let affiliateReferredSales = 0
+    const { data: vendor } = await supabase
+      .from("vendors")
+      .select("id, auth_id")
+      .eq("vendor_name", vendorName)
+      .maybeSingle()
+    if (vendor?.auth_id) {
+      let affQuery = supabase
+        .from("collector_ledger_entries")
+        .select("amount, created_at")
+        .eq("collector_identifier", vendor.auth_id)
+        .eq("transaction_type", "affiliate_commission")
+        .eq("currency", "USD")
+      if (startDate && endDate) {
+        affQuery = affQuery
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString())
+      }
+      const { data: affEntries } = await affQuery
+      if (affEntries?.length) {
+        affiliateTotalEarned = affEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0)
+        affiliateReferredSales = affEntries.length
+      }
+    }
+
     return NextResponse.json({
       salesByDate: analytics.salesByDate,
       salesByProduct: analytics.salesByProduct,
       salesHistory: analytics.salesHistory,
       totalItems: items.length,
+      affiliate: {
+        totalEarned: Number(affiliateTotalEarned.toFixed(2)),
+        referredSales: affiliateReferredSales,
+      },
     })
   } catch (error) {
     console.error("Unexpected error in vendor sales analytics API:", error)

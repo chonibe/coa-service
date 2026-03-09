@@ -11,6 +11,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/lib/shop/CartContext'
+import { trackBeginCheckout } from '@/lib/google-analytics'
+import { cartItemsToProductItems } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
@@ -57,6 +59,12 @@ function CartContentInner() {
   const handleCheckout = async () => {
     setError(null)
     setIsCheckingOut(true)
+
+    // E-commerce: track begin_checkout
+    const productItems = cartItemsToProductItems(items)
+    if (productItems.length > 0) {
+      trackBeginCheckout(productItems, subtotal, 'USD')
+    }
 
     try {
       const response = await fetch('/api/checkout/create', {
