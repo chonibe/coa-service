@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 interface Product {
   id: string;
@@ -70,7 +71,10 @@ async function updateProductMetafield(productId: number, metafieldId: number | n
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

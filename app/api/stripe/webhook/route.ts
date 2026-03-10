@@ -12,9 +12,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20",
 })
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || ""
 
 export async function POST(request: NextRequest) {
+  if (!endpointSecret) {
+    console.error("[Stripe webhook] STRIPE_WEBHOOK_SECRET not configured")
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 })
+  }
+
   const supabase = createClient()
   
   try {
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest) {
     let event
 
     try {
-      event = stripe.webhooks.constructEvent(body, sig, endpointSecret || "")
+      event = stripe.webhooks.constructEvent(body, sig, endpointSecret)
     } catch (err: any) {
       console.error(`Webhook signature verification failed: ${err.message}`)
       return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })

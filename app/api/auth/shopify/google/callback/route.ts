@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { buildCollectorSessionCookie, clearCollectorSessionCookie } from "@/lib/collector-session"
+import { isValidRedirectPath } from "@/lib/auth/redirect-validation"
 
 /**
  * Handles Shopify Google login callback.
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     )
 
     const postLoginRedirect = request.cookies.get("shopify_login_redirect")?.value || "/experience"
-    const redirectPath = postLoginRedirect.startsWith("/") ? postLoginRedirect : "/experience"
+    const redirectPath = isValidRedirectPath(postLoginRedirect) ? postLoginRedirect : "/experience"
     const response = NextResponse.redirect(new URL(redirectPath, request.url))
 
     response.cookies.set("shopify_customer_id", customerId.toString(), {

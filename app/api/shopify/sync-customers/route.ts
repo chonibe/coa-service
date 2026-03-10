@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createChinaDivisionClient } from "@/lib/chinadivision/client"
 import type { Json } from "@/types/supabase"
 import type { ChinaDivisionOrderInfo } from "@/lib/chinadivision/client"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 interface CustomerProfile {
   email: string
@@ -225,7 +226,7 @@ async function syncCustomerOrderHistory(
     if (existing) continue
 
     // Calculate order total (sum of products if available)
-    let orderTotal = 0
+    const orderTotal = 0
     const products: any[] = []
     
     if (order.info && Array.isArray(order.info)) {
@@ -262,7 +263,10 @@ async function syncCustomerOrderHistory(
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {

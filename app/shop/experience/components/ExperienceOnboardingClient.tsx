@@ -23,17 +23,18 @@ const IntroQuiz = dynamic(() => import('./IntroQuiz').then((m) => ({ default: m.
 const ONBOARDING_BASE = '/shop/experience/onboarding'
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
-function getStepFromPathname(pathname: string): 1 | 2 | 3 | 4 {
+function getStepFromPathname(pathname: string): 1 | 2 | 3 {
   const base = '/shop/experience/onboarding'
   if (!pathname.startsWith(base)) return 1
   const rest = pathname.slice(base.length).replace(/^\/+/, '')
   if (!rest) return 1
   const num = parseInt(rest, 10)
-  if (num >= 1 && num <= 4) return num as 1 | 2 | 3 | 4
+  if (num >= 1 && num <= 3) return num as 1 | 2 | 3
+  if (num === 4) return 3 // legacy: step 4 (email) removed, treat as step 3
   return 1
 }
 
-function buildOnboardingUrl(step: 1 | 2 | 3 | 4, searchParams: URLSearchParams): string {
+function buildOnboardingUrl(step: 1 | 2 | 3, searchParams: URLSearchParams): string {
   if (step === 1) {
     const q = searchParams.toString()
     return q ? `${ONBOARDING_BASE}?${q}` : ONBOARDING_BASE
@@ -98,7 +99,7 @@ export function ExperienceOnboardingClient({
   }, [lamp, setOrderBarProps])
 
   const handleNext = useCallback(
-    (nextStep: 2 | 3 | 4, partial: IntroQuizPartialAnswers) => {
+    (nextStep: 2 | 3, partial: IntroQuizPartialAnswers) => {
       const toStore = { ...partial, completedAt: undefined }
       try {
         localStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify(toStore))
@@ -112,7 +113,7 @@ export function ExperienceOnboardingClient({
   )
 
   const handleBack = useCallback(() => {
-    const prev = (step === 2 ? 1 : step === 3 ? 2 : 3) as 1 | 2 | 3
+    const prev: 1 | 2 | 3 = step === 2 ? 1 : 2
     router.push(buildOnboardingUrl(prev, searchParams))
   }, [step, router, searchParams])
 

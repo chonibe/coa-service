@@ -163,7 +163,7 @@ export function ExperienceSlideoutMenu() {
         authRedirectTo={onboardingRedirectPath ?? '/experience'}
         openAuthWhenOpened={openAuthWhenMenuOpens}
         onAuthOpened={() => setOpenAuthWhenMenuOpens(false)}
-        logoHref="/shop/street-collector"
+        logoHref="/"
         promoCode={promoCode}
         promoDiscount={promoDiscount}
         onPromoChange={(code, discount) => { setPromoCode(code); setPromoDiscount(discount) }}

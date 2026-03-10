@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import DOMPurify from "dompurify"
 
 export interface EmailBodyRendererProps {
   content: string
@@ -21,15 +22,10 @@ export function EmailBodyRenderer({
 }: EmailBodyRendererProps) {
   const sanitizedHtml = useMemo(() => {
     if (html) {
-      // Basic HTML sanitization - remove script tags and dangerous attributes
-      // For production, consider using a library like DOMPurify
-      let sanitized = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/on\w+="[^"]*"/gi, '')
-        .replace(/on\w+='[^']*'/gi, '')
-        .replace(/javascript:/gi, '')
-      
-      return sanitized
+      return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'blockquote', 'img'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt'],
+      })
     }
     return null
   }, [html])

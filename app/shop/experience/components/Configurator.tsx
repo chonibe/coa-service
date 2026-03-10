@@ -862,9 +862,9 @@ export function Configurator({
           </div>
         )}
 
-        {/* AR camera + Light/dark mode toggles — overlay in Spline preview */}
+        {/* AR camera + Light/dark mode toggles — overlay in Spline preview (camera toggle hidden for now) */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-          {isCameraSupported && (
+          {false && isCameraSupported && (
             <button
               type="button"
               onClick={handleArCameraToggle}

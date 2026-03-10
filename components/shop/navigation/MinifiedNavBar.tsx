@@ -32,6 +32,8 @@ export interface MinifiedNavBarProps {
   onSearchClick?: () => void
   onAccountClick?: () => void
   onSearch?: (query: string) => Promise<{ products: SearchResult[]; collections: SearchResult[] }>
+  /** Link for the logo (default: /) */
+  logoHref?: string
   className?: string
 }
 
@@ -51,6 +53,7 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
       onSearchClick,
       onAccountClick,
       onSearch,
+      logoHref = '/',
       className,
     },
     ref
@@ -354,11 +357,17 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
 
               {/* Center: Logo - perfectly centered */}
               <div className="flex justify-center pointer-events-auto">
-                <StreetLampLogo 
-                  color="#ffba94"
-                  height={24}
-                  className="logo-img sm:h-7"
-                />
+                <Link
+                  href={logoHref}
+                  className="inline-flex items-center justify-center p-1 -m-1 transition-transform hover:scale-105"
+                  aria-label="Street Collector Home"
+                >
+                  <StreetLampLogo 
+                    color="#ffba94"
+                    height={24}
+                    className="logo-img sm:h-7"
+                  />
+                </Link>
               </div>
 
               {/* Right: Credits, Wishlist & Cart */}

@@ -30,8 +30,10 @@ This document outlines the security procedures, responsibilities, and guidelines
 
 ### Hosting (Vercel)
 - **Security Headers**: Configured in `next.config.js` including CSP, HSTS, and X-Frame-Options.
-- **CORS**: Wildcards are prohibited. Allowed origins must be explicitly listed in `ALLOWED_ORIGINS`.
+- **CORS**: Wildcards are prohibited. Use explicit origins in `ALLOWED_ORIGINS`; avoid overly broad subdomain patterns (e.g. `*.example.com`). Prefer listing each origin explicitly in production.
 - **Rate Limiting**: Applied to all API routes via middleware.
+- **Webhook Verification**: All webhooks (Stripe, Shopify, PayPal, WhatsApp) must verify request signatures before processing. WhatsApp requires `WHATSAPP_WEBHOOK_SECRET` for Meta Cloud API `x-hub-signature-256` verification.
+- **CSP Technical Debt**: `script-src` currently includes `unsafe-eval` and `unsafe-inline` for compatibility. Plan migration to nonce- or hash-based script loading when dependencies allow.
 
 ## 3. Continuous Security Checks
 

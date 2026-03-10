@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   const searchParams = request.nextUrl.searchParams
   const parentType = searchParams.get("parent_type")
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   const body = await request.json()
   const { parent_type, parent_id, title } = body

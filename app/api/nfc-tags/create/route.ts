@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

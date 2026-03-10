@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     const supabase = createClient()
     const results = {

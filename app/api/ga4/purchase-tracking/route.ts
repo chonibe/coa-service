@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * GET: Retrieve untracked purchases for a specific order or user
@@ -7,6 +8,9 @@ import { createClient } from "@/lib/supabase/server"
  */
 
 export async function GET(request: Request) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   const { searchParams } = new URL(request.url)
   const orderId = searchParams.get('orderId')
@@ -42,6 +46,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {

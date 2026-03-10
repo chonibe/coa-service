@@ -1,6 +1,10 @@
-import { NextResponse } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     // Call the database initialization endpoint
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || ""}/api/db/exec-sql`, {

@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { searchCollectors } from "@/lib/collectors";
+import { guardAdminRequest } from "@/lib/auth-guards"
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const { searchParams } = new URL(request.url);
   
   const search = searchParams.get("search") || "";

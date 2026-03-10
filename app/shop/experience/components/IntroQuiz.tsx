@@ -19,11 +19,11 @@ export type IntroQuizPartialAnswers = Partial<Pick<QuizAnswers, 'ownsLamp' | 'pu
 interface IntroQuizProps {
   onComplete: (answers: QuizAnswers) => void
   /** When set, quiz is driven by URL: only this step is shown and navigation uses onNext/onBack */
-  step?: 1 | 2 | 3 | 4
+  step?: 1 | 2 | 3
   /** Pre-filled values when using URL mode (e.g. from localStorage) */
   partialAnswers?: IntroQuizPartialAnswers
   /** Called when user continues to next step (URL mode only). Parent should navigate and pass updated partialAnswers next render. */
-  onNext?: (nextStep: 2 | 3 | 4, partial: IntroQuizPartialAnswers) => void
+  onNext?: (nextStep: 2 | 3, partial: IntroQuizPartialAnswers) => void
   /** Called when user taps back (URL mode only). Parent should navigate to previous step. */
   onBack?: () => void
   /** When set, step 1 shows "Already have an account? Log in" and calls this when clicked (skip onboarding for returning users) */
@@ -38,11 +38,10 @@ const fadeUp = {
 
 export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, onBack, onOpenLogin }: IntroQuizProps) {
   const isUrlMode = urlStep != null
-  const [internalStep, setInternalStep] = useState<1 | 2 | 3 | 4>(1)
+  const [internalStep, setInternalStep] = useState<1 | 2 | 3>(1)
   const [ownsLamp, setOwnsLamp] = useState<boolean | null>(partialAnswers?.ownsLamp ?? null)
   const [purpose, setPurpose] = useState<'self' | 'gift' | null>(partialAnswers?.purpose ?? null)
   const [name, setName] = useState(partialAnswers?.name ?? '')
-  const [email, setEmail] = useState(partialAnswers?.email ?? '')
 
   const step = isUrlMode ? urlStep : internalStep
 
@@ -56,8 +55,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     if (partialAnswers?.ownsLamp !== undefined) setOwnsLamp(partialAnswers.ownsLamp)
     if (partialAnswers?.purpose !== undefined) setPurpose(partialAnswers.purpose)
     if (partialAnswers?.name !== undefined) setName(partialAnswers.name)
-    if (partialAnswers?.email !== undefined) setEmail(partialAnswers.email)
-  }, [isUrlMode, partialAnswers?.ownsLamp, partialAnswers?.purpose, partialAnswers?.name, partialAnswers?.email])
+  }, [isUrlMode, partialAnswers?.ownsLamp, partialAnswers?.purpose, partialAnswers?.name])
 
   const handleStep1 = (owns: boolean) => {
     if (isUrlMode && onNext) {
@@ -78,19 +76,10 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   }
 
   const handleStep3 = () => {
-    if (isUrlMode && onNext) {
-      onNext(4, { ...partialAnswers, ownsLamp: ownsLamp ?? false, purpose: purpose ?? 'self', name: name.trim() || undefined })
-      return
-    }
-    setInternalStep(4)
-  }
-
-  const handleStep4 = () => {
-    const answers = {
+    const answers: QuizAnswers = {
       ownsLamp: ownsLamp ?? false,
       purpose: purpose ?? 'self',
       name: name.trim() || undefined,
-      email: email.trim() || undefined,
     }
     captureFunnelEvent(FunnelEvents.experience_quiz_completed, {
       owns_lamp: answers.ownsLamp,
@@ -106,7 +95,6 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     }
     if (internalStep === 2) setInternalStep(1)
     else if (internalStep === 3) setInternalStep(2)
-    else if (internalStep === 4) setInternalStep(3)
   }
 
   return (
@@ -133,7 +121,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
             className="flex flex-col items-center gap-10 max-w-lg w-full"
           >
             <div className="text-center">
-              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 1 of 4</p>
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 1 of 3</p>
               <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
                 Let&rsquo;s get started
               </h1>
@@ -199,7 +187,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
             className="flex flex-col items-center gap-10 max-w-lg w-full"
           >
             <div className="text-center">
-              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 2 of 4</p>
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 2 of 3</p>
               <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
                 Who is this for?
               </h1>
@@ -240,7 +228,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
             className="flex flex-col items-center gap-10 max-w-lg w-full"
           >
             <div className="text-center w-full">
-              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 3 of 4</p>
+              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 3 of 3</p>
               <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
                 {purpose === 'gift' ? "Let's create an awesome gift" : "Let's get to know you"}
               </h1>
@@ -268,49 +256,6 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
           </motion.div>
         )}
 
-        {step === 4 && (
-          <motion.div
-            key="step4"
-            variants={fadeUp}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="flex flex-col items-center gap-10 max-w-lg w-full"
-          >
-            <div className="text-center w-full">
-              <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 4 of 4</p>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
-                Hey there{name.trim() ? `, ${name.trim()}` : ''}! 👋
-              </h1>
-              <p className="text-[#FFBA94]/50 mt-4 text-lg">What&rsquo;s your email?</p>
-            </div>
-
-            <div className="w-full max-w-sm flex flex-col gap-4">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="What's your email?"
-                className="w-full px-4 py-3 rounded-xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] placeholder:text-[#FFBA94]/60 focus:outline-none focus:ring-2 focus:ring-[#FFBA94]/40 focus:border-transparent"
-                autoComplete="email"
-              />
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleStep4}
-                className="w-full py-3.5 rounded-xl bg-[#FFBA94] hover:bg-[#FFBA94]/90 text-[#390000] font-semibold transition-colors"
-              >
-                Continue
-              </motion.button>
-              <p className="text-center text-xs text-[#FFBA94]/60 mt-2">
-                By continuing, you indicate that you have read and agree to our{' '}
-                <a href="/policies/terms-of-service" className="underline hover:text-[#FFBA94]/90">Terms of Use</a>
-                {' & '}
-                <a href="/policies/privacy-policy" className="underline hover:text-[#FFBA94]/90">Privacy Policy</a>
-              </p>
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
     </div>
   )

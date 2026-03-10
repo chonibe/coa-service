@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import DOMPurify from "dompurify"
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -118,7 +119,12 @@ export function URLParamBanner({
           color: textColor,
           fontSize: `${fontSize}px`,
         }}
-        dangerouslySetInnerHTML={{ __html: message }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(message, {
+            ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+            ALLOWED_ATTR: ['href', 'target', 'rel'],
+          }),
+        }}
       />
       
       {/* CTA Button */}

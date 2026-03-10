@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { signPayload } from "@/lib/nfc/token"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 type SignRequestBody = {
   tagId?: string
@@ -12,6 +13,9 @@ type SignRequestBody = {
 const TOKEN_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const body = (await request.json()) as SignRequestBody
     const tagId = body.tagId?.trim()

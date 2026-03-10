@@ -5,10 +5,44 @@ import crypto from "crypto"
 
 /**
  * CRM Webhook Delivery Handler
- * Receives CRM events and delivers them to subscribed webhooks with filtering
+ * Receives CRM events (e.g. from Attio) and delivers them to subscribed webhooks with filtering.
+ * Verifies inbound signature via Attio-Signature / X-Attio-Signature HMAC-SHA256.
  */
 
+function verifyCrmWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string
+): boolean {
+  if (!signatureHeader || !secret) return false
+  try {
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody, "utf8")
+      .digest("hex")
+    if (signatureHeader.length !== expected.length) return false
+    return crypto.timingSafeEqual(
+      Buffer.from(signatureHeader, "hex"),
+      Buffer.from(expected, "hex")
+    )
+  } catch {
+    return false
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const secret = process.env.CRM_WEBHOOK_SECRET || process.env.ATTIO_WEBHOOK_SECRET || ""
+  const rawBody = await request.text()
+  const signature =
+    request.headers.get("attio-signature") ||
+    request.headers.get("x-attio-signature") ||
+    ""
+
+  if (!verifyCrmWebhookSignature(rawBody, signature, secret)) {
+    console.error("[CRM Webhook] Signature verification failed")
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const supabase = createClient()
 
   try {
@@ -16,7 +50,7 @@ export async function POST(request: NextRequest) {
       throw new Error("Database client not initialized")
     }
 
-    const body = await request.json()
+    const body = JSON.parse(rawBody)
     const { type, event, payload } = body
 
     // Support both 'type' and 'event' for backward compatibility

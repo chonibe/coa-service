@@ -7,13 +7,13 @@ import { getCollection, getCollectionWithListProducts, getProducts, getProductsB
 /**
  * Artist Spotlight API
  *
- * Returns the most recent "artist spotlight" — the vendor with the most recently
- * activated product. Tries override first (Tyler Shelton), then Shopify, then Supabase.
- * Used for the experience selector banner: filter artworks, "New Drop" badge, artist info card.
+ * Returns the "artist spotlight" for the experience: default is derived from the
+ * latest 2 artworks added to Season 2 (2025-edition). Also supports ?artist= for
+ * direct/affiliate links. Used for the experience selector banner: filter artworks,
+ * "New Drop" badge, artist info card.
  */
 
-/** Spotlight override: vendor name and/or collection handle to try */
-const SPOTLIGHT_OVERRIDE = { vendorName: 'Tyler Shelton', collectionHandle: 'tyler-shelton' }
+const SEASON_2_HANDLE = '2025-edition'
 
 export async function GET(request: Request) {
   try {
@@ -40,11 +40,9 @@ export async function GET(request: Request) {
       }
     }
 
-    // 0. Override: try configured artist first (vendor name, then collection by handle); skip if unlisted. No Admin fallback — Online Store only.
-    const overrideResult =
-      (await tryVendorSpotlight(supabase, SPOTLIGHT_OVERRIDE.vendorName)) ??
-      (await tryCollectionSpotlight(supabase, SPOTLIGHT_OVERRIDE.collectionHandle, { allowEarlyAccessFallback: false }))
-    if (overrideResult && !overrideResult.unlisted) return NextResponse.json(overrideResult)
+    // 0. Default: spotlight = artist of the latest 2 artworks in Season 2
+    const season2Result = await trySeason2LatestSpotlight(supabase)
+    if (season2Result && !season2Result.unlisted) return NextResponse.json(season2Result)
 
     // 1. Try Shopify: most recently created/activated product (Storefront returns published only); skip if unlisted
     const shopifyResult = await tryShopifySpotlight(supabase)
@@ -206,6 +204,52 @@ async function tryCollectionSpotlight(
       instagram: instagram || instagramFromCol || collectionInstagram,
       image: imageUrl || undefined,
       productIds: productIds.length > 0 ? productIds : (newest ? [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id] : []),
+      seriesName: col.title !== vendorName ? col.title : undefined,
+      gifUrl,
+      unlisted,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Build spotlight from the latest 2 artworks in Season 2 (2025-edition). */
+async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClient>): Promise<SpotlightResult | null> {
+  try {
+    const col = await getCollectionWithListProducts(SEASON_2_HANDLE, {
+      first: 2,
+      sortKey: 'CREATED',
+      reverse: true,
+    })
+    if (!col) return null
+
+    const nodes = (col.products?.edges?.map((e) => e.node) ?? []).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    if (nodes.length === 0) return null
+
+    const vendorName = nodes[0].vendor || col.title || SEASON_2_HANDLE.replace(/-/g, ' ')
+    const productIds = nodes
+      .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
+      .filter(Boolean)
+    const newest = nodes[0]
+
+    const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, null)
+    const handle = vendorSlug || slugify(vendorName)
+    const artistImage =
+      image ||
+      (await getArtistImageByHandle(handle)) ||
+      (await getArtistImageByHandle(`${handle}-one`))
+    const collectionBio = !bio ? await getCollectionDescription(handle) || await getCollectionDescription(`${handle}-one`) : undefined
+    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) || await getCollectionInstagram(`${handle}-one`) : undefined
+
+    return {
+      vendorName,
+      vendorSlug: handle,
+      bio: bio || collectionBio,
+      instagram: instagram || collectionInstagram,
+      image: artistImage || newest.featuredImage?.url || newest.images?.edges?.[0]?.node?.url,
+      productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
       unlisted,

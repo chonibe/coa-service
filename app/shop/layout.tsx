@@ -275,7 +275,7 @@ function ShopLayoutInner({ children }: { children: React.ReactNode }) {
       </a>
       
       {/* Minimal back bar on all shop pages except street-collector */}
-      {!isStreetCollectorPage && <BackBar href="/shop/street-collector" label="Back" />}
+      {!isStreetCollectorPage && <BackBar href="/" label="Back" />}
       {/* Chat icon in top-right when scrolled past hero (street-collector has no BackBar) */}
       {isStreetCollectorPage && <ChatIconScrollReveal />}
       

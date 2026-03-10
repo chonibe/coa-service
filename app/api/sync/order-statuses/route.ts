@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Sync order statuses from Shopify to ensure financial_status and fulfillment_status are up to date
  * This is especially important for cancelled orders that may have been cancelled in Shopify
  * but still show as active in the database
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })

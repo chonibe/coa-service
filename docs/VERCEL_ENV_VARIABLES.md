@@ -43,6 +43,16 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 ### 6. Street Lamp (Already in vercel.json)
 - ✅ `NEXT_PUBLIC_STREET_LAMP_CLIENT_ID` - Already configured
 
+### 7. WhatsApp Business API (Meta Cloud API)
+- ⚠️ `WHATSAPP_WEBHOOK_SECRET` - **REQUIRED** for webhook signature verification when using WhatsApp webhook
+  - Use your WhatsApp App Secret from Meta Developer Console
+  - Without this, POST webhook requests will be rejected with 401
+
+### 8. CRM Webhook (Attio)
+- ⚠️ `CRM_WEBHOOK_SECRET` or `ATTIO_WEBHOOK_SECRET` - **REQUIRED** for inbound CRM webhook signature verification
+  - Use your webhook secret from Attio Developer Settings
+  - Without this, inbound webhook requests will be rejected with 401
+
 ## Quick Setup Steps
 
 1. **Go to Vercel Dashboard** → Your Project → Settings → Environment Variables

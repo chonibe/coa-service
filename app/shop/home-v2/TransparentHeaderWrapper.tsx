@@ -34,7 +34,7 @@ export function TransparentHeaderWrapper() {
       
       <TransparentHeader
         navigation={shopNavigation}
-        logoHref="/shop/home"
+        logoHref="/"
       />
     </>
   )

@@ -1,11 +1,18 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import type { Database } from '@/types/supabase';
+import { guardAdminRequest } from "@/lib/auth-guards";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const orderId = searchParams.get('orderId');
 
     if (!orderId) {

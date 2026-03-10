@@ -2,8 +2,18 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Lock, Check, GripVertical, Play, Sparkles, Link2, Crown } from "lucide-react"
-
+import {
+  Lock,
+  Check,
+  GripVertical,
+  Play,
+  Sparkles,
+  Link2,
+  Crown,
+  MoreVertical,
+  Lock as LockIcon,
+  ArrowRight,
+} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Sparkles, Lock as LockIcon, Crown, ArrowRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { SeriesMember } from "@/types/artwork-series"

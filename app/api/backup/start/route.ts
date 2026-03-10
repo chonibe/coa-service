@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { startBackupCron } from '@/backup/cron/backup-cron';
+import { guardAdminRequest } from "@/lib/auth-guards"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     startBackupCron();
     return NextResponse.json({ 

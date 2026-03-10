@@ -3,8 +3,12 @@ import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { parseFilter, validateFilter } from "@/lib/crm/filter-parser"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
   

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { Errors } from "@/lib/crm/errors"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Saved Views API - Manage saved filter combinations
@@ -25,6 +26,9 @@ async function getUserWorkspaceId(supabase: any, userId: string): Promise<string
 }
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
   
@@ -83,6 +87,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
   

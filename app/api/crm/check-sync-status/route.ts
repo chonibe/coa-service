@@ -4,12 +4,16 @@ import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { shouldSyncGmail } from "@/lib/crm/sync-helper"
 import { isAdminEmail } from "@/lib/vendor-auth"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Check if Gmail sync is needed for the current user
  * Returns whether sync should be triggered
  */
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
 

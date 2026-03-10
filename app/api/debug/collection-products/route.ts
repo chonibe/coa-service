@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { getCollection } from '@/lib/shopify/storefront-client'
 import { getCollectionProductHandlesByHandle, isAdminCollectionApiAvailable } from '@/lib/shopify/admin-collection-products'
 import { getProductsByHandles } from '@/lib/shopify/storefront-client'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Debug endpoint to see if we can find artworks in a collection.
@@ -10,8 +12,13 @@ import { getProductsByHandles } from '@/lib/shopify/storefront-client'
  */
 const DEFAULT_DEBUG_HANDLE = 'jack-jc-art'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+export async function GET(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { searchParams } = request.nextUrl
   const handle = searchParams.get('handle')?.trim() || DEFAULT_DEBUG_HANDLE
 
   try {

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import DOMPurify from "dompurify"
 import { cn } from '@/lib/utils'
 import { Container, Button } from '@/components/impact'
 
@@ -133,7 +134,12 @@ export function ImageWithTextOverlay({
               <p
                 className="text-base sm:text-lg mb-6 opacity-90"
                 style={{ color: textColor }}
-                dangerouslySetInnerHTML={{ __html: content.description }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(content.description, {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                  }),
+                }}
               />
             )}
             {content.buttonText && content.buttonLink && (

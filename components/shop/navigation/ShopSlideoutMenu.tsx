@@ -131,7 +131,7 @@ export function ShopSlideoutMenu({
         <div className="flex flex-col h-full bg-white dark:bg-[#171515]">
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
             <Link
-              href={logoHref ?? '/shop/street-collector'}
+              href={logoHref ?? '/'}
               onClick={onClose}
               className="flex items-center shrink-0"
               aria-label="Street Collector home"

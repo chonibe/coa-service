@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { requirePermission, getWorkspaceMember } from "@/lib/crm/permissions"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Workspace Members API
@@ -8,6 +9,9 @@ import { requirePermission, getWorkspaceMember } from "@/lib/crm/permissions"
  */
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {
@@ -53,6 +57,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {

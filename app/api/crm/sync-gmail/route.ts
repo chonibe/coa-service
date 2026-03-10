@@ -7,12 +7,16 @@ import { fetchGmailMessages, extractEmailContent } from "@/lib/gmail/client"
 import { logEmail } from "@/lib/crm/log-email"
 import { isAdminEmail } from "@/lib/vendor-auth"
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Sync emails from Gmail to CRM
  * ADMIN ONLY - Fetches recent emails from the authenticated admin's Gmail account
  */
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
 

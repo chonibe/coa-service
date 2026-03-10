@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { resequenceEditionNumbers } from "@/lib/resequence-edition-numbers"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 const VALID_STATUSES = ["active", "inactive"] as const
 type Status = typeof VALID_STATUSES[number]
 
 export async function POST(request: Request) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const body = await request.json()
     const { lineItemId, orderId, status, itemIds } = body

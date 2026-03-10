@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * POST /api/debug/checkout-error
@@ -7,6 +8,11 @@ import { NextRequest, NextResponse } from 'next/server'
  * Call from client when checkout.confirm() fails or returns unexpected result.
  */
 export async function POST(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { stage, resultType, error, message, hasRedirectUrl } = body as {

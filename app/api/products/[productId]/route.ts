@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest, { params }: { params: { productId: string } }) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const productId = params.productId
 
   try {

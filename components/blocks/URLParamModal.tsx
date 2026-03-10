@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import DOMPurify from "dompurify"
 import { useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/impact'
@@ -281,7 +282,12 @@ export function URLParamModal({
               fontSize: `${messageSize}px`,
               color: textColor,
             }}
-            dangerouslySetInnerHTML={{ __html: message }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(message, {
+                ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+                ALLOWED_ATTR: ['href', 'target', 'rel'],
+              }),
+            }}
           />
 
           {showCta && ctaText && ctaLink && (

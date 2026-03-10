@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createChinaDivisionClient } from '@/lib/chinadivision/client'
 import { createClient } from '@supabase/supabase-js'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,9 @@ const supabase = createClient(
 )
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     // Create ChinaDivision client and fetch all SKU inventory
     const client = createChinaDivisionClient()

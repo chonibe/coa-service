@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from '@/lib/supabase/server'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,7 +11,10 @@ const supabase = createClient(
  * Assign edition numbers to line items that don't have them yet
  * Only processes products that have active (fulfilled) items without edition numbers
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     // Find products that have active items without edition numbers
     const { data: itemsWithoutEditions, error: fetchError } = await supabase

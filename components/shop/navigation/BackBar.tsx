@@ -34,7 +34,7 @@ export interface BackBarProps {
  */
 
 export function BackBar({
-  href = '/shop/street-collector',
+  href = '/',
   label = 'Back to home',
   iconUrl = HOME_ICON_URL,
   legalLinks = [],

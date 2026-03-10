@@ -44,7 +44,7 @@ export default function PoliciesLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <BackBar href="/shop/street-collector" label="Back to home" />
+      <BackBar href="/" label="Back to home" />
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
           {children}

@@ -43,14 +43,10 @@ export function ScrollingAnnouncementBar({
 }: ScrollingAnnouncementBarProps) {
   if (!visible || !messages || messages.length === 0) return null
 
-  // Create the message string with separators
-  const messageString = messages.join(` ${separator} `)
-  
-  // Repeat the message to ensure seamless loop
+  // Sanitize numeric values to prevent CSS injection (only numbers allowed)
+  const safeSpeed = Math.max(1, Math.min(120, Number(speed) || 30))
   const repeatCount = 10
-
-  // Calculate animation translate percentage
-  const translatePercent = 100 / repeatCount * 2
+  const translatePercent = Math.max(0, Math.min(100, 100 / repeatCount * 2))
 
   return (
     <div
@@ -64,17 +60,12 @@ export function ScrollingAnnouncementBar({
       <div
         className="flex whitespace-nowrap"
         style={{
-          animation: `marquee ${speed}s linear infinite`,
+          animation: `marquee ${safeSpeed}s linear infinite`,
         }}
       >
-        {/* Keyframe animation via inline style tag */}
+        {/* Keyframe animation - values are sanitized numbers only */}
         <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes marquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-${translatePercent}%); }
-            }
-          `
+          __html: `@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-${translatePercent}%)}}`,
         }} />
         {/* Render repeated messages for seamless loop */}
         {Array.from({ length: repeatCount }).map((_, index) => (

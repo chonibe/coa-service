@@ -82,7 +82,6 @@ export function VideoPlayerEnhanced({
   const ctaRef = useRef<HTMLDivElement>(null)
 
   const [isPlaying, setIsPlaying] = React.useState(video.autoplay ?? true)
-  const [isMuted, setIsMuted] = React.useState(video.muted ?? true)
   const [showPlayButton, setShowPlayButton] = React.useState(!video.autoplay)
   const [videoError, setVideoError] = React.useState(false)
 
@@ -97,13 +96,6 @@ export function VideoPlayerEnhanced({
     }
     setIsPlaying(!isPlaying)
     setShowPlayButton(false)
-  }
-
-  // Handle mute/unmute
-  const toggleMute = () => {
-    if (!videoRef.current) return
-    videoRef.current.muted = !isMuted
-    setIsMuted(!isMuted)
   }
 
   // Text split animation on mount
@@ -262,10 +254,11 @@ export function VideoPlayerEnhanced({
             poster={video.poster}
             autoPlay={video.autoplay}
             loop={video.loop ?? true}
-            muted={video.muted ?? true}
+            muted
             playsInline
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
+            onLoadedData={(e) => { e.currentTarget.muted = true }}
             onError={(e) => {
               console.error('Video load error:', e)
               setVideoError(true)
@@ -376,25 +369,6 @@ export function VideoPlayerEnhanced({
             ) : (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={toggleMute}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-            aria-label={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                <line x1="23" y1="9" x2="17" y2="15" />
-                <line x1="17" y1="9" x2="23" y2="15" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
               </svg>
             )}
           </button>

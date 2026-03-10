@@ -6,6 +6,7 @@ import { validateToken } from "@/lib/nfc/token"
 import { CheckCircle, Shield, ExternalLink, Image, Video, Music, FileText } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Alert, AlertDescription } from "@/components/ui"
+import { SanitizedHtml } from "@/components/SanitizedHtml"
 
 // ---------------------------------------------------------------------------
 // Content-block icon helper
@@ -152,9 +153,9 @@ export default async function NfcUnlockPage({
 
                   {/* Rich text / HTML content */}
                   {block.content_html && (
-                    <div
+                    <SanitizedHtml
+                      html={block.content_html}
                       className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: block.content_html }}
                     />
                   )}
 

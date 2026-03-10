@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { updateAllProductsWithBarcodes } from "@/lib/shopify/product-creation"
 import { createClient } from "@/lib/supabase/server"
 
-/**
- * Cron job to process product barcodes
- * Runs every 4 hours to ensure all Shopify products have barcodes
- */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get("authorization")
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const supabase = createClient()
 
   try {

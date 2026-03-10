@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { Errors } from "@/lib/crm/errors"
 import { parseFilter, parseFilterAsync, hasPathFilters } from "@/lib/crm/filter-parser"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Bulk Operations API
@@ -34,6 +35,9 @@ async function getUserWorkspaceId(supabase: any, userId: string): Promise<string
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {
@@ -163,7 +167,7 @@ export async function POST(request: NextRequest) {
       : 'crm_activities'
 
     switch (operation) {
-      case 'delete':
+      case 'delete': {
         const { error: deleteError } = await supabase
           .from(tableName)
           .delete()
@@ -177,8 +181,9 @@ export async function POST(request: NextRequest) {
         }
         affectedCount = recordIds.length
         break
+      }
 
-      case 'archive':
+      case 'archive': {
         const { error: archiveError } = await supabase
           .from(tableName)
           .update({ is_archived: true })
@@ -192,8 +197,9 @@ export async function POST(request: NextRequest) {
         }
         affectedCount = recordIds.length
         break
+      }
 
-      case 'restore':
+      case 'restore': {
         const { error: restoreError } = await supabase
           .from(tableName)
           .update({ is_archived: false })
@@ -207,8 +213,9 @@ export async function POST(request: NextRequest) {
         }
         affectedCount = recordIds.length
         break
+      }
 
-      case 'update':
+      case 'update': {
         if (!operationData || typeof operationData !== 'object') {
           return NextResponse.json(
             Errors.validation("data field is required for update operation", { field: "data" }),
@@ -229,6 +236,7 @@ export async function POST(request: NextRequest) {
         }
         affectedCount = recordIds.length
         break
+      }
 
       case 'add_tags':
       case 'remove_tags':
@@ -276,7 +284,7 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      case 'assign':
+      case 'assign': {
         if (!operationData?.assigned_to) {
           return NextResponse.json(
             Errors.validation("data.assigned_to is required for assign operation", { field: "data.assigned_to" }),
@@ -297,6 +305,7 @@ export async function POST(request: NextRequest) {
         }
         affectedCount = recordIds.length
         break
+      }
 
       default:
         return NextResponse.json(

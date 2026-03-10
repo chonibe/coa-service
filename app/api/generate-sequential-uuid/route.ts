@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { v4 as uuidv4 } from "uuid"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
@@ -17,6 +18,9 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const body = await request.json()
     const { productId, lineItemId, orderId } = body

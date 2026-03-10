@@ -13,7 +13,7 @@ interface TransparentHeaderProps {
 
 export function TransparentHeader({
   navigation,
-  logoHref = '/shop/home',
+  logoHref = '/',
 }: TransparentHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)

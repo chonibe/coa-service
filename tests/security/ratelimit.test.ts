@@ -1,4 +1,16 @@
-import { NextRequest } from "next/server";
+// Mock next/server so NextResponse.json returns a Response with readable body in Jest
+jest.mock("next/server", () => ({
+  NextRequest: class {},
+  NextResponse: {
+    json: (body: unknown, init?: { status?: number; headers?: Headers }) => {
+      return new Response(JSON.stringify(body), {
+        status: init?.status ?? 200,
+        headers: init?.headers ?? new Headers(),
+      });
+    },
+  },
+}));
+
 import { rateLimitMiddleware } from "@/lib/middleware/rate-limit";
 
 // Mock the rate limiter to test middleware logic
@@ -13,24 +25,30 @@ jest.mock("@/lib/crm/rate-limiter", () => ({
 
 import { checkRateLimit } from "@/lib/crm/rate-limiter";
 
-describe("Rate Limiting Middleware", () => {
-  const mockUrl = "http://localhost:3000/api/auth/login";
+/** Plain request-shaped object to avoid NextRequest read-only url in Jest */
+function createMockRequest(overrides: { pathname?: string; method?: string; headers?: HeadersInit } = {}) {
+  const pathname = overrides.pathname ?? "/api/auth/login";
+  return {
+    nextUrl: new URL(`http://localhost:3000${pathname}`),
+    method: overrides.method ?? "POST",
+    headers: new Headers(overrides.headers ?? { "x-forwarded-for": "1.2.3.4" }),
+  } as any;
+}
 
+describe("Rate Limiting Middleware", () => {
   it("should return 429 when rate limit is exceeded", async () => {
     (checkRateLimit as jest.Mock).mockReturnValue({
       allowed: false,
       retryAfter: 60
     });
 
-    const request = new NextRequest(mockUrl, {
-      method: "POST",
-      headers: { "x-forwarded-for": "1.2.3.4" }
-    });
+    const request = createMockRequest();
 
     const response = rateLimitMiddleware(request);
-    
+
     expect(response?.status).toBe(429);
-    const body = await response?.json();
+    const text = await response?.text();
+    const body = text ? JSON.parse(text) : {};
     expect(body.error).toBe("Rate limit exceeded");
     expect(response?.headers.get("Retry-After")).toBe("60");
   });
@@ -41,10 +59,7 @@ describe("Rate Limiting Middleware", () => {
       remaining: 5
     });
 
-    const request = new NextRequest(mockUrl, {
-      method: "POST",
-      headers: { "x-forwarded-for": "1.2.3.4" }
-    });
+    const request = createMockRequest();
 
     const response = rateLimitMiddleware(request);
     expect(response).toBeNull(); // Middleware returns null to continue

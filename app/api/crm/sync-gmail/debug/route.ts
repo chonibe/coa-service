@@ -4,12 +4,16 @@ import { cookies } from "next/headers"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { isAdminEmail } from "@/lib/vendor-auth"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Debug endpoint to check Gmail sync status
  * Shows token availability, user info, and recent sync status
  */
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const cookieStore = cookies()
   const supabase = createRouteClient(cookieStore)
 

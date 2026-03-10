@@ -7,6 +7,7 @@ import {
   createCursorResponse,
 } from "@/lib/crm/cursor-pagination"
 import { Errors } from "@/lib/crm/errors"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Companies API - Manage company/organization records
@@ -14,6 +15,9 @@ import { Errors } from "@/lib/crm/errors"
  */
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {
@@ -153,6 +157,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

@@ -3,8 +3,12 @@ import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

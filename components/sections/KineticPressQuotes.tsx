@@ -23,7 +23,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Container, SectionWrapper } from '@/components/impact'
 import { gsap } from '@/lib/animations/gsap-config'
@@ -76,37 +76,30 @@ export function KineticPressQuotes({
   const authorRef = useRef<HTMLParagraphElement>(null)
 
   const currentQuote = safeQuotes[currentIndex]
-  if (safeQuotes.length === 0 || !currentQuote) return null
 
-  // Auto-advance
-  useEffect(() => {
-    if (!autoAdvance || safeQuotes.length <= 1) return
-
-    const timer = setInterval(() => {
-      next()
-    }, interval)
-
-    return () => clearInterval(timer)
-  }, [currentIndex, autoAdvance, interval, safeQuotes.length])
-
-  const next = () => {
-    if (isAnimating) return
+  const next = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % safeQuotes.length)
-  }
+  }, [safeQuotes.length])
 
   const prev = () => {
     if (isAnimating) return
     setCurrentIndex((prev) => (prev - 1 + safeQuotes.length) % safeQuotes.length)
   }
 
-  const goTo = (index: number) => {
-    if (isAnimating || index === currentIndex) return
-    setCurrentIndex(index)
-  }
+  // Auto-advance (hooks must run unconditionally)
+  useEffect(() => {
+    if (!autoAdvance || safeQuotes.length <= 1 || isAnimating) return
 
-  // Animate quote change
+    const timer = setInterval(() => {
+      next()
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [currentIndex, autoAdvance, interval, safeQuotes.length, isAnimating, next])
+
+  // Animate quote change (hooks must run unconditionally)
   useGSAP(() => {
-    if (!quoteRef.current || !authorRef.current) return
+    if (!currentQuote || !quoteRef.current || !authorRef.current) return
 
     setIsAnimating(true)
 
@@ -159,6 +152,8 @@ export function KineticPressQuotes({
       tl.kill()
     }
   }, { dependencies: [currentIndex], scope: containerRef })
+
+  if (safeQuotes.length === 0 || !currentQuote) return null
 
   // Content size classes
   const sizeClasses = {
@@ -274,33 +269,6 @@ export function KineticPressQuotes({
           )}
         </div>
 
-        {/* Navigation Dots */}
-        {showDots && safeQuotes.length > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
-            {safeQuotes.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goTo(index)}
-                disabled={isAnimating}
-                className={cn(
-                  'transition-all duration-300 rounded-full',
-                  'disabled:cursor-not-allowed',
-                  index === currentIndex
-                    ? 'w-8 h-2'
-                    : 'w-2 h-2',
-                  index === currentIndex
-                    ? background === 'dark'
-                      ? 'bg-white'
-                      : 'bg-[#f0c417]'
-                    : background === 'dark'
-                    ? 'bg-white/30 hover:bg-white/50'
-                    : 'bg-[#1a1a1a]/20 hover:bg-[#1a1a1a]/40'
-                )}
-                aria-label={`Go to quote ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </Container>
     </SectionWrapper>
   )

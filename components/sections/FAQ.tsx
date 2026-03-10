@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import DOMPurify from "dompurify"
 import { cn } from '@/lib/utils'
 import { SectionWrapper, Container, Button } from '@/components/impact'
 
@@ -105,7 +106,12 @@ export function FAQSection({
               <div
                 className="mt-4 prose prose-sm"
                 style={{ color: textColor ? `${textColor}cc` : '#1a1a1acc' }}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(content, {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel'],
+                  }),
+                }}
               />
             )}
 
@@ -223,7 +229,12 @@ function AccordionItem({ item, isOpen, onToggle, backgroundColor, textColor }: A
           <div
             className="prose prose-sm max-w-none"
             style={{ color: textColor ? `${textColor}cc` : '#1a1a1acc' }}
-            dangerouslySetInnerHTML={{ __html: item.answer }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(item.answer, {
+                ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+                ALLOWED_ATTR: ['href', 'target', 'rel'],
+              }),
+            }}
           />
         </div>
       </div>

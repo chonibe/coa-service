@@ -38,6 +38,18 @@ The Street Collector authentication system provides a secure, Shopify-integrated
 - Environment-specific validation
 - Comprehensive logging
 
+## 📍 Where users are stored (Supabase)
+
+Logged-in users are stored in **Supabase Auth** and linked in app tables:
+
+| Location | What it is | How to view |
+|----------|------------|-------------|
+| **auth.users** | All authenticated users (Supabase Auth). Created on login (Shopify OAuth, email, OTP, Google, etc.). | **Dashboard → Authentication → Users**, or SQL: `SELECT id, email, created_at FROM auth.users;` |
+| **public.user_roles** | RBAC roles (collector, vendor, admin). `user_id` references `auth.users.id`. | Table Editor → schema `public` → table `user_roles`. |
+| **public.collector_profiles** | Collector profile (name, preferences). `user_id` references `auth.users.id`. | Table Editor → schema `public` → table `collector_profiles`. |
+
+If users log in but you don’t see them in the app, check **Authentication → Users** first; they will be there. Roles and profiles are created/updated by the auth callback ([`app/auth/callback/route.ts`](../../app/auth/callback/route.ts)).
+
 ## 🔍 Debugging
 - Debug route: `/api/auth/debug`
 - Provides detailed authentication state information

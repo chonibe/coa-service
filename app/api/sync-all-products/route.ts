@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import crypto from "crypto"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 // Add more detailed logging throughout the file
 
@@ -43,6 +44,9 @@ async function fetchLineItemDetails(lineItems: any[]) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   console.log("==== SYNC ALL PRODUCTS API CALLED ====")

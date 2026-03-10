@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     
@@ -43,7 +46,7 @@ export async function GET() {
     console.error("Unexpected error testing Supabase URL:", error)
     return NextResponse.json({ 
       error: error.message || "An unexpected error occurred",
-      stack: error.stack
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
     }, { status: 500 })
   }
 } 

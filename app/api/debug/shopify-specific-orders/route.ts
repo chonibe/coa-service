@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   const orderNames = ["#1183", "#1180", "#1178", "#1165", "#1146"]
   const results = []
 

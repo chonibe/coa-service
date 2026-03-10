@@ -24,6 +24,7 @@ import { syncInstagramHistory } from "@/lib/crm/instagram-helper"
 import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
 import { getUserActiveRoles, getUserVendorId, getPreferredDashboard } from "@/lib/rbac/role-helpers"
 import type { Role } from "@/lib/rbac/index"
+import { isValidRedirectPath } from "@/lib/auth/redirect-validation"
 
 const DEFAULT_VENDOR_REDIRECT = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false' ? '/vendor/home' : '/vendor/dashboard'
 const NOT_REGISTERED_REDIRECT = "/login?error=not_registered"
@@ -33,13 +34,6 @@ const DENIED_VENDOR_REDIRECT = "/vendor/access-denied"
 
 const deleteCookie = (response: NextResponse, name: string) => {
   response.cookies.set(name, "", { path: "/", maxAge: 0 })
-}
-
-/** Validate redirect path to prevent open redirects - must be relative path starting with / */
-function isValidRedirectPath(path: string | null): path is string {
-  if (!path || typeof path !== 'string') return false
-  const decoded = decodeURIComponent(path).trim()
-  return decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes('://')
 }
 
 /**

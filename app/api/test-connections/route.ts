@@ -2,8 +2,14 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN, CRON_SECRET } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 export async function GET(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const supabase = createClient()
   
   const results = {
@@ -60,21 +66,15 @@ export async function GET(request: NextRequest) {
       const errorText = await shopifyResponse.text()
       results.shopify_api = {
         status: "Error",
-        message: `Failed to connect to Shopify API: ${shopifyResponse.status} ${shopifyResponse.statusText}`,
-        details: {
-          status: shopifyResponse.status,
-          response: errorText.substring(0, 500),
-        },
+        message: "Test failed",
+        details: { status: shopifyResponse.status },
       }
     }
   } catch (error: any) {
     results.shopify_api = {
       status: "Error",
-      message: `Exception when connecting to Shopify API: ${error.message}`,
-      details: {
-        error: error.toString(),
-        stack: error.stack,
-      },
+      message: "Test failed",
+      details: null,
     }
   }
 
@@ -88,12 +88,8 @@ export async function GET(request: NextRequest) {
     if (error) {
       results.supabase = {
         status: "Error",
-        message: `Failed to connect to Supabase: ${error.message}`,
-        details: {
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        },
+        message: "Test failed",
+        details: null,
       }
     } else {
       results.supabase = {
@@ -108,25 +104,20 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     results.supabase = {
       status: "Error",
-      message: `Exception when connecting to Supabase: ${error.message}`,
-      details: {
-        error: error.toString(),
-        stack: error.stack,
-      },
+      message: "Test failed",
+      details: null,
     }
   }
 
-  // Test cron endpoint
+  // Test cron endpoint (uses Authorization Bearer, not query param)
   try {
     console.log("Testing cron endpoint...")
-    // Build the correct URL for the cron job
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-    // Make sure we're using the correct path without "/authenticate/"
-    const cronUrl = `${baseUrl}/api/cron/sync-shopify-orders?secret=${CRON_SECRET}`
+    const cronUrl = `${baseUrl}/api/cron/sync-shopify-orders`
 
-    console.log(`Testing cron endpoint at: ${cronUrl.replace(CRON_SECRET || "", "REDACTED")}`)
-
-    const cronResponse = await fetch(cronUrl)
+    const cronResponse = await fetch(cronUrl, {
+      headers: CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {},
+    })
 
     if (cronResponse.ok) {
       const cronData = await cronResponse.json()
@@ -149,18 +140,14 @@ export async function GET(request: NextRequest) {
         details: {
           status: cronResponse.status,
           response: errorText.substring(0, 500),
-          url: cronUrl.replace(CRON_SECRET || "", "REDACTED"),
         },
       }
     }
   } catch (error: any) {
     results.cron_endpoint = {
       status: "Error",
-      message: `Exception when connecting to cron endpoint: ${error.message}`,
-      details: {
-        error: error.toString(),
-        stack: error.stack,
-      },
+      message: "Test failed",
+      details: null,
     }
   }
 

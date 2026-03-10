@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 const TransferOwnershipSchema = z.object({
   line_item_id: z.string().min(1),
@@ -13,6 +14,9 @@ const TransferOwnershipSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {

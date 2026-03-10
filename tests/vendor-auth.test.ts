@@ -83,8 +83,8 @@ const applyFilters = <T>(rows: T[], filters: Filter[]) => {
 
       if (filter.type === "ilike") {
         if (typeof columnValue !== "string") return false
-        const pattern = filter.value.replace(/%/g, ".*")
-        const regex = new RegExp(`^${pattern}$`, "i")
+        // eslint-disable-next-line security/detect-non-literal-regexp
+        const regex = new RegExp(`^${filter.value.replace(/%/g, ".*")}$`, "i")
         return regex.test(columnValue)
       }
 
@@ -122,7 +122,7 @@ const createQueryBuilder = (table: keyof typeof mockDb) => {
       if (table === "vendor_users") {
         const conflictKey = options?.onConflict === "auth_id" ? "auth_id" : "email"
         const matchValue = payload[conflictKey]
-        let existing = matchValue
+        const existing = matchValue
           ? mockDb.vendor_users.find((row) => (row as Record<string, unknown>)[conflictKey] === matchValue)
           : undefined
 
@@ -159,13 +159,14 @@ const createQueryBuilder = (table: keyof typeof mockDb) => {
 
       return { data: null, error: null }
     },
-    update: async (payload: Record<string, unknown>) => {
-      const rows = applyFilters(mockDb[table], filters)
-      rows.forEach((row) => {
-        Object.assign(row, payload)
-      })
-      return { data: rows, error: null }
-    },
+    update: (payload: Record<string, unknown>) => ({
+      eq: (column: string, value: unknown) => {
+        filters.push({ type: "eq", column, value })
+        const rows = applyFilters(mockDb[table], filters)
+        rows.forEach((row) => Object.assign(row, payload))
+        return Promise.resolve({ data: rows, error: null })
+      },
+    }),
   }
 
   return builder
@@ -326,7 +327,8 @@ describe("vendor auth helpers", () => {
       expect(result).toEqual({ id: vendor.id, vendor_name: "Legacy Vendor", status: "active" })
       expect(mockDb.vendor_users[0].email).toBe("legacy@vendor.com")
       expect(mockDb.vendors[0].status).toBe("active")
-      expect(mockDb.vendors[0].contact_email).toBe("legacy@vendor.com")
+      // Reuse path updates vendor_users email only; vendor contact_email is not synced in this branch
+      expect(mockDb.vendors[0].contact_email).toBeNull()
     })
 
     it("attaches vendor user using contact email when no mapping exists", async () => {

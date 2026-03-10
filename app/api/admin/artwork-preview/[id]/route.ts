@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Admin Artwork Preview API
@@ -10,6 +11,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const supabase = createClient()
     const lineItemId = params.id
@@ -275,7 +279,7 @@ export async function GET(
     }
     
     // Build discovery data
-    let discoveryData: any = {}
+    const discoveryData: any = {}
     
     // Series info for discovery (using customer ID from order)
     if (seriesMember && series && order?.shopify_customer_id) {

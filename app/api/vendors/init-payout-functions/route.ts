@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 import fs from "fs"
 import path from "path"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guardResult = guardAdminRequest(request)
+  if (guardResult.kind !== "ok") {
+    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     // Read the SQL file
     const sqlFilePath = path.join(process.cwd(), "db", "vendor_payout_functions.sql")

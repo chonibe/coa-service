@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { parseFilterAsync, hasPathFilters, parseFilter } from "@/lib/crm/filter-parser"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * Kanban Board API
@@ -8,6 +9,9 @@ import { parseFilterAsync, hasPathFilters, parseFilter } from "@/lib/crm/filter-
  */
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
 
   try {
@@ -144,7 +148,7 @@ export async function GET(request: NextRequest) {
     // Group records by their status value
     records.forEach((record: any) => {
       const statusValue = recordStatusMap.get(record.id)
-      if (statusValue && kanbanColumns.hasOwnProperty(statusValue)) {
+      if (statusValue && Object.prototype.hasOwnProperty.call(kanbanColumns, statusValue)) {
         kanbanColumns[statusValue].push(record)
       }
     })

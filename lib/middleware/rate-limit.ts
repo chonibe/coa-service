@@ -2,19 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit, getRateLimitHeaders, RateLimitConfig } from "@/lib/crm/rate-limiter"
 
 /**
- * Get user identifier from request (IP address or user ID)
+ * Get user identifier from request (IP address or user ID).
+ * Uses the rightmost entry in x-forwarded-for (closest to our proxy) to resist
+ * client spoofing. Configure TRUSTED_PROXY_COUNT if your stack uses multiple hops.
  */
 function getUserId(request: NextRequest): string {
-  // Try to get user ID from auth header or session
   const authHeader = request.headers.get("authorization")
   if (authHeader) {
-    // Extract user ID from token if possible
-    // For now, use IP address as fallback
+    // TODO: Extract user ID from token for authenticated rate limiting
   }
 
-  // Use IP address as identifier
   const forwarded = request.headers.get("x-forwarded-for")
-  const ip = forwarded ? forwarded.split(",")[0].trim() : request.ip || "unknown"
+  const ip = forwarded
+    ? (forwarded.split(",").map((s) => s.trim()).pop() || "unknown")
+    : request.ip || "unknown"
 
   return ip
 }

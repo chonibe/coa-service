@@ -1,20 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 import { createClient } from "@/lib/supabase/server"
 
 /**
  * WhatsApp Webhook Handler
- * Receives incoming WhatsApp messages via webhook
+ * Receives incoming WhatsApp messages via webhook (Meta Cloud API).
+ * Verifies x-hub-signature-256 HMAC-SHA256 before processing.
  */
+
+function verifyWhatsAppSignature(rawBody: string, signatureHeader: string | null, secret: string): boolean {
+  if (!signatureHeader || !secret) return false
+  const expectedPrefix = "sha256="
+  if (!signatureHeader.startsWith(expectedPrefix)) return false
+  const receivedHex = signatureHeader.slice(expectedPrefix.length)
+  const expectedHex = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex")
+  if (receivedHex.length !== expectedHex.length) return false
+  try {
+    return crypto.timingSafeEqual(Buffer.from(receivedHex, "hex"), Buffer.from(expectedHex, "hex"))
+  } catch {
+    return false
+  }
+}
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
-  
+  const secret = process.env.WHATSAPP_WEBHOOK_SECRET || ""
+
+  const rawBody = await request.text()
+  const signatureHeader = request.headers.get("x-hub-signature-256")
+
+  if (!verifyWhatsAppSignature(rawBody, signatureHeader, secret)) {
+    console.error("[WhatsApp] Webhook signature verification failed: missing or invalid signature")
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     if (!supabase) {
       throw new Error("Database client not initialized")
     }
 
-    const body = await request.json()
+    const body = JSON.parse(rawBody)
     
     // WhatsApp webhook payload structure varies by provider
     // This is a generic handler - adjust based on your WhatsApp Business API provider

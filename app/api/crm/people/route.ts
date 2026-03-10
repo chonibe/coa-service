@@ -9,6 +9,7 @@ import {
 } from "@/lib/crm/cursor-pagination"
 import { addRateLimitHeaders } from "@/lib/crm/rate-limit-middleware"
 import { Errors } from "@/lib/crm/errors"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * People API - Unified API for managing people/contacts in CRM
@@ -17,6 +18,9 @@ import { Errors } from "@/lib/crm/errors"
  */
 
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {
@@ -208,6 +212,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

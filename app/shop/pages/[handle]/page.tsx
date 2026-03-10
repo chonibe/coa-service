@@ -4,6 +4,7 @@ import { getPage as getPageFromShopify } from '@/lib/shopify/pages'
 import { getPage as getSyncedPage, hasPage } from '@/content/shopify-content'
 import { Container, SectionWrapper } from '@/components/impact'
 import { ScrollReveal, ParallaxLayer } from '@/components/blocks'
+import { SanitizedHtml } from '@/components/SanitizedHtml'
 
 // =============================================================================
 // METADATA
@@ -83,7 +84,8 @@ function PageContent({ title, body }: { title: string; body: string }) {
           
           {/* Page Content with Scroll Reveal */}
           <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
-            <div 
+            <SanitizedHtml
+              html={body}
               className="prose prose-lg max-w-none
                 prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
                 prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
@@ -92,7 +94,6 @@ function PageContent({ title, body }: { title: string; body: string }) {
                 prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
                 prose-img:rounded-xl
               "
-              dangerouslySetInnerHTML={{ __html: body }}
             />
           </ScrollReveal>
         </Container>

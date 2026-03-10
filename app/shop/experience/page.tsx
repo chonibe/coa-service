@@ -96,8 +96,8 @@ export async function generateMetadata(props: {
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 const INITIAL_PRODUCTS_PER_SEASON = 36
-/** Artist collections to merge into Season 2 so their artworks appear in the selector */
-const SPOTLIGHT_COLLECTIONS_IN_SEASON2 = ['tyler-shelton'] as const
+/** Extra collections to merge into Season 2 (e.g. for ?artist= only; spotlight is derived from Season 2 latest 2) */
+const SPOTLIGHT_COLLECTIONS_IN_SEASON2: readonly string[] = []
 
 interface ExperiencePageProps {
   searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string; unlisted?: string; fromOnboardingLogin?: string }>

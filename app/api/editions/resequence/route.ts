@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * This endpoint manually resequences edition numbers for a product
  * It will set all active items to sequential numbers starting from 1
  * and ensure removed items have null edition numbers
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   const { searchParams } = new URL(request.url)

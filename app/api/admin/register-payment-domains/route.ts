@@ -8,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
@@ -54,6 +55,9 @@ function getDomainsToRegister(): string[] {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   if (!stripe) {
     return NextResponse.json(
       { error: 'Stripe is not configured' },
@@ -107,7 +111,10 @@ export async function POST(request: NextRequest) {
 }
 
 /** GET: list current payment method domains */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   if (!stripe) {
     return NextResponse.json(
       { error: 'Stripe is not configured' },

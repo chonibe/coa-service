@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createSTONE3PLClient } from '@/lib/stone3pl/client'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * GET /api/tracking/stone3pl
@@ -10,6 +11,9 @@ import { createSTONE3PLClient } from '@/lib/stone3pl/client'
  *   - order_ids: Comma-separated order IDs for batch tracking
  */
 export async function GET(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get('order_id')

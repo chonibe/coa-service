@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
 import { ga4DataService } from '@/lib/ga4-data-api'
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 // GA4 Insights API Route
 // Provides programmatic access to GA4 data for custom dashboards
 
 export async function GET(request: Request) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     console.log('🔍 GA4 Insights API called')
     console.log('Environment check:')
@@ -68,6 +72,9 @@ export async function GET(request: Request) {
 
 // POST endpoint for custom queries (future enhancement)
 export async function POST(request: Request) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const body = await request.json()
     const { query, days = 30 } = body

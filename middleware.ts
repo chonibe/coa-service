@@ -115,6 +115,18 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const search = request.nextUrl.search
 
+  // Shopify email tracking links (/_t/c/v3/...) have no app route → redirect to home instead of 404
+  if (pathname.startsWith('/_t/c/')) {
+    const dest = new URL('/', request.url)
+    const redirect = NextResponse.redirect(dest, 302)
+    if (affiliateSlug) {
+      setAffiliateCookie(redirect, affiliateSlug)
+      clearDismissedCookie(redirect)
+    }
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    return redirect
+  }
+
   // Affiliate product links → main page (/); set cookie so Experience applies vendor filter when they open it
   if (pathname.startsWith('/products/')) {
     const dest = new URL('/', request.url)

@@ -7,6 +7,7 @@ import { getArticle as getSyncedArticle, articles as syncedArticles } from '@/co
 import { Container, SectionWrapper, Button } from '@/components/impact'
 import { ScrollReveal, ScrollProgress, ParallaxLayer } from '@/components/blocks'
 import { VinylTiltEffect } from '@/components/vinyl'
+import { SanitizedHtml } from '@/components/SanitizedHtml'
 
 // =============================================================================
 // METADATA
@@ -218,7 +219,8 @@ function ArticleContent({
           
           {/* Content */}
           <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
-            <article 
+            <SanitizedHtml
+              html={contentHtml}
               className="prose prose-lg max-w-none
                 prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
                 prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
@@ -228,7 +230,6 @@ function ArticleContent({
                 prose-img:rounded-xl
                 prose-blockquote:border-l-[#047AFF] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
               "
-              dangerouslySetInnerHTML={{ __html: contentHtml }}
             />
           </ScrollReveal>
           

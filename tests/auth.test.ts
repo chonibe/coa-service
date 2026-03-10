@@ -1,16 +1,19 @@
 import { createAuthContext, UserRole, requireAuth } from '../lib/graphql/auth'
 import jwt from 'jsonwebtoken'
-import { createClient } from '@supabase/supabase-js'
 
-// Mock Supabase client
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn()
-  }))
-}))
+// Shared mock: factory runs at hoist time so we attach the single fn to global for test to configure
+jest.mock('@supabase/supabase-js', () => {
+  const singleFn = jest.fn()
+  ;(global as any).__authSupabaseSingle = singleFn
+  return {
+    createClient: jest.fn(() => ({
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: singleFn,
+    })),
+  }
+})
 
 // Mock JWT secret
 process.env.JWT_SECRET = 'test_secret'
@@ -27,23 +30,16 @@ describe('Authentication System', () => {
     })
 
     it('should successfully validate a valid JWT token', async () => {
-      // Create a mock valid token
       const mockToken = jwt.sign(
-        { 
-          sub: 'user123', 
-          email: 'test@example.com', 
-          role: UserRole.COLLECTOR 
-        }, 
+        {
+          sub: 'user123',
+          email: 'test@example.com',
+          role: UserRole.COLLECTOR
+        },
         process.env.JWT_SECRET!
       )
 
-      // Mock Supabase response
-      const mockSupabaseClient = createClient('', '')
-      const mockSelect = mockSupabaseClient.from('users').select
-      const mockEq = mockSelect('id, email, role').eq
-      const mockSingle = mockEq('id', 'user123').single
-
-      mockSingle.mockResolvedValue({
+      ;(global as any).__authSupabaseSingle.mockResolvedValue({
         data: {
           id: 'user123',
           email: 'test@example.com',
@@ -53,7 +49,7 @@ describe('Authentication System', () => {
       })
 
       const context = await createAuthContext(mockToken)
-      
+
       expect(context.user).toEqual({
         id: 'user123',
         email: 'test@example.com',
@@ -71,7 +67,7 @@ describe('Authentication System', () => {
   describe('requireAuth Middleware', () => {
     const mockResolver = jest.fn((parent, args, context) => context)
 
-    it('should allow access for authenticated users', () => {
+    it('should allow access for authenticated users', async () => {
       const authContext = {
         user: {
           id: 'user123',
@@ -81,20 +77,20 @@ describe('Authentication System', () => {
       }
 
       const wrappedResolver = requireAuth()(mockResolver)
-      const result = wrappedResolver(null, {}, authContext, null)
-      
+      const result = await wrappedResolver(null, {}, authContext, null)
+
       expect(result).toEqual(authContext)
     })
 
-    it('should restrict access for unauthenticated users', () => {
+    it('should restrict access for unauthenticated users', async () => {
       const wrappedResolver = requireAuth()(mockResolver)
-      
-      expect(() => {
+
+      await expect(
         wrappedResolver(null, {}, { user: null }, null)
-      }).toThrow('Not authenticated')
+      ).rejects.toThrow('Not authenticated')
     })
 
-    it('should restrict access for users without required role', () => {
+    it('should restrict access for users without required role', async () => {
       const authContext = {
         user: {
           id: 'user123',
@@ -104,10 +100,10 @@ describe('Authentication System', () => {
       }
 
       const wrappedResolver = requireAuth([UserRole.ADMIN])(mockResolver)
-      
-      expect(() => {
+
+      await expect(
         wrappedResolver(null, {}, authContext, null)
-      }).toThrow('Insufficient permissions')
+      ).rejects.toThrow('Insufficient permissions')
     })
   })
 })

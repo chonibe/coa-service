@@ -20,12 +20,14 @@ jest.mock('../lib/vendor-auth', () => ({
   isAdminEmail: jest.fn(email => email.endsWith('@admin.com'))
 }))
 
+const mockMaybeSingle = jest.fn()
 jest.mock('../lib/supabase/server', () => ({
   createClient: jest.fn(() => ({
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    maybeSingle: jest.fn()
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
+      }))
+    }))
   }))
 }))
 
@@ -67,8 +69,7 @@ describe('Auth Guards (RBAC)', () => {
   describe('guardVendorRequest', () => {
     it('should return ok for valid vendor session', async () => {
       ;(getVendorFromCookieStore as jest.Mock).mockReturnValue('test-vendor')
-      const mockSupabase = createSupabaseClient()
-      ;(mockSupabase.from('').maybeSingle as jest.Mock).mockResolvedValue({
+      mockMaybeSingle.mockResolvedValue({
         data: { vendor_name: 'test-vendor', status: 'active', onboarding_completed: true },
         error: null
       })
@@ -82,8 +83,7 @@ describe('Auth Guards (RBAC)', () => {
 
     it('should block suspended vendors', async () => {
       ;(getVendorFromCookieStore as jest.Mock).mockReturnValue('suspended-vendor')
-      const mockSupabase = createSupabaseClient()
-      ;(mockSupabase.from('').maybeSingle as jest.Mock).mockResolvedValue({
+      mockMaybeSingle.mockResolvedValue({
         data: { vendor_name: 'suspended-vendor', status: 'suspended' },
         error: null
       })

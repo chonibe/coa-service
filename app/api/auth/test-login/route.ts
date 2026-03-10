@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Development-only endpoint to test customer authentication
-// This bypasses Shopify and sets the cookies directly
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customer_id') || '23225839157634'; // Default test customer
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       error: 'Test login failed',
       details: error instanceof Error ? error.message : 'Unknown error',
-      stackTrace: error instanceof Error ? error.stack : null
+      stackTrace: undefined
     }, { status: 500 });
   }
 } 

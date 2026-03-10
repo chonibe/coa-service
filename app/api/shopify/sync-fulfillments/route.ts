@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/supabase"
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 interface ShopifyFulfillment {
   id: number;
@@ -67,7 +68,10 @@ async function fetchFulfillments(startDate: Date): Promise<ShopifyFulfillment[]>
   return allFulfillments;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   const supabase = createClient()
   
   try {

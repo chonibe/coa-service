@@ -1,7 +1,8 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import type { Database } from '@/types/supabase';
+import { guardAdminRequest } from "@/lib/auth-guards"
 
 interface ShopifyLineItem {
   id: number;
@@ -16,7 +17,10 @@ interface ShopifyLineItem {
   total_discount: string;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const guard = guardAdminRequest(request)
+  if (guard.kind !== "ok") return guard.response
+
   try {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
