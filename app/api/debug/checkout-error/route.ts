@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { guardAdminRequest } from "@/lib/auth-guards"
 
 /**
  * POST /api/debug/checkout-error
  *
  * Logs checkout/PayPal errors for debugging. Appears in Vercel deployment logs.
  * Call from client when checkout.confirm() fails or returns unexpected result.
+ * Public (no auth) so real users can report errors during checkout.
  */
-export async function POST(request: NextRequest) {
-  const guardResult = guardAdminRequest(request)
-  if (guardResult.kind !== "ok") {
-    return guardResult.response ?? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+const MAX_BODY_SIZE = 2048
 
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const raw = await request.text()
+    if (raw.length > MAX_BODY_SIZE) {
+      return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+    }
+    const body = JSON.parse(raw) as Record<string, unknown>
     const { stage, resultType, error, message, hasRedirectUrl } = body as {
       stage?: string
       resultType?: string
