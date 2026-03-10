@@ -13,13 +13,12 @@ export const streetCollectorContent = {
   hero: {
     headline: 'A living art collection.',
     subheadline: 'Not just a lamp.',
-    microCue: "Discover this month's drop.",
     cta: {
       text: 'Start your collection',
       url: EXPERIENCE_URL,
     },
     /** Hero video from thestreetcollector.com CTA section */
-    video: 'https://cdn.shopify.com/videos/c/o/v/638abe675ef54a34b73593eeb95897f8.mp4',
+    video: 'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
     /** Hero video poster/preview image */
     image: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/684cd0c8b42142fdad8e4db442befa6e.thumbnail.0000000000_800x.jpg?v=1770544655',
   },
