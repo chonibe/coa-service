@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { Container, SectionWrapper, buttonVariants } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
+import { MutedVideo } from '@/components/MutedVideo'
 
 export const metadata: Metadata = {
   title: 'Affiliate Program',
@@ -20,10 +21,9 @@ export default function CollabPage() {
     <main className="min-h-screen bg-white">
       {/* Video Hero */}
       <section className="relative w-full aspect-video bg-neutral-900 overflow-hidden">
-        <video
+        <MutedVideo
           src={HERO_VIDEO_URL}
           autoPlay
-          muted
           loop
           playsInline
           preload="auto"

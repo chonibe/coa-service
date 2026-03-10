@@ -28,6 +28,7 @@ export function LazyVideo({
 }: LazyVideoProps) {
   const [shouldLoad, setShouldLoad] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -42,15 +43,29 @@ export function LazyVideo({
     return () => io.disconnect()
   }, [rootMargin])
 
+  // Force mute and lock audio: re-apply mute on volumechange so audio never plays through
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    el.muted = true
+    const forceMute = () => { el.muted = true }
+    el.addEventListener('volumechange', forceMute)
+    return () => el.removeEventListener('volumechange', forceMute)
+  }, [shouldLoad])
+
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full">
       <video
+        ref={videoRef}
         {...props}
         poster={poster}
         preload="none"
         playsInline
         muted
         loop
+        disablePictureInPicture
+        disableRemotePlayback
+        controlsList="nodownload nofullscreen noremoteplayback"
         className={cn('absolute inset-0 w-full h-full object-cover', className)}
         onLoadedData={(e) => {
           e.currentTarget.muted = true

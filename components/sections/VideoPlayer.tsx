@@ -77,6 +77,16 @@ export function VideoPlayer({
     return () => clearTimeout(t)
   }, [])
 
+  // Force mute and lock audio: re-apply mute on volumechange so audio never plays through
+  React.useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    el.muted = true
+    const forceMute = () => { el.muted = true }
+    el.addEventListener('volumechange', forceMute)
+    return () => el.removeEventListener('volumechange', forceMute)
+  }, [videoLoadStarted])
+
   // Handle play/pause
   const togglePlay = () => {
     if (!videoRef.current) return
@@ -140,6 +150,9 @@ export function VideoPlayer({
         loop={video.loop ?? true}
         muted
         playsInline
+        disablePictureInPicture
+        disableRemotePlayback
+        controlsList="nodownload nofullscreen noremoteplayback"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onLoadedData={(e) => {
@@ -164,7 +177,7 @@ export function VideoPlayer({
       {/* Overlay */}
       {overlay && (
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-20"
           style={{
             backgroundColor: overlay.overlayColor || '#000000',
             opacity: (overlay.overlayOpacity ?? 0) / 100,
@@ -178,7 +191,7 @@ export function VideoPlayer({
         return (
         <div
           className={cn(
-            'absolute inset-0 flex flex-col',
+            'absolute inset-0 z-30 flex flex-col',
             isCtaAtBottom
               ? 'justify-between items-center'
               : positionClasses[overlay.position || 'center']
@@ -257,15 +270,15 @@ export function VideoPlayer({
                   )}
                 </div>
               </Container>
-              {/* CTA block at bottom */}
+              {/* CTA block at bottom — hidden on mobile; fixed CTA is the mobile CTA */}
               {(overlay.cta || overlay.microCue) && (
-                <Container maxWidth="default" paddingX="gutter" className="flex justify-center pb-[18vh] sm:pb-[4vh]">
+                <Container maxWidth="default" paddingX="gutter" className="hidden md:flex justify-center pb-[18vh] sm:pb-[4vh]">
                   <div className="max-w-2xl mx-auto w-full text-center flex flex-col items-center gap-4">
                     {overlay.cta && (
                       <a
                         href={overlay.cta.url}
                         className={cn(
-                          'hidden sm:inline-flex items-center justify-center font-semibold rounded-lg transition-all',
+                          'inline-flex items-center justify-center font-semibold rounded-lg transition-all',
                           overlay.cta.backgroundColor || overlay.cta.color
                             ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base shadow-lg hover:opacity-90'
                             : overlay.cta.style === 'glassmorphism'
@@ -373,7 +386,7 @@ export function VideoPlayer({
                 <a
                   href={overlay.cta.url}
                   className={cn(
-                    'hidden sm:inline-flex items-center justify-center font-semibold rounded-lg transition-all mb-6',
+                    'hidden md:inline-flex items-center justify-center font-semibold rounded-lg transition-all mb-6',
                     overlay.cta.backgroundColor || overlay.cta.color
                       ? 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base shadow-lg hover:opacity-90'
                       : overlay.cta.style === 'glassmorphism'
@@ -397,7 +410,7 @@ export function VideoPlayer({
               {overlay.microCue && (
                 <a
                   href={overlay.ctaUrl || overlay.cta?.url || '#'}
-                  className="block mb-6 text-sm sm:text-base opacity-90 hover:opacity-100 underline underline-offset-2 transition-opacity"
+                  className="hidden md:block mb-6 text-sm sm:text-base opacity-90 hover:opacity-100 underline underline-offset-2 transition-opacity"
                   style={{ color: overlay.textColor || '#ffffff' }}
                 >
                   {overlay.microCue}

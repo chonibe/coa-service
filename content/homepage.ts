@@ -11,7 +11,7 @@
 
 export const heroSection = {
   video: {
-    url: 'https://cdn.shopify.com/videos/c/o/v/638abe675ef54a34b73593eeb95897f8.mp4',
+    url: 'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
     autoplay: true,
     size: 'lg', // large video
     externalUrl: 'https://www.youtube.com/watch?v=_9VUPq3SxOc', // fallback

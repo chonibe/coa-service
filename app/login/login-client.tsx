@@ -61,6 +61,8 @@ export default function LoginClient() {
     const errorParam = searchParams.get("error")
     if (errorParam === "not_registered") {
       setFormError(NOT_REGISTERED_ERROR)
+    } else if (errorParam === "otp_expired") {
+      setFormError("This sign-in link has expired or is invalid. Please sign in again to get a new link.")
     } else if (errorParam === "signup_failed") {
       setFormError("Unable to create your account. Please try again or contact support@thestreetcollector.com.")
     } else if (errorParam === "no_collector_profile") {

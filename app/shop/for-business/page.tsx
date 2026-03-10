@@ -9,6 +9,7 @@ import {
   Button,
 } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
+import { MutedVideo } from '@/components/MutedVideo'
 import { cn } from '@/lib/utils'
 
 const BULK_DISCOUNT_TIERS = [
@@ -170,10 +171,9 @@ export default function ForBusinessPage() {
       {/* Banner with video and clickable tab pills overlaid */}
       <div className="relative w-full">
         <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] min-h-[200px]">
-          <video
+          <MutedVideo
             src="https://cdn.shopify.com/videos/c/o/v/024d818562914184bbd79811b32e8efb.mp4"
             autoPlay
-            muted
             loop
             playsInline
             className="absolute inset-0 w-full h-full object-cover"

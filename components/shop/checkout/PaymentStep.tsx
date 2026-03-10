@@ -155,6 +155,7 @@ function PaymentFormInner({
   total,
   itemCount,
   shippingAddress,
+  customerEmail,
   onBack,
   onSuccess,
   onError,
@@ -165,7 +166,7 @@ function PaymentFormInner({
   onPaymentMethodChange,
   onSessionExpired,
   clientSecret,
-}: Omit<PaymentStepProps, 'customerEmail'>) {
+}: PaymentStepProps) {
   const handlePaymentChange = React.useCallback(
     (event: { value?: { type?: string; paymentMethod?: { card?: { brand?: string; last4?: string } }; card?: { brand?: string; last4?: string } } }) => {
       const type = event?.value?.type
@@ -205,9 +206,16 @@ function PaymentFormInner({
     setPaymentError(null)
 
     try {
-      // redirect: 'if_required' ensures we get redirectUrl for PayPal instead of Stripe
-      // auto-redirecting (which can fail inside modals). For card we get 'success'.
-      const result = await checkout.confirm({ redirect: 'if_required' })
+      // Email is required to confirm: session may have been created before address was filled.
+      // Pass email so Stripe has it for the Checkout Session (avoids "email is required" error).
+      const email = (customerEmail || shippingAddress?.email || '').trim()
+      if (email && typeof (checkout as { updateEmail?: (opts: { email: string }) => Promise<unknown> }).updateEmail === 'function') {
+        await (checkout as { updateEmail: (opts: { email: string }) => Promise<unknown> }).updateEmail({ email })
+      }
+      const result = await checkout.confirm({
+        redirect: 'if_required',
+        ...(email ? { email } : {}),
+      })
 
       if (result.type === 'error') {
         const errMsg = result.error?.message ?? 'Payment failed'

@@ -262,7 +262,6 @@ export default async function StreetCollectorPage() {
             autoplay: true,
             loop: true,
             muted: true,
-            captionsUrl: '/captions/hero-no-speech.vtt',
           }}
           overlay={{
             headline: streetCollectorContent.hero.headline,

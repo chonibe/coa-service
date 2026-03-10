@@ -39,17 +39,17 @@ const nextConfig = {
     // If no specific origins configured, use the app URL only
     const origins = allowedOrigins.length > 0 ? allowedOrigins : [defaultOrigin]
     
-    // Build CSP directive. unsafe-eval removed for security; unsafe-inline still required for Next.js and some third-party scripts until we move to nonce-based CSP (see docs/SECURITY_VULNERABILITY_FINDINGS.md #10).
+    // Build CSP directive. unsafe-eval required for Spline 3D runtime (loads .splinecode); unsafe-inline for Next.js and third-party scripts until nonce-based CSP (see docs/SECURITY_VULNERABILITY_FINDINGS.md #10).
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://cdn.jsdelivr.net https://js.stripe.com https://maps.googleapis.com https://static.hotjar.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com", // Google Analytics + Stripe.js + Tawk.to + Hotjar + PostHog (no unsafe-eval)
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://*.tawk.to https://cdn.jsdelivr.net https://js.stripe.com https://maps.googleapis.com https://static.hotjar.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com https://*.posthog.com", // + Spline unsafe-eval; PostHog; Tawk.to
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com https://embed.tawk.to https://cdn.jsdelivr.net https://*.stripe.com", // Tawk.to + Stripe Payment Element styles
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to https://embed.tawk.to", // Tawk.to chat fonts
       "connect-src 'self' data: https://*.supabase.co https://*.shopify.com https://api.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net https://maps.googleapis.com https://api.mapbox.com https://*.tiles.mapbox.com mapbox: https://*.spline.design https://unpkg.com https://www.gstatic.com https://fonts.gstatic.com https://*.tawk.to https://tawk.to https://embed.tawk.to wss://*.tawk.to wss://embed.tawk.to blob: https://*.stripe.com https://pay.google.com https://*.hotjar.io https://*.hotjar.com https://us.i.posthog.com https://us-assets.i.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com", // + Hotjar + PostHog
       "worker-src 'self' blob:", // Allow Mapbox web workers
       "child-src 'self' blob:", // Allow Mapbox child contexts
-      "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://my.spline.design https://*.spline.design https://embed.tawk.to https://js.stripe.com https://*.stripe.com https://hooks.stripe.com", // GTM + Spline 3D + Stripe Payment Element/3DS + Tawk.to chat
+      "frame-src 'self' https://*.supabase.co https://open.spotify.com https://*.spotify.com https://www.youtube.com https://player.vimeo.com https://www.googletagmanager.com https://my.spline.design https://*.spline.design https://embed.tawk.to https://*.tawk.to https://js.stripe.com https://*.stripe.com https://hooks.stripe.com https://us.posthog.com https://eu.posthog.com https://*.posthog.com", // GTM + Spline + Stripe + Tawk.to + PostHog
       "media-src 'self' https://*.supabase.co https://cdn.shopify.com https://thestreetcollector.com blob:",
       "object-src 'none'",
       "base-uri 'self'",

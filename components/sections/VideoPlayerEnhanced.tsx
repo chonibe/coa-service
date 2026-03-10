@@ -85,6 +85,16 @@ export function VideoPlayerEnhanced({
   const [showPlayButton, setShowPlayButton] = React.useState(!video.autoplay)
   const [videoError, setVideoError] = React.useState(false)
 
+  // Force mute and lock audio: re-apply mute on volumechange so audio never plays through
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    el.muted = true
+    const forceMute = () => { el.muted = true }
+    el.addEventListener('volumechange', forceMute)
+    return () => el.removeEventListener('volumechange', forceMute)
+  }, [])
+
   // Handle play/pause
   const togglePlay = () => {
     if (!videoRef.current) return
@@ -256,6 +266,9 @@ export function VideoPlayerEnhanced({
             loop={video.loop ?? true}
             muted
             playsInline
+            disablePictureInPicture
+            disableRemotePlayback
+            controlsList="nodownload nofullscreen noremoteplayback"
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onLoadedData={(e) => { e.currentTarget.muted = true }}

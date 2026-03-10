@@ -115,6 +115,16 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const search = request.nextUrl.search
 
+  // Supabase auth: email link expired or invalid — redirect to login with friendly error
+  const authError = searchParams.get('error')
+  const authErrorCode = searchParams.get('error_code')
+  const authErrorDesc = searchParams.get('error_description') ?? ''
+  if (authError === 'access_denied' && (authErrorCode === 'otp_expired' || /expired|invalid/i.test(authErrorDesc))) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('error', 'otp_expired')
+    return NextResponse.redirect(loginUrl, 302)
+  }
+
   // Shopify email tracking links (/_t/c/v3/...) have no app route → redirect to home instead of 404
   if (pathname.startsWith('/_t/c/')) {
     const dest = new URL('/', request.url)
