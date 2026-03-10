@@ -190,7 +190,7 @@ export function MeetTheStreetLamp({
               poster={poster}
               autoPlay
             >
-              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
             </LazyVideo>
           </div>
           <div>{mobileCenteredStage}</div>
@@ -212,7 +212,7 @@ export function MeetTheStreetLamp({
               autoPlay
               className="rounded-2xl"
             >
-              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
             </LazyVideo>
           </div>
         </div>
