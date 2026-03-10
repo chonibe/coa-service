@@ -435,6 +435,10 @@ export function ArtistCarousel({
                       <img
                         src={artist.imageUrl}
                         alt={artist.name}
+                        loading="lazy"
+                        decoding="async"
+                        width={cardWidth}
+                        height={Math.round(cardWidth * 5 / 3)}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (

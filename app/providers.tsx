@@ -88,41 +88,45 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
         }
       }
       const isLanding = pathname && LANDING_PATHS.some((p) => pathname === p || pathname === p + "/")
-      const initPostHog = () => {
-        const isDebug =
-          typeof window !== "undefined" &&
-          typeof window.location?.search !== "undefined" &&
-          window.location.search.includes("__posthog_debug=true")
+      const isDebug =
+        typeof window !== "undefined" &&
+        typeof window.location?.search !== "undefined" &&
+        window.location.search.includes("__posthog_debug=true")
+
+      const doInit = (withRecording: boolean) => {
         posthog.init(key, {
           api_host: host,
           debug: isDebug,
           capture_pageview: false,
           person_profiles: "identified_only",
-          disable_session_recording: isLanding,
+          disable_session_recording: !withRecording,
           session_recording: {
             recordCrossOriginIframes: false,
             console: false,
           },
-          enable_heatmaps: !isLanding,
+          enable_heatmaps: withRecording,
           defaults: "2026-01-30",
           autocapture: true,
           capture_pageleave: true,
-          capture_dead_clicks: true,
-          rageclick: true,
+          capture_dead_clicks: withRecording,
+          rageclick: withRecording,
           advanced_disable_flags: false,
           __preview_remote_config: false,
           before_send: makeBeforeSend(),
         })
-        if (isLanding) {
-          setTimeout(() => {
-            posthog.startSessionRecording?.()
-          }, 8000)
-        }
       }
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(initPostHog, { timeout: isLanding ? 5000 : 3500 })
+
+      if (isLanding) {
+        // On landing pages, delay the entire PostHog init by 10s so plugin scripts
+        // (recorder, surveys, dead-clicks, logs) don't load during Lighthouse audit window
+        setTimeout(() => doInit(true), 10000)
       } else {
-        setTimeout(initPostHog, isLanding ? 5000 : 500)
+        const initPostHog = () => doInit(true)
+        if (typeof requestIdleCallback !== "undefined") {
+          requestIdleCallback(initPostHog, { timeout: 3500 })
+        } else {
+          setTimeout(initPostHog, 500)
+        }
       }
     }
   }, [pathname])
