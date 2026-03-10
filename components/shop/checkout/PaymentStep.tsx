@@ -208,9 +208,16 @@ function PaymentFormInner({
     try {
       // Email is required to confirm: session may have been created before address was filled.
       // Pass email so Stripe has it for the Checkout Session (avoids "email is required" error).
-      const email = (customerEmail || shippingAddress?.email || '').trim()
-      if (email && typeof (checkout as { updateEmail?: (opts: { email: string }) => Promise<unknown> }).updateEmail === 'function') {
-        await (checkout as { updateEmail: (opts: { email: string }) => Promise<unknown> }).updateEmail({ email })
+      // Stripe updateEmail expects a string; normalize in case an object like { email: "..." } was passed.
+      const raw = customerEmail ?? shippingAddress?.email ?? ''
+      const email =
+        typeof raw === 'string'
+          ? raw.trim()
+          : raw && typeof raw === 'object' && 'email' in raw && typeof (raw as { email?: unknown }).email === 'string'
+            ? (raw as { email: string }).email.trim()
+            : ''
+      if (email && typeof (checkout as { updateEmail?: (email: string) => Promise<unknown> }).updateEmail === 'function') {
+        await (checkout as { updateEmail: (email: string) => Promise<unknown> }).updateEmail(email)
       }
       const result = await checkout.confirm({
         redirect: 'if_required',
