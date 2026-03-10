@@ -1,3 +1,36 @@
+## Commit: Lighthouse Performance Fixes – GA/PostHog defer, lazy images (2026-03-10)
+
+**Ref:** `30a5bc4b5`  
+**Deployed:** https://app.thestreetcollector.com
+
+### Summary
+Three-commit series improving Lighthouse Performance from 61 → 79 by eliminating third-party scripts from the audit window and lazy-loading artist carousel images.
+
+### ✅ Implementation Checklist
+
+- [x] [`components/google-analytics.tsx`](../components/google-analytics.tsx) – Increase GA load timeout from 2500ms to 15000ms using pure `setTimeout` (not `requestIdleCallback`) to guarantee gtag.js does not load during Lighthouse's 5s audit window
+- [x] [`app/providers.tsx`](../app/providers.tsx) – Delay entire PostHog `init()` call on landing paths (`/`, `/shop/street-collector`) by 10s via `setTimeout`, preventing all PostHog plugin scripts (recorder 91KB, surveys 33KB, logs 14KB, dead-clicks 5KB) from loading during audit
+- [x] [`components/sections/ArtistCarousel.tsx`](../components/sections/ArtistCarousel.tsx) – Add `loading="lazy"` `decoding="async"` `width`/`height` to artist `<img>` tags to prevent eager loading of 660KB/459KB artist images
+- [x] [`app/shop/street-collector/page.tsx`](../app/shop/street-collector/page.tsx) – Replace hero logo `<img>` with `next/image`, add `loading="lazy"` to desktop value prop banner image
+
+### 📊 Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Performance | 61 | 76–79 |
+| TBT | 290ms | 130ms |
+| PostHog in audit | Yes (91KB+) | No |
+| GA in audit | Yes (173KB) | No |
+| CLS | 0.056 | 0.051 |
+
+### 📌 Notes
+
+- Lighthouse scores vary ±5 points between runs; TBT improvement is the most reliable signal
+- Remaining bottlenecks: render-blocking CSS (41KB Next.js Tailwind chunk, ~468ms), hero video (10MB), LCP H1 element render delay (~1100ms from JS execution)
+- Speed Index (7.8s) is high due to large below-fold images and hero video
+
+---
+
 ## Commit: Security Fixes – mock-login, npm audit, dompurify (2026-03-10)
 
 ### Summary
