@@ -30,9 +30,9 @@ export function GoogleAnalytics() {
     }
 
     if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(load, { timeout: 8000 })
+      requestIdleCallback(load, { timeout: 15000 })
     } else {
-      setTimeout(load, 8000)
+      setTimeout(load, 15000)
     }
 
     const handleRouteChange = () => trackPageView()

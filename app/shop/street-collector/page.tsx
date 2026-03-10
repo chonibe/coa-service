@@ -15,6 +15,7 @@ import {
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
 import { FixedCTAButton } from './FixedCTAButton'
 
@@ -244,12 +245,14 @@ export default async function StreetCollectorPage() {
           aria-label="Street Collector Home"
           className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top"
         >
-          <img
+          <Image
             src={HOME_LOGO_URL}
             alt=""
             width={32}
             height={32}
             className="shrink-0 w-8 h-8 object-contain drop-shadow-lg"
+            loading="eager"
+            unoptimized
           />
         </Link>
         <VideoPlayer
@@ -372,6 +375,10 @@ export default async function StreetCollectorPage() {
             <img
               src="https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200"
               alt=""
+              loading="lazy"
+              decoding="async"
+              width={1200}
+              height={280}
               className="w-full max-w-4xl h-[280px] object-cover object-top pointer-events-none mx-auto block"
               aria-hidden
             />
