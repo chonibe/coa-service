@@ -165,10 +165,37 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
     }
 
     // Parse compact format "variantId:qty,variantId:qty,..." (Stripe metadata max 500 chars)
-    const variants = shopifyVariantsRaw.split(',').map(part => {
+    const compactVariants = shopifyVariantsRaw.split(',').map(part => {
       const [variantId, qty] = part.split(':')
       return { variantId: variantId ?? '', quantity: parseInt(qty ?? '1', 10) }
     }).filter(v => v.variantId)
+
+    // Enrich variants with GID and productHandle from items_json metadata (if available)
+    const itemsJsonMap: Record<string, { variantGid: string; productHandle: string }> = {}
+    if (session.metadata?.items_json) {
+      try {
+        const parsed = JSON.parse(session.metadata.items_json)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: { variantId?: string; variantGid?: string; handle?: string }) => {
+            if (item.variantId) {
+              const numericId = item.variantId.replace('gid://shopify/ProductVariant/', '')
+              itemsJsonMap[numericId] = {
+                variantGid: item.variantGid || `gid://shopify/ProductVariant/${numericId}`,
+                productHandle: item.handle || '',
+              }
+            }
+          })
+        }
+      } catch {
+        // items_json may be truncated at 500 chars — fall back to defaults
+      }
+    }
+
+    const variants = compactVariants.map(v => ({
+      ...v,
+      variantGid: itemsJsonMap[v.variantId]?.variantGid ?? `gid://shopify/ProductVariant/${v.variantId}`,
+      productHandle: itemsJsonMap[v.variantId]?.productHandle ?? '',
+    }))
 
     // Get shipping details (from Stripe or metadata for experience_checkout)
     let shipping = session.shipping_details
@@ -181,7 +208,7 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
             line1: meta.addressLine1 || '',
             line2: meta.addressLine2 || '',
             city: meta.city || '',
-            state: '',
+            state: meta.state || '',
             postal_code: meta.postalCode || '',
             country: meta.country || 'US',
           },
