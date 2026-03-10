@@ -41,10 +41,10 @@ In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experi
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
 | `/shop` (home) | `page_view` | **Tracked** | Global. |
-| `/shop` (home) | `view_item` (product card impression / click) | **Not tracked** | Cards in [`app/shop/home/HomeProductCard.tsx`](../../app/shop/home/HomeProductCard.tsx), [`app/shop/components/ProductCardItem.tsx`](../../app/shop/components/ProductCardItem.tsx) — no `trackViewItem`. |
+| `/shop` (home) | `view_item` (product card click to PDP) | **Tracked** | [`HomeProductCard`](../../app/shop/home/HomeProductCard.tsx) — `trackViewItem` on card click via `onCardClick`. |
 | `/shop` (home) | `add_to_cart` (quick add) | **Tracked** | [`HomeProductCard`](../../app/shop/home/HomeProductCard.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
 | `/shop/products` | `page_view` | **Tracked** | Global. |
-| `/shop/products` | `view_item` (grid cards) | **Not tracked** | [`app/shop/products/page.tsx`](../../app/shop/products/page.tsx) uses ProductCardItem — no view tracking. |
+| `/shop/products` | `view_item` (grid cards click to PDP) | **Tracked** | [`ProductCardItem`](../../app/shop/components/ProductCardItem.tsx) — `trackViewItem` on card click. |
 | `/shop/products` | `add_to_cart` (quick add) | **Tracked** | [`ProductCardItem`](../../app/shop/components/ProductCardItem.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
 | `/shop/products` | `search` (if search UI exists) | **Not tracked** | No search bar on products page; collection/sort only. |
 
@@ -79,7 +79,7 @@ In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experi
 | `/shop/artists` | `page_view` | **Tracked** | Global. |
 | `/shop/artists/[slug]` | `page_view` | **Tracked** | Global. |
 | `/shop/artists/[slug]` | `add_to_cart` (artist’s products) | **Tracked** | [`app/shop/artists/[slug]/page.tsx`](../../app/shop/artists/[slug]/page.tsx) — `trackAddToCart(storefrontProductToItem(...))` in `onQuickAdd`. |
-| `/shop/artists/[slug]` | `view_item` (card click to PDP) | **Not tracked** | Optional: fire on click to product page. |
+| `/shop/artists/[slug]` | `view_item` (card click to PDP) | **Tracked** | [`VinylProductCard`](../../components/shop/VinylProductCard.tsx) — `trackViewItem` on card click. |
 
 ---
 

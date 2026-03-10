@@ -3,7 +3,7 @@
 import { VinylArtworkCard } from '@/components/vinyl'
 import { ProductBadge, Badge } from '@/components/impact'
 import { useCart } from '@/lib/shop/CartContext'
-import { trackAddToCart } from '@/lib/google-analytics'
+import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -149,6 +149,7 @@ export function HomeProductCard({ product, compact = false, disableTilt = false 
       showWishlist={false}
       productId={product.id}
       variantId={firstVariantForWishlist?.id || product.id}
+      onCardClick={() => trackViewItem(storefrontProductToItem(product, firstVariantForWishlist ?? undefined, 1))}
     />
   )
 }

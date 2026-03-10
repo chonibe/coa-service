@@ -9,7 +9,7 @@ import {
   getDiscountPercentage,
   type ShopifyProduct
 } from '@/lib/shopify/storefront-client'
-import { trackAddToCart } from '@/lib/google-analytics'
+import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useState } from 'react'
 
@@ -141,6 +141,10 @@ export function ProductCardItem({
         disableFlip={!artistNotes} // Only enable flip if there are artist notes
         disableTilt={true}
         variant="shop"
+        onCardClick={() => {
+          const v = product.variants?.edges?.[0]?.node
+          trackViewItem(storefrontProductToItem(product, v ?? undefined, 1))
+        }}
       />
     )
   }
@@ -162,6 +166,10 @@ export function ProductCardItem({
       showQuickAdd={product.availableForSale}
       onQuickAdd={handleQuickAdd}
       quickAddLoading={isAdding}
+      onClick={() => {
+        const v = product.variants?.edges?.[0]?.node
+        trackViewItem(storefrontProductToItem(product, v ?? undefined, 1))
+      }}
     />
   )
 }

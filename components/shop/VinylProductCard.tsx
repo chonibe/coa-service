@@ -24,6 +24,8 @@ import {
   getDiscountPercentage,
   type ShopifyProduct 
 } from '@/lib/shopify/storefront-client'
+import { trackViewItem } from '@/lib/google-analytics'
+import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 
 export interface VinylProductCardProps {
   product: ShopifyProduct
@@ -113,6 +115,7 @@ export function VinylProductCard({
       disableTilt={!enableTilt}
       variant="shop"
       className={className}
+      onCardClick={() => trackViewItem(storefrontProductToItem(product, firstVariant ?? undefined, 1))}
     />
   )
 }

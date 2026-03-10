@@ -75,6 +75,8 @@ export interface VinylArtworkCardProps {
   purchaseDate?: Date | string
   /** Additional className */
   className?: string
+  /** Called when card/link is clicked (before navigation) – use for view_item tracking */
+  onCardClick?: () => void
 }
 
 export const VinylArtworkCard = React.forwardRef<HTMLDivElement, VinylArtworkCardProps>(
@@ -103,6 +105,7 @@ export const VinylArtworkCard = React.forwardRef<HTMLDivElement, VinylArtworkCar
       variant = 'shop',
       purchaseDate,
       className,
+      onCardClick,
     },
     forwardedRef
   ) => {
@@ -158,7 +161,7 @@ export const VinylArtworkCard = React.forwardRef<HTMLDivElement, VinylArtworkCar
 
     const CardWrapper = href && !isFlipped ? Link : 'div'
     const wrapperProps = href && !isFlipped 
-      ? { href, className: 'block' } 
+      ? { href, className: 'block', onClick: () => onCardClick?.() } 
       : { className: 'block' }
 
     return (
@@ -174,7 +177,7 @@ export const VinylArtworkCard = React.forwardRef<HTMLDivElement, VinylArtworkCar
         onMouseLeave={handleMouseLeave}
         onClick={handleFlipClick}
       >
-        {/* @ts-ignore - Link/div typing */}
+        {/* @ts-expect-error - Link/div typing */}
         <CardWrapper {...wrapperProps}>
           {/* Card Container */}
           <div className="relative" style={{ transformStyle: 'preserve-3d' }}>

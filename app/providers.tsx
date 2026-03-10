@@ -29,6 +29,42 @@ function isValidPostHogKey(key: string | undefined): key is string {
   return !!key && key.startsWith("phc_") && key.length > 40 && !key.includes("your_project")
 }
 
+/** Parse comma-separated env list into trimmed non-empty strings. */
+function parseFilterList(env: string | undefined): string[] {
+  if (!env || typeof env !== "string") return []
+  return env
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+const PH_FILTER_STORAGE_KEY = "ph_filter_internal"
+
+/** Build before_send to filter out internal users (by email, distinct_id, or device opt-in). */
+function makeBeforeSend() {
+  const filterEmails = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_EMAILS)
+  const filterDistinctIds = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_DISTINCT_IDS)
+  const hasEnvFilters = filterEmails.length > 0 || filterDistinctIds.length > 0
+
+  return (event: { event?: string; distinct_id?: string; properties?: Record<string, unknown> }) => {
+    if (typeof window !== "undefined" && localStorage?.getItem(PH_FILTER_STORAGE_KEY) === "1") {
+      return false
+    }
+    const distinctId = event?.distinct_id?.toString().toLowerCase()
+    if (hasEnvFilters && filterDistinctIds.length > 0 && distinctId && filterDistinctIds.includes(distinctId)) {
+      return false
+    }
+    if (event?.properties?.internal_user === true) {
+      return false
+    }
+    const email = (event?.properties?.$set as Record<string, unknown> | undefined)?.email as string | undefined
+    if (hasEnvFilters && filterEmails.length > 0 && email && filterEmails.includes(email.toLowerCase())) {
+      return false
+    }
+    return event
+  }
+}
+
 /** PostHog: session replay, heatmaps, autocapture, user journeys. Key from window (runtime) or build-time env. */
 function PostHogWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -41,8 +77,20 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
       process.env.NEXT_PUBLIC_POSTHOG_HOST ||
       "https://us.i.posthog.com"
     if (isValidPostHogKey(key)) {
+      if (typeof window !== "undefined" && window.location?.search?.includes("posthog_filter_me=1")) {
+        try {
+          localStorage.setItem(PH_FILTER_STORAGE_KEY, "1")
+        } catch {
+          /* ignore */
+        }
+      }
+      const isDebug =
+        typeof window !== "undefined" &&
+        typeof window.location?.search !== "undefined" &&
+        window.location.search.includes("__posthog_debug=true")
       posthog.init(key, {
         api_host: host,
+        debug: isDebug,
         capture_pageview: false,
         person_profiles: "identified_only",
         disable_session_recording: false,
@@ -56,8 +104,9 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
         capture_pageleave: true,
         capture_dead_clicks: true,
         rageclick: true,
-        advanced_disable_decide: true,
+        advanced_disable_flags: false, // Required for session recording (recorder.js endpoint)
         __preview_remote_config: false,
+        before_send: makeBeforeSend(),
       })
     }
   }, [])
@@ -83,6 +132,12 @@ function PostHogIdentify() {
 
   useEffect(() => {
     if (!posthog || !user) return
+    const filterEmails = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_EMAILS)
+    const filterDistinctIds = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_DISTINCT_IDS)
+    const isInternal =
+      (user.email && filterEmails.includes(user.email.toLowerCase())) ||
+      filterDistinctIds.includes(user.id.toLowerCase())
+
     posthog.identify(user.id, {
       email: user.email,
       collector_identifier: user.collectorIdentifier,
@@ -97,6 +152,9 @@ function PostHogIdentify() {
       roles: user.roles.join(","),
       is_member: user.isMember,
     })
+    if (isInternal) {
+      posthog.register({ internal_user: true })
+    }
   }, [posthog, user])
   return null
 }
