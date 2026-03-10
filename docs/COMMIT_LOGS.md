@@ -1,3 +1,40 @@
+## Commit: Lighthouse Performance and Best Practices (2026-03-10)
+
+**Ref:** `70813b0a82`  
+**Deployed:** https://app.thestreetcollector.com
+
+### Summary
+Improves Lighthouse Performance (~66) and Best Practices (~79) for the street-collector landing page by addressing video payload, render-blocking resources, JS execution, cache headers, bfcache, and third-party cookies.
+
+### ✅ Implementation Checklist
+
+- [x] [`components/LazyVideo.tsx`](../components/LazyVideo.tsx) – Created Intersection Observer–based lazy video component; loads `src` only when near viewport; `preload="none"` for below-fold videos
+- [x] [`app/shop/street-collector/MeetTheStreetLamp.tsx`](../app/shop/street-collector/MeetTheStreetLamp.tsx) – Replaced inline videos with `LazyVideo` (mobile + desktop)
+- [x] [`app/shop/street-collector/TestimonialCarousel.tsx`](../app/shop/street-collector/TestimonialCarousel.tsx) – Replaced testimonial videos with `LazyVideo`
+- [x] [`app/shop/street-collector/MultiColumnVideoSection.tsx`](../app/shop/street-collector/MultiColumnVideoSection.tsx) – Replaced ValuePropVideoCard and section videos with `LazyVideo`
+- [x] [`app/api/proxy-video/route.ts`](../app/api/proxy-video/route.ts) – Added `Cache-Control: public, max-age=31536000, immutable` for proxy responses
+- [x] [`app/layout.tsx`](../app/layout.tsx) – Hero poster preload in `<head>` with `fetchPriority="high"`; preconnect for `fonts.googleapis.com` and `fonts.gstatic.com`; removed GA script (moved to deferred load)
+- [x] [`components/AsyncMaterialSymbolsFont.tsx`](../components/AsyncMaterialSymbolsFont.tsx) – Switched to `rel="preload" as="style"` with `onLoad` handler to reduce render-blocking
+- [x] [`app/shop/street-collector/page.tsx`](../app/shop/street-collector/page.tsx) – Replaced `dynamic = 'force-dynamic'` with `revalidate = 60`; removed hero preload from body
+- [x] [`app/page.tsx`](../app/page.tsx) – Re-export `revalidate` instead of `dynamic` for bfcache
+- [x] [`app/providers.tsx`](../app/providers.tsx) – PostHog init delay increased to 3.5s via `requestIdleCallback` timeout
+- [x] [`components/google-analytics.tsx`](../components/google-analytics.tsx) – GA/Ads gtag loaded via `requestIdleCallback` (2.5s) to defer third-party cookies
+- [x] [`components/sections/VideoPlayer.tsx`](../components/sections/VideoPlayer.tsx) – Hero poster `<img>` with explicit `width={1920}` and `height={1080}`
+
+### 🧪 Verification
+
+- Build succeeds (`npm run build`)
+- Production deploy completed on Vercel
+- Re-run Lighthouse (mobile, throttled) on production URL to validate improvements
+
+### 📌 Deployment Notes
+
+- Deployed to Vercel production
+- No schema changes or migrations required
+- Code-splitting with `next/dynamic` was attempted but reverted due to build error (circular dependency / initialization order)
+
+---
+
 ## Commit: Experience Carousel & Slideshow Fixes (2026-02-25)
 
 **Ref:** [experience-carousel-slideshow-2026-02-25.md](COMMIT_LOGS/experience-carousel-slideshow-2026-02-25.md)

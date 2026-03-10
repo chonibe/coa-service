@@ -1,5 +1,24 @@
 # Commit Log
 
+## Commit: Lighthouse Performance and Best Practices (2026-03-10)
+
+**Ref:** `70813b0a82`  
+**Deployed:** https://app.thestreetcollector.com
+
+### Summary
+Improves Lighthouse Performance and Best Practices for the street-collector landing page: lazy-load videos, hero preload in head, deferred PostHog/GA, proxy-video cache, bfcache-friendly revalidate, explicit poster dimensions.
+
+### Implementation Checklist
+
+- [x] [components/LazyVideo.tsx](components/LazyVideo.tsx) – Intersection Observer lazy video
+- [x] [app/layout.tsx](app/layout.tsx) – Hero poster preload, font preconnect, deferred GA
+- [x] [app/api/proxy-video/route.ts](app/api/proxy-video/route.ts) – Long-lived cache headers
+- [x] [app/shop/street-collector/page.tsx](app/shop/street-collector/page.tsx) – `revalidate = 60`
+- [x] [components/google-analytics.tsx](components/google-analytics.tsx) – Deferred GA/Ads
+- [x] See [docs/features/lighthouse-performance/README.md](docs/features/lighthouse-performance/README.md) for full details
+
+---
+
 ## Commit: feat(theme): add #1c0202 to base and #FFBA94 highlight palette (2026-03-06)
 
 **Ref:** `d9179ccd6`

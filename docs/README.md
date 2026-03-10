@@ -13,6 +13,7 @@
 - [Architecture](/architecture/README.md)
 - [Data Enrichment Protocol (PII Bridge)](/docs/features/data-enrichment-protocol.md) 🆕
 - [**Data Fetching Strategies**](/data-fetching/README.md) 🆕
+- [Lighthouse Performance](/docs/features/lighthouse-performance/README.md) – Landing page Performance and Best Practices optimizations
 
 ### Authentication
 - [Authentication Flows](/authentication/README.md)
