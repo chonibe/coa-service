@@ -220,7 +220,7 @@ function TestimonialCard({ item }: { item: TestimonialCardItem }) {
               poster={getProxiedImageUrl(media.poster)}
               autoPlay
             >
-              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
             </LazyVideo>
           ) : (
             <img
