@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   Container,
@@ -14,12 +15,25 @@ import {
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
-import { MeetTheStreetLamp } from './MeetTheStreetLamp'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
-import { TestimonialCarousel } from './TestimonialCarousel'
 import { FixedCTAButton } from './FixedCTAButton'
-import { StreetCollectorFAQ } from './StreetCollectorFAQ'
-import { ArtistCarousel } from '@/components/sections/ArtistCarousel'
+
+const MeetTheStreetLamp = dynamic(
+  () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
+  { loading: () => <section className="min-h-[280px] bg-[#1a0a0a]" aria-hidden /> }
+)
+const TestimonialCarousel = dynamic(
+  () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
+  { loading: () => <section className="min-h-[200px] bg-[#1a0a0a]" aria-hidden /> }
+)
+const StreetCollectorFAQ = dynamic(
+  () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
+  { loading: () => <section className="min-h-[120px] bg-[#1a0a0a]" aria-hidden /> }
+)
+const ArtistCarousel = dynamic(
+  () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
+  { loading: () => <section className="min-h-[400px] bg-[#1a0a0a]" aria-hidden /> }
+)
 
 const HOME_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
 
@@ -226,7 +240,7 @@ export default async function StreetCollectorPage() {
         />
         {/* Logo overlay on hero */}
         <Link
-          href="/shop/street-collector"
+          href="/"
           aria-label="Street Collector Home"
           className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top"
         >

@@ -4,9 +4,14 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ShopSlideoutMenu } from '@/components/shop/navigation/ShopSlideoutMenu'
-
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+
+type ShopSlideoutMenuProps = {
+  open: boolean
+  onClose: () => void
+  theme?: 'light' | 'dark'
+  authRedirectTo?: string
+}
 
 const DEFAULT_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
 
@@ -25,7 +30,14 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
   const [isMobile, setIsMobile] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pastHero, setPastHero] = useState(false)
+  const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<ShopSlideoutMenuProps> | null>(null)
   const lastScrollY = useRef(0)
+
+  useEffect(() => {
+    if (menuOpen && !SlideoutMenu) {
+      import('@/components/shop/navigation/ShopSlideoutMenu').then((m) => setSlideoutMenu(() => m.ShopSlideoutMenu))
+    }
+  }, [menuOpen, SlideoutMenu])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640)
@@ -80,6 +92,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
       >
         <Link
           href={href}
+          prefetch={false}
           className="w-full flex items-center justify-center min-h-[52px] text-sm font-semibold rounded-lg px-5 py-3.5 shadow-lg transition-colors hover:opacity-90"
           style={{ backgroundColor: '#FFBA94', color: '#390000' }}
         >
@@ -100,7 +113,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
       >
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
-            href="/shop/street-collector"
+            href="/"
             aria-label="Street Collector Home"
             className="inline-flex items-center justify-center p-1 -m-1 transition-transform hover:scale-105"
           >
@@ -114,15 +127,18 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
           >
             <Menu size={20} className="shrink-0" />
           </button>
-          <ShopSlideoutMenu
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            theme="light"
-            authRedirectTo="/shop/street-collector"
-          />
+          {SlideoutMenu && (
+            <SlideoutMenu
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              theme="light"
+              authRedirectTo="/"
+            />
+          )}
         </div>
         <Link
           href={href}
+          prefetch={false}
           className="inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-md px-3 sm:px-4 py-1.5 sm:py-2 shadow-md transition-colors shrink-0 hover:opacity-90"
           style={{ backgroundColor: '#FFBA94', color: '#390000' }}
         >

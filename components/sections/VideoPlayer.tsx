@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Container } from '@/components/impact'
 
@@ -114,17 +115,17 @@ export function VideoPlayer({
         className
       )}
     >
-      {/* Poster as LCP: visible first, high priority */}
+      {/* Poster as LCP: next/image for modern formats (WebP/AVIF) and optimization */}
       {video.poster && (
-        <img
+        <Image
           src={video.poster}
           alt=""
           width={1920}
           height={1080}
           className="absolute inset-0 w-full h-full object-cover z-0"
           fetchPriority="high"
-          loading="eager"
-          decoding="async"
+          priority
+          sizes="100vw"
         />
       )}
       {/* Video: preload=none so poster paints first; load started after delay */}

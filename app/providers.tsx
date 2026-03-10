@@ -65,6 +65,9 @@ function makeBeforeSend() {
   }
 }
 
+/** Landing paths where we defer session recording to reduce TBT and bootup (Lighthouse) */
+const LANDING_PATHS = ["/", "/shop/street-collector"]
+
 /** PostHog: session replay, heatmaps, autocapture, user journeys. Key from window (runtime) or build-time env. */
 function PostHogWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -84,6 +87,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           /* ignore */
         }
       }
+      const isLanding = pathname && LANDING_PATHS.some((p) => pathname === p || pathname === p + "/")
       const initPostHog = () => {
         const isDebug =
           typeof window !== "undefined" &&
@@ -94,29 +98,34 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           debug: isDebug,
           capture_pageview: false,
           person_profiles: "identified_only",
-          disable_session_recording: false,
+          disable_session_recording: isLanding,
           session_recording: {
             recordCrossOriginIframes: false,
             console: false,
           },
-          enable_heatmaps: true,
+          enable_heatmaps: !isLanding,
           defaults: "2026-01-30",
           autocapture: true,
           capture_pageleave: true,
           capture_dead_clicks: true,
           rageclick: true,
-          advanced_disable_flags: false, // Required for session recording (recorder.js endpoint)
+          advanced_disable_flags: false,
           __preview_remote_config: false,
           before_send: makeBeforeSend(),
         })
+        if (isLanding) {
+          setTimeout(() => {
+            posthog.startSessionRecording?.()
+          }, 8000)
+        }
       }
       if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(initPostHog, { timeout: 3500 })
+        requestIdleCallback(initPostHog, { timeout: isLanding ? 5000 : 3500 })
       } else {
-        setTimeout(initPostHog, 500)
+        setTimeout(initPostHog, isLanding ? 5000 : 500)
       }
     }
-  }, [])
+  }, [pathname])
   useEffect(() => {
     const key =
       (typeof window !== "undefined" && (window as unknown as { __POSTHOG_KEY__?: string }).__POSTHOG_KEY__) ||

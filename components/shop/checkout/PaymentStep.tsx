@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import {
   CheckoutProvider,
   useCheckout,
@@ -10,10 +9,18 @@ import {
 import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
+import type { Stripe } from '@stripe/stripe-js'
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+/** Lazy-load Stripe only when payment UI mounts (avoids loading on landing page prefetch) */
+function useStripePromise() {
+  const [promise, setPromise] = React.useState<Promise<Stripe | null> | null>(null)
+  React.useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    if (!key) return
+    import('@stripe/stripe-js').then(({ loadStripe }) => setPromise(loadStripe(key)))
+  }, [])
+  return promise
+}
 
 interface CartLineItem {
   productId: string
@@ -459,6 +466,7 @@ function PaymentFormInner({
 }
 
 export function PaymentStep(props: PaymentStepProps) {
+  const stripePromise = useStripePromise()
   const { theme } = useExperienceTheme()
   const { preloadedClientSecret, ...restProps } = props
   const [clientSecret, setClientSecret] = React.useState<string | null>(
@@ -508,11 +516,19 @@ export function PaymentStep(props: PaymentStepProps) {
       })
   }, [props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret])
 
-  if (!stripePromise) {
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
       <p className="text-sm text-amber-600 p-4">
         Payment configuration is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
       </p>
+    )
+  }
+  if (!stripePromise) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading payment...</span>
+      </div>
     )
   }
 

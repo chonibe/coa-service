@@ -1,14 +1,21 @@
 'use client'
 
 import * as React from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Loader2 } from 'lucide-react'
 import type { SavedCardInfo } from '@/lib/shop/CheckoutContext'
+import type { Stripe } from '@stripe/stripe-js'
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+/** Lazy-load Stripe only when component mounts (avoids loading on landing page) */
+function useStripePromise() {
+  const [promise, setPromise] = React.useState<Promise<Stripe | null> | null>(null)
+  React.useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    if (!key) return
+    import('@stripe/stripe-js').then(({ loadStripe }) => setPromise(loadStripe(key)))
+  }, [])
+  return promise
+}
 
 interface SetupFormInnerProps {
   customerEmail?: string
@@ -116,11 +123,20 @@ export interface CardInputSectionProps {
 }
 
 export function CardInputSection({ clientSecret, customerEmail, onSuccess, onError }: CardInputSectionProps) {
-  if (!stripePromise) {
+  const stripePromise = useStripePromise()
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
       <p className="text-sm text-amber-600">
         Payment configuration is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
       </p>
+    )
+  }
+  if (!stripePromise) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading payment...</span>
+      </div>
     )
   }
   return (

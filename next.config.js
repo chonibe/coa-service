@@ -10,7 +10,12 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'cdn.shopify.com', pathname: '/**' },
+      { protocol: 'https', hostname: '**.shopify.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'thestreetcollector.com', pathname: '/**' },
+    ],
   },
   async headers() {
     // Get allowed origins from environment variable

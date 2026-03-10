@@ -9,7 +9,8 @@ declare global {
 // Mirror e-commerce events to PostHog for journey/funnel analysis (no-op if PostHog not inited)
 function toPostHog() {
   try {
-    return require('@/lib/posthog')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- optional runtime dep
+    return require('@/lib/posthog') as { captureViewItem?: (i: unknown) => void }
   } catch {
     return null
   }
@@ -29,10 +30,24 @@ const ensureDataLayer = () => {
     window.dataLayer = []
   }
   if (typeof window !== 'undefined' && !window.gtag) {
-    window.gtag = function() {
-      window.dataLayer?.push(arguments)
+    window.gtag = (...args: unknown[]) => {
+      window.dataLayer?.push(args)
     }
   }
+}
+
+/** Set Consent Mode v2 default deny — prevents third-party cookies until user consent (Best Practices).
+ * Must run before gtag.js loads. Uses stub gtag from ensureDataLayer. */
+export const setConsentDefault = () => {
+  if (typeof window === 'undefined') return
+  ensureDataLayer()
+  if (!window.gtag) return
+  window.gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+  })
 }
 
 // Initialize Google Analytics
@@ -102,7 +117,7 @@ export const event = ({
 }
 
 // Track user interactions
-export const trackUserInteraction = (interaction: string, details?: Record<string, any>) => {
+export const trackUserInteraction = (interaction: string, _details?: Record<string, unknown>) => {
   event({
     action: 'user_interaction',
     category: 'engagement',

@@ -22,12 +22,21 @@ Optimizations applied to improve Lighthouse scores for https://app.thestreetcoll
 - [app/api/proxy-video/route.ts](/app/api/proxy-video/route.ts) – Cache headers
 - [components/google-analytics.tsx](/components/google-analytics.tsx) – Deferred GA/Ads load
 
+## Best Practices: Third-Party Cookies (2026-03-10)
+
+- **Google Consent Mode v2**: `gtag('consent', 'default', { ad_storage, ad_user_data, ad_personalization, analytics_storage: 'denied' })` set before gtag.js loads — prevents Google Ads / doubleclick.net third-party cookies until user consent
+- **Stripe prefetch**: `prefetch={false}` on CTA `Link` components in [FixedCTAButton](app/shop/street-collector/FixedCTAButton.tsx) — prevents Next.js from prefetching `/experience` (which loads Stripe), so `m.stripe.com` cookie is not set on landing
+
 ## Not Implemented (Cancelled)
 
 - **Code-split street-collector sections**: `next/dynamic` for MeetTheStreetLamp, ArtistCarousel, etc. caused build error (`Cannot access 'y' before initialization`)
 - **GSAP/reflow batching**: Deferred due to risk and complexity
 - **Next image optimization**: Left disabled (`unoptimized: true`); explicit dimensions added instead
 - **Stripe-on-checkout-only**: Stripe likely not on landing page; unchanged
+
+## Roadmap to 100%
+
+See [LIGHTHOUSE_100_PLAN.md](LIGHTHOUSE_100_PLAN.md) for a phased plan to reach 100% on Performance and Best Practices.
 
 ## Validation
 
