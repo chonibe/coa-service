@@ -368,7 +368,7 @@ export function CheckoutSuccessContent() {
                 </Button>
               </Link>
             ) : (
-              <Link href={`/login?redirect=/collector/dashboard&intent=collector`}>
+              <Link href={`/shop/account`}>
                 <Button variant="primary" size="lg">
                   Sign in
                 </Button>
