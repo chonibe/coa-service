@@ -29,7 +29,8 @@ export const metadata: Metadata = {
     'Discover your city\'s vibrant art scene, connect with your favourite artists, ignite your creativity, and claim exclusive masterpieces in an exciting new way.',
 }
 
-export const dynamic = 'force-dynamic'
+// Allow revalidation so bfcache can work; page uses Shopify API so short revalidate
+export const revalidate = 60
 
 export default async function StreetCollectorPage() {
   const apiConfigured = isStorefrontConfigured()
@@ -47,66 +48,69 @@ export default async function StreetCollectorPage() {
 
   if (apiConfigured) {
     try {
-      // Fetch artist images from configured list
-      featuredArtists = await Promise.all(
-        streetCollectorContent.featuredArtists.collections.map(async (artist) => {
-          const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
-          try {
-            const col = await getCollection(artist.handle, { first: 1 }).catch(() => null)
-            const handleForName = artist.handle.replace(/-\d+$/, '')
-            const fallbackName = handleForName
-              .split('-')
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(' ')
-            const name = col?.title?.trim() || fallbackName
-            let description: string | undefined =
-              col?.description
-                ? col.description
-                : col?.descriptionHtml
-                  ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-                  : undefined
-            if (!description) {
-              const vendorBio = await getVendorBioByHandle(artist.handle)
-              description = vendorBio?.bio
-            }
-            let imageUrl = col?.image?.url || col?.products?.edges?.[0]?.node?.featuredImage?.url
-            if (!imageUrl) {
-              imageUrl = await getArtistImageByHandle(artist.handle)
-            }
-            return {
-              handle: artist.handle,
-              name,
-              location: artist.location,
-              imageUrl,
-              description,
-              href: collectionHref,
-            }
-          } catch {
-            const handleForName = artist.handle.replace(/-\d+$/, '')
-            const imageUrl = await getArtistImageByHandle(artist.handle)
-            return {
-              handle: artist.handle,
-              name: handleForName
+      // Fetch featured artists and season-2 collection in parallel
+      const [featuredArtistsResult, season2Col] = await Promise.all([
+        Promise.all(
+          streetCollectorContent.featuredArtists.collections.map(async (artist) => {
+            const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
+            try {
+              const col = await getCollection(artist.handle, { first: 1 }).catch(() => null)
+              const handleForName = artist.handle.replace(/-\d+$/, '')
+              const fallbackName = handleForName
                 .split('-')
                 .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(' '),
-              location: artist.location,
-              imageUrl,
-              description: undefined,
-              href: collectionHref,
+                .join(' ')
+              const name = col?.title?.trim() || fallbackName
+              let description: string | undefined =
+                col?.description
+                  ? col.description
+                  : col?.descriptionHtml
+                    ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+                    : undefined
+              if (!description) {
+                const vendorBio = await getVendorBioByHandle(artist.handle)
+                description = vendorBio?.bio
+              }
+              let imageUrl = col?.image?.url || col?.products?.edges?.[0]?.node?.featuredImage?.url
+              if (!imageUrl) {
+                imageUrl = await getArtistImageByHandle(artist.handle)
+              }
+              return {
+                handle: artist.handle,
+                name,
+                location: artist.location,
+                imageUrl,
+                description,
+                href: collectionHref,
+              }
+            } catch {
+              const handleForName = artist.handle.replace(/-\d+$/, '')
+              const imageUrl = await getArtistImageByHandle(artist.handle)
+              return {
+                handle: artist.handle,
+                name: handleForName
+                  .split('-')
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(' '),
+                location: artist.location,
+                imageUrl,
+                description: undefined,
+                href: collectionHref,
+              }
             }
-          }
-        })
-      )
+          })
+        ),
+        getCollectionWithListProducts(SEASON_2_HANDLE, {
+          first: 100,
+          sortKey: 'MANUAL',
+        }).catch(() => null),
+      ])
+      featuredArtists = featuredArtistsResult
 
       // Add 2nd edition artists from season-2 collection (vendors not already in list)
       const existingHandles = new Set(
         featuredArtists.map((a) => a.handle.replace(/-\d+$/, '').toLowerCase())
       )
-      const season2Col = await getCollectionWithListProducts(SEASON_2_HANDLE, {
-        first: 100,
-        sortKey: 'MANUAL',
-      }).catch(() => null)
       const season2Products = season2Col?.products?.edges?.map((e) => e.node) ?? []
       const vendorsBySlug = new Map<string, string>()
       for (const p of season2Products) {
@@ -236,11 +240,12 @@ export default async function StreetCollectorPage() {
         </Link>
         <VideoPlayer
           video={{
-            url: `/api/proxy-video?url=${encodeURIComponent(streetCollectorContent.hero.video)}`,
+            url: streetCollectorContent.hero.video,
             poster: getProxiedImageUrl(streetCollectorContent.hero.image),
             autoplay: true,
             loop: true,
             muted: true,
+            captionsUrl: '/captions/hero-no-speech.vtt',
           }}
           overlay={{
             headline: streetCollectorContent.hero.headline,

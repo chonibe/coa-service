@@ -47,6 +47,11 @@ The main shop landing page inspired by [thestreetcollector.com](https://thestree
 - Accent: `#047AFF` (primary button/CTA)
 - Uses Impact design tokens (Fraunces, Barlow) from `@/components/impact`
 
+### Accessibility & Best Practices (Lighthouse)
+
+- **Video captions:** Hero, Meet the Street Lamp, and testimonial videos use `<track kind="captions">` with `/captions/hero-no-speech.vtt` (no-speech placeholder for decorative/background video).
+- **Touch targets:** Testimonial carousel dot buttons and press-quote dot buttons use a minimum 24×24px touch target for mobile accessibility.
+
 ---
 
 ## Related
@@ -61,3 +66,4 @@ The main shop landing page inspired by [thestreetcollector.com](https://thestree
 
 - **Created:** 2026-02-27
 - **Implementation:** Street Collector–inspired landing flow into `/shop/experience` with bridge + FAQ conversion layers
+- **Updated:** 2026-03-10 — Lighthouse: video captions (hero, Meet the Street Lamp, testimonials), 24px touch targets for carousel/press-quote dots

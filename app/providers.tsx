@@ -84,30 +84,37 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           /* ignore */
         }
       }
-      const isDebug =
-        typeof window !== "undefined" &&
-        typeof window.location?.search !== "undefined" &&
-        window.location.search.includes("__posthog_debug=true")
-      posthog.init(key, {
-        api_host: host,
-        debug: isDebug,
-        capture_pageview: false,
-        person_profiles: "identified_only",
-        disable_session_recording: false,
-        session_recording: {
-          recordCrossOriginIframes: false,
-          console: false,
-        },
-        enable_heatmaps: true,
-        defaults: "2026-01-30",
-        autocapture: true,
-        capture_pageleave: true,
-        capture_dead_clicks: true,
-        rageclick: true,
-        advanced_disable_flags: false, // Required for session recording (recorder.js endpoint)
-        __preview_remote_config: false,
-        before_send: makeBeforeSend(),
-      })
+      const initPostHog = () => {
+        const isDebug =
+          typeof window !== "undefined" &&
+          typeof window.location?.search !== "undefined" &&
+          window.location.search.includes("__posthog_debug=true")
+        posthog.init(key, {
+          api_host: host,
+          debug: isDebug,
+          capture_pageview: false,
+          person_profiles: "identified_only",
+          disable_session_recording: false,
+          session_recording: {
+            recordCrossOriginIframes: false,
+            console: false,
+          },
+          enable_heatmaps: true,
+          defaults: "2026-01-30",
+          autocapture: true,
+          capture_pageleave: true,
+          capture_dead_clicks: true,
+          rageclick: true,
+          advanced_disable_flags: false, // Required for session recording (recorder.js endpoint)
+          __preview_remote_config: false,
+          before_send: makeBeforeSend(),
+        })
+      }
+      if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(initPostHog, { timeout: 3500 })
+      } else {
+        setTimeout(initPostHog, 500)
+      }
     }
   }, [])
   useEffect(() => {

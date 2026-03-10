@@ -3,6 +3,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { LazyVideo } from '@/components/LazyVideo'
 
 /** Video aspect ratio 4×5 (width:height) so they render the same size. */
 const VIDEO_ASPECT_RATIO = 4 / 5
@@ -35,21 +36,12 @@ export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
               className="relative w-full overflow-hidden flex-shrink-0 rounded-lg"
               style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
             >
-              <video
-                playsInline
-                muted
-                loop
-                preload="metadata"
-                autoPlay
+              <LazyVideo
+                src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
                 poster={getProxiedImageUrl(prop.poster)}
-                className="absolute inset-0 h-full w-full object-cover"
-              >
-                <source
-                  src={`/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
-                  type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
-                />
-                <img src={getProxiedImageUrl(prop.poster)} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              </video>
+                type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
+                autoPlay
+              />
             </div>
           </div>
         ))}
@@ -120,25 +112,12 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
                   className="relative w-full overflow-hidden flex-shrink-0 rounded-lg"
                   style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
                 >
-                  <video
-                    playsInline
-                    muted
-                    loop
-                    preload="metadata"
-                    autoPlay
+                  <LazyVideo
+                    src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
                     poster={getProxiedImageUrl(prop.poster)}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  >
-                    <source
-                      src={`/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
-                      type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
-                    />
-                    <img
-                      src={getProxiedImageUrl(prop.poster)}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  </video>
+                    type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
+                    autoPlay
+                  />
                 </div>
               </div>
             ))}

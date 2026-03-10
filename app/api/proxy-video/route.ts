@@ -84,7 +84,6 @@ export async function GET(request: NextRequest) {
 
   const range = request.headers.get('range')
   let res: Response
-  let usedUrl = url
 
   try {
     const fallback = cdnFallbackUrl(url)
@@ -109,7 +108,6 @@ export async function GET(request: NextRequest) {
       }
     }
     res = result.res
-    usedUrl = result.usedUrl
 
     if (!res.ok) {
       return NextResponse.json(
@@ -125,7 +123,7 @@ export async function GET(request: NextRequest) {
     const responseHeaders = new Headers({
       'Content-Type': contentType,
       'Accept-Ranges': acceptRanges,
-      'Cache-Control': 'public, max-age=86400',
+      'Cache-Control': 'public, max-age=31536000, immutable',
     })
     if (contentLength) responseHeaders.set('Content-Length', contentLength)
 

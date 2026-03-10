@@ -6,6 +6,8 @@ import { Providers } from "./providers"
 import { getProxiedImageUrl } from "@/lib/proxy-cdn-url"
 import { SkipLink } from "@/components/accessibility/skip-link"
 import { GoogleAnalytics } from "@/components/google-analytics"
+import { AsyncMaterialSymbolsFont } from "@/components/AsyncMaterialSymbolsFont"
+import { streetCollectorContent } from "@/content/street-collector"
 
 const fraunces = Fraunces({ 
   subsets: ["latin"],
@@ -37,14 +39,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <script
-            async
-            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-          />
-        )}
+        {/* Preload LCP image for landing page (/) — improves FCP/LCP */}
+        <link
+          rel="preload"
+          as="image"
+          href={getProxiedImageUrl(streetCollectorContent.hero.image) || streetCollectorContent.hero.image}
+          fetchPriority="high"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <AsyncMaterialSymbolsFont />
+        {/* GA script loaded deferred by GoogleAnalytics component to reduce first-load impact */}
         {/* PostHog: inject key at runtime so it works even when client bundle was built before env was set. Skip placeholders. */}
         {process.env.NEXT_PUBLIC_POSTHOG_KEY?.startsWith("phc_") &&
           process.env.NEXT_PUBLIC_POSTHOG_KEY.length > 40 &&

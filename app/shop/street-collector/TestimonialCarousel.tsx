@@ -4,6 +4,7 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { SectionWrapper, Container } from '@/components/impact'
+import { LazyVideo } from '@/components/LazyVideo'
 
 export type TestimonialMedia =
   | { type: 'video'; poster: string; video: string }
@@ -118,11 +119,6 @@ export function TestimonialCarousel({
 
   const currentIndex = n > 0 ? currentCardIndex % n : 0
 
-  const scrollToDot = (reviewIndex: number) => {
-    const cycle = Math.floor(currentCardIndex / n) * n
-    scrollToCard(cycle + reviewIndex)
-  }
-
   return (
     <SectionWrapper spacing="sm" fullWidth={fullWidth} background="header" className={cn('bg-[#1a0a0a]', className)}>
       <Container maxWidth="default" paddingX="gutter">
@@ -196,23 +192,6 @@ export function TestimonialCarousel({
               </>
             )}
 
-            {n > 1 && (
-              <div className="flex items-center justify-center gap-1.5 mt-6">
-                {safeList.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => scrollToDot(i)}
-                    aria-label={`Go to testimonial ${i + 1}`}
-                    className={cn(
-                      'w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-colors shrink-0',
-                      i === currentIndex ? 'bg-[#FFBA94]' : 'bg-[#FFBA94]/30 hover:bg-[#FFBA94]/50'
-                    )}
-                    style={{ width: 4, height: 4 }}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </article>
       </Container>
@@ -236,21 +215,13 @@ function TestimonialCard({ item }: { item: TestimonialCardItem }) {
           style={{ aspectRatio: MEDIA_ASPECT_RATIO }}
         >
           {media.type === 'video' ? (
-            <video
-              playsInline
-              muted
-              loop
-              autoPlay
-              preload="metadata"
+            <LazyVideo
+              src={media.video.startsWith('https://cdn.shopify.com/') ? media.video : `/api/proxy-video?url=${encodeURIComponent(media.video)}`}
               poster={getProxiedImageUrl(media.poster)}
-              className="absolute inset-0 w-full h-full object-cover"
+              autoPlay
             >
-              <source
-                src={`/api/proxy-video?url=${encodeURIComponent(media.video)}`}
-                type="video/mp4"
-              />
-              <img src={getProxiedImageUrl(media.poster)} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            </video>
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+            </LazyVideo>
           ) : (
             <img
               src={getProxiedImageUrl(media.src)}

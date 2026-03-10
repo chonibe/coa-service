@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { LazyVideo } from '@/components/LazyVideo'
 
 export interface MeetTheLampStage {
   title: string
@@ -56,9 +57,9 @@ export function MeetTheStreetLamp({
 }: MeetTheStreetLampProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const isDesktop = useIsDesktop()
   const videoUrl = isDesktop ? desktopVideo : mobileVideo
+  const videoSrc = videoUrl.startsWith('https://cdn.shopify.com/') ? videoUrl : `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
 
   const goToNext = useCallback(() => {
     setProgress(0)
@@ -183,22 +184,14 @@ export function MeetTheStreetLamp({
         <div className="flex flex-col gap-8 sm:gap-10">
           <div>{titleBlock}</div>
           <div className="relative w-full overflow-hidden rounded-2xl aspect-[3/4]">
-            <video
-              ref={videoRef}
+            <LazyVideo
               key={`mobile-${videoUrl}`}
-              playsInline
-              muted
-              loop
-              autoPlay
-              preload="metadata"
+              src={videoSrc}
               poster={poster}
-              className="absolute inset-0 w-full h-full object-cover"
+              autoPlay
             >
-              <source
-                src={`/api/proxy-video?url=${encodeURIComponent(videoUrl)}`}
-                type="video/mp4"
-              />
-            </video>
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+            </LazyVideo>
           </div>
           <div>{mobileCenteredStage}</div>
         </div>
@@ -212,22 +205,15 @@ export function MeetTheStreetLamp({
             {stageList}
           </div>
           <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-800 aspect-[4/5] max-h-[640px]">
-            <video
-              ref={videoRef}
+            <LazyVideo
               key={`desktop-${videoUrl}`}
-              playsInline
-              muted
-              loop
-              autoPlay
-              preload="metadata"
+              src={videoSrc}
               poster={poster}
-              className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              autoPlay
+              className="rounded-2xl"
             >
-              <source
-                src={`/api/proxy-video?url=${encodeURIComponent(videoUrl)}`}
-                type="video/mp4"
-              />
-            </video>
+              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" default />
+            </LazyVideo>
           </div>
         </div>
         )}
