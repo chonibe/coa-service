@@ -13,7 +13,8 @@ import {
   footerSections as syncedFooterSections 
 } from '@/content/shopify-content'
 import { homepageContent } from '@/content/homepage'
-import { BackBar, ChatIconScrollReveal } from '@/components/shop/navigation'
+import { BackBar } from '@/components/shop/navigation/BackBar'
+import { ChatIconScrollReveal } from '@/components/shop/navigation/ChatIconScrollReveal'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import type { SearchResult } from '@/components/impact/SearchDrawer'
 import { cn } from '@/lib/utils'

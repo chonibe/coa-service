@@ -2,6 +2,7 @@
   "name": "coa-service",
   "version": "0.1.0",
   "private": true,
+  "sideEffects": ["*.css", "*.scss", "*.sass"],
   "scripts": {
     "postinstall": "patch-package || echo 'Warning: patch-package could not apply some patches - continuing'",
     "dev": "next dev",
