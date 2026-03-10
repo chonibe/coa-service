@@ -47,7 +47,6 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
   }, [])
 
   useEffect(() => {
-    if (isMobile) return
     const sentinel = document.getElementById('street-collector-hero-sentinel')
     if (!sentinel) return
     const io = new IntersectionObserver(
@@ -60,7 +59,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     )
     io.observe(sentinel)
     return () => io.disconnect()
-  }, [isMobile])
+  }, [])
 
   useEffect(() => {
     if (isMobile || !pastHero) return
@@ -81,7 +80,20 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isMobile, pastHero])
 
-  const showMobile = isMobile
+  // On mobile, also hide the CTA near the bottom of the page so the footer is accessible
+  const [nearBottom, setNearBottom] = useState(false)
+  useEffect(() => {
+    if (!isMobile) return
+    const handleScroll = () => {
+      const distFromBottom = document.documentElement.scrollHeight - window.scrollY - window.innerHeight
+      setNearBottom(distFromBottom < 200)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isMobile])
+
+  const showMobile = isMobile && pastHero && !nearBottom
   const renderDesktopBar = !isMobile && pastHero
 
   if (showMobile) {
