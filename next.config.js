@@ -26,10 +26,10 @@ const nextConfig = {
     // If no specific origins configured, use the app URL only
     const origins = allowedOrigins.length > 0 ? allowedOrigins : [defaultOrigin]
     
-    // Build CSP directive
+    // Build CSP directive. unsafe-eval removed for security; unsafe-inline still required for Next.js and some third-party scripts until we move to nonce-based CSP (see docs/SECURITY_VULNERABILITY_FINDINGS.md #10).
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://cdn.jsdelivr.net https://js.stripe.com https://maps.googleapis.com https://static.hotjar.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com", // Google Analytics + Stripe.js + Tawk.to + Hotjar + PostHog (incl. session replay recorder)
+      "script-src 'self' 'unsafe-inline' https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com https://*.googleadservices.com https://googleads.g.doubleclick.net https://embed.tawk.to https://cdn.jsdelivr.net https://js.stripe.com https://maps.googleapis.com https://static.hotjar.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com", // Google Analytics + Stripe.js + Tawk.to + Hotjar + PostHog (no unsafe-eval)
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com https://embed.tawk.to https://cdn.jsdelivr.net https://*.stripe.com", // Tawk.to + Stripe Payment Element styles
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to https://embed.tawk.to", // Tawk.to chat fonts

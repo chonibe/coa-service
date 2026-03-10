@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 
 /**
- * Get allowed origins from environment variable
+ * ALLOWED_ORIGINS (optional): Comma-separated list of origins allowed for CORS.
+ * - Production: Use explicit origins only (e.g. https://app.example.com). Wildcard (*) and
+ *   subdomain wildcards (*.example.com) from this env are ignored in production for security.
+ * - Development: Wildcard subdomains (e.g. *.thestreetcollector.com) are allowed if set.
+ * - Never set to * in production. Prefer explicit origins.
+ * @see docs/VERCEL_ENV_VARIABLES.md
  */
 export function getAllowedOrigins(): string[] {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || []
+  const raw = process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || []
   const defaultOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  
-  // Always include the app URL and localhost for development
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  // In production, only allow explicit origins from env (no * or *.domain)
+  const allowedOrigins = isProduction
+    ? raw.filter((o) => o !== '*' && !o.startsWith('*.'))
+    : raw
+
   const origins = new Set([
     defaultOrigin,
     'https://app.thestreetcollector.com',
@@ -16,7 +26,7 @@ export function getAllowedOrigins(): string[] {
     'http://localhost:3001',
     ...allowedOrigins,
   ])
-  
+
   return Array.from(origins)
 }
 

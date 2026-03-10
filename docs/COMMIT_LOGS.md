@@ -1,3 +1,22 @@
+## Commit: Security – CORS #9 and CSP #10 hardening (2026-03-10)
+
+### Summary
+Addresses remaining low-priority security items: CORS wildcard documentation and production restriction; CSP removal of `unsafe-eval` and documented path to nonce-based CSP.
+
+### ✅ Implementation Checklist
+
+- [x] [`lib/middleware/cors.ts`](../lib/middleware/cors.ts) – In production, ignore `*` and `*.` entries from `ALLOWED_ORIGINS`; JSDoc for allowed values
+- [x] [`docs/VERCEL_ENV_VARIABLES.md`](../docs/VERCEL_ENV_VARIABLES.md) – New section 9: CORS `ALLOWED_ORIGINS` (explicit origins only in prod, no wildcards)
+- [x] [`next.config.js`](../next.config.js) – Remove `'unsafe-eval'` from `script-src`; comment that `'unsafe-inline'` remains until nonce-based CSP
+- [x] [`docs/SECURITY_VULNERABILITY_FINDINGS.md`](../docs/SECURITY_VULNERABILITY_FINDINGS.md) – Remediation entries for #9 and #10; CSP hardening path (nonce via middleware) documented
+
+### 📌 Notes
+
+- If any runtime script fails after removing `unsafe-eval`, add it back in next.config.js script-src.
+- Full removal of `unsafe-inline` requires moving CSP into middleware with per-request nonces (see security doc).
+
+---
+
 ## Commit: Lighthouse Performance Fixes – GA/PostHog defer, lazy images (2026-03-10)
 
 **Ref:** `30a5bc4b5`  

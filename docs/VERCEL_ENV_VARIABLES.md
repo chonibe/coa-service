@@ -53,6 +53,12 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
   - Use your webhook secret from Attio Developer Settings
   - Without this, inbound webhook requests will be rejected with 401
 
+### 9. CORS – Allowed origins (optional)
+- `ALLOWED_ORIGINS` – Optional. Comma-separated list of origins allowed for CORS (e.g. `https://admin.example.com,https://portal.example.com`).
+- **Production:** Use **explicit origins only**. Do not set to `*`. Wildcard subdomain entries (e.g. `*.example.com`) from this variable are **ignored** in production; only full URLs are used.
+- **Recommended for production:** Set to explicit URLs if you have additional frontends (e.g. `https://admin.thestreetcollector.com`). If unset, the app URL, `https://app.thestreetcollector.com`, and `https://thestreetcollector.com` are already allowed by default.
+- See [`lib/middleware/cors.ts`](../lib/middleware/cors.ts) and [Security Policy](./SECURITY_POLICY.md).
+
 ## Quick Setup Steps
 
 1. **Go to Vercel Dashboard** → Your Project → Settings → Environment Variables
