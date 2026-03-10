@@ -1,3 +1,47 @@
+## Commit: Security Fixes – mock-login, npm audit, dompurify (2026-03-10)
+
+### Summary
+Addresses remaining security findings: mock-login redirect validation (open redirect), npm audit – jspdf/dompurify XSS override, and documentation updates.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/api/dev/mock-login/route.ts`](../app/api/dev/mock-login/route.ts) – Use `isValidRedirectPath()` for redirect param to prevent open redirect
+- [x] [`package.json`](../package.json) – Add `overrides.jspdf.dompurify` >= 3.2.4 to fix jspdf’s vulnerable bundled dompurify
+- [x] [`docs/SECURITY_VULNERABILITY_FINDINGS.md`](../docs/SECURITY_VULNERABILITY_FINDINGS.md) – Document mock-login redirect fix and npm audit override
+- [x] Clean `node_modules` reinstall – Reduced vulnerabilities from 70+ to 19 (remaining mostly in vercel CLI transitive deps; require breaking change to fix)
+
+### 📌 Notes
+
+- `dev/mock-login` is dev-only (404 in production); redirect validation adds defense-in-depth
+- Remaining 19 npm vulnerabilities: 1 low, 7 moderate, 10 high, 1 critical – predominantly in `vercel` CLI and transitive deps; `npm audit fix --force` would upgrade vercel to 32.x (breaking)
+
+---
+
+## Commit: Lighthouse Full Audit Fixes (2026-03-10)
+
+**Ref:** `f2be72213`  
+**Deployed:** https://app.thestreetcollector.com
+
+### Summary
+Implements fixes from LIGHTHOUSE_100_PLAN for Performance (75→higher) and Best Practices (77→higher): Stripe lazy-load, PostHog recorder defer, code-split, Next image optimization.
+
+### ✅ Implementation Checklist
+
+- [x] [`components/shop/checkout/PaymentStep.tsx`](../components/shop/checkout/PaymentStep.tsx) – Lazy-load Stripe via `useStripePromise()` hook (dynamic import)
+- [x] [`components/shop/checkout/CardInputSection.tsx`](../components/shop/checkout/CardInputSection.tsx) – Same Stripe lazy-load
+- [x] [`app/providers.tsx`](../app/providers.tsx) – PostHog: `disable_session_recording: true` on landing, `startSessionRecording()` after 8s
+- [x] [`app/shop/street-collector/page.tsx`](../app/shop/street-collector/page.tsx) – `next/dynamic` for MeetTheStreetLamp, ArtistCarousel, TestimonialCarousel, StreetCollectorFAQ
+- [x] [`next.config.js`](../next.config.js) – `unoptimized: false`, `remotePatterns` for cdn.shopify.com
+- [x] [`components/sections/VideoPlayer.tsx`](../components/sections/VideoPlayer.tsx) – Hero poster uses `next/image` with `priority`
+- [x] [`docs/features/lighthouse-performance/LIGHTHOUSE_100_PLAN.md`](../docs/features/lighthouse-performance/LIGHTHOUSE_100_PLAN.md) – Created with checklist
+
+### 📌 Deployment Notes
+
+- Deployed to Vercel production
+- Re-run Lighthouse to validate improvements
+
+---
+
 ## Commit: Lighthouse Performance and Best Practices (2026-03-10)
 
 **Ref:** `70813b0a82`  
