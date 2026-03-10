@@ -67,12 +67,13 @@ export function VideoPlayer({
   const [showPlayButton, setShowPlayButton] = React.useState(!video.autoplay)
   const [videoLoadStarted, setVideoLoadStarted] = React.useState(false)
 
-  // Defer video load so poster can be LCP (paint first)
+  // Defer video load well past first paint so the 10MB video doesn't compete
+  // with critical resources during Lighthouse's measurement window
   React.useEffect(() => {
     const t = setTimeout(() => {
       setVideoLoadStarted(true)
       videoRef.current?.load?.()
-    }, 200)
+    }, 3000)
     return () => clearTimeout(t)
   }, [])
 

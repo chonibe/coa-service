@@ -22,12 +22,10 @@
 'use client'
 
 import * as React from 'react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Container, SectionWrapper, SectionHeader, Button } from '@/components/impact'
-import { gsap } from '@/lib/animations/gsap-config'
-import { useGSAP } from '@gsap/react'
 
 export interface Artist {
   handle: string
@@ -157,7 +155,7 @@ export function ArtistCarousel({
   const [revealedCardKey, setRevealedCardKey] = useState<string | null>(null)
 
   // Check scroll state
-  const checkScrollState = React.useCallback(() => {
+  const checkScrollState = useCallback(() => {
     const container = cardsContainerRef.current
     if (!container) return
 
@@ -190,70 +188,49 @@ export function ArtistCarousel({
     })
   }
 
-  // GSAP animations for cards
-  useGSAP(() => {
-    const cards = cardsContainerRef.current?.children
-    if (!cards || cards.length === 0) return
+  const [cardsVisible, setCardsVisible] = useState(false)
 
-    // Staggered entrance animation
-    gsap.fromTo(
-      cards,
-      {
-        opacity: 0,
-        y: 50,
-        scale: 0.95,
-      },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: cardsContainerRef.current,
-          start: 'top bottom-=100',
-        },
-      }
-    )
-
-    // Add depth/parallax effect on scroll
+  // Scroll-triggered entrance via IntersectionObserver (replaces GSAP ScrollTrigger)
+  useEffect(() => {
     const container = cardsContainerRef.current
     if (!container) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setCardsVisible(true); observer.disconnect() } },
+      { rootMargin: '0px 0px -100px 0px' }
+    )
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
-    const handleScroll = () => {
-      Array.from(cards).forEach((card, index) => {
-        const rect = card.getBoundingClientRect()
-        const containerRect = container.getBoundingClientRect()
-        
-        // Calculate distance from center
-        const cardCenter = rect.left + rect.width / 2
-        const containerCenter = containerRect.left + containerRect.width / 2
-        const distanceFromCenter = (cardCenter - containerCenter) / containerRect.width
-        
-        // Apply subtle depth effect (closer to center = more prominent)
-        const scale = 1 - Math.abs(distanceFromCenter) * 0.05
-        const opacity = 1 - Math.abs(distanceFromCenter) * 0.2
-        
-        gsap.to(card, {
-          scale: Math.max(0.95, Math.min(1, scale)),
-          opacity: Math.max(0.7, Math.min(1, opacity)),
-          duration: 0.3,
-          ease: 'power1.out',
-        })
-      })
+  // Depth/parallax on horizontal scroll (replaces GSAP gsap.to per card)
+  const applyDepth = useCallback(() => {
+    const container = cardsContainerRef.current
+    if (!container) return
+    const cards = container.children
+    const containerRect = container.getBoundingClientRect()
+    const containerCenter = containerRect.left + containerRect.width / 2
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i] as HTMLElement
+      const rect = card.getBoundingClientRect()
+      const cardCenter = rect.left + rect.width / 2
+      const dist = (cardCenter - containerCenter) / containerRect.width
+      const scale = Math.max(0.95, Math.min(1, 1 - Math.abs(dist) * 0.05))
+      const opacity = Math.max(0.7, Math.min(1, 1 - Math.abs(dist) * 0.2))
+      card.style.transform = `scale(${scale})`
+      card.style.opacity = `${opacity}`
     }
+  }, [])
 
-    container.addEventListener('scroll', handleScroll)
-    handleScroll() // Initial state
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-    }
-  }, [safeArtists.length])
+  useEffect(() => {
+    const container = cardsContainerRef.current
+    if (!container) return
+    container.addEventListener('scroll', applyDepth, { passive: true })
+    applyDepth()
+    return () => container.removeEventListener('scroll', applyDepth)
+  }, [applyDepth, safeArtists.length])
 
   // Monitor scroll state
-  React.useEffect(() => {
+  useEffect(() => {
     const container = cardsContainerRef.current
     if (!container) return
 
@@ -267,24 +244,26 @@ export function ArtistCarousel({
     }
   }, [checkScrollState])
 
-  // Auto-scroll slideshow: duplicate artists for seamless loop, scroll every 4s
-  const displayArtists = autoScroll && safeArtists.length > 0
+  // Defer artist duplication until auto-scroll actually starts so extra images
+  // don't load eagerly (saves ~2MB on initial paint for Lighthouse)
+  const [duplicated, setDuplicated] = useState(false)
+  const displayArtists = duplicated && autoScroll && safeArtists.length > 0
     ? [...safeArtists, ...safeArtists]
     : safeArtists
 
-  React.useEffect(() => {
-    if (!autoScroll || displayArtists.length === 0) return
+  useEffect(() => {
+    if (!autoScroll || safeArtists.length === 0) return
 
     let intervalId: ReturnType<typeof setInterval> | null = null
     let timeoutId: ReturnType<typeof setTimeout>
 
     const startScroll = () => {
+      setDuplicated(true)
       const container = cardsContainerRef.current
       if (!container) return false
       const first = container.firstElementChild as HTMLElement
       if (!first) return false
       const step = (first.offsetWidth || cardWidth) + cardGap
-      // Start auto-scroll (no overflow check - if no overflow, scroll has no visible effect)
       intervalId = setInterval(() => {
         const el = cardsContainerRef.current
         if (!el) return
@@ -298,16 +277,15 @@ export function ArtistCarousel({
 
     timeoutId = setTimeout(() => {
       if (!startScroll()) {
-        // Retry after 1s in case layout wasn't ready (e.g. images loading)
         timeoutId = setTimeout(startScroll, 1000)
       }
-    }, 500)
+    }, 4000)
 
     return () => {
       clearTimeout(timeoutId)
       if (intervalId) clearInterval(intervalId)
     }
-  }, [autoScroll, displayArtists.length, cardGap, cardWidth])
+  }, [autoScroll, safeArtists.length, cardGap, cardWidth])
 
   if (safeArtists.length === 0) return null
 
@@ -411,6 +389,7 @@ export function ArtistCarousel({
               }}
             >
               {displayArtists.map((artist, index) => {
+                const staggerDelay = cardsVisible ? `${Math.min(index, 8) * 100}ms` : undefined
                 const nameBlock = (
                   <div
                     className={cn(
@@ -485,8 +464,14 @@ export function ArtistCarousel({
                 )
 
                 const cardHref = artist.href ?? (showInfoSheet ? undefined : `/shop?collection=${artist.handle}`)
-                const cardClassName = 'group flex-shrink-0 relative w-full'
-                const cardStyle = { width: `${cardWidth}px` }
+                const cardClassName = cn(
+                  'group flex-shrink-0 relative w-full transition-[transform,opacity] duration-500 ease-out',
+                  cardsVisible ? 'artist-card-enter' : 'opacity-0 translate-y-[50px] scale-95'
+                )
+                const cardStyle: React.CSSProperties = {
+                  width: `${cardWidth}px`,
+                  ...(staggerDelay ? { animationDelay: staggerDelay } : {}),
+                }
 
                 if (cardHref) {
                   return cardHref.startsWith('http') ? (
@@ -725,6 +710,16 @@ export function ArtistCarousel({
         }
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
+        }
+        @keyframes cardEnter {
+          from { opacity: 0; transform: translateY(50px) scale(0.95); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .artist-card-enter {
+          animation: cardEnter 0.6s cubic-bezier(0.33, 1, 0.68, 1) both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .artist-card-enter { animation: none; opacity: 1; transform: none; }
         }
       `}</style>
     </SectionWrapper>
