@@ -206,19 +206,10 @@ function PaymentFormInner({
     setPaymentError(null)
 
     try {
-      // Email: pass to confirm when needed. Do NOT call updateEmail—Stripe forbids it when
-      // customer_email was already set on Checkout Session creation (our create-checkout-session
-      // API sets it when we have customerEmail or shippingAddress.email).
-      const raw = customerEmail ?? shippingAddress?.email ?? ''
-      const email =
-        typeof raw === 'string'
-          ? raw.trim()
-          : raw && typeof raw === 'object' && 'email' in raw && typeof (raw as { email?: unknown }).email === 'string'
-            ? (raw as { email: string }).email.trim()
-            : ''
+      // Do NOT pass email to confirm() — Stripe throws IntegrationError if customer_email
+      // was already set on the CheckoutSession at creation time (which we always do).
       const result = await checkout.confirm({
         redirect: 'if_required',
-        ...(email ? { email } : {}),
       })
 
       if (result.type === 'error') {
