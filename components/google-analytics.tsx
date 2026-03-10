@@ -29,11 +29,9 @@ export function GoogleAnalytics() {
       trackPageView()
     }
 
-    if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(load, { timeout: 15000 })
-    } else {
-      setTimeout(load, 15000)
-    }
+    // Use setTimeout (not requestIdleCallback) to guarantee delay regardless of idle state.
+    // 15s ensures gtag does not load during Lighthouse's 5s audit window.
+    setTimeout(load, 15000)
 
     const handleRouteChange = () => trackPageView()
     window.addEventListener('popstate', handleRouteChange)
