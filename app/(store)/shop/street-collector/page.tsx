@@ -257,18 +257,19 @@ export default async function StreetCollectorPage() {
           className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
           aria-hidden
         />
-        {/* Logo overlay on hero */}
+        {/* Logo overlay on hero — z-[40] above VideoPlayer overlay (z-30) so it stays clickable */}
         <Link
           href="/"
           aria-label="Street Collector Home"
-          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top opacity-100"
+          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[40] inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 hover:opacity-100 safe-area-inset-top opacity-100 pointer-events-auto"
+          style={{ boxSizing: 'content-box' }}
         >
           <Image
             src={HOME_LOGO_URL}
             alt=""
             width={32}
             height={32}
-            className="shrink-0 w-8 h-8 object-contain drop-shadow-md opacity-100"
+            className="shrink-0 w-8 h-8 object-contain drop-shadow-md opacity-100 pointer-events-none"
             loading="eager"
           />
         </Link>

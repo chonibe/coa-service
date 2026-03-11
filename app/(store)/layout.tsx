@@ -62,6 +62,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/'
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   const isLandingOrStreetCollector = isLandingPage || isStreetCollectorPage
+  const pathnameReady = pathname != null && pathname !== ''
   const cart = useCart()
 
   const handleCheckout = useCallback(async () => {
@@ -126,8 +127,8 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       >
         Skip to content
       </a>
-      {!isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
-      {isLandingOrStreetCollector && <ChatIconScrollReveal />}
+      {pathnameReady && !isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
+      {pathnameReady && isLandingOrStreetCollector && <ChatIconScrollReveal />}
       {!isExperiencePage && (
         <LocalCartDrawer
           isOpen={cart.isOpen}
