@@ -88,7 +88,7 @@ export const streetCollectorContent = {
         'Every piece fuels the next one. Your purchase keeps culture alive.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
-      video: 'https://cdn.shopify.com/videos/c/o/v/223348c706fe4ad298930c72e30d76b3.mp4',
+      video: 'https://cdn.shopify.com/videos/c/o/v/e6dbb48d20214a77b0009174129dc21d.mp4',
     },
   ],
   valuePropsCue: '',
@@ -129,7 +129,7 @@ export const streetCollectorContent = {
         media: {
           type: 'video' as const,
           poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/e16722752a44428689d98ffecf6fa016.thumbnail.0000000000_800x.jpg?v=1770571582',
-          video: 'https://cdn.shopify.com/videos/c/o/v/e16722752a44428689d98ffecf6fa016.mp4',
+          video: 'https://cdn.shopify.com/videos/c/o/v/aa503626477c4e37a0596acdead3ae54.mp4',
         },
       },
       {
