@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { StreetCollectorFAQ } from '@/app/shop/street-collector/StreetCollectorFAQ'
+import { StreetCollectorFAQ } from '@/app/(store)/shop/street-collector/StreetCollectorFAQ'
 import { shopFaqGroups } from '@/content/shop-faq'
 
 export const metadata: Metadata = {

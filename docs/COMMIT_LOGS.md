@@ -1,3 +1,25 @@
+## Commit: Landing mobile CTA and footer fix (2026-03-11)
+
+### Summary
+Fixes mobile landing page issues: "Start your collection" button being overwritten/hidden, and footer not showing on root `/` route. Root cause: root page did not use the shop layout (no Footer); fixed CTA had lower z-index than other overlays.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/layout.tsx`](../app/(store)/layout.tsx) — New store layout wrapping both `/` and `/shop/*` with Footer, Cart, ChatIcon, BackBar
+- [x] [`app/(store)/page.tsx`](../app/(store)/page.tsx) — Root page re-exports street-collector; uses (store) layout so Footer shows
+- [x] Moved `app/shop/*` → `app/(store)/shop/*` — Shop routes now share store layout
+- [x] [`app/(store)/shop/street-collector/FixedCTAButton.tsx`](../app/(store)/shop/street-collector/FixedCTAButton.tsx) — Raised z-index from 100 to 120 so CTA stays above overlays
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Added `pb-20 md:pb-0` for mobile bottom padding so content isn't obscured by fixed CTA
+- [x] Updated imports: `@/app/shop/*` → `@/app/(store)/shop/*` in FAQ, AddressModal, PaymentStep, PromoCodeModal, PaymentMethodsModal, AuthSlideupMenu
+- [x] Removed unused `useRouter` from store layout (fixed prerender error on careers/contact)
+
+### 📌 Notes
+
+- Route group `(store)` keeps URLs unchanged: `/`, `/shop/*`
+- Footer, Cart drawer, ChatIcon now visible on landing page at `/`
+
+---
+
 ## Commit: Security – CORS #9 and CSP #10 hardening (2026-03-10)
 
 ### Summary

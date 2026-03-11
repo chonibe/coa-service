@@ -199,8 +199,8 @@ export function VideoPlayer({
         >
           {isCtaAtBottom ? (
             <>
-              {/* Title block at top */}
-              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-20 sm:pt-24">
+              {/* Title block at top — less top padding on mobile so CTA remains visible in viewport */}
+              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-12 sm:pt-20 md:pt-24">
                 <div className="max-w-2xl mx-auto w-full text-center">
                   {overlay.subheadlineFirst ? (
                     <>
@@ -270,9 +270,14 @@ export function VideoPlayer({
                   )}
                 </div>
               </Container>
-              {/* CTA block at bottom — hidden on mobile; fixed CTA is the mobile CTA */}
+              {/* CTA block at bottom — visible on all viewports so mobile users see "Start your collection" in hero */}
               {(overlay.cta || overlay.microCue) && (
-                <Container maxWidth="default" paddingX="gutter" className="hidden md:flex justify-center pb-[18vh] sm:pb-[4vh]">
+                <Container
+                  maxWidth="default"
+                  paddingX="gutter"
+                  className="flex justify-center pb-8 sm:pb-[18vh] md:pb-[4vh]"
+                  style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))' }}
+                >
                   <div className="max-w-2xl mx-auto w-full text-center flex flex-col items-center gap-4">
                     {overlay.cta && (
                       <a

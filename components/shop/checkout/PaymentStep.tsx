@@ -8,7 +8,7 @@ import {
 } from '@stripe/react-stripe-js/checkout'
 import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
+import { useExperienceTheme } from '@/app/(store)/shop/experience/ExperienceThemeContext'
 import type { Stripe } from '@stripe/stripe-js'
 
 /** Lazy-load Stripe only when payment UI mounts (avoids loading on landing page prefetch) */

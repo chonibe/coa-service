@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
+import { useExperienceTheme } from '@/app/(store)/shop/experience/ExperienceThemeContext'
 import { Button, Input } from '@/components/ui'
 
 export interface PromoCodeModalProps {

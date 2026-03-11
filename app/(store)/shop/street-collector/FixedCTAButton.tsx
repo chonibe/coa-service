@@ -39,26 +39,48 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     }
   }, [menuOpen, SlideoutMenu])
 
+  // Use 768px so tablets and phones in landscape get the persistent bottom CTA (desktop top bar hides on scroll down)
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640)
+    const check = () => setIsMobile(window.innerWidth < 768)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Observe hero sentinel — retry so we catch it even if it mounts after this component
   useEffect(() => {
-    const sentinel = document.getElementById('street-collector-hero-sentinel')
-    if (!sentinel) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        const e = entries[0]
-        if (!e) return
-        setPastHero(!e.isIntersecting)
-      },
-      { threshold: 0, rootMargin: '0px' }
-    )
-    io.observe(sentinel)
-    return () => io.disconnect()
+    let io: IntersectionObserver | null = null
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let retries = 0
+    const maxRetries = 20 // ~2s at 100ms
+    let cancelled = false
+
+    const setupObserver = () => {
+      if (cancelled) return
+      const sentinel = document.getElementById('street-collector-hero-sentinel')
+      if (!sentinel) {
+        if (retries < maxRetries) {
+          retries += 1
+          timeoutId = setTimeout(setupObserver, 100)
+        }
+        return
+      }
+      io = new IntersectionObserver(
+        (entries) => {
+          const e = entries[0]
+          if (!e) return
+          setPastHero(!e.isIntersecting)
+        },
+        { threshold: 0, rootMargin: '0px' }
+      )
+      io.observe(sentinel)
+    }
+    setupObserver()
+    return () => {
+      cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
+      io?.disconnect()
+    }
   }, [])
 
   useEffect(() => {
@@ -93,13 +115,25 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isMobile])
 
-  const showMobile = isMobile && pastHero && !nearBottom
+  // Fallback: show CTA after scrolling past ~40% of viewport (in case sentinel isn't observed yet)
+  const [scrollPastHero, setScrollPastHero] = useState(false)
+  useEffect(() => {
+    if (!isMobile) return
+    const threshold = Math.min(400, window.innerHeight * 0.4)
+    const check = () => setScrollPastHero(window.scrollY > threshold)
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
+  }, [isMobile])
+  const pastHeroOrScrolled = pastHero || (isMobile && scrollPastHero)
+
+  const showMobile = isMobile && pastHeroOrScrolled && !nearBottom
   const renderDesktopBar = !isMobile && pastHero
 
   if (showMobile) {
     return (
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center px-2 pb-4 sm:hidden"
+        className="fixed bottom-0 left-0 right-0 z-[120] flex items-center justify-center px-2 pb-4 md:hidden"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
       >
         <Link
@@ -118,7 +152,7 @@ export function FixedCTAButton({ text, href, logoUrl = DEFAULT_LOGO_URL }: Fixed
     return (
       <div
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 sm:px-4 py-1.5 bg-white/80 dark:bg-[#171515]/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-white/10 transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 right-0 z-[120] flex items-center justify-between px-3 sm:px-4 py-1.5 bg-white/80 dark:bg-[#171515]/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-white/10 transition-transform duration-300 ease-out',
           !showTopBar && '-translate-y-full'
         )}
         style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Sheet, Modal, Button, Input } from '@/components/ui'
-import { useExperienceTheme } from '@/app/shop/experience/ExperienceThemeContext'
+import { useExperienceTheme } from '@/app/(store)/shop/experience/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
 const DESKTOP_BREAKPOINT = 768

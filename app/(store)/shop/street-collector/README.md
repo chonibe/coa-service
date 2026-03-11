@@ -5,9 +5,11 @@
 The main shop landing page inspired by [thestreetcollector.com](https://thestreetcollector.com/). This page serves as the default `/shop` route and provides a clean, conversion-focused layout.
 
 **Access:**
-- **Root:** `/` (app.thestreetcollector.com default — redirects here)
+- **Root:** `/` (app.thestreetcollector.com default — uses (store) layout with Footer)
 - **Primary:** `/shop` (redirects here)
 - **Direct:** `/shop/street-collector`
+
+All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer, Cart, and ChatIcon.
 
 ---
 

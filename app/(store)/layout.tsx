@@ -1,0 +1,175 @@
+'use client'
+
+import { Suspense, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
+import { Footer } from '@/components/impact'
+import { AffiliatePersistence } from './shop/components/AffiliatePersistence'
+import { CartProvider, useCart } from '@/lib/shop/CartContext'
+import { WishlistProvider } from '@/lib/shop/WishlistContext'
+import { ShopAuthProvider } from '@/lib/shop/ShopAuthContext'
+import { footerSections as syncedFooterSections } from '@/content/shopify-content'
+import { BackBar } from '@/components/shop/navigation/BackBar'
+import { ChatIconScrollReveal } from '@/components/shop/navigation/ChatIconScrollReveal'
+import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
+import { cn } from '@/lib/utils'
+
+/**
+ * Store Layout — wraps landing (/) and shop (/shop/*)
+ * Ensures Footer, Cart, BackBar/ChatIcon are shown on both routes.
+ */
+
+const hasUsefulFooterSections =
+  Array.isArray(syncedFooterSections) &&
+  syncedFooterSections.length > 0 &&
+  syncedFooterSections.some((s: { links?: unknown[] }) => s.links && s.links.length > 0)
+
+const footerSections = hasUsefulFooterSections
+  ? syncedFooterSections
+  : [
+      {
+        title: 'FOLLOW US',
+        links: [
+          { label: 'Instagram', href: 'https://instagram.com/thestreetcollector' },
+          { label: 'Facebook', href: 'https://facebook.com/streetcollector' },
+          { label: 'TikTok', href: 'https://tiktok.com/@thestreetcollector' },
+          { label: 'Pinterest', href: 'https://pinterest.com/thestreetcollector' },
+        ],
+      },
+      {
+        title: 'RESOURCES',
+        links: [
+          { label: 'FAQ', href: '/shop/faq' },
+          { label: 'For Business', href: '/shop/for-business' },
+          { label: 'Affiliate program', href: '/shop/collab' },
+          { label: 'Artist Submissions', href: '/shop/artist-submissions' },
+        ],
+      },
+      {
+        title: 'TERMS & CONDITIONS',
+        links: [
+          { label: 'Terms of Service', href: '/policies/terms-of-service' },
+          { label: 'Shipping Policy', href: '/policies/shipping-policy' },
+          { label: 'Refund Policy', href: '/policies/refund-policy' },
+          { label: 'Privacy Policy', href: '/policies/privacy-policy' },
+          { label: 'Contact', href: '/shop/contact' },
+        ],
+      },
+    ]
+
+function StoreLayoutInner({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
+  const isLandingPage = pathname === '/'
+  const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
+  const isLandingOrStreetCollector = isLandingPage || isStreetCollectorPage
+  const cart = useCart()
+
+  const handleCheckout = useCallback(async () => {
+    if (cart.isEmpty) return
+    try {
+      const response = await fetch('/api/checkout/stripe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lineItems: cart.items.map(item => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+            productHandle: item.handle,
+            productTitle: item.title,
+            variantTitle: item.variantTitle,
+            price: Math.round(item.price * 100),
+            imageUrl: item.image,
+          })),
+          creditsToUse: cart.creditsToUse,
+          orderNotes: cart.orderNotes,
+        }),
+      })
+      const { url, error } = await response.json()
+      if (error) throw new Error(error)
+      if (url) window.location.href = url
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Failed to start checkout. Please try again.')
+    }
+  }, [cart.items, cart.creditsToUse, cart.isEmpty, cart.orderNotes])
+
+  const handleUpdateQuantity = useCallback(async (lineId: string, quantity: number) => {
+    if (quantity <= 0) {
+      cart.removeItem(lineId)
+    } else {
+      cart.updateQuantity(lineId, quantity)
+    }
+  }, [cart])
+
+  const handleRemoveItem = useCallback(async (id: string) => {
+    cart.removeItem(id)
+  }, [cart])
+
+  const handleNewsletterSubmit = useCallback(async (email: string) => {
+    const res = await fetch('/api/shop/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data?.error || 'Signup failed')
+  }, [])
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Suspense fallback={null}>
+        <AffiliatePersistence />
+      </Suspense>
+      <a
+        href="#main-content"
+        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-[#047AFF] focus-visible:text-white focus-visible:rounded-lg focus-visible:shadow-lg"
+      >
+        Skip to content
+      </a>
+      {!isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
+      {isLandingOrStreetCollector && <ChatIconScrollReveal />}
+      {!isExperiencePage && (
+        <LocalCartDrawer
+          isOpen={cart.isOpen}
+          onClose={() => cart.toggleCart(false)}
+          items={cart.items ?? []}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
+          subtotal={cart.subtotal}
+          total={cart.total}
+          creditsToUse={cart.creditsToUse}
+          creditsDiscount={cart.creditsDiscount}
+        />
+      )}
+      <main
+        id="main-content"
+        className={cn('flex-1', isLandingOrStreetCollector && 'bg-[#F5F5F5]')}
+      >
+        {children}
+      </main>
+      <Footer
+        sections={footerSections}
+        newsletterEnabled={true}
+        newsletterTitle="Sign up for new stories and personal offers"
+        newsletterDescription=""
+        onNewsletterSubmit={handleNewsletterSubmit}
+        tagline=""
+        legalLinks={[]}
+        showPaymentIcons={true}
+      />
+    </div>
+  )
+}
+
+export default function StoreLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <CartProvider>
+      <WishlistProvider>
+        <ShopAuthProvider>
+          <StoreLayoutInner>{children}</StoreLayoutInner>
+        </ShopAuthProvider>
+      </WishlistProvider>
+    </CartProvider>
+  )
+}

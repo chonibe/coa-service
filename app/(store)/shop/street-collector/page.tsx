@@ -213,7 +213,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-0">
+    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-20 md:pb-0">
       {/* Fixed CTA - stays visible as user scrolls (replaces top nav) */}
       <FixedCTAButton
         text={streetCollectorContent.hero.cta.text}

@@ -2,7 +2,7 @@
  * Street Collector Page Content
  *
  * Media URLs from thestreetcollector.com HTML (og:image, CDN).
- * Used by app/shop/street-collector/page.tsx
+ * Used by app/(store)/shop/street-collector/page.tsx and app/(store)/page.tsx (root /)
  */
 
 /** Single destination for all CTAs and momentum cues */
