@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Footer } from '@/components/impact'
 import { AffiliatePersistence } from './shop/components/AffiliatePersistence'
@@ -58,11 +58,13 @@ const footerSections = hasUsefulFooterSections
 
 function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [hasMounted, setHasMounted] = useState(false)
+  useEffect(() => setHasMounted(true), [])
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   const isLandingOrStreetCollector = isLandingPage || isStreetCollectorPage
-  const pathnameReady = pathname != null && pathname !== ''
+  const pathnameReady = hasMounted && pathname != null && pathname !== ''
   const cart = useCart()
 
   const handleCheckout = useCallback(async () => {
@@ -129,7 +131,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       </a>
       {pathnameReady && !isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
       {pathnameReady && isLandingOrStreetCollector && <ChatIconScrollReveal />}
-      {!isExperiencePage && (
+      {hasMounted && !isExperiencePage && (
         <LocalCartDrawer
           isOpen={cart.isOpen}
           onClose={() => cart.toggleCart(false)}
@@ -145,7 +147,10 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       )}
       <main
         id="main-content"
-        className={cn(isLandingOrStreetCollector ? 'flex-initial' : 'flex-1', isLandingOrStreetCollector && 'bg-[#251212]')}
+        className={cn(
+          hasMounted && isLandingOrStreetCollector ? 'flex-initial' : 'flex-1',
+          hasMounted && isLandingOrStreetCollector && 'bg-[#251212]'
+        )}
       >
         {children}
       </main>

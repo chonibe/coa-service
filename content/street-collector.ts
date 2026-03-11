@@ -23,7 +23,7 @@ export const streetCollectorContent = {
     image: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/684cd0c8b42142fdad8e4db442befa6e.thumbnail.0000000000_800x.jpg?v=1770544655',
   },
   /** Logo (Street Collector branding) */
-  logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535',
+  logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
   /** Meet the Street Lamp — one video, stages rotate via progress bar on texts */
   meetTheLamp: {
     title: 'Meet the Street Lamp',

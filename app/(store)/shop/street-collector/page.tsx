@@ -41,7 +41,7 @@ const ArtistCarousel = dynamic(
 
 // 64×64 request for 32px display (2x) to minimize file size
 const HOME_LOGO_URL =
-  'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535&width=64&height=64'
+  'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Revolutionizing The Urban Art World',

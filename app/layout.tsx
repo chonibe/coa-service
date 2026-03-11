@@ -22,8 +22,8 @@ const barlow = Barlow({
   display: "swap",
 })
 
-/** Logo icon (Group_707) used for favicon — same as street-collector/header */
-const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
+/** Logo icon used for favicon — same as street-collector/header */
+const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683'
 
 export const metadata = {
   title: "Limited Edition Certificate System",
