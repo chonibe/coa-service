@@ -28,9 +28,9 @@ export const streetCollectorContent = {
   meetTheLamp: {
     title: 'Meet the Street Lamp',
     /** Desktop video URL */
-    desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/85f511b742be4bc7a16d0efbf50147e6.mp4',
+    desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
     /** Mobile video URL */
-    mobileVideo: 'https://cdn.shopify.com/videos/c/o/v/52f4f4d4f3ac49c5b24dd536bc55328c.mp4',
+    mobileVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
     /** Poster for video (shared) */
     poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
     stages: [
@@ -106,7 +106,7 @@ export const streetCollectorContent = {
         media: {
           type: 'video' as const,
           poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/1eaf8197dddc4b9f852534a2932d51cb.thumbnail.0000000000_800x.jpg?v=1770573388',
-          video: 'https://cdn.shopify.com/videos/c/o/v/1eaf8197dddc4b9f852534a2932d51cb.mp4',
+          video: 'https://cdn.shopify.com/videos/c/o/v/587954a427824f56bb0bdc6302da914c.mp4',
         },
       },
       {
@@ -117,7 +117,7 @@ export const streetCollectorContent = {
         media: {
           type: 'video' as const,
           poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/481c3eb1bcef489d84d3b69c881c431b.thumbnail.0000000000_800x.jpg?v=1770565793',
-          video: 'https://cdn.shopify.com/videos/c/o/v/481c3eb1bcef489d84d3b69c881c431b.mp4',
+          video: 'https://cdn.shopify.com/videos/c/o/v/be9370aeb46e4762b8715c461a79ef47.mp4',
         },
       },
       {
@@ -219,7 +219,7 @@ export const streetCollectorContent = {
         media: {
           type: 'video' as const,
           poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/e4c389d4b826457b91d26a849ddb61be.thumbnail.0000000000_800x.jpg?v=1770571269',
-          video: 'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
+          video: 'https://cdn.shopify.com/videos/c/o/v/df16c8164d564677a32adb77c9a57ddd.mp4',
         },
       },
       {

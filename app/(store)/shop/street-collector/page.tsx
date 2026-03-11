@@ -298,7 +298,7 @@ export default async function StreetCollectorPage() {
             subheadlineFirst: true,
             textColor: '#FFBA94',
             overlayColor: '#000000',
-            overlayOpacity: 40,
+            overlayOpacity: 10,
           }}
           size="full"
           fullWidth={true}

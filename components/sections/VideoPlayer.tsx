@@ -199,8 +199,8 @@ export function VideoPlayer({
         >
           {isCtaAtBottom ? (
             <>
-              {/* Title block at top — less top padding on mobile so CTA remains visible in viewport */}
-              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-[55px] sm:pt-20 md:pt-24">
+              {/* Title block at top — slightly more on mobile to move text down */}
+              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-[72px] sm:pt-20 md:pt-24">
                 <div className="max-w-2xl mx-auto w-full text-center">
                   {overlay.subheadlineFirst ? (
                     <>
