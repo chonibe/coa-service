@@ -17,7 +17,10 @@ import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
-import { FixedCTAButton } from './FixedCTAButton'
+
+const DesktopTopBar = dynamic(
+  () => import('./DesktopTopBar').then((m) => ({ default: m.DesktopTopBar }))
+)
 
 const MeetTheStreetLamp = dynamic(
   () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
@@ -36,7 +39,9 @@ const ArtistCarousel = dynamic(
   { loading: () => <section className="min-h-[400px] bg-[#1a0a0a]" aria-hidden /> }
 )
 
-const HOME_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535'
+// 64×64 request for 32px display (2x) to minimize file size
+const HOME_LOGO_URL =
+  'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_707.png?v=1767356535&width=64&height=64'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Revolutionizing The Urban Art World',
@@ -213,13 +218,27 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <main className="dark min-h-screen bg-[#390000] text-[#FFBA94] pb-20 md:pb-0">
-      {/* Fixed CTA - stays visible as user scrolls (replaces top nav) */}
-      <FixedCTAButton
+    <main className="dark bg-[#390000] text-[#FFBA94] pb-16 md:pb-0 h-[5950px]">
+      {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
+      <DesktopTopBar
         text={streetCollectorContent.hero.cta.text}
         href={streetCollectorContent.experienceUrl}
         logoUrl={HOME_LOGO_URL}
       />
+      {/* Sticky CTA - always visible on mobile, no scroll logic */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-4 md:hidden"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Link
+          href={streetCollectorContent.experienceUrl}
+          prefetch={false}
+          className="w-full max-w-md flex items-center justify-center min-h-[52px] text-sm font-semibold rounded-lg px-5 py-3.5 shadow-lg transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#FFBA94', color: '#390000' }}
+        >
+          {streetCollectorContent.hero.cta.text}
+        </Link>
+      </div>
       {/* API Warning (dev only) */}
       {apiError && process.env.NODE_ENV === 'development' && (
         <div className="bg-amber-900/30 border-b border-amber-700/50 px-4 py-3">
@@ -233,7 +252,6 @@ export default async function StreetCollectorPage() {
 
       {/* Hero - Video with logo overlay */}
       <div id="street-collector-hero" className="relative">
-        {/* Sentinel for scroll-aware CTA (bottom of hero) */}
         <div
           id="street-collector-hero-sentinel"
           className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
@@ -243,16 +261,15 @@ export default async function StreetCollectorPage() {
         <Link
           href="/"
           aria-label="Street Collector Home"
-          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top"
+          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 safe-area-inset-top opacity-100"
         >
           <Image
             src={HOME_LOGO_URL}
             alt=""
             width={32}
             height={32}
-            className="shrink-0 w-8 h-8 object-contain drop-shadow-lg"
+            className="shrink-0 w-8 h-8 object-contain drop-shadow-md opacity-100"
             loading="eager"
-            unoptimized
           />
         </Link>
         <VideoPlayer
@@ -415,7 +432,7 @@ export default async function StreetCollectorPage() {
       />
 
       {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
-      <SectionWrapper spacing="xs" background="header" className="bg-[#2a0000]">
+      <SectionWrapper spacing="xs" background="header" className="bg-[#2a0000] pb-0">
         <Container maxWidth="default" paddingX="gutter">
           <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8 md:mb-10">
             We&apos;ve got you covered

@@ -29,7 +29,7 @@ const groupIcons: Record<string, React.ElementType> = {
 
 export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
   return (
-    <SectionWrapper spacing="lg" background="header" className="bg-[#1a0a0a] pb-1 sm:pb-2 md:pb-2">
+    <SectionWrapper spacing="lg" background="header" className="bg-[#1a0a0a] pb-0 mb-12 sm:mb-16">
       <Container maxWidth="default" paddingX="gutter">
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] mb-4 tracking-tight">
@@ -47,7 +47,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 pb-16 sm:pb-20 md:pb-24">
           {groups.map((group) => {
             const Icon = groupIcons[group.title] ?? Lamp
             return (

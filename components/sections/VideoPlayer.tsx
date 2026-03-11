@@ -200,14 +200,14 @@ export function VideoPlayer({
           {isCtaAtBottom ? (
             <>
               {/* Title block at top — less top padding on mobile so CTA remains visible in viewport */}
-              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-12 sm:pt-20 md:pt-24">
+              <Container maxWidth="default" paddingX="gutter" className="flex justify-center pt-[55px] sm:pt-20 md:pt-24">
                 <div className="max-w-2xl mx-auto w-full text-center">
                   {overlay.subheadlineFirst ? (
                     <>
                       {overlay.subheadline && (
                         <p
                           className={cn(
-                            'mb-2',
+                            'mb-2.5',
                             overlay.headlineSize === 'large'
                               ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
                               : overlay.headlineSize === 'medium'
@@ -270,12 +270,12 @@ export function VideoPlayer({
                   )}
                 </div>
               </Container>
-              {/* CTA block at bottom — visible on all viewports so mobile users see "Start your collection" in hero */}
+              {/* CTA block at bottom — hidden on mobile (fixed button is shown there) */}
               {(overlay.cta || overlay.microCue) && (
                 <Container
                   maxWidth="default"
                   paddingX="gutter"
-                  className="flex justify-center pb-8 sm:pb-[18vh] md:pb-[4vh]"
+                  className="hidden md:flex justify-center pb-[18vh] sm:pb-[4vh]"
                   style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 0px))' }}
                 >
                   <div className="max-w-2xl mx-auto w-full text-center flex flex-col items-center gap-4">
@@ -325,7 +325,7 @@ export function VideoPlayer({
                   {overlay.subheadline && (
                     <p
                       className={cn(
-                        'mb-2',
+                        'mb-2.5',
                         overlay.headlineSize === 'large'
                           ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
                           : overlay.headlineSize === 'medium'

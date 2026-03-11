@@ -144,7 +144,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       )}
       <main
         id="main-content"
-        className={cn('flex-1', isLandingOrStreetCollector && 'bg-[#F5F5F5]')}
+        className={cn(isLandingOrStreetCollector ? 'flex-initial' : 'flex-1', isLandingOrStreetCollector && 'bg-[#251212]')}
       >
         {children}
       </main>
