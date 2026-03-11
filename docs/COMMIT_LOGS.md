@@ -1,3 +1,22 @@
+## Commit: Lighthouse Best Practices – third-party cookies, COOP (2026-03-10)
+
+### Summary
+Addresses Lighthouse Best Practices: proxy all Shopify CDN image URLs so the browser never hits cdn.shopify.com directly (avoids third-party cookies such as `_identity_session`). Add Cross-Origin-Opener-Policy header for origin isolation.
+
+### ✅ Implementation Checklist
+
+- [x] [`lib/proxy-cdn-url.ts`](../lib/proxy-cdn-url.ts) – Extend `getProxiedImageUrl` to proxy `https://cdn.shopify.com/` and `https://shopify.com/` URLs (in addition to thestreetcollector.com) so all Shopify CDN images load via `/api/proxy-image`
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) – Hero logo `Image` and value-prop banner `img` use `getProxiedImageUrl()` for Shopify URLs (no direct cdn.shopify.com requests)
+- [x] [`app/layout.tsx`](../app/layout.tsx) – Preload hero image uses `getProxiedImageUrl` only (no fallback to raw URL)
+- [x] [`next.config.js`](../next.config.js) – Add `Cross-Origin-Opener-Policy: same-origin` to security headers (Lighthouse “Ensure proper origin isolation with COOP”)
+
+### 📌 Notes
+
+- **React 418 (hydration):** If “Browser errors were logged” shows Minified React error #418, run the app in development (`npm run dev`) to get the full message. Common causes: server/client HTML mismatch, invalid nesting (e.g. `<p>` containing block elements), or conditional render based on `window`/`document`. Fix by ensuring the same initial markup on server and client.
+- **CSP / Trusted Types:** Lighthouse may still report “Host allowlists can frequently be bypassed” and “No Trusted Types directive”; these are unscored. Strengthening requires nonce-based script-src and Trusted Types policy (see [SECURITY_VULNERABILITY_FINDINGS.md](SECURITY_VULNERABILITY_FINDINGS.md)).
+
+---
+
 ## Commit: Landing mobile CTA and footer fix (2026-03-11)
 
 ### Summary

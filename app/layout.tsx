@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link
           rel="preload"
           as="image"
-          href={getProxiedImageUrl(streetCollectorContent.hero.image) || streetCollectorContent.hero.image}
+          href={getProxiedImageUrl(streetCollectorContent.hero.image)}
           fetchPriority="high"
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

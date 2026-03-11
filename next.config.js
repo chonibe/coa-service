@@ -93,6 +93,10 @@ const nextConfig = {
             value: "strict-origin-when-cross-origin",
           },
           {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
+          {
             key: "Permissions-Policy",
             value: "camera=(self), microphone=(self), geolocation=(self)", // Allow camera for experience AR preview; microphone for voice notes; geolocation for maps
           },

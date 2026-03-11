@@ -265,7 +265,7 @@ export default async function StreetCollectorPage() {
           style={{ boxSizing: 'content-box' }}
         >
           <Image
-            src={HOME_LOGO_URL}
+            src={getProxiedImageUrl(HOME_LOGO_URL)}
             alt=""
             width={32}
             height={32}
@@ -388,9 +388,9 @@ export default async function StreetCollectorPage() {
       <section className="hidden md:block bg-[#1a0a0a] pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
-            {/* Image right above the banner */}
+            {/* Image right above the banner — proxied to avoid third-party cookies */}
             <img
-              src="https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200"
+              src={getProxiedImageUrl('https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200')}
               alt=""
               loading="lazy"
               decoding="async"
