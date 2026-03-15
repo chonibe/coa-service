@@ -32,8 +32,12 @@ if (!API_KEY || !POSTHOG_PROJECT_ID) {
   process.exit(1)
 }
 
-if (!POSTHOG_PERSONAL_API_KEY && POSTHOG_API_KEY) {
-  console.log('⚠️  Using Project API key (phc_...) — Personal API key (phx_...) is recommended for creating insights')
+// Debug: Log which key type is being used (first 8 chars only for security)
+const keyPrefix = API_KEY.substring(0, 8)
+if (POSTHOG_PERSONAL_API_KEY) {
+  console.log(`✅ Using Personal API key (${keyPrefix}...)`)
+} else if (POSTHOG_API_KEY) {
+  console.log(`⚠️  Using Project API key (${keyPrefix}...) — Personal API key (phx_...) is recommended for creating insights`)
 }
 
 const headers = {
