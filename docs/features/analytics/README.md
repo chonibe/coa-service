@@ -55,15 +55,17 @@ npm run setup:posthog
 ```
 
 **Get your credentials:**
-- Personal API key: [PostHog Settings → API Keys](https://app.posthog.com/settings/user-api-keys)
-- Project ID: [PostHog Settings → Project](https://app.posthog.com/settings/project)
+- **Project API key** (`phc_...`): [PostHog Settings → Project](https://app.posthog.com/settings/project) → copy "Project API Key" (used for insights/dashboards)
+- **Personal API key** (`phx_...`): [PostHog Settings → User API Keys](https://app.posthog.com/settings/user-api-keys) → create new key (required for cohorts)
+- **Project ID**: [PostHog Settings → Project](https://app.posthog.com/settings/project) → copy Project ID
 
 **Vercel deployment integration:**
 
 The script runs automatically during Vercel production deployments via the `postbuild` hook. To enable:
 
 1. **Set environment variables in Vercel:**
-   - `POSTHOG_API_KEY` — Your PostHog Personal API key
+   - `POSTHOG_API_KEY` — Your PostHog **Project API key** (`phc_...`) — required for insights/dashboards
+   - `POSTHOG_PERSONAL_API_KEY` — Your PostHog **Personal API key** (`phx_...`) — required for cohorts (optional, cohorts will be skipped if not set)
    - `POSTHOG_PROJECT_ID` — Your PostHog Project ID
    - `POSTHOG_SETUP_ENABLED` — Set to `true` (optional, defaults to enabled if API key is set)
 
@@ -82,8 +84,10 @@ If you prefer to run it manually once instead of on every deploy:
 ```bash
 # Set env vars in Vercel, then run locally or via Vercel CLI:
 vercel env pull .env.local
-POSTHOG_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
+POSTHOG_API_KEY=phc_xxx POSTHOG_PERSONAL_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
 ```
+
+Note: `POSTHOG_PERSONAL_API_KEY` is optional — if not set, cohorts will be skipped but insights/dashboards will still be created.
 
 ### Session replay configuration
 
