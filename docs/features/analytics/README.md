@@ -19,6 +19,11 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **AEM Event Priority:** Register and prioritize your 8 events in Meta Events Manager → Settings → Aggregated Event Measurement. Recommended priority order: `Purchase` > `InitiateCheckout` > `AddToCart` > `ViewContent` > `AddPaymentInfo` > `PageView` > `Search` > `Lead`. This ensures iOS 14+ users count toward conversions.
 - **Testing:** Optionally set `META_TEST_EVENT_CODE` and verify in Meta Events Manager > Test Events.
 - **Diagnostics:** Admin-only endpoint [`/api/meta/diagnostics`](../../app/api/meta/diagnostics/route.ts) shows Meta env readiness, recent Stripe webhook health counts, and field completeness metrics for EMQ tracking.
+- **PostHog Integration:** All Meta CAPI events are automatically mirrored to PostHog via [`lib/posthog-server.ts`](../../lib/posthog-server.ts). This allows you to:
+  - Build PostHog funnels that include Meta conversion events (e.g., Meta ad → Purchase)
+  - Correlate Meta conversion events with PostHog session replays
+  - See Meta-driven conversions alongside client-side events in PostHog dashboards
+  - Track Meta event properties (`meta_event_name`, `meta_event_id`, `meta_action_source`, `meta_fbp`, `meta_fbc`) for attribution analysis
 
 ## PostHog (session replay, heatmaps, user journeys, funnels)
 
@@ -26,6 +31,7 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **Implementation:** [`app/providers.tsx`](../../app/providers.tsx) – `PostHogWrapper` initializes PostHog with direct API host (`us.i.posthog.com`). CSP in [`next.config.js`](../../next.config.js) allows PostHog domains. Features: **session replay**, **heatmaps**, **autocapture**, **pageleave**, **dead clicks**, **rageclick**, **session context capture**. `PostHogIdentify` identifies logged-in shop users so journeys and funnels are tied to users.
 - **Session Context:** On init, `captureSessionContext()` fires `session_context` with `referrer`, `device_type`, `is_returning_user`, `screen_width`, `screen_height`, and `language`. Also sets `preferred_device` as a person property.
 - **E-commerce:** All GA4 e-commerce events (`view_item`, `add_to_cart`, `view_cart`, `begin_checkout`, `add_shipping_info`, `add_payment_info`, `purchase`, `search`) are mirrored to PostHog from [`lib/google-analytics.ts`](../../lib/google-analytics.ts) / [`lib/posthog.ts`](../../lib/posthog.ts). `begin_checkout` fires **after** the checkout session is successfully created (not before). Each item includes **`item_list_name`** (stage: `home` | `products` | `artist` | `pdp` | `experience`).
+- **Meta CAPI Integration:** Meta Conversions API events (`Purchase`, `Refund`, `Lead`, etc.) are automatically mirrored to PostHog server-side via [`lib/posthog-server.ts`](../../lib/posthog-server.ts). Meta events appear in PostHog with `source: 'meta_capi'` and include Meta-specific properties (`meta_event_name`, `meta_event_id`, `meta_fbp`, `meta_fbc`) for attribution analysis. This enables unified funnels that track the full journey from Meta ad click → conversion.
 - **Funnel events:** [`lib/posthog.ts`](../../lib/posthog.ts) defines `FunnelEvents` and `captureFunnelEvent()` for onboarding and experience. New events include step-level quiz tracking, error events wired to all error paths, claim flow events, and checkout lifecycle events.
 - **Micro-interaction events:** `onboarding_step_viewed`, `onboarding_step_interaction`, `onboarding_step_abandoned`, `onboarding_field_focused`, `checkout_step_viewed` — granular step-level events for heatmap-level funnel analysis.
 - **Session replay tagging:** `tagSessionForReplay(tag)` from `lib/posthog.ts` fires `session_tagged` at critical drop-off points (`checkout-error`, `payment-error`) so you can filter session replays in PostHog.
