@@ -107,9 +107,9 @@ export function ProductCardItem({
         artistName: product.vendor,
       })
 
-      // E-commerce: track add_to_cart
+      // E-commerce: track add_to_cart (stage: products grid)
       const item = storefrontProductToItem(product, variant, 1)
-      trackAddToCart(item)
+      trackAddToCart({ ...item, item_list_name: 'products' })
 
       // Brief delay for visual feedback
       setTimeout(() => {
@@ -143,7 +143,7 @@ export function ProductCardItem({
         variant="shop"
         onCardClick={() => {
           const v = product.variants?.edges?.[0]?.node
-          trackViewItem(storefrontProductToItem(product, v ?? undefined, 1))
+          trackViewItem({ ...storefrontProductToItem(product, v ?? undefined, 1), item_list_name: 'products' })
         }}
       />
     )
@@ -168,7 +168,7 @@ export function ProductCardItem({
       quickAddLoading={isAdding}
       onClick={() => {
         const v = product.variants?.edges?.[0]?.node
-        trackViewItem(storefrontProductToItem(product, v ?? undefined, 1))
+        trackViewItem({ ...storefrontProductToItem(product, v ?? undefined, 1), item_list_name: 'products' })
       }}
     />
   )

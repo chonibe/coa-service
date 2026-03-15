@@ -99,8 +99,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     })
   }, [panX, panY])
 
-  const price = product.priceRange?.minVariantPrice?.amount
-    ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}`
+  const originalPriceAmount = product.priceRange?.minVariantPrice?.amount
+    ? parseFloat(product.priceRange.minVariantPrice.amount)
+    : 0
+  const discountedPriceAmount = isEarlyAccess && originalPriceAmount > 0
+    ? Math.round(originalPriceAmount * 0.9 * 100) / 100
+    : originalPriceAmount
+  const price = originalPriceAmount > 0
+    ? `$${discountedPriceAmount.toFixed(2)}`
+    : ''
+  const originalPrice = isEarlyAccess && originalPriceAmount > 0
+    ? `$${originalPriceAmount.toFixed(2)}`
     : ''
   const artist = product.vendor || ''
   const isSoldOut = !product.availableForSale
@@ -377,6 +386,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         <span className="text-xs text-neutral-500 dark:text-[#c4a0a0]">
                           Edition of {editionSizeNum}
                         </span>
+                      )}
+                      {price && (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            'text-base font-semibold',
+                            isEarlyAccess && 'text-violet-600 dark:text-violet-400'
+                          )}>
+                            {price}
+                          </span>
+                          {isEarlyAccess && originalPrice && (
+                            <span className="text-sm text-neutral-400 dark:text-[#a09090] line-through">
+                              {originalPrice}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {isSoldOut && (
                         <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded">
@@ -667,7 +691,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       ) : isSoldOut ? (
                         'Sold Out'
                       ) : (
-                        <>{addToOrderLabel} — {price}</>
+                        <>
+                          {addToOrderLabel} — {price}
+                          {isEarlyAccess && originalPrice && (
+                            <span className="ml-1.5 text-xs line-through opacity-60">
+                              {originalPrice}
+                            </span>
+                          )}
+                        </>
                       )}
                     </button>
                   </div>
@@ -1200,7 +1231,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               ) : isSoldOut ? (
                 'Sold Out'
               ) : (
-                <>{addToOrderLabel} &mdash; {price}</>
+                <>
+                  {addToOrderLabel} &mdash; {price}
+                  {isEarlyAccess && originalPrice && (
+                    <span className="ml-1.5 text-xs line-through opacity-60">
+                      {originalPrice}
+                    </span>
+                  )}
+                </>
               )}
               </button>
             </div>

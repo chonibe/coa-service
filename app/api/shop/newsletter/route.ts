@@ -7,6 +7,8 @@
 
 import { NextResponse } from 'next/server'
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from '@/lib/env'
+import { sendMetaServerEvent } from '@/lib/meta-conversions-server'
+import { sendTikTokEvent } from '@/lib/tiktok-events-server'
 
 const API_VERSION = '2024-01'
 
@@ -54,6 +56,34 @@ export async function POST(request: Request) {
     })
 
     if (createRes.ok) {
+      // Fire Meta Lead event for newsletter signup
+      await sendMetaServerEvent({
+        eventName: 'Lead',
+        userData: {
+          em: email,
+        },
+        customData: {
+          lead_type: 'newsletter',
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if Meta event fails
+        console.error('[newsletter] Failed to send Meta Lead event:', err)
+      })
+
+      // Fire TikTok SubmitForm event for newsletter signup
+      await sendTikTokEvent({
+        event: 'SubmitForm',
+        userData: {
+          email,
+        },
+        properties: {
+          content_type: 'newsletter_signup',
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if TikTok event fails
+        console.error('[newsletter] Failed to send TikTok SubmitForm event:', err)
+      })
+
       return NextResponse.json({ success: true })
     }
 
@@ -92,12 +122,68 @@ export async function POST(request: Request) {
           })
 
           if (updateRes.ok) {
+            // Fire Meta Lead event for newsletter signup (update case)
+            await sendMetaServerEvent({
+              eventName: 'Lead',
+              userData: {
+                em: email,
+              },
+              customData: {
+                lead_type: 'newsletter',
+              },
+            }).catch((err) => {
+              // Log but don't fail the request if Meta event fails
+              console.error('[newsletter] Failed to send Meta Lead event:', err)
+            })
+
+            // Fire TikTok SubmitForm event for newsletter signup (update case)
+            await sendTikTokEvent({
+              event: 'SubmitForm',
+              userData: {
+                email,
+              },
+              properties: {
+                content_type: 'newsletter_signup',
+              },
+            }).catch((err) => {
+              // Log but don't fail the request if TikTok event fails
+              console.error('[newsletter] Failed to send TikTok SubmitForm event:', err)
+            })
+
             return NextResponse.json({ success: true })
           }
         }
       }
 
       // Customer exists - treat as success (avoid revealing if email is in system)
+      // Fire Meta Lead event even if customer already exists (they're still a lead)
+      await sendMetaServerEvent({
+        eventName: 'Lead',
+        userData: {
+          em: email,
+        },
+        customData: {
+          lead_type: 'newsletter',
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if Meta event fails
+        console.error('[newsletter] Failed to send Meta Lead event:', err)
+      })
+
+      // Fire TikTok SubmitForm event even if customer already exists
+      await sendTikTokEvent({
+        event: 'SubmitForm',
+        userData: {
+          email,
+        },
+        properties: {
+          content_type: 'newsletter_signup',
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if TikTok event fails
+        console.error('[newsletter] Failed to send TikTok SubmitForm event:', err)
+      })
+
       return NextResponse.json({ success: true })
     }
 

@@ -29,6 +29,11 @@ This project includes custom Model Context Protocol (MCP) servers that enable Cu
    - Order information queries
    - Rate-limited operations
 
+4. **Google MCP Server** (via [@mcp-server/google-search-mcp](https://www.npmjs.com/package/@mcp-server/google-search-mcp))
+   - Google Search from the AI (web search, lookups)
+   - Configured in project `.cursor/mcp.json` via `npx @mcp-server/google-search-mcp`
+   - **Requirements:** Node.js 18+, no API key for basic search
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -75,15 +80,19 @@ The MCP servers are already registered in `~/.cursor/mcp.json`. The configuratio
 
 ### Configuration File Location
 
-The Cursor MCP configuration is located at:
-```
-~/.cursor/mcp.json
-```
+The Cursor MCP configuration can be:
 
-Example configuration:
+- **Project-level:** `.cursor/mcp.json` in this repo (used for Google MCP in this project)
+- **Global:** `~/.cursor/mcp.json` (Supabase, Shopify, Lighthouse; merge with project config as needed)
+
+Example configuration (snippet for Google MCP; add to your existing `mcpServers` if using global config):
 ```json
 {
   "mcpServers": {
+    "google-search": {
+      "command": "npx",
+      "args": ["-y", "@mcp-server/google-search-mcp@latest"]
+    },
     "supabase-custom": {
       "command": "node",
       "args": ["/absolute/path/to/mcp-servers/supabase-server/index.js"],
@@ -105,6 +114,21 @@ Example configuration:
 ```
 
 ## Usage
+
+### Google MCP Server
+
+Google Search MCP is enabled in this project via `.cursor/mcp.json`. Restart Cursor after pulling the config so the server loads.
+
+#### Tools
+
+- **google_search** (or equivalent): Run Google searches from the AI.
+  - Parameters: `query` (required), optional `limit`, `timeout`, `language`, `region`.
+  - Example: "Search Google for Next.js 15 release notes"
+
+#### Connecting to more Google services
+
+- **Google Drive:** Use [@modelcontextprotocol/server-gdrive](https://www.npmjs.com/package/@modelcontextprotocol/server-gdrive) with a Google Cloud project and OAuth credentials (`drive.readonly` scope). Add to `mcpServers` with `command`/`args` and required env (e.g. path to OAuth JSON).
+- **Google Cloud (BigQuery, Firestore, etc.):** Use [Google Cloud remote MCP servers](https://docs.cloud.google.com/mcp/supported-products) via HTTP/SSE endpoints and Google authentication (e.g. `https://bigquery.googleapis.com/mcp`). Configure in Cursor as an SSE/HTTP MCP server with your credentials.
 
 ### Lighthouse MCP Server
 

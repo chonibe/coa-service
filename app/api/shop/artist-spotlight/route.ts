@@ -40,7 +40,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // 0. Default: spotlight = artist of the latest 2 artworks in Season 2
+    // 0. Default: Try Tyler Shelton first, then spotlight = artist of the latest 2 artworks in Season 2
+    const tylerSheltonResult = await tryTylerSheltonSpotlight(supabase)
+    if (tylerSheltonResult && !tylerSheltonResult.unlisted) return NextResponse.json(tylerSheltonResult)
+    
     const season2Result = await trySeason2LatestSpotlight(supabase)
     if (season2Result && !season2Result.unlisted) return NextResponse.json(season2Result)
 
@@ -207,6 +210,114 @@ async function tryCollectionSpotlight(
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
       unlisted,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Build spotlight for Tyler Shelton by querying Supabase first, then Shopify. */
+async function tryTylerSheltonSpotlight(supabase: ReturnType<typeof createClient>): Promise<SpotlightResult | null> {
+  try {
+    // First, try to find Tyler Shelton in Supabase vendors table (case-insensitive, flexible matching)
+    const vendorNamesToTry = ['Tyler Shelton', 'tyler shelton', 'TylerShelton', 'tylershelton']
+    let vendorId: number | null = null
+    let vendorName: string | null = null
+    
+    for (const name of vendorNamesToTry) {
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('id, vendor_name')
+        .ilike('vendor_name', `%${name.replace(/\s+/g, '%')}%`)
+        .maybeSingle()
+      if (vendor) {
+        vendorId = vendor.id
+        vendorName = vendor.vendor_name
+        break
+      }
+    }
+    
+    // If not found by name, try vendor_collections by handle
+    if (!vendorId) {
+      const handlesToTry = ['tyler-shelton', 'tyler-shelton-one', 'tylershelton']
+      for (const handle of handlesToTry) {
+        const { data: vc } = await supabase
+          .from('vendor_collections')
+          .select('vendor_id, vendor_name')
+          .eq('shopify_collection_handle', handle)
+          .maybeSingle()
+        if (vc?.vendor_id) {
+          vendorId = vc.vendor_id
+          vendorName = vc.vendor_name
+          break
+        }
+      }
+    }
+    
+    // If still not found, try direct Shopify vendor lookup (vendor might exist in Shopify but not Supabase yet)
+    if (!vendorId || !vendorName) {
+      const shopifyVendorNames = ['Tyler Shelton', 'TylerShelton']
+      for (const shopifyName of shopifyVendorNames) {
+        const { products } = await getProductsByVendor(shopifyName, { first: 1 })
+        if (products && products.length > 0 && products[0].vendor) {
+          vendorName = products[0].vendor
+          break
+        }
+      }
+    }
+    
+    if (!vendorName) return null
+    
+    // Get vendor meta data (vendorId might be null if found via Shopify only)
+    const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, vendorId)
+    
+    // Try to get products by vendor name
+    const handle = vendorSlug || slugify(vendorName)
+    
+    // First try collection spotlight (might have products)
+    const colResult = await tryCollectionSpotlight(supabase, handle)
+    if (colResult && colResult.productIds.length > 0) {
+      return colResult
+    }
+    
+    // Try vendor products
+    const { products: vendorProducts } = await getProductsByVendor(vendorName, {
+      first: 4,
+      sortKey: 'CREATED_AT',
+      reverse: true,
+    })
+    
+    const filtered = (vendorProducts || []).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    
+    const productIds = filtered
+      .slice(0, 4)
+      .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
+      .filter(Boolean)
+    
+    const newest = filtered[0]
+    const artistImage = image ||
+      (await getArtistImageByHandle(handle)) ||
+      (await getArtistImageByHandle(`${handle}-one`)) ||
+      newest?.featuredImage?.url ||
+      newest?.images?.edges?.[0]?.node?.url ||
+      colResult?.image
+    
+    const collectionBio = !bio ? await getCollectionDescription(handle) || await getCollectionDescription(`${handle}-one`) : undefined
+    const collectionInstagram = !instagram ? await getCollectionInstagram(handle) || await getCollectionInstagram(`${handle}-one`) : undefined
+    
+    // Return spotlight even if no products found (vendor exists in database)
+    return {
+      vendorName,
+      vendorSlug: handle,
+      bio: bio || colResult?.bio || collectionBio,
+      instagram: instagram || colResult?.instagram || collectionInstagram,
+      image: artistImage || undefined,
+      productIds: productIds.length > 0 ? productIds : (colResult?.productIds || []),
+      seriesName: colResult?.seriesName,
+      gifUrl: gifUrl || colResult?.gifUrl,
+      unlisted: unlisted || colResult?.unlisted || false,
     }
   } catch {
     return null

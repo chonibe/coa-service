@@ -6,6 +6,12 @@ The Experience page (`/shop/experience`) lets users customize a Street Lamp with
 
 **Implementation**: [`app/shop/experience/`](../../../app/shop/experience/)
 
+## Rotation And Selection Reference
+
+Artwork queueing, side replacement, and Spline rotate/settle behavior are documented in:
+
+- [`ROTATION_AND_SELECTION_LOGIC.md`](./ROTATION_AND_SELECTION_LOGIC.md)
+
 ## Performance Optimizations (2026-02)
 
 ### Implemented
@@ -148,14 +154,14 @@ Half of visitors see the 4-step onboarding; half skip to the configurator. This 
 
 ### Intro Quiz Signups (Tracking & Marketing)
 
-When the user completes the intro quiz and provides an **email**, the signup is persisted to the database for tracking and marketing:
+When the user completes the intro quiz, their responses are persisted so you can track **name**, **gift vs self**, **first time vs have lamp**, and optional email:
 
 - **Table**: `public.experience_quiz_signups`  
-  - Columns: `id`, `email`, `name`, `owns_lamp`, `purpose` (`'self'` \| `'gift'`), `source` (default `'experience'`), `affiliate_artist_slug`, `collector_user_id` (set when user logs in), `stripe_customer_id` (set when user completes checkout), `created_at`.  
-  - Migrations: [`20260309000002_experience_quiz_signups.sql`](../../../supabase/migrations/20260309000002_experience_quiz_signups.sql), [`20260309000003_experience_quiz_signups_allow_insert.sql`](../../../supabase/migrations/20260309000003_experience_quiz_signups_allow_insert.sql), [`20260309100000_experience_quiz_signups_customer_id.sql`](../../../supabase/migrations/20260309100000_experience_quiz_signups_customer_id.sql) (adds `collector_user_id`, `stripe_customer_id`; RLS allows authenticated user to UPDATE own rows by email).
-- **Client**: [`ExperienceOnboardingClient.tsx`](../../../app/shop/experience/components/ExperienceOnboardingClient.tsx) uses the **Supabase browser client** in `handleComplete` (after step 4) to insert into `experience_quiz_signups` when `email` is present (fire-and-forget). Admins can query the table (RLS allows `SELECT` for admin role) for exports and marketing.
-- **Linking customer ID**: When the user **logs in**, [`ExperienceClient`](../../../app/shop/experience/components/ExperienceClient.tsx) calls `POST /api/experience/quiz-signup/link` (once per visit). The link API sets `collector_user_id` = current Supabase auth user id on any signup row(s) with matching email. When the user **completes checkout**, the Stripe webhook (`checkout.session.completed`) sets `stripe_customer_id` on matching `experience_quiz_signups` rows by purchaser email.
-- **API** (optional): `POST /api/experience/quiz-signup` is available for server-side or server-action use; the onboarding flow uses the client directly.
+  - Columns: `id`, `email` (nullable), `name`, `owns_lamp`, `purpose` (`'self'` \| `'gift'`), `source` (default `'experience'`), `affiliate_artist_slug`, `collector_user_id` (set when user logs in), `stripe_customer_id` (set when user completes checkout), `created_at`.  
+  - Migrations: [`20260309000002_experience_quiz_signups.sql`](../../../supabase/migrations/20260309000002_experience_quiz_signups.sql), [`20260309000003_experience_quiz_signups_allow_insert.sql`](../../../supabase/migrations/20260309000003_experience_quiz_signups_allow_insert.sql), [`20260309100000_experience_quiz_signups_customer_id.sql`](../../../supabase/migrations/20260309100000_experience_quiz_signups_customer_id.sql), [`20260310100000_experience_quiz_signups_email_nullable.sql`](../../../supabase/migrations/20260310100000_experience_quiz_signups_email_nullable.sql) (email optional so we can record name + selections even before email is collected).
+- **Client**: [`ExperienceOnboardingClient.tsx`](../../../app/(store)/shop/experience/components/ExperienceOnboardingClient.tsx) inserts into `experience_quiz_signups` on **every** quiz completion (fire-and-forget) with `name`, `owns_lamp`, `purpose`, and `email` when provided. This includes “Skip for now” (owns_lamp false, purpose self, name/email null). Admins can query the table (RLS allows `SELECT` for admin role) for exports and marketing.
+- **Linking customer ID**: When the user **logs in**, [`ExperienceClient`](../../../app/(store)/shop/experience/components/ExperienceClient.tsx) calls `POST /api/experience/quiz-signup/link` (once per visit). The link API sets `collector_user_id` on any signup row(s) with matching email. When the user **completes checkout**, the Stripe webhook sets `stripe_customer_id` on matching rows by purchaser email.
+- **API**: `POST /api/experience/quiz-signup` accepts `email` (optional), `name` (optional), `ownsLamp`, `purpose`; at least one of `email` or `name` is required.
 
 ## Collected Artworks (Logged-in Users)
 
@@ -206,5 +212,5 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 ## Version
 
-- Last updated: 2026-03-09
-- Version: 1.11.0
+- Last updated: 2026-03-14
+- Version: 1.12.0

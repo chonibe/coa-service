@@ -239,14 +239,3 @@ export const usePurchaseTracking = () => {
     isEnabled: isGAEnabled()
   }
 }
-
-// Declare gtag on window for TypeScript
-declare global {
-  interface Window {
-    gtag: (
-      command: string,
-      targetId: string,
-      config?: Record<string, any>
-    ) => void
-  }
-}

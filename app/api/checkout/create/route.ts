@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
+import { getEarlyAccessCouponCookie } from '@/lib/early-access'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
     const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
+    const metaFbp = cookieStore.get('_fbp')?.value
+    const metaFbc = cookieStore.get('_fbc')?.value || cookieStore.get('sc_fbc')?.value
+    const metaFbclid = cookieStore.get('sc_fbclid')?.value
 
     // Parse request body
     const body: CreateCheckoutRequest = await request.json()
@@ -274,6 +278,17 @@ export async function POST(request: NextRequest) {
       if (promo?.coupon?.valid) {
         discounts = [{ promotion_code: promo.id }]
       }
+    } else {
+      // Check for early access coupon cookie
+      const { couponCode: earlyAccessCoupon } = getEarlyAccessCouponCookie()
+      if (earlyAccessCoupon?.trim()) {
+        const trimmed = earlyAccessCoupon.trim().toUpperCase()
+        const { data: promoCodes } = await stripe!.promotionCodes.list({ code: trimmed, active: true })
+        const promo = promoCodes?.[0]
+        if (promo?.coupon?.valid) {
+          discounts = [{ promotion_code: promo.id }]
+        }
+      }
     }
 
     // Restrict payment method if user selected one
@@ -292,6 +307,9 @@ export async function POST(request: NextRequest) {
         credits_used: actualCreditsToUse.toString(),
         credits_discount_cents: creditDiscountCents.toString(),
         collector_identifier: email || '',
+        ...(metaFbp && { meta_fbp: metaFbp }),
+        ...(metaFbc && { meta_fbc: metaFbc }),
+        ...(metaFbclid && { meta_fbclid: metaFbclid }),
         ...(orderNotes && { order_notes: orderNotes }),
         ...(promoCode && { promo_code: promoCode }),
         ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),

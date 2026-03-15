@@ -862,14 +862,14 @@ export function AdminShell({ children }: AdminShellProps) {
             <div className="rounded-md bg-muted p-3 space-y-2">
               <p className="text-sm font-medium">This will:</p>
               <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                <li>Switch you to the vendor's dashboard view</li>
+                <li>Switch you to the vendor&apos;s dashboard view</li>
                 <li>Allow you to see exactly what the vendor sees</li>
                 <li>Log all actions as admin actions for audit purposes</li>
-                <li>Display a banner indicating you're in admin view mode</li>
+                <li>Display a banner indicating you&apos;re in admin view mode</li>
               </ul>
             </div>
             <p className="text-xs text-muted-foreground">
-              Use this feature for testing the vendor experience or providing support. For regular vendor management, use "View Details" instead.
+              Use this feature for testing the vendor experience or providing support. For regular vendor management, use &quot;View Details&quot; instead.
             </p>
           </div>
           <DialogFooter>
@@ -887,13 +887,6 @@ export function AdminShell({ children }: AdminShellProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <a
-        href="#admin-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
-      >
-        Skip to main content
-      </a>
-      
       {/* Polaris Update Notification Banner */}
       <PolarisUpdateNotifications />
       

@@ -7,12 +7,24 @@ import { MEMBERSHIP_TIERS, type MembershipTierId } from "@/lib/membership/tiers"
 import { getOrCreateCollectorAccount } from "@/lib/banking/account-manager"
 import { CREDITS_PER_DOLLAR } from "@/lib/banking/types"
 import { sendEmail } from "@/lib/email/client"
+import { sendMetaServerEvent } from "@/lib/meta-conversions-server"
+import { enhanceFbp, enhanceFbc } from "@/lib/meta-parameter-builder-server"
+import { sendTikTokEvent } from "@/lib/tiktok-events-server"
+import { addUserToAudience } from "@/lib/meta-custom-audiences-server"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20",
 })
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || ""
+
+function toMajorUnits(amountMinor: number | null | undefined): number {
+  return Number(((amountMinor || 0) / 100).toFixed(2))
+}
+
+function toUpperCurrency(currency: string | null | undefined): string {
+  return (currency || 'usd').toUpperCase()
+}
 
 export async function POST(request: NextRequest) {
   if (!endpointSecret) {
@@ -87,6 +99,11 @@ export async function POST(request: NextRequest) {
             .from('checkout_sessions')
             .update({ status: 'expired' })
             .eq('session_id', expiredSession.id)
+          break
+        }
+        case "charge.refunded": {
+          const charge = event.data.object as Stripe.Charge
+          await handleChargeRefunded(charge, event.id)
           break
         }
         case "invoice.payment_succeeded": {
@@ -309,10 +326,71 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       // ── Persist Stripe customer ID for saved payment methods ──
       const stripeCustomerId = session.customer && typeof session.customer === 'string' ? session.customer : null
       const purchaserEmail = customer?.email?.toLowerCase()?.trim()
+      const { data: existingCollector } = purchaserEmail
+        ? await supabase
+            .from('collectors')
+            .select('id')
+            .ilike('email', purchaserEmail)
+            .maybeSingle()
+        : { data: null }
       if (stripeCustomerId && purchaserEmail) {
         await supabase.from('collector_profiles').update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() }).ilike('email', purchaserEmail)
         await supabase.from('collectors').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
         await supabase.from('experience_quiz_signups').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
+      }
+
+      // ── Meta CAPI source-of-truth purchase from webhook ──
+      await sendMetaPurchaseFromWebhook(session, variants, {
+        customer,
+        shipping,
+        customerType: existingCollector ? 'returning' : 'new',
+      })
+
+      // ── TikTok Events API: Purchase event ──
+      const purchaserPhone = customer?.phone || undefined
+      const nameParts = (customer?.name || shipping?.name || '').trim().split(/\s+/)
+      const firstName = nameParts[0]
+      const lastName = nameParts.slice(1).join(' ')
+      const address = customer?.address || shipping?.address || undefined
+      const value = toMajorUnits(session.amount_total)
+      const currency = toUpperCurrency(session.currency)
+      
+      await sendTikTokEvent({
+        event: 'Purchase',
+        event_id: `purchase_${session.payment_intent || session.id}`,
+        properties: {
+          value,
+          currency,
+          contents: variants.map((v) => ({
+            content_id: v.variantId,
+            quantity: v.quantity || 1,
+          })),
+        },
+        userData: {
+          email: purchaserEmail,
+          phone_number: purchaserPhone || undefined,
+          first_name: firstName || undefined,
+          last_name: lastName || undefined,
+          city: address?.city || undefined,
+          state: address?.state || undefined,
+          zip_code: address?.postal_code || undefined,
+          country_code: address?.country || undefined,
+        },
+      }).catch((err) => {
+        // Log but don't fail the webhook if TikTok event fails
+        console.error('[stripe/webhook] Failed to send TikTok Purchase event:', err)
+      })
+
+      // ── Meta Custom Audience: Add buyer to audience for retargeting ──
+      if (purchaserEmail) {
+        await addUserToAudience(purchaserEmail, {
+          phone: purchaserPhone || undefined,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+        }).catch((err) => {
+          // Log but don't fail the webhook if Custom Audience sync fails
+          console.error('[stripe/webhook] Failed to add user to Meta Custom Audience:', err)
+        })
       }
 
       // ── Post-Purchase Bridge: Create/link collector identity ──
@@ -337,6 +415,176 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
     }
   } catch (err) {
     console.error('Error handling checkout.session.completed:', err)
+  }
+}
+
+async function sendMetaPurchaseFromWebhook(
+  session: Stripe.Checkout.Session,
+  variants: Array<{ variantId: string; variantGid: string; quantity: number; productHandle: string }>,
+  context: {
+    customer?: { email?: string | null; phone?: string | null; name?: string | null; address?: Stripe.Address | null } | null
+    shipping?: { name?: string | null; address?: Stripe.Address | null } | null
+    customerType: 'new' | 'returning'
+  }
+) {
+  const contentIds = variants.map((v) => v.variantId).filter(Boolean)
+  const value = toMajorUnits(session.amount_total)
+  const currency = toUpperCurrency(session.currency)
+  const customer = context.customer
+  const shipping = context.shipping
+  const nameParts = (customer?.name || shipping?.name || '').trim().split(/\s+/)
+  const firstName = nameParts[0]
+  const lastName = nameParts.slice(1).join(' ')
+  const address = customer?.address || shipping?.address || undefined
+  const purchaserEmail = customer?.email || undefined
+  const purchaserPhone = customer?.phone || undefined
+  const eventId = `purchase_${session.payment_intent || session.id}`
+
+  const purchaseRes = await sendMetaServerEvent({
+    eventName: 'Purchase',
+    eventId,
+    eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'}/shop/checkout/success`,
+    customData: {
+      currency,
+      value,
+      content_type: 'product',
+      content_ids: contentIds,
+      num_items: variants.reduce((sum, v) => sum + (v.quantity || 1), 0),
+      contents: variants.map((v) => ({
+        id: v.variantId,
+        quantity: v.quantity || 1,
+      })),
+      customer_type: context.customerType,
+      order_source: session.metadata?.source || 'headless_storefront',
+      order_id: session.id,
+      quality_tier: value >= 250 ? 'high' : value >= 120 ? 'mid' : 'base',
+    },
+    userData: {
+      em: purchaserEmail,
+      ph: purchaserPhone || undefined,
+      fn: firstName || undefined,
+      ln: lastName || undefined,
+      ct: address?.city || undefined,
+      st: address?.state || undefined,
+      zp: address?.postal_code || undefined,
+      country: address?.country || undefined,
+      external_id: purchaserEmail || undefined,
+      fbp: enhanceFbp(session.metadata?.meta_fbp),
+      fbc: enhanceFbc(session.metadata?.meta_fbc),
+    },
+  })
+
+  if (!purchaseRes.success) {
+    console.error('[meta/webhook] Purchase send failed', purchaseRes.error)
+    return
+  }
+  console.log('[meta/webhook] Purchase sent', {
+    eventId,
+    currency,
+    value,
+    items: contentIds.length,
+  })
+
+  // Additional quality event for higher-value purchases.
+  if (value >= 250) {
+    await sendMetaServerEvent({
+      eventName: 'QualifiedPurchase',
+      eventId: `qualified_${eventId}`,
+      eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'}/shop/checkout/success`,
+      customData: {
+        currency,
+        value,
+        quality_tier: 'high',
+        order_id: session.id,
+      },
+      userData: {
+        em: purchaserEmail,
+        external_id: purchaserEmail || undefined,
+        fbp: enhanceFbp(session.metadata?.meta_fbp),
+        fbc: enhanceFbc(session.metadata?.meta_fbc),
+      },
+    })
+  }
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge, webhookEventId: string) {
+  try {
+    const refundedValue = toMajorUnits(charge.amount_refunded)
+    if (refundedValue <= 0) return
+
+    // Try to retrieve PaymentIntent or Checkout Session for richer metadata
+    let paymentIntent: Stripe.PaymentIntent | null = null
+    let checkoutSession: Stripe.Checkout.Session | null = null
+    let purchaseMetadata: Record<string, string> = {}
+
+    if (charge.payment_intent) {
+      try {
+        paymentIntent = await stripe.paymentIntents.retrieve(charge.payment_intent as string)
+        purchaseMetadata = paymentIntent.metadata || {}
+      } catch {
+        // PaymentIntent may not exist or be accessible
+      }
+    }
+
+    // Try to find Checkout Session from metadata or by searching
+    if (purchaseMetadata.source && (purchaseMetadata.source === 'headless_storefront' || purchaseMetadata.source === 'experience_checkout')) {
+      try {
+        // Search for checkout sessions with this payment_intent
+        const sessions = await stripe.checkout.sessions.list({
+          payment_intent: charge.payment_intent as string,
+          limit: 1,
+        })
+        if (sessions.data.length > 0) {
+          checkoutSession = sessions.data[0]
+          purchaseMetadata = { ...purchaseMetadata, ...checkoutSession.metadata }
+        }
+      } catch {
+        // Session search may fail, continue with PaymentIntent metadata
+      }
+    }
+
+    // Extract user data from charge billing_details and purchase metadata
+    const billing = charge.billing_details
+    const nameParts = (billing?.name || '').trim().split(/\s+/)
+    const firstName = nameParts[0] || undefined
+    const lastName = nameParts.slice(1).join(' ') || undefined
+    const purchaserEmail = billing?.email || purchaseMetadata.collector_email || purchaseMetadata.collector_identifier || undefined
+    const purchaserPhone = billing?.phone || undefined
+    const address = billing?.address
+
+    const response = await sendMetaServerEvent({
+      eventName: 'Refund',
+      eventId: `refund_${charge.id}_${webhookEventId}`,
+      eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.thestreetcollector.com'}/shop/checkout/success`,
+      customData: {
+        currency: toUpperCurrency(charge.currency),
+        value: refundedValue,
+        order_id: charge.payment_intent || charge.id,
+        refund_reason: charge.refunds?.data?.[0]?.reason || undefined,
+        original_order_id: purchaseMetadata.order_id || purchaseMetadata.shopify_order_id || undefined,
+      },
+      userData: {
+        em: purchaserEmail,
+        ph: purchaserPhone,
+        fn: firstName,
+        ln: lastName,
+        ct: address?.city || undefined,
+        st: address?.state || undefined,
+        zp: address?.postal_code || undefined,
+        country: address?.country || undefined,
+        external_id: purchaserEmail || undefined,
+        fbp: enhanceFbp(purchaseMetadata.meta_fbp),
+        fbc: enhanceFbc(purchaseMetadata.meta_fbc),
+      },
+    })
+
+    if (!response.success) {
+      console.error('[meta/webhook] Refund send failed', response.error)
+      return
+    }
+    console.log('[meta/webhook] Refund sent', { chargeId: charge.id, value: refundedValue, hasUserData: !!purchaserEmail })
+  } catch (err) {
+    console.error('[meta/webhook] Refund handler error', err)
   }
 }
 

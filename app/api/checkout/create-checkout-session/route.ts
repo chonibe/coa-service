@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
+import { getEarlyAccessCouponCookie } from '@/lib/early-access'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
@@ -74,6 +75,9 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
     const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
+    const metaFbp = cookieStore.get('_fbp')?.value
+    const metaFbc = cookieStore.get('_fbc')?.value || cookieStore.get('sc_fbc')?.value
+    const metaFbclid = cookieStore.get('sc_fbclid')?.value
 
     const body: CreateCheckoutSessionRequest = await request.json()
     const { items, customerEmail, shippingAddress, promoCode } = body
@@ -104,6 +108,9 @@ export async function POST(request: NextRequest) {
       shopify_variant_ids: shopifyVariantsCompact,
       collector_email: email,
       collector_identifier: email,
+      ...(metaFbp && { meta_fbp: metaFbp }),
+      ...(metaFbc && { meta_fbc: metaFbc }),
+      ...(metaFbclid && { meta_fbclid: metaFbclid }),
       ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       items_json: JSON.stringify(
         items.map((i) => ({
@@ -160,6 +167,17 @@ export async function POST(request: NextRequest) {
       const promo = promoCodes?.[0]
       if (promo?.coupon?.valid) {
         discounts = [{ promotion_code: promo.id }]
+      }
+    } else {
+      // Check for early access coupon cookie
+      const { couponCode: earlyAccessCoupon } = getEarlyAccessCouponCookie()
+      if (earlyAccessCoupon?.trim()) {
+        const trimmed = earlyAccessCoupon.trim().toUpperCase()
+        const { data: promoCodes } = await stripe.promotionCodes.list({ code: trimmed, active: true })
+        const promo = promoCodes?.[0]
+        if (promo?.coupon?.valid) {
+          discounts = [{ promotion_code: promo.id }]
+        }
       }
     }
 

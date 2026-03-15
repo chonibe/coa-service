@@ -65,7 +65,7 @@ export function convertShopifyMedia(shopifyMedia: ShopifyMedia[]): ProductMedia[
           src: item.image.url,
           alt: item.image.altText || '',
         }
-      case 'VIDEO':
+      case 'VIDEO': {
         const bestSource = item.sources.reduce((best, current) => 
           (current.height || 0) > (best.height || 0) ? current : best
         , item.sources[0])
@@ -77,6 +77,7 @@ export function convertShopifyMedia(shopifyMedia: ShopifyMedia[]): ProductMedia[
           previewImage: item.previewImage?.url,
           sources: item.sources,
         }
+      }
       case 'EXTERNAL_VIDEO':
         return {
           id: item.id,
@@ -87,7 +88,7 @@ export function convertShopifyMedia(shopifyMedia: ShopifyMedia[]): ProductMedia[
           host: item.host,
           embeddedUrl: item.embeddedUrl,
         }
-      case 'MODEL_3D':
+      case 'MODEL_3D': {
         const glbSource = item.sources.find(s => s.format === 'glb') || item.sources[0]
         return {
           id: item.id,
@@ -97,6 +98,7 @@ export function convertShopifyMedia(shopifyMedia: ShopifyMedia[]): ProductMedia[
           previewImage: item.previewImage?.url,
           sources: item.sources.map(s => ({ ...s, width: undefined, height: undefined })),
         }
+      }
       default:
         return {
           id: (item as any).id || 'unknown',
@@ -117,10 +119,12 @@ export function ProductGallery({
 }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const [isZoomed, setIsZoomed] = React.useState(false)
-  const [touchStart, setTouchStart] = React.useState<number | null>(null)
-  const [touchEnd, setTouchEnd] = React.useState<number | null>(null)
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false)
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const touchStartXRef = React.useRef<number | null>(null)
+  const touchStartYRef = React.useRef<number | null>(null)
+  const touchEndXRef = React.useRef<number | null>(null)
+  const touchEndYRef = React.useRef<number | null>(null)
   
   // Combine images and media into unified gallery items
   const galleryItems: ProductMedia[] = React.useMemo(() => {
@@ -146,25 +150,36 @@ export function ProductGallery({
   const minSwipeDistance = 50
   
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
+    const touch = e.targetTouches[0]
+    touchStartXRef.current = touch.clientX
+    touchStartYRef.current = touch.clientY
+    touchEndXRef.current = null
+    touchEndYRef.current = null
   }
   
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
+    const touch = e.targetTouches[0]
+    touchEndXRef.current = touch.clientX
+    touchEndYRef.current = touch.clientY
   }
   
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-    
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > minSwipeDistance
-    const isRightSwipe = distance < -minSwipeDistance
-    
-    if (isLeftSwipe) {
+    const startX = touchStartXRef.current
+    const endX = touchEndXRef.current
+    const startY = touchStartYRef.current
+    const endY = touchEndYRef.current
+    if (startX == null || endX == null || startY == null || endY == null) return
+
+    const deltaX = startX - endX
+    const deltaY = startY - endY
+
+    // Keep vertical scrolling fluid by only reacting to clearly horizontal swipes.
+    if (Math.abs(deltaX) < minSwipeDistance || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+    if (deltaX > 0) {
       // Swipe left - next image
-      setSelectedIndex((prev) => Math.min(prev + 1, images.length - 1))
-    } else if (isRightSwipe) {
+      setSelectedIndex((prev) => Math.min(prev + 1, galleryItems.length - 1))
+    } else {
       // Swipe right - previous image
       setSelectedIndex((prev) => Math.max(prev - 1, 0))
     }
@@ -348,7 +363,7 @@ export function ProductGallery({
       <div className={cn('space-y-4', className)}>
         {/* Main Media */}
         <div 
-          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-pan-x"
+          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-manipulation"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -397,7 +412,7 @@ export function ProductGallery({
       {/* Main Media */}
       <div className="flex-1 relative">
         <div 
-          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-pan-x"
+          className="relative aspect-square rounded-[16px] overflow-hidden bg-transparent touch-manipulation"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart, Camera } from 'lucide-react'
+import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart, Camera, RotateCw } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
@@ -55,7 +55,6 @@ const Spline3DPreview = dynamic(
   }
 )
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
-import { SplineWhenVisible } from './SplineWhenVisible'
 import { ArtworkStrip } from './ArtworkStrip'
 
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
@@ -246,7 +245,12 @@ export function Configurator({
   }, [imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>([])
+  const [lampSelectionQueue, setLampSelectionQueue] = useState<string[]>([])
   const [splineResetTrigger, setSplineResetTrigger] = useState(0)
+  const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
+  const [rotateTrigger, setRotateTrigger] = useState(0)
+  const currentFrontSideRef = useRef<'A' | 'B'>('B')
+  const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const loadedCart = loadExperienceCart(quizAnswers.ownsLamp)
   const [cartOrder, setCartOrder] = useState<string[]>(() => loadedCart.cartOrder)
   /** Non-lamp owners start at 0; they must add lamp via paywall first, then choose artwork */
@@ -302,6 +306,15 @@ export function Configurator({
   const highlightStepRef = useRef(highlightStep)
   highlightStepRef.current = highlightStep
   const [triedSteps, setTriedSteps] = useState<[boolean, boolean, boolean, boolean, boolean, boolean]>([false, false, false, false, false, false])
+  const autoAdvancedStepsRef = useRef<[boolean, boolean, boolean, boolean, boolean, boolean]>([false, false, false, false, false, false])
+  const [wizardPosition, setWizardPosition] = useState<{ top?: string; left?: string; right?: string; bottom?: string }>({ top: '0.75rem', left: '0.75rem' })
+  const wizardCardRef = useRef<HTMLDivElement>(null)
+  const lampButtonRef = useRef<HTMLDivElement>(null)
+  const filterButtonRef = useRef<HTMLButtonElement>(null)
+  const chevronButtonRef = useRef<HTMLButtonElement>(null)
+  
+  // Unified wizard highlight style for consistent visual affordance
+  const wizardHighlightClass = 'ring-2 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
   const handleOpenFilter = useCallback(() => {
     setFilterOpen(true)
     setTriedSteps((prev) => {
@@ -309,8 +322,11 @@ export function Configurator({
       next[4] = true
       return next
     })
-    if (highlightStepRef.current === 4) setHighlightStep(5)
-  }, [])
+    if (highlightStepRef.current === 4) {
+      if (isMobile) setHighlightStep(5)
+      else setPreviewEngaged(true)
+    }
+  }, [isMobile])
 
   const handleCycleSelectorState = useCallback(() => {
     cycleSelectorState()
@@ -412,6 +428,9 @@ export function Configurator({
           fullProductCacheRef.current.set(handle, full)
         }
       })
+      .catch(() => {
+        // Best-effort prefetch only; ignore fetch failures.
+      })
       .finally(() => { prefetchingRef.current.delete(handle) })
   }, [lamp.handle])
 
@@ -454,11 +473,11 @@ export function Configurator({
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
 
-  // E-commerce: track view_item when previewed artwork changes
+  // E-commerce: track view_item when previewed artwork changes (stage: experience)
   useEffect(() => {
     if (!previewed) return
     const variant = previewed.variants?.edges?.[0]?.node
-    trackViewItem(storefrontProductToItem(previewed, variant, 1))
+    trackViewItem({ ...storefrontProductToItem(previewed, variant, 1), item_list_name: 'experience' })
   }, [previewed?.id, previewIndex])
 
   // Fetch collected product IDs when authenticated (for "Collected" badge)
@@ -573,6 +592,164 @@ export function Configurator({
   /** Paywall: non-lamp owners must add lamp first — unless they skip or deselect */
   const showLampPaywall = !quizAnswers.ownsLamp && lampQuantity === 0 && !lampPaywallSkipped
   const showHighlightAnimation = previewVisible && !previewEngaged && !showLampPaywall
+  const totalWizardSteps = isMobile ? 6 : 5
+  const lastWizardStep = totalWizardSteps - 1
+
+  useEffect(() => {
+    if (!isMobile && highlightStep > 4) setHighlightStep(4)
+  }, [isMobile, highlightStep])
+
+  // Mobile step visibility guard: ensure targets are visible before showing instructions
+  useEffect(() => {
+    if (!showHighlightAnimation || !isMobile) return
+    
+    // Ensure appropriate panel state and scroll position for each step
+    const ensureTargetVisible = () => {
+      if (highlightStep <= 2) {
+        // Steps 0-2: Artwork card buttons - ensure first card is visible
+        const firstCard = document.querySelector('[data-highlight-card]')
+        if (firstCard) {
+          firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+        // Ensure selector is expanded so artwork strip is visible
+        if (selectorSheetState === 'collapsed') {
+          cycleSelectorState()
+        }
+      } else if (highlightStep === 3) {
+        // Step 3: Lamp button (if present on mobile) - ensure selector is expanded
+        // Note: Lamp button may not be visible on mobile, but step should still work
+        if (selectorSheetState === 'collapsed') {
+          cycleSelectorState()
+        }
+      } else if (highlightStep === 4 || highlightStep === 5) {
+        // Steps 4-5: Filter and chevron buttons - ensure selector is expanded (they're in bottom bar)
+        if (selectorSheetState === 'collapsed') {
+          cycleSelectorState()
+        }
+      }
+    }
+    
+    const timeoutId = setTimeout(ensureTargetVisible, 100)
+    return () => clearTimeout(timeoutId)
+  }, [showHighlightAnimation, isMobile, highlightStep, selectorSheetState, cycleSelectorState])
+
+  // Position wizard card: fixed dock on mobile, contextual on desktop
+  useEffect(() => {
+    if (!showHighlightAnimation) {
+      setWizardPosition({ top: '0.75rem', left: '0.75rem' })
+      return
+    }
+    
+    // Mobile: fixed bottom dock (no positioning calculations needed)
+    if (isMobile) {
+      setWizardPosition({ top: undefined, bottom: '5.5rem', left: '1rem', right: '1rem' })
+      return
+    }
+    
+    // Desktop: position near target element
+    const updatePosition = () => {
+      let targetElement: HTMLElement | null = null
+      
+      // Steps 0-2: buttons on artwork card (virtualized, use querySelector)
+      if (highlightStep <= 2) {
+        const btnType = highlightStep === 0 ? 'eye' : highlightStep === 1 ? 'info' : 'add'
+        targetElement = document.querySelector(`[data-highlight-btn="${btnType}"]`) as HTMLElement
+      } else if (highlightStep === 3) {
+        // Lamp button in selector header (use ref for stability)
+        targetElement = lampButtonRef.current
+      } else if (highlightStep === 4) {
+        // Filter button (use ref for stability)
+        targetElement = filterButtonRef.current
+      }
+      
+      if (!targetElement) {
+        setWizardPosition({ top: '0.75rem', left: '0.75rem' })
+        return
+      }
+      
+      const rect = targetElement.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const viewportWidth = window.innerWidth
+      const spaceBelow = viewportHeight - rect.bottom
+      const spaceAbove = rect.top
+      const measuredWizardRect = wizardCardRef.current?.getBoundingClientRect()
+      const wizardHeight = measuredWizardRect?.height ?? 90
+      const wizardWidth = Math.min(
+        viewportWidth - 32,
+        measuredWizardRect?.width ?? 460
+      )
+      const offset = 12
+      
+      let top: string | undefined
+      let bottom: string | undefined
+      const targetCenterX = rect.left + rect.width / 2
+      
+      if (spaceBelow >= wizardHeight + offset) {
+        top = `${rect.bottom + offset}px`
+      } else if (spaceAbove >= wizardHeight + offset) {
+        bottom = `${viewportHeight - rect.top + offset}px`
+      } else {
+        bottom = '1rem'
+      }
+      
+      const horizontalPadding = 16
+      const bubbleLeft = Math.max(
+        horizontalPadding,
+        Math.min(viewportWidth - wizardWidth - horizontalPadding, targetCenterX - wizardWidth / 2)
+      )
+      const left = `${bubbleLeft}px`
+
+      setWizardPosition({ top, bottom, left, right: undefined })
+    }
+    
+    const timeoutId = setTimeout(updatePosition, 150)
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [showHighlightAnimation, highlightStep, isMobile])
+
+  useEffect(() => {
+    if (!showHighlightAnimation) return
+    const completionByStep: [boolean, boolean, boolean, boolean, boolean, boolean] = [
+      lampPreviewOrder.length > 0,
+      !!detailProduct,
+      cartOrder.length > 0,
+      lampQuantity > 0,
+      filterOpen,
+      triedSteps[5] || selectorSheetState !== 'half',
+    ]
+    const step = highlightStepRef.current as 0 | 1 | 2 | 3 | 4 | 5
+    if (step > lastWizardStep) {
+      setPreviewEngaged(true)
+      return
+    }
+    if (!completionByStep[step]) return
+    if (autoAdvancedStepsRef.current[step]) return
+    autoAdvancedStepsRef.current[step] = true
+    setTriedSteps((prev) => {
+      if (prev[step]) return prev
+      const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]
+      next[step] = true
+      return next
+    })
+    if (step < lastWizardStep) setHighlightStep(step + 1)
+    else setPreviewEngaged(true)
+  }, [
+    showHighlightAnimation,
+    lastWizardStep,
+    lampPreviewOrder.length,
+    detailProduct,
+    cartOrder.length,
+    lampQuantity,
+    filterOpen,
+    selectorSheetState,
+    triedSteps,
+  ])
 
   const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar, setDiscountCelebrationAmount } = useExperienceOrder()
   const { theme, setTheme } = useExperienceTheme()
@@ -694,14 +871,10 @@ export function Configurator({
   const sideAProduct = sideA ? allProducts.find((p) => p.id === sideA) ?? null : null
   const sideBProduct = sideB ? allProducts.find((p) => p.id === sideB) ?? null : null
   // When 0 selected: both sides empty (user selects artworks to preview)
-  // When 1 selected: both sides show the same (stable until user picks second)
+  // When 1 selected: only side A shows the artwork (side B remains empty)
   // When 2 selected: each side shows its selection
   const image1 = sideAProduct ? getFirstImage(sideAProduct) : null
-  const image2 = sideBProduct
-    ? getFirstImage(sideBProduct)
-    : sideAProduct
-      ? getFirstImage(sideAProduct) // 1 selected: both show same
-      : null
+  const image2 = sideBProduct ? getFirstImage(sideBProduct) : null
 
   const handleSwapSides = useCallback(() => {
     setLampPreviewOrder((prev) =>
@@ -709,17 +882,60 @@ export function Configurator({
     )
   }, [])
 
+  const getSideToShowForProduct = useCallback((order: string[], productId: string): 'A' | 'B' => {
+    const productIndex = order.indexOf(productId)
+    // With swapLampSides=true in Spline3DPreview:
+    // index 0 (image1/sideA) renders on Side B object
+    // index 1 (image2/sideB) renders on Side A object
+    if (productIndex === 0) return 'B'
+    if (productIndex === 1) return 'A'
+    return 'A'
+  }, [])
+
   const handleLampSelect = useCallback((product: ShopifyProduct) => {
     setLampPreviewOrder((prev) => {
       const idx = prev.indexOf(product.id)
       if (idx >= 0) {
-        setSplineResetTrigger((t) => t + 1)
-        return prev.filter((id) => id !== product.id)
+        // Removing artwork: rotate toward the side that still has artwork.
+        const newOrder = prev.filter((id) => id !== product.id)
+        setLampSelectionQueue((queuePrev) => queuePrev.filter((id) => id !== product.id))
+        if (newOrder.length === 0) {
+          setSplineResetTrigger((t) => t + 1)
+          setRotateToSide(null)
+        } else {
+          const remainingId = newOrder[0]
+          const sideToShow = getSideToShowForProduct(newOrder, remainingId)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+        }
+        return newOrder
       }
-      if (prev.length >= 2) return [product.id, prev[0]]
-      return [...prev, product.id]
+      // With both slots occupied, replace the side that is currently hidden
+      // so the visible side does not jump before rotate-in.
+      const newOrder = prev.length >= 2
+        ? (currentFrontSideRef.current === 'A'
+          ? [product.id, prev[1]]
+          : [prev[0], product.id])
+        : [...prev, product.id]
+      setLampSelectionQueue((queuePrev) => {
+        if (queuePrev.includes(product.id)) return queuePrev
+        return queuePrev.length >= 2 ? [queuePrev[1], product.id] : [...queuePrev, product.id]
+      })
+      
+      // Determine which side the new artwork is on AFTER adding it
+      // newOrder[0] is sideA (becomes image1), newOrder[1] is sideB (becomes image2)
+      // With swapLampSides=true: image1 goes to Side B object, image2 goes to Side A object
+      // So: if product is at index 0 (sideA/image1) → shows on Side B object → rotate to 'B'
+      //     if product is at index 1 (sideB/image2) → shows on Side A object → rotate to 'A'
+      const sideToShow = getSideToShowForProduct(newOrder, product.id)
+      
+      // Increment trigger to force re-trigger even if rotating to same side
+      setRotateTrigger((prev) => prev + 1)
+      setRotateToSide(sideToShow)
+      
+      return newOrder
     })
-  }, [])
+  }, [getSideToShowForProduct])
 
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
 
@@ -732,20 +948,38 @@ export function Configurator({
     })
     if (isAdding) {
       const variant = product.variants?.edges?.[0]?.node
-      trackAddToCart(storefrontProductToItem(product, variant, 1))
+      trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience' })
       setLastAddedProductId(product.id)
       setLampPreviewOrder((prev) => {
         const idx = prev.indexOf(product.id)
-        if (idx >= 0) return prev
-        if (prev.length >= 2) return [product.id, prev[0]]
-        return [product.id, ...prev]
+        if (idx >= 0) {
+          // Keep preview order, but still rotate to that side for consistency.
+          const sideToShow = getSideToShowForProduct(prev, product.id)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+          return prev
+        }
+        // Match eye-select replacement behavior so model side changes are consistent.
+        const newOrder = prev.length >= 2
+          ? (currentFrontSideRef.current === 'A'
+            ? [product.id, prev[1]]
+            : [prev[0], product.id])
+          : [...prev, product.id]
+        const sideToShow = getSideToShowForProduct(newOrder, product.id)
+        setRotateTrigger((t) => t + 1)
+        setRotateToSide(sideToShow)
+        return newOrder
+      })
+      setLampSelectionQueue((queuePrev) => {
+        if (queuePrev.includes(product.id)) return queuePrev
+        return queuePrev.length >= 2 ? [queuePrev[1], product.id] : [...queuePrev, product.id]
       })
       if (lampQuantity > 0) {
         const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
         if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
       }
     }
-  }, [cartOrder, lampQuantity, lampPrice, setDiscountCelebrationAmount])
+  }, [cartOrder, lampQuantity, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -800,67 +1034,72 @@ export function Configurator({
           selectorSheetState === 'half' && (showHighlightAnimation ? 'flex-[25] min-h-0 basis-0' : 'flex-[3] min-h-0 basis-0'),
           selectorSheetState === 'full' && 'h-0 min-h-0 overflow-hidden md:!h-full md:!min-h-0 md:!basis-auto'
         )}
+        style={{ 
+          maxHeight: '100dvh',
+          maxWidth: '100vw',
+        }}
       >
-        {((!isMobile) || selectorSheetState !== 'full') && (
-          <div className="relative w-full h-full">
-            <SplineScenePreload />
-            {isArModeActive && (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="absolute inset-0 w-full h-full object-cover [transform:scaleX(-1)]"
-                aria-hidden
-              />
-            )}
-            <SplineWhenVisible className="relative w-full h-full" placeholder={<SplinePreviewLoading />}>
-              <ComponentErrorBoundary
-                componentName="Spline3DPreview"
-                fallback={
-                  <div className={cn(
-                    'flex h-full w-full items-center justify-center',
-                    theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
-                  )}>
-                    <div className="text-center px-4">
-                      <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
-                      <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
-                    </div>
-                  </div>
-                }
-              >
-                <Spline3DPreview
-                  image1={image1}
-                  image2={image2}
-                  lampVariant={lampVariant}
-                  previewTheme={theme}
-                  side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
-                  side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
-                  minimal
-                  animate
-                  interactive
-                  className="relative w-full h-full"
-                  onPanelsFound={setPanelStatus}
-                  swapLampSides
-                  flipForSide="B"
-                  flipForSideB="horizontal"
-                  imageScale={imageScale}
-                  imageOffsetX={imageOffsetX}
-                  imageOffsetY={imageOffsetY}
-                  imageScaleX={imageScaleX}
-                  imageScaleY={imageScaleY}
-                  imageScaleB={imageScaleB}
-                  imageOffsetXB={imageOffsetXB}
-                  imageOffsetYB={imageOffsetYB}
-                  imageScaleXB={imageScaleXB}
-                  imageScaleYB={imageScaleYB}
-                  resetTrigger={splineResetTrigger}
-                  cameraFeedMode={isArModeActive}
-                />
-              </ComponentErrorBoundary>
-            </SplineWhenVisible>
-          </div>
-        )}
+        <div className="relative w-full h-full">
+          <SplineScenePreload />
+          {isArModeActive && (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover [transform:scaleX(-1)]"
+              aria-hidden
+            />
+          )}
+          <ComponentErrorBoundary
+            componentName="Spline3DPreview"
+            fallback={
+              <div className={cn(
+                'flex h-full w-full items-center justify-center',
+                theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
+              )}>
+                <div className="text-center px-4">
+                  <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
+                  <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
+                </div>
+              </div>
+            }
+          >
+            <Spline3DPreview
+              image1={image1}
+              image2={image2}
+              lampVariant={lampVariant}
+              previewTheme={theme}
+              side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
+              side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
+              minimal
+              animate
+              interactive
+              idleSpinEnabled={lampPreviewOrder.length < 2}
+              className="relative w-full h-full"
+              onPanelsFound={setPanelStatus}
+              swapLampSides
+              flipForSide="B"
+              flipForSideB="horizontal"
+              imageScale={imageScale}
+              imageOffsetX={imageOffsetX}
+              imageOffsetY={imageOffsetY}
+              imageScaleX={imageScaleX}
+              imageScaleY={imageScaleY}
+              imageScaleB={imageScaleB}
+              imageOffsetXB={imageOffsetXB}
+              imageOffsetYB={imageOffsetYB}
+              imageScaleXB={imageScaleXB}
+              imageScaleYB={imageScaleYB}
+              resetTrigger={splineResetTrigger}
+              cameraFeedMode={isArModeActive}
+              rotateToSide={rotateToSide}
+              rotateTrigger={rotateTrigger}
+              onFrontSideSettled={(side) => { currentFrontSideRef.current = side }}
+              previewQuarterTurns={previewQuarterTurns}
+            />
+          </ComponentErrorBoundary>
+        </div>
 
         {/* AR camera + Light/dark mode toggles — overlay in Spline preview (camera toggle hidden for now) */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
@@ -889,6 +1128,15 @@ export function Configurator({
           )}
           <button
             type="button"
+            onClick={() => setPreviewQuarterTurns((prev) => (prev + 3) % 4)}
+            aria-label="Rotate preview 90 degrees"
+            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+            title="Rotate 90 degrees"
+          >
+            <RotateCw size={20} className="shrink-0" />
+          </button>
+          <button
+            type="button"
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
             className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
@@ -896,6 +1144,125 @@ export function Configurator({
             {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
           </button>
         </div>
+
+        {/* Wizard explanation card — chat bubble style, positioned next to highlighted button */}
+        {showHighlightAnimation && (
+          <div
+            className={cn(
+              'fixed z-50'
+            )}
+            style={{
+              top: wizardPosition.top,
+              bottom: wizardPosition.bottom,
+              left: wizardPosition.left,
+              right: wizardPosition.right,
+            }}
+          >
+            <div 
+              ref={wizardCardRef}
+              className={cn(
+                'bg-blue-500 dark:bg-blue-600 border border-blue-400 dark:border-blue-500 shadow-2xl transition-all duration-200',
+                // Mobile: positioned next to button
+                isMobile 
+                  ? 'w-full max-w-[400px] mx-auto rounded-2xl px-4 py-3'
+                  : 'md:max-w-[460px] rounded-lg px-2.5 py-2'
+              )}
+              aria-live="polite"
+            >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="min-w-0 flex-1">
+                  <p className={cn(
+                    'font-semibold tracking-wide uppercase text-white/85 mb-1',
+                    isMobile ? 'text-[11px]' : 'text-[10px]'
+                  )}>
+                    Step {Math.min(highlightStep + 1, totalWizardSteps)} of {totalWizardSteps}
+                  </p>
+                  <p className={cn(
+                    'font-semibold text-white flex items-center gap-1 flex-wrap',
+                    isMobile ? 'text-sm leading-snug' : 'text-xs'
+                  )}>
+                  {highlightStep === 0 && (
+                    <>
+                      Tap <Eye className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden /> to preview the artwork on the 3d viewer
+                    </>
+                  )}
+                  {highlightStep === 1 && (
+                    <>
+                      Tap <Info className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden /> for more info about the artwork & artist
+                    </>
+                  )}
+                  {highlightStep === 2 && (
+                    <>
+                      Tap{' '}
+                      <span className={cn(
+                        'inline-flex items-center justify-center rounded text-white shrink-0',
+                        isMobile ? 'px-2 py-1 text-xs font-medium bg-white/20' : 'px-1.5 py-0.5 text-[10px] font-medium bg-white/20'
+                      )}>
+                        Add
+                      </span>{' '}
+                      to add to your cart <ShoppingCart className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden />
+                    </>
+                  )}
+                  {highlightStep === 3 && (
+                    <>
+                      Tap{' '}
+                      <svg viewBox="0 0 306 400" fill="currentColor" className={cn('shrink-0 text-white', isMobile ? 'w-5 h-6' : 'w-4 h-5')} aria-hidden xmlns="http://www.w3.org/2000/svg">
+                        <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+                      </svg>{' '}
+                      the + - to add or remove Street lamps
+                    </>
+                  )}
+                  {highlightStep === 4 && (
+                    <>
+                      Tap <SlidersHorizontal className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden /> the filter to narrow by artist, price & more
+                    </>
+                  )}
+                  {isMobile && highlightStep === 5 && (
+                    <>
+                      Tap{' '}
+                      {selectorSheetState === 'half' ? (
+                        <ChevronUp className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden />
+                      ) : (
+                        <ChevronDown className={cn('shrink-0 text-white', isMobile ? 'w-5 h-5' : 'w-4 h-4')} aria-hidden />
+                      )}{' '}
+                      to expand / collapse view
+                    </>
+                  )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (highlightStep < lastWizardStep) setHighlightStep((s) => s + 1)
+                    else setPreviewEngaged(true)
+                  }}
+                  className={cn(
+                    'flex items-center gap-0.5 text-white/90 hover:text-white font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded',
+                    isMobile ? 'text-sm px-2 py-1' : 'text-xs'
+                  )}
+                  aria-label={highlightStep < lastWizardStep ? 'Next tip' : 'Finish wizard'}
+                >
+                  {highlightStep < lastWizardStep ? <>Next <ChevronRight className={isMobile ? 'w-4 h-4' : 'w-3 h-3'} /></> : 'Got it'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewEngaged(true)}
+                  className={cn(
+                    'flex items-center justify-center text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded',
+                    isMobile ? 'w-7 h-7' : 'w-5 h-5'
+                  )}
+                  aria-label="Skip tips"
+                >
+                  <X className={isMobile ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
+                </button>
+              </div>
+            </div>
+          </div>
+          </div>
+        )}
 
         {/* No collapse button — tap the selector bar to switch */}
 
@@ -1232,13 +1599,14 @@ export function Configurator({
               {/* Left: Filter + Season tabs */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <button
+                  ref={filterButtonRef}
                   onClick={handleOpenFilter}
                   className={cn(
                     'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
                     hasActiveFilters(filters)
                       ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                       : 'bg-white dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#3e3838] hover:border-neutral-300 dark:hover:border-[#4a4444] hover:bg-neutral-50 dark:hover:bg-[#262222]',
-                    showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
+                    showHighlightAnimation && highlightStep === 4 && wizardHighlightClass
                   )}
                   aria-label="Open filters"
                 >
@@ -1280,10 +1648,14 @@ export function Configurator({
               {/* Right: Street lamp module — lg+ only (below lg, lamp lives in header to avoid touching seasons) */}
               {lamp && typeof lampPrice === 'number' && !showLampPaywall && (
                 <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-0 ml-2">
-                  <div className={cn(
-                    'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-[#262222]/70',
-                    showHighlightAnimation && highlightStep === 3 && 'ring-2 ring-inset ring-amber-600/70'
-                  )}>
+                  <div 
+                    ref={lampButtonRef}
+                    data-wizard-lamp
+                    className={cn(
+                      'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-[#262222]/70',
+                      showHighlightAnimation && highlightStep === 3 && wizardHighlightClass
+                    )}
+                  >
                     <div
                       role="button"
                       tabIndex={0}
@@ -1429,67 +1801,7 @@ export function Configurator({
             isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
           )}
         >
-          {/* Wizard explanation card — replaces spotlight when guiding user; otherwise show Artist Spotlight */}
-          {showHighlightAnimation ? (
-            <div className="sticky top-0 z-20 mb-3 px-2.5 py-2 rounded-lg bg-orange-500 dark:bg-orange-600 border border-orange-400 dark:border-orange-500 shadow-lg" aria-live="polite">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  {highlightStep === 0 && <Eye className="w-5 h-5 shrink-0 text-white" aria-hidden />}
-                  {highlightStep === 1 && <Info className="w-5 h-5 shrink-0 text-white" aria-hidden />}
-                  {highlightStep === 2 && (
-                    <span className="inline-flex items-center justify-center px-2 py-1 rounded text-xs font-medium bg-white/20 text-white shrink-0">
-                      Add
-                    </span>
-                  )}
-                  {highlightStep === 3 && (
-                    <svg viewBox="0 0 306 400" fill="currentColor" className="w-5 h-6 shrink-0 text-white" aria-hidden xmlns="http://www.w3.org/2000/svg">
-                      <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
-                    </svg>
-                  )}
-                  {highlightStep === 4 && <SlidersHorizontal className="w-5 h-5 shrink-0 text-white" aria-hidden />}
-                  {highlightStep === 5 && (selectorSheetState === 'half' ? <ChevronUp className="w-5 h-5 shrink-0 text-white" aria-hidden /> : <ChevronDown className="w-5 h-5 shrink-0 text-white" aria-hidden />)}
-                  <p className="text-xs font-semibold text-white truncate flex items-center gap-1">
-                    {highlightStep === 0 && 'Tap to preview the artwork on the 3d viewer'}
-                    {highlightStep === 1 && 'Tap for more info about the artwork & artist'}
-                    {highlightStep === 2 && (
-                      <>
-                        Tap to add to your cart <ShoppingCart className="w-4 h-4 shrink-0" aria-hidden />
-                      </>
-                    )}
-                    {highlightStep === 3 && 'Tap the + - to add or remove Street lamps'}
-                    {highlightStep === 4 && 'Tap the filter to narrow by artist, price & more'}
-                    {highlightStep === 5 && 'Tap to expand / collapse view'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (highlightStep < 5) setHighlightStep((s) => s + 1)
-                      else if (triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5]) setPreviewEngaged(true)
-                      else setHighlightStep(0)
-                    }}
-                    className="flex items-center gap-0.5 text-white/90 hover:text-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
-                    aria-label={highlightStep < 5 ? 'Next tip' : triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5] ? 'Got it' : 'Next tip'}
-                  >
-                    {highlightStep < 5 || !(triedSteps[0] && triedSteps[1] && triedSteps[2] && triedSteps[3] && triedSteps[4] && triedSteps[5]) ? (
-                      <>Next <ChevronRight className="w-3 h-3" /></>
-                    ) : (
-                      'Got it'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewEngaged(true)}
-                    className="w-5 h-5 flex items-center justify-center text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
-                    aria-label="Skip tips"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : spotlightData ? (
+          {spotlightData ? (
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
@@ -1597,7 +1909,7 @@ export function Configurator({
             scrollRef={artworkStripScrollRef}
             products={filteredProducts}
             previewIndex={previewIndex}
-            lampPreviewOrder={lampPreviewOrder}
+            lampPreviewOrder={lampSelectionQueue}
             cartOrder={cartOrder}
             lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}
@@ -1618,7 +1930,6 @@ export function Configurator({
                 next[step] = true
                 return next
               })
-              if (highlightStep === step) setHighlightStep((s) => (s < 5 ? s + 1 : s))
             }}
             onPrefetchProduct={(p) => prefetchProduct(p.handle)}
             hasMore={pageInfo.hasNextPage}
@@ -1634,13 +1945,14 @@ export function Configurator({
             {/* Left: Filter */}
             <div className="flex-shrink-0">
               <button
+                ref={isMobile ? filterButtonRef : undefined}
                 onClick={handleOpenFilter}
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
                   hasActiveFilters(filters)
                     ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                     : 'bg-white dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#3e3838]',
-                  showHighlightAnimation && highlightStep === 4 && 'ring-2 ring-inset ring-amber-600/70'
+                  showHighlightAnimation && highlightStep === 4 && wizardHighlightClass
                 )}
                 aria-label="Open filters"
               >
@@ -1742,11 +2054,12 @@ export function Configurator({
             {/* Right: Expand/collapse chevron */}
             <div className="flex-shrink-0">
               <button
+                ref={chevronButtonRef}
                 onClick={handleCycleSelectorState}
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 transition-colors',
                   showHighlightAnimation && highlightStep === 5 && isMobile
-                    ? 'ring-2 ring-inset ring-amber-600/70 border-amber-500/50 bg-amber-50 dark:bg-amber-950/30'
+                    ? `${wizardHighlightClass} border-blue-300/80 dark:border-blue-400/70 bg-blue-100/80 dark:bg-blue-900/40`
                     : 'border-neutral-200 dark:border-[#3e3838] bg-white dark:bg-[#201c1c] text-neutral-600 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#262222] hover:text-neutral-900 dark:hover:text-[#f0e8e8]'
                 )}
                 aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}

@@ -123,12 +123,6 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <AffiliatePersistence />
       </Suspense>
-      <a
-        href="#main-content"
-        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-[#047AFF] focus-visible:text-white focus-visible:rounded-lg focus-visible:shadow-lg"
-      >
-        Skip to content
-      </a>
       {pathnameReady && !isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
       {pathnameReady && isLandingOrStreetCollector && <ChatIconScrollReveal />}
       {hasMounted && !isExperiencePage && (

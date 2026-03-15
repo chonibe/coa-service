@@ -24,7 +24,7 @@ import {
   getDiscountPercentage,
   type ShopifyProduct 
 } from '@/lib/shopify/storefront-client'
-import { trackViewItem } from '@/lib/google-analytics'
+import { trackViewItem, type AnalyticsStage } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 
 export interface VinylProductCardProps {
@@ -36,6 +36,10 @@ export interface VinylProductCardProps {
   /** Whether to enable tilt interaction */
   enableTilt?: boolean
   className?: string
+  /** Stage/source for analytics (view_item): home | products | artist | pdp | experience */
+  trackStage?: AnalyticsStage
+  /** Whether to show early access badge */
+  isEarlyAccess?: boolean
 }
 
 export function VinylProductCard({
@@ -45,13 +49,34 @@ export function VinylProductCard({
   enableFlip = true,
   enableTilt = false,
   className,
+  trackStage,
+  isEarlyAccess = false,
 }: VinylProductCardProps) {
-  const price = formatPrice(product.priceRange.minVariantPrice)
-  const compareAtPrice = product.compareAtPriceRange?.minVariantPrice?.amount
-    ? formatPrice(product.compareAtPriceRange.minVariantPrice)
-    : undefined
+  // Calculate early access discount (10% off)
+  const originalPriceAmount = parseFloat(product.priceRange.minVariantPrice.amount)
+  const earlyAccessDiscountPercent = isEarlyAccess ? 10 : 0
+  const earlyAccessDiscountedAmount = isEarlyAccess 
+    ? Math.round(originalPriceAmount * (1 - earlyAccessDiscountPercent / 100) * 100) / 100
+    : originalPriceAmount
+
+  // Use early access discounted price if active, otherwise use original price
+  const displayPrice = isEarlyAccess
+    ? formatPrice({ 
+        ...product.priceRange.minVariantPrice, 
+        amount: earlyAccessDiscountedAmount.toFixed(2),
+        currencyCode: product.priceRange.minVariantPrice.currencyCode
+      })
+    : formatPrice(product.priceRange.minVariantPrice)
+  
+  // Show original price as compareAtPrice when early access is active
+  const compareAtPrice = isEarlyAccess
+    ? formatPrice(product.priceRange.minVariantPrice)
+    : (product.compareAtPriceRange?.minVariantPrice?.amount
+        ? formatPrice(product.compareAtPriceRange.minVariantPrice)
+        : undefined)
+  
   const onSale = isOnSale(product)
-  const discount = onSale ? getDiscountPercentage(product) : 0
+  const discount = onSale ? getDiscountPercentage(product) : (isEarlyAccess ? earlyAccessDiscountPercent : 0)
   
   // Get images for hover effect
   const images = product.images?.edges?.map(e => e.node) || []
@@ -77,10 +102,15 @@ export function VinylProductCard({
       {!product.availableForSale && (
         <ProductBadge type="sold-out" />
       )}
+      {product.availableForSale && isEarlyAccess && (
+        <Badge variant="new" className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+          Early Access
+        </Badge>
+      )}
       {product.availableForSale && onSale && (
         <ProductBadge type="sale" discount={discount} />
       )}
-      {product.availableForSale && !onSale && isNew && (
+      {product.availableForSale && !onSale && isNew && !isEarlyAccess && (
         <Badge variant="new">New</Badge>
       )}
       {product.availableForSale && isLowStock && (
@@ -98,8 +128,8 @@ export function VinylProductCard({
   return (
     <VinylArtworkCard
       title={product.title}
-      price={price}
-      compareAtPrice={onSale ? compareAtPrice : undefined}
+      price={displayPrice}
+      compareAtPrice={isEarlyAccess ? compareAtPrice : (onSale ? compareAtPrice : undefined)}
       image={product.featuredImage?.url || ''}
       secondImage={secondImage}
       imageAlt={product.featuredImage?.altText || product.title}
@@ -115,7 +145,7 @@ export function VinylProductCard({
       disableTilt={!enableTilt}
       variant="shop"
       className={className}
-      onCardClick={() => trackViewItem(storefrontProductToItem(product, firstVariant ?? undefined, 1))}
+      onCardClick={() => trackViewItem({ ...storefrontProductToItem(product, firstVariant ?? undefined, 1), ...(trackStage && { item_list_name: trackStage }) })}
     />
   )
 }

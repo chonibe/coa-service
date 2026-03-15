@@ -84,9 +84,6 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
     <RefreshContext.Provider value={refreshValue}>
       <DirtyFormContext.Provider value={dirtyValue}>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-          <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-background focus:px-3 focus:py-2 focus:rounded-md">
-            Skip to content
-          </a>
           {/* Old sidebar: hide on app shell routes (home, studio, insights, inbox, profile) */}
           {showOldSidebar && (
             <ComponentErrorBoundary componentName="VendorSidebar" fallbackMode="silent">

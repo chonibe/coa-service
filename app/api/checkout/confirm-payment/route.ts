@@ -52,6 +52,9 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
     const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
+    const metaFbp = cookieStore.get('_fbp')?.value
+    const metaFbc = cookieStore.get('_fbc')?.value || cookieStore.get('sc_fbc')?.value
+    const metaFbclid = cookieStore.get('sc_fbclid')?.value
 
     const body: ConfirmPaymentRequest = await request.json()
     const { items, paymentMethodId, shippingAddress } = body
@@ -80,6 +83,9 @@ export async function POST(request: NextRequest) {
         source: 'headless_storefront_embedded',
         shopify_variant_ids: shopifyVariantsCompact,
         collector_identifier: shippingAddress.email || '',
+        ...(metaFbp && { meta_fbp: metaFbp }),
+        ...(metaFbc && { meta_fbc: metaFbc }),
+        ...(metaFbclid && { meta_fbclid: metaFbclid }),
         ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       },
       return_url: `${baseUrl}/shop/checkout/success`,

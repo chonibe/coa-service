@@ -100,12 +100,22 @@ interface Spline3DPreviewProps {
   pointLightDistance?: number
   /** When true, apply subtle rotation (slow spin or cursor-follow when interactive). */
   animate?: boolean
+  /** When false, disables idle turntable drift when pointer is not interacting. */
+  idleSpinEnabled?: boolean
   /** When true with animate, rotation follows cursor for interactivity. */
   interactive?: boolean
   /** Increment to reset lamp rotation and camera to start state (e.g. when deselecting eye preview) */
   resetTrigger?: number
   /** When true, render with transparent background for AR/camera-feed compositing (camera feed shown behind) */
   cameraFeedMode?: boolean
+  /** Rotate lamp to show this side: 'A' shows side A (image1), 'B' shows side B (image2) */
+  rotateToSide?: 'A' | 'B' | null
+  /** Trigger counter to force re-triggering rotation even if side hasn't changed */
+  rotateTrigger?: number
+  /** Called when rotate settle completes and front side is finalized. */
+  onFrontSideSettled?: (side: 'A' | 'B') => void
+  /** View rotation in 90deg steps (0..3) for portrait/landscape inspection */
+  previewQuarterTurns?: number
 }
 
 export function Spline3DPreview({ 
@@ -137,9 +147,14 @@ export function Spline3DPreview({
   pointLightPosition,
   pointLightDistance,
   animate = false,
+  idleSpinEnabled = true,
   interactive = false,
   resetTrigger = 0,
   cameraFeedMode = false,
+  rotateToSide = null,
+  rotateTrigger = 0,
+  onFrontSideSettled,
+  previewQuarterTurns = 0,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -166,6 +181,22 @@ export function Spline3DPreview({
   const loadEffectIdRef = useRef(0)
   const cameraFeedModeRef = useRef(cameraFeedMode)
   cameraFeedModeRef.current = cameraFeedMode
+
+  const rotateToSideRef = useRef<'A' | 'B' | null>(null)
+  rotateToSideRef.current = rotateToSide
+  const currentImagesRef = useRef<{ image1: string | null; image2: string | null }>({ image1, image2 })
+  currentImagesRef.current = { image1, image2 }
+  // Canonical yaw for idle/interactive motion; kept in sync with settle animations.
+  const baseYawRef = useRef(0)
+  // While true, idle/pointer rotation loop yields to settle animation.
+  const isSettlingRotationRef = useRef(false)
+  // Briefly hold exact front-facing yaw after settle before idle turntable resumes.
+  const frontLockUntilRef = useRef(0)
+  // First artwork-driven rotate gets a full spin; later rotates are reduced to half spin.
+  const hasCompletedArtworkSpinRef = useRef(false)
+  const [viewRollScale, setViewRollScale] = useState(1)
+  const previewQuarterTurnsRef = useRef(previewQuarterTurns)
+  previewQuarterTurnsRef.current = previewQuarterTurns
 
   const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
   /** Base image shown when an artwork is deselected (served from public). */
@@ -1043,6 +1074,8 @@ export function Spline3DPreview({
     const objB = panels.sideB
     const imgA = swapLampSides ? image2 : image1
     const imgB = swapLampSides ? image1 : image2
+    const prevImgA = swapLampSides ? lastAppliedImagesRef.current.image2 : lastAppliedImagesRef.current.image1
+    const prevImgB = swapLampSides ? lastAppliedImagesRef.current.image1 : lastAppliedImagesRef.current.image2
 
     const flipA = flipForSide === 'A' || flipForSide === 'both'
     const flipBResolved = flipForSideB ?? (flipForSide === 'B' || flipForSide === 'both')
@@ -1142,6 +1175,10 @@ export function Spline3DPreview({
     }
 
     const sideALayerLayout = { projection: undefined as number | undefined, axis: undefined as string | undefined }
+
+    // Keep existing artwork visible until new artwork has finished loading/applying.
+    // (No interim fallback-to-default frame during swaps.)
+
     if (objA) captureBaseIfNeeded(objA, "Side A", baseTextureSideARef)
     if (imgA && objA) {
       side1ObjectRef.current = objA
@@ -1302,22 +1339,27 @@ export function Spline3DPreview({
               setSceneBackground(scene, hex, app)
             }
           }
-          // Enable slight zoom on preview: find orbit controls and constrain zoom range
+          // Overwrite only conflicting control settings so custom drag logic remains stable.
           try {
             const a = app as any
             const controls = a.controls || a._controls || a.orbitControls || a.cameraControls ||
               (a.manager && (a.manager.controls || a.manager._controls)) ||
               (a._manager && (a._manager.controls || a._manager._controls))
             const cam = a.camera
-            if (controls && cam) {
+            if (controls) {
+              if (typeof controls.enableRotate === 'boolean') controls.enableRotate = false
+              if (typeof controls.enablePan === 'boolean') controls.enablePan = false
+              // Keep zoom/control loop alive; fully disabling controls caused unstable behavior.
               if (typeof controls.enableZoom === 'boolean') controls.enableZoom = true
-              if (controls.getDistance && typeof controls.getDistance === 'function') {
+              if (typeof controls.enabled === 'boolean') controls.enabled = true
+              if (cam && controls.getDistance && typeof controls.getDistance === 'function') {
                 const d = controls.getDistance()
-                const minD = Math.max(1, d * 0.88)
-                const maxD = d * 1.02
+                const minD = Math.max(1, d * 0.9)
+                const maxD = d * 1.05
                 if (controls.minDistance !== undefined) controls.minDistance = minD
                 if (controls.maxDistance !== undefined) controls.maxDistance = maxD
               }
+              if (typeof controls.update === 'function') controls.update()
             }
           } catch (_) { /* camera controls unavailable */ }
           const reapplyTransparentBgIfAr = () => {
@@ -2340,7 +2382,10 @@ export function Spline3DPreview({
       rotatable.rotation.x = 0
       rotatable.rotation.y = 0
       rotatable.rotation.z = 0
+      baseYawRef.current = 0
+      onFrontSideSettled?.('B')
     }
+    isSettlingRotationRef.current = false
     try {
       const a = app as any
       const controls = a.controls || a._controls || a.orbitControls || a.cameraControls ||
@@ -2348,7 +2393,44 @@ export function Spline3DPreview({
         (a._manager && (a._manager.controls || a._manager._controls))
       if (controls?.reset) (controls as any).reset()
     } catch (_) { /* camera reset unavailable */ }
-  }, [resetTrigger, isLoading, error])
+  }, [resetTrigger, isLoading, error, onFrontSideSettled])
+
+  // Rotate rendered view in 90deg increments (portrait/landscape) without rotating model axis.
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
+    const isSideways = normalizedTurns % 2 === 1
+
+    const recomputeScale = () => {
+      if (!isSideways) {
+        setViewRollScale(1)
+        return
+      }
+      const rect = container.getBoundingClientRect()
+      if (!rect.width || !rect.height) {
+        setViewRollScale(1)
+        return
+      }
+      // For 90/270deg, fit swapped aspect into original viewport.
+      const baseScale = Math.min(rect.width / rect.height, rect.height / rect.width)
+      // Mobile: force a stronger fill in sideways view (less zoomed-out feel).
+      const isMobile = window.innerWidth < 768
+      const adjustedScale = isMobile
+        ? 1.26
+        : baseScale
+      setViewRollScale(Number.isFinite(adjustedScale) && adjustedScale > 0 ? adjustedScale : 1)
+    }
+
+    recomputeScale()
+    const ro = new ResizeObserver(recomputeScale)
+    ro.observe(container)
+    window.addEventListener('resize', recomputeScale)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', recomputeScale)
+    }
+  }, [previewQuarterTurns])
 
   useEffect(() => {
     if (!animate || isLoading || error) return
@@ -2372,11 +2454,13 @@ export function Spline3DPreview({
 
     const rotatable = (target?.rotation && target) || (target?.mesh?.rotation && target.mesh) || target?.object3D || target
     if (!rotatable?.rotation) return
+    baseYawRef.current = rotatable.rotation.y || 0
 
     const container = containerRef.current
     const maxYaw = 0.5
     const maxPitch = 0.08
     const turntableSpeed = 0.003
+    const sidewaysTurntableSpeed = 0.001
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!container || !interactive) return
@@ -2421,16 +2505,53 @@ export function Spline3DPreview({
     let rafId: number
     const tick = () => {
       const rot = rotatable.rotation
+      const turns = ((previewQuarterTurnsRef.current % 4) + 4) % 4
+      const roll = turns * (Math.PI / 2)
+      const cosRoll = Math.cos(roll)
+      const sinRoll = Math.sin(roll)
+      // Yield while a settle animation is active.
+      if (isSettlingRotationRef.current) {
+        rafId = requestAnimationFrame(tick)
+        return
+      }
       if (interactive && isPointerOverRef.current) {
         const t = cursorTargetRef.current
         const c = cursorCurrentRef.current
         const lerpFactor = 0.08
         c.x += (t.x - c.x) * lerpFactor
         c.y += (t.y - c.y) * lerpFactor
-        rot.y = c.x * maxYaw
-        rot.x = -c.y * maxPitch
+        // Remap drag vector from rotated view-space back into model control-space.
+        const mappedX = c.x * cosRoll + c.y * sinRoll
+        const mappedY = -c.x * sinRoll + c.y * cosRoll
+        const isSidewaysView = turns % 2 === 1
+        if (isSidewaysView) {
+          // In 90°/270° view, vertical drag should drive X-axis rotation.
+          // Keep Y mostly anchored so it does not feel like yaw-spin while dragging.
+          rot.x = -c.y * maxYaw
+          rot.y = baseYawRef.current + c.x * maxPitch
+        } else {
+          // Portrait/upside-down views keep standard yaw-primary drag.
+          rot.y = baseYawRef.current + mappedX * maxYaw
+          rot.x = -mappedY * maxPitch
+        }
       } else {
-        rot.y += turntableSpeed
+        if (Date.now() < frontLockUntilRef.current) {
+          rot.y = baseYawRef.current
+          rot.x *= 0.9
+          rafId = requestAnimationFrame(tick)
+          return
+        }
+        if (!idleSpinEnabled) {
+          rot.y = baseYawRef.current
+          rot.x *= 0.9
+          rafId = requestAnimationFrame(tick)
+          return
+        }
+        // Adjust spin direction with rotated view so motion feels consistent.
+        const spinDirection = turns >= 2 ? -1 : 1
+        const activeTurntableSpeed = turns % 2 === 1 ? sidewaysTurntableSpeed : turntableSpeed
+        baseYawRef.current += activeTurntableSpeed * spinDirection
+        rot.y = baseYawRef.current
       }
       rafId = requestAnimationFrame(tick)
     }
@@ -2447,7 +2568,185 @@ export function Spline3DPreview({
       }
       cancelAnimationFrame(rafId)
     }
-  }, [animate, interactive, isLoading, error])
+  }, [animate, interactive, idleSpinEnabled, isLoading, error])
+
+  // Rotate to show specific side when artwork is added
+  useEffect(() => {
+    if (!rotateToSide || isLoading || error) return
+
+    const app = splineAppRef.current as any
+    if (!app) return
+    const scene = app.scene || app._scene
+    if (!scene) return
+
+    const lampNames = ['Assembly Small Lamp 2025 v62', 'Assembly Small Lamp', 'Assembly', 'Lamp', 'White', 'Black']
+    let target: any = null
+    for (const name of lampNames) {
+      const obj = app.findObjectByName?.(name)
+      if (obj) { target = obj; break }
+    }
+    if (!target && scene.children?.length > 0) {
+      const first = scene.children.find((c: any) => c.type !== 'Camera' && c.name)
+      target = first || scene
+    }
+    if (!target) target = scene
+
+    const rotatable = (target?.rotation && target) || (target?.mesh?.rotation && target.mesh) || target?.object3D || target
+    if (!rotatable?.rotation) return
+
+    // Store the current rotateToSide value for this animation
+    const currentSide = rotateToSide
+    rotateToSideRef.current = currentSide
+    isSettlingRotationRef.current = true
+
+    // Rotate to show the specified side.
+    // First artwork change uses a full spin; subsequent changes do a direct turn (no extra spin).
+    // Scene calibration: in this experience model, Side A and Side B are
+    // opposite the default assumption, so we intentionally flip yaw targets.
+    // Side A: Math.PI radians (front-facing)
+    // Side B: 0 radians (front-facing)
+    const targetRotation = currentSide === 'A' ? Math.PI : 0
+    
+    // Always end at the exact front-facing position (0 or π)
+    const normalizedTarget = targetRotation
+    const twoPi = Math.PI * 2
+    const oppositeTarget = (normalizedTarget + Math.PI) % twoPi
+    const settleDuration = 1500
+    const directTurnDuration = 1300
+    const waitSpinSpeed = 0.045
+    const tiltAmount = -0.1 // Small tilt angle (radians) - negative for downward tilt
+    const tiltPeakTime = 0.7 // When tilt reaches peak (70% through settle)
+    const finalRotationX = 0 // End at level position
+
+    let settleStartedAt: number | null = null
+    let settleDurationMs = settleDuration
+    let settleStartY = 0
+    let settleFinalY = 0
+    let settleStartX = rotatable.rotation.x || 0
+    
+    let settleRafId: number
+    let cancelled = false
+    const animateRotation = () => {
+      if (cancelled) return
+      // Only cancel if a different side was requested
+      if (rotateToSideRef.current !== null && rotateToSideRef.current !== currentSide) {
+        isSettlingRotationRef.current = false
+        return
+      }
+      
+      // Phase 1: spin while waiting for the latest artwork textures to apply.
+      // This lets the texture update happen during motion.
+      const imagesApplied =
+        lastAppliedImagesRef.current.image1 === currentImagesRef.current.image1 &&
+        lastAppliedImagesRef.current.image2 === currentImagesRef.current.image2
+
+      if (settleStartedAt == null && !imagesApplied) {
+        if (hasCompletedArtworkSpinRef.current) {
+          // On repeat selections, lock to the opposite side while artwork applies.
+          // This guarantees the new artwork is off-screen, then rotates into view.
+          rotatable.rotation.y = oppositeTarget
+          baseYawRef.current = oppositeTarget
+          rotatable.rotation.x = (rotatable.rotation.x || 0) * 0.85
+        } else {
+          // First selection keeps the energetic loading spin.
+          rotatable.rotation.y += waitSpinSpeed
+          baseYawRef.current = rotatable.rotation.y
+          rotatable.rotation.x = (rotatable.rotation.x || 0) * 0.9 + Math.sin(Date.now() / 130) * 0.01
+        }
+        settleRafId = requestAnimationFrame(animateRotation)
+        return
+      }
+
+      // Phase 2: once textures are applied, compute recenter path from *current* yaw and settle.
+      if (settleStartedAt == null) {
+        settleStartedAt = Date.now()
+        settleStartY = rotatable.rotation.y
+        settleStartX = rotatable.rotation.x || 0
+        let normalizedCurrent = settleStartY
+        while (normalizedCurrent < 0) normalizedCurrent += twoPi
+        while (normalizedCurrent >= twoPi) normalizedCurrent -= twoPi
+        const hasSpunBefore = hasCompletedArtworkSpinRef.current
+        let totalRotation = 0
+
+        if (!hasSpunBefore) {
+          // First selection: keep full showcase spin.
+          const forwardDeltaToTarget = (normalizedTarget - normalizedCurrent + twoPi) % twoPi
+          totalRotation = forwardDeltaToTarget + twoPi
+          settleDurationMs = settleDuration
+        } else {
+          // Subsequent selections: turn from current (typically opposite) into selected front side.
+          let signedDelta = normalizedTarget - normalizedCurrent
+          while (signedDelta > Math.PI) signedDelta -= twoPi
+          while (signedDelta < -Math.PI) signedDelta += twoPi
+          totalRotation = signedDelta
+          settleDurationMs = directTurnDuration
+        }
+
+        settleFinalY = settleStartY + totalRotation
+      }
+
+      const elapsed = Date.now() - settleStartedAt
+      const progress = Math.min(elapsed / settleDurationMs, 1)
+
+      // Main rotation (Y axis) - ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      rotatable.rotation.y = settleStartY + (settleFinalY - settleStartY) * eased
+      baseYawRef.current = rotatable.rotation.y
+
+      // Vertical tilt (X axis) during settle, then snap back
+      if (progress < tiltPeakTime) {
+        const tiltProgress = progress / tiltPeakTime
+        const tiltEased = 1 - Math.pow(1 - tiltProgress, 2)
+        rotatable.rotation.x = settleStartX + tiltAmount * tiltEased
+      } else {
+        const snapProgress = (progress - tiltPeakTime) / (1 - tiltPeakTime)
+        const snapEased = 1 - Math.pow(1 - snapProgress, 4)
+        rotatable.rotation.x = settleStartX + tiltAmount * (1 - snapEased)
+      }
+
+      if (progress < 1) {
+        settleRafId = requestAnimationFrame(animateRotation)
+      } else {
+        // Always end at the exact front-facing position for the side with the new artwork.
+        // This guarantees recentering from any turntable/mouse offset at selection time.
+        let finalY = normalizedTarget
+        // Ensure it's in [0, 2π] range
+        while (finalY < 0) finalY += Math.PI * 2
+        while (finalY >= Math.PI * 2) finalY -= Math.PI * 2
+        
+        rotatable.rotation.y = finalY
+        rotatable.rotation.x = finalRotationX // Level position
+        baseYawRef.current = finalY
+        frontLockUntilRef.current = Date.now() + 850
+        onFrontSideSettled?.(currentSide)
+        cursorTargetRef.current = { x: 0, y: 0 }
+        cursorCurrentRef.current = { x: 0, y: 0 }
+        isPointerOverRef.current = false
+        
+        // Clear rotation ref first to prevent other rotation logic from interfering
+        rotateToSideRef.current = null
+        isSettlingRotationRef.current = false
+        
+        // Double-check after a frame to ensure it's set correctly (in case auto-rotation tries to override)
+        requestAnimationFrame(() => {
+          rotatable.rotation.y = finalY
+          rotatable.rotation.x = finalRotationX
+          baseYawRef.current = finalY
+          frontLockUntilRef.current = Date.now() + 850
+        })
+        hasCompletedArtworkSpinRef.current = true
+      }
+    }
+    
+    settleRafId = requestAnimationFrame(animateRotation)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(settleRafId)
+      if (rotateToSideRef.current === currentSide) {
+        isSettlingRotationRef.current = false
+      }
+    }
+  }, [rotateToSide, rotateTrigger, isLoading, error, onFrontSideSettled])
 
   if (minimal) {
     const bgTheme = previewTheme ?? lampVariant
@@ -2512,6 +2811,9 @@ export function Spline3DPreview({
             maxHeight: "100%",
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             cursor: "grab",
+            transform: `rotate(${(((previewQuarterTurns % 4) + 4) % 4) * 90}deg) scale(${viewRollScale})`,
+            transformOrigin: "50% 50%",
+            transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
           width={800}
           height={600}

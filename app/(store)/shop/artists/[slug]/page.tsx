@@ -61,6 +61,7 @@ export default function ArtistPage() {
   const [notFound, setNotFound] = useState(false)
 
   const affiliateLandingFired = useRef(false)
+  const [earlyAccessCoupon, setEarlyAccessCoupon] = useState<string | null>(null)
 
   // Set affiliate ref cookie when ?ref= is present (for referral tracking)
   useEffect(() => {
@@ -74,6 +75,29 @@ export default function ArtistPage() {
         trackEnhancedEvent('affiliate_landing', { affiliate_ref: ref.trim(), page: 'artist', artist_slug: params.slug })
       }
     }
+  }, [searchParams, params?.slug])
+
+  // Fetch early access coupon if early access link is detected
+  useEffect(() => {
+    async function fetchEarlyAccessCoupon() {
+      const isEarlyAccess = searchParams.get('early_access') === '1' || searchParams.get('unlisted') === '1'
+      const token = searchParams.get('token')
+      if (isEarlyAccess && params?.slug && token) {
+        try {
+          const response = await fetch(`/api/shop/early-access-coupon?artist=${encodeURIComponent(params.slug)}&token=${encodeURIComponent(token)}`)
+          if (response.ok) {
+            const data = await response.json()
+            setEarlyAccessCoupon(data.couponCode)
+          } else {
+            // Token invalid or expired - don't show early access
+            console.warn('Early access token invalid or expired')
+          }
+        } catch (error) {
+          console.error('Error fetching early access coupon:', error)
+        }
+      }
+    }
+    fetchEarlyAccessCoupon()
   }, [searchParams, params?.slug])
   
   useEffect(() => {
@@ -371,6 +395,8 @@ export default function ArtistPage() {
                     key={product.id}
                     product={product}
                     artistAvatarUrl={artist.image}
+                    trackStage="artist"
+                    isEarlyAccess={!!earlyAccessCoupon}
                     onQuickAdd={(prod) => {
                       const variant = prod.variants.edges[0]?.node
                       if (variant) {
@@ -384,7 +410,7 @@ export default function ArtistPage() {
                           image: prod.featuredImage?.url,
                           artistName: prod.vendor,
                         })
-                        trackAddToCart(storefrontProductToItem(prod, variant, 1))
+                        trackAddToCart({ ...storefrontProductToItem(prod, variant, 1), item_list_name: 'artist' })
                       }
                     }}
                     enableFlip={true}

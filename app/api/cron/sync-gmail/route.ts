@@ -2,13 +2,15 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
 import { syncGmailForUser } from "@/lib/crm/sync-gmail-helper"
-import { isAdminEmail } from "@/lib/vendor-auth"
 import { CRON_SECRET } from "@/lib/env"
 
 /**
  * Cron job to automatically sync Gmail emails for all admin users
  * Runs every hour to keep emails up to date
- * 
+ *
+ * Admin list: ADMIN_EMAILS env (comma-separated), or fallback to user_roles (role=admin).
+ * This ensures no admin (e.g. choni@thestreetlamp.com) is skipped when env is unset.
+ *
  * Schedule in vercel.json: "0 * * * *" (every hour)
  */
 export async function GET(request: NextRequest) {
@@ -38,11 +40,30 @@ export async function GET(request: NextRequest) {
 
     const serviceSupabase = createServiceClient()
 
-    // Get all admin users
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []
-    
+    // Resolve admin list: env first, then user_roles so no admin is excluded
+    let adminEmails: string[] =
+      process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean) || []
+
     if (adminEmails.length === 0) {
-      console.log("[Gmail Cron] No admin emails configured")
+      const { data: adminRoles, error: rolesError } = await serviceSupabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .eq("is_active", true)
+
+      if (!rolesError && adminRoles?.length) {
+        const { data: users } = await serviceSupabase.auth.admin.listUsers()
+        const byId = new Map(users?.users?.map((u) => [u.id, u.email?.toLowerCase()]) || [])
+        adminEmails = adminRoles
+          .map((r) => byId.get(r.user_id))
+          .filter((e): e is string => !!e && e.includes("@"))
+        adminEmails = [...new Set(adminEmails)]
+        console.log("[Gmail Cron] Using admins from user_roles:", adminEmails.join(", "))
+      }
+    }
+
+    if (adminEmails.length === 0) {
+      console.log("[Gmail Cron] No admin emails configured (set ADMIN_EMAILS or ensure user_roles has admins)")
       return NextResponse.json({
         success: true,
         message: "No admin emails configured",
@@ -50,29 +71,27 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const results = []
+    const results: { email: string; success: boolean; synced?: number; errors?: number; error?: string }[] = []
     let totalSynced = 0
     let totalErrors = 0
 
     // Sync for each admin
     for (const email of adminEmails) {
       try {
-        // Get user by email
         const { data: users, error: userError } = await serviceSupabase.auth.admin.listUsers()
-        
+
         if (userError) {
           console.error(`[Gmail Cron] Error listing users:`, userError)
           continue
         }
 
-        const user = users.users.find(u => u.email?.toLowerCase() === email)
-        
+        const user = users.users.find((u) => u.email?.toLowerCase() === email)
+
         if (!user) {
           console.log(`[Gmail Cron] Admin user not found: ${email}`)
           continue
         }
 
-        // Check if user has provider tokens
         const providerToken = user.app_metadata?.provider_token as string | undefined
         const providerRefreshToken = user.app_metadata?.provider_refresh_token as string | undefined
 
@@ -82,8 +101,7 @@ export async function GET(request: NextRequest) {
         }
 
         console.log(`[Gmail Cron] Syncing Gmail for ${email}`)
-        
-        // Sync emails
+
         const result = await syncGmailForUser(
           user.id,
           email,

@@ -22,7 +22,7 @@ import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
-import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, getDeviceType, setUserProperty } from '@/lib/posthog'
 import type { FilterState } from './FilterPanel'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
@@ -136,6 +136,33 @@ export function ExperienceClient({
   const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
   const [abVariant, setABVariant] = useState<ABVariant | null>(null)
 
+  // Fetch early access coupon if early access link is detected (requires token)
+  useEffect(() => {
+    if ((forceUnlisted || initialArtistSlug) && initialArtistSlug) {
+      // Check for token in URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get('token')
+      
+      if (token) {
+        async function fetchEarlyAccessCoupon() {
+          try {
+            const response = await fetch(`/api/shop/early-access-coupon?artist=${encodeURIComponent(initialArtistSlug!)}&token=${encodeURIComponent(token)}`)
+            if (response.ok) {
+              const data = await response.json()
+              // Cookie is set by the API
+              console.log('Early access coupon fetched:', data.couponCode)
+            } else {
+              console.warn('Early access token invalid or expired')
+            }
+          } catch (error) {
+            console.error('Error fetching early access coupon:', error)
+          }
+        }
+        fetchEarlyAccessCoupon()
+      }
+    }
+  }, [forceUnlisted, initialArtistSlug])
+
   // A/B test: assign variant (onboarding vs skip) once per visitor; persist in cookie and record for analysis
   const abAssigned = useRef(false)
   useEffect(() => {
@@ -162,10 +189,13 @@ export function ExperienceClient({
       }).catch(() => {})
     }
     // Mirror A/B variant to PostHog so session replays, funnels, and heatmaps can be segmented by variant
-    captureFunnelEvent('experience_ab_variant_known', { variant, is_new_assignment: isNewAssignment })
-    import('@/lib/posthog').then(({ setUserProperty }) => {
-      setUserProperty('experience_ab_variant', variant as string)
-    }).catch(() => {})
+    // Set variant immediately (don't wait for async import) to ensure it's set before quiz starts
+    captureFunnelEvent('experience_ab_variant_known', {
+      variant,
+      is_new_assignment: isNewAssignment,
+      device_type: getDeviceType(),
+    })
+    setUserProperty('experience_ab_variant', variant as string)
     setABVariant(variant)
   }, [])
 
@@ -206,6 +236,7 @@ export function ExperienceClient({
       captureFunnelEvent(FunnelEvents.experience_redirected_to_onboarding, {
         reason: 'no_quiz_answers',
         ab_variant: abVariant ?? undefined,
+        device_type: getDeviceType(),
       })
       const q = new URLSearchParams(onboardingQueryParams).toString()
       router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
@@ -236,6 +267,7 @@ export function ExperienceClient({
     captureFunnelEvent(FunnelEvents.experience_started, {
       owns_lamp: quizAnswers.ownsLamp,
       purpose: quizAnswers.purpose,
+      device_type: getDeviceType(),
     })
   }, [mounted, quizAnswers])
 

@@ -111,6 +111,12 @@ EMAIL_FROM=noreply@yourdomain.com  # Optional, defaults to noreply@coa-service.c
 
 **Note:** If you don't verify a domain, Resend will use their default domain for sending, which may have lower deliverability.
 
+### Admin emails (CRM, test endpoints, vendor checks)
+```
+ADMIN_EMAILS=choni@thestreetlamp.com,chonibe@gmail.com
+```
+Comma-separated list of admin emails. Used for CRM connect (WhatsApp, Instagram, Facebook), test email endpoints, and vendor auth checks. Must include every admin who should access these features. The app also uses the `user_roles` table (role = admin) for dashboard access and Gmail sender selection.
+
 
 ## 🚀 Quick Setup Steps
 

@@ -23,9 +23,37 @@ function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
 
 const BARE_DOMAIN = 'thestreetcollector.com'
 const CANONICAL_HOST = 'www.thestreetcollector.com'
+const APP_HOST = 'app.thestreetcollector.com'
 /** Redirect these hosts to canonical domain so product/collection links and cookies work */
 const REDIRECT_TO_CANONICAL_HOSTS = ['thestreetlamp.com', 'www.thestreetlamp.com']
 const AFFILIATE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
+const META_ATTR_COOKIE_MAX_AGE = 60 * 60 * 24 * 90 // 90 days
+const META_FBCLID_COOKIE_NAME = 'sc_fbclid'
+const META_FBC_COOKIE_NAME = 'sc_fbc'
+
+function deriveFbcFromFbclid(fbclid: string): string {
+  const ts = Math.floor(Date.now() / 1000)
+  return `fb.1.${ts}.${fbclid}`
+}
+
+function setMetaAttributionCookies(response: NextResponse, fbclid?: string | null): void {
+  if (!fbclid) return
+  const value = fbclid.trim()
+  if (!value || value.length > 500) return
+  response.cookies.set(META_FBCLID_COOKIE_NAME, value, {
+    path: '/',
+    maxAge: META_ATTR_COOKIE_MAX_AGE,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
+  // Persist first-party FBC equivalent for server-side conversion attribution.
+  response.cookies.set(META_FBC_COOKIE_NAME, deriveFbcFromFbclid(value), {
+    path: '/',
+    maxAge: META_ATTR_COOKIE_MAX_AGE,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
+}
 
 function setAffiliateCookie(response: NextResponse, slug: string): void {
   response.cookies.set(AFFILIATE_ARTIST_COOKIE_NAME, slug, {
@@ -54,6 +82,7 @@ function clearDismissedCookie(response: NextResponse): void {
 
 export async function middleware(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
+  const fbclid = searchParams.get('fbclid')
   let affiliateSlug: string | undefined
   let affiliateQueryString: string | undefined
   try {
@@ -78,14 +107,53 @@ export async function middleware(request: NextRequest) {
 
   const host = request.headers.get('host') ?? ''
 
+  // Redirect app subdomain to canonical www host.
+  if (host === APP_HOST) {
+    try {
+      const path = request.nextUrl.pathname + request.nextUrl.search
+      const dest = new URL(path, `https://${CANONICAL_HOST}`)
+      const redirect = NextResponse.redirect(dest, 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug) {
+        setAffiliateCookie(redirect, affiliateSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+      return redirect
+    } catch {
+      const redirect = NextResponse.redirect(new URL(`https://${CANONICAL_HOST}${request.nextUrl.pathname}`), 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug) {
+        setAffiliateCookie(redirect, affiliateSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+      return redirect
+    }
+  }
+
   // Redirect thestreetlamp.com (and www) → www.thestreetcollector.com so product links get affiliate handling
   if (REDIRECT_TO_CANONICAL_HOSTS.includes(host)) {
     try {
       const path = request.nextUrl.pathname + request.nextUrl.search
       const dest = new URL(path, `https://${CANONICAL_HOST}`)
-      return NextResponse.redirect(dest, 308)
+      const redirect = NextResponse.redirect(dest, 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug) {
+        setAffiliateCookie(redirect, affiliateSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+      return redirect
     } catch {
-      return NextResponse.redirect(new URL(`https://${CANONICAL_HOST}${request.nextUrl.pathname}`), 308)
+      const redirect = NextResponse.redirect(new URL(`https://${CANONICAL_HOST}${request.nextUrl.pathname}`), 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug) {
+        setAffiliateCookie(redirect, affiliateSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+      return redirect
     }
   }
 
@@ -95,6 +163,7 @@ export async function middleware(request: NextRequest) {
       const path = request.nextUrl.pathname + request.nextUrl.search
       const wwwUrl = new URL(`https://www.${BARE_DOMAIN}${path}`)
       const redirect = NextResponse.redirect(wwwUrl, 308)
+      setMetaAttributionCookies(redirect, fbclid)
       if (affiliateSlug) {
         setAffiliateCookie(redirect, affiliateSlug)
         clearDismissedCookie(redirect)
@@ -103,6 +172,7 @@ export async function middleware(request: NextRequest) {
       return redirect
     } catch {
       const redirect = NextResponse.redirect(new URL(`https://www.${BARE_DOMAIN}${request.nextUrl.pathname}`), 308)
+      setMetaAttributionCookies(redirect, fbclid)
       if (affiliateSlug) {
         setAffiliateCookie(redirect, affiliateSlug)
         clearDismissedCookie(redirect)
@@ -122,13 +192,21 @@ export async function middleware(request: NextRequest) {
   if (authError === 'access_denied' && (authErrorCode === 'otp_expired' || /expired|invalid/i.test(authErrorDesc))) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('error', 'otp_expired')
-    return NextResponse.redirect(loginUrl, 302)
+    const redirect = NextResponse.redirect(loginUrl, 302)
+    setMetaAttributionCookies(redirect, fbclid)
+    if (affiliateSlug) {
+      setAffiliateCookie(redirect, affiliateSlug)
+      clearDismissedCookie(redirect)
+    }
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    return redirect
   }
 
   // Shopify email tracking links (/_t/c/v3/...) have no app route → redirect to home instead of 404
   if (pathname.startsWith('/_t/c/')) {
     const dest = new URL('/', request.url)
     const redirect = NextResponse.redirect(dest, 302)
+    setMetaAttributionCookies(redirect, fbclid)
     if (affiliateSlug) {
       setAffiliateCookie(redirect, affiliateSlug)
       clearDismissedCookie(redirect)
@@ -141,6 +219,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/products/')) {
     const dest = new URL('/', request.url)
     const redirect = NextResponse.redirect(dest, 308)
+    setMetaAttributionCookies(redirect, fbclid)
     if (affiliateSlug) {
       setAffiliateCookie(redirect, affiliateSlug)
       clearDismissedCookie(redirect)
@@ -166,6 +245,7 @@ export async function middleware(request: NextRequest) {
     const slugFromPath = rest && rest.length <= 200 ? rest : undefined
     const dest = new URL('/', request.url)
     const redirect = NextResponse.redirect(dest, 308)
+    setMetaAttributionCookies(redirect, fbclid)
     const cookieSlug = affiliateSlug || slugFromPath
     if (cookieSlug) {
       setAffiliateCookie(redirect, cookieSlug)
@@ -181,6 +261,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const supabaseResponse = await updateSession(request)
+  setMetaAttributionCookies(supabaseResponse, fbclid)
 
   // If user previously dismissed the affiliate filter, clear affiliate cookies so second session has no filter
   const dismissed = request.cookies.get(AFFILIATE_DISMISSED_COOKIE_NAME)?.value

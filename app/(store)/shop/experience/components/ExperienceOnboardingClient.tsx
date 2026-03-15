@@ -127,23 +127,23 @@ export function ExperienceOnboardingClient({
       } catch {
         // ignore
       }
-      const email = answers.email?.trim()
-      if (email) {
-        const supabase = createClient()
-        supabase
-          .from('experience_quiz_signups')
-          .insert({
-            email,
-            name: answers.name?.trim() || null,
-            owns_lamp: answers.ownsLamp,
-            purpose: answers.purpose,
-            source: 'experience',
-            affiliate_artist_slug: initialArtistSlug?.trim() || null,
-          })
-          .then(({ error }) => {
-            if (error) console.warn('Experience quiz signup save failed:', error)
-          })
-      }
+      // Record every quiz completion so we can track name, gift/self, first-time/have-lamp
+      const name = answers.name?.trim() || null
+      const email = answers.email?.trim() || null
+      const supabase = createClient()
+      supabase
+        .from('experience_quiz_signups')
+        .insert({
+          email,
+          name,
+          owns_lamp: answers.ownsLamp,
+          purpose: answers.purpose,
+          source: 'experience',
+          affiliate_artist_slug: initialArtistSlug?.trim() || null,
+        })
+        .then(({ error }) => {
+          if (error) console.warn('Experience quiz signup save failed:', error)
+        })
       const params = new URLSearchParams(searchParams)
       const q = params.toString()
       router.replace(q ? `/shop/experience?${q}` : '/shop/experience')

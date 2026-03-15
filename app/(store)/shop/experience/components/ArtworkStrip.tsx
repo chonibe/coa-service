@@ -233,6 +233,9 @@ function ArtworkCard({
     handleLampSelect()
   }
 
+  // Unified wizard highlight style for consistent visual affordance
+  const wizardHighlightClass = 'ring-2 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
+
   const isMerged = isInCart && (mergeWithLeft || mergeWithRight)
   const roundLeft = !isMerged || mergeWithRight
   const roundRight = !isMerged || mergeWithLeft
@@ -306,7 +309,7 @@ function ArtworkCard({
           className={cn(
             'absolute top-0.5 right-0.5 z-10 flex items-center justify-center transition-all duration-200',
             isFirstCard && showHighlightAnimation && highlightStep === 1
-              ? 'w-6 h-6 rounded-md ring-2 ring-inset ring-amber-600/70 text-orange-400 bg-amber-100/90 dark:bg-amber-900/30'
+              ? `w-6 h-6 rounded-md ${wizardHighlightClass} text-blue-50 bg-blue-500/70 dark:bg-blue-600/60`
               : 'w-6 h-6 rounded-full bg-white/90 dark:bg-[#171515]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70'
           )}
           aria-label="View artwork details"
@@ -360,10 +363,21 @@ function ArtworkCard({
             'text-xs font-medium truncate',
             isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
           )}>{product.title}</p>
-          <p className={cn(
-            'text-xs',
-            isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]'
-          )}>{formatPrice(product)}</p>
+          <div className="flex items-center gap-1.5">
+            <p className={cn(
+              'text-xs',
+              isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]',
+              isEarlyAccess && 'text-violet-600 dark:text-violet-400 font-semibold'
+            )}>{formatPrice(product, isEarlyAccess)}</p>
+            {isEarlyAccess && product.priceRange?.minVariantPrice?.amount && (
+              <p className={cn(
+                'text-[10px] line-through',
+                isInCart ? 'text-neutral-500 dark:text-[#c4a0a0]' : 'text-neutral-400 dark:text-[#a09090]'
+              )}>
+                ${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}
+              </p>
+            )}
+          </div>
           {crewCount > 0 && (
             <p className={cn(
               'text-[10px] mt-0.5',
@@ -383,7 +397,7 @@ function ArtworkCard({
             className={cn(
               'flex items-center justify-center rounded-full transition-all duration-200',
               isFirstCard && showHighlightAnimation && highlightStep === 0
-                ? 'w-6 h-6 ring-2 ring-inset ring-amber-600/70 text-orange-400'
+                ? `w-6 h-6 ${wizardHighlightClass} text-blue-50 bg-blue-500/70`
                 : 'w-5 h-5',
               !(isFirstCard && showHighlightAnimation && highlightStep === 0) && (
                 isLampSelection
@@ -420,8 +434,7 @@ function ArtworkCard({
             title={isInCart ? 'Remove from order' : 'Add artwork to order'}
             className={cn(
               'flex items-center justify-center transition-all duration-200 shrink-0 overflow-visible',
-              isFirstCard && showHighlightAnimation && highlightStep === 2 && 'ring-2 ring-inset ring-amber-600/70',
-              isFirstCard && showHighlightAnimation && highlightStep === 2 && 'text-orange-400',
+              isFirstCard && showHighlightAnimation && highlightStep === 2 && `${wizardHighlightClass} text-blue-50 bg-blue-500/70 rounded-md`,
               isInCart && 'h-6 w-6 p-0',
               !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#262222]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-white/80 dark:hover:bg-[#2c2828]/90',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
@@ -489,10 +502,15 @@ interface ArtworkStripProps {
   spotlightUnlisted?: boolean
 }
 
-function formatPrice(product: ShopifyProduct): string {
+function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
   const amount = product.priceRange?.minVariantPrice?.amount
   if (!amount) return ''
-  return `$${parseFloat(amount).toFixed(2)}`
+  const originalPrice = parseFloat(amount)
+  if (isEarlyAccess) {
+    const discountedPrice = Math.round(originalPrice * 0.9 * 100) / 100
+    return `$${discountedPrice.toFixed(2)}`
+  }
+  return `$${originalPrice.toFixed(2)}`
 }
 
 const SENTINEL_HEIGHT = 80

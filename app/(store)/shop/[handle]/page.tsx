@@ -65,8 +65,10 @@ export default function ProductPage() {
 
   // For carousel scrolling
   const carouselRef = useRef<HTMLDivElement>(null)
-  const [touchStart, setTouchStart] = useState<number | null>(null)
-  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
+  const touchEndXRef = useRef<number | null>(null)
+  const touchEndYRef = useRef<number | null>(null)
 
   // Fetch product data
   useEffect(() => {
@@ -136,11 +138,11 @@ export default function ProductPage() {
     }
   }, [selectedOptions, product])
 
-  // E-commerce: track view_item when product is loaded
+  // E-commerce: track view_item when product is loaded (stage: pdp)
   useEffect(() => {
     if (!product || !selectedVariant) return
     const item = storefrontProductToItem(product, selectedVariant, 1)
-    trackViewItem(item)
+    trackViewItem({ ...item, item_list_name: 'pdp' })
   }, [product?.id, selectedVariant?.id])
 
   // Handle option change
@@ -171,9 +173,9 @@ export default function ProductPage() {
       artistName: product.vendor,
     })
 
-    // E-commerce: track add_to_cart
+    // E-commerce: track add_to_cart (stage: pdp)
     const item = storefrontProductToItem(product, selectedVariant, quantity)
-    trackAddToCart(item)
+    trackAddToCart({ ...item, item_list_name: 'pdp' })
 
     // Show success state
     setTimeout(() => {
@@ -201,20 +203,34 @@ export default function ProductPage() {
   const minSwipeDistance = 50
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
+    const touch = e.targetTouches[0]
+    touchStartXRef.current = touch.clientX
+    touchStartYRef.current = touch.clientY
+    touchEndXRef.current = null
+    touchEndYRef.current = null
   }
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
+    const touch = e.targetTouches[0]
+    touchEndXRef.current = touch.clientX
+    touchEndYRef.current = touch.clientY
   }
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-    
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > minSwipeDistance
-    const isRightSwipe = distance < -minSwipeDistance
+    const startX = touchStartXRef.current
+    const endX = touchEndXRef.current
+    const startY = touchStartYRef.current
+    const endY = touchEndYRef.current
+    if (startX == null || endX == null || startY == null || endY == null) return
+
+    const deltaX = startX - endX
+    const deltaY = startY - endY
+
+    // Only treat as carousel swipe when horizontal intent is clear.
+    if (Math.abs(deltaX) < minSwipeDistance || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+    const isLeftSwipe = deltaX > 0
+    const isRightSwipe = deltaX < 0
 
     if (isLeftSwipe) {
       scrollCarousel('right')
@@ -572,6 +588,7 @@ export default function ProductPage() {
                       product={artistProduct}
                       artistAvatarUrl={artistAvatarUrl}
                       isInCollection={isOwned}
+                      trackStage="pdp"
                       onQuickAdd={() => {
                         const variant = artistProduct.variants?.edges?.[0]?.node
                         if (variant) {
@@ -639,7 +656,7 @@ export default function ProductPage() {
             {/* Scrollable carousel */}
             <div 
               ref={carouselRef}
-              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 snap-x snap-mandatory touch-pan-x"
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 snap-x snap-mandatory touch-manipulation"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
@@ -653,6 +670,7 @@ export default function ProductPage() {
                       <VinylProductCard
                         product={relatedProduct}
                         isInCollection={isOwned}
+                        trackStage="pdp"
                         onQuickAdd={() => {
                           const variant = relatedProduct.variants?.edges?.[0]?.node
                           if (variant) {

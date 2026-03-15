@@ -54,6 +54,16 @@ export function tagSessionForReplay(tag: string) {
 }
 
 /**
+ * Get device type from user agent (same logic as captureSessionContext).
+ * Use this to include device_type in events.
+ */
+export function getDeviceType(): string {
+  if (typeof window === "undefined") return "unknown"
+  const ua = navigator.userAgent
+  return /Mobi|Android/i.test(ua) ? "mobile" : /Tablet|iPad/i.test(ua) ? "tablet" : "desktop"
+}
+
+/**
  * Capture session context metadata on init.
  * Attaches device, referrer, and returning-user signals to every session.
  */
@@ -75,8 +85,7 @@ export function captureSessionContext() {
     }
   })()
 
-  const ua = navigator.userAgent
-  const deviceType = /Mobi|Android/i.test(ua) ? "mobile" : /Tablet|iPad/i.test(ua) ? "tablet" : "desktop"
+  const deviceType = getDeviceType()
 
   ph.capture("session_context", {
     referrer: document.referrer || "direct",

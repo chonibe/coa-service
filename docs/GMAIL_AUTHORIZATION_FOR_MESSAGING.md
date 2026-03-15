@@ -142,6 +142,16 @@ We only request the minimum necessary Gmail scopes:
 
 ## Troubleshooting
 
+### "Can't see or send emails" in Gmail inbox
+The app **does not block or modify** your actual Gmail inbox. It only:
+- **Reads** (Gmail API) to sync copies into the CRM
+- **Sends** on your behalf when you use app templates
+
+If the provider (e.g. choni@thestreetlamp.com) cannot see or send in their real Gmail:
+- Check Google Account security, recovery email, and that the account is in good standing
+- Ensure **Admin → Messaging → Email Sender Settings** has an admin with Gmail authorized (and that admin has completed "Authorize Gmail")
+- Ensure `ADMIN_EMAILS` (or `user_roles` for cron) includes that admin so sync and sender fallback work
+
 ### Banner Always Shows
 **Problem**: Banner persists even after authorization  
 **Solution**: Check that provider tokens are being stored in `app_metadata`:

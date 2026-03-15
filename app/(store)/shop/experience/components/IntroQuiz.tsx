@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
-import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 
 export interface QuizAnswers {
   ownsLamp: boolean
@@ -48,13 +48,27 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   const completedRef = useRef(false)
 
   useEffect(() => {
-    captureFunnelEvent(FunnelEvents.experience_quiz_started, {})
+    // Include device_type and default values for owns_lamp and purpose
+    // This ensures all users have these properties set, preventing 0% completion rates
+    captureFunnelEvent(FunnelEvents.experience_quiz_started, {
+      device_type: getDeviceType(),
+      owns_lamp: ownsLamp ?? false, // Default to false if not yet selected
+      purpose: purpose ?? 'self', // Default to 'self' if not yet selected
+    })
   }, [])
 
   // Track step views and time spent — fires on every step change
   useEffect(() => {
     stepStartTimeRef.current = Date.now()
-    captureFunnelEvent(FunnelEvents.onboarding_step_viewed, { step, context: 'experience_quiz' })
+    // Use step_number property (not step) for PostHog funnel filtering
+    captureFunnelEvent(FunnelEvents.onboarding_step_viewed, {
+      step_number: step, // Use step_number for PostHog funnel queries
+      step, // Keep step for backward compatibility
+      context: 'experience_quiz',
+      device_type: getDeviceType(),
+      owns_lamp: ownsLamp ?? false,
+      purpose: purpose ?? 'self',
+    })
 
     return () => {
       // Only fire abandoned if the quiz wasn't completed
@@ -62,14 +76,18 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
         const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
         if (timeSpent > 1) {
           captureFunnelEvent(FunnelEvents.onboarding_step_abandoned, {
-            step,
+            step_number: step, // Use step_number for PostHog funnel queries
+            step, // Keep step for backward compatibility
             context: 'experience_quiz',
             time_spent_seconds: timeSpent,
+            device_type: getDeviceType(),
+            owns_lamp: ownsLamp ?? false,
+            purpose: purpose ?? 'self',
           })
         }
       }
     }
-  }, [step])
+  }, [step, ownsLamp, purpose])
 
   // Sync partialAnswers into state when in URL mode (e.g. back/forward)
   useEffect(() => {
@@ -83,13 +101,21 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
     captureFunnelEvent(FunnelEvents.experience_quiz_step_completed, {
       step: 1,
+      step_number: 1, // Add step_number for PostHog queries
       answer: owns ? 'has_lamp' : 'no_lamp',
       time_spent_seconds: timeSpent,
+      device_type: getDeviceType(),
+      owns_lamp: owns,
+      purpose: purpose ?? 'self',
     })
     captureFunnelEvent(FunnelEvents.onboarding_step_interaction, {
       step: 1,
+      step_number: 1, // Add step_number for PostHog queries
       button_type: owns ? 'owns_lamp_yes' : 'owns_lamp_no',
       context: 'experience_quiz',
+      device_type: getDeviceType(),
+      owns_lamp: owns,
+      purpose: purpose ?? 'self',
     })
     if (isUrlMode && onNext) {
       onNext(2, { ...partialAnswers, ownsLamp: owns })
@@ -103,13 +129,21 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
     captureFunnelEvent(FunnelEvents.experience_quiz_step_completed, {
       step: 2,
+      step_number: 2, // Add step_number for PostHog queries
       answer: p,
       time_spent_seconds: timeSpent,
+      device_type: getDeviceType(),
+      owns_lamp: ownsLamp ?? false,
+      purpose: p,
     })
     captureFunnelEvent(FunnelEvents.onboarding_step_interaction, {
       step: 2,
+      step_number: 2, // Add step_number for PostHog queries
       button_type: p === 'self' ? 'purpose_self' : 'purpose_gift',
       context: 'experience_quiz',
+      device_type: getDeviceType(),
+      owns_lamp: ownsLamp ?? false,
+      purpose: p,
     })
     if (isUrlMode && onNext) {
       onNext(3, { ...partialAnswers, ownsLamp: ownsLamp ?? false, purpose: p })
@@ -130,6 +164,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
       owns_lamp: answers.ownsLamp,
       purpose: answers.purpose,
       provided_name: !!answers.name,
+      device_type: getDeviceType(),
     })
     onComplete(answers)
   }
@@ -214,6 +249,10 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
                   completedRef.current = true
                   captureFunnelEvent(FunnelEvents.experience_quiz_skipped, {
                     at_step: step,
+                    step_number: step, // Add step_number for PostHog queries
+                    device_type: getDeviceType(),
+                    owns_lamp: ownsLamp ?? false,
+                    purpose: purpose ?? 'self',
                   })
                   onComplete({ ownsLamp: false, purpose: 'self' })
                 }}
@@ -288,7 +327,15 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'name', step: 3, context: 'experience_quiz' })}
+                onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, {
+                  field_name: 'name',
+                  step: 3,
+                  step_number: 3, // Add step_number for PostHog queries
+                  context: 'experience_quiz',
+                  device_type: getDeviceType(),
+                  owns_lamp: ownsLamp ?? false,
+                  purpose: purpose ?? 'self',
+                })}
                 placeholder="What's your name?"
                 className="w-full px-4 py-3 rounded-xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] placeholder:text-[#FFBA94]/60 focus:outline-none focus:ring-2 focus:ring-[#FFBA94]/40 focus:border-transparent"
                 autoComplete="name"

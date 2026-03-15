@@ -1,11 +1,14 @@
 /**
  * POST /api/experience/quiz-signup
- * Persist experience intro quiz signup (email, name, owns_lamp, purpose) for tracking and marketing.
- * Body: { email: string, name?: string, ownsLamp: boolean, purpose: 'self' | 'gift', affiliateArtistSlug?: string }
+ * Persist experience intro quiz signup (name, email, owns_lamp, purpose) for tracking and marketing.
+ * Body: { email?: string, name?: string, ownsLamp: boolean, purpose: 'self' | 'gift', affiliateArtistSlug?: string }
+ * At least one of email or name is required.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendMetaServerEvent } from '@/lib/meta-conversions-server'
+import { sendTikTokEvent } from '@/lib/tiktok-events-server'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -14,17 +17,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json()
     const { email, name, ownsLamp, purpose, affiliateArtistSlug } = body
 
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing or invalid email' },
-        { status: 400 }
-      )
-    }
+    const trimmedEmail =
+      typeof email === 'string' && email.trim() && EMAIL_REGEX.test(email.trim())
+        ? email.trim()
+        : null
+    const trimmedName = typeof name === 'string' ? name.trim() || null : null
 
-    const trimmedEmail = email.trim()
-    if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
+    if (!trimmedEmail && !trimmedName) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'At least one of email or name is required' },
         { status: 400 }
       )
     }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const supabase = createClient()
     const { error } = await supabase.from('experience_quiz_signups').insert({
       email: trimmedEmail,
-      name: typeof name === 'string' ? name.trim() || null : null,
+      name: trimmedName,
       owns_lamp: ownsLamp,
       purpose,
       source: 'experience',
@@ -62,6 +63,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Failed to save signup' },
         { status: 500 }
       )
+    }
+
+    // Fire Meta Lead event for quiz signup (only if email provided)
+    if (trimmedEmail) {
+      await sendMetaServerEvent({
+        eventName: 'Lead',
+        userData: {
+          em: trimmedEmail,
+        },
+        customData: {
+          lead_type: 'experience_quiz',
+          owns_lamp: ownsLamp,
+          purpose,
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if Meta event fails
+        console.error('[quiz-signup] Failed to send Meta Lead event:', err)
+      })
+
+      // Fire TikTok SubmitForm event for quiz signup
+      await sendTikTokEvent({
+        event: 'SubmitForm',
+        userData: {
+          email: trimmedEmail,
+        },
+        properties: {
+          content_type: 'experience_quiz',
+        },
+      }).catch((err) => {
+        // Log but don't fail the request if TikTok event fails
+        console.error('[quiz-signup] Failed to send TikTok SubmitForm event:', err)
+      })
     }
 
     return NextResponse.json({ success: true }, { status: 201 })

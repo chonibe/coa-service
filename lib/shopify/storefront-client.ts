@@ -16,6 +16,7 @@ const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY
 // Storefront API token (not Admin API token which starts with shpat_)
 const STOREFRONT_TOKEN = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
 const API_VERSION = '2024-01'
+const STOREFRONT_TIMEOUT_MS = Number(process.env.SHOPIFY_STOREFRONT_TIMEOUT_MS || 12000)
 
 const STOREFRONT_URL = `https://${SHOPIFY_SHOP}/api/${API_VERSION}/graphql.json`
 
@@ -103,15 +104,24 @@ export async function storefrontQuery<T>(
     )
   }
 
-  const response = await fetch(STOREFRONT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
-    },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 }, // Cache for 60 seconds
-  })
+  let response: Response
+  try {
+    response = await fetch(STOREFRONT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({ query, variables }),
+      next: { revalidate: 60 }, // Cache for 60 seconds
+      signal: AbortSignal.timeout(STOREFRONT_TIMEOUT_MS),
+    })
+  } catch (error: any) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw new Error(`Shopify Storefront request timed out after ${STOREFRONT_TIMEOUT_MS}ms`)
+    }
+    throw error
+  }
 
   const json: GraphQLResponse<T> = await response.json()
 
@@ -148,15 +158,24 @@ async function storefrontQueryWithToken<T>(
   variables?: Record<string, unknown>
 ): Promise<T> {
   if (!SHOPIFY_SHOP || !token) throw new Error('Storefront: shop and token required')
-  const response = await fetch(STOREFRONT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': token,
-    },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 },
-  })
+  let response: Response
+  try {
+    response = await fetch(STOREFRONT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': token,
+      },
+      body: JSON.stringify({ query, variables }),
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(STOREFRONT_TIMEOUT_MS),
+    })
+  } catch (error: any) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw new Error(`Shopify Storefront request timed out after ${STOREFRONT_TIMEOUT_MS}ms`)
+    }
+    throw error
+  }
   const json: GraphQLResponse<T> = await response.json()
   if (json.errors) throw new Error(json.errors[0]?.message || 'GraphQL error')
   if (!json.data) throw new Error('No data from Storefront API')

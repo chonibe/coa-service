@@ -4,8 +4,9 @@ import { Fraunces, Barlow } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "./providers"
 import { getProxiedImageUrl } from "@/lib/proxy-cdn-url"
-import { SkipLink } from "@/components/accessibility/skip-link"
 import { GoogleAnalytics } from "@/components/google-analytics"
+import { MetaPixel } from "@/components/meta-pixel"
+import { TikTokPixel } from "@/components/tiktok-pixel"
 import { AsyncMaterialSymbolsFont } from "@/components/AsyncMaterialSymbolsFont"
 import { streetCollectorContent } from "@/content/street-collector"
 
@@ -64,7 +65,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${barlow.variable} ${fraunces.variable} font-sans min-h-screen bg-background text-foreground antialiased`} style={{ fontFamily: 'var(--font-barlow), system-ui, sans-serif' }} suppressHydrationWarning>
         <Providers>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
-            <SkipLink />
+            <MetaPixel />
+            <TikTokPixel />
             <GoogleAnalytics />
             {children}
           </ThemeProvider>

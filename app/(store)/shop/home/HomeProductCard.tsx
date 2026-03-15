@@ -106,9 +106,9 @@ export function HomeProductCard({ product, compact = false, disableTilt = false 
         artistName: product.vendor,
       })
 
-      // E-commerce: track add_to_cart
+      // E-commerce: track add_to_cart (stage: home)
       const item = storefrontProductToItem(product, variant, 1)
-      trackAddToCart(item)
+      trackAddToCart({ ...item, item_list_name: 'home' })
 
       // Brief delay for visual feedback
       setTimeout(() => {
@@ -149,7 +149,7 @@ export function HomeProductCard({ product, compact = false, disableTilt = false 
       showWishlist={false}
       productId={product.id}
       variantId={firstVariantForWishlist?.id || product.id}
-      onCardClick={() => trackViewItem(storefrontProductToItem(product, firstVariantForWishlist ?? undefined, 1))}
+      onCardClick={() => trackViewItem({ ...storefrontProductToItem(product, firstVariantForWishlist ?? undefined, 1), item_list_name: 'home' })}
     />
   )
 }
