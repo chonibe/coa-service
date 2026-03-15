@@ -42,7 +42,42 @@ To create all PostHog insights (10 funnels, 12 trends, 8 paths, 20 cohorts, 4 da
 POSTHOG_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 node scripts/setup-posthog-insights.js
 ```
 
-Get your Personal API key from [PostHog Settings → API Keys](https://app.posthog.com/settings/user-api-keys). Get the Project ID from [PostHog Settings → Project](https://app.posthog.com/settings/project).
+Or use the npm script:
+
+```bash
+npm run setup:posthog
+```
+
+**Get your credentials:**
+- Personal API key: [PostHog Settings → API Keys](https://app.posthog.com/settings/user-api-keys)
+- Project ID: [PostHog Settings → Project](https://app.posthog.com/settings/project)
+
+**Vercel deployment integration:**
+
+The script runs automatically during Vercel production deployments via the `postbuild` hook. To enable:
+
+1. **Set environment variables in Vercel:**
+   - `POSTHOG_API_KEY` — Your PostHog Personal API key
+   - `POSTHOG_PROJECT_ID` — Your PostHog Project ID
+   - `POSTHOG_SETUP_ENABLED` — Set to `true` (optional, defaults to enabled if API key is set)
+
+2. **The script will:**
+   - Run automatically after each production build
+   - Skip if insights already exist (idempotent)
+   - Only run in production (`VERCEL_ENV=production`)
+   - Log results to Vercel build logs
+
+To disable automatic setup, set `POSTHOG_SETUP_ENABLED=false` in Vercel environment variables.
+
+**Manual setup (one-time):**
+
+If you prefer to run it manually once instead of on every deploy:
+
+```bash
+# Set env vars in Vercel, then run locally or via Vercel CLI:
+vercel env pull .env.local
+POSTHOG_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
+```
 
 ### Session replay configuration
 

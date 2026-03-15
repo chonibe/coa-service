@@ -35,9 +35,24 @@ async function api(method, path, body) {
   })
   if (!res.ok) {
     const text = await res.text()
+    // If creating and already exists (409), return null to skip
+    if (method === 'POST' && res.status === 409) {
+      return null
+    }
     throw new Error(`${method} ${path} → ${res.status}: ${text.slice(0, 300)}`)
   }
   return res.json()
+}
+
+async function findExisting(name, type) {
+  try {
+    const path = type === 'dashboard' ? '/dashboards/' : type === 'cohort' ? '/cohorts/' : '/insights/'
+    const list = await api('GET', path)
+    const items = type === 'dashboard' ? list.results : type === 'cohort' ? list.results : list.results
+    return items.find((item) => item.name === name || item.name?.trim() === name.trim())
+  } catch {
+    return null
+  }
 }
 
 // ─── INSIGHT DEFINITIONS ─────────────────────────────────────────────────────
@@ -588,14 +603,28 @@ async function run() {
   console.log(`\n🚀 PostHog Insights Setup — Project ${POSTHOG_PROJECT_ID}\n`)
 
   const dashboardIds = {}
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
+  const skipIfExists = process.env.POSTHOG_SKIP_IF_EXISTS !== 'false' // Default: skip if exists
 
-  // 1. Create dashboards
-  console.log('─── Creating Dashboards ───')
+  // 1. Create or find dashboards
+  console.log('─── Setting up Dashboards ───')
   for (const d of DASHBOARDS) {
     try {
+      if (skipIfExists) {
+        const existing = await findExisting(d.name, 'dashboard')
+        if (existing) {
+          dashboardIds[d.name] = existing.id
+          console.log(`  ⏭️  Dashboard exists: "${d.name}" (id: ${existing.id})`)
+          continue
+        }
+      }
       const result = await api('POST', '/dashboards/', d)
-      dashboardIds[d.name] = result.id
-      console.log(`  ✅ Dashboard created: "${d.name}" (id: ${result.id})`)
+      if (result) {
+        dashboardIds[d.name] = result.id
+        console.log(`  ✅ Dashboard created: "${d.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Dashboard already exists: "${d.name}"`)
+      }
     } catch (err) {
       console.error(`  ❌ Dashboard "${d.name}": ${err.message}`)
     }
@@ -605,45 +634,89 @@ async function run() {
   const conversionDashId = dashboardIds['📈 Conversion Optimization']
   const pathsDashId = dashboardIds['🗺️ User Journey Paths']
 
-  // 2. Create funnels
-  console.log('\n─── Creating Funnels ───')
+  // 2. Create or find funnels
+  console.log('\n─── Setting up Funnels ───')
   for (const f of FUNNELS) {
     try {
+      if (skipIfExists) {
+        const existing = await findExisting(f.name, 'insight')
+        if (existing) {
+          console.log(`  ⏭️  Funnel exists: "${f.name}" (id: ${existing.id})`)
+          continue
+        }
+      }
       const result = await api('POST', '/insights/', { name: f.name, description: f.description, query: f.query, dashboards: funnelDashId ? [funnelDashId] : [] })
-      console.log(`  ✅ Funnel: "${f.name}" (id: ${result.id})`)
+      if (result) {
+        console.log(`  ✅ Funnel created: "${f.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Funnel already exists: "${f.name}"`)
+      }
     } catch (err) {
       console.error(`  ❌ Funnel "${f.name}": ${err.message}`)
     }
   }
 
-  // 3. Create trends
-  console.log('\n─── Creating Trends ───')
+  // 3. Create or find trends
+  console.log('\n─── Setting up Trends ───')
   for (const t of TRENDS) {
     try {
+      if (skipIfExists) {
+        const existing = await findExisting(t.name, 'insight')
+        if (existing) {
+          console.log(`  ⏭️  Trend exists: "${t.name}" (id: ${existing.id})`)
+          continue
+        }
+      }
       const result = await api('POST', '/insights/', { name: t.name, description: t.description, query: t.query, dashboards: conversionDashId ? [conversionDashId] : [] })
-      console.log(`  ✅ Trend: "${t.name}" (id: ${result.id})`)
+      if (result) {
+        console.log(`  ✅ Trend created: "${t.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Trend already exists: "${t.name}"`)
+      }
     } catch (err) {
       console.error(`  ❌ Trend "${t.name}": ${err.message}`)
     }
   }
 
-  // 4. Create paths
-  console.log('\n─── Creating Paths ───')
+  // 4. Create or find paths
+  console.log('\n─── Setting up Paths ───')
   for (const p of PATHS) {
     try {
+      if (skipIfExists) {
+        const existing = await findExisting(p.name, 'insight')
+        if (existing) {
+          console.log(`  ⏭️  Path exists: "${p.name}" (id: ${existing.id})`)
+          continue
+        }
+      }
       const result = await api('POST', '/insights/', { name: p.name, description: p.description, query: p.query, dashboards: pathsDashId ? [pathsDashId] : [] })
-      console.log(`  ✅ Path: "${p.name}" (id: ${result.id})`)
+      if (result) {
+        console.log(`  ✅ Path created: "${p.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Path already exists: "${p.name}"`)
+      }
     } catch (err) {
       console.error(`  ❌ Path "${p.name}": ${err.message}`)
     }
   }
 
-  // 5. Create cohorts
-  console.log('\n─── Creating Cohorts ───')
+  // 5. Create or find cohorts
+  console.log('\n─── Setting up Cohorts ───')
   for (const c of COHORTS) {
     try {
+      if (skipIfExists) {
+        const existing = await findExisting(c.name, 'cohort')
+        if (existing) {
+          console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
+          continue
+        }
+      }
       const result = await api('POST', '/cohorts/', c)
-      console.log(`  ✅ Cohort: "${c.name}" (id: ${result.id})`)
+      if (result) {
+        console.log(`  ✅ Cohort created: "${c.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Cohort already exists: "${c.name}"`)
+      }
     } catch (err) {
       console.error(`  ❌ Cohort "${c.name}": ${err.message}`)
     }
