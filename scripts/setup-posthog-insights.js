@@ -20,7 +20,8 @@
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY // Project API key (phc_...) - fallback
 const POSTHOG_PERSONAL_API_KEY = process.env.POSTHOG_PERSONAL_API_KEY // Personal API key (phx_...) - preferred for all operations
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID
-const POSTHOG_HOST = process.env.POSTHOG_HOST || 'https://us.posthog.com'
+// Use POSTHOG_HOST if set, otherwise fall back to NEXT_PUBLIC_POSTHOG_HOST, otherwise default to US Cloud
+const POSTHOG_HOST = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
 
 // PostHog REST API requires Personal API key (phx_...) for creating insights/dashboards/cohorts
 // Use Personal API key if available, otherwise fall back to Project API key
