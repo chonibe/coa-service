@@ -17,34 +17,35 @@
  * cohorts will be skipped but insights/dashboards will still be created.
  */
 
-const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY // Project API key (phc_...) for insights/dashboards
-const POSTHOG_PERSONAL_API_KEY = process.env.POSTHOG_PERSONAL_API_KEY // Personal API key (phx_...) for cohorts
+const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY // Project API key (phc_...) - fallback
+const POSTHOG_PERSONAL_API_KEY = process.env.POSTHOG_PERSONAL_API_KEY // Personal API key (phx_...) - preferred for all operations
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID
 const POSTHOG_HOST = process.env.POSTHOG_HOST || 'https://us.posthog.com'
 
-if (!POSTHOG_API_KEY || !POSTHOG_PROJECT_ID) {
-  console.error('❌ Required: POSTHOG_API_KEY (project key) and POSTHOG_PROJECT_ID env vars')
+// PostHog REST API requires Personal API key (phx_...) for creating insights/dashboards/cohorts
+// Use Personal API key if available, otherwise fall back to Project API key
+const API_KEY = POSTHOG_PERSONAL_API_KEY || POSTHOG_API_KEY
+
+if (!API_KEY || !POSTHOG_PROJECT_ID) {
+  console.error('❌ Required: POSTHOG_PERSONAL_API_KEY (phx_...) or POSTHOG_API_KEY (phc_...) and POSTHOG_PROJECT_ID env vars')
+  console.error('   Note: Personal API key (phx_...) is recommended for all operations')
   process.exit(1)
 }
 
-// Use personal API key for cohorts if available, otherwise fall back to project key
-const COHORT_API_KEY = POSTHOG_PERSONAL_API_KEY || POSTHOG_API_KEY
+if (!POSTHOG_PERSONAL_API_KEY && POSTHOG_API_KEY) {
+  console.log('⚠️  Using Project API key (phc_...) — Personal API key (phx_...) is recommended for creating insights')
+}
 
 const headers = {
-  Authorization: `Bearer ${POSTHOG_API_KEY}`,
+  Authorization: `Bearer ${API_KEY}`,
   'Content-Type': 'application/json',
 }
 
-const cohortHeaders = {
-  Authorization: `Bearer ${COHORT_API_KEY}`,
-  'Content-Type': 'application/json',
-}
-
-async function api(method, path, body, useCohortKey = false) {
+async function api(method, path, body) {
   const url = `${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}${path}`
   const res = await fetch(url, {
     method,
-    headers: useCohortKey ? cohortHeaders : headers,
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
@@ -61,7 +62,7 @@ async function api(method, path, body, useCohortKey = false) {
 async function findExisting(name, type) {
   try {
     const path = type === 'dashboard' ? '/dashboards/' : type === 'cohort' ? '/cohorts/' : '/insights/'
-    const list = await api('GET', path, undefined, type === 'cohort')
+    const list = await api('GET', path)
     const items = type === 'dashboard' ? list.results : type === 'cohort' ? list.results : list.results
     return items.find((item) => item.name === name || item.name?.trim() === name.trim())
   } catch {
@@ -714,29 +715,25 @@ async function run() {
     }
   }
 
-  // 5. Create or find cohorts (requires Personal API key)
+  // 5. Create or find cohorts
   console.log('\n─── Setting up Cohorts ───')
-  if (!POSTHOG_PERSONAL_API_KEY) {
-    console.log('  ⚠️  Skipping cohorts: POSTHOG_PERSONAL_API_KEY not set (cohorts require Personal API key)')
-  } else {
-    for (const c of COHORTS) {
-      try {
-        if (skipIfExists) {
-          const existing = await findExisting(c.name, 'cohort')
-          if (existing) {
-            console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
-            continue
-          }
+  for (const c of COHORTS) {
+    try {
+      if (skipIfExists) {
+        const existing = await findExisting(c.name, 'cohort')
+        if (existing) {
+          console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
+          continue
         }
-        const result = await api('POST', '/cohorts/', c, true)
-        if (result) {
-          console.log(`  ✅ Cohort created: "${c.name}" (id: ${result.id})`)
-        } else {
-          console.log(`  ⏭️  Cohort already exists: "${c.name}"`)
-        }
-      } catch (err) {
-        console.error(`  ❌ Cohort "${c.name}": ${err.message}`)
       }
+      const result = await api('POST', '/cohorts/', c)
+      if (result) {
+        console.log(`  ✅ Cohort created: "${c.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Cohort already exists: "${c.name}"`)
+      }
+    } catch (err) {
+      console.error(`  ❌ Cohort "${c.name}": ${err.message}`)
     }
   }
 

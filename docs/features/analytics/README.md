@@ -55,8 +55,8 @@ npm run setup:posthog
 ```
 
 **Get your credentials:**
-- **Project API key** (`phc_...`): [PostHog Settings → Project](https://app.posthog.com/settings/project) → copy "Project API Key" (used for insights/dashboards)
-- **Personal API key** (`phx_...`): [PostHog Settings → User API Keys](https://app.posthog.com/settings/user-api-keys) → create new key (required for cohorts)
+- **Personal API key** (`phx_...`) — **Recommended**: [PostHog Settings → User API Keys](https://app.posthog.com/settings/user-api-keys) → create new key (works for all operations)
+- **Project API key** (`phc_...`) — Fallback: [PostHog Settings → Project](https://app.posthog.com/settings/project) → copy "Project API Key" (may have limited permissions)
 - **Project ID**: [PostHog Settings → Project](https://app.posthog.com/settings/project) → copy Project ID
 
 **Vercel deployment integration:**
@@ -64,8 +64,8 @@ npm run setup:posthog
 The script runs automatically during Vercel production deployments via the `postbuild` hook. To enable:
 
 1. **Set environment variables in Vercel:**
-   - `POSTHOG_API_KEY` — Your PostHog **Project API key** (`phc_...`) — required for insights/dashboards
-   - `POSTHOG_PERSONAL_API_KEY` — Your PostHog **Personal API key** (`phx_...`) — required for cohorts (optional, cohorts will be skipped if not set)
+   - `POSTHOG_PERSONAL_API_KEY` — Your PostHog **Personal API key** (`phx_...`) — **recommended** for all operations (insights, dashboards, cohorts)
+   - `POSTHOG_API_KEY` — Your PostHog **Project API key** (`phc_...`) — fallback if Personal API key not set (may have limited permissions)
    - `POSTHOG_PROJECT_ID` — Your PostHog Project ID
    - `POSTHOG_SETUP_ENABLED` — Set to `true` (optional, defaults to enabled if API key is set)
 
@@ -84,10 +84,16 @@ If you prefer to run it manually once instead of on every deploy:
 ```bash
 # Set env vars in Vercel, then run locally or via Vercel CLI:
 vercel env pull .env.local
-POSTHOG_API_KEY=phc_xxx POSTHOG_PERSONAL_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
+POSTHOG_PERSONAL_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
 ```
 
-Note: `POSTHOG_PERSONAL_API_KEY` is optional — if not set, cohorts will be skipped but insights/dashboards will still be created.
+Or with Project API key as fallback:
+
+```bash
+POSTHOG_API_KEY=phc_xxx POSTHOG_PROJECT_ID=12345 npm run setup:posthog
+```
+
+Note: Personal API key (`phx_...`) is recommended for all operations. Project API key (`phc_...`) can be used as fallback but may have limited permissions.
 
 ### Session replay configuration
 
