@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
 import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
@@ -44,10 +44,32 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   const [name, setName] = useState(partialAnswers?.name ?? '')
 
   const step = isUrlMode ? urlStep : internalStep
+  const stepStartTimeRef = useRef<number>(Date.now())
+  const completedRef = useRef(false)
 
   useEffect(() => {
     captureFunnelEvent(FunnelEvents.experience_quiz_started, {})
   }, [])
+
+  // Track step views and time spent — fires on every step change
+  useEffect(() => {
+    stepStartTimeRef.current = Date.now()
+    captureFunnelEvent(FunnelEvents.onboarding_step_viewed, { step, context: 'experience_quiz' })
+
+    return () => {
+      // Only fire abandoned if the quiz wasn't completed
+      if (!completedRef.current) {
+        const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
+        if (timeSpent > 1) {
+          captureFunnelEvent(FunnelEvents.onboarding_step_abandoned, {
+            step,
+            context: 'experience_quiz',
+            time_spent_seconds: timeSpent,
+          })
+        }
+      }
+    }
+  }, [step])
 
   // Sync partialAnswers into state when in URL mode (e.g. back/forward)
   useEffect(() => {
@@ -58,6 +80,17 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   }, [isUrlMode, partialAnswers?.ownsLamp, partialAnswers?.purpose, partialAnswers?.name])
 
   const handleStep1 = (owns: boolean) => {
+    const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
+    captureFunnelEvent(FunnelEvents.experience_quiz_step_completed, {
+      step: 1,
+      answer: owns ? 'has_lamp' : 'no_lamp',
+      time_spent_seconds: timeSpent,
+    })
+    captureFunnelEvent(FunnelEvents.onboarding_step_interaction, {
+      step: 1,
+      button_type: owns ? 'owns_lamp_yes' : 'owns_lamp_no',
+      context: 'experience_quiz',
+    })
     if (isUrlMode && onNext) {
       onNext(2, { ...partialAnswers, ownsLamp: owns })
       return
@@ -67,6 +100,17 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   }
 
   const handleStep2 = (p: 'self' | 'gift') => {
+    const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
+    captureFunnelEvent(FunnelEvents.experience_quiz_step_completed, {
+      step: 2,
+      answer: p,
+      time_spent_seconds: timeSpent,
+    })
+    captureFunnelEvent(FunnelEvents.onboarding_step_interaction, {
+      step: 2,
+      button_type: p === 'self' ? 'purpose_self' : 'purpose_gift',
+      context: 'experience_quiz',
+    })
     if (isUrlMode && onNext) {
       onNext(3, { ...partialAnswers, ownsLamp: ownsLamp ?? false, purpose: p })
       return
@@ -76,6 +120,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
   }
 
   const handleStep3 = () => {
+    completedRef.current = true
     const answers: QuizAnswers = {
       ownsLamp: ownsLamp ?? false,
       purpose: purpose ?? 'self',
@@ -84,6 +129,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     captureFunnelEvent(FunnelEvents.experience_quiz_completed, {
       owns_lamp: answers.ownsLamp,
       purpose: answers.purpose,
+      provided_name: !!answers.name,
     })
     onComplete(answers)
   }
@@ -154,7 +200,10 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
               {onOpenLogin && (
                 <button
                   type="button"
-                  onClick={onOpenLogin}
+                  onClick={() => {
+                    captureFunnelEvent(FunnelEvents.experience_onboarding_login_clicked, { step: 1 })
+                    onOpenLogin()
+                  }}
                   className="text-sm text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
                 >
                   Already have an account? Log in
@@ -162,10 +211,9 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
               )}
               <button
                 onClick={() => {
-                  captureFunnelEvent(FunnelEvents.experience_quiz_completed, {
-                    owns_lamp: false,
-                    purpose: 'self',
-                    skipped: true,
+                  completedRef.current = true
+                  captureFunnelEvent(FunnelEvents.experience_quiz_skipped, {
+                    at_step: step,
                   })
                   onComplete({ ownsLamp: false, purpose: 'self' })
                 }}
@@ -240,6 +288,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'name', step: 3, context: 'experience_quiz' })}
                 placeholder="What's your name?"
                 className="w-full px-4 py-3 rounded-xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 text-[#FFBA94] placeholder:text-[#FFBA94]/60 focus:outline-none focus:ring-2 focus:ring-[#FFBA94]/40 focus:border-transparent"
                 autoComplete="name"

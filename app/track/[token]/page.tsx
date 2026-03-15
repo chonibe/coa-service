@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { usePurchaseTracking } from '@/hooks/use-analytics'
+import { setUserProperty } from '@/lib/posthog'
 
 import { Skeleton } from "@/components/ui"
 
@@ -268,16 +269,28 @@ export default function TrackOrdersPage() {
     }
   }, [token])
 
-  // Track purchases for GA4 when orders are loaded
+  // Track purchases for GA4 when orders are loaded; set user properties for PostHog segmentation
   useEffect(() => {
     if (orders.length > 0) {
       orders.forEach(order => {
-        // Extract order ID from the order object (adjust field name as needed)
         const orderId = order.orderNumber || order.id?.toString()
         if (orderId) {
           trackPurchaseFromOrder(orderId)
         }
       })
+
+      // User properties for PostHog — allows cohort analysis
+      const totalPurchases = orders.length
+      setUserProperty('total_purchases', totalPurchases)
+
+      // Set first_purchase_at from earliest order date if available
+      const sortedDates = orders
+        .map((o) => (o as unknown as { createdAt?: string }).createdAt)
+        .filter(Boolean)
+        .sort()
+      if (sortedDates[0]) {
+        setUserProperty('first_purchase_at', sortedDates[0] as string)
+      }
     }
   }, [orders, trackPurchaseFromOrder])
 
@@ -2140,7 +2153,7 @@ export default function TrackOrdersPage() {
                         className="h-10"
                       />
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        We'll send tracking updates to this email address for orders without label emails
+                        We&apos;ll send tracking updates to this email address for orders without label emails
                       </p>
                     </div>
                     
@@ -2175,7 +2188,7 @@ export default function TrackOrdersPage() {
                           ✓ Test email sent successfully!
                         </p>
                         <p className="text-xs text-slate-600 dark:text-slate-400 text-center">
-                          Check your inbox. If you don't see it, check your spam folder. It may take a few moments to arrive.
+                          Check your inbox. If you don&apos;t see it, check your spam folder. It may take a few moments to arrive.
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-500 text-center">
                           Tip: Verify your domain in Resend for better deliverability.
@@ -2205,7 +2218,7 @@ export default function TrackOrdersPage() {
                   {/* Create label by assigning to order */}
                   {newLabelName.trim() && (
                     <div className="space-y-3 pt-4 border-t">
-                      <Label className="text-sm font-medium">Assign "{newLabelName.trim()}" to orders</Label>
+                      <Label className="text-sm font-medium">Assign &quot;{newLabelName.trim()}&quot; to orders</Label>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         Select orders to assign this new label to. The label will be created when assigned.
                       </p>
@@ -2258,7 +2271,7 @@ export default function TrackOrdersPage() {
                       <div>
                         <Label className="text-sm font-medium">Label Email Notifications</Label>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          Add emails to specific labels. Orders with those labels will send notifications to the label's email.
+                          Add emails to specific labels. Orders with those labels will send notifications to the label&apos;s email.
                         </p>
                       </div>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -2301,7 +2314,7 @@ export default function TrackOrdersPage() {
                           <div className="space-y-2 max-h-96 overflow-y-auto border rounded-md p-3 bg-slate-50 dark:bg-slate-800/50">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm font-medium">
-                                Orders with label "{selectedLabelForOrders}"
+                                Orders with label &quot;{selectedLabelForOrders}&quot;
                               </span>
                               <Badge variant="secondary">
                                 {orders.filter(order => getOrderLabels(order).includes(selectedLabelForOrders)).length} orders

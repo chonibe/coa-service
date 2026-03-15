@@ -142,6 +142,7 @@ export function ExperienceClient({
     if (abAssigned.current) return
     abAssigned.current = true
     let variant = getABVariantFromCookie()
+    const isNewAssignment = !variant
     if (!variant) {
       variant = Math.random() < 0.5 ? 'skip' : 'onboarding'
       setABVariantCookie(variant)
@@ -160,6 +161,11 @@ export function ExperienceClient({
         credentials: 'include',
       }).catch(() => {})
     }
+    // Mirror A/B variant to PostHog so session replays, funnels, and heatmaps can be segmented by variant
+    captureFunnelEvent('experience_ab_variant_known', { variant, is_new_assignment: isNewAssignment })
+    import('@/lib/posthog').then(({ setUserProperty }) => {
+      setUserProperty('experience_ab_variant', variant as string)
+    }).catch(() => {})
     setABVariant(variant)
   }, [])
 
@@ -197,6 +203,10 @@ export function ExperienceClient({
       setMounted(true)
     } else {
       setRedirectingToOnboarding(true)
+      captureFunnelEvent(FunnelEvents.experience_redirected_to_onboarding, {
+        reason: 'no_quiz_answers',
+        ab_variant: abVariant ?? undefined,
+      })
       const q = new URLSearchParams(onboardingQueryParams).toString()
       router.replace(q ? `${ONBOARDING_PATH}?${q}` : ONBOARDING_PATH)
     }

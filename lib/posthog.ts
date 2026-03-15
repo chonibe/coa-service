@@ -33,6 +33,62 @@ export function identifyUser(
   ph.identify(distinctId, traits)
 }
 
+/**
+ * Set a person property on the current PostHog user.
+ * Use to track user-level attributes (e.g. total_purchases, favorite_artist).
+ */
+export function setUserProperty(key: string, value: string | number | boolean) {
+  const ph = getPostHog()
+  if (!ph) return
+  ph.setPersonProperties({ [key]: value })
+}
+
+/**
+ * Tag the current session for targeted replay analysis.
+ * Use at critical drop-off points so sessions are easy to filter in PostHog.
+ */
+export function tagSessionForReplay(tag: string) {
+  const ph = getPostHog()
+  if (!ph) return
+  ph.capture("session_tagged", { tag })
+}
+
+/**
+ * Capture session context metadata on init.
+ * Attaches device, referrer, and returning-user signals to every session.
+ */
+export function captureSessionContext() {
+  if (typeof window === "undefined") return
+  const ph = getPostHog()
+  if (!ph) return
+
+  const isReturning = (() => {
+    try {
+      const visited = localStorage.getItem("sc_visited_before")
+      if (!visited) {
+        localStorage.setItem("sc_visited_before", "1")
+        return false
+      }
+      return true
+    } catch {
+      return false
+    }
+  })()
+
+  const ua = navigator.userAgent
+  const deviceType = /Mobi|Android/i.test(ua) ? "mobile" : /Tablet|iPad/i.test(ua) ? "tablet" : "desktop"
+
+  ph.capture("session_context", {
+    referrer: document.referrer || "direct",
+    device_type: deviceType,
+    is_returning_user: isReturning,
+    screen_width: window.screen.width,
+    screen_height: window.screen.height,
+    language: navigator.language,
+  })
+  ph.setPersonProperties({ preferred_device: deviceType })
+}
+
 /** E-commerce: mirror GA4-style events to PostHog for funnel analysis. */
 export interface PostHogProductItem {
   item_id?: string
@@ -41,6 +97,8 @@ export interface PostHogProductItem {
   price?: number
   quantity?: number
   currency?: string
+  /** Stage/source: home | products | artist | pdp | experience */
+  item_list_name?: string
 }
 
 export function captureViewItem(item: PostHogProductItem) {
@@ -88,6 +146,19 @@ export function captureSearch(searchTerm: string) {
   getPostHog()?.capture("search", { search_term: searchTerm })
 }
 
+export function captureViewCart(items: PostHogProductItem[], value?: number, currency = "USD") {
+  getPostHog()?.capture("view_cart", { items, value, currency })
+}
+
+export function captureAddShippingInfo(
+  items: PostHogProductItem[],
+  value?: number,
+  country?: string,
+  currency = "USD"
+) {
+  getPostHog()?.capture("add_shipping_info", { items, value, country, currency })
+}
+
 /** Funnel: onboarding & experience (use for drop-off analysis). */
 export const FunnelEvents = {
   /** Vendor onboarding wizard */
@@ -100,12 +171,35 @@ export const FunnelEvents = {
   collector_onboarding_step_completed: "collector_onboarding_step_completed",
   collector_onboarding_completed: "collector_onboarding_completed",
   collector_onboarding_skipped: "collector_onboarding_skipped",
-  /** Experience (lamp configurator) */
+  /** Experience quiz — step-level granularity */
   experience_quiz_started: "experience_quiz_started",
+  experience_quiz_step_completed: "experience_quiz_step_completed",
   experience_quiz_completed: "experience_quiz_completed",
+  experience_quiz_skipped: "experience_quiz_skipped",
+  experience_onboarding_login_clicked: "experience_onboarding_login_clicked",
+  experience_redirected_to_onboarding: "experience_redirected_to_onboarding",
   experience_started: "experience_started",
   experience_filter_applied: "experience_filter_applied",
-  /** Blockages / errors (optional: capture when user hits an error or dead end) */
+  /** Micro-interaction events: onboarding steps */
+  onboarding_step_viewed: "onboarding_step_viewed",
+  onboarding_step_interaction: "onboarding_step_interaction",
+  onboarding_step_abandoned: "onboarding_step_abandoned",
+  onboarding_field_focused: "onboarding_field_focused",
+  onboarding_field_error: "onboarding_field_error",
+  /** Micro-interaction events: checkout */
+  checkout_step_viewed: "checkout_step_viewed",
+  checkout_step_abandoned: "checkout_step_abandoned",
+  checkout_cancelled: "checkout_cancelled",
+  promo_code_applied: "promo_code_applied",
+  /** Micro-interaction events: experience configurator */
+  experience_artwork_previewed: "experience_artwork_previewed",
+  experience_artwork_preview_time: "experience_artwork_preview_time",
+  experience_filter_interaction: "experience_filter_interaction",
+  /** Collector claim flow */
+  collector_claim_page_viewed: "collector_claim_page_viewed",
+  collector_claim_google_clicked: "collector_claim_google_clicked",
+  collector_claim_continue_shopping: "collector_claim_continue_shopping",
+  /** Blockages / errors */
   checkout_error: "checkout_error",
   payment_error: "payment_error",
 } as const

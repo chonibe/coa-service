@@ -9,6 +9,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
 import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/google-analytics'
+import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
@@ -150,7 +151,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       : selectedArtworks.map((p) =>
           storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
         )
-    trackBeginCheckout(items, total, 'USD')
+    trackBeginCheckout(items, total, 'USD', {
+      em: checkout.address?.email || undefined,
+    })
   }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total])
 
   const buildLineItems = useCallback(() => {
@@ -290,7 +293,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       }
       if (data.url) window.location.href = data.url
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      const message = err instanceof Error ? err.message : 'Something went wrong.'
+      setError(message)
+      captureFunnelEvent(FunnelEvents.checkout_error, { error_message: message, source: 'order_bar_test' })
+      tagSessionForReplay('checkout-error')
     }
   }, [lamp])
 
@@ -299,6 +305,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const handleAddressSave = (addr: typeof checkout.address) => {
     checkout.setAddress(addr)
     setAddressModalOpen(false)
+    if (addr) {
+      captureAddShippingInfo([], undefined, addr.country)
+      captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved', context: 'experience' })
+    }
   }
 
   const handlePaymentSuccess = (redirectUrl: string) => {
@@ -637,7 +647,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                             }
                       }
                       onSuccess={handlePaymentSuccess}
-                      onError={(msg) => setError(msg)}
+                      onError={(msg) => {
+                        setError(msg)
+                        captureFunnelEvent(FunnelEvents.payment_error, { error_message: msg, source: 'experience_order_bar' })
+                        tagSessionForReplay('payment-error')
+                      }}
                       onPaymentMethodChange={(type, cardInfo) => {
                         const displayType = type === 'google_pay' ? 'google_pay' : type === 'paypal' || type === 'external_paypal' ? 'paypal' : type === 'link' ? 'link' : 'card'
                         if (type === 'google_pay' && checkout.paymentMethodDisplayType && checkout.paymentMethodDisplayType !== 'google_pay') return
@@ -665,7 +679,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                             : selectedArtworks.map((p) =>
                                 storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
                               )
-                          trackAddPaymentInfo(displayType, items, total, 'USD')
+                          trackAddPaymentInfo(displayType, items, total, 'USD', {
+                            em: checkout.address?.email || undefined,
+                          })
                         }
                       }}
                       preloadedClientSecret={preloadedClientSecret}

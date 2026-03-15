@@ -15,6 +15,7 @@ import { PAYPAL_LOGO_URL } from './PaymentButtonAssets'
 import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
+import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo } from '@/lib/posthog'
 
 function getPaymentMethodLabel(method: PaymentMethodType): string {
   switch (method) {
@@ -306,6 +307,8 @@ export function CheckoutLayout({
           setAddress(addr)
           if (sameAsShipping) setBillingAddress(addr)
           closeModals()
+          captureAddShippingInfo([], total, addr.country)
+          captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved' })
         }}
         billingAddress={!sameAsShipping ? billingAddress : null}
       />
@@ -315,6 +318,8 @@ export function CheckoutLayout({
         selectedMethod={paymentMethod}
         onSelect={(m) => {
           setPaymentMethod(m)
+          captureAddPaymentInfo(m, [], total)
+          captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'payment_selected', payment_method: m })
           if (m === 'paypal') closeModals()
         }}
         onCardSaved={(card) => {
@@ -339,7 +344,11 @@ export function CheckoutLayout({
           setPromoCode(code)
           const subtotalCents = Math.round(subtotal * 100)
           const { valid, discountCents } = await validatePromo(code, subtotalCents)
-          setPromoDiscount(valid ? discountCents / 100 : 0)
+          const discount = valid ? discountCents / 100 : 0
+          setPromoDiscount(discount)
+          if (valid) {
+            captureFunnelEvent(FunnelEvents.promo_code_applied, { code, discount_amount: discount })
+          }
           closeModals()
         }}
         onRemove={() => {

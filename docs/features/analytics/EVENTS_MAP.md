@@ -10,21 +10,100 @@ PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **
 
 ### Funnel events (for drop-off analysis)
 
-| Event | When | Implementation |
-|-------|------|----------------|
-| `vendor_onboarding_started` | Vendor opens onboarding wizard | [`app/vendor/components/onboarding-wizard.tsx`](../../app/vendor/components/onboarding-wizard.tsx) |
-| `vendor_onboarding_step_completed` | Vendor completes a step (Next) | Same |
-| `vendor_onboarding_completed` | Vendor completes onboarding | Same |
-| `collector_onboarding_started` | Collector opens onboarding | [`app/collector/components/onboarding-wizard.tsx`](../../app/collector/components/onboarding-wizard.tsx) |
-| `collector_onboarding_step_completed` | Collector leaves a step (time spent) | Same |
-| `collector_onboarding_completed` | Collector completes onboarding | Same |
-| `collector_onboarding_skipped` | Collector skips onboarding | Same |
-| `experience_quiz_started` | User sees experience intro quiz | [`app/shop/experience/components/IntroQuiz.tsx`](../../app/shop/experience/components/IntroQuiz.tsx) |
-| `experience_quiz_completed` | User completes or skips quiz | Same |
-| `experience_started` | Configurator is shown | [`app/shop/experience/components/ExperienceClient.tsx`](../../app/shop/experience/components/ExperienceClient.tsx) |
-| `experience_filter_applied` | User applies filter (artist, tag, price, sort, etc.) | [`app/shop/experience/components/FilterPanel.tsx`](../../app/shop/experience/components/FilterPanel.tsx) |
+| Event | When | Properties | Implementation |
+|-------|------|------------|----------------|
+| `vendor_onboarding_started` | Vendor opens onboarding wizard | | [`app/vendor/components/onboarding-wizard.tsx`](../../app/vendor/components/onboarding-wizard.tsx) |
+| `vendor_onboarding_step_completed` | Vendor completes a step (Next) | | Same |
+| `vendor_onboarding_completed` | Vendor completes onboarding | | Same |
+| `collector_onboarding_started` | Collector opens onboarding | `total_steps` | [`app/collector/components/onboarding-wizard.tsx`](../../app/collector/components/onboarding-wizard.tsx) |
+| `collector_onboarding_step_completed` | Collector transitions away from any step (incl. step 0) | `step`, `step_name`, `time_spent_seconds` | Same |
+| `collector_onboarding_completed` | Collector completes all steps | `total_steps` | Same |
+| `collector_onboarding_skipped` | Collector skips onboarding | | Same |
+| `experience_quiz_started` | User sees experience intro quiz | | [`app/(store)/shop/experience/components/IntroQuiz.tsx`](../../app/(store)/shop/experience/components/IntroQuiz.tsx) |
+| `experience_quiz_step_completed` | User answers quiz step 1 or 2 | `step`, `answer`, `time_spent_seconds` | Same |
+| `experience_quiz_completed` | User completes step 3 (name + continue) | `owns_lamp`, `purpose`, `provided_name` | Same |
+| `experience_quiz_skipped` | User clicks "Skip for now" | `at_step` | Same |
+| `experience_onboarding_login_clicked` | User clicks "Already have an account? Log in" | `step` | Same |
+| `experience_redirected_to_onboarding` | User sent to /shop/experience/onboarding | `reason`, `ab_variant` | [`app/(store)/shop/experience/components/ExperienceClient.tsx`](../../app/(store)/shop/experience/components/ExperienceClient.tsx) |
+| `experience_ab_variant_known` | A/B variant resolved (new or from cookie) | `variant`, `is_new_assignment` | Same |
+| `experience_started` | Configurator is shown | `owns_lamp`, `purpose` | Same |
+| `experience_filter_applied` | User applies filter | artist, tag, etc. | [`app/(store)/shop/experience/components/FilterPanel.tsx`](../../app/(store)/shop/experience/components/FilterPanel.tsx) |
+| `experience_filter_interaction` | Filter panel open/close or filter change | `action`, `filter_type` | Same |
 
-In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experience_quiz_completed` → `experience_started` → `add_to_cart` → `begin_checkout` → `purchase`) and **paths** to find blockages and improve conversion.
+### Micro-interaction events (granular step-level tracking)
+
+| Event | When | Properties | Implementation |
+|-------|------|------------|----------------|
+| `onboarding_step_viewed` | Any onboarding step becomes visible | `step`, `context` (`experience_quiz` \| `collector_onboarding`) | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
+| `onboarding_step_interaction` | User taps a choice button | `step`, `button_type`, `context` | `IntroQuiz.tsx` |
+| `onboarding_step_abandoned` | User leaves a step without completing | `step`, `context`, `time_spent_seconds` | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
+| `onboarding_field_focused` | User focuses a form input | `field_name`, `step`, `context` | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
+| `onboarding_field_error` | Validation error shown | `field_name`, `error_message` | `onboarding-wizard.tsx` |
+| `checkout_step_viewed` | Address or payment step completed | `step_name`, `payment_method` | `CheckoutLayout.tsx`, `OrderBar.tsx` |
+
+### E-commerce events (PostHog + GA4 mirror)
+
+| Event | When | Properties | Implementation |
+|-------|------|------------|----------------|
+| `view_cart` | Cart page loads with items | `items`, `value`, `currency` | [`app/(store)/shop/cart/page.tsx`](../../app/(store)/shop/cart/page.tsx) |
+| `view_item` | User views a product | item fields | `lib/google-analytics.ts` + PostHog mirror |
+| `add_to_cart` | User adds item | item fields | Same |
+| `begin_checkout` | Checkout session created successfully | `items`, `value`, `currency` | `cart/page.tsx` (after API success) |
+| `add_shipping_info` | Shipping address saved | `items`, `value`, `country`, `currency` | `CheckoutLayout.tsx`, `OrderBar.tsx` |
+| `add_payment_info` | Payment method selected | `payment_type`, `items`, `value`, `currency` | `CheckoutLayout.tsx` |
+| `purchase` | Order completed | `transaction_id`, `value`, `currency`, `items` | `lib/google-analytics.ts` + PostHog |
+| `promo_code_applied` | Valid promo code applied | `code`, `discount_amount` | `CheckoutLayout.tsx` |
+| `checkout_cancelled` | User returns from Stripe with `?cancelled=true` | `item_count`, `subtotal` | `cart/page.tsx` |
+
+### Error & session events
+
+| Event | When | Properties | Implementation |
+|-------|------|------------|----------------|
+| `checkout_error` | Checkout API or form error | `error_message`, `source` | `cart/page.tsx`, `OrderBar.tsx` |
+| `payment_error` | Payment step or webhook error | `error_message`, `source` | `OrderBar.tsx`, `checkout-success-content.tsx` |
+| `session_context` | PostHog init (once per session) | `referrer`, `device_type`, `is_returning_user`, `screen_width`, `screen_height`, `language` | `lib/posthog.ts` via `providers.tsx` |
+| `session_tagged` | Critical drop-off point | `tag` (`checkout-error` \| `payment-error`) | `lib/posthog.ts` → `tagSessionForReplay()` |
+
+### Collector claim flow events
+
+| Event | When | Properties | Implementation |
+|-------|------|------------|----------------|
+| `collector_claim_page_viewed` | Guest purchaser opens claim page | `profile_exists` | [`app/collector/welcome/welcome-client.tsx`](../../app/collector/welcome/welcome-client.tsx) |
+| `collector_claim_google_clicked` | User clicks "Sign in with Google" on claim page | | Same |
+| `collector_claim_continue_shopping` | User clicks "Continue Shopping" on claim page | | Same |
+
+In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experience_quiz_step_completed` → `experience_quiz_completed` → `experience_started` → `add_to_cart` → `begin_checkout` → `purchase`) and **paths** to find blockages and improve conversion.
+
+### Feature flags (PostHog)
+
+| Flag Key | Purpose | Variants |
+|----------|---------|---------|
+| `experience_onboarding_variant` | A/B test onboarding vs skip (planned migration from cookie) | `onboarding` \| `skip` |
+
+See `hooks/use-posthog-feature-flag.ts` for the `usePostHogFeatureFlag` and `usePostHogFeatureFlagEnabled` hooks.
+
+### User properties (set via PostHog `setPersonProperties`)
+
+| Property | Type | When set | Implementation |
+|----------|------|----------|----------------|
+| `preferred_device` | `mobile` \| `tablet` \| `desktop` | Session init | `lib/posthog.ts` → `captureSessionContext()` |
+| `experience_ab_variant` | `onboarding` \| `skip` | A/B assignment | `ExperienceClient.tsx` |
+| `total_purchases` | number | Order tracking page | `app/track/[token]/page.tsx` |
+| `first_purchase_at` | ISO date string | Order tracking page | Same |
+
+### Stage / source (which artworks, from where)
+
+`view_item` and `add_to_cart` include **`item_list_name`** (stage) so you can segment by where the user saw or added the artwork:
+
+| Stage        | Where |
+|-------------|--------|
+| `home`      | Home page grid |
+| `products`  | Shop products grid |
+| `artist`    | Artist profile page |
+| `pdp`       | Product detail page (view or add) |
+| `experience`| Experience configurator (preview or add to order) |
+
+In PostHog or GA4, filter or break down by `item_list_name` to see which artworks are selected or added at each stage.
 
 ---
 
@@ -32,7 +111,7 @@ In PostHog you can build **funnels** (e.g. `experience_quiz_started` → `experi
 
 | Event | Source | Status | Notes |
 |-------|--------|--------|--------|
-| `page_view` | Root layout → [`components/google-analytics.tsx`](../../components/google-analytics.tsx) (init + `trackPageView` on load and `popstate`) | **Tracked** | Automatic for every route. |
+| `page_view` | Root layout → [`components/google-analytics.tsx`](../../components/google-analytics.tsx) (init + `trackPageView` on load and client route changes via History API + `popstate`) | **Tracked** | Automatic for every route transition, including client navigation. |
 
 ---
 

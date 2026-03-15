@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { trackPurchase, trackGoogleAdsConversion, type ProductItem } from '@/lib/google-analytics'
+import { captureFunnelEvent, FunnelEvents, tagSessionForReplay } from '@/lib/posthog'
 import {
   Container,
   SectionWrapper,
@@ -108,6 +110,55 @@ export function CheckoutSuccessContent() {
   const [seriesProgress, setSeriesProgress] = useState<SeriesProgressItem[]>([])
 
   useEffect(() => {
+    if (!order || !order.id || !order.amountTotal) return
+    const dedupeKey = `meta_purchase_tracked_${order.id}`
+    if (typeof window !== 'undefined' && sessionStorage.getItem(dedupeKey) === '1') return
+
+    // Extract payment_intent or session_id from order.id to match webhook event_id format
+    // Webhook uses: purchase_${session.payment_intent || session.id}
+    // For client-side dedup, we use the same format so Meta can deduplicate properly
+    const orderId = order.id
+    const canonicalEventId = `purchase_${orderId}` // Webhook format: purchase_${payment_intent || session_id}
+
+    const items: ProductItem[] = (order.lineItems || []).map((item, index) => ({
+      item_id: `${order.id}_${index + 1}`,
+      item_name: item.description || `Item ${index + 1}`,
+      price: item.amount / 100,
+      quantity: item.quantity || 1,
+      currency: order.currency?.toUpperCase() || 'USD',
+    }))
+    const purchaseValue = order.amountTotal / 100
+    
+    // Use trackPurchase with explicit event_id matching webhook format for deduplication
+    // The webhook is the canonical source; client-side uses same event_id so Meta deduplicates
+    trackPurchase(
+      {
+        transaction_id: order.id,
+        value: purchaseValue,
+        currency: order.currency?.toUpperCase() || 'USD',
+        items,
+      },
+      { em: order.customerEmail || undefined },
+      canonicalEventId
+    )
+    
+    // Track Google Ads conversion with Enhanced Conversions (hashed email)
+    if (process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID) {
+      trackGoogleAdsConversion('purchase', {
+        conversionLabel: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
+        value: purchaseValue,
+        currency: order.currency?.toUpperCase() || 'USD',
+        transaction_id: order.id,
+        email: order.customerEmail || undefined,
+      })
+    }
+    
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(dedupeKey, '1')
+    }
+  }, [order])
+
+  useEffect(() => {
     async function fetchOrderDetails() {
       if (isDemo) {
         setOrder(MOCK_ORDER)
@@ -161,7 +212,10 @@ export function CheckoutSuccessContent() {
         setOrder(data.session)
         setSeriesProgress(data.seriesProgress || [])
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Something went wrong')
+        const message = err instanceof Error ? err.message : 'Something went wrong'
+        setError(message)
+        captureFunnelEvent(FunnelEvents.payment_error, { error_message: message, source: 'checkout_success' })
+        tagSessionForReplay('payment-error')
       } finally {
         setLoading(false)
       }

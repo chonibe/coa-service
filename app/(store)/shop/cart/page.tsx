@@ -6,7 +6,7 @@
  * Shows cart items with credit slider for members to apply credits.
  */
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,6 +14,7 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackBeginCheckout } from '@/lib/google-analytics'
 import { cartItemsToProductItems } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { captureFunnelEvent, FunnelEvents, captureViewCart, tagSessionForReplay } from '@/lib/posthog'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { Button, Slider } from '@/components/ui'
@@ -53,18 +54,28 @@ function CartContentInner() {
   const [error, setError] = useState<string | null>(null)
 
   const cancelled = searchParams.get('cancelled') === 'true'
+
+  // Track view_cart on mount
+  useEffect(() => {
+    if (!isEmpty) {
+      const productItems = cartItemsToProductItems(items)
+      captureViewCart(productItems, subtotal)
+    }
+    // Track cancellation return from Stripe
+    if (cancelled) {
+      captureFunnelEvent(FunnelEvents.checkout_cancelled, {
+        item_count: items.length,
+        subtotal,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const availableCredits = user?.creditBalance ?? 0
   const maxCreditsForCart = Math.min(availableCredits, subtotal * 10) // 10 credits per $1
 
   const handleCheckout = async () => {
     setError(null)
     setIsCheckingOut(true)
-
-    // E-commerce: track begin_checkout
-    const productItems = cartItemsToProductItems(items)
-    if (productItems.length > 0) {
-      trackBeginCheckout(productItems, subtotal, 'USD')
-    }
 
     try {
       const response = await fetch('/api/checkout/create', {
@@ -108,6 +119,14 @@ function CartContentInner() {
         throw new Error(data.error || 'Failed to create checkout')
       }
 
+      // Track begin_checkout only after session is successfully created
+      const productItems = cartItemsToProductItems(items)
+      if (productItems.length > 0) {
+        trackBeginCheckout(productItems, subtotal, 'USD', {
+          em: user?.email || checkout.address?.email || undefined,
+        })
+      }
+
       // Handle different checkout types
       if (data.type === 'credit_only') {
         // For credit-only purchases, redirect to complete endpoint
@@ -119,8 +138,11 @@ function CartContentInner() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+      const message = err.message || 'Something went wrong'
+      setError(message)
       setIsCheckingOut(false)
+      captureFunnelEvent(FunnelEvents.checkout_error, { error_message: message, source: 'cart' })
+      tagSessionForReplay('checkout-error')
     }
   }
 

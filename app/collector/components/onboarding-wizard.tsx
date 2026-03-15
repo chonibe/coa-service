@@ -89,12 +89,17 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     captureFunnelEvent(FunnelEvents.collector_onboarding_started, { total_steps: steps.length })
   }, [])
 
-  // Track step time and send analytics
+  // Track step views and time — fires on every step change, covers all steps including 0 and final
   useEffect(() => {
     stepTimeRef.current = Date.now()
+    captureFunnelEvent(FunnelEvents.onboarding_step_viewed, {
+      step: currentStep + 1,
+      step_name: steps[currentStep].title,
+      context: 'collector_onboarding',
+    })
     return () => {
       const timeSpent = Math.floor((Date.now() - stepTimeRef.current) / 1000)
-      if (timeSpent > 0 && currentStep > 0 && currentStep < steps.length) {
+      if (timeSpent > 0) {
         trackStepTime(currentStep, steps[currentStep].title, timeSpent, false)
         captureFunnelEvent(FunnelEvents.collector_onboarding_step_completed, {
           step: currentStep + 1,
@@ -392,6 +397,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                       id="first_name"
                       value={formData.first_name}
                       onChange={(e) => setFormData((prev) => ({ ...prev, first_name: e.target.value }))}
+                      onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'first_name', step: currentStep + 1, context: 'collector_onboarding' })}
                       placeholder="John"
                     />
                   </div>
@@ -401,6 +407,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                       id="last_name"
                       value={formData.last_name}
                       onChange={(e) => setFormData((prev) => ({ ...prev, last_name: e.target.value }))}
+                      onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'last_name', step: currentStep + 1, context: 'collector_onboarding' })}
                       placeholder="Doe"
                     />
                   </div>
@@ -413,6 +420,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                    onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'phone', step: currentStep + 1, context: 'collector_onboarding' })}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -423,6 +431,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                     id="bio"
                     value={formData.bio}
                     onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
+                    onFocus={() => captureFunnelEvent(FunnelEvents.onboarding_field_focused, { field_name: 'bio', step: currentStep + 1, context: 'collector_onboarding' })}
                     placeholder="Tell us about yourself..."
                     rows={4}
                     maxLength={500}
@@ -460,7 +469,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      As a welcome gift, you've received 100 credits. Use them to customize your InkOGatchi avatar or save them for future purchases.
+                      As a welcome gift, you&apos;ve received 100 credits. Use them to customize your InkOGatchi avatar or save them for future purchases.
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">

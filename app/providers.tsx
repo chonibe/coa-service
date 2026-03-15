@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import posthog from "posthog-js"
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
 import { ShopAuthProvider, useShopAuthContext } from "@/lib/shop/ShopAuthContext"
+import { captureSessionContext } from "@/lib/posthog"
 
 // Conditionally import React Query to avoid build errors if not installed
 let QueryClientProvider: any = null
@@ -113,6 +114,10 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           advanced_disable_flags: false,
           __preview_remote_config: false,
           before_send: makeBeforeSend(),
+          loaded: () => {
+            // Capture session context once PostHog is fully loaded
+            captureSessionContext()
+          },
         })
       }
 
