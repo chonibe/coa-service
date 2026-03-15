@@ -621,6 +621,18 @@ const DASHBOARDS = [
 async function run() {
   console.log(`\n🚀 PostHog Insights Setup — Project ${POSTHOG_PROJECT_ID}\n`)
 
+  // Test API key by trying to list dashboards
+  try {
+    console.log('🔍 Testing API key...')
+    await api('GET', '/dashboards/')
+    console.log('✅ API key verified — can read dashboards\n')
+  } catch (err) {
+    console.error(`❌ API key test failed: ${err.message}`)
+    console.error('   Please verify your Personal API key (phx_...) has the correct permissions.')
+    console.error('   Key should have access to: insights, dashboards, cohorts')
+    process.exit(1)
+  }
+
   const dashboardIds = {}
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
   const skipIfExists = process.env.POSTHOG_SKIP_IF_EXISTS !== 'false' // Default: skip if exists
