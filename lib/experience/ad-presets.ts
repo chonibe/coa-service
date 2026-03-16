@@ -11,8 +11,8 @@ export interface AdPreset {
  */
 export const AD_PRESETS: Record<string, AdPreset> = {
   'feels-good-bundle': {
-    name: 'Feels Good Bundle',
-    handles: ['feels-good', 'levinski', 'lamp-2'],
+    name: 'Fortune Favours the Friendly',
+    handles: ['fortune-favours-the-friendly', 'levinski', 'lamp-2'],
   },
 }
 
