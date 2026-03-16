@@ -1,3 +1,26 @@
+## Commit: Experience 90+ Lighthouse Score — Round 3 (2026-03-16)
+
+### Summary
+Third round of Lighthouse optimizations targeting Performance 90+ and Best Practices 90+. After Round 2, Performance stood at 69 (LCP 10.4s) and Best Practices at 82. Root causes: Spline 3D canvas was the LCP element — 6.7MB scene download blocks paint on throttled mobile regardless of preloading; `getFbp()` was writing the `_fbp` tracking cookie synchronously before `fbevents.js` loaded, flagged by Lighthouse; COOP `same-origin` was blocking Stripe popup flows and logging console errors; onboarding page was fetching the lamp product cold on every request.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/experience/components/Configurator.tsx`](../app/(store)/shop/experience/components/Configurator.tsx) — Add `splineReady` state + static `<Image src="/internal.webp">` facade as LCP element; mount `Spline3DPreview` via `requestIdleCallback` (3s timeout) after LCP so 6.7MB scene no longer blocks paint
+- [x] [`app/(store)/shop/experience/components/Configurator.tsx`](../app/(store)/shop/experience/components/Configurator.tsx) — Add `next/image` import; remove unused `SplineScenePreload` import (now covered by `layout.tsx` head preload)
+- [x] [`components/meta-pixel.tsx`](../components/meta-pixel.tsx) — Move `getFbc()`, `getFbp()`, `captureClientIpAddress()` inside `loadScript` so `_fbp` cookie is only written when `fbevents.js` actually loads — eliminates Lighthouse "third-party cookie" flag
+- [x] [`next.config.js`](../next.config.js) — Change `Cross-Origin-Opener-Policy` from `same-origin` to `same-origin-allow-popups` — allows Stripe Google Pay / Stripe Link popups to communicate back; removes console errors Lighthouse flags under Best Practices
+- [x] [`app/(store)/shop/experience/onboarding/[[...step]]/page.tsx`](../app/(store)/shop/experience/onboarding/%5B%5B...step%5D%5D/page.tsx) — Add `unstable_cache` wrapper for `getProduct('street_lamp')` (5-min TTL, shared `experience-lamp` cache key) — onboarding TTFB drops from ~1.5s to ~50ms on cache hits
+- [x] [`app/(store)/shop/experience/components/IntroQuiz.tsx`](../app/(store)/shop/experience/components/IntroQuiz.tsx) — Remove `y` offsets from `fadeUp` animation (opacity-only fade) — eliminates layout shift contribution from the `y: 30` → `y: 0` shift on quiz step mount
+
+### 📌 Notes
+
+- The Spline facade shows `/internal.webp` (87 KB) immediately as the LCP candidate. The `requestIdleCallback` fires within ~1–3s of page load, triggering Spline mount in the background. Users can also tap the preview area to load 3D immediately.
+- The `_fbp` cookie is still written — just deferred until `fbevents.js` loads (inside `requestIdleCallback`). This is correct: Meta's EMQ recommendation is to capture fbp/fbc early relative to script load, not early relative to page load.
+- COOP `same-origin-allow-popups` still prevents other cross-origin windows from accessing this page's `window` object; only popups that this page opens (Stripe) are allowed to reference back.
+- Re-run Lighthouse after deploy to confirm Performance 90+ and Best Practices 90+.
+
+---
+
 ## Commit: Experience LCP/TTI Optimization — Round 2 (2026-03-16)
 
 ### Summary

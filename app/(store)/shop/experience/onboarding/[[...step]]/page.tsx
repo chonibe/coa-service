@@ -1,10 +1,20 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { getProduct } from '@/lib/shopify/storefront-client'
 import { getAffiliateArtistSlugFromSearchParams } from '@/lib/affiliate-tracking'
 import { ExperienceOnboardingClient } from '../../components/ExperienceOnboardingClient'
 
 export const dynamic = 'force-dynamic'
+
+// Cache lamp product for 5 minutes — same cache key as the main experience page so
+// both pages share a single warm cache entry. force-dynamic is still required for
+// searchParams (affiliate tracking), but product data doesn't need to be live.
+const getCachedLamp = unstable_cache(
+  () => getProduct('street_lamp'),
+  ['experience-lamp'],
+  { revalidate: 300, tags: ['experience-products'] }
+)
 
 interface OnboardingPageProps {
   searchParams: Promise<{ artist?: string; vendor?: string; utm_campaign?: string }>
@@ -18,7 +28,7 @@ export default async function ExperienceOnboardingPage({ searchParams }: Onboard
   })
   const initialArtistSlug = (fromParams ?? resolvedSearch?.vendor?.trim()) || undefined
 
-  const lamp = await getProduct('street_lamp').catch(() => null)
+  const lamp = await getCachedLamp().catch(() => null)
 
   if (!lamp) {
     return (

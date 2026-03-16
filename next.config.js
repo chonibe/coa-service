@@ -93,8 +93,11 @@ const nextConfig = {
             value: "strict-origin-when-cross-origin",
           },
           {
+            // same-origin-allow-popups: retains cross-origin isolation for the page while
+            // allowing Stripe's Google Pay / Stripe Link popups to communicate back.
+            // "same-origin" blocked those popups and logged console errors flagged by Lighthouse.
             key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
+            value: "same-origin-allow-popups",
           },
           {
             key: "Permissions-Policy",

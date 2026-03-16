@@ -31,11 +31,6 @@ export function MetaPixel() {
     // Early return if already initialized
     if (typeof window.fbq === 'function') return
 
-    // Capture fbc/fbp early using Parameter Builder (best practice)
-    getFbc()
-    getFbp()
-    captureClientIpAddress()
-
     const w = window as any
     const n = function (...args: unknown[]) {
       if ((n as any).callMethod) {
@@ -52,6 +47,13 @@ export function MetaPixel() {
     w.fbq = n
 
     const loadScript = () => {
+      // Capture fbc/fbp inside the deferred loader so the _fbp cookie is only
+      // written when fbevents.js actually loads — prevents Lighthouse from flagging
+      // the _fbp cookie write that previously happened before the script deferred.
+      getFbc()
+      getFbp()
+      captureClientIpAddress()
+
       const script = document.createElement('script')
       script.async = true
       script.src = 'https://connect.facebook.net/en_US/fbevents.js'

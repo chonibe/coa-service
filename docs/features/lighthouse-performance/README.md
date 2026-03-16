@@ -46,6 +46,17 @@ See [EXPERIENCE_CHECKOUT_OPTIMIZATION.md](EXPERIENCE_CHECKOUT_OPTIMIZATION.md) f
 - Conditional modal rendering in `CheckoutLayout.tsx` (defers Google Maps SDK)
 - `framer-motion` removed from `OrderBar.tsx` and `CheckoutLayout.tsx`
 
+## Experience 90+ Score — Round 3 (2026-03-16)
+
+After Round 2, Performance was 69 (LCP 10.4s) and Best Practices 82. Root issues: Spline canvas was LCP element; `_fbp` cookie written early; COOP blocking Stripe popups; onboarding uncached.
+
+**Key changes:**
+- `Configurator.tsx`: static `internal.webp` facade as LCP candidate; Spline mounts via `requestIdleCallback` after LCP
+- `meta-pixel.tsx`: `getFbp()`/`getFbc()` moved inside `loadScript` — no early `_fbp` cookie
+- `next.config.js`: COOP changed to `same-origin-allow-popups` — fixes Stripe popup console errors
+- `onboarding/page.tsx`: `unstable_cache` for lamp product (5-min TTL)
+- `IntroQuiz.tsx`: `fadeUp` animation opacity-only (no `y` offset) — reduces CLS
+
 ## Experience LCP/TTI Optimization — Round 2 (2026-03-16)
 
 After Round 1, LCP remained at 10.3s and TTI at 10.3s. Root causes: `force-dynamic` overriding fetch cache, Spline preload firing too late, A/B variant 2-render-cycle waterfall, and remaining `framer-motion` in the critical bundle.

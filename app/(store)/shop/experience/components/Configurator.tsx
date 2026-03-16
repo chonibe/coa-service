@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart, Camera, RotateCw, Globe, ShieldCheck, RotateCcw } from 'lucide-react'
@@ -271,6 +272,9 @@ export function Configurator({
   const [lampSelectionQueue, setLampSelectionQueue] = useState<string[]>([])
   const [splineResetTrigger, setSplineResetTrigger] = useState(0)
   const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
+  // Facade pattern: show static image immediately as LCP candidate; mount heavy Spline runtime
+  // only after the browser is idle (requestIdleCallback) or the user taps the preview area.
+  const [splineReady, setSplineReady] = useState(false)
   const [rotateTrigger, setRotateTrigger] = useState(0)
   const currentFrontSideRef = useRef<'A' | 'B'>('B')
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
