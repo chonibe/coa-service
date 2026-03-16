@@ -8,7 +8,7 @@ import { getEarlyAccessCouponCookie } from '@/lib/early-access'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
 
 interface CartLineItem {
   productId: string
@@ -322,8 +322,7 @@ export async function POST(request: NextRequest) {
         },
       }),
       billing_address_collection: 'required',
-      allow_promotion_codes: true,
-      ...(discounts?.length ? { discounts } : {}),
+      ...(discounts?.length ? { discounts } : { allow_promotion_codes: true }),
     }
 
     const stripeSession = await stripe!.checkout.sessions.create(sessionParams)

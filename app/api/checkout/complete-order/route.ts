@@ -5,7 +5,7 @@ import Stripe from 'stripe'
 import { createAndCompleteOrder } from '@/lib/stripe/fulfill-embedded-payment'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 interface ShippingAddressInput {
@@ -106,12 +106,17 @@ export async function POST(request: NextRequest) {
       0
     )
 
+    const affiliateVendorId = paymentIntent.metadata?.affiliate_vendor_id
+      ? parseInt(paymentIntent.metadata.affiliate_vendor_id, 10)
+      : undefined
+
     const { draftOrderId, orderId } = await createAndCompleteOrder(
       variants,
       shippingAddress,
       paymentIntentId,
       totalCents,
-      'usd'
+      'usd',
+      affiliateVendorId
     )
 
     await supabase.from('stripe_purchases').insert({

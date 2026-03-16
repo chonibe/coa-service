@@ -11,7 +11,7 @@ import { getProduct, extractVariantId } from '@/lib/shopify/storefront-client'
  */
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-05-28.basil',
+  apiVersion: '2025-03-31.basil',
 })
 
 // =============================================================================
@@ -313,13 +313,12 @@ function extractProductHandles(metadata: Stripe.Metadata | null): string[] {
         .filter((h: string) => h && h.length > 0)
     }
     if (metadata.shopify_variant_ids) {
-      const variants = JSON.parse(metadata.shopify_variant_ids)
-      return (variants || [])
-        .map((v: any) => v.productHandle || v.handle)
-        .filter((h: string) => h && h.length > 0)
+      // Compact format: "variantId:qty,variantId:qty" — not JSON
+      // Product handles are not available in compact format; return empty to avoid crash
+      return []
     }
   } catch {
-    // Compact format "id:qty,id:qty" is not JSON - ignore
+    // items_json may be truncated — ignore parse errors
   }
   return []
 }

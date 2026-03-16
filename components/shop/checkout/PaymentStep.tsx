@@ -10,6 +10,7 @@ import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '@/app/(store)/shop/experience/ExperienceThemeContext'
 import type { Stripe } from '@stripe/stripe-js'
+import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
 
 /** Lazy-load Stripe only when payment UI mounts (avoids loading on landing page prefetch) */
 function useStripePromise() {
@@ -70,6 +71,10 @@ export interface PaymentStepProps {
   clientSecret?: string | null
   /** Ref for the form – parent can call requestSubmit() */
   formRef?: React.RefObject<HTMLFormElement | null>
+  /** Called when a valid promo code is applied; parent should recreate the checkout session with the code */
+  onPromoApplied?: (code: string) => void
+  /** Pre-applied promo code (passed from parent context) */
+  promoCode?: string
 }
 
 /** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
@@ -165,6 +170,7 @@ function PaymentFormInner({
   formRef,
   onPaymentMethodChange,
   onSessionExpired,
+  onPromoApplied,
   clientSecret,
 }: PaymentStepProps) {
   const handlePaymentChange = React.useCallback(
@@ -194,18 +200,71 @@ function PaymentFormInner({
   }, [checkoutState.type, onPaymentMethodChange])
   const [loading, setLoading] = React.useState(false)
   const [promoOpen, setPromoOpen] = React.useState(false)
-  const [promoCode, setPromoCode] = React.useState('')
+  const [promoInput, setPromoInput] = React.useState('')
   const [promoApplied, setPromoApplied] = React.useState('')
+  const [promoError, setPromoError] = React.useState<string | null>(null)
+  const [promoLoading, setPromoLoading] = React.useState(false)
   const [paymentError, setPaymentError] = React.useState<string | null>(null)
+
+  const applyPromo = React.useCallback(async () => {
+    const code = promoInput.trim().toUpperCase()
+    if (!code) return
+    setPromoLoading(true)
+    setPromoError(null)
+    try {
+      const res = await fetch('/api/checkout/validate-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promoCode: code }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.valid) {
+        setPromoError(data.error || 'Invalid or expired promo code.')
+        return
+      }
+      setPromoApplied(code)
+      setPromoOpen(false)
+      // Notify parent so it can recreate the checkout session with the promo applied
+      if (onPromoApplied) onPromoApplied(code)
+    } catch {
+      setPromoError('Could not validate promo code. Please try again.')
+    } finally {
+      setPromoLoading(false)
+    }
+  }, [promoInput, onPromoApplied])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (checkoutState.type !== 'success') return
     const checkout = checkoutState.checkout
+    
+    // Get email from customerEmail prop or shippingAddress
+    const email = customerEmail?.trim() || shippingAddress?.email?.trim()
+    
+    // Validate email is present for PayPal (required by Stripe)
+    if (!email) {
+      const errMsg = 'Email address is required for PayPal payments. Please add your email address.'
+      setPaymentError(errMsg)
+      onError(errMsg)
+      return
+    }
+    
     setLoading(true)
     setPaymentError(null)
 
     try {
+      // PayPal requires email to be set via updateEmail() before confirmation
+      // This is required even if customer_email was set during session creation
+      if (email && typeof checkout.updateEmail === 'function') {
+        try {
+          await checkout.updateEmail(email)
+        } catch (updateErr) {
+          // If updateEmail fails (e.g., email already set), continue anyway
+          // The error might be that email is already set, which is fine
+          console.debug('[PaymentStep] updateEmail result:', updateErr)
+        }
+      }
+      
       // Do NOT pass email to confirm() — Stripe throws IntegrationError if customer_email
       // was already set on the CheckoutSession at creation time (which we always do).
       const result = await checkout.confirm({
@@ -214,12 +273,44 @@ function PaymentFormInner({
 
       if (result.type === 'error') {
         const errMsg = result.error?.message ?? 'Payment failed'
+        const errorCode = result.error?.code
+        const declineCode = (result.error as any)?.paymentFailed?.declineCode
+        
         console.error('[PayPal] confirm error:', errMsg, result)
         logCheckoutError({
           stage: 'confirm',
           resultType: 'error',
           error: errMsg,
         })
+        
+        // Handle specific error types with actionable messages
+        if (/email.*required|required.*email/i.test(errMsg)) {
+          const emailErrorMsg = 'Email address is required for PayPal payments. Please add your email address to your shipping address.'
+          setPaymentError(emailErrorMsg)
+          onError(emailErrorMsg)
+          setLoading(false)
+          return
+        }
+        
+        // Handle ZIP code errors
+        if (declineCode === 'incorrect_zip' || /zip.*invalid|invalid.*zip/i.test(errMsg)) {
+          const zipErrorMsg = 'Your card\'s ZIP code is invalid. Please check your billing address ZIP code matches your card.'
+          setPaymentError(zipErrorMsg)
+          onError(zipErrorMsg)
+          setLoading(false)
+          return
+        }
+        
+        // Handle card details errors
+        if (/card.*details|fill.*card|card.*information/i.test(errMsg)) {
+          const cardErrorMsg = 'Please fill in your card details completely before submitting.'
+          setPaymentError(cardErrorMsg)
+          onError(cardErrorMsg)
+          setLoading(false)
+          return
+        }
+        
+        // Generic error handling
         setPaymentError(errMsg)
         onError(errMsg)
         setLoading(false)
@@ -286,8 +377,53 @@ function PaymentFormInner({
         error: msg,
         message: err instanceof Error ? err.stack : String(err),
       })
+      
+      // Handle specific PayPal email requirement error
+      if (/email.*required|required.*email|IntegrationError.*email/i.test(msg)) {
+        const emailErrorMsg = 'Email address is required for PayPal payments. Please add your email address to your shipping address.'
+        setPaymentError(emailErrorMsg)
+        onError(emailErrorMsg)
+        captureFunnelEvent(FunnelEvents.payment_error, {
+          error_type: 'email_required',
+          error_message: msg,
+          payment_method: 'paypal',
+        })
+        setLoading(false)
+        return
+      }
+      
+      // Handle ZIP code errors
+      if (/zip.*invalid|invalid.*zip|incorrect.*zip/i.test(msg)) {
+        const zipErrorMsg = 'Your card\'s ZIP code is invalid. Please check your billing address ZIP code matches your card.'
+        setPaymentError(zipErrorMsg)
+        onError(zipErrorMsg)
+        captureFunnelEvent(FunnelEvents.payment_error, {
+          error_type: 'zip_invalid',
+          error_message: msg,
+        })
+        setLoading(false)
+        return
+      }
+      
+      // Handle card details errors
+      if (/card.*details|fill.*card|card.*information/i.test(msg)) {
+        const cardErrorMsg = 'Please fill in your card details completely before submitting.'
+        setPaymentError(cardErrorMsg)
+        onError(cardErrorMsg)
+        captureFunnelEvent(FunnelEvents.payment_error, {
+          error_type: 'card_details_incomplete',
+          error_message: msg,
+        })
+        setLoading(false)
+        return
+      }
+      
       setPaymentError(msg)
       onError(msg)
+      captureFunnelEvent(FunnelEvents.payment_error, {
+        error_type: 'generic',
+        error_message: msg,
+      })
       const isExpired = /expired|session/i.test(msg)
       if (isExpired && onSessionExpired) onSessionExpired()
     } finally {
@@ -330,11 +466,23 @@ function PaymentFormInner({
           />
         </div>
         {paymentError && (
-          <div className="space-y-2">
-            <p className="text-center text-xs text-red-500 dark:text-red-400">{paymentError}</p>
-            <p className="text-center text-xs text-neutral-500 dark:text-[#c4a0a0]">
-              Try a different payment method or card, then try again.
-            </p>
+          <div className="space-y-2 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 border border-red-200 dark:border-red-800">
+            <p className="text-center text-xs font-medium text-red-700 dark:text-red-300">{paymentError}</p>
+            {paymentError.toLowerCase().includes('email') && (
+              <p className="text-center text-xs text-red-600 dark:text-red-400">
+                Update your shipping address with a valid email address.
+              </p>
+            )}
+            {paymentError.toLowerCase().includes('zip') && (
+              <p className="text-center text-xs text-red-600 dark:text-red-400">
+                Check your ZIP/postal code matches your billing address.
+              </p>
+            )}
+            {!paymentError.toLowerCase().includes('email') && !paymentError.toLowerCase().includes('zip') && (
+              <p className="text-center text-xs text-red-600 dark:text-red-400">
+                Check your payment details or try a different payment method.
+              </p>
+            )}
           </div>
         )}
       </form>
@@ -352,31 +500,41 @@ function PaymentFormInner({
         >
           <span className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5" />
-            {promoApplied || 'Add promo code'}
+            {promoApplied ? `${promoApplied} applied` : 'Add promo code'}
           </span>
           {promoOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
         {promoOpen && (
-          <div className="px-3 pb-3 flex gap-2">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Enter code"
-              className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1a1616] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#4a4444]"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (promoCode.trim()) {
-                  setPromoApplied(promoCode.trim().toUpperCase())
-                  setPromoOpen(false)
-                }
-              }}
-              className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors"
-            >
-              Apply
-            </button>
+          <div className="px-3 pb-3 space-y-1.5">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => {
+                  setPromoInput(e.target.value)
+                  setPromoError(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    applyPromo()
+                  }
+                }}
+                placeholder="Enter code"
+                className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1a1616] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#4a4444]"
+              />
+              <button
+                type="button"
+                onClick={applyPromo}
+                disabled={promoLoading || !promoInput.trim()}
+                className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors disabled:opacity-50"
+              >
+                {promoLoading ? 'Checking…' : 'Apply'}
+              </button>
+            </div>
+            {promoError && (
+              <p className="text-xs text-red-500 dark:text-red-400">{promoError}</p>
+            )}
           </div>
         )}
       </div>
@@ -425,11 +583,30 @@ function PaymentFormInner({
       </div>
 
       {paymentError && (
-        <div className="space-y-2 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2">
-          <p className="text-sm text-red-600 dark:text-red-400">{paymentError}</p>
-          <p className="text-xs text-neutral-600 dark:text-[#c4a0a0]">
-            Try a different payment method or card, then try again.
-          </p>
+        <div className="space-y-2 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 border border-red-200 dark:border-red-800">
+          <p className="text-sm font-medium text-red-700 dark:text-red-300">{paymentError}</p>
+          {paymentError.toLowerCase().includes('email') && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Please update your shipping address with a valid email address, then try again.
+            </p>
+          )}
+          {paymentError.toLowerCase().includes('zip') && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Please check your ZIP/postal code matches your billing address, then try again.
+            </p>
+          )}
+          {paymentError.toLowerCase().includes('card') && !paymentError.toLowerCase().includes('zip') && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Please check your card details are correct, or try a different payment method.
+            </p>
+          )}
+          {!paymentError.toLowerCase().includes('email') && 
+           !paymentError.toLowerCase().includes('zip') && 
+           !paymentError.toLowerCase().includes('card') && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Please check your payment details and try again, or use a different payment method.
+            </p>
+          )}
         </div>
       )}
 
@@ -471,12 +648,13 @@ function PaymentFormInner({
 export function PaymentStep(props: PaymentStepProps) {
   const stripePromise = useStripePromise()
   const { theme } = useExperienceTheme()
-  const { preloadedClientSecret, ...restProps } = props
+  const { preloadedClientSecret, promoCode, onPromoApplied, ...restProps } = props
   const [clientSecret, setClientSecret] = React.useState<string | null>(
     () => preloadedClientSecret ?? null
   )
   const [intentError, setIntentError] = React.useState<string | null>(null)
   const [retryKey, setRetryKey] = React.useState(0)
+  const [appliedPromo, setAppliedPromo] = React.useState<string | undefined>(promoCode)
   const fetchedRef = React.useRef(!!preloadedClientSecret)
 
   const resetAndRetry = React.useCallback(() => {
@@ -485,6 +663,16 @@ export function PaymentStep(props: PaymentStepProps) {
     setIntentError(null)
     setRetryKey((k) => k + 1)
   }, [])
+
+  // When a promo code is applied, recreate the checkout session with the code
+  const handlePromoApplied = React.useCallback((code: string) => {
+    setAppliedPromo(code)
+    fetchedRef.current = false
+    setClientSecret(null)
+    setIntentError(null)
+    setRetryKey((k) => k + 1)
+    if (onPromoApplied) onPromoApplied(code)
+  }, [onPromoApplied])
 
   React.useEffect(() => {
     if (preloadedClientSecret) {
@@ -506,6 +694,7 @@ export function PaymentStep(props: PaymentStepProps) {
         items: props.items,
         customerEmail: props.customerEmail,
         shippingAddress: props.shippingAddress,
+        ...(appliedPromo && { promoCode: appliedPromo }),
       }),
     })
       .then(async (r) => {
@@ -517,7 +706,7 @@ export function PaymentStep(props: PaymentStepProps) {
         setIntentError(err?.message || 'Could not load payment form')
         fetchedRef.current = false
       })
-  }, [props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret])
+  }, [props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret, appliedPromo])
 
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
@@ -584,6 +773,7 @@ export function PaymentStep(props: PaymentStepProps) {
         {...restProps}
         clientSecret={clientSecret}
         onSessionExpired={props.onSessionExpired ?? resetAndRetry}
+        onPromoApplied={handlePromoApplied}
       />
     </CheckoutProvider>
   )

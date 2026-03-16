@@ -102,6 +102,14 @@ export async function POST(request: NextRequest) {
       .map((i) => `${i.variantId.replace('gid://shopify/ProductVariant/', '')}:${i.quantity}`)
       .join(',')
     const email = customerEmail || shippingAddress?.email || ''
+    
+    // PayPal requires email - validate before creating session
+    if (!email?.trim()) {
+      return NextResponse.json(
+        { error: 'Email address is required for checkout. Please add your email address.' },
+        { status: 400 }
+      )
+    }
 
     const metadata: Record<string, string> = {
       source: 'experience_checkout',
@@ -185,7 +193,8 @@ export async function POST(request: NextRequest) {
       ui_mode: 'custom',
       mode: 'payment',
       return_url: `${baseUrl}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      ...(stripeCustomerId ? { customer: stripeCustomerId } : (email ? { customer_email: email } : {})),
+      // Always set customer_email for PayPal compatibility (required by Stripe)
+      ...(stripeCustomerId ? { customer: stripeCustomerId } : { customer_email: email.trim().toLowerCase() }),
       payment_method_types: ['card', 'link', 'paypal'],
       automatic_tax: { enabled: false },
       ...(discounts?.length
@@ -195,6 +204,8 @@ export async function POST(request: NextRequest) {
       payment_intent_data: {
         setup_future_usage: 'off_session',
       },
+      // Save shipping address to the Stripe Customer for pre-fill on future sessions
+      ...(stripeCustomerId && { customer_update: { shipping: 'auto', address: 'auto' } }),
       metadata,
       line_items: items.map((item) => ({
         price_data: {

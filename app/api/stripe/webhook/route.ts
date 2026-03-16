@@ -13,7 +13,7 @@ import { sendTikTokEvent } from "@/lib/tiktok-events-server"
 import { addUserToAudience } from "@/lib/meta-custom-audiences-server"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-03-31.basil",
 })
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || ""
@@ -168,7 +168,7 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       return
     }
 
-    const isHeadless = source === 'headless_storefront'
+    const isHeadless = source === 'headless_storefront' || source === 'headless_storefront_embedded'
     const isExperience = source === 'experience_checkout'
     if (!isHeadless && !isExperience) {
       console.log('Ignoring non-headless/experience checkout session:', source)
@@ -279,6 +279,8 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
           : undefined,
         tags: 'headless,stripe-checkout',
         use_customer_default_address: false,
+        // Mark as paid so Shopify creates the order with paid financial status
+        financial_status: 'paid',
       },
     }
 
@@ -302,116 +304,126 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       method: 'PUT',
       body: JSON.stringify({
         payment_pending: false,
+        payment_gateway: 'manual',
       }),
     })
 
-    if (completeResponse.ok) {
-      const { draft_order: completedOrder } = await completeResponse.json()
-      console.log(`Completed draft order, created order: ${completedOrder.order_id}`)
+    if (!completeResponse.ok) {
+      const errText = await completeResponse.text()
+      throw new Error(`Failed to complete Shopify draft order ${draft_order.id}: ${errText}`)
+    }
 
-      // Record the purchase in Supabase
-      await supabase.from('stripe_purchases').insert({
-        stripe_session_id: session.id,
-        stripe_payment_intent: session.payment_intent as string,
-        shopify_draft_order_id: draft_order.id.toString(),
-        shopify_order_id: completedOrder.order_id?.toString() || null,
-        customer_email: customer?.email || null,
-        amount_total: session.amount_total,
-        currency: session.currency,
-        status: 'completed',
-        metadata: session.metadata,
-        created_at: new Date().toISOString(),
-      })
+    const { draft_order: completedOrder } = await completeResponse.json()
 
-      // ── Persist Stripe customer ID for saved payment methods ──
-      const stripeCustomerId = session.customer && typeof session.customer === 'string' ? session.customer : null
-      const purchaserEmail = customer?.email?.toLowerCase()?.trim()
-      const { data: existingCollector } = purchaserEmail
-        ? await supabase
-            .from('collectors')
-            .select('id')
-            .ilike('email', purchaserEmail)
-            .maybeSingle()
-        : { data: null }
-      if (stripeCustomerId && purchaserEmail) {
-        await supabase.from('collector_profiles').update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() }).ilike('email', purchaserEmail)
-        await supabase.from('collectors').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
-        await supabase.from('experience_quiz_signups').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
-      }
+    if (!completedOrder.order_id) {
+      throw new Error(
+        `Draft order ${draft_order.id} completed but Shopify did not return an order_id. ` +
+        `Draft status: ${completedOrder.status}. Check inventory or Shopify store settings.`
+      )
+    }
 
-      // ── Meta CAPI source-of-truth purchase from webhook ──
-      await sendMetaPurchaseFromWebhook(session, variants, {
-        customer,
-        shipping,
-        customerType: existingCollector ? 'returning' : 'new',
-      })
+    console.log(`Completed draft order, created order: ${completedOrder.order_id}`)
 
-      // ── TikTok Events API: Purchase event ──
-      const purchaserPhone = customer?.phone || undefined
-      const nameParts = (customer?.name || shipping?.name || '').trim().split(/\s+/)
-      const firstName = nameParts[0]
-      const lastName = nameParts.slice(1).join(' ')
-      const address = customer?.address || shipping?.address || undefined
-      const value = toMajorUnits(session.amount_total)
-      const currency = toUpperCurrency(session.currency)
-      
-      await sendTikTokEvent({
-        event: 'Purchase',
-        event_id: `purchase_${session.payment_intent || session.id}`,
-        properties: {
-          value,
-          currency,
-          contents: variants.map((v) => ({
-            content_id: v.variantId,
-            quantity: v.quantity || 1,
-          })),
-        },
-        userData: {
-          email: purchaserEmail,
-          phone_number: purchaserPhone || undefined,
-          first_name: firstName || undefined,
-          last_name: lastName || undefined,
-          city: address?.city || undefined,
-          state: address?.state || undefined,
-          zip_code: address?.postal_code || undefined,
-          country_code: address?.country || undefined,
-        },
+    // Record the purchase in Supabase
+    await supabase.from('stripe_purchases').insert({
+      stripe_session_id: session.id,
+      stripe_payment_intent: session.payment_intent as string,
+      shopify_draft_order_id: draft_order.id.toString(),
+      shopify_order_id: completedOrder.order_id.toString(),
+      customer_email: customer?.email || null,
+      amount_total: session.amount_total,
+      currency: session.currency,
+      status: 'completed',
+      metadata: session.metadata,
+      created_at: new Date().toISOString(),
+    })
+
+    // ── Persist Stripe customer ID for saved payment methods ──
+    const stripeCustomerId = session.customer && typeof session.customer === 'string' ? session.customer : null
+    const purchaserEmail = customer?.email?.toLowerCase()?.trim()
+    const { data: existingCollector } = purchaserEmail
+      ? await supabase
+          .from('collectors')
+          .select('id')
+          .ilike('email', purchaserEmail)
+          .maybeSingle()
+      : { data: null }
+    if (stripeCustomerId && purchaserEmail) {
+      await supabase.from('collector_profiles').update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() }).ilike('email', purchaserEmail)
+      await supabase.from('collectors').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
+      await supabase.from('experience_quiz_signups').update({ stripe_customer_id: stripeCustomerId }).ilike('email', purchaserEmail)
+    }
+
+    // ── Meta CAPI source-of-truth purchase from webhook ──
+    await sendMetaPurchaseFromWebhook(session, variants, {
+      customer,
+      shipping,
+      customerType: existingCollector ? 'returning' : 'new',
+    })
+
+    // ── TikTok Events API: Purchase event ──
+    const purchaserPhone = customer?.phone || undefined
+    const nameParts = (customer?.name || shipping?.name || '').trim().split(/\s+/)
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ')
+    const address = customer?.address || shipping?.address || undefined
+    const value = toMajorUnits(session.amount_total)
+    const currency = toUpperCurrency(session.currency)
+
+    await sendTikTokEvent({
+      event: 'Purchase',
+      event_id: `purchase_${session.payment_intent || session.id}`,
+      properties: {
+        value,
+        currency,
+        contents: variants.map((v) => ({
+          content_id: v.variantId,
+          quantity: v.quantity || 1,
+        })),
+      },
+      userData: {
+        email: purchaserEmail,
+        phone_number: purchaserPhone || undefined,
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
+        city: address?.city || undefined,
+        state: address?.state || undefined,
+        zip_code: address?.postal_code || undefined,
+        country_code: address?.country || undefined,
+      },
+    }).catch((err) => {
+      // Log but don't fail the webhook if TikTok event fails
+      console.error('[stripe/webhook] Failed to send TikTok Purchase event:', err)
+    })
+
+    // ── Meta Custom Audience: Add buyer to audience for retargeting ──
+    if (purchaserEmail) {
+      await addUserToAudience(purchaserEmail, {
+        phone: purchaserPhone || undefined,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
       }).catch((err) => {
-        // Log but don't fail the webhook if TikTok event fails
-        console.error('[stripe/webhook] Failed to send TikTok Purchase event:', err)
+        // Log but don't fail the webhook if Custom Audience sync fails
+        console.error('[stripe/webhook] Failed to add user to Meta Custom Audience:', err)
       })
+    }
 
-      // ── Meta Custom Audience: Add buyer to audience for retargeting ──
-      if (purchaserEmail) {
-        await addUserToAudience(purchaserEmail, {
-          phone: purchaserPhone || undefined,
-          firstName: firstName || undefined,
-          lastName: lastName || undefined,
-        }).catch((err) => {
-          // Log but don't fail the webhook if Custom Audience sync fails
-          console.error('[stripe/webhook] Failed to add user to Meta Custom Audience:', err)
-        })
+    // ── Post-Purchase Bridge: Create/link collector identity ──
+    if (purchaserEmail) {
+      try {
+        await bridgePostPurchase(
+          supabase,
+          purchaserEmail,
+          session.id,
+          completedOrder.order_id.toString(),
+          session.amount_total || 0,
+          session.currency || 'usd',
+          variants
+        )
+      } catch (bridgeError) {
+        // Non-critical: log but don't fail the webhook
+        console.error('[stripe/webhook] Post-purchase bridge error (non-critical):', bridgeError)
       }
-
-      // ── Post-Purchase Bridge: Create/link collector identity ──
-      if (purchaserEmail) {
-        try {
-          await bridgePostPurchase(
-            supabase,
-            purchaserEmail,
-            session.id,
-            completedOrder.order_id?.toString() || draft_order.id.toString(),
-            session.amount_total || 0,
-            session.currency || 'usd',
-            variants
-          )
-        } catch (bridgeError) {
-          // Non-critical: log but don't fail the webhook
-          console.error('[stripe/webhook] Post-purchase bridge error (non-critical):', bridgeError)
-        }
-      }
-    } else {
-      console.error('Failed to complete draft order')
     }
   } catch (err) {
     console.error('Error handling checkout.session.completed:', err)

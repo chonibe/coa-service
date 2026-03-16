@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2024-06-20' }) : null
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
 
 interface CartLineItem {
   productId: string

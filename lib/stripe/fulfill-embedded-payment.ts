@@ -70,6 +70,8 @@ export async function createAndCompleteOrder(
         : undefined,
       tags: 'headless,stripe-embedded',
       use_customer_default_address: false,
+      // Mark as paid so Shopify creates the order with paid financial status
+      financial_status: 'paid',
     },
   }
 
@@ -88,15 +90,24 @@ export async function createAndCompleteOrder(
     `draft_orders/${draft_order.id}/complete.json`,
     {
       method: 'PUT',
-      body: JSON.stringify({ payment_pending: false }),
+      body: JSON.stringify({ payment_pending: false, payment_gateway: 'manual' }),
     }
   )
 
   if (!completeResponse.ok) {
-    throw new Error('Failed to complete draft order')
+    const errText = await completeResponse.text()
+    throw new Error(`Failed to complete draft order ${draft_order.id}: ${errText}`)
   }
 
   const { draft_order: completedOrder } = await completeResponse.json()
   const orderId = completedOrder.order_id?.toString() || null
+
+  if (!orderId) {
+    throw new Error(
+      `Draft order ${draft_order.id} completed but Shopify did not return an order_id. ` +
+      `Draft status: ${completedOrder.status}. Check inventory, required fields, or Shopify store settings.`
+    )
+  }
+
   return { draftOrderId: draft_order.id.toString(), orderId }
 }
