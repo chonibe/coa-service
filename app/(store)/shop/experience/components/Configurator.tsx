@@ -1830,7 +1830,7 @@ export function Configurator({
             <div
               style={showLampPaywall && gridBlurred ? { filter: 'blur(3px)', transition: 'filter 0.35s ease-out', pointerEvents: 'none' } : { filter: 'none', transition: 'filter 0.35s ease-out' }}
             >
-          {spotlightData && (!adPreset || showAllArtworks) ? (
+          {spotlightData && !showLampPaywall && (!adPreset || showAllArtworks) ? (
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
