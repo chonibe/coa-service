@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { trackPurchase, trackGoogleAdsConversion, type ProductItem } from '@/lib/google-analytics'
 import { captureFunnelEvent, FunnelEvents, tagSessionForReplay } from '@/lib/posthog'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import {
   Container,
   SectionWrapper,
@@ -103,10 +104,13 @@ export function CheckoutSuccessContent() {
   const orderParam = sessionId || paymentIntentId
   const isDemo = searchParams.get('demo') === '1' || searchParams.get('demo') === 'true'
 
+  // Use shared auth context so the CTA doesn't flicker and auth state is consistent.
+  const { isAuthenticated } = useShopAuthContext()
+
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [paypalProcessing, setPaypalProcessing] = useState(false)
   const [seriesProgress, setSeriesProgress] = useState<SeriesProgressItem[]>([])
 
   useEffect(() => {
@@ -179,6 +183,7 @@ export function CheckoutSuccessContent() {
         if (paymentIntentId) {
           const pendingItems = sessionStorage.getItem('sc_checkout_items')
           const pendingAddress = sessionStorage.getItem('sc_checkout_address')
+
           if (pendingItems && pendingAddress) {
             try {
               await fetch('/api/checkout/complete-order', {
@@ -191,11 +196,44 @@ export function CheckoutSuccessContent() {
                 }),
               })
             } catch {
-              // Best-effort; order may already exist from inline flow
+              // Best-effort; webhook may already have fulfilled the order
             } finally {
               sessionStorage.removeItem('sc_checkout_items')
               sessionStorage.removeItem('sc_checkout_address')
             }
+          } else {
+            // sessionStorage is empty — user may have opened the URL in a new tab
+            // or the browser cleared storage (private mode / crash). Poll the
+            // stripe endpoint so the webhook has time to fulfill the order.
+            setPaypalProcessing(true)
+            let fulfilled = false
+            for (let attempt = 0; attempt < 3; attempt++) {
+              if (attempt > 0) {
+                await new Promise(resolve => setTimeout(resolve, 2000))
+              }
+              try {
+                const pollRes = await fetch(`/api/checkout/stripe?payment_intent=${paymentIntentId}`)
+                if (pollRes.ok) {
+                  const pollData = await pollRes.json()
+                  if (pollData.session?.id) {
+                    setOrder(pollData.session)
+                    setSeriesProgress(pollData.seriesProgress || [])
+                    fulfilled = true
+                    break
+                  }
+                }
+              } catch {
+                // continue polling
+              }
+            }
+            setPaypalProcessing(false)
+            if (!fulfilled) {
+              setError(
+                'We\'re still processing your order. Please check your email for confirmation, or contact support if you have questions.'
+              )
+            }
+            setLoading(false)
+            return
           }
         }
 
@@ -222,10 +260,6 @@ export function CheckoutSuccessContent() {
     }
 
     fetchOrderDetails()
-
-    fetch('/api/auth/roles', { credentials: 'include' })
-      .then(res => { if (res.ok) setIsAuthenticated(true) })
-      .catch(() => {})
   }, [orderParam, sessionId, paymentIntentId, isDemo])
 
   // Format price
@@ -244,8 +278,17 @@ export function CheckoutSuccessContent() {
           <Container maxWidth="narrow">
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#f5f5f5] animate-pulse" />
-              <div className="h-8 bg-[#f5f5f5] rounded w-2/3 mx-auto mb-4 animate-pulse" />
-              <div className="h-4 bg-[#f5f5f5] rounded w-1/2 mx-auto animate-pulse" />
+              {paypalProcessing ? (
+                <>
+                  <p className="text-lg font-medium text-[#1a1a1a] mb-2">We&apos;re processing your order&hellip;</p>
+                  <p className="text-sm text-[#1a1a1a]/60">This usually takes just a moment. Please don&apos;t close this page.</p>
+                </>
+              ) : (
+                <>
+                  <div className="h-8 bg-[#f5f5f5] rounded w-2/3 mx-auto mb-4 animate-pulse" />
+                  <div className="h-4 bg-[#f5f5f5] rounded w-1/2 mx-auto animate-pulse" />
+                </>
+              )}
             </div>
           </Container>
         </SectionWrapper>
@@ -352,6 +395,30 @@ export function CheckoutSuccessContent() {
             </CardContent>
           </Card>
 
+          {/* Credits Earned Card */}
+          {order.amountTotal > 0 && (
+            <Card variant="flat" padding="md" className="mb-6 border border-[#047AFF]/20 bg-[#047AFF]/5">
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#047AFF]">
+                      You earned {Math.round((order.amountTotal / 100) * CREDITS_PER_DOLLAR).toLocaleString()} credits!
+                    </p>
+                    <p className="text-sm text-[#1a1a1a]/60">
+                      Credits are added to your account and can be redeemed on future purchases.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Shipping Address Card */}
           {order.shippingDetails?.address && (
             <Card variant="flat" padding="md" className="mb-6">
@@ -428,7 +495,7 @@ export function CheckoutSuccessContent() {
                 </Button>
               </Link>
             )}
-            <Link href="/experience">
+            <Link href="/shop/experience">
               <Button variant="outline" size="lg">
                 Continue Shopping
               </Button>

@@ -149,8 +149,7 @@ export function ExperienceClient({
             const response = await fetch(`/api/shop/early-access-coupon?artist=${encodeURIComponent(initialArtistSlug!)}&token=${encodeURIComponent(token)}`)
             if (response.ok) {
               const data = await response.json()
-              // Cookie is set by the API
-              console.log('Early access coupon fetched:', data.couponCode)
+              // Cookie is set by the API; coupon code intentionally not logged
             } else {
               console.warn('Early access token invalid or expired')
             }

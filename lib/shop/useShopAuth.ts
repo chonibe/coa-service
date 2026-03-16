@@ -9,7 +9,7 @@
  * @module lib/shop/useShopAuth
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Role, Permission } from '@/lib/rbac'
 import type { MembershipTierId } from '@/lib/membership/tiers'
@@ -57,7 +57,9 @@ interface UseShopAuthReturn {
 export function useShopAuth(): UseShopAuthReturn {
   const [user, setUser] = useState<ShopUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  // Memoize so the client reference is stable across renders, preventing
+  // checkAuth / onAuthStateChange from being recreated on every render.
+  const supabase = useMemo(() => createClient(), [])
   const lastCheckRef = useRef(0)
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -201,10 +203,17 @@ export function useShopAuth(): UseShopAuthReturn {
     return hasPermission('credits:redeem') || hasPermission('admin:all')
   }, [user, hasPermission])
 
-  // Refresh user data (e.g., after purchase)
+  // Refresh user data (e.g., after purchase).
+  // Bypass the throttle so an explicit refresh always runs, and guarantee
+  // setLoading(false) even if checkAuth returns early.
   const refreshUser = useCallback(async () => {
     setLoading(true)
-    await checkAuth()
+    lastCheckRef.current = 0
+    try {
+      await checkAuth()
+    } finally {
+      setLoading(false)
+    }
   }, [checkAuth])
 
   return { 

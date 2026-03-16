@@ -12,6 +12,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useCheckout, type CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
@@ -40,9 +41,15 @@ function loadQuizForPrefill(): { name?: string; email?: string } | null {
 
 export function ExperienceQuizPrefill() {
   const checkout = useCheckout()
+  const { loading: authLoading, user } = useShopAuthContext()
   const hasPrefilledRef = useRef(false)
 
   useEffect(() => {
+    // Wait for auth to resolve so we don't overwrite a logged-in user's profile
+    // data with quiz data (race condition fix).
+    if (authLoading) return
+    // If a user is logged in, CheckoutPiiPrefill will handle the prefill.
+    if (user) return
     if (hasPrefilledRef.current) return
     if (checkout.address !== null) return
 
@@ -54,7 +61,9 @@ export function ExperienceQuizPrefill() {
     const partial: CheckoutAddress = {
       email: quiz.email ?? '',
       fullName: quiz.name ?? '',
-      country: 'US',
+      // Leave country empty so AddressModal's geo-detection fills it naturally
+      // for international users instead of defaulting to US.
+      country: '',
       addressLine1: '',
       addressLine2: '',
       city: '',
@@ -65,7 +74,7 @@ export function ExperienceQuizPrefill() {
     }
 
     checkout.setAddress(partial)
-  }, [checkout.address, checkout.setAddress])
+  }, [authLoading, user, checkout.address, checkout.setAddress])
 
   return null
 }

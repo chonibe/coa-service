@@ -49,7 +49,9 @@ export function CheckoutPiiPrefill() {
     const partial: CheckoutAddress = {
       email: user.email.trim(),
       fullName: fullName || '',
-      country: 'US',
+      // Leave country empty so AddressModal's geo-detection fills it for
+      // international users instead of always defaulting to US.
+      country: '',
       addressLine1: '',
       addressLine2: '',
       city: '',

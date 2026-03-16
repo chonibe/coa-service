@@ -71,13 +71,19 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     })
 
     return () => {
-      // Only fire abandoned if the quiz wasn't completed
-      if (!completedRef.current) {
+      // Only fire abandoned if the quiz wasn't completed AND the user has
+      // actually navigated away from the quiz (not just moved to the next step).
+      // In URL mode each step change causes a cleanup, so we check the current
+      // pathname to avoid false "abandoned" events on normal forward navigation.
+      const stillInQuiz =
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/shop/experience/onboarding')
+      if (!completedRef.current && !stillInQuiz) {
         const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
         if (timeSpent > 1) {
           captureFunnelEvent(FunnelEvents.onboarding_step_abandoned, {
-            step_number: step, // Use step_number for PostHog funnel queries
-            step, // Keep step for backward compatibility
+            step_number: step,
+            step,
             context: 'experience_quiz',
             time_spent_seconds: timeSpent,
             device_type: getDeviceType(),

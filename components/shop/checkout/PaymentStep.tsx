@@ -314,7 +314,9 @@ function PaymentFormInner({
         setPaymentError(errMsg)
         onError(errMsg)
         setLoading(false)
-        const isExpired = /expired|session/i.test(errMsg)
+        const isExpired =
+          errMsg.toLowerCase().includes('checkout session has expired') ||
+          errMsg.toLowerCase().includes('session_expired')
         if (isExpired && onSessionExpired) onSessionExpired()
         return
       }
@@ -424,7 +426,9 @@ function PaymentFormInner({
         error_type: 'generic',
         error_message: msg,
       })
-      const isExpired = /expired|session/i.test(msg)
+      const isExpired =
+        msg.toLowerCase().includes('checkout session has expired') ||
+        msg.toLowerCase().includes('session_expired')
       if (isExpired && onSessionExpired) onSessionExpired()
     } finally {
       setLoading(false)
