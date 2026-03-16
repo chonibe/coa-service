@@ -124,6 +124,12 @@ interface ConfiguratorProps {
   adPreset?: string
 }
 
+const LAMP_TRUST_CHIPS = [
+  { icon: Globe, label: 'Free Shipping' },
+  { icon: ShieldCheck, label: '1 year guarantee' },
+  { icon: RotateCcw, label: '30 day returns' },
+]
+
 export function Configurator({
   lamp,
   productsSeason1: initialSeason1,
@@ -277,8 +283,8 @@ export function Configurator({
   const [detailProductLoading, setDetailProductLoading] = useState(false)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
   const prefetchingRef = useRef<Set<string>>(new Set())
-  /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = 50/50; 'full' = selector covers preview */
-  const [selectorSheetState, setSelectorSheetState] = useState<'collapsed' | 'half' | 'full'>('half')
+  /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = selector visible alongside preview */
+  const [selectorSheetState, setSelectorSheetState] = useState<'collapsed' | 'half'>('half')
   const [lampVariant, setLampVariant] = useState<'light' | 'dark'>('dark')
   const [panelStatus, setPanelStatus] = useState<{ sideA: boolean; sideB: boolean; sameObject: boolean } | null>(null)
 
@@ -294,17 +300,17 @@ export function Configurator({
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Cycle selector state: collapsed -> half -> full -> collapsed (mobile only)
+  // Cycle selector state: collapsed <-> half (mobile only)
   const cycleSelectorState = useCallback(() => {
-    setSelectorSheetState((s) => (s === 'collapsed' ? 'half' : s === 'half' ? 'full' : 'collapsed'))
-    // Notify Spline to resize only when chevron collapses/expands — after transition settles
+    setSelectorSheetState((s) => (s === 'collapsed' ? 'half' : 'collapsed'))
+    // Notify Spline to resize after transition settles
     const delay = typeof window !== 'undefined' && window.innerWidth < 768 ? 600 : 400
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('experience-selector-settled'))
     }, delay)
   }, [])
 
-  const previewVisible = !isMobile || selectorSheetState !== 'full'
+  const previewVisible = true
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchExpanded, setSearchExpanded] = useState(false)
@@ -991,12 +997,10 @@ export function Configurator({
         if (queuePrev.includes(product.id)) return queuePrev
         return queuePrev.length >= 2 ? [queuePrev[1], product.id] : [...queuePrev, product.id]
       })
-      if (lampQuantity > 0) {
-        const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
-        if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
-      }
+      const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
+      if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
     }
-  }, [cartOrder, lampQuantity, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct])
+  }, [cartOrder, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -1006,7 +1010,7 @@ export function Configurator({
 
   const handlePreview = useCallback((index: number) => {
     setPreviewIndex(index)
-    setSelectorSheetState((s) => (s === 'full' ? 'half' : s))
+    setSelectorSheetState((s) => (s === 'collapsed' ? 'half' : s))
   }, [])
 
   const activeFilterCount = (filters.artists.length > 0 ? 1 : 0) +
@@ -1046,10 +1050,9 @@ export function Configurator({
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
-          /* Mobile: 3 states — larger preview when selector collapsed; 30/70 default, 25/75 when wizard */
+          /* Mobile: 2 states — larger preview when selector collapsed; 40/60 split when half */
           selectorSheetState === 'collapsed' && 'min-h-[55dvh] flex-1',
-          selectorSheetState === 'half' && (showHighlightAnimation ? 'flex-[25] min-h-0 basis-0' : 'flex-[4] min-h-0 basis-0'),
-          selectorSheetState === 'full' && 'h-0 min-h-0 overflow-hidden md:!h-full md:!min-h-0 md:!basis-auto'
+          selectorSheetState !== 'collapsed' && (showHighlightAnimation ? 'flex-[25] min-h-0 basis-0' : 'flex-[4] min-h-0 basis-0')
         )}
         style={{ 
           maxHeight: '100dvh',
@@ -1490,20 +1493,6 @@ export function Configurator({
           </div>
         )}
 
-        {/* File-tab chevron at bottom of Spline preview — mobile only when selector expanded */}
-        {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (
-          <button
-            onClick={cycleSelectorState}
-            className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full z-20 px-4 py-1.5 rounded-b-lg bg-white dark:bg-[#201c1c] border border-t-0 border-neutral-200 dark:border-[#3e3838] text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#262222] shadow-sm transition-colors"
-            aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
-          >
-            {selectorSheetState === 'half' ? (
-              <ChevronUp className="w-3.5 h-3.5" aria-hidden />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5" aria-hidden />
-            )}
-          </button>
-        )}
       </motion.div>
 
       {/* Right: Selector Panel — 3 states on mobile: collapsed | half | full */}
@@ -1513,10 +1502,9 @@ export function Configurator({
           'relative flex flex-col bg-white dark:bg-[#171515] overflow-hidden min-h-0 transition-[height,flex] duration-200 ease-out',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
-          /* Mobile: 3 states — when collapsed, keep expand tab visible (min 56px); 70/30 default, 75/25 when wizard */
+          /* Mobile: 2 states — when collapsed, keep expand tab visible (min 56px); 60/40 split when half */
           selectorSheetState === 'collapsed' && 'min-h-[56px] flex-shrink-0 md:h-auto md:min-h-0',
-          selectorSheetState === 'half' && (showHighlightAnimation ? 'flex-[75] min-h-0 basis-0' : 'flex-[6] min-h-0 basis-0'),
-          selectorSheetState === 'full' && 'flex-1 min-h-0'
+          selectorSheetState !== 'collapsed' && (showHighlightAnimation ? 'flex-[75] min-h-0 basis-0' : 'flex-[6] min-h-0 basis-0')
         )}
       >
         {/* Selector UI */}
@@ -1765,7 +1753,7 @@ export function Configurator({
           ref={artworkStripScrollRef}
           className={cn(
             'flex-1 overflow-y-auto overflow-x-hidden px-5 pt-3 min-h-0',
-            isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') ? 'pb-16' : 'pb-4'
+            isMobile && selectorSheetState === 'half' ? 'pb-16' : 'pb-4'
           )}
         >
           {/* Lamp card — sharp, above the blurred grid */}
@@ -1773,11 +1761,7 @@ export function Configurator({
             <div className="flex flex-col gap-2 pb-3">
               {/* Trust chips */}
               <div className="flex items-center justify-center gap-2 flex-wrap">
-                {([
-                  { icon: Globe, label: 'Free Shipping' },
-                  { icon: ShieldCheck, label: '1 year guarantee' },
-                  { icon: RotateCcw, label: '30 day returns' },
-                ] as const).map(({ icon: Icon, label }) => (
+                {LAMP_TRUST_CHIPS.map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/8">
                     <Icon className="w-3 h-3 shrink-0 text-[#a08080]" />
                     <span className="text-[10px] text-[#9a8080] leading-none whitespace-nowrap">{label}</span>
@@ -1821,7 +1805,7 @@ export function Configurator({
             <div
               style={showLampPaywall && gridBlurred ? { filter: 'blur(3px)', transition: 'filter 0.35s ease-out', pointerEvents: 'none' } : { filter: 'none', transition: 'filter 0.35s ease-out' }}
             >
-          {spotlightData && !adPreset ? (
+          {spotlightData && (!adPreset || showAllArtworks) ? (
             <ArtistSpotlightBanner
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
@@ -2015,7 +1999,7 @@ export function Configurator({
 
         {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
         {/* When ad preset active and not yet expanded: replace bottom bar with Show all artworks button */}
-        {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && adPreset && !showAllArtworks && (
+        {isMobile && selectorSheetState === 'half' && adPreset && !showAllArtworks && (
           <div className="flex-shrink-0 w-full flex items-center justify-center px-4 py-2.5 border-t border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#1a1616]">
             <button
               type="button"
@@ -2026,7 +2010,7 @@ export function Configurator({
             </button>
           </div>
         )}
-        {isMobile && (selectorSheetState === 'half' || selectorSheetState === 'full') && (!adPreset || showAllArtworks) && (
+        {isMobile && selectorSheetState === 'half' && (!adPreset || showAllArtworks) && (
           <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#1a1616]">
             {/* Left: Filter */}
             <div className="flex-shrink-0">
