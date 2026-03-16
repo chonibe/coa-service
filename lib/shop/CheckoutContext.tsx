@@ -15,6 +15,7 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react'
+import { getMissingAddressField, type MissingField } from '@/components/shop/checkout/AddressModal'
 
 // ============================================
 // Types
@@ -93,6 +94,7 @@ interface CheckoutContextValue extends CheckoutState {
   isPaymentSelected: () => boolean
   getIncompleteSections: () => OpenSection[]
   validateAndOpenFirstIncomplete: () => boolean
+  getMissingAddressField: () => MissingField
 }
 
 // ============================================
@@ -291,6 +293,11 @@ export function CheckoutProvider({
     return sections
   }, [state.address, state.paymentMethod, state.savedCard])
 
+  const getMissingAddressFieldFn = useCallback(
+    (): MissingField => getMissingAddressField(state.address),
+    [state.address]
+  )
+
   const validateAndOpenFirstIncomplete = useCallback((): boolean => {
     const incomplete = getIncompleteSections()
     if (incomplete.length === 0) return true
@@ -324,6 +331,7 @@ export function CheckoutProvider({
       isPaymentSelected: isPaymentSelectedFn,
       getIncompleteSections,
       validateAndOpenFirstIncomplete,
+      getMissingAddressField: getMissingAddressFieldFn,
     }),
     [
       state,
@@ -350,6 +358,7 @@ export function CheckoutProvider({
       isPaymentSelectedFn,
       getIncompleteSections,
       validateAndOpenFirstIncomplete,
+      getMissingAddressFieldFn,
     ]
   )
 

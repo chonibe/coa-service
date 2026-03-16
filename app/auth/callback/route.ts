@@ -54,9 +54,68 @@ async function processUserLogin(
     const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value as 'admin' | 'vendor' | 'collector' | undefined
     console.log(`[auth/callback] Login intent: ${loginIntent || 'none'}`)
 
+    // Ensure admin emails have admin role in user_roles table
+    if (email && isAdminEmail(email)) {
+      console.log(`[auth/callback] Admin email detected: ${email}, ensuring admin role exists`)
+      const serviceClient = createServiceClient()
+      
+      // Upsert admin role to ensure it exists
+      const { error: adminRoleError } = await serviceClient
+        .from('user_roles')
+        .upsert({
+          user_id: userId,
+          role: 'admin',
+          is_active: true,
+          metadata: {
+            source: 'email_whitelist',
+            email: email,
+            ensured_at: new Date().toISOString()
+          }
+        }, {
+          onConflict: 'user_id,role',
+          ignoreDuplicates: false
+        })
+      
+      if (adminRoleError) {
+        console.error('[auth/callback] Failed to ensure admin role:', adminRoleError)
+      } else {
+        console.log('[auth/callback] Admin role ensured for:', email)
+      }
+    }
+
     // Get all active roles from RBAC system
-    const roles = await getUserActiveRoles(userId)
+    let roles = await getUserActiveRoles(userId)
     console.log(`[auth/callback] User roles from RBAC: ${roles.join(', ')}`)
+
+    // Fallback: If no roles found but email is admin, ensure admin role exists
+    if (roles.length === 0 && email && isAdminEmail(email)) {
+      console.log(`[auth/callback] No roles found but admin email detected, ensuring admin role`)
+      const serviceClient = createServiceClient()
+      
+      const { error: adminRoleError } = await serviceClient
+        .from('user_roles')
+        .upsert({
+          user_id: userId,
+          role: 'admin',
+          is_active: true,
+          metadata: {
+            source: 'email_whitelist_fallback',
+            email: email,
+            ensured_at: new Date().toISOString()
+          }
+        }, {
+          onConflict: 'user_id,role',
+          ignoreDuplicates: false
+        })
+      
+      if (!adminRoleError) {
+        // Refresh roles after ensuring admin role
+        roles = await getUserActiveRoles(userId)
+        console.log(`[auth/callback] Admin role ensured, refreshed roles: ${roles.join(', ')}`)
+      } else {
+        console.error('[auth/callback] Failed to ensure admin role in fallback:', adminRoleError)
+      }
+    }
 
     if (roles.length === 0) {
       // Handle collector signup for new users
@@ -315,6 +374,60 @@ async function processUserLogin(
         return signupResponse
       }
 
+      // For non-collector intents, check if admin email before showing "not registered" error
+      if (email && isAdminEmail(email)) {
+        console.log(`[auth/callback] Admin email detected but no roles, ensuring admin role and retrying`)
+        const serviceClient = createServiceClient()
+        
+        const { error: adminRoleError } = await serviceClient
+          .from('user_roles')
+          .upsert({
+            user_id: userId,
+            role: 'admin',
+            is_active: true,
+            metadata: {
+              source: 'email_whitelist_not_registered_fallback',
+              email: email,
+              ensured_at: new Date().toISOString()
+            }
+          }, {
+            onConflict: 'user_id,role',
+            ignoreDuplicates: false
+          })
+        
+        if (!adminRoleError) {
+          // Refresh roles and retry login processing
+          const updatedRoles = await getUserActiveRoles(userId)
+          console.log(`[auth/callback] Admin role ensured, retrying with roles: ${updatedRoles.join(', ')}`)
+          
+          // Retry the login process with updated roles
+          const preferredDashboard = getPreferredDashboard(updatedRoles, loginIntent)
+          const redirectPath = preferredDashboard
+          
+          const adminResponse = NextResponse.redirect(new URL(redirectPath, origin), { status: 307 })
+          deleteCookie(adminResponse, LOGIN_INTENT_COOKIE)
+          deleteCookie(adminResponse, PENDING_VENDOR_EMAIL_COOKIE)
+          deleteCookie(adminResponse, REQUIRE_ACCOUNT_SELECTION_COOKIE)
+          deleteCookie(adminResponse, COLLECTOR_REDIRECT_COOKIE)
+          
+          if (email) {
+            const adminCookie = buildAdminSessionCookie(email)
+            adminResponse.cookies.set(ADMIN_SESSION_COOKIE_NAME, adminCookie.value, adminCookie.options)
+          }
+          adminResponse.cookies.set(VENDOR_SESSION_COOKIE_NAME, "", { ...clearVendorSessionCookie().options, maxAge: 0 })
+          adminResponse.cookies.set('active_role', 'admin', {
+            path: '/',
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 30,
+          })
+          
+          console.log(`[auth/callback] Admin login successful after role creation for ${email}`)
+          return adminResponse
+        }
+      }
+      
       // For non-collector intents, show "not registered" error
       console.log(`[auth/callback] No roles found for user ${email} with intent ${loginIntent}`)
       const notRegisteredResponse = NextResponse.redirect(new URL(NOT_REGISTERED_REDIRECT, origin), { status: 307 })

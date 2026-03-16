@@ -26,12 +26,15 @@ export interface GooglePlacesAddressInputProps {
   className?: string
   disabled?: boolean
   autoComplete?: string
+  enterKeyHint?: React.HTMLAttributes<HTMLInputElement>['enterKeyHint']
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
 }
 
 /** Extract postal/ZIP code from formatted address when address_components lacks it */
 function extractPostalFromFormatted(formatted: string): string {
   if (!formatted?.trim()) return ''
   // US ZIP: 12345 or 12345-6789
+  // eslint-disable-next-line security/detect-unsafe-regex
   const us = formatted.match(/\b(\d{5}(?:-\d{4})?)\b/)
   if (us) return us[1]
   // UK postcode: SW1A 1AA, E1 6AN, etc.
@@ -91,6 +94,8 @@ export function GooglePlacesAddressInput({
   className,
   disabled,
   autoComplete,
+  enterKeyHint,
+  inputMode,
 }: GooglePlacesAddressInputProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null)
@@ -162,6 +167,8 @@ export function GooglePlacesAddressInput({
       placeholder={placeholder}
       disabled={disabled}
       autoComplete="off"
+      enterKeyHint={enterKeyHint}
+      inputMode={inputMode}
       className={cn(inputBase, className)}
       role="combobox"
       aria-autocomplete="list"

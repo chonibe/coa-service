@@ -13,12 +13,20 @@ interface Artist {
   instagramUrl?: string
 }
 
+interface EarlyAccessLinks {
+  artistPage: string
+  experiencePage: string
+  token: string
+}
+
 export default function ExperienceLinksPage() {
   const [artists, setArtists] = useState<Artist[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const [earlyAccessLinks, setEarlyAccessLinks] = useState<Record<string, EarlyAccessLinks>>({})
+  const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set())
   const [earlyAccessDialogOpen, setEarlyAccessDialogOpen] = useState(false)
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null)
   const [earlyAccessLink, setEarlyAccessLink] = useState<string | null>(null)
@@ -52,6 +60,47 @@ export default function ExperienceLinksPage() {
 
   const fullUrl = (slug: string) => `${baseUrl}/experience?artist=${encodeURIComponent(slug)}`
   const shortUrl = (slug: string) => `${baseUrl}/e/${slug}`
+
+  const generateEarlyAccessLinksForArtist = async (artist: Artist) => {
+    if (earlyAccessLinks[artist.slug] || generatingLinks.has(artist.slug)) {
+      return // Already generated or currently generating
+    }
+
+    setGeneratingLinks(prev => new Set(prev).add(artist.slug))
+
+    try {
+      const response = await fetch('/api/admin/generate-early-access-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artistSlug: artist.slug }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to generate early access link')
+      }
+
+      const data = await response.json()
+      const experienceLink = `${baseUrl}/shop/experience?artist=${encodeURIComponent(artist.slug)}&unlisted=1&token=${encodeURIComponent(data.token)}`
+      
+      setEarlyAccessLinks(prev => ({
+        ...prev,
+        [artist.slug]: {
+          artistPage: data.link,
+          experiencePage: experienceLink,
+          token: data.token,
+        }
+      }))
+    } catch (err: any) {
+      console.error(`Failed to generate early access link for ${artist.slug}:`, err)
+    } finally {
+      setGeneratingLinks(prev => {
+        const next = new Set(prev)
+        next.delete(artist.slug)
+        return next
+      })
+    }
+  }
 
   const copyToClipboard = async (text: string, slug: string) => {
     try {
@@ -166,45 +215,99 @@ export default function ExperienceLinksPage() {
                             {artist.productCount} artwork{artist.productCount !== 1 ? "s" : ""} · slug: <code className="text-xs">{artist.slug}</code>
                           </p>
                         </div>
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                          <div className="flex gap-2 flex-wrap">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyToClipboard(full, artist.slug)}
-                              className="shrink-0"
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => copyToClipboard(full, artist.slug)}
+                                className="shrink-0"
+                              >
+                                {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                <span className="ml-1.5">{isCopied ? "Copied" : "Full link"}</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => copyToClipboard(short, artist.slug)}
+                                className="shrink-0"
+                              >
+                                <Copy className="h-4 w-4" />
+                                <span className="ml-1.5">Short</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  if (!earlyAccessLinks[artist.slug]) {
+                                    generateEarlyAccessLinksForArtist(artist)
+                                  } else {
+                                    handleGenerateEarlyAccessLink(artist)
+                                  }
+                                }}
+                                className="shrink-0 bg-violet-600 hover:bg-violet-700 text-white"
+                                disabled={generatingLinks.has(artist.slug)}
+                              >
+                                {generatingLinks.has(artist.slug) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Sparkles className="h-4 w-4" />
+                                )}
+                                <span className="ml-1.5">Early Access</span>
+                              </Button>
+                            </div>
+                            <a
+                              href={full}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-sm text-primary hover:underline"
                             >
-                              {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                              <span className="ml-1.5">{isCopied ? "Copied" : "Full link"}</span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyToClipboard(short, artist.slug)}
-                              className="shrink-0"
-                            >
-                              <Copy className="h-4 w-4" />
-                              <span className="ml-1.5">Short</span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleGenerateEarlyAccessLink(artist)}
-                              className="shrink-0 bg-violet-600 hover:bg-violet-700 text-white"
-                            >
-                              <Sparkles className="h-4 w-4" />
-                              <span className="ml-1.5">Early Access</span>
-                            </Button>
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Open
+                            </a>
                           </div>
-                          <a
-                            href={full}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-sm text-primary hover:underline"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Open
-                          </a>
+                          
+                          {earlyAccessLinks[artist.slug] && (
+                            <div className="flex flex-col gap-2 p-3 bg-violet-50 dark:bg-violet-950/20 rounded-md border border-violet-200 dark:border-violet-900/30">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                                <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">Early Access Links (10% off)</span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex-1 flex gap-1.5">
+                                  <Input
+                                    value={earlyAccessLinks[artist.slug].experiencePage}
+                                    readOnly
+                                    className="font-mono text-xs h-8"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => copyToClipboard(earlyAccessLinks[artist.slug].experiencePage, artist.slug)}
+                                    className="shrink-0 h-8"
+                                  >
+                                    {copiedSlug === artist.slug ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                  </Button>
+                                </div>
+                                <div className="flex-1 flex gap-1.5">
+                                  <Input
+                                    value={earlyAccessLinks[artist.slug].artistPage}
+                                    readOnly
+                                    className="font-mono text-xs h-8"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => copyToClipboard(earlyAccessLinks[artist.slug].artistPage, artist.slug)}
+                                    className="shrink-0 h-8"
+                                  >
+                                    {copiedSlug === artist.slug ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )
@@ -220,7 +323,13 @@ export default function ExperienceLinksPage() {
           <br />
           <strong>Short link:</strong> <code>/e/artist-slug</code> — redirects to the same experience. Ideal when character count matters.
           <br />
-          <strong>Early Access:</strong> Generates a secure link with a 10% discount coupon. Links expire after 30 days.
+          <strong>Early Access:</strong> Secure links with HMAC-signed tokens that provide a 10% discount coupon. 
+          <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>/shop/experience?artist=artist-slug&unlisted=1&token=HASHED_TOKEN</code> — Experience page with discount
+          <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>/shop/artists/artist-slug?early_access=1&token=HASHED_TOKEN</code> — Artist page with discount
+          <br />
+          Links expire after 30 days. Click &quot;Early Access&quot; to generate links for an artist.
         </p>
       </div>
 

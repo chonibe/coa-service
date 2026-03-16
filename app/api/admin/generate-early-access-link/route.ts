@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserContext, hasPermission } from '@/lib/rbac'
+import { guardAdminRequest } from '@/lib/auth-guards'
 import { generateEarlyAccessToken } from '@/lib/early-access-token'
 
 /**
@@ -12,15 +12,12 @@ import { generateEarlyAccessToken } from '@/lib/early-access-token'
  * Returns: { link: string, token: string }
  */
 export async function POST(request: NextRequest) {
+  const auth = guardAdminRequest(request)
+  if (auth.kind !== 'ok') {
+    return auth.response
+  }
+  
   try {
-    const ctx = await getUserContext()
-    if (!ctx.userId || !hasPermission(ctx, 'admin')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const { artistSlug } = body as { artistSlug?: string }
 
@@ -28,6 +25,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Artist slug is required' },
         { status: 400 }
+      )
+    }
+
+    // Check if required environment variables are set
+    const secret = process.env.EARLY_ACCESS_TOKEN_SECRET || process.env.SUPABASE_JWT_SECRET
+    if (!secret) {
+      console.error('[admin/generate-early-access-link] Missing EARLY_ACCESS_TOKEN_SECRET or SUPABASE_JWT_SECRET')
+      return NextResponse.json(
+        { error: 'Server configuration error: Missing token secret' },
+        { status: 500 }
       )
     }
 

@@ -395,29 +395,7 @@ export function CheckoutSuccessContent() {
             </CardContent>
           </Card>
 
-          {/* Credits Earned Card */}
-          {order.amountTotal > 0 && (
-            <Card variant="flat" padding="md" className="mb-6 border border-[#047AFF]/20 bg-[#047AFF]/5">
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 6v6l4 2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#047AFF]">
-                      You earned {Math.round((order.amountTotal / 100) * CREDITS_PER_DOLLAR).toLocaleString()} credits!
-                    </p>
-                    <p className="text-sm text-[#1a1a1a]/60">
-                      Credits are added to your account and can be redeemed on future purchases.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Credits Earned Card — hidden for now */}
 
           {/* Shipping Address Card */}
           {order.shippingDetails?.address && (

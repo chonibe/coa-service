@@ -54,6 +54,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [sendCooldown, setSendCooldown] = useState(0)
 
   const reset = () => {
     setStep('email')
@@ -61,6 +62,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
     setCode('')
     setError(null)
     setIsLoading(false)
+    setSendCooldown(0)
   }
 
   const handleClose = () => {
@@ -70,6 +72,7 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
 
   const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (sendCooldown > 0) return
     setError(null)
     setIsLoading(true)
     const trimmedEmail = email.trim()
@@ -100,10 +103,20 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
 
       setStep('code')
       setResendCooldown(60)
+      setSendCooldown(60)
       const interval = setInterval(() => {
         setResendCooldown((prev) => {
           if (prev <= 1) {
             clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      const sendInterval = setInterval(() => {
+        setSendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(sendInterval)
             return 0
           }
           return prev - 1
@@ -213,10 +226,12 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
               <Button
                 type="submit"
                 className="w-full h-12 bg-[#047AFF] hover:bg-[#0366d6] text-white font-semibold"
-                disabled={isLoading}
+                disabled={isLoading || sendCooldown > 0}
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                ) : sendCooldown > 0 ? (
+                  `Please wait ${sendCooldown}s`
                 ) : (
                   'Continue'
                 )}
