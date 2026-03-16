@@ -1,17 +1,26 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Menu, Info, Minus, Plus } from 'lucide-react'
 import { ExperienceCartChip } from './ExperienceCartChip'
-import { DiscountCelebration } from './components/DiscountCelebration'
 import { ShopSlideoutMenu } from '@/components/shop/navigation/ShopSlideoutMenu'
+
+const DiscountCelebration = dynamic(
+  () => import('./components/DiscountCelebration').then((m) => ({ default: m.DiscountCelebration })),
+  { ssr: false }
+)
 import { useExperienceOrder } from './ExperienceOrderContext'
 import { useExperienceTheme } from './ExperienceThemeContext'
 import { useExperienceAuthContext } from './ExperienceAuthContext'
 import { cn } from '@/lib/utils'
 
+const ONBOARDING_PATH_PREFIX = '/shop/experience/onboarding'
+
 export function ExperienceSlideoutMenu() {
+  const pathname = usePathname()
+  const isOnOnboarding = pathname?.startsWith(ONBOARDING_PATH_PREFIX) ?? false
   const { menuOpen: open, setMenuOpen: setOpen, openAuthWhenMenuOpens, setOpenAuthWhenMenuOpens, onboardingRedirectPath } = useExperienceAuthContext()
   const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount, discountCelebrationAmount, setDiscountCelebrationAmount } = useExperienceOrder()
   const [shouldPulse, setShouldPulse] = useState(false)
@@ -62,7 +71,7 @@ export function ExperienceSlideoutMenu() {
               'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-[#262222]/70',
               highlightLampIcon && 'ring-2 ring-inset ring-amber-600/70'
             )}>
-              <motion.div
+              <div
                 role="button"
                 tabIndex={0}
                 onClick={() => setDetailProduct?.(lamp)}
@@ -71,19 +80,11 @@ export function ExperienceSlideoutMenu() {
                   'flex items-center gap-1 min-w-0 transition-colors cursor-pointer text-left relative py-0',
                   lampQuantity > 0
                     ? 'text-neutral-800 dark:text-[#f0e8e8] hover:opacity-90'
-                    : 'text-neutral-600 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8]'
+                    : 'text-neutral-600 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8]',
+                  shouldPulse && 'animate-lamp-pulse'
                 )}
                 aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}`}
-                animate={
-                  shouldPulse
-                    ? {
-                        scale: [1, 1.35, 1],
-                        filter: ['brightness(1)', 'brightness(1.4)', 'brightness(1)'],
-                      }
-                    : { scale: 1 }
-                }
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                onAnimationComplete={() => setShouldPulse(false)}
+                onAnimationEnd={() => setShouldPulse(false)}
               >
                 <span className="relative inline-flex">
                   <span className={cn('absolute inset-0 flex items-center justify-center translate-x-0.5 text-[10px] font-bold tabular-nums pointer-events-none', lampQuantity > 0 ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#f0e8e8]')}>
@@ -94,7 +95,7 @@ export function ExperienceSlideoutMenu() {
                   </svg>
                 </span>
                 <span className={cn('text-[10px] font-medium truncate', lampQuantity > 0 ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-600 dark:text-[#f0e8e8]/80')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
-              </motion.div>
+              </div>
               {pastLampPaywall && (
                 <div className="flex items-center gap-0.5 ml-0.5 shrink-0" data-wizard-lamp-controls>
                   {lampQuantity > 0 && (
@@ -141,19 +142,18 @@ export function ExperienceSlideoutMenu() {
         {/* Right spacer — when lamp in header: centers lamp between menu and cart */}
         {showLampCard && lamp && <div className="flex-1 min-w-0 lg:hidden" />}
 
-        <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && 'md:ml-8')}>
-          <ExperienceCartChip variant="light" className={cn(showLampCard && lamp ? '' : 'ml-auto')} />
-          <AnimatePresence>
+        {!isOnOnboarding && (
+          <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && 'md:ml-8')}>
+            <ExperienceCartChip variant="light" className={cn(showLampCard && lamp ? '' : 'ml-auto')} />
             {discountCelebrationAmount !== null && (
               <DiscountCelebration
-                key="discount-celebration"
                 amount={discountCelebrationAmount}
                 onComplete={() => setDiscountCelebrationAmount(null)}
                 popFromCart
               />
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        )}
       </header>
 
       <ShopSlideoutMenu

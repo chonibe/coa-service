@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { cookies, headers } from 'next/headers'
 import type { Metadata } from 'next'
 import { getCollectionProductHandlesByHandle } from '@/lib/shopify/admin-collection-products'
@@ -13,7 +14,28 @@ import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME, A
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
 
+// force-dynamic is required because cookies() is called for affiliate tracking.
+// Product data is cached via unstable_cache (5-min TTL) to bypass the force-dynamic
+// fetch-cache override — this is the key fix for LCP: Shopify fetches are served from
+// cache on subsequent requests instead of hitting the API cold every time.
 export const dynamic = 'force-dynamic'
+
+// Cached Shopify product fetches — survive force-dynamic at the page level.
+const getCachedLamp = unstable_cache(
+  () => getProduct('street_lamp'),
+  ['experience-lamp'],
+  { revalidate: 300, tags: ['experience-products'] }
+)
+
+const getCachedSeasonCollections = unstable_cache(
+  () =>
+    Promise.all([
+      getCollectionWithListProducts('season-1', { first: 36 }).catch(() => null),
+      getCollectionWithListProducts('2025-edition', { first: 36 }).catch(() => null),
+    ]),
+  ['experience-season-collections'],
+  { revalidate: 300, tags: ['experience-products'] }
+)
 
 const DEFAULT_TITLE = 'Customize Your Lamp | Street Collector'
 const DEFAULT_DESCRIPTION =
@@ -100,7 +122,7 @@ const INITIAL_PRODUCTS_PER_SEASON = 36
 const SPOTLIGHT_COLLECTIONS_IN_SEASON2: readonly string[] = []
 
 interface ExperiencePageProps {
-  searchParams: Promise<{ artist?: string; skipQuiz?: string; utm_campaign?: string; unlisted?: string; fromOnboardingLogin?: string }>
+  searchParams: Promise<{ artist?: string; skipQuiz?: string; direct?: string; preset?: string; utm_campaign?: string; unlisted?: string; fromOnboardingLogin?: string }>
 }
 
 interface SeasonPageInfo {
@@ -112,6 +134,8 @@ async function ExperienceProductsLoader({
   lamp,
   initialArtistSlug,
   skipQuiz,
+  directEntry,
+  adPreset,
   forceUnlisted,
   onboardingQueryParams,
   fromOnboardingLogin,
@@ -119,6 +143,8 @@ async function ExperienceProductsLoader({
   lamp: ShopifyProduct
   initialArtistSlug?: string
   skipQuiz: boolean
+  directEntry?: boolean
+  adPreset?: string
   forceUnlisted?: boolean
   onboardingQueryParams?: Record<string, string>
   fromOnboardingLogin?: boolean
@@ -128,17 +154,29 @@ async function ExperienceProductsLoader({
     ? [initialArtistSlug, `${initialArtistSlug}-one`]
     : []
   const collectionsToMerge = [...new Set([...SPOTLIGHT_COLLECTIONS_IN_SEASON2, ...extraHandles])]
-  const [season1Result, season2Result, ...spotlightResults] = await Promise.all([
-    getCollectionWithListProducts(SEASON_1_HANDLE, {
-      first: INITIAL_PRODUCTS_PER_SEASON,
-    }).catch(() => null),
-    getCollectionWithListProducts(SEASON_2_HANDLE, {
-      first: INITIAL_PRODUCTS_PER_SEASON,
-    }).catch(() => null),
-    ...collectionsToMerge.map((h) =>
-      getCollectionWithListProducts(h, { first: 12 }).catch(() => null)
-    ),
-  ])
+
+  // Use cached base season collections when no artist-specific collections are needed.
+  // For artist/spotlight links, fall back to uncached fetches (per-request, personalised).
+  const useBaseCache = collectionsToMerge.length === 0
+  let season1Result: Awaited<ReturnType<typeof getCollectionWithListProducts>> | null
+  let season2Result: Awaited<ReturnType<typeof getCollectionWithListProducts>> | null
+  let spotlightResults: (Awaited<ReturnType<typeof getCollectionWithListProducts>> | null)[]
+
+  if (useBaseCache) {
+    const [s1, s2] = await getCachedSeasonCollections()
+    season1Result = s1
+    season2Result = s2
+    spotlightResults = []
+  } else {
+    const results = await Promise.all([
+      getCollectionWithListProducts(SEASON_1_HANDLE, { first: INITIAL_PRODUCTS_PER_SEASON }).catch(() => null),
+      getCollectionWithListProducts(SEASON_2_HANDLE, { first: INITIAL_PRODUCTS_PER_SEASON }).catch(() => null),
+      ...collectionsToMerge.map((h) =>
+        getCollectionWithListProducts(h, { first: 12 }).catch(() => null)
+      ),
+    ])
+    ;[season1Result, season2Result, ...spotlightResults] = results
+  }
 
   const productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
   const baseSeason2 = season2Result?.products?.edges?.map((e) => e.node) ?? []
@@ -203,6 +241,8 @@ async function ExperienceProductsLoader({
       pageInfoSeason2={pageInfoSeason2}
       initialArtistSlug={initialArtistSlug}
       skipQuiz={skipQuiz}
+      directEntry={directEntry}
+      adPreset={adPreset}
       forceUnlisted={forceUnlisted}
       onboardingQueryParams={onboardingQueryParams}
       fromOnboardingLogin={fromOnboardingLogin}
@@ -237,6 +277,8 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   }
 
   const skipQuiz = resolved?.skipQuiz === '1'
+  const directEntry = resolved?.direct === '1'
+  const adPreset = resolved?.preset?.trim() || undefined
   const forceUnlisted = ['1', 'true', 'yes'].includes((resolved?.unlisted ?? '').toLowerCase())
   const fromOnboardingLogin = resolved?.fromOnboardingLogin === '1'
 
@@ -245,7 +287,7 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
   if (resolved?.utm_campaign) onboardingQueryParams.utm_campaign = resolved.utm_campaign
   if (resolved?.vendor) onboardingQueryParams.vendor = resolved.vendor
 
-  const lamp = await getProduct('street_lamp').catch(() => null)
+  const lamp = await getCachedLamp().catch(() => null)
 
   if (!lamp) {
     return (
@@ -272,6 +314,8 @@ async function ExperienceLampLoader({ searchParams }: ExperiencePageProps) {
         lamp={lamp}
         initialArtistSlug={initialArtistSlug}
         skipQuiz={skipQuiz}
+        directEntry={directEntry}
+        adPreset={adPreset}
         forceUnlisted={forceUnlisted}
         onboardingQueryParams={onboardingQueryParams}
         fromOnboardingLogin={fromOnboardingLogin}

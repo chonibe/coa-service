@@ -705,6 +705,16 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation: fadeIn 0.6s ease-out forwards;
 }
 
+@keyframes lampPulse {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  40%  { transform: scale(1.35); filter: brightness(1.4); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
+.animate-lamp-pulse {
+  animation: lampPulse 0.5s ease-out forwards;
+}
+
 /* Parallax container */
 .parallax-container {
   perspective: 1px;

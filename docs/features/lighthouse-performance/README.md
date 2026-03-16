@@ -34,9 +34,9 @@ Optimizations applied to improve Lighthouse scores for https://app.thestreetcoll
 - **Next image optimization**: Left disabled (`unoptimized: true`); explicit dimensions added instead
 - **Stripe-on-checkout-only**: Stripe likely not on landing page; unchanged
 
-## Experience & Checkout Optimization (2026-03-16)
+## Experience & Checkout Optimization — Round 1 (2026-03-16)
 
-See [EXPERIENCE_CHECKOUT_OPTIMIZATION.md](EXPERIENCE_CHECKOUT_OPTIMIZATION.md) for the full audit and changes applied to the `/experience` page (Performance 27 → target 65–75).
+See [EXPERIENCE_CHECKOUT_OPTIMIZATION.md](EXPERIENCE_CHECKOUT_OPTIMIZATION.md) for the full audit and changes applied to the `/experience` page (Performance 27 → 68, TBT 4,710ms → 100ms).
 
 **Key changes:**
 - `PaymentStep` lazy-loaded via `next/dynamic` in `OrderBar.tsx` — removes Stripe/hCaptcha/Google Pay from initial experience bundle
@@ -45,6 +45,17 @@ See [EXPERIENCE_CHECKOUT_OPTIMIZATION.md](EXPERIENCE_CHECKOUT_OPTIMIZATION.md) f
 - `internal.png` → `internal.webp` (2.8 MB → 87 KB, 97% reduction)
 - Conditional modal rendering in `CheckoutLayout.tsx` (defers Google Maps SDK)
 - `framer-motion` removed from `OrderBar.tsx` and `CheckoutLayout.tsx`
+
+## Experience LCP/TTI Optimization — Round 2 (2026-03-16)
+
+After Round 1, LCP remained at 10.3s and TTI at 10.3s. Root causes: `force-dynamic` overriding fetch cache, Spline preload firing too late, A/B variant 2-render-cycle waterfall, and remaining `framer-motion` in the critical bundle.
+
+**Key changes:**
+- `unstable_cache` wrappers on Shopify product fetches in `page.tsx` — bypasses `force-dynamic` fetch-cache override; product catalog cached 5 min
+- `<link rel="preload">` for Spline scene added directly in `layout.tsx` JSX — browser starts 6.7MB download on HTML parse, 2-3s earlier
+- A/B cookie read moved to `useState` lazy initializer in `ExperienceClient.tsx` — eliminates 2-render-cycle spinner waterfall for returning visitors
+- `DiscountCelebration` converted to `next/dynamic({ ssr: false })` in `ExperienceSlideoutMenu.tsx` — removes framer-motion from initial bundle
+- `motion.div` lamp counter pulse replaced with CSS `animate-lamp-pulse` keyframe; `AnimatePresence` removed
 
 ## Roadmap to 100%
 

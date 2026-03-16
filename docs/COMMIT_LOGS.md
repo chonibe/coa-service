@@ -1,3 +1,27 @@
+## Commit: Experience LCP/TTI Optimization — Round 2 (2026-03-16)
+
+### Summary
+Second round of Lighthouse performance optimizations targeting the remaining LCP (10.3s) and TTI (10.3s) after Round 1 brought Performance from 27 → 68 and TBT from 4,710ms → 100ms. Root causes: `force-dynamic` page-level override was disabling the `next: { revalidate: 60 }` cache on all Shopify fetches; Spline 6.7MB scene file was only preloaded via `useEffect` (after JS hydration); A/B variant cookie read required 2 sequential render cycles before `Configurator` could mount; `framer-motion` still in the critical bundle via `ExperienceSlideoutMenu`.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/experience/page.tsx`](../app/(store)/shop/experience/page.tsx) — Add `unstable_cache` wrappers (`getCachedLamp`, `getCachedSeasonCollections`) with 5-min TTL to bypass `force-dynamic` fetch-cache override — Shopify product catalog now served from cache on subsequent requests
+- [x] [`app/(store)/shop/experience/layout.tsx`](../app/(store)/shop/experience/layout.tsx) — Add `<link rel="preload" href="/spline/splinemodel2/scene.splinecode" as="fetch" crossOrigin="anonymous" />` directly in layout JSX — browser starts 6.7MB Spline download 2-3s earlier (on HTML parse vs. after JS hydration)
+- [x] [`app/(store)/shop/experience/components/ExperienceClient.tsx`](../app/(store)/shop/experience/components/ExperienceClient.tsx) — Move A/B cookie read from `useEffect` into `useState` lazy initializer — returning visitors (with cookie) skip the 2-render-cycle waterfall, `Configurator` starts loading on first render
+- [x] [`app/(store)/shop/experience/components/ExperienceClient.tsx`](../app/(store)/shop/experience/components/ExperienceClient.tsx) — Remove `framer-motion` import; replace `motion.div` fade-in wrapper with CSS `animate-fade-in` class
+- [x] [`app/(store)/shop/experience/ExperienceSlideoutMenu.tsx`](../app/(store)/shop/experience/ExperienceSlideoutMenu.tsx) — Convert `DiscountCelebration` static import to `next/dynamic({ ssr: false })` — removes framer-motion from initial bundle
+- [x] [`app/(store)/shop/experience/ExperienceSlideoutMenu.tsx`](../app/(store)/shop/experience/ExperienceSlideoutMenu.tsx) — Replace `motion.div` lamp counter pulse with CSS `animate-lamp-pulse` keyframe; remove `AnimatePresence` wrapper
+- [x] [`app/globals.css`](../app/globals.css) — Add `@keyframes lampPulse` and `.animate-lamp-pulse` CSS class
+
+### 📌 Notes
+
+- `unstable_cache` is the correct mechanism to cache data in `force-dynamic` pages — it operates at the data layer, not the fetch layer, bypassing Next.js's per-request fetch deduplication override.
+- The A/B lazy initializer only reads the cookie synchronously; new visitors (no cookie) still go through the assignment `useEffect` and see a brief spinner. This is intentional — new assignment requires random number generation and analytics calls.
+- `DiscountCelebration` retains its internal `framer-motion` usage (complex multi-keyframe pop/hold/float animation) since it's now lazy-loaded and only renders when a discount is applied.
+- Re-run Lighthouse after deploy to measure LCP improvement (target: < 4s).
+
+---
+
 ## Commit: Experience & Checkout Lighthouse Optimization (2026-03-16)
 
 ### Summary

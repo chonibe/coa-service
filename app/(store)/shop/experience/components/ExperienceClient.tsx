@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { QuizAnswers } from './IntroQuiz'
@@ -94,6 +93,10 @@ interface ExperienceClientProps {
   initialArtistSlug?: string
   /** When true, skip intro quiz and go straight to configurator (default: true when artist link) */
   skipQuiz?: boolean
+  /** When true, user arrived via a direct ad link (?direct=1); skips quiz, lamp paywall still shown */
+  directEntry?: boolean
+  /** Named ad preset key (?preset=X); drives the bundle grid layout in Configurator */
+  adPreset?: string
   /** When true, request spotlight with unlisted=1 so API returns unlisted (early access UI) */
   forceUnlisted?: boolean
   /** Query params to preserve when redirecting to onboarding (e.g. artist, utm_campaign) for trackable URLs */
@@ -123,6 +126,8 @@ export function ExperienceClient({
   pageInfoSeason2,
   initialArtistSlug,
   skipQuiz = false,
+  directEntry = false,
+  adPreset,
   forceUnlisted = false,
   onboardingQueryParams = {},
   fromOnboardingLogin = false,
@@ -134,7 +139,9 @@ export function ExperienceClient({
   const [mounted, setMounted] = useState(false)
   const [redirectingToOnboarding, setRedirectingToOnboarding] = useState(false)
   const [initialFilters, setInitialFilters] = useState<Pick<FilterState, 'artists'> | null>(null)
-  const [abVariant, setABVariant] = useState<ABVariant | null>(null)
+  // Read A/B cookie synchronously on first render to eliminate the 2-render-cycle waterfall.
+  // New visitors (no cookie) get null here; the useEffect below assigns and persists the variant.
+  const [abVariant, setABVariant] = useState<ABVariant | null>(() => getABVariantFromCookie())
 
   // Fetch early access coupon if early access link is detected (requires token)
   useEffect(() => {
@@ -162,15 +169,17 @@ export function ExperienceClient({
     }
   }, [forceUnlisted, initialArtistSlug])
 
-  // A/B test: assign variant (onboarding vs skip) once per visitor; persist in cookie and record for analysis
+  // A/B test: assign variant for new visitors (no cookie) and fire analytics.
+  // Returning visitors already have abVariant set from the useState lazy initializer above —
+  // this effect only runs assignment logic for new visitors (abVariant === null on mount).
   const abAssigned = useRef(false)
   useEffect(() => {
     if (abAssigned.current) return
     abAssigned.current = true
-    let variant = getABVariantFromCookie()
-    const isNewAssignment = !variant
-    if (!variant) {
-      variant = Math.random() < 0.5 ? 'skip' : 'onboarding'
+    const existingVariant = abVariant
+    const isNewAssignment = !existingVariant
+    const variant: ABVariant = existingVariant ?? (Math.random() < 0.5 ? 'skip' : 'onboarding')
+    if (isNewAssignment) {
       setABVariantCookie(variant)
       if (isGAEnabled()) {
         trackEnhancedEvent('experience_ab_assigned', { variant, test: 'experience_onboarding' })
@@ -186,16 +195,16 @@ export function ExperienceClient({
         body: JSON.stringify({ variant }),
         credentials: 'include',
       }).catch(() => {})
+      setABVariant(variant)
     }
     // Mirror A/B variant to PostHog so session replays, funnels, and heatmaps can be segmented by variant
-    // Set variant immediately (don't wait for async import) to ensure it's set before quiz starts
     captureFunnelEvent('experience_ab_variant_known', {
       variant,
       is_new_assignment: isNewAssignment,
       device_type: getDeviceType(),
     })
     setUserProperty('experience_ab_variant', variant as string)
-    setABVariant(variant)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // When user just logged in from onboarding: if authenticated, save quiz (owns lamp) and show configurator
@@ -223,7 +232,7 @@ export function ExperienceClient({
   }, [fromOnboardingLogin, isAuthenticated, authLoading, router, onboardingQueryParams])
 
   // When user needs onboarding (no fromOnboardingLogin flow), redirect to onboarding or show configurator (A/B: half skip)
-  const effectiveSkipQuiz = skipQuiz || abVariant === 'skip'
+  const effectiveSkipQuiz = skipQuiz || directEntry || abVariant === 'skip'
   useEffect(() => {
     if (fromOnboardingLogin || abVariant === null) return
     const saved = loadQuizAnswers()
@@ -269,6 +278,17 @@ export function ExperienceClient({
       device_type: getDeviceType(),
     })
   }, [mounted, quizAnswers])
+
+  // Analytics: track direct ad entry (?direct=1)
+  const directEntryFired = useRef(false)
+  useEffect(() => {
+    if (!directEntry || !mounted || directEntryFired.current) return
+    directEntryFired.current = true
+    captureFunnelEvent('experience_direct_entry', {
+      artist_slug: initialArtistSlug ?? undefined,
+      device_type: getDeviceType(),
+    })
+  }, [directEntry, mounted, initialArtistSlug])
 
   // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
   useEffect(() => {
@@ -334,12 +354,9 @@ export function ExperienceClient({
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 min-h-0">
-        <motion.div
+        <div
           key="configurator"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="h-full"
+          className="h-full animate-fade-in"
         >
           <ExperienceConfiguratorWithBoundary
             lamp={lamp}
@@ -353,8 +370,9 @@ export function ExperienceClient({
             initialArtistSlug={initialArtistSlug}
             forceUnlisted={forceUnlisted}
             forceShowLampPaywall={abVariant === 'skip'}
+            adPreset={adPreset}
           />
-        </motion.div>
+        </div>
       </div>
       {/* OrderBar is always mounted so cart chip opens drawer even during quiz */}
       {effectiveOrderBarProps && (
