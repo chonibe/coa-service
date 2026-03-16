@@ -237,7 +237,9 @@ export function ExperienceClient({
     if (fromOnboardingLogin || abVariant === null) return
     const saved = loadQuizAnswers()
     if (saved || effectiveSkipQuiz) {
-      setQuizAnswers(saved ?? { ownsLamp: false, purpose: 'self' })
+      // directEntry (ad traffic) always treats the user as not owning a lamp so the paywall card always shows
+      const answers = saved ?? { ownsLamp: false, purpose: 'self' as const }
+      setQuizAnswers(directEntry ? { ...answers, ownsLamp: false } : answers)
       setMounted(true)
     } else {
       setRedirectingToOnboarding(true)
@@ -369,7 +371,7 @@ export function ExperienceClient({
             initialFilters={initialFilters}
             initialArtistSlug={initialArtistSlug}
             forceUnlisted={forceUnlisted}
-            forceShowLampPaywall={abVariant === 'skip'}
+            forceShowLampPaywall={abVariant === 'skip' || directEntry}
             adPreset={adPreset}
           />
         </div>

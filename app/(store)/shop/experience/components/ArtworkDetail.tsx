@@ -61,6 +61,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const [imageZoom, setImageZoom] = useState(1)
   const [isOpen, setIsOpen] = useState(true)
   const constraintsRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const dragX = useMotionValue(0)
   const panX = useMotionValue(0)
   const panY = useMotionValue(0)
@@ -85,6 +86,18 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     panY.set(0)
     dragX.set(0)
   }, [imageIndex, dragX])
+
+  // Scroll hint — nudge down on open so user sees accordions below the image
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    el.scrollTop = 0
+    // Wait for the sheet spring animation to settle before nudging
+    const timer = setTimeout(() => {
+      el.scrollTo({ top: 120, behavior: 'smooth' })
+    }, 650)
+    return () => clearTimeout(timer)
+  }, [product.id])
 
   const handleZoomChange = useCallback(() => {
     setImageZoom((z) => {
@@ -265,6 +278,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
           {/* Content: two-column on desktop, single scroll on mobile */}
           <div
+            ref={!isSlideout ? scrollContainerRef : undefined}
             className={cn(
               'flex-1 min-h-0',
               isSlideout ? 'flex flex-row overflow-hidden gap-8 px-6 pt-5 pb-0' : 'overflow-y-auto overflow-x-hidden pt-4 pb-64'
@@ -801,30 +815,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
-            {/* Thumbnail strip */}
-            {!showingArtistInCarousel && allImages.length > 1 && (
-              <div className="flex gap-2 px-4 mt-3 overflow-x-auto scrollbar-hide">
-                {allImages.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => goToIndex(i)}
-                    className={cn(
-                      'w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors',
-                      i === imageIndex ? 'border-neutral-900 dark:border-white' : 'border-transparent opacity-60 hover:opacity-100'
-                    )}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.altText || `Image ${i + 1}`}
-                      width={56}
-                      height={56}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* Tags */}
             {product.tags && product.tags.length > 0 && (
@@ -1183,7 +1173,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   <h2 className="text-sm font-semibold text-[#FFBA94] tracking-tight mt-0.5">
                     {product.title}
                   </h2>
-                  {editionSizeNum && editionSizeNum > 0 && (
+                  {editionSizeNum && editionSizeNum > 0 && !hideScarcityBar && (
                     <span className="mt-1 text-[10px] text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
                       Limited Edition of {editionSizeNum}
                     </span>

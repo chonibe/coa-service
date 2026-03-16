@@ -62,10 +62,10 @@ export function ExperienceSlideoutMenu() {
         </button>
 
         {/* Left spacer — pushes lamp+cart right (or just cart when lamp in Configurator) */}
-        {showLampCard && lamp && <div className="flex-1 min-w-0" />}
+        {showLampCard && lamp && pastLampPaywall && <div className="flex-1 min-w-0" />}
 
         {/* Lamp + counter — below lg (mobile/tablet); at lg+ it lives in selector bar (Configurator) */}
-        {showLampCard && lamp && (
+        {showLampCard && lamp && pastLampPaywall && (
           <div className="lg:hidden flex items-center shrink-0">
             <div className={cn(
               'flex items-center gap-1 flex-shrink-0 min-w-0 rounded-md px-2 py-0 bg-neutral-100 dark:bg-[#262222]/70',
@@ -140,11 +140,11 @@ export function ExperienceSlideoutMenu() {
         )}
 
         {/* Right spacer — when lamp in header: centers lamp between menu and cart */}
-        {showLampCard && lamp && <div className="flex-1 min-w-0 lg:hidden" />}
+        {showLampCard && lamp && pastLampPaywall && <div className="flex-1 min-w-0 lg:hidden" />}
 
         {!isOnOnboarding && (
-          <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && 'md:ml-8')}>
-            <ExperienceCartChip variant="light" className={cn(showLampCard && lamp ? '' : 'ml-auto')} />
+          <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && pastLampPaywall ? 'md:ml-8' : 'ml-auto')}>
+            <ExperienceCartChip variant="light" />
             {discountCelebrationAmount !== null && (
               <DiscountCelebration
                 amount={discountCelebrationAmount}
