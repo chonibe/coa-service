@@ -251,7 +251,7 @@ function ArtworkCard({
         !roundLeft && roundRight && 'rounded-r-xl',
         (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
         isInCart && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isInCart && !isMerged && 'scale-[0.95]',
+        isInCart && !isMerged && 'scale-[0.95] ring-2 ring-[#FFBA94]',
       )}
     >
       <div
