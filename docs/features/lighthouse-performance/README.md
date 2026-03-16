@@ -34,6 +34,18 @@ Optimizations applied to improve Lighthouse scores for https://app.thestreetcoll
 - **Next image optimization**: Left disabled (`unoptimized: true`); explicit dimensions added instead
 - **Stripe-on-checkout-only**: Stripe likely not on landing page; unchanged
 
+## Experience & Checkout Optimization (2026-03-16)
+
+See [EXPERIENCE_CHECKOUT_OPTIMIZATION.md](EXPERIENCE_CHECKOUT_OPTIMIZATION.md) for the full audit and changes applied to the `/experience` page (Performance 27 → target 65–75).
+
+**Key changes:**
+- `PaymentStep` lazy-loaded via `next/dynamic` in `OrderBar.tsx` — removes Stripe/hCaptcha/Google Pay from initial experience bundle
+- PostHog deferred 10s on `/experience` paths
+- Facebook Pixel deferred via `requestIdleCallback`
+- `internal.png` → `internal.webp` (2.8 MB → 87 KB, 97% reduction)
+- Conditional modal rendering in `CheckoutLayout.tsx` (defers Google Maps SDK)
+- `framer-motion` removed from `OrderBar.tsx` and `CheckoutLayout.tsx`
+
 ## Roadmap to 100%
 
 See [LIGHTHOUSE_100_PLAN.md](LIGHTHOUSE_100_PLAN.md) for a phased plan to reach 100% on Performance and Best Practices.
@@ -48,5 +60,5 @@ npx lighthouse https://app.thestreetcollector.com/ --preset=perf --throttling-me
 
 ## Version
 
-- **Last Updated**: 2026-03-10
+- **Last Updated**: 2026-03-16
 - **Ref**: [docs/COMMIT_LOGS.md](/docs/COMMIT_LOGS.md#commit-lighthouse-performance-and-best-practices-2026-03-10)

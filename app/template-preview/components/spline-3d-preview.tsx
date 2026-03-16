@@ -200,7 +200,7 @@ export function Spline3DPreview({
 
   const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
   /** Base image shown when an artwork is deselected (served from public). */
-  const BASE_IMAGE_URL = '/internal.png'
+  const BASE_IMAGE_URL = '/internal.webp'
 
   
   // Store discovered layers for toggling

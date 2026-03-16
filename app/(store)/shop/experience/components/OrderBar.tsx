@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
 import { Package } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -15,9 +15,22 @@ import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuizPrefill'
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
-import { PaymentStep } from '@/components/shop/checkout/PaymentStep'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { Checkbox, Label } from '@/components/ui'
+
+// Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
+// payment section is expanded by the user — keeps them off the initial experience bundle.
+const PaymentStep = dynamic(
+  () => import('@/components/shop/checkout/PaymentStep').then((m) => ({ default: m.PaymentStep })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-5 h-5 border-2 border-neutral-300 border-t-[#047AFF] rounded-full animate-spin" />
+      </div>
+    ),
+  }
+)
 
 interface OrderBarProps {
   lamp: ShopifyProduct
@@ -561,23 +574,22 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   return (
     <div className={cn('fixed inset-0 z-[90]', drawerOpen ? 'pointer-events-auto' : 'pointer-events-none')} aria-hidden={!drawerOpen}>
-      <AnimatePresence>
-        {drawerOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleClose}
-            className="fixed inset-0 pointer-events-auto z-[91] bg-black/30"
-            aria-hidden="true"
-          />
+      {/* Backdrop */}
+      <div
+        onClick={handleClose}
+        className={cn(
+          'fixed inset-0 pointer-events-auto z-[91] bg-black/30 transition-opacity duration-200',
+          drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
-      </AnimatePresence>
-      <motion.div
-        initial={false}
-        animate={{ x: drawerOpen ? 0 : '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]"
+        aria-hidden="true"
+      />
+      {/* Drawer — CSS slide from right */}
+      <div
+        className={cn(
+          'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
+          'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+          drawerOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
         style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
       >
         {/* Header - close button only */}
@@ -750,7 +762,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <AddressModal
         open={addressModalOpen}

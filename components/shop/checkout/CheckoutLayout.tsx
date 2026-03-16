@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { Home, CreditCard, Loader2, Tag } from 'lucide-react'
 import { validatePromo } from '@/lib/shop/useValidatePromo'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import {
   useCheckout,
@@ -126,6 +125,7 @@ export function CheckoutLayout({
     openPromoModal,
     closeModals,
     validateAndOpenFirstIncomplete,
+    getMissingAddressField,
   } = checkout
 
   const isAddressComplete = checkout.isAddressComplete()
@@ -264,13 +264,12 @@ export function CheckoutLayout({
         {error && (
           <p className="text-center text-xs text-red-500 dark:text-red-400">{error}</p>
         )}
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.98 }}
           onClick={handlePayClick}
           disabled={isCheckingOut || disabled}
           className={cn(
-            'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors',
+            'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors active:scale-[0.98]',
             isCheckingOut || disabled
               ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0]'
               : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
@@ -295,67 +294,74 @@ export function CheckoutLayout({
               )}
             </>
           )}
-        </motion.button>
+        </button>
       </div>
 
-      {/* Modals */}
-      <AddressModal
-        open={openSection === 'address'}
-        onOpenChange={(open) => !open && closeModals()}
-        initialAddress={address}
-        onSave={(addr) => {
-          setAddress(addr)
-          if (sameAsShipping) setBillingAddress(addr)
-          closeModals()
-          captureAddShippingInfo([], total, addr.country)
-          captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved' })
-        }}
-        billingAddress={!sameAsShipping ? billingAddress : null}
-      />
-      <PaymentMethodModal
-        open={openSection === 'payment'}
-        onOpenChange={(open) => !open && closeModals()}
-        selectedMethod={paymentMethod}
-        onSelect={(m) => {
-          setPaymentMethod(m)
-          captureAddPaymentInfo(m, [], total)
-          captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'payment_selected', payment_method: m })
-          if (m === 'paypal') closeModals()
-        }}
-        onCardSaved={(card) => {
-          setSavedCard(card)
-          closeModals()
-        }}
-        shippingAddress={address}
-        sameAsShipping={sameAsShipping}
-        onSameAsShippingChange={(v) => {
-          setSameAsShipping(v)
-          if (v) setBillingAddress(null)
-        }}
-        billingAddress={sameAsShipping ? address : billingAddress}
-        onBillingAddressSave={(addr) => setBillingAddress(addr)}
-      />
-      <PromoCodeModal
-        open={openSection === 'promo'}
-        onOpenChange={(open) => !open && closeModals()}
-        appliedCode={promoCode}
-        appliedDiscount={promoDiscount}
-        onApply={async (code) => {
-          setPromoCode(code)
-          const subtotalCents = Math.round(subtotal * 100)
-          const { valid, discountCents } = await validatePromo(code, subtotalCents)
-          const discount = valid ? discountCents / 100 : 0
-          setPromoDiscount(discount)
-          if (valid) {
-            captureFunnelEvent(FunnelEvents.promo_code_applied, { code, discount_amount: discount })
-          }
-          closeModals()
-        }}
-        onRemove={() => {
-          setPromoCode('')
-          setPromoDiscount(0)
-        }}
-      />
+      {/* Modals — conditionally mounted to avoid loading Google Maps / heavy modal JS until needed */}
+      {openSection === 'address' && (
+        <AddressModal
+          open
+          onOpenChange={(open) => !open && closeModals()}
+          initialAddress={address}
+          onSave={(addr) => {
+            setAddress(addr)
+            if (sameAsShipping) setBillingAddress(addr)
+            closeModals()
+            captureAddShippingInfo([], total, addr.country)
+            captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved' })
+          }}
+          billingAddress={!sameAsShipping ? billingAddress : null}
+          highlightField={getMissingAddressField()}
+        />
+      )}
+      {openSection === 'payment' && (
+        <PaymentMethodModal
+          open
+          onOpenChange={(open) => !open && closeModals()}
+          selectedMethod={paymentMethod}
+          onSelect={(m) => {
+            setPaymentMethod(m)
+            captureAddPaymentInfo(m, [], total)
+            captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'payment_selected', payment_method: m })
+            if (m === 'paypal') closeModals()
+          }}
+          onCardSaved={(card) => {
+            setSavedCard(card)
+            closeModals()
+          }}
+          shippingAddress={address}
+          sameAsShipping={sameAsShipping}
+          onSameAsShippingChange={(v) => {
+            setSameAsShipping(v)
+            if (v) setBillingAddress(null)
+          }}
+          billingAddress={sameAsShipping ? address : billingAddress}
+          onBillingAddressSave={(addr) => setBillingAddress(addr)}
+        />
+      )}
+      {openSection === 'promo' && (
+        <PromoCodeModal
+          open
+          onOpenChange={(open) => !open && closeModals()}
+          appliedCode={promoCode}
+          appliedDiscount={promoDiscount}
+          onApply={async (code) => {
+            setPromoCode(code)
+            const subtotalCents = Math.round(subtotal * 100)
+            const { valid, discountCents } = await validatePromo(code, subtotalCents)
+            const discount = valid ? discountCents / 100 : 0
+            setPromoDiscount(discount)
+            if (valid) {
+              captureFunnelEvent(FunnelEvents.promo_code_applied, { code, discount_amount: discount })
+            }
+            closeModals()
+          }}
+          onRemove={() => {
+            setPromoCode('')
+            setPromoDiscount(0)
+          }}
+        />
+      )}
     </div>
   )
 }

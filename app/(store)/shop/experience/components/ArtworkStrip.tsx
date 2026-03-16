@@ -278,7 +278,7 @@ function ArtworkCard({
               alt={product.title}
               fill
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
-              sizes="(max-width: 768px) 52vw, 28vw"
+              sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
               loading={priorityLoad ? 'eager' : 'lazy'}
               onLoad={() => setImageLoaded(true)}

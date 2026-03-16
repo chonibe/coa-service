@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import posthog from "posthog-js"
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
@@ -66,12 +66,14 @@ function makeBeforeSend() {
   }
 }
 
-/** Landing paths where we defer session recording to reduce TBT and bootup (Lighthouse) */
-const LANDING_PATHS = ["/", "/shop/street-collector"]
+/** Paths where we defer PostHog init by 10s to reduce TBT/bootup for Lighthouse and ad landing performance */
+const LANDING_PATHS = ["/", "/shop/street-collector", "/shop/experience", "/experience"]
 
 /** PostHog: session replay, heatmaps, autocapture, user journeys. Key from window (runtime) or build-time env. */
 function PostHogWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const hasInitializedRef = useRef(false)
+  
   useEffect(() => {
     const key =
       (typeof window !== "undefined" && (window as unknown as { __POSTHOG_KEY__?: string }).__POSTHOG_KEY__) ||
@@ -88,13 +90,25 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           /* ignore */
         }
       }
-      const isLanding = pathname && LANDING_PATHS.some((p) => pathname === p || pathname === p + "/")
+      const isLanding = pathname && LANDING_PATHS.some((p) => pathname === p || pathname === p + "/" || pathname.startsWith(p + "/"))
       const isDebug =
         typeof window !== "undefined" &&
         typeof window.location?.search !== "undefined" &&
         window.location.search.includes("__posthog_debug=true")
 
       const doInit = (withRecording: boolean) => {
+        // Prevent re-initialization by checking our ref and PostHog's internal state
+        if (hasInitializedRef.current) {
+          return
+        }
+        
+        // Check if PostHog is already initialized (PostHog sets config when initialized)
+        if (typeof window !== 'undefined' && posthog?.__loaded) {
+          hasInitializedRef.current = true
+          return
+        }
+        
+        hasInitializedRef.current = true
         posthog.init(key, {
           api_host: host,
           debug: isDebug,

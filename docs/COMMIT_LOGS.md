@@ -1,3 +1,30 @@
+## Commit: Experience & Checkout Lighthouse Optimization (2026-03-16)
+
+### Summary
+Applied Lighthouse performance optimizations to the `/experience` page and checkout funnel based on a real audit (Performance 27, LCP 49s, TBT 4,710ms). Primary fix: `PaymentStep` was statically imported in `OrderBar.tsx`, causing Stripe (213 KiB), hCaptcha (358 KiB, 8,771ms critical path), and Google Pay (386 KiB) to load on every experience page visit. Converted to `next/dynamic`. Also deferred PostHog and Facebook Pixel, compressed `internal.png` 97%, and removed `framer-motion` from checkout components.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/experience/components/OrderBar.tsx`](../app/(store)/shop/experience/components/OrderBar.tsx) — Convert `PaymentStep` static import to `next/dynamic({ ssr: false })` — removes Stripe/hCaptcha/Google Pay from initial experience bundle
+- [x] [`app/(store)/shop/experience/components/OrderBar.tsx`](../app/(store)/shop/experience/components/OrderBar.tsx) — Replace `framer-motion` `motion.div`/`AnimatePresence` with CSS `transition-transform`/`transition-opacity` for drawer slide animation
+- [x] [`app/providers.tsx`](../app/providers.tsx) — Add `/shop/experience` and `/experience` to `LANDING_PATHS`; update path matching to cover subpaths via `startsWith` — PostHog init delayed 10s on all experience paths
+- [x] [`components/meta-pixel.tsx`](../components/meta-pixel.tsx) — Wrap `fbevents.js` script injection in `requestIdleCallback` (fallback: `setTimeout(3000)`) to defer Facebook Pixel until after page is interactive
+- [x] [`app/(store)/shop/experience/components/ArtworkStrip.tsx`](../app/(store)/shop/experience/components/ArtworkStrip.tsx) — Fix `sizes` prop on artwork cards: `(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px` — reduces oversized srcset entries (saves 136 KiB on LCP image)
+- [x] [`public/internal.webp`](../public/internal.webp) — New WebP version of Spline base texture (2,896 KiB PNG → 87 KiB WebP, 97% reduction)
+- [x] [`app/template-preview/components/spline-3d-preview.tsx`](../app/template-preview/components/spline-3d-preview.tsx) — Update `BASE_IMAGE_URL` from `/internal.png` to `/internal.webp`
+- [x] [`components/shop/checkout/CheckoutLayout.tsx`](../components/shop/checkout/CheckoutLayout.tsx) — Convert `AddressModal`, `PaymentMethodModal`, `PromoCodeModal` to conditional rendering (only mount when `openSection` matches) — defers Google Maps SDK until user opens address modal
+- [x] [`components/shop/checkout/CheckoutLayout.tsx`](../components/shop/checkout/CheckoutLayout.tsx) — Replace `motion.button` with `whileTap={{ scale: 0.98 }}` with plain `<button>` + Tailwind `active:scale-[0.98]` — removes `framer-motion` from checkout bundle
+- [x] [`docs/features/lighthouse-performance/EXPERIENCE_CHECKOUT_OPTIMIZATION.md`](../docs/features/lighthouse-performance/EXPERIENCE_CHECKOUT_OPTIMIZATION.md) — New audit doc with findings and changes
+- [x] [`docs/features/lighthouse-performance/README.md`](../docs/features/lighthouse-performance/README.md) — Updated with experience optimization section
+
+### 📌 Notes
+
+- Stripe's `clover/stripe.js` still loads when the user expands the payment section (by design — required for checkout). hCaptcha and Google Pay iframes are Stripe-injected and load at that point.
+- `internal.png` is kept in `/public/` for backward compatibility but `internal.webp` is now the active reference. The PNG can be deleted after verifying no other references.
+- Re-run Lighthouse after deploy to measure actual score improvement.
+
+---
+
 ## Commit: Lighthouse Best Practices – third-party cookies, COOP (2026-03-10)
 
 ### Summary

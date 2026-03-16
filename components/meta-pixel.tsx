@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || undefined
 
 /**
  * Initializes Meta Pixel base code once.
@@ -20,7 +20,15 @@ const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
  */
 export function MetaPixel() {
   useEffect(() => {
-    if (typeof window === 'undefined' || !META_PIXEL_ID) return
+    if (typeof window === 'undefined') return
+    
+    // Early return if Pixel ID is not configured
+    if (!META_PIXEL_ID) {
+      console.warn('[Meta Pixel] NEXT_PUBLIC_META_PIXEL_ID is not set. Meta Pixel will not be initialized.')
+      return
+    }
+    
+    // Early return if already initialized
     if (typeof window.fbq === 'function') return
 
     // Capture fbc/fbp early using Parameter Builder (best practice)
@@ -43,12 +51,23 @@ export function MetaPixel() {
     n.queue = []
     w.fbq = n
 
-    const script = document.createElement('script')
-    script.async = true
-    script.src = 'https://connect.facebook.net/en_US/fbevents.js'
-    document.head.appendChild(script)
+    const loadScript = () => {
+      const script = document.createElement('script')
+      script.async = true
+      script.src = 'https://connect.facebook.net/en_US/fbevents.js'
+      document.head.appendChild(script)
 
-    window.fbq?.('init', META_PIXEL_ID)
+      if (META_PIXEL_ID) {
+        window.fbq?.('init', META_PIXEL_ID)
+      }
+    }
+
+    // Defer fbevents.js until the browser is idle to avoid blocking LCP/TBT
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(loadScript, { timeout: 5000 })
+    } else {
+      setTimeout(loadScript, 3000)
+    }
   }, [])
 
   return null
