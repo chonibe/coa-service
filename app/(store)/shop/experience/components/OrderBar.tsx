@@ -587,10 +587,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       <div
         className={cn(
           'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
-          'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+          'transition-transform duration-300',
           drawerOpen ? 'translate-x-0' : 'translate-x-full'
         )}
-        style={{ width: 'min(calc(100vw - 0.5rem), 420px)' }}
+        style={{ width: 'min(calc(100vw - 0.5rem), 420px)', transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)' }}
       >
         {/* Header - close button only */}
         <div className="checkout-title flex-shrink-0 flex items-center justify-end px-6 pt-4 pb-1">
