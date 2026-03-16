@@ -602,6 +602,8 @@ export function Configurator({
 
   /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp. A/B skip variant always starts false so they must see paywall first. */
   const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => (forceShowLampPaywall ? false : loadedCart.lampPaywallSkipped))
+  /** Session-only skip: resets on refresh. On ads page we use this so lamp card shows every new session but they can skip during the session. */
+  const [sessionLampPaywallSkipped, setSessionLampPaywallSkipped] = useState(false)
   /** When user deselects lamp (quantity → 0), keep them on artworks */
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(n)
@@ -609,11 +611,14 @@ export function Configurator({
       setTriedSteps((prev) => { const next: [boolean, boolean, boolean, boolean, boolean, boolean] = [...prev]; next[3] = true; return next })
       if (highlightStepRef.current === 3) setHighlightStep(4)
     }
-    if (n === 0 && !quizAnswers.ownsLamp) setLampPaywallSkipped(true)
+    if (n === 0 && !quizAnswers.ownsLamp) {
+      setLampPaywallSkipped(true)
+      setSessionLampPaywallSkipped(true)
+    }
   }, [])
 
-  /** Lamp card: always show when lamp not yet added and user hasn't dismissed it */
-  const showLampPaywall = lampQuantity === 0 && !lampPaywallSkipped
+  /** Lamp card: on ads use session skip only (card shows every new session, skip hides for current session). Else use persisted skip. */
+  const showLampPaywall = lampQuantity === 0 && (adPreset ? !sessionLampPaywallSkipped : !lampPaywallSkipped)
   const showHighlightAnimation = false // temporarily hidden for user testing
   const totalWizardSteps = isMobile ? 6 : 5
   const lastWizardStep = totalWizardSteps - 1
@@ -1537,11 +1542,26 @@ export function Configurator({
           {/* Top bar: on desktop = full; on mobile = just chevron (season/filter/search in bottom bar) */}
           {!isMobile && (
             <>
-              {/* Lamp paywall heading — replaces season tabs while lamp not yet added */}
+              {/* Lamp paywall heading + lamp card on desktop — replaces season tabs while lamp not yet added */}
               {showLampPaywall ? (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#FFBA94] leading-tight">Start with the Street Lamp</p>
-                  <p className="text-[11px] text-neutral-500 dark:text-[#c4a0a0] mt-0.5">Choose your lamp, then personalize with artwork.</p>
+                <div className="flex-1 min-w-0 flex items-center gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#FFBA94] leading-tight">Start with the Street Lamp</p>
+                    <p className="text-[11px] text-neutral-500 dark:text-[#c4a0a0] mt-0.5">Choose your lamp, then personalize with artwork.</p>
+                  </div>
+                  {lamp && typeof lampPrice === 'number' && (
+                    <div className="hidden lg:block flex-shrink-0 w-[240px]">
+                      <LampGridCard
+                        lamp={lamp}
+                        lampPrice={lampPrice}
+                        onAddLamp={() => {
+                          if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_add_to_cart', { source: 'configurator_header' })
+                          handleLampQuantityChange(1)
+                        }}
+                        onViewDetail={() => setDetailProduct(lamp)}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
               <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1594,7 +1614,7 @@ export function Configurator({
               )}
 
               {/* Right: Street lamp module — lg+ only (below lg, lamp lives in header to avoid touching seasons) */}
-              {lamp && typeof lampPrice === 'number' && !showLampPaywall && (!adPreset || lampQuantity > 0) && (
+              {lamp && typeof lampPrice === 'number' && !showLampPaywall && (
                 <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-0 ml-2">
                   <div 
                     ref={lampButtonRef}
@@ -1789,6 +1809,7 @@ export function Configurator({
                   onClick={() => {
                     if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_skip', { source: 'configurator' })
                     setLampPaywallSkipped(true)
+                    setSessionLampPaywallSkipped(true)
                   }}
                   style={{ touchAction: 'manipulation' }}
                   className="text-[11px] text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4] transition-colors underline underline-offset-2 whitespace-nowrap flex-shrink-0"
