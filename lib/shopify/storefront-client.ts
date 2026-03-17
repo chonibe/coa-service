@@ -16,7 +16,8 @@ const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY
 // Storefront API token (not Admin API token which starts with shpat_)
 const STOREFRONT_TOKEN = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
 const API_VERSION = '2024-01'
-const STOREFRONT_TIMEOUT_MS = Number(process.env.SHOPIFY_STOREFRONT_TIMEOUT_MS || 20000)
+// 35s default: cold start + Shopify latency often exceed 20s; set SHOPIFY_STOREFRONT_TIMEOUT_MS in Vercel if needed
+const STOREFRONT_TIMEOUT_MS = Number(process.env.SHOPIFY_STOREFRONT_TIMEOUT_MS || 35000)
 
 const STOREFRONT_URL = `https://${SHOPIFY_SHOP}/api/${API_VERSION}/graphql.json`
 
@@ -953,6 +954,65 @@ export async function getCollectionWithListProducts(handle: string, options: {
   })
 
   return data.collection
+}
+
+/**
+ * Fetch two named season collections in a single GraphQL request to minimise
+ * Shopify Storefront round-trips. Returns [season1, season2] — either may be
+ * null if the collection doesn't exist or the request fails.
+ */
+export async function getSeasonCollections(
+  handle1: string,
+  handle2: string,
+  options: { first?: number } = {}
+): Promise<[ShopifyCollection | null, ShopifyCollection | null]> {
+  const { first = 24 } = options
+
+  const query = `
+    ${COLLECTION_FRAGMENT}
+    ${PRODUCT_LIST_FRAGMENT}
+    query GetSeasonCollections($first: Int!) {
+      season1: collection(handle: "${handle1}") {
+        ...CollectionFields
+        products(first: $first, sortKey: MANUAL) {
+          edges {
+            node {
+              ...ProductListFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+      season2: collection(handle: "${handle2}") {
+        ...CollectionFields
+        products(first: $first, sortKey: MANUAL) {
+          edges {
+            node {
+              ...ProductListFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  try {
+    const data = await storefrontQuery<{
+      season1: ShopifyCollection | null
+      season2: ShopifyCollection | null
+    }>(query, { first })
+    return [data.season1, data.season2]
+  } catch (err) {
+    console.error('[Shopify] getSeasonCollections failed:', err)
+    return [null, null]
+  }
 }
 
 /**

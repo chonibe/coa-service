@@ -7,10 +7,11 @@ import { getCollectionProductHandlesByHandle } from '@/lib/shopify/admin-collect
 import {
   getProduct,
   getCollectionWithListProducts,
+  getSeasonCollections,
   getProductsByHandles,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { getAdPreset } from '@/lib/experience/ad-presets'
+import { getAdPreset, getPresetFetchHandles } from '@/lib/experience/ad-presets'
 import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME, AFFILIATE_DISMISSED_COOKIE_NAME, AFFILIATE_PRODUCT_COOKIE_NAME } from '@/lib/affiliate-tracking'
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
@@ -29,17 +30,7 @@ const getCachedLamp = unstable_cache(
 )
 
 const getCachedSeasonCollections = unstable_cache(
-  () =>
-    Promise.all([
-      getCollectionWithListProducts('season-1', { first: 36 }).catch((err) => {
-        console.error('[experience] Failed to fetch season-1 collection:', err?.message ?? err)
-        return null
-      }),
-      getCollectionWithListProducts('2025-edition', { first: 36 }).catch((err) => {
-        console.error('[experience] Failed to fetch 2025-edition collection:', err?.message ?? err)
-        return null
-      }),
-    ]),
+  () => getSeasonCollections('season-1', '2025-edition', { first: 24 }),
   ['experience-season-collections'],
   { revalidate: 300, tags: ['experience-products'] }
 )
@@ -124,7 +115,7 @@ export async function generateMetadata(props: {
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
-const INITIAL_PRODUCTS_PER_SEASON = 36
+const INITIAL_PRODUCTS_PER_SEASON = 24
 /** Extra collections to merge into Season 2 (e.g. for ?artist= only; spotlight is derived from Season 2 latest 2) */
 const SPOTLIGHT_COLLECTIONS_IN_SEASON2: readonly string[] = []
 
@@ -175,14 +166,14 @@ async function ExperienceProductsLoader({
     season2Result = s2
     spotlightResults = []
   } else {
-    const results = await Promise.all([
-      getCollectionWithListProducts(SEASON_1_HANDLE, { first: INITIAL_PRODUCTS_PER_SEASON }).catch(() => null),
-      getCollectionWithListProducts(SEASON_2_HANDLE, { first: INITIAL_PRODUCTS_PER_SEASON }).catch(() => null),
-      ...collectionsToMerge.map((h) =>
+    const [s1, s2] = await getSeasonCollections(SEASON_1_HANDLE, SEASON_2_HANDLE, { first: INITIAL_PRODUCTS_PER_SEASON })
+    season1Result = s1
+    season2Result = s2
+    spotlightResults = await Promise.all(
+      collectionsToMerge.map((h) =>
         getCollectionWithListProducts(h, { first: 12 }).catch(() => null)
-      ),
-    ])
-    ;[season1Result, season2Result, ...spotlightResults] = results
+      )
+    )
   }
 
   const productsSeason1 = season1Result?.products?.edges?.map((e) => e.node) ?? []
@@ -230,12 +221,13 @@ async function ExperienceProductsLoader({
   }
   let productsSeason2 = [...spotlightProducts, ...baseSeason2]
 
-  // When ?preset= is set, ensure preset products are loaded so the bundle grid is never empty
+  // When ?preset= is set, ensure preset products are loaded (including alternate handles e.g. fortune-favors-the-friendly)
   if (adPreset?.trim()) {
     const preset = getAdPreset(adPreset.trim())
     if (preset?.handles?.length) {
       try {
-        const byHandles = await getProductsByHandles(preset.handles, { preferPrivateToken: true })
+        const fetchHandles = getPresetFetchHandles(preset)
+        const byHandles = await getProductsByHandles(fetchHandles, { preferPrivateToken: true })
         const season2IdSet = new Set(productsSeason2.map((p) => p.id))
         const presetOnly = byHandles.filter(
           (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp') && !season2IdSet.has(p.id)
