@@ -600,16 +600,16 @@ const COLLECTION_FRAGMENT = `
       width
       height
     }
-    metafield(namespace: "custom", key: "instagram") {
+    metafield: metafield(namespace: "custom", key: "instagram") {
       value
     }
-    metafield(namespace: "custom", key: "gif") {
+    gifMetafield: metafield(namespace: "custom", key: "gif") {
       value
     }
-    metafield(namespace: "custom", key: "unlisted") {
+    unlistedMetafield: metafield(namespace: "custom", key: "unlisted") {
       value
     }
-    metafield(namespace: "custom", key: "product_handles") {
+    productHandlesMetafield: metafield(namespace: "custom", key: "product_handles") {
       value
     }
   }
