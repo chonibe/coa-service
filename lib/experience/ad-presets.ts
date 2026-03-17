@@ -14,6 +14,15 @@ export const AD_PRESETS: Record<string, AdPreset> = {
     name: 'Fortune Favours the Friendly',
     handles: ['fortune-favours-the-friendly', 'levinski', 'lamp-2'],
   },
+  // Ad URL variants — typo in original campaign URL preserved intentionally
+  'fortune-favores-the-friendly': {
+    name: 'Fortune Favours the Friendly',
+    handles: ['fortune-favours-the-friendly', 'levinski', 'lamp-2'],
+  },
+  'fortune-favours-the-friendly': {
+    name: 'Fortune Favours the Friendly',
+    handles: ['fortune-favours-the-friendly', 'levinski', 'lamp-2'],
+  },
 }
 
 export function getAdPreset(key: string | undefined): AdPreset | null {

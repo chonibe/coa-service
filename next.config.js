@@ -166,13 +166,16 @@ const nextConfig = {
       // /products/* is redirected to /shop/street-collector via redirects() (affiliate links)
       // /collections/* is handled in middleware (redirect to / with affiliate cookie from path); no rewrite so middleware runs
       // Experience at /experience (no /shop prefix) — https://app.thestreetcollector.com/experience
+      // permanent: false = 307 so query params (?preset=, ?direct=, etc.) are preserved
       {
         source: "/experience",
         destination: "/shop/experience",
+        permanent: false,
       },
       {
         source: "/experience/:path*",
         destination: "/shop/experience/:path*",
+        permanent: false,
       },
       {
         source: "/api/:path*",
