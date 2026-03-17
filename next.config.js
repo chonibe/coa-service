@@ -165,17 +165,14 @@ const nextConfig = {
       // Root / is the main page (app/page.tsx re-exports street-collector); no redirect to /shop/street-collector
       // /products/* is redirected to /shop/street-collector via redirects() (affiliate links)
       // /collections/* is handled in middleware (redirect to / with affiliate cookie from path); no rewrite so middleware runs
-      // Experience at /experience (no /shop prefix) — https://app.thestreetcollector.com/experience
-      // permanent: false = 307 so query params (?preset=, ?direct=, etc.) are preserved
+      // Experience at /experience (no /shop prefix) — rewrites preserve query params (?preset=, ?direct=, etc.)
       {
         source: "/experience",
         destination: "/shop/experience",
-        permanent: false,
       },
       {
         source: "/experience/:path*",
         destination: "/shop/experience/:path*",
-        permanent: false,
       },
       {
         source: "/api/:path*",

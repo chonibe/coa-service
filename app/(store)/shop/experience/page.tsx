@@ -10,6 +10,7 @@ import {
   getProductsByHandles,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
+import { getAdPreset } from '@/lib/experience/ad-presets'
 import { getAffiliateArtistSlugFromSearchParams, AFFILIATE_ARTIST_COOKIE_NAME, AFFILIATE_DISMISSED_COOKIE_NAME, AFFILIATE_PRODUCT_COOKIE_NAME } from '@/lib/affiliate-tracking'
 import { ExperienceClient } from './components/ExperienceClient'
 import { ExperienceLoadingSkeleton } from './loading'
@@ -30,8 +31,14 @@ const getCachedLamp = unstable_cache(
 const getCachedSeasonCollections = unstable_cache(
   () =>
     Promise.all([
-      getCollectionWithListProducts('season-1', { first: 36 }).catch(() => null),
-      getCollectionWithListProducts('2025-edition', { first: 36 }).catch(() => null),
+      getCollectionWithListProducts('season-1', { first: 36 }).catch((err) => {
+        console.error('[experience] Failed to fetch season-1 collection:', err?.message ?? err)
+        return null
+      }),
+      getCollectionWithListProducts('2025-edition', { first: 36 }).catch((err) => {
+        console.error('[experience] Failed to fetch 2025-edition collection:', err?.message ?? err)
+        return null
+      }),
     ]),
   ['experience-season-collections'],
   { revalidate: 300, tags: ['experience-products'] }
@@ -221,7 +228,26 @@ async function ExperienceProductsLoader({
       }
     }
   }
-  const productsSeason2 = [...spotlightProducts, ...baseSeason2]
+  let productsSeason2 = [...spotlightProducts, ...baseSeason2]
+
+  // When ?preset= is set, ensure preset products are loaded so the bundle grid is never empty
+  if (adPreset?.trim()) {
+    const preset = getAdPreset(adPreset.trim())
+    if (preset?.handles?.length) {
+      try {
+        const byHandles = await getProductsByHandles(preset.handles, { preferPrivateToken: true })
+        const season2IdSet = new Set(productsSeason2.map((p) => p.id))
+        const presetOnly = byHandles.filter(
+          (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp') && !season2IdSet.has(p.id)
+        )
+        if (presetOnly.length > 0) {
+          productsSeason2 = [...presetOnly, ...productsSeason2]
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   const pageInfoSeason1: SeasonPageInfo = {
     hasNextPage: season1Result?.products?.pageInfo?.hasNextPage ?? false,

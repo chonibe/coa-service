@@ -1031,16 +1031,25 @@ export function Configurator({
 
   if (products.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-white">
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-white">
         <div className="text-center max-w-md px-6">
-          <h1 className="text-2xl font-semibold mb-3 text-[#FFBA94]">No artworks available</h1>
-          <p className="text-neutral-400 mb-6">Check back soon for new releases.</p>
-          <Link
-            href="/shop"
-            className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
-          >
-            Back to Shop
-          </Link>
+          <h1 className="text-2xl font-semibold mb-3 text-[#FFBA94]">Artworks unavailable</h1>
+          <p className="text-neutral-400 mb-6">We couldn&apos;t load the artworks. Please try refreshing the page.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+            >
+              Refresh page
+            </button>
+            <Link
+              href="/shop"
+              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
+            >
+              Back to Shop
+            </Link>
+          </div>
         </div>
       </div>
     )
