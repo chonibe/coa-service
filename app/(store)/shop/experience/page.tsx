@@ -7,26 +7,9 @@ import {
   getSeasonCollections,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { ExperienceV2Client } from './components/ExperienceV2Client'
+import { ExperienceV2ClientLoader } from './components/ExperienceV2ClientLoader'
 
 export const dynamic = 'force-dynamic'
-
-const getCachedLamp = unstable_cache(
-  () => getProduct('street_lamp'),
-  ['experience-v2-lamp'],
-  { revalidate: 300, tags: ['experience-products'] }
-)
-
-const getCachedSeasonCollections = unstable_cache(
-  () => getSeasonCollections('season-1', '2025-edition', { first: 50 }),
-  ['experience-v2-season-collections'],
-  { revalidate: 300, tags: ['experience-products'] }
-)
-
-export const metadata: Metadata = {
-  title: 'Experience V2 | Street Collector',
-  description: 'Build your Street Lamp with artwork you love. New streamlined experience.',
-}
 
 function LoadingSkeleton() {
   return (
@@ -39,22 +22,39 @@ function LoadingSkeleton() {
   )
 }
 
+const getCachedLamp = unstable_cache(
+  () => getProduct('street_lamp'),
+  ['experience-v2-lamp'],
+  { revalidate: 300, tags: ['experience-products'] }
+)
+
+const getCachedSeasonCollections = unstable_cache(
+  () => getSeasonCollections('season-1', '2025-edition', { first: 24 }),
+  ['experience-v2-season-collections'],
+  { revalidate: 300, tags: ['experience-products'] }
+)
+
+export const metadata: Metadata = {
+  title: 'Experience V2 | Street Collector',
+  description: 'Build your Street Lamp with artwork you love. New streamlined experience.',
+}
+
 function filterLamp(products: ShopifyProduct[]) {
   return products.filter(
     (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
   )
 }
 
-async function ExperienceV2Loader({ lamp, initialArtistSlug }: { lamp: ShopifyProduct; initialArtistSlug?: string }) {
-  const [season1Result, season2Result] = await getCachedSeasonCollections()
-
+function buildProductsFromSeasons(
+  season1Result: Awaited<ReturnType<typeof getCachedSeasonCollections>>[0],
+  season2Result: Awaited<ReturnType<typeof getCachedSeasonCollections>>[1]
+) {
   const productsSeason1 = filterLamp(
     season1Result?.products?.edges?.map((e) => e.node) ?? []
   )
   const productsSeason2 = filterLamp(
     season2Result?.products?.edges?.map((e) => e.node) ?? []
   )
-
   const pageInfoSeason1 = season1Result?.products?.pageInfo ?? {
     hasNextPage: false,
     endCursor: null,
@@ -63,21 +63,14 @@ async function ExperienceV2Loader({ lamp, initialArtistSlug }: { lamp: ShopifyPr
     hasNextPage: false,
     endCursor: null,
   }
-
-  return (
-    <ExperienceV2Client
-      lamp={lamp}
-      productsSeason1={productsSeason1}
-      productsSeason2={productsSeason2}
-      pageInfoSeason1={pageInfoSeason1}
-      pageInfoSeason2={pageInfoSeason2}
-      initialArtistSlug={initialArtistSlug}
-    />
-  )
+  return { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 }
 }
 
-async function ExperienceV2LampLoader({ initialArtistSlug }: { initialArtistSlug?: string }) {
-  const lamp = await getCachedLamp().catch(() => null)
+async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug?: string }) {
+  const [lamp, [season1Result, season2Result]] = await Promise.all([
+    getCachedLamp().catch(() => null),
+    getCachedSeasonCollections(),
+  ])
 
   if (!lamp) {
     return (
@@ -98,10 +91,18 @@ async function ExperienceV2LampLoader({ initialArtistSlug }: { initialArtistSlug
     )
   }
 
+  const { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 } =
+    buildProductsFromSeasons(season1Result, season2Result)
+
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2Loader lamp={lamp} initialArtistSlug={initialArtistSlug} />
-    </Suspense>
+    <ExperienceV2ClientLoader
+      lamp={lamp}
+      productsSeason1={productsSeason1}
+      productsSeason2={productsSeason2}
+      pageInfoSeason1={pageInfoSeason1}
+      pageInfoSeason2={pageInfoSeason2}
+      initialArtistSlug={initialArtistSlug}
+    />
   )
 }
 
@@ -115,7 +116,7 @@ export default async function ExperienceV2Page({ searchParams }: ExperiencePageP
 
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2LampLoader initialArtistSlug={initialArtistSlug} />
+      <ExperienceV2DataLoader initialArtistSlug={initialArtistSlug} />
     </Suspense>
   )
 }

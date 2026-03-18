@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronDown, Instagram, Sparkles } from 'lucide-react'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 
 export interface SpotlightData {
@@ -137,11 +138,14 @@ export function ArtistSpotlightBanner({
             <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-200 dark:bg-[#262222]">
               {spotlight.image ? (
                 <Image
-                  src={spotlight.image}
+                  src={getShopifyImageUrl(spotlight.image, 96) ?? spotlight.image}
                   alt={spotlight.vendorName}
                   width={48}
                   height={48}
                   className="object-cover w-full h-full"
+                  sizes="48px"
+                  loading="eager"
+                  priority
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -173,12 +177,14 @@ export function ArtistSpotlightBanner({
                 >
                   {firstImage(p) ? (
                     <Image
-                      src={firstImage(p)!}
+                      src={getShopifyImageUrl(firstImage(p), 96) ?? firstImage(p)!}
                       alt={p.title}
                       width={32}
                       height={32}
                       className="object-cover w-full h-full"
                       sizes="32px"
+                      loading="eager"
+                      priority
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-neutral-400 text-[8px]">–</div>
@@ -199,7 +205,7 @@ export function ArtistSpotlightBanner({
                 <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#262222]">
                   {spotlight.image ? (
                     <Image
-                      src={spotlight.image}
+                      src={getShopifyImageUrl(spotlight.image, 224) ?? spotlight.image}
                       alt={spotlight.vendorName}
                       width={112}
                       height={112}

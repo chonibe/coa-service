@@ -114,7 +114,8 @@ export function ArtworkCarouselBar({
               'flex items-end gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory flex-1 min-w-0 pb-3',
               selectedArtworks.length === 0 && 'justify-center pl-3 pr-3',
               selectedArtworks.length > 0 && 'pl-3 pr-3',
-              isDesktop && selectedArtworks.length > 0 && 'md:justify-center cursor-grab active:cursor-grabbing select-none'
+              !isDesktop && selectedArtworks.length > 0 && 'pr-28',
+              isDesktop && selectedArtworks.length > 0 && 'md:justify-center md:pr-3 cursor-grab active:cursor-grabbing select-none'
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
           >
@@ -122,6 +123,7 @@ export function ArtworkCarouselBar({
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
+                const isFirstItem = index === 0
 
                 return (
                   <motion.div
@@ -151,7 +153,7 @@ export function ArtworkCarouselBar({
                       onClick={() => onTapItem(index)}
                       whileTap={{ scale: 0.95 }}
                       className={cn(
-                        'relative block w-24 h-24 rounded-xl transition-all duration-200',
+                        'relative block w-24 h-30 rounded-xl transition-all duration-200 aspect-[4/5]',
                         isOnLamp ? 'opacity-100' : 'opacity-60 hover:opacity-85',
                         isOnLamp && (theme === 'light'
                           ? 'ring-2 ring-[#FFBA94] ring-offset-2 ring-offset-white'
@@ -168,6 +170,8 @@ export function ArtworkCarouselBar({
                             fill
                             className="object-cover"
                             sizes="96px"
+                            priority={isFirstItem}
+                            loading={isFirstItem ? 'eager' : 'lazy'}
                           />
                         ) : (
                           <div className={cn(
@@ -185,27 +189,67 @@ export function ArtworkCarouselBar({
                   </motion.div>
                   )
               })}
-              {/* + add card — inline with artwork blocks */}
-              <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
-                {/* Match artwork item header height (Trash2 row) for alignment when items exist */}
-                <div className={cn('flex items-center justify-center w-5', selectedArtworks.length > 0 ? 'h-3.5' : 'h-5')} aria-hidden />
-                <motion.button
-                  type="button"
-                  onClick={onOpenPicker}
-                  whileTap={{ scale: 0.95 }}
-                  className={cn(
-                    'relative flex w-24 h-24 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed',
-                    theme === 'light'
-                      ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
-                      : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
-                  )}
-                  aria-label="Start your Collection"
-                >
-                  <Plus className="w-8 h-8" strokeWidth={2} />
-                </motion.button>
-              </div>
+              {/* + add card — inline on desktop; fixed on right for mobile */}
+              {isDesktop && (
+                <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
+                  <div className={cn('flex items-center justify-center w-5', selectedArtworks.length > 0 ? 'h-3.5' : 'h-5')} aria-hidden />
+                  <motion.button
+                    type="button"
+                    onClick={onOpenPicker}
+                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5]',
+                      theme === 'light'
+                        ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
+                        : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
+                    )}
+                    aria-label="Start your Collection"
+                  >
+                    <Plus className="w-8 h-8" strokeWidth={2} />
+                  </motion.button>
+                </div>
+              )}
+              {!isDesktop && selectedArtworks.length === 0 && (
+                <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
+                  <div className="flex items-center justify-center w-5 h-5" aria-hidden />
+                  <motion.button
+                    type="button"
+                    onClick={onOpenPicker}
+                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5]',
+                      theme === 'light'
+                        ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
+                        : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
+                    )}
+                    aria-label="Start your Collection"
+                  >
+                    <Plus className="w-8 h-8" strokeWidth={2} />
+                  </motion.button>
+                </div>
+              )}
             </AnimatePresence>
           </div>
+          {/* Fixed + button on mobile when items exist — always visible on right */}
+          {!isDesktop && selectedArtworks.length > 0 && (
+            <div className="absolute right-4 bottom-3 flex flex-col items-center gap-1 z-10">
+              <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
+              <motion.button
+                type="button"
+                onClick={onOpenPicker}
+                whileTap={{ scale: 0.95 }}
+                className={cn(
+                  'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed shadow-lg aspect-[4/5]',
+                  theme === 'light'
+                    ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
+                    : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
+                )}
+                aria-label="Start your Collection"
+              >
+                <Plus className="w-8 h-8" strokeWidth={2} />
+              </motion.button>
+            </div>
+          )}
         </div>
         </div>
 

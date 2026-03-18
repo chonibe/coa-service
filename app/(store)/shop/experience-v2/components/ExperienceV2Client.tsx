@@ -9,16 +9,28 @@ import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { applyFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import type { SpotlightData } from './ArtistSpotlightBanner'
-import { SplineFullScreen } from '../../experience/components/SplineFullScreen'
-import { ArtworkCarouselBar } from '../../experience/components/ArtworkCarouselBar'
-import { ArtworkInfoBar } from '../../experience/components/ArtworkInfoBar'
 import { ArtworkDetail } from './ArtworkDetail'
+import { useExperienceTheme } from '../ExperienceThemeContext'
+
+const SplineFullScreen = dynamic(
+  () => import('../../experience/components/SplineFullScreen').then((m) => ({ default: m.SplineFullScreen })),
+  { ssr: false }
+)
+
+const ArtworkCarouselBar = dynamic(
+  () => import('../../experience/components/ArtworkCarouselBar').then((m) => ({ default: m.ArtworkCarouselBar })),
+  { ssr: false }
+)
+
+const ArtworkInfoBar = dynamic(
+  () => import('../../experience/components/ArtworkInfoBar').then((m) => ({ default: m.ArtworkInfoBar })),
+  { ssr: false }
+)
 
 const ArtworkPickerSheet = dynamic(
   () => import('../../experience/components/ArtworkPickerSheet').then((m) => ({ default: m.ArtworkPickerSheet })),
   { ssr: false }
 )
-import { useExperienceTheme } from '../ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
 const SEASON_1_HANDLE = 'season-1'
@@ -250,6 +262,30 @@ export function ExperienceV2Client({
   useEffect(() => {
     saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
   }, [cartOrder, lampQuantity, lampPreviewOrder])
+
+  // Preload first few product images when carousel is visible so selector opens with cached images
+  useEffect(() => {
+    if (!splineInView || filteredProducts.length === 0) return
+    const links: HTMLLinkElement[] = []
+    const id = setTimeout(() => {
+      const toPreload = filteredProducts.slice(0, 4)
+      toPreload.forEach((p) => {
+        const url = p.featuredImage?.url ?? p.images?.edges?.[0]?.node?.url
+        if (!url || !url.includes('cdn.shopify.com')) return
+        const resized = getShopifyImageUrl(url, 400) ?? url
+        const link = document.createElement('link')
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = resized
+        document.head.appendChild(link)
+        links.push(link)
+      })
+    }, 1500)
+    return () => {
+      clearTimeout(id)
+      links.forEach((l) => { try { document.head.removeChild(l) } catch { /* already removed */ } })
+    }
+  }, [splineInView, filteredProducts])
 
   // V1 logic: lampPreviewOrder[0] -> image1 (Side B), lampPreviewOrder[1] -> image2 (Side A)
   const sideAProduct = lampPreviewOrder[0] ? allProducts.find((p) => p.id === lampPreviewOrder[0]) ?? null : null

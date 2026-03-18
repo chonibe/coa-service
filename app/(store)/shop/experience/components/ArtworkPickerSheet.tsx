@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -137,7 +137,7 @@ function ArtworkCardV2({
               <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
-              src={getShopifyImageUrl(imageUrl, 500) ?? imageUrl}
+              src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
@@ -364,13 +364,13 @@ export function ArtworkPickerSheet({
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                'w-full max-w-2xl min-h-[70vh] max-h-[96vh] flex flex-col pointer-events-auto rounded-t-3xl md:rounded-t-2xl md:shadow-2xl',
+                'w-full max-w-2xl min-h-[60vh] max-h-[85vh] md:min-h-[70vh] md:max-h-[96vh] flex flex-col pointer-events-auto rounded-t-3xl md:rounded-t-2xl md:shadow-2xl',
                 theme === 'light' ? 'bg-white' : 'bg-[#171515]'
               )}
             >
-            {/* Bar: Title + Season 1/2 + Filter */}
+            {/* Header: Title + Close (mobile: title + close only; desktop: title + seasons + filter + close) */}
             <div className={cn(
-              'flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b',
+              'flex-shrink-0 flex items-center gap-3 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
               theme === 'light' ? 'border-neutral-200' : 'border-neutral-800'
             )}>
               <h2 className={cn(
@@ -379,9 +379,10 @@ export function ArtworkPickerSheet({
               )}>
                 Start your Collection
               </h2>
+              {/* Desktop: Season + Filter in header */}
               {onSeasonChange && (
                 <div className={cn(
-                  'flex rounded-lg border p-0.5 flex-shrink-0 ml-auto',
+                  'hidden md:flex rounded-lg border p-0.5 flex-shrink-0 ml-auto',
                   theme === 'light'
                     ? 'border-neutral-200 bg-neutral-50'
                     : 'border-[#2c2828] bg-[#201c1c]/50'
@@ -425,7 +426,7 @@ export function ArtworkPickerSheet({
                   type="button"
                   onClick={onFilterOpen}
                   className={cn(
-                    'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+                    'hidden md:flex relative items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
                     hasActiveFilters(filters)
                       ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                       : theme === 'light'
@@ -442,6 +443,19 @@ export function ArtworkPickerSheet({
                   )}
                 </button>
               )}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className={cn(
+                  'flex items-center justify-center w-9 h-9 rounded-lg -m-2 ml-auto transition-colors',
+                  theme === 'light'
+                    ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                    : 'text-[#c4a0a0] hover:text-white hover:bg-[#262222]'
+                )}
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <div
@@ -509,7 +523,7 @@ export function ArtworkPickerSheet({
                               isSelected={p1Selected}
                               selectionNumber={getSelectionNumber(product1.id)}
                               onSelect={onToggleSelect}
-                              priorityLoad={virtualRow.index < 2}
+                              priorityLoad={virtualRow.index < 3}
                               mergeWithRight={shouldMerge}
                               isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                               isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
@@ -531,7 +545,7 @@ export function ArtworkPickerSheet({
                               isSelected={p2Selected}
                               selectionNumber={getSelectionNumber(product2.id)}
                               onSelect={onToggleSelect}
-                              priorityLoad={virtualRow.index < 2}
+                              priorityLoad={virtualRow.index < 3}
                               mergeWithLeft={shouldMerge}
                               isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                               isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
@@ -555,6 +569,78 @@ export function ArtworkPickerSheet({
                 </p>
               )}
             </div>
+
+            {/* Mobile bottom bar: Season 1/2 + Filter */}
+            {(onSeasonChange || (onFilterOpen && onFilterClose && filters && onFiltersChange)) && (
+              <div className={cn(
+                'md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 border-t pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]',
+                theme === 'light' ? 'border-neutral-200 bg-neutral-50/80' : 'border-neutral-800 bg-[#1a1616]/80'
+              )}>
+                {onSeasonChange && (
+                  <div className={cn(
+                    'flex rounded-lg border p-0.5 flex-1',
+                    theme === 'light'
+                      ? 'border-neutral-200 bg-white'
+                      : 'border-[#2c2828] bg-[#201c1c]/50'
+                  )}>
+                    <button
+                      type="button"
+                      onClick={() => onSeasonChange('season1')}
+                      className={cn(
+                        'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        activeSeason === 'season1'
+                          ? theme === 'light'
+                            ? 'bg-white text-neutral-900 shadow-sm'
+                            : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
+                          : theme === 'light'
+                            ? 'text-neutral-500 hover:text-neutral-700'
+                            : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
+                      )}
+                    >
+                      Season 1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSeasonChange('season2')}
+                      className={cn(
+                        'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                        activeSeason === 'season2'
+                          ? theme === 'light'
+                            ? 'bg-white text-neutral-900 shadow-sm'
+                            : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
+                          : theme === 'light'
+                            ? 'text-neutral-500 hover:text-neutral-700'
+                            : 'text-[#c4a0a0] hover:text-[#e8d4d4]'
+                      )}
+                    >
+                      Season 2
+                    </button>
+                  </div>
+                )}
+                {onFilterOpen && onFilterClose && filters && onFiltersChange && (
+                  <button
+                    type="button"
+                    onClick={onFilterOpen}
+                    className={cn(
+                      'relative flex items-center justify-center w-11 h-11 rounded-lg text-sm font-medium transition-colors border flex-shrink-0',
+                      hasActiveFilters(filters)
+                        ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
+                        : theme === 'light'
+                          ? 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                          : 'bg-[#201c1c] text-[#d4b8b8] border-[#3e3838] hover:border-[#4a4444] hover:bg-[#262222]'
+                    )}
+                    aria-label="Open filters"
+                  >
+                    <SlidersHorizontal className="w-5 h-5" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] px-1 rounded-full bg-white dark:bg-[#2c2828] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#4a4444] text-[11px] flex items-center justify-center font-bold leading-none">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Filter panel overlay */}
             {filterOpen && onFilterClose && filters && onFiltersChange && (

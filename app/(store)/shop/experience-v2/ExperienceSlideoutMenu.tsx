@@ -52,29 +52,45 @@ export function ExperienceSlideoutMenu() {
           'bg-white dark:bg-[#171515] border-b border-neutral-200 dark:border-white/10 safe-area-inset-top'
         )}
       >
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="inline-flex items-center justify-center p-2 -m-2 text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] transition-colors cursor-pointer shrink-0"
-        >
-          <Menu size={24} className="shrink-0" />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Desktop: logo left of hamburger */}
+          <Link
+            href="/"
+            aria-label="Street Collector - Home"
+            className="hidden md:inline-flex items-center justify-center p-2 -m-2 transition-opacity hover:opacity-80"
+          >
+            <img
+              src={getProxiedImageUrl(ROUND_LOGO_URL)}
+              alt="Street Collector"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain shrink-0"
+            />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            className="inline-flex items-center justify-center p-2 -m-2 text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] transition-colors cursor-pointer shrink-0"
+          >
+            <Menu size={24} className="shrink-0" />
+          </button>
+        </div>
 
-        {/* Logo: absolute center of top bar, same vertical alignment as hamburger/cart */}
-        <div className="absolute left-0 right-0 top-0 bottom-0 flex items-center justify-center pointer-events-none">
+        {/* Mobile: logo absolute center (unchanged) */}
+        <div className="md:hidden absolute left-0 right-0 top-0 bottom-0 flex items-center justify-center pointer-events-none">
           <Link
             href="/"
             aria-label="Street Collector - Home"
             className="pointer-events-auto inline-flex items-center justify-center p-2 -m-2 transition-opacity hover:opacity-80 z-10"
           >
-          <img
-            src={getProxiedImageUrl(ROUND_LOGO_URL)}
-            alt="Street Collector"
-            width={32}
-            height={32}
-            className="w-8 h-8 object-contain shrink-0"
-          />
+            <img
+              src={getProxiedImageUrl(ROUND_LOGO_URL)}
+              alt="Street Collector"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain shrink-0"
+            />
           </Link>
         </div>
 

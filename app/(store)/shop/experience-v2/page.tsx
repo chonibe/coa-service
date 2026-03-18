@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import type { Metadata } from 'next'
@@ -7,7 +6,7 @@ import {
   getSeasonCollections,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { ExperienceV2Client } from './components/ExperienceV2Client'
+import { ExperienceV2ClientLoader } from './components/ExperienceV2ClientLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +17,7 @@ const getCachedLamp = unstable_cache(
 )
 
 const getCachedSeasonCollections = unstable_cache(
-  () => getSeasonCollections('season-1', '2025-edition', { first: 50 }),
+  () => getSeasonCollections('season-1', '2025-edition', { first: 24 }),
   ['experience-v2-season-collections'],
   { revalidate: 300, tags: ['experience-products'] }
 )
@@ -28,33 +27,21 @@ export const metadata: Metadata = {
   description: 'Build your Street Lamp with artwork you love. New streamlined experience.',
 }
 
-function LoadingSkeleton() {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-950">
-      <div className="flex flex-col items-center gap-6">
-        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        <p className="text-sm text-white/50">Loading experience…</p>
-      </div>
-    </div>
-  )
-}
-
 function filterLamp(products: ShopifyProduct[]) {
   return products.filter(
     (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
   )
 }
 
-async function ExperienceV2Loader({ lamp }: { lamp: ShopifyProduct }) {
-  const [season1Result, season2Result] = await getCachedSeasonCollections()
+type SeasonResult = Awaited<ReturnType<typeof getCachedSeasonCollections>>[0]
 
+function buildProductsFromSeasons(season1Result: SeasonResult, season2Result: SeasonResult) {
   const productsSeason1 = filterLamp(
     season1Result?.products?.edges?.map((e) => e.node) ?? []
   )
   const productsSeason2 = filterLamp(
     season2Result?.products?.edges?.map((e) => e.node) ?? []
   )
-
   const pageInfoSeason1 = season1Result?.products?.pageInfo ?? {
     hasNextPage: false,
     endCursor: null,
@@ -63,20 +50,14 @@ async function ExperienceV2Loader({ lamp }: { lamp: ShopifyProduct }) {
     hasNextPage: false,
     endCursor: null,
   }
-
-  return (
-    <ExperienceV2Client
-      lamp={lamp}
-      productsSeason1={productsSeason1}
-      productsSeason2={productsSeason2}
-      pageInfoSeason1={pageInfoSeason1}
-      pageInfoSeason2={pageInfoSeason2}
-    />
-  )
+  return { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 }
 }
 
-async function ExperienceV2LampLoader() {
-  const lamp = await getCachedLamp().catch(() => null)
+export default async function ExperienceV2Page() {
+  const [lamp, [season1Result, season2Result]] = await Promise.all([
+    getCachedLamp().catch(() => null),
+    getCachedSeasonCollections(),
+  ])
 
   if (!lamp) {
     return (
@@ -97,17 +78,16 @@ async function ExperienceV2LampLoader() {
     )
   }
 
-  return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2Loader lamp={lamp} />
-    </Suspense>
-  )
-}
+  const { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 } =
+    buildProductsFromSeasons(season1Result, season2Result)
 
-export default function ExperienceV2Page() {
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2LampLoader />
-    </Suspense>
+    <ExperienceV2ClientLoader
+      lamp={lamp}
+      productsSeason1={productsSeason1}
+      productsSeason2={productsSeason2}
+      pageInfoSeason1={pageInfoSeason1}
+      pageInfoSeason2={pageInfoSeason2}
+    />
   )
 }

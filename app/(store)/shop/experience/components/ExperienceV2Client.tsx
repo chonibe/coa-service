@@ -12,8 +12,12 @@ import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlig
 import { SplineFullScreen } from './SplineFullScreen'
 import { ArtworkCarouselBar } from './ArtworkCarouselBar'
 import { ArtworkInfoBar } from './ArtworkInfoBar'
-import { ArtworkPickerSheet } from './ArtworkPickerSheet'
 import { ArtworkDetail } from '../../experience-v2/components/ArtworkDetail'
+
+const ArtworkPickerSheet = dynamic(
+  () => import('./ArtworkPickerSheet').then((m) => ({ default: m.ArtworkPickerSheet })),
+  { ssr: false }
+)
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
@@ -106,6 +110,7 @@ export function ExperienceV2Client({
   const [lampQuantity, setLampQuantity] = useState(() => loadedCart.lampQuantity)
   const [activeCarouselIndex, setActiveCarouselIndex] = useState<number>(-1)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
   const [rotateTrigger, setRotateTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
@@ -118,8 +123,26 @@ export function ExperienceV2Client({
   const [displayedProduct, setDisplayedProduct] = useState<ShopifyProduct | null>(null)
   const [displayedIndex, setDisplayedIndex] = useState(0)
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
+  const [splineInView, setSplineInView] = useState(true)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+
+  const allProducts = useMemo(
+    () => [...productsSeason1, ...productsSeason2],
+    [productsSeason1, productsSeason2]
+  )
+  const productsForActiveSeason = useMemo(
+    () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
+    [activeSeason, productsSeason1, productsSeason2]
+  )
+  const filteredProducts = useMemo(
+    () => applyFilters(productsForActiveSeason, filters, '', cartOrder),
+    [productsForActiveSeason, filters, cartOrder]
+  )
+  const selectedArtworks = useMemo(
+    () => cartOrder.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[],
+    [allProducts, cartOrder]
+  )
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -136,8 +159,11 @@ export function ExperienceV2Client({
   }, [])
 
   const spotlightPreselectedRef = useRef(false)
+  const spotlightFetchedRef = useRef(false)
 
-  useEffect(() => {
+  const fetchSpotlight = useCallback(() => {
+    if (spotlightFetchedRef.current) return
+    spotlightFetchedRef.current = true
     const url = initialArtistSlug
       ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
       : '/api/shop/artist-spotlight'
@@ -172,6 +198,39 @@ export function ExperienceV2Client({
       .catch(() => {})
   }, [initialArtistSlug])
 
+  // When arriving via artist link, fetch spotlight on mount (needed for preselect). Otherwise defer until picker opens.
+  useEffect(() => {
+    if (initialArtistSlug) fetchSpotlight()
+  }, [initialArtistSlug, fetchSpotlight])
+
+  useEffect(() => {
+    if (!initialArtistSlug && isPickerOpen) fetchSpotlight()
+  }, [initialArtistSlug, isPickerOpen, fetchSpotlight])
+
+  // Preload first few product images when carousel is visible so selector opens with cached images
+  useEffect(() => {
+    if (!splineInView || filteredProducts.length === 0) return
+    const links: HTMLLinkElement[] = []
+    const id = setTimeout(() => {
+      const toPreload = filteredProducts.slice(0, 4)
+      toPreload.forEach((p) => {
+        const url = p.featuredImage?.url ?? p.images?.edges?.[0]?.node?.url
+        if (!url || !url.includes('cdn.shopify.com')) return
+        const resized = getShopifyImageUrl(url, 400) ?? url
+        const link = document.createElement('link')
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = resized
+        document.head.appendChild(link)
+        links.push(link)
+      })
+    }, 1500)
+    return () => {
+      clearTimeout(id)
+      links.forEach((l) => { try { document.head.removeChild(l) } catch { /* already removed */ } })
+    }
+  }, [splineInView, filteredProducts])
+
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
       const info = season === 'season1' ? pageInfoSeason1 : pageInfoSeason2
@@ -205,26 +264,6 @@ export function ExperienceV2Client({
   )
 
   const currentFrontSideRef = useRef<'A' | 'B'>('A')
-
-  const allProducts = useMemo(
-    () => [...productsSeason1, ...productsSeason2],
-    [productsSeason1, productsSeason2]
-  )
-
-  const selectedArtworks = useMemo(
-    () => cartOrder.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[],
-    [allProducts, cartOrder]
-  )
-
-  const productsForActiveSeason = useMemo(
-    () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
-    [activeSeason, productsSeason1, productsSeason2]
-  )
-
-  const filteredProducts = useMemo(
-    () => applyFilters(productsForActiveSeason, filters, '', cartOrder),
-    [productsForActiveSeason, filters, cartOrder]
-  )
 
   const spotlightProducts = useMemo(() => {
     if (!spotlightData?.productIds?.length) return []
@@ -575,6 +614,7 @@ export function ExperienceV2Client({
 
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
+    setPickerHasBeenOpened(true)
     setIsPickerOpen(true)
   }, [cartOrder.length])
 
@@ -591,7 +631,6 @@ export function ExperienceV2Client({
 
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()
-  const [splineInView, setSplineInView] = useState(true)
 
   useEffect(() => {
     if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
@@ -765,6 +804,7 @@ export function ExperienceV2Client({
           onOpenPicker={handleOpenPicker}
         />
 
+      {pickerHasBeenOpened && (
       <ArtworkPickerSheet
         isOpen={isPickerOpen}
         onClose={handleClosePicker}
@@ -788,6 +828,7 @@ export function ExperienceV2Client({
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}
       />
+      )}
 
       {detailProduct && (
         <ArtworkDetail

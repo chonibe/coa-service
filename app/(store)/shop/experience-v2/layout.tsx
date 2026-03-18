@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { ExperienceOrderProvider } from './ExperienceOrderContext'
 import { ExperienceThemeProvider } from './ExperienceThemeContext'
 import { ExperienceAuthProvider } from './ExperienceAuthContext'
-import { ExperienceSlideoutMenu } from './ExperienceSlideoutMenu'
+
+const ExperienceSlideoutMenu = dynamic(
+  () => import('./ExperienceSlideoutMenu').then((m) => ({ default: m.ExperienceSlideoutMenu }))
+)
 
 export const viewport = {
   width: 'device-width',

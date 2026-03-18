@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, us
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
-import { Package } from 'lucide-react'
+import { Package, Shield, RotateCcw, Lock } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
@@ -82,6 +82,56 @@ function AnimatedPrice({ value }: { value: number }) {
   }, [value])
 
   return <span className="tabular-nums">${display.toFixed(2)}</span>
+}
+
+function LampQuantityInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const [local, setLocal] = useState(String(value))
+  useEffect(() => {
+    setLocal(String(value))
+  }, [value])
+  const commit = useCallback(
+    (raw: string) => {
+      const trimmed = raw.trim()
+      if (trimmed === '') {
+        onChange(0)
+        setLocal('0')
+        return
+      }
+      const n = parseInt(trimmed, 10)
+      if (!Number.isNaN(n) && n >= 0) {
+        const clamped = Math.min(99, n)
+        onChange(clamped)
+        setLocal(String(clamped))
+      } else {
+        setLocal(String(value))
+      }
+    },
+    [onChange, value]
+  )
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={local}
+      onChange={(e) => {
+        const v = e.target.value.replace(/[^0-9]/g, '')
+        if (v === '') {
+          setLocal('')
+          return
+        }
+        const n = parseInt(v, 10)
+        setLocal(String(Math.min(99, n)))
+      }}
+      onBlur={() => commit(local)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className="w-12 h-7 text-center text-xs font-medium rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#047AFF]/50 focus:border-[#047AFF]"
+      aria-label="Lamp quantity (0 to remove)"
+    />
+  )
 }
 
 const ARTWORKS_PER_FREE_LAMP = 14
@@ -445,7 +495,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const orderSummary = (
     <div className="order-summary-container space-y-3">
       {/* Compact cart lines */}
-      <div className="pt-2 space-y-2 max-h-[18vh] overflow-y-auto scrollbar-prominent">
+      <div className="pt-2 space-y-2 max-h-[35vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
           <div className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -468,9 +518,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                 {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
               </span>
             </div>
-            <div className="w-9 h-6 flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-xs font-medium tabular-nums text-neutral-700 dark:text-[#d4b8b8] shrink-0">
-              {lampQuantity}
-            </div>
+            <LampQuantityInput
+              value={lampQuantity}
+              onChange={onLampQuantityChange}
+            />
           </div>
         )}
         {selectedArtworks.map((art) => {
@@ -732,18 +783,27 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               {orderSummary}
             </div>
             {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
-            {placeOrderButton}
-            {/* Trust chips under Place Order */}
-            <div className="mt-4 flex flex-row flex-nowrap gap-2 justify-center overflow-x-auto scrollbar-none px-1">
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+            <div className="mt-8">
+              {placeOrderButton}
+              {/* Trust chips under Place Order - 2 per row, centered, icons aligned */}
+              <div className="mt-10 grid grid-cols-2 gap-2.5 w-fit mx-auto">
+              <span className="inline-flex items-center gap-1 text-[11px] leading-tight bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-3 py-1.5 rounded-lg [&>svg]:size-[1.1em] [&>svg]:shrink-0 shrink-0">
+                <Package strokeWidth={1} />
                 Free Worldwide Shipping
               </span>
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 text-[11px] leading-tight bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-3 py-1.5 rounded-lg [&>svg]:size-[1.1em] [&>svg]:shrink-0 shrink-0">
+                <Shield strokeWidth={1} />
                 12 months guarantee
               </span>
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 text-[11px] leading-tight bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-3 py-1.5 rounded-lg [&>svg]:size-[1.1em] [&>svg]:shrink-0 shrink-0">
+                <RotateCcw strokeWidth={1} />
                 Easy 30 days returns
               </span>
+              <span className="inline-flex items-center gap-1 text-[11px] leading-tight bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-3 py-1.5 rounded-lg [&>svg]:size-[1.1em] [&>svg]:shrink-0 shrink-0">
+                <Lock strokeWidth={1} />
+                Secure payment
+              </span>
+            </div>
             </div>
           </div>
         </div>

@@ -4,6 +4,9 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { RotateCw } from 'lucide-react'
+
+/** Static facade (87 KB) as LCP candidate; Spline 6.7MB scene mounts via requestIdleCallback. */
+const SPLINE_FACADE_SRC = '/internal.webp'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -86,6 +89,8 @@ export function SplineFullScreen({
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
+  // Facade pattern: show static image as LCP; mount Spline via requestIdleCallback (3s timeout) or tap
+  const [splineReady, setSplineReady] = useState(false)
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768)
     check()
@@ -147,6 +152,18 @@ export function SplineFullScreen({
       window.removeEventListener('resize', dispatchSettled)
       window.removeEventListener('orientationchange', dispatchSettled)
     }
+  }, [])
+
+  // Defer Spline mount until idle (3s max) so 6.7MB scene does not block LCP
+  useEffect(() => {
+    const schedule = (cb: () => void) =>
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(cb, { timeout: 3000 })
+        : (setTimeout(cb, 3000) as unknown as number)
+    const cancel = (id: number) =>
+      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
+    const id = schedule(() => setSplineReady(true))
+    return () => cancel(id)
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
@@ -217,7 +234,7 @@ export function SplineFullScreen({
         )}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {/* Section 0: Spline 3D */}
+        {/* Section 0: Spline 3D — facade (LCP) then deferred Spline mount */}
         <div
           ref={(r) => { slideRefs.current[0] = r }}
           className={cn(
@@ -225,7 +242,24 @@ export function SplineFullScreen({
             hasCarousel ? 'w-full min-h-[100dvh]' : 'w-full flex-1 min-w-0'
           )}
         >
-          <div className="flex-1 min-h-0 min-w-0">
+          <div className="flex-1 min-h-0 min-w-0 relative">
+          {!splineReady ? (
+            <button
+              type="button"
+              onClick={() => setSplineReady(true)}
+              className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer focus:outline-none focus:ring-0"
+              aria-label="Load 3D preview"
+            >
+              <Image
+                src={SPLINE_FACADE_SRC}
+                alt="Street Lamp preview"
+                fill
+                className="object-contain"
+                sizes="100vw"
+                priority
+              />
+            </button>
+          ) : (
           <ComponentErrorBoundary
             componentName="Spline3DPreview"
             fallback={
@@ -272,6 +306,7 @@ export function SplineFullScreen({
               previewQuarterTurns={previewQuarterTurns}
             />
           </ComponentErrorBoundary>
+          )}
           </div>
         </div>
 
