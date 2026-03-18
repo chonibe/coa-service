@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User } from 'lucide-react'
+import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { useExperienceTheme } from '@/app/(store)/shop/experience-v2/ExperienceThemeContext'
 import { openTawkChat } from '@/lib/tawk'
 
 const MENU_ITEMS = [
@@ -39,6 +40,8 @@ export interface ShopSlideoutMenuProps {
   volumeDiscountDescription?: string
   /** When false, hide Promo Codes menu item (e.g. until configured in Stripe) */
   showPromoCodes?: boolean
+  /** When true, show Light/Dark mode toggle (experience page) */
+  showThemeToggle?: boolean
 }
 
 /**
@@ -75,8 +78,10 @@ export function ShopSlideoutMenu({
   volumeDiscountLabel,
   volumeDiscountDescription,
   showPromoCodes = false,
+  showThemeToggle = false,
 }: ShopSlideoutMenuProps) {
   const [authOpen, setAuthOpen] = useState(false)
+  const { theme: experienceTheme, setTheme: setExperienceTheme } = useExperienceTheme()
   const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [quizName, setQuizName] = useState<string | null>(null)
   const { user, isAuthenticated, loading } = useShopAuthContext()
@@ -130,20 +135,29 @@ export function ShopSlideoutMenu({
       >
         <div className="flex flex-col h-full bg-white dark:bg-[#171515]">
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
-            <Link
-              href={logoHref ?? '/'}
-              onClick={onClose}
-              className="flex items-center shrink-0"
-              aria-label="Street Collector home"
-            >
-              <img
-                src={getProxiedImageUrl(LOGO_URL)}
-                alt="Street Collector"
-                className="h-8 w-auto object-contain"
-                width={80}
-                height={32}
-              />
-            </Link>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href={logoHref ?? '/'}
+                onClick={onClose}
+                className="flex items-center shrink-0"
+                aria-label="Street Collector home"
+              >
+                <img
+                  src={getProxiedImageUrl(LOGO_URL)}
+                  alt="Street Collector"
+                  className="h-8 w-auto object-contain"
+                  width={80}
+                  height={32}
+                />
+              </Link>
+              <Link
+                href="/"
+                onClick={onClose}
+                className="flex items-center self-center text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-[#f0e8e8]/60 dark:hover:text-[#f0e8e8] transition-colors whitespace-nowrap leading-none"
+              >
+                Back to Home
+              </Link>
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -200,6 +214,25 @@ export function ShopSlideoutMenu({
               </>
             )}
           </div>
+
+          {showThemeToggle && (
+            <div className="px-6 py-3 border-b border-neutral-200 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setExperienceTheme(experienceTheme === 'light' ? 'dark' : 'light')}
+                className="flex w-full items-center gap-4 px-2 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors text-left"
+              >
+                {experienceTheme === 'light' ? (
+                  <Moon size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                ) : (
+                  <Sun size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                )}
+                <span className="text-neutral-900 dark:text-white font-medium">
+                  {experienceTheme === 'light' ? 'Dark mode' : 'Light mode'}
+                </span>
+              </button>
+            </div>
+          )}
 
           <nav className="flex flex-col py-4">
             {MENU_ITEMS.filter((item) => showPromoCodes || !('openPromoModal' in item && item.openPromoModal)).map((item) => {

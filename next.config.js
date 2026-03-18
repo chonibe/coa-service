@@ -175,6 +175,14 @@ const nextConfig = {
         destination: "/shop/experience/:path*",
       },
       {
+        source: "/experience-v2",
+        destination: "/shop/experience-v2",
+      },
+      {
+        source: "/experience-v2/:path*",
+        destination: "/shop/experience-v2/:path*",
+      },
+      {
         source: "/api/:path*",
         destination: "/api/:path*",
       },

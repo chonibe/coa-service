@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { ExperienceOrderProvider } from './ExperienceOrderContext'
-import { ExperienceThemeProvider } from './ExperienceThemeContext'
-import { ExperienceAuthProvider } from './ExperienceAuthContext'
-import { ExperienceSlideoutMenu } from './ExperienceSlideoutMenu'
+import { ExperienceOrderProvider } from '../experience-v2/ExperienceOrderContext'
+import { ExperienceThemeProvider } from '../experience-v2/ExperienceThemeContext'
+import { ExperienceAuthProvider } from '../experience-v2/ExperienceAuthContext'
+import { ExperienceSlideoutMenu } from '../experience-v2/ExperienceSlideoutMenu'
 
 export const viewport = {
   width: 'device-width',
@@ -12,9 +12,8 @@ export const viewport = {
 export default function ExperienceLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      {/* Preload Spline scene in the HTML <head> so the browser starts the 6.7MB
-          download as soon as the page is parsed — 2-3s earlier than the useEffect
-          approach in SplineScenePreload.tsx which fires after JS hydration. */}
+      {/* Preload Spline scene in the HTML <head> so the 6.7MB download starts as soon
+          as the page is parsed — 2-3s earlier than the useEffect approach. */}
       <link
         rel="preload"
         href="/spline/splinemodel2/scene.splinecode"

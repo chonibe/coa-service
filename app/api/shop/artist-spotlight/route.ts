@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagram } from '@/lib/shopify/artist-image'
 import { getCollectionProductHandlesByHandle, getCollectionGifUrlByAdmin, resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
-import { getCollection, getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles } from '@/lib/shopify/storefront-client'
+import { getCollection, getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 
 /**
  * Artist Spotlight API
@@ -74,6 +74,8 @@ type SpotlightResult = {
   gifUrl?: string
   /** When true, collection is unlisted (only shown when requested via ?artist=; excluded from default spotlight) */
   unlisted?: boolean
+  /** Product objects for preselection when ?artist= is present (enables lamp preview without season load) */
+  products?: ShopifyProduct[]
 }
 
 /** Title-case a slug for Shopify vendor name (e.g. kymo → Kymo) */
@@ -132,6 +134,7 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
       seriesName: undefined,
       gifUrl,
       unlisted,
+      products: filtered.slice(0, 4),
     }
   } catch {
     return null
@@ -210,6 +213,7 @@ async function tryCollectionSpotlight(
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
       unlisted,
+      products: nodes.slice(0, 4),
     }
   } catch {
     return null

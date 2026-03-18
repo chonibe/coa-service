@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, SlidersHorizontal, ChevronUp, ChevronDown, LayoutGrid, ArrowLeftRight, Sun, Moon, FlaskConical, Eye, Info, Check, Plus, Minus, TicketPercent, ChevronRight, ShoppingCart, Camera, RotateCw, Globe, ShieldCheck, RotateCcw } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
 
@@ -58,7 +59,7 @@ const Spline3DPreview = dynamic(
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { LampGridCard } from './LampGridCard'
-import { getAdPreset } from '@/lib/experience/ad-presets'
+import { getAdPreset, resolvePresetProducts } from '@/lib/experience/ad-presets'
 
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
@@ -166,6 +167,7 @@ export function Configurator({
   const [pageInfoSeason1, setPageInfoSeason1] = useState<SeasonPageInfo>(() => initialPage1)
   const [pageInfoSeason2, setPageInfoSeason2] = useState<SeasonPageInfo>(() => initialPage2)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [retryingArtworks, setRetryingArtworks] = useState(false)
   const products = activeSeason === 'season1' ? productsSeason1 : productsSeason2
   const pageInfo = activeSeason === 'season1' ? pageInfoSeason1 : pageInfoSeason2
 
@@ -174,9 +176,7 @@ export function Configurator({
   const allLoadedProducts = useMemo(() => [...productsSeason1, ...productsSeason2], [productsSeason1, productsSeason2])
   const presetProducts = useMemo(() => {
     if (!resolvedPreset) return []
-    return resolvedPreset.handles
-      .map((h) => allLoadedProducts.find((p) => p.handle === h))
-      .filter((p): p is ShopifyProduct => !!p)
+    return resolvePresetProducts(resolvedPreset, allLoadedProducts)
   }, [resolvedPreset, allLoadedProducts])
   const [showAllArtworks, setShowAllArtworks] = useState(false)
   const [gridBlurred, setGridBlurred] = useState(true)
@@ -213,6 +213,34 @@ export function Configurator({
       setLoadingMore(false)
     }
   }, [pageInfoSeason1, pageInfoSeason2, loadingMore])
+
+  /** When server-side collection fetch timed out, retry loading both seasons from the API (client-side). */
+  const retryLoadArtworks = useCallback(async () => {
+    if (retryingArtworks) return
+    setRetryingArtworks(true)
+    try {
+      const [res1, res2] = await Promise.all([
+        fetch(`/api/shop/experience/collection-products?handle=${encodeURIComponent(SEASON_1_HANDLE)}&first=${LOAD_MORE_PAGE_SIZE}`),
+        fetch(`/api/shop/experience/collection-products?handle=${encodeURIComponent(SEASON_2_HANDLE)}&first=${LOAD_MORE_PAGE_SIZE}`),
+      ])
+      const data1 = await res1.json().catch(() => ({}))
+      const data2 = await res2.json().catch(() => ({}))
+      const list1 = data1.products ?? []
+      const list2 = data2.products ?? []
+      setProductsSeason1(list1)
+      setProductsSeason2(list2)
+      setPageInfoSeason1({
+        hasNextPage: Boolean(data1.hasNextPage),
+        endCursor: data1.endCursor ?? null,
+      })
+      setPageInfoSeason2({
+        hasNextPage: Boolean(data2.hasNextPage),
+        endCursor: data2.endCursor ?? null,
+      })
+    } finally {
+      setRetryingArtworks(false)
+    }
+  }, [retryingArtworks])
 
   const scrollArtworkStripToTop = useCallback(() => {
     artworkStripScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -436,6 +464,11 @@ export function Configurator({
     const t = setTimeout(() => setScrollToProductId(null), 800)
     return () => clearTimeout(t)
   }, [scrollToProductId, filteredProducts])
+
+  // Desktop: expand left panel when artwork detail is opened (from Info button or preview select)
+  useEffect(() => {
+    if (detailProduct && !isMobile) setSelectorSheetState('half')
+  }, [detailProduct, isMobile])
 
   useEffect(() => {
     if (searchExpanded) searchInputRef.current?.focus()
@@ -905,8 +938,29 @@ export function Configurator({
   // When 0 selected: both sides empty (user selects artworks to preview)
   // When 1 selected: only side A shows the artwork (side B remains empty)
   // When 2 selected: each side shows its selection
-  const image1 = sideAProduct ? getFirstImage(sideAProduct) : null
-  const image2 = sideBProduct ? getFirstImage(sideBProduct) : null
+  const image1Fallback = sideAProduct ? (getShopifyImageUrl(getFirstImage(sideAProduct), 1200) ?? getFirstImage(sideAProduct)) : null
+  const image2Fallback = sideBProduct ? (getShopifyImageUrl(getFirstImage(sideBProduct), 1200) ?? getFirstImage(sideBProduct)) : null
+
+  // Pre-warm the Supabase cache in the background when a product is selected.
+  // We do NOT use the returned URL directly in Spline — the resized Shopify fallback is passed
+  // directly so Spline only ever sees one URL change per product (no double-fire that causes flash).
+  useEffect(() => {
+    if (!sideAProduct || !image1Fallback) return
+    const currentProductId = sideAProduct.id
+    fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(image1Fallback)}`)
+      .catch(() => {})
+  }, [sideAProduct?.id, image1Fallback])
+
+  useEffect(() => {
+    if (!sideBProduct || !image2Fallback) return
+    const currentProductId = sideBProduct.id
+    fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(image2Fallback)}`)
+      .catch(() => {})
+  }, [sideBProduct?.id, image2Fallback])
+
+  // Pass the resized Shopify URL directly to Spline — single URL change per product, no flash.
+  const image1 = image1Fallback
+  const image2 = image2Fallback
 
   const handleSwapSides = useCallback(() => {
     setLampPreviewOrder((prev) =>
@@ -925,6 +979,7 @@ export function Configurator({
   }, [])
 
   const handleLampSelect = useCallback((product: ShopifyProduct) => {
+    const wasInPreview = lampPreviewOrder.includes(product.id)
     setLampPreviewOrder((prev) => {
       const idx = prev.indexOf(product.id)
       if (idx >= 0) {
@@ -967,7 +1022,12 @@ export function Configurator({
       
       return newOrder
     })
-  }, [getSideToShowForProduct])
+    // Desktop: when user selects an artwork for preview, open its information card in the left panel
+    if (!isMobile && !wasInPreview) {
+      setDetailProduct(product)
+      setSelectorSheetState('half') // Expand left panel to show artwork info
+    }
+  }, [getSideToShowForProduct, isMobile, lampPreviewOrder])
 
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
 
@@ -1034,12 +1094,32 @@ export function Configurator({
       <div className="flex h-full items-center justify-center bg-neutral-950 text-white">
         <div className="text-center max-w-md px-6">
           <h1 className="text-2xl font-semibold mb-3 text-[#FFBA94]">Artworks unavailable</h1>
-          <p className="text-neutral-400 mb-6">We couldn&apos;t load the artworks. Please try refreshing the page.</p>
+          <p className="text-neutral-400 mb-6">
+            {retryingArtworks
+              ? 'Loading artworks…'
+              : "We couldn't load the artworks. You can try again or refresh the page."}
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               type="button"
+              onClick={retryLoadArtworks}
+              disabled={retryingArtworks}
+              className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {retryingArtworks ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-neutral-950/30 border-t-neutral-950 rounded-full animate-spin align-middle mr-2" />
+                  Loading…
+                </>
+              ) : (
+                'Try again'
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => window.location.reload()}
-              className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+              disabled={retryingArtworks}
+              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/10 transition-colors disabled:opacity-70"
             >
               Refresh page
             </button>
@@ -1113,7 +1193,7 @@ export function Configurator({
               minimal
               animate
               interactive
-              idleSpinEnabled={lampPreviewOrder.length < 2}
+              idleSpinEnabled
               className="relative w-full h-full"
               onPanelsFound={setPanelStatus}
               swapLampSides
@@ -1527,8 +1607,32 @@ export function Configurator({
       >
         {/* Selector UI */}
         <>
-        {/* Top bar: Season tabs, filter, search (desktop); Artworks bar (mobile collapsed). Hidden on mobile when expanded — controls are in bottom bar. */}
-        {(!isMobile || selectorSheetState === 'collapsed') && (
+        {/* Step indicator bar — mobile only; on desktop steps are in top toolbar (hidden) */}
+        {false && selectorSheetState !== 'collapsed' && (
+          <div className="md:hidden flex-shrink-0 w-full flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-[#171515]">
+            {/* Step 1 */}
+            <div className={cn('flex items-center gap-1.5', lampQuantity === 0 ? 'opacity-100' : 'opacity-60')}>
+              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity === 0 ? 'bg-[#047AFF] text-white' : 'bg-[#047AFF] text-white')}>
+                {lampQuantity > 0 ? <Check className="w-2.5 h-2.5" /> : '1'}
+              </span>
+              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity === 0 ? 'text-[#047AFF]' : 'text-neutral-600 dark:text-neutral-400')}>
+                {lampQuantity === 0 ? 'Add Street Lamp' : ''}
+              </span>
+            </div>
+            <ChevronRight className="w-3 h-3 text-neutral-400 dark:text-neutral-600 shrink-0" />
+            {/* Step 2 */}
+            <div className={cn('flex items-center gap-1.5', lampQuantity > 0 && cartOrder.length === 0 ? 'opacity-100' : lampQuantity > 0 && cartOrder.length > 0 ? 'opacity-60' : 'opacity-40')}>
+              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity > 0 && cartOrder.length === 0 ? 'bg-[#047AFF] text-white' : lampQuantity > 0 && cartOrder.length > 0 ? 'bg-[#047AFF] text-white' : 'bg-neutral-400 dark:bg-neutral-600 text-white')}>
+                {lampQuantity > 0 && cartOrder.length > 0 ? <Check className="w-2.5 h-2.5" /> : '2'}
+              </span>
+              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity > 0 && cartOrder.length === 0 ? 'text-[#047AFF]' : lampQuantity > 0 && cartOrder.length > 0 ? 'text-neutral-600 dark:text-neutral-400' : 'text-neutral-500 dark:text-neutral-500')}>
+                {lampQuantity === 0 ? 'Add your Art' : cartOrder.length === 0 ? '' : 'Artwork added'}
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Top bar: Season tabs, filter, search (desktop); Artworks bar (mobile collapsed). Hidden when showing inline artwork info on desktop. */}
+        {(!isMobile || selectorSheetState === 'collapsed') && !(detailProduct && !isMobile) && (
         <div
           role={selectorSheetState === 'collapsed' && isMobile ? 'button' : undefined}
           tabIndex={selectorSheetState === 'collapsed' && isMobile ? 0 : undefined}
@@ -1536,7 +1640,7 @@ export function Configurator({
           onKeyDown={selectorSheetState === 'collapsed' && isMobile ? (e) => e.key === 'Enter' && cycleSelectorState() : undefined}
           className={cn(
             'relative flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
-            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : 'border-b border-neutral-100 dark:border-[#342e2e]',
+            selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : (showLampPaywall ? 'border-b-0' : 'border-b border-neutral-100 dark:border-[#342e2e]'),
             selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-[#1a1616]/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
             selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 dark:active:bg-neutral-800/95 justify-center',
           )}
@@ -1555,29 +1659,10 @@ export function Configurator({
           {/* Top bar: on desktop = full; on mobile = just chevron (season/filter/search in bottom bar) */}
           {!isMobile && (
             <>
-              {/* Lamp paywall heading + lamp card on desktop — replaces season tabs while lamp not yet added */}
-              {showLampPaywall ? (
-                <div className="flex-1 min-w-0 flex items-center gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#FFBA94] leading-tight">Start with the Street Lamp</p>
-                    <p className="text-[11px] text-neutral-500 dark:text-[#c4a0a0] mt-0.5">Choose your lamp, then personalize with artwork.</p>
-                  </div>
-                  {lamp && typeof lampPrice === 'number' && (
-                    <div className="hidden lg:block flex-shrink-0 w-[240px]">
-                      <LampGridCard
-                        lamp={lamp}
-                        lampPrice={lampPrice}
-                        onAddLamp={() => {
-                          if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_add_to_cart', { source: 'configurator_header' })
-                          handleLampQuantityChange(1)
-                        }}
-                        onViewDetail={() => setDetailProduct(lamp)}
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              {/* Season tabs + filter — hidden while lamp paywall is active */}
+              {!showLampPaywall && (
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {/* Filter — left */}
                 <button
                   ref={filterButtonRef}
                   onClick={handleOpenFilter}
@@ -1597,7 +1682,15 @@ export function Configurator({
                     </span>
                   )}
                 </button>
-                <div className="flex rounded-lg border border-neutral-200 dark:border-[#2c2828] p-0.5 bg-neutral-50 dark:bg-[#201c1c]/50 flex-shrink-0">
+                {/* Discount chip — middle (hidden) */}
+                {false && lampQuantity > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 flex-shrink-0">
+                    <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
+                  </div>
+                )}
+                {/* Season buttons — right */}
+                <div className="flex rounded-lg border border-neutral-200 dark:border-[#2c2828] p-0.5 bg-neutral-50 dark:bg-[#201c1c]/50 flex-shrink-0 ml-auto">
                   <button
                     type="button"
                     onClick={() => setActiveSeasonAndReset('season1')}
@@ -1626,80 +1719,6 @@ export function Configurator({
               </div>
               )}
 
-              {/* Right: Street lamp module — lg+ only (below lg, lamp lives in header to avoid touching seasons) */}
-              {lamp && typeof lampPrice === 'number' && !showLampPaywall && (
-                <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-0 ml-2">
-                  <div 
-                    ref={lampButtonRef}
-                    data-wizard-lamp
-                    className={cn(
-                      'flex items-center gap-2 flex-shrink-0 min-w-0 rounded-lg p-0.5 pl-3.5 bg-neutral-100 dark:bg-[#262222]/70',
-                      showHighlightAnimation && highlightStep === 3 && wizardHighlightClass
-                    )}
-                  >
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setDetailProduct(lamp)}
-                      onKeyDown={(e) => e.key === 'Enter' && setDetailProduct(lamp)}
-                      className={cn(
-                        'flex items-center gap-1.5 min-w-0 transition-colors cursor-pointer text-left relative py-1',
-                        lampQuantity > 0
-                          ? 'text-neutral-800 dark:text-[#f0e8e8] hover:opacity-90'
-                          : 'text-neutral-600 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8]'
-                      )}
-                      aria-label={`${lampQuantity} Street ${lampQuantity > 1 ? 'Lamps' : 'Lamp'}`}
-                    >
-                      <span className="relative inline-flex">
-                        <span className={cn('absolute inset-0 flex items-center justify-center translate-x-0.5 text-[10px] font-bold tabular-nums pointer-events-none', lampQuantity > 0 ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#ffffff]')}>
-                          {lampQuantity}
-                        </span>
-                        <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-5 h-6 shrink-0', lampQuantity > 0 ? 'text-neutral-400 dark:text-[#d4b8b8]' : 'text-neutral-400 dark:text-[#f0e8e8]/60')} xmlns="http://www.w3.org/2000/svg">
-                          <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
-                        </svg>
-                      </span>
-                      <span className={cn('text-[10px] font-medium truncate', lampQuantity > 0 ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-600 dark:text-[#f0e8e8]/80')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
-                    </div>
-                    <div className="flex items-center gap-0.5 ml-0.5" data-wizard-lamp-controls>
-                      {lampQuantity > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleLampQuantityChange(Math.max(0, lampQuantity - 1))}
-                          className="h-5 w-5 flex items-center justify-center p-0 text-[#047AFF] dark:text-[#60A5FA] hover:opacity-80 transition-opacity"
-                          aria-label="Decrease lamp quantity"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleLampQuantityChange(lampQuantity + 1)}
-                        className={cn(
-                          'flex items-center justify-center transition-colors shrink-0',
-                          lampQuantity > 0
-                            ? 'h-5 w-5 p-0 text-[#047AFF] dark:text-[#60A5FA]'
-                            : 'h-5 px-2 rounded-md border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#201c1c] text-neutral-700 dark:text-[#e8d4d4] hover:border-neutral-300 dark:hover:border-[#3e3838] hover:bg-neutral-100 dark:hover:bg-[#262222] text-[10px] font-medium'
-                        )}
-                        aria-label={lampQuantity > 0 ? 'Add another lamp' : 'Add lamp'}
-                      >
-                        {lampQuantity > 0 ? (
-                          <Plus className="w-3.5 h-3.5" />
-                        ) : (
-                          <span>Add</span>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDetailProduct(lamp)}
-                    className="w-5 h-5 flex items-center justify-center rounded text-neutral-500 hover:text-neutral-700 dark:text-[#c4a0a0] dark:hover:text-[#f0e8e8] transition-colors shrink-0 -mr-1"
-                    aria-label="View lamp details"
-                  >
-                    <Info className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
             </>
           )}
             {/* Mobile: show lamp paywall heading in top bar */}
@@ -1716,6 +1735,31 @@ export function Configurator({
 
         {/* Selector body: expanded content + OrderBar — keep visible when collapsed so OrderBar (fixed on mobile) still renders */}
         <div ref={selectorBodyRef} className="flex flex-col flex-1 min-h-0 overflow-hidden min-w-0">
+        {/* Desktop: when artwork selected, show inline info panel in place of selector */}
+        {detailProduct && !isMobile ? (
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <ArtworkDetail
+              inline
+              product={detailProductFull ?? detailProduct}
+              isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
+              onToggleSelect={() => {
+                const product = detailProductFull ?? detailProduct
+                if (product.id === lamp.id) handleLampQuantityChange(lampQuantity > 0 ? 0 : 1)
+                else { const wasInCart = cartOrder.includes(product.id); handleAddToCart(product); if (!wasInCart) setDetailProduct(null) }
+              }}
+              onClose={() => { setDetailProduct(null); setDetailProductFull(null) }}
+              isLoadingDetails={detailProductLoading}
+              isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
+              isNewDrop={!!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
+              isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
+              hideScarcityBar={detailProduct.id === lamp.id}
+              addToOrderLabel={detailProduct.id === lamp.id ? 'Add Lamp to order' : 'Add artwork to order'}
+              productIncludes={detailProduct.id === lamp.id ? [{ label: 'A Street Lamp', icon: 'lamp' as const }, { label: 'USB-C cable – 150mm length', icon: 'cable' as const }, { label: 'Internal magnet mount', icon: 'magnet' as const }, { label: 'EU/US wall adapter', icon: 'plug' as const }, { label: 'Care instruction booklet', icon: 'book' as const }, { label: 'Protective bag', icon: 'bag' as const }] : undefined}
+              productSpecs={detailProduct.id === lamp.id ? [{ title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] }, { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] }, { title: 'Materials', icon: 'box' as const, items: ['Silver anodized matte finish, Aluminum 6063', 'Polycarbonate transparent and double matte optical diffusion', 'Neodymium magnet built into the frame (N52)'] }, { title: 'Light', icon: 'sun' as const, items: ['Energy efficient, heat resistant high output LED / 500 lumen, lasts up to 50,000 hours', 'Light temperatures: 2700K (Warm White), 3000K (Soft White), 5000K (Daylight)', 'Touch dimmer with multiple light options'] }, { title: 'Battery', icon: 'battery' as const, items: ['2500 mAh 3.7V 18650 rechargeable lithium ion', 'Up to 8 hours battery life with constant use'] }, { title: 'Charging', icon: 'zap' as const, items: ['Type C charging port', '1.8 m 360° magnetic head charging cable', 'EU/US wall adapter'] }] : undefined}
+            />
+          </div>
+        ) : (
+        <>
         {/* Expanded content: filter pills + artwork strip — hidden when collapsed on mobile */}
         <div className={cn(
           'flex flex-col flex-1 min-h-0 overflow-hidden',
@@ -1784,6 +1828,7 @@ export function Configurator({
         {/* Artwork strip */}
         <div
           ref={artworkStripScrollRef}
+          onScroll={() => showLampPaywall && gridBlurred && setGridBlurred(false)}
           className={cn(
             'flex-1 overflow-y-auto overflow-x-hidden px-5 pt-3 min-h-0',
             isMobile && selectorSheetState === 'half' ? 'pb-16' : 'pb-4'
@@ -1792,19 +1837,11 @@ export function Configurator({
           {/* Lamp card — sharp, above the blurred grid */}
           {showLampPaywall && (
             <div className="flex flex-col gap-2 pb-3">
-              {/* Trust chips */}
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {LAMP_TRUST_CHIPS.map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/8">
-                    <Icon className="w-3 h-3 shrink-0 text-[#a08080]" />
-                    <span className="text-[10px] text-[#9a8080] leading-none whitespace-nowrap">{label}</span>
-                  </div>
-                ))}
-              </div>
               <div className="grid grid-cols-2 gap-x-2 md:gap-x-3">
                 <LampGridCard
                   lamp={lamp}
                   lampPrice={lampPrice}
+                  trustChips={LAMP_TRUST_CHIPS}
                   onAddLamp={() => {
                     if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_add_to_cart', { source: 'configurator' })
                     handleLampQuantityChange(1)
@@ -1813,10 +1850,12 @@ export function Configurator({
                 />
               </div>
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/40">
-                  <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                  <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
-                </div>
+                {false && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/40">
+                    <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -1830,6 +1869,14 @@ export function Configurator({
                   Skip
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Discount chip — mobile only (hidden) */}
+          {false && lampQuantity > 0 && (
+            <div className="md:hidden flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-emerald-950/60 border border-emerald-800/40 self-start">
+              <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
             </div>
           )}
 
@@ -1977,6 +2024,7 @@ export function Configurator({
             hasMore={adPreset && !showAllArtworks ? false : pageInfo.hasNextPage}
             onLoadMore={() => loadMoreForSeason(activeSeason)}
             isLoadingMore={loadingMore}
+            isMobile={isMobile}
           />
             </div>
             {/* Tap-to-deblur overlay — sibling of blur div, anchors to the outer relative wrapper */}
@@ -1990,6 +2038,8 @@ export function Configurator({
                   className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 cursor-pointer"
                   onClick={() => setGridBlurred(false)}
                   onTouchStart={() => setGridBlurred(false)}
+                  onTouchMove={() => setGridBlurred(false)}
+                  onWheel={() => setGridBlurred(false)}
                 >
                   {/* Dark tint */}
                   <div className="absolute inset-0 bg-[#0e0a0a]/70" />
@@ -2030,6 +2080,8 @@ export function Configurator({
           )}
         </div>
         </div>
+        </>
+        )}
 
         {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
         {/* When ad preset active and not yet expanded: replace bottom bar with Show all artworks button */}
@@ -2195,8 +2247,8 @@ export function Configurator({
         cartOrder={cartOrder}
       />
 
-      {/* Artwork / lamp detail drawer */}
-      {detailProduct && (
+      {/* Artwork / lamp detail drawer — overlay only on mobile; desktop uses inline panel in left area */}
+      {detailProduct && isMobile && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
           isMobile={isMobile}

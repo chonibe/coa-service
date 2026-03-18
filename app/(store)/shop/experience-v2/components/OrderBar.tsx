@@ -447,40 +447,30 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       {/* Compact cart lines */}
       <div className="pt-2 space-y-2 max-h-[18vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between gap-2 text-sm">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-7 h-7 flex items-center justify-center shrink-0">
-                    <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-700 dark:text-[#d4b8b8] shrink-0" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
-                  </svg>
-                </div>
-                <span className="text-sm text-neutral-900 dark:text-[#f0e8e8] truncate">{lampQuantity} × Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0 tabular-nums text-sm">
-                {lampSavings > 0 ? (
-                  <>
-                    <span className="text-sm line-through text-neutral-500 dark:text-[#c4a0a0]">${lampOriginalTotal.toFixed(2)}</span>
-                    <span className={cn('text-sm font-medium', lampTotal === 0 ? 'text-green-600' : 'text-green-700')}>
-                      {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-sm text-neutral-700 dark:text-[#d4b8b8]">
-                    {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
-                  </span>
-                )}
-              </div>
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-7 h-7 shrink-0', 'text-neutral-400 dark:text-[#d4b8b8]')} xmlns="http://www.w3.org/2000/svg">
+                <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
+              </svg>
+              <span className="text-sm text-neutral-900 dark:text-[#f0e8e8] truncate min-w-0">Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
             </div>
             {lampSavings > 0 && (
-              <div className="flex items-center gap-2">
-                <div className="w-7 shrink-0" aria-hidden />
+              <>
                 <TicketIcon className="w-4 h-4 shrink-0 text-green-600" aria-hidden />
-                <span className="text-sm text-green-600">
-                  Volume discount : you&apos;re saving ${lampSavings.toFixed(2)}
-                </span>
-              </div>
+                <span className="text-green-600 whitespace-nowrap shrink-0">Saving ${lampSavings.toFixed(2)}</span>
+              </>
             )}
+            <div className="flex items-center gap-1.5 tabular-nums shrink-0 whitespace-nowrap">
+              {lampSavings > 0 && (
+                <span className="line-through text-neutral-500 dark:text-[#c4a0a0]">${lampOriginalTotal.toFixed(2)}</span>
+              )}
+              <span className={cn('font-medium text-sm', lampTotal === 0 ? 'text-green-600' : 'text-neutral-700 dark:text-[#d4b8b8]')}>
+                {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
+              </span>
+            </div>
+            <div className="w-9 h-6 flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-xs font-medium tabular-nums text-neutral-700 dark:text-[#d4b8b8] shrink-0">
+              {lampQuantity}
+            </div>
           </div>
         )}
         {selectedArtworks.map((art) => {
@@ -515,14 +505,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               </span>
             </div>
             <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
-            <button
-              type="button"
-              onClick={() => onRemoveArtwork(art.id)}
-              aria-label={`Remove ${art.title} from cart`}
-              className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-neutral-400 dark:text-[#b89090] hover:text-neutral-700 dark:hover:text-[#d4b8b8] hover:bg-neutral-100 dark:hover:bg-[#201c1c] transition-colors"
-            >
-              <XMarkIcon className="w-3 h-3" />
-            </button>
+            <div className="w-9 h-6 flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-xs font-medium tabular-nums text-neutral-700 dark:text-[#d4b8b8] shrink-0">
+              1
+            </div>
           </div>
         )})}
         {lampQuantity === 0 && (
@@ -586,11 +571,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       {/* Drawer — CSS slide from right */}
       <div
         className={cn(
-          'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full max-w-md sm:max-w-sm bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
+          'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full md:w-[480px] bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
           'transition-transform duration-300',
           drawerOpen ? 'translate-x-0' : 'translate-x-full'
         )}
-        style={{ width: 'min(calc(100vw - 0.5rem), 420px)', transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)' }}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)' }}
       >
         {/* Header - close button only */}
         <div className="checkout-title flex-shrink-0 flex items-center justify-end px-6 pt-4 pb-1">
@@ -749,14 +734,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
             {placeOrderButton}
             {/* Trust chips under Place Order */}
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+            <div className="mt-4 flex flex-row flex-nowrap gap-2 justify-center overflow-x-auto scrollbar-none px-1">
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                 Free Worldwide Shipping
               </span>
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                 12 months guarantee
               </span>
-              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full">
+              <span className="text-[11px] bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                 Easy 30 days returns
               </span>
             </div>

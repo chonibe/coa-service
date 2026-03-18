@@ -1,0 +1,313 @@
+'use client'
+
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import Image from 'next/image'
+import { Box, RotateCw } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
+import { cn } from '@/lib/utils'
+
+function getFirstImageUrl(product: ShopifyProduct | null | undefined): string | null {
+  if (!product) return null
+  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
+}
+
+/** Normalize URL for dedup — same image can have different ?v= or size params */
+function urlKey(url: string): string {
+  try {
+    const u = new URL(url)
+    return u.pathname
+  } catch {
+    return url
+  }
+}
+
+function getOrderedImages(product: ShopifyProduct | null | undefined): { url: string; altText?: string | null }[] {
+  if (!product) return []
+  const fromImages = product.images?.edges?.map((e) => e.node).filter(Boolean) ?? []
+  const fromMedia =
+    product.media?.edges
+      ?.map((e) => (e.node as { mediaContentType?: string; image?: { url: string; altText?: string | null } }))
+      .filter((n) => n?.mediaContentType === 'IMAGE' && n?.image?.url)
+      .map((n) => n!.image!) ?? []
+  const fallback = product.featuredImage ? [product.featuredImage] : []
+  const combined = [...fromImages, ...fromMedia]
+  const source = combined.length > 0 ? combined : fallback
+  const seen = new Set<string>()
+  const unique: { url: string; altText?: string | null }[] = []
+  for (const n of source) {
+    const url = n?.url
+    if (!url) continue
+    const key = urlKey(url)
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push({ url, altText: n?.altText ?? null })
+  }
+  if (unique.length <= 1) return unique
+  const firstUrl = getFirstImageUrl(product)
+  const firstNode = unique.find((n) => n.url === firstUrl) ?? unique[0]
+  const rest = unique.filter((n) => n !== firstNode && n.url !== firstUrl)
+  return [firstNode, ...rest]
+}
+
+interface ArtworkInfoBarProps {
+  /** Product on lamp Side A (image1) */
+  sideAProduct: ShopifyProduct | null
+  /** Product on lamp Side B (image2) */
+  sideBProduct: ShopifyProduct | null
+  /** When no artworks on lamp, show this product (street lamp) — title, thumbnails, gallery */
+  lampProduct?: ShopifyProduct | null
+  /** Product ID of the last clicked artwork in the carousel */
+  lastClickedProductId: string | null
+  /** Called when gallery images change — parent passes to Spline carousel */
+  onGalleryImagesChange?: (images: { url: string; altText?: string | null }[]) => void
+  /** Called when user taps a thumbnail — 0 = Spline, 1+ = image index */
+  onGoToSlide?: (slideIndex: number) => void
+  /** Current slide index — for highlighting active thumbnail */
+  currentSlide?: number
+  /** Optional: open artwork detail when tapped */
+  onViewDetail?: (product: ShopifyProduct) => void
+  /** When two artworks on lamp: which is displayed (0 = sideA, 1 = sideB). Controlled by parent; 1|2 buttons live in header. */
+  displayedIndex?: number
+  /** Called when the displayed product changes (full product when available from cache) */
+  onDisplayedProductChange?: (product: ShopifyProduct | null) => void
+  /** 'inline' = thumbnails below title (default). 'right' = thumbnails portaled under rotate button. */
+  thumbnailPlacement?: 'inline' | 'right'
+  /** When Spline is selected (currentSlide 0), first thumbnail becomes rotate button. Pass to enable. */
+  onRotate?: () => void
+  /** When true, hide title/artist (moved to header center on desktop) */
+  hideTitle?: boolean
+}
+
+export function ArtworkInfoBar({
+  sideAProduct,
+  sideBProduct,
+  lampProduct = null,
+  lastClickedProductId,
+  onGalleryImagesChange,
+  onGoToSlide,
+  currentSlide = 0,
+  onViewDetail,
+  displayedIndex = 0,
+  onDisplayedProductChange,
+  thumbnailPlacement = 'inline',
+  onRotate,
+  hideTitle = false,
+}: ArtworkInfoBarProps) {
+  const { theme } = useExperienceTheme()
+  const hasA = !!sideAProduct
+  const hasB = !!sideBProduct
+  const hasTwo = hasA && hasB && sideAProduct.id !== sideBProduct.id
+
+  const displayedProduct = hasTwo
+    ? (displayedIndex === 0 ? sideAProduct : sideBProduct)
+    : (sideAProduct ?? sideBProduct ?? lampProduct)
+
+  // Cache full products by handle — pre-fetch for BOTH lamp sides so we have all images
+  const [fullProductCache, setFullProductCache] = useState<Map<string, ShopifyProduct>>(new Map())
+  const [imagesLoading, setImagesLoading] = useState(false)
+  const fetchAbortRef = useRef<AbortController | null>(null)
+  const cacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  cacheRef.current = fullProductCache
+
+  useEffect(() => {
+    const handles = new Set<string>()
+    if (sideAProduct?.handle) handles.add(sideAProduct.handle)
+    if (sideBProduct?.handle && sideBProduct.handle !== sideAProduct?.handle) handles.add(sideBProduct.handle)
+    if (handles.size === 0) return
+
+    const toFetch = [...handles].filter((h) => !cacheRef.current.has(h))
+    if (toFetch.length === 0) {
+      setImagesLoading(false)
+      return
+    }
+
+    setImagesLoading(true)
+    fetchAbortRef.current?.abort()
+    fetchAbortRef.current = new AbortController()
+    const signal = fetchAbortRef.current.signal
+
+    Promise.all(
+      toFetch.map((handle) =>
+        fetch(`/api/shop/products/${encodeURIComponent(handle)}`, { signal })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => (data?.product ? { handle, product: data.product as ShopifyProduct } : null))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (signal.aborted) return
+      setFullProductCache((prev) => {
+        const next = new Map(prev)
+        for (const r of results) {
+          if (r?.product) next.set(r.handle, r.product)
+        }
+        return next
+      })
+    }).finally(() => {
+      if (!signal.aborted) setImagesLoading(false)
+    })
+
+    return () => { fetchAbortRef.current?.abort() }
+  }, [sideAProduct?.handle, sideBProduct?.handle])
+
+  const productForImages =
+    displayedProduct && displayedProduct.id !== lampProduct?.id
+      ? (displayedProduct.handle && fullProductCache.get(displayedProduct.handle)) ?? displayedProduct
+      : displayedProduct
+
+  useEffect(() => {
+    onDisplayedProductChange?.(productForImages ?? displayedProduct ?? null)
+  }, [displayedProduct, productForImages, onDisplayedProductChange])
+
+  const orderedImages = useMemo(
+    () => getOrderedImages(productForImages),
+    [productForImages, productForImages?.images?.edges?.length, productForImages?.media?.edges?.length]
+  )
+  const galleryImages = useMemo(
+    () => (orderedImages.length > 1 ? orderedImages.slice(1) : []),
+    [orderedImages]
+  )
+
+  useEffect(() => {
+    onGalleryImagesChange?.(galleryImages)
+  }, [galleryImages, onGalleryImagesChange])
+
+  const [portalReady, setPortalReady] = useState(false)
+  useLayoutEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  if (!displayedProduct) return null
+
+  const isLamp = displayedProduct?.id === lampProduct?.id
+  const title = displayedProduct.title ?? ''
+  const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+        {/* Row: artwork title and artist — hidden when in header (desktop) */}
+        {!hideTitle && (
+        <div className="flex items-center gap-3 min-w-0 max-w-full">
+          {/* Artwork name and artist */}
+          <button
+            type="button"
+            onClick={() => onViewDetail?.(displayedProduct)}
+            className={cn(
+              'text-left min-w-0 flex-1 truncate',
+              !onViewDetail && 'cursor-default'
+            )}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={displayedProduct.id}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-0.5 min-w-0 truncate"
+              >
+                <p
+                  className={cn(
+                    'text-sm font-semibold truncate',
+                    theme === 'light' ? 'text-neutral-900' : 'text-white'
+                  )}
+                >
+                  {title || 'Untitled'}
+                </p>
+                {artist && (
+                  <p
+                    className={cn(
+                      'text-xs truncate',
+                      theme === 'light' ? 'text-neutral-500' : 'text-white/70'
+                    )}
+                  >
+                    by {artist}
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </button>
+        </div>
+        )}
+
+        {/* Thumbnails: [Spline] [img1] [img2]... — inline or portaled to right */}
+        {(galleryImages.length > 0 || imagesLoading) && (() => {
+          const thumbnails = (
+            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {imagesLoading ? (
+                <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-white/10')} />
+              ) : (
+                <>
+                  {/* Thumb 0: Spline / 3D lamp — when selected, becomes rotate button */}
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (currentSlide === 0 && onRotate) onRotate()
+                      else onGoToSlide?.(0)
+                    }}
+                    title={currentSlide === 0 && onRotate ? 'Rotate 90 degrees' : '3D lamp view'}
+                    className={cn(
+                      'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
+                    currentSlide === 0
+                      ? theme === 'light'
+                        ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
+                        : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                        : theme === 'light'
+                          ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
+                          : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                    )}
+                  >
+                    {currentSlide === 0 && onRotate ? (
+                      <RotateCw className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} />
+                    ) : (
+                      <Box className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} strokeWidth={1.5} />
+                    )}
+                  </button>
+                  {galleryImages.map((img, idx) => (
+                    <button
+                      key={img.url || idx}
+                      type="button"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGoToSlide?.(idx + 1) }}
+                      title="View full image"
+                      className={cn(
+                        'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
+                      currentSlide === idx + 1
+                        ? 'border-[#FFBA94]'
+                          : theme === 'light'
+                            ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
+                            : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
+                      )}
+                    >
+                      <Image
+                        src={getShopifyImageUrl(img.url, 88) ?? img.url}
+                        alt={img.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
+                        fill
+                        className="object-cover pointer-events-none"
+                        sizes="32px"
+                        loading="eager"
+                      />
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )
+          if (thumbnailPlacement === 'right') {
+            if (portalReady && typeof document !== 'undefined') {
+              const slot = document.getElementById('spline-thumbnail-slot')
+              if (slot) return createPortal(thumbnails, slot)
+            }
+            return null
+          }
+          return thumbnails
+        })()}
+    </div>
+  )
+}

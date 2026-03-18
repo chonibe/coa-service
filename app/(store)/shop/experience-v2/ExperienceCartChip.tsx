@@ -49,7 +49,7 @@ export function ExperienceCartChip({
   className?: string
   variant?: 'light' | 'dark'
 }) {
-  const { total, itemCount, openOrderBar, orderBarProps, promoDiscount } = useExperienceOrder()
+  const { total, itemCount, openOrderBar, orderBarProps, promoDiscount, priceBumpTrigger } = useExperienceOrder()
   const prevLampQuantity = useRef(0)
   const [hasExpanded, setHasExpanded] = useState(false)
   const lampQuantity = orderBarProps?.lampQuantity ?? 0
@@ -57,6 +57,9 @@ export function ExperienceCartChip({
   const displayTotal = Math.max(0, total - (promoDiscount ?? 0))
   const formattedPrice = displayTotal > 0 ? `$${displayTotal.toFixed(2)}` : ''
   const showPrice = hasExpanded && total > 0
+
+  /** When priceBumpTrigger > 0, we remount with key and play expand-from-collapsed animation */
+  const playExpandAnimation = priceBumpTrigger > 0 && showPrice
 
   useEffect(() => {
     if (lampQuantity > prevLampQuantity.current && lampQuantity >= 1) {
@@ -74,17 +77,24 @@ export function ExperienceCartChip({
   const collapsedPadding = 5
   const collapsedWidth = iconSize + collapsedPadding * 2
 
+  const expandTransition = { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const }
+
   return (
     <motion.button
+      key={priceBumpTrigger > 0 ? `bump-${priceBumpTrigger}` : 'chip'}
       type="button"
       onClick={openOrderBar}
       data-testid="photo-styler-cta-button"
       aria-label={formattedPrice ? `View cart – ${formattedPrice} (${itemCount} items)` : `View cart (${itemCount} items)`}
       className={cn(
-        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-[#047AFF] hover:bg-[#0366d6] text-white self-center shrink-0 !min-h-0 -mx-1',
+        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-[#047AFF] hover:bg-[#0366d6] text-white self-center shrink-0 !min-h-0',
         className
       )}
-      initial={false}
+      initial={
+        playExpandAnimation
+          ? { width: collapsedWidth, paddingLeft: collapsedPadding, paddingRight: collapsedPadding, paddingTop: 5, paddingBottom: 5 }
+          : false
+      }
       animate={{
         width: showPrice ? 'auto' : collapsedWidth,
         paddingLeft: showPrice ? 10 : collapsedPadding,
@@ -92,18 +102,27 @@ export function ExperienceCartChip({
         paddingTop: 5,
         paddingBottom: 5,
       }}
-      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      transition={{
+        width: expandTransition,
+        paddingLeft: expandTransition,
+        paddingRight: expandTransition,
+        paddingTop: { duration: 0.4 },
+        paddingBottom: { duration: 0.4 },
+      }}
     >
       <span className="inline-flex items-center justify-center min-w-0">
         <AnimatePresence mode="sync">
           {showPrice && (
             <motion.span
               key="price"
-              initial={{ width: 0, opacity: 0 }}
+              initial={playExpandAnimation ? { width: 0, opacity: 0 } : false}
               animate={{ width: 'auto', opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="font-bold tabular-nums whitespace-nowrap shrink-0 mr-1.5"
+              transition={{
+                width: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+                opacity: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+              }}
+              className="font-bold tabular-nums whitespace-nowrap shrink-0 mr-1.5 inline-block origin-left"
             >
               {formattedPrice}
             </motion.span>

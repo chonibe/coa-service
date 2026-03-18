@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, MapPin, Search, ChevronDown, Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useExperienceTheme } from '@/app/(store)/shop/experience/ExperienceThemeContext'
+import { useExperienceTheme } from '@/app/(store)/shop/experience-v2/ExperienceThemeContext'
 import { Button } from '@/components/ui'
 import {
   Input,

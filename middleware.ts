@@ -185,6 +185,26 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const search = request.nextUrl.search
 
+  // /experience-v2 and /experience-v2/* → /shop/experience-v2 (legacy experience)
+  if (pathname === '/experience-v2' || pathname === '/experience-v2/' || pathname.startsWith('/experience-v2/')) {
+    const rest = pathname === '/experience-v2' || pathname === '/experience-v2/' ? '' : pathname.slice('/experience-v2'.length)
+    return NextResponse.redirect(new URL(`/shop/experience-v2${rest}${search}`, request.url), 308)
+  }
+
+  // /experience and /experience/* → /shop/experience (main experience)
+  if (pathname === '/experience' || pathname === '/experience/' || pathname.startsWith('/experience/')) {
+    const rest = pathname === '/experience' || pathname === '/experience/' ? '' : pathname.slice('/experience'.length)
+    const dest = new URL(`/shop/experience${rest}${search}`, request.url)
+    const redirect = NextResponse.redirect(dest, 308)
+    setMetaAttributionCookies(redirect, fbclid)
+    if (affiliateSlug) {
+      setAffiliateCookie(redirect, affiliateSlug)
+      clearDismissedCookie(redirect)
+    }
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    return redirect
+  }
+
   // Supabase auth: email link expired or invalid — redirect to login with friendly error
   const authError = searchParams.get('error')
   const authErrorCode = searchParams.get('error_code')

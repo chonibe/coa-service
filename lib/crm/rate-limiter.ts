@@ -68,11 +68,17 @@ class RateLimitStore {
 
 const rateLimitStore = new RateLimitStore()
 
-// Cleanup every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    rateLimitStore.cleanup()
-  }, 5 * 60 * 1000)
+// Cleanup every 5 minutes — only in environments that support setInterval (Node.js runtime).
+// Edge Runtime (Next.js middleware) does not support setInterval; cleanup is skipped there.
+// The store still self-prunes per-request via recordRequest, so memory stays bounded.
+try {
+  if (typeof setInterval === 'function') {
+    setInterval(() => {
+      rateLimitStore.cleanup()
+    }, 5 * 60 * 1000)
+  }
+} catch {
+  // Edge Runtime — setInterval not available, skip periodic cleanup
 }
 
 /**

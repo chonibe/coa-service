@@ -383,7 +383,7 @@ const PRODUCT_FRAGMENT = `
       width
       height
     }
-    images(first: 10) {
+    images(first: 50) {
       edges {
         node {
           url
@@ -393,7 +393,7 @@ const PRODUCT_FRAGMENT = `
         }
       }
     }
-    media(first: 20) {
+    media(first: 50) {
       edges {
         node {
           mediaContentType

@@ -12,6 +12,7 @@ const ALLOWED_HOSTNAME_SUFFIXES = [
   '.cdn.shopify.com',
   '.shopify.com',
   '.myshopify.com',
+  '.supabase.co',
 ]
 
 function isAllowedUrl(url: string): boolean {
@@ -34,7 +35,16 @@ export async function GET(request: NextRequest) {
   const url = searchParams.get('url')
 
   if (!url || !isAllowedUrl(url)) {
-    return NextResponse.json({ error: 'Invalid or disallowed image URL' }, { status: 400 })
+    console.warn('[proxy-image] Invalid or disallowed URL:', url?.slice(0, 80))
+    // Return 1x1 transparent GIF so Image doesn't trigger onerror (Spline 3D, canvas)
+    const transparentGif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    )
+    return new NextResponse(transparentGif, {
+      status: 200,
+      headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'public, max-age=60' },
+    })
   }
 
   try {
@@ -54,7 +64,7 @@ export async function GET(request: NextRequest) {
     const res = await fetch(url, {
       headers,
       signal: AbortSignal.timeout(20000),
-      cache: 'no-store',
+      next: { revalidate: 3600 },
     })
 
     if (!res.ok) {
@@ -85,6 +95,14 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch image'
     console.error('[proxy-image]', message)
-    return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
+    // Return 1x1 transparent GIF so canvas/WebGL Image doesn't trigger onerror (Spline 3D texture)
+    const transparentGif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    )
+    return new NextResponse(transparentGif, {
+      status: 200,
+      headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'public, max-age=60' },
+    })
   }
 }

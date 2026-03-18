@@ -20,11 +20,11 @@ const IntroQuiz = dynamic(() => import('./IntroQuiz').then((m) => ({ default: m.
   ),
 })
 
-const ONBOARDING_BASE = '/shop/experience/onboarding'
+const ONBOARDING_BASE = '/shop/experience-v2/onboarding'
 const QUIZ_STORAGE_KEY = 'sc-experience-quiz'
 
 function getStepFromPathname(pathname: string): 1 | 2 | 3 {
-  const base = '/shop/experience/onboarding'
+  const base = '/shop/experience-v2/onboarding'
   if (!pathname.startsWith(base)) return 1
   const rest = pathname.slice(base.length).replace(/^\/+/, '')
   if (!rest) return 1
@@ -118,7 +118,7 @@ export function ExperienceOnboardingClient({
   }, [step, router, searchParams])
 
   const handleComplete = useCallback(
-    (answers: QuizAnswers) => {
+    async (answers: QuizAnswers) => {
       try {
         localStorage.setItem(
           QUIZ_STORAGE_KEY,
@@ -127,26 +127,38 @@ export function ExperienceOnboardingClient({
       } catch {
         // ignore
       }
-      // Record every quiz completion so we can track name, gift/self, first-time/have-lamp
-      const name = answers.name?.trim() || null
-      const email = answers.email?.trim() || null
-      const supabase = createClient()
-      supabase
-        .from('experience_quiz_signups')
-        .insert({
-          email,
-          name,
+      const name = answers.name?.trim() || undefined
+      const email = answers.email?.trim() || undefined
+      const payload = {
+        name: name || undefined,
+        email: email || undefined,
+        ownsLamp: answers.ownsLamp,
+        purpose: answers.purpose,
+        affiliateArtistSlug: initialArtistSlug?.trim() || undefined,
+      }
+      // Prefer API so server can persist and fire Meta Lead + TikTok (max benefit for ads)
+      const res = await fetch('/api/experience/quiz-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        // Fallback: save via client so we don't lose the signup; Meta/TikTok won't get event
+        const supabase = createClient()
+        const { error } = await supabase.from('experience_quiz_signups').insert({
+          email: email || null,
+          name: name || null,
           owns_lamp: answers.ownsLamp,
           purpose: answers.purpose,
           source: 'experience',
           affiliate_artist_slug: initialArtistSlug?.trim() || null,
         })
-        .then(({ error }) => {
-          if (error) console.warn('Experience quiz signup save failed:', error)
-        })
+        if (error) console.warn('Experience quiz signup save failed:', error)
+      }
       const params = new URLSearchParams(searchParams)
       const q = params.toString()
-      router.replace(q ? `/shop/experience?${q}` : '/shop/experience')
+      router.replace(q ? `/shop/experience-v2?${q}` : '/shop/experience-v2')
     },
     [router, searchParams, initialArtistSlug]
   )

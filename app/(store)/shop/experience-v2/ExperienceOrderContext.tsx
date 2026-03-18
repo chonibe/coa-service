@@ -57,6 +57,12 @@ interface ExperienceOrderContextValue extends ExperienceOrderState {
   /** Discount celebration: amount when adding first artwork (pops from under cart) */
   discountCelebrationAmount: number | null
   setDiscountCelebrationAmount: (amount: number | null) => void
+  /** Increment to trigger cart price bump animation (e.g. when selector closes after adding items) */
+  priceBumpTrigger: number
+  triggerPriceBump: () => void
+  /** Optional content to render in the header center (e.g. 1|2 artwork switcher) */
+  headerCenterContent: ReactNode | null
+  setHeaderCenterContent: (content: ReactNode | null) => void
 }
 
 const defaultValue: ExperienceOrderContextValue = {
@@ -77,6 +83,10 @@ const defaultValue: ExperienceOrderContextValue = {
   setPromoDiscount: () => {},
   discountCelebrationAmount: null,
   setDiscountCelebrationAmount: () => {},
+  priceBumpTrigger: 0,
+  triggerPriceBump: () => {},
+  headerCenterContent: null,
+  setHeaderCenterContent: () => {},
 }
 
 const ExperienceOrderContext = createContext<ExperienceOrderContextValue>(defaultValue)
@@ -87,7 +97,17 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   const [promoCode, setPromoCodeState] = useState('')
   const [promoDiscount, setPromoDiscountState] = useState(0)
   const [discountCelebrationAmount, setDiscountCelebrationAmountState] = useState<number | null>(null)
+  const [priceBumpTrigger, setPriceBumpTriggerState] = useState(0)
+  const [headerCenterContent, setHeaderCenterContentState] = useState<ReactNode | null>(null)
   const orderBarRef = useRef<OrderBarRefLike | null>(null)
+
+  const setHeaderCenterContent = useCallback((content: ReactNode | null) => {
+    setHeaderCenterContentState(content)
+  }, [])
+
+  const triggerPriceBump = useCallback(() => {
+    setPriceBumpTriggerState((n) => n + 1)
+  }, [])
 
   const setOrderSummary = useCallback((s: ExperienceOrderState) => {
     setState(s)
@@ -117,6 +137,10 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
     setPromoDiscount,
     discountCelebrationAmount,
     setDiscountCelebrationAmount,
+    priceBumpTrigger,
+    triggerPriceBump,
+    headerCenterContent,
+    setHeaderCenterContent,
   }
 
   return (

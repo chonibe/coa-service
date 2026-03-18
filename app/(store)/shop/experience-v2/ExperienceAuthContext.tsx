@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 
-const ONBOARDING_LOGIN_REDIRECT = '/shop/experience?fromOnboardingLogin=1'
+const ONBOARDING_LOGIN_REDIRECT = '/shop/experience-v2?fromOnboardingLogin=1'
 
 export interface ExperienceAuthContextValue {
   /** Open the slideout menu and auth (e.g. from onboarding "Log in"). Use redirectPath to send user after login (e.g. with fromOnboardingLogin=1). */

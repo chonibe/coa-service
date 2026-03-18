@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X, Instagram } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X, Instagram } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -41,16 +41,21 @@ interface ArtworkDetailProps {
   isNewDrop?: boolean
   /** When true, show "Early access" badge (unlisted spotlight) instead of "New Drop" */
   isEarlyAccess?: boolean
+  /** When true, render inline in a panel (no overlay/slideout) — for left-panel embedding on desktop */
+  inline?: boolean
+  /** When true, hide the add-to-order CTA button (e.g. for Experience V2 where selection is in picker) */
+  hideCta?: boolean
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
+  const displayImages = allImages.length > 1 ? allImages.slice(1) : allImages
 
-  const [imageIndex, setImageIndex] = useState(() => (allImages.length >= 2 ? 1 : 0))
+  const [imageIndex, setImageIndex] = useState(0)
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
@@ -67,10 +72,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const panY = useMotionValue(0)
 
   useEffect(() => {
-    const imgs = product.images?.edges?.map((e) => e.node) ?? []
-    const fallback = product.featuredImage
-    const count = imgs.length > 0 ? imgs.length : fallback ? 1 : 0
-    setImageIndex(count >= 2 ? 1 : 0)
+    setImageIndex(0)
     setShowDescription(false)
     setShowArtistBio(false)
     setShowSpecs(false)
@@ -180,16 +182,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); handleClose() }
-      if (e.key === 'ArrowLeft') goToIndex((imageIndex - 1 + allImages.length) % allImages.length)
-      if (e.key === 'ArrowRight') goToIndex((imageIndex + 1) % allImages.length)
+      if (e.key === 'ArrowLeft') goToIndex((imageIndex - 1 + displayImages.length) % displayImages.length)
+      if (e.key === 'ArrowRight') goToIndex((imageIndex + 1) % displayImages.length)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleClose, allImages.length, imageIndex, goToIndex])
+  }, [handleClose, displayImages.length, imageIndex, goToIndex])
 
   const handleDragEnd = useCallback(
     (_: any, info: PanInfo) => {
-      if (allImages.length <= 1) return
+      if (displayImages.length <= 1) return
       setHasUserInteracted(true)
       const velocity = info.velocity.x
       const offset = info.offset.x
@@ -198,17 +200,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       const shouldNext = offset < -threshold || velocity < -velocityThreshold
       const shouldPrev = offset > threshold || velocity > velocityThreshold
       if (shouldNext) {
-        setImageIndex((i) => (i + 1) % allImages.length)
+        setImageIndex((i) => (i + 1) % displayImages.length)
       } else if (shouldPrev) {
-        setImageIndex((i) => (i - 1 + allImages.length) % allImages.length)
+        setImageIndex((i) => (i - 1 + displayImages.length) % displayImages.length)
       } else {
         animate(dragX, 0, { type: 'spring', stiffness: 400, damping: 40 })
       }
     },
-    [allImages.length, dragX]
+    [displayImages.length, dragX]
   )
 
-  const currentImage = allImages[imageIndex]
+  const currentImage = displayImages[imageIndex]
   const showingArtistInCarousel = showArtistBio && !!artistData?.image
 
   // Auto-rotate slideshow when user hasn't interacted
@@ -216,20 +218,145 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     if (
       hasUserInteracted ||
       showingArtistInCarousel ||
-      allImages.length <= 1
+      displayImages.length <= 1
     )
       return
     const id = setInterval(() => {
-      setImageIndex((i) => (i + 1) % allImages.length)
+      setImageIndex((i) => (i + 1) % displayImages.length)
     }, 4000)
     return () => clearInterval(id)
-  }, [hasUserInteracted, showingArtistInCarousel, allImages.length])
+  }, [hasUserInteracted, showingArtistInCarousel, displayImages.length])
 
   const carouselImage = showingArtistInCarousel
     ? { url: artistData!.image!, altText: artistData!.name }
     : currentImage
 
   const isSlideout = !isMobile
+
+  // Inline mode: render content in a panel (no overlay) — for left-panel embedding on desktop
+  const renderDesktopContent = () => (
+    <>
+      {/* Left: Image carousel + thumbnails */}
+      <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
+        {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
+          <div ref={constraintsRef} className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner">
+            <AnimatePresence initial={false} mode="sync">
+              <motion.div
+                key={showingArtistInCarousel ? `artist-${artistData?.image}` : `${imageIndex}-${currentImage?.url ?? ''}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
+                dragConstraints={imageZoom > 1 ? { left: -150, right: 150, top: -150, bottom: 150 } : { left: -280, right: 280 }}
+                dragElastic={imageZoom > 1 ? 0.1 : 0.2}
+                dragMomentum={false}
+                onDragEnd={imageZoom > 1 || showingArtistInCarousel ? undefined : handleDragEnd}
+                style={{ x: imageZoom > 1 ? panX : dragX, y: imageZoom > 1 ? panY : 0, scale: imageZoom }}
+                className="absolute inset-0 cursor-grab active:cursor-grabbing"
+              >
+                {carouselImage && (
+                  <Image key={carouselImage.url} src={carouselImage.url} alt={carouselImage.altText || product.title} fill className={imageZoom > 1 ? 'object-contain' : 'object-cover'} sizes="(max-width: 768px) 100vw, 480px" draggable={false} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+            <button type="button" onClick={handleZoomChange} className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors" aria-label={imageZoom > 1 ? 'Zoom out' : 'Zoom in'}>
+              {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+            </button>
+            {!showingArtistInCarousel && displayImages.length > 1 && (
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                {displayImages.map((_, i) => (
+                  <button key={i} onClick={() => goToIndex(i)} className={cn('w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0', i === imageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70')} style={{ width: 4, height: 4 }} aria-label={`Image ${i + 1}`} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {!showingArtistInCarousel && displayImages.length > 1 && (
+          <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
+            {displayImages.map((img, i) => (
+              <button key={i} onClick={() => goToIndex(i)} className={cn('w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors', i === imageIndex ? 'border-neutral-900 dark:border-white' : 'border-transparent opacity-60 hover:opacity-100')}>
+                <Image src={img.url} alt={img.altText || `Image ${i + 1}`} width={56} height={56} className="w-full h-full object-cover" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Right: Product info — artist, title, edition, scarcity, add button */}
+      <div className="flex-1 min-w-0 flex flex-col pl-2 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
+          <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
+            {artist && <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">{artist}</p>}
+            <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">{product.title}</h2>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {editionSizeNum && editionSizeNum > 0 && <span className="text-xs text-neutral-500 dark:text-[#c4a0a0]">Edition of {editionSizeNum}</span>}
+              {price && (
+                <div className="flex items-center gap-2">
+                  <span className={cn('text-base font-semibold', isEarlyAccess && 'text-violet-600 dark:text-violet-400')}>{price}</span>
+                  {isEarlyAccess && originalPrice && <span className="text-sm text-neutral-400 dark:text-[#a09090] line-through">{originalPrice}</span>}
+                </div>
+              )}
+              {isSoldOut && <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded">Sold out</span>}
+              {isCollected && !isSoldOut && <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded"><Package className="w-3 h-3" strokeWidth={2} /> Collected</span>}
+              {(isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected && <span className={cn('text-xs font-semibold px-2 py-0.5 rounded', isEarlyAccess ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30' : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30')}>{isEarlyAccess ? 'Early access' : 'New Drop'}</span>}
+            </div>
+          </div>
+          {isLoadingDetails && (
+            <div className="py-3 border-b border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+              <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#3e3838] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+              <span className="text-xs">Loading details…</span>
+            </div>
+          )}
+          {artist && (
+            <div className="py-3 border-b border-neutral-100 dark:border-white/10">
+              <button onClick={() => setShowArtistBio(!showArtistBio)} className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
+                <div className="flex items-center gap-3">
+                  {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? <Image src={artistData?.image || (displayImages[0] ?? allImages[0])!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" /> : <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0"><User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" /></div>}
+                  <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">About {artistData?.name || artist}</span>
+                </div>
+                <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showArtistBio && 'rotate-180')} />
+              </button>
+              <AnimatePresence>
+                {showArtistBio && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                    {artistLoading ? <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div> : (
+                      <div className="pt-1 pb-2 space-y-3">
+                        {artistData?.bio && <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>}
+                        {artistData?.instagram && <a href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"><Instagram className="w-4 h-4" />@{artistData.instagram.replace(/^@/, '')}</a>}
+                        {!artistData?.bio && !artistData?.instagram && <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+        <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
+          {!hideScarcityBar && <ScarcityBadge quantityAvailable={quantityAvailable} editionSize={editionSizeNum} availableForSale={product.availableForSale} variant="bar" productId={product.id} productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null} productTitle={product.title} className="w-full" />}
+          {!hideCta && (
+            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]')}>
+              {isSelected ? <><Check className="w-4 h-4" />Added to order — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  )
+
+  if (inline) {
+    return (
+      <div className="h-full flex flex-col bg-white dark:bg-[#171515] overflow-hidden">
+        <button type="button" onClick={onClose} className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-neutral-100 dark:border-white/10 text-sm font-medium text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors" aria-label="Browse artworks">
+          <ChevronLeft className="w-4 h-4" />
+          Browse artworks
+        </button>
+        <div className="flex-1 min-h-0 flex flex-row overflow-hidden gap-6 px-6 pt-5 pb-4">
+          {renderDesktopContent()}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <AnimatePresence onExitComplete={handleExitComplete}>
@@ -289,7 +416,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <>
                 {/* Left: Image carousel + thumbnails — 48% for balanced artwork focus */}
                 <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
-                  {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
+                  {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
                     <div
                       ref={constraintsRef}
                       className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner"
@@ -301,7 +428,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.15 }}
-                          drag={imageZoom > 1 ? true : (!showingArtistInCarousel && allImages.length > 1 ? 'x' : false)}
+                          drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
                           dragConstraints={
                             imageZoom > 1
                               ? { left: -150, right: 150, top: -150, bottom: 150 }
@@ -338,9 +465,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       >
                         {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
                       </button>
-                      {!showingArtistInCarousel && allImages.length > 1 && (
+                      {!showingArtistInCarousel && displayImages.length > 1 && (
                         <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
-                          {allImages.map((_, i) => (
+                          {displayImages.map((_, i) => (
                             <button
                               key={i}
                               onClick={() => goToIndex(i)}
@@ -356,9 +483,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       )}
                     </div>
                   )}
-                  {!showingArtistInCarousel && allImages.length > 1 && (
+                  {!showingArtistInCarousel && displayImages.length > 1 && (
                     <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
-                      {allImages.map((img, i) => (
+                      {displayImages.map((img, i) => (
                         <button
                           key={i}
                           onClick={() => goToIndex(i)}
@@ -617,8 +744,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                       >
                         <div className="flex items-center gap-3">
-                          {(artistData?.image || allImages[0]?.url) ? (
-                            <Image src={artistData?.image || allImages[0]!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
+                          {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? (
+                            <Image src={artistData?.image || (displayImages[0] ?? allImages[0])!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
                           ) : (
                             <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
                               <User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
@@ -685,36 +812,38 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className="w-full"
                       />
                     )}
-                    <button
-                      onClick={onToggleSelect}
-                      disabled={isSoldOut && !isSelected}
-                      className={cn(
-                        'w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                        isSelected
-                          ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
-                          : isSoldOut
-                            ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                            : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
-                      )}
-                    >
-                      {isSelected ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Added to order — Tap to remove
-                        </>
-                      ) : isSoldOut ? (
-                        'Sold Out'
-                      ) : (
-                        <>
-                          {addToOrderLabel} — {price}
-                          {isEarlyAccess && originalPrice && (
-                            <span className="ml-1.5 text-xs line-through opacity-60">
-                              {originalPrice}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </button>
+                    {!hideCta && (
+                      <button
+                        onClick={onToggleSelect}
+                        disabled={isSoldOut && !isSelected}
+                        className={cn(
+                          'w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                          isSelected
+                            ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
+                            : isSoldOut
+                              ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
+                              : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
+                        )}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            Added to order — Tap to remove
+                          </>
+                        ) : isSoldOut ? (
+                          'Sold Out'
+                        ) : (
+                          <>
+                            {addToOrderLabel} — {price}
+                            {isEarlyAccess && originalPrice && (
+                              <span className="ml-1.5 text-xs line-through opacity-60">
+                                {originalPrice}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </>
@@ -722,7 +851,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           /* Mobile: single scroll column */
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-64">
             {/* Swipeable image gallery */}
-            {(allImages.length > 0 || (showArtistBio && artistData?.image)) && (
+            {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
               <div
                 ref={constraintsRef}
                 className="relative aspect-[4/5] bg-neutral-50 dark:bg-[#1a1616] mx-4 rounded-lg overflow-hidden"
@@ -745,7 +874,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    drag={imageZoom > 1 ? true : (!showingArtistInCarousel && allImages.length > 1 ? 'x' : false)}
+                    drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
                     dragConstraints={
                       imageZoom > 1
                         ? { left: -150, right: 150, top: -150, bottom: 150 }
@@ -794,10 +923,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </button>
 
-                {!showingArtistInCarousel && allImages.length > 1 && (
+                {!showingArtistInCarousel && displayImages.length > 1 && (
                   <>
                     <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
-                      {allImages.map((_, i) => (
+                      {displayImages.map((_, i) => (
                         <button
                           key={i}
                           onClick={() => goToIndex(i)}
@@ -1012,9 +1141,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                 >
                   <div className="flex items-center gap-3">
-                    {(artistData?.image || allImages[0]?.url) ? (
+                    {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? (
                       <Image
-                        src={artistData?.image || allImages[0]!.url}
+                        src={artistData?.image || (displayImages[0] ?? allImages[0])!.url}
                         alt={artistData?.name || artist}
                         width={32}
                         height={32}
@@ -1201,36 +1330,38 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </div>
               </div>
-              <button
-              onClick={onToggleSelect}
-              disabled={isSoldOut && !isSelected}
-              className={cn(
-                'w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                isSelected
-                  ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
-                  : isSoldOut
-                    ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                    : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
-              )}
-            >
-              {isSelected ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Added to order &mdash; Tap to remove
-                </>
-              ) : isSoldOut ? (
-                'Sold Out'
-              ) : (
-                <>
-                  {addToOrderLabel} &mdash; {price}
-                  {isEarlyAccess && originalPrice && (
-                    <span className="ml-1.5 text-xs line-through opacity-60">
-                      {originalPrice}
-                    </span>
+              {!hideCta && (
+                <button
+                  onClick={onToggleSelect}
+                  disabled={isSoldOut && !isSelected}
+                  className={cn(
+                    'w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                    isSelected
+                      ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
+                      : isSoldOut
+                        ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
+                        : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
                   )}
-                </>
+                >
+                  {isSelected ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Added to order &mdash; Tap to remove
+                    </>
+                  ) : isSoldOut ? (
+                    'Sold Out'
+                  ) : (
+                    <>
+                      {addToOrderLabel} &mdash; {price}
+                      {isEarlyAccess && originalPrice && (
+                        <span className="ml-1.5 text-xs line-through opacity-60">
+                          {originalPrice}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
               )}
-              </button>
             </div>
           </div>
           )}

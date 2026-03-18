@@ -40,7 +40,7 @@ const splineError = (...args: unknown[]) => __SPLINE_DEV__ && console.error('[Sp
 
 /** Use proxy for external image URLs so canvas/WebGL can use them without CORS. */
 function getImageLoadUrl(imageUrl: string): string {
-  if (!imageUrl || typeof window === 'undefined') return imageUrl
+  if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '' || typeof window === 'undefined') return imageUrl
   if (imageUrl.startsWith('data:')) return imageUrl
   try {
     const parsed = new URL(imageUrl)
@@ -162,6 +162,8 @@ export function Spline3DPreview({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isModelVisible, setIsModelVisible] = useState(true)
+  /** Increment to retry loading the Spline scene (e.g. after user clicks Retry). */
+  const [retryTrigger, setRetryTrigger] = useState(0)
   
   // Store references to objects with image layers
   const side1ObjectRef = useRef<any>(null)
@@ -624,6 +626,10 @@ export function Spline3DPreview({
         splineWarn(`[Spline3D] Cannot add image layer: ${label} object not found`)
         return false
       }
+      if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+        splineWarn(`[Spline3D] Cannot add image layer: ${label} — invalid or empty URL`)
+        return false
+      }
 
       try {
         splineLog(`[Spline3D] Attempting to add image layer to ${label} material...`)
@@ -661,27 +667,33 @@ export function Spline3DPreview({
         // Load image element first (use proxy for external URLs to avoid CORS with canvas)
         const loadUrl = getImageLoadUrl(imageUrl)
         splineLog(`[Spline3D] Loading image for ${label}: ${loadUrl === imageUrl ? 'direct' : 'via proxy'}`)
-        const loadImage = (url: string): Promise<HTMLImageElement> =>
+        const loadImageFn = (url: string): Promise<HTMLImageElement> =>
           new Promise((resolve, reject) => {
             const img = new Image()
             img.crossOrigin = url.startsWith('data:') ? '' : 'anonymous'
             img.onload = () => resolve(img)
             img.onerror = (e) => {
-              splineError(`[Spline3D] Image load failed for ${label}`, e)
+              const urlPreview = url.length > 80 ? `${url.slice(0, 80)}...` : url
+              splineError(`[Spline3D] Image load failed for ${label}`, { event: e, url: urlPreview })
               reject(e)
             }
             img.src = url
           })
         let imageElement: HTMLImageElement
         try {
-          imageElement = await loadImage(loadUrl)
+          imageElement = await loadImageFn(loadUrl)
         } catch {
           // Retry once (e.g. proxy cold start or transient failure); add cache-bust for proxy
           const retryUrl = loadUrl.includes('api/proxy-image')
             ? `${loadUrl}${loadUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`
             : loadUrl
           splineLog(`[Spline3D] Retrying image load for ${label}`)
-          imageElement = await loadImage(retryUrl)
+          try {
+            imageElement = await loadImageFn(retryUrl)
+          } catch (retryErr) {
+            splineError(`[Spline3D] Image load failed for ${label} after retry — restoring base texture`)
+            return false
+          }
         }
 
         // Draw to canvas: scale + position, optionally flip (avoids texture repeat/splitting)
@@ -1082,36 +1094,46 @@ export function Spline3DPreview({
 
     type BaseTextureState = { data: Uint8Array; width: number; height: number; magFilter?: number; minFilter?: number; wrapping?: number } | null
 
-    /** Load base image from URL (e.g. /internal.png) for use when artwork is deselected. */
+    /** Load base image from URL (e.g. /internal.webp) for use when artwork is deselected. Falls back to .png if .webp fails. */
     const loadBaseImageFromUrl = async (): Promise<BaseTextureState> => {
-      const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        img.onload = () => resolve(img)
-        img.onerror = (e) => {
-          splineError('[Spline3D] Base image load failed', e)
-          reject(e)
-        }
-        img.src = BASE_IMAGE_URL
-      })
-      const canvas = document.createElement('canvas')
-      canvas.width = imageElement.width
-      canvas.height = imageElement.height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(imageElement, 0, 0)
-      const blob = await new Promise<Blob>((resolve) =>
-        canvas.toBlob((b) => resolve(b!), 'image/png')
-      )
-      const data = new Uint8Array(await blob!.arrayBuffer())
-      splineLog(`[Spline3D] Loaded base image from ${BASE_IMAGE_URL}: ${canvas.width}x${canvas.height}`)
-      return {
-        data,
-        width: canvas.width,
-        height: canvas.height,
-        magFilter: 1006,
-        minFilter: 1008,
-        wrapping: 1000,
+      const urls = [BASE_IMAGE_URL]
+      if (BASE_IMAGE_URL.endsWith('.webp')) {
+        urls.push(BASE_IMAGE_URL.replace(/\.webp$/i, '.png'))
       }
+      let lastError: unknown
+      for (const url of urls) {
+        try {
+          const imageElement = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => resolve(img)
+            img.onerror = (e) => reject(e)
+            img.src = url
+          })
+          const canvas = document.createElement('canvas')
+          canvas.width = imageElement.width
+          canvas.height = imageElement.height
+          const ctx = canvas.getContext('2d')!
+          ctx.drawImage(imageElement, 0, 0)
+          const blob = await new Promise<Blob>((resolve) =>
+            canvas.toBlob((b) => resolve(b!), 'image/png')
+          )
+          const data = new Uint8Array(await blob!.arrayBuffer())
+          splineLog(`[Spline3D] Loaded base image from ${url}: ${canvas.width}x${canvas.height}`)
+          return {
+            data,
+            width: canvas.width,
+            height: canvas.height,
+            magFilter: 1006,
+            minFilter: 1008,
+            wrapping: 1000,
+          }
+        } catch (e) {
+          lastError = e
+          if (url === BASE_IMAGE_URL) splineError('[Spline3D] Base image load failed', e)
+        }
+      }
+      throw lastError ?? new Error('Base image load failed')
     }
 
     /** Ensure base texture is set: prefer BASE_IMAGE_URL, else capture from scene when both sides have no selection. */
@@ -1186,6 +1208,7 @@ export function Spline3DPreview({
         captureLayer: sideALayerLayout,
       })
       splineLog(`[Spline3D] Side A texture: ${success ? '✓' : '✗'}`)
+      if (!success) restorePanelToBaseState(objA, "Side A", baseTextureSideARef)
     } else {
       side1ObjectRef.current = null
       if (objA && !imgA) restorePanelToBaseState(objA, "Side A", baseTextureSideARef)
@@ -1204,6 +1227,7 @@ export function Spline3DPreview({
         layerOverrides: sideBLayerOverrides,
       })
       splineLog(`[Spline3D] Side B texture: ${success ? '✓' : '✗'}`)
+      if (!success) restorePanelToBaseState(objB, "Side B", baseTextureSideBRef)
     } else {
       side2ObjectRef.current = null
       if (objB && !imgB) restorePanelToBaseState(objB, "Side B", baseTextureSideBRef)
@@ -1235,76 +1259,99 @@ export function Spline3DPreview({
     const forceCursorGrab = () => canvas.style.setProperty('cursor', 'grab', 'important')
     const forceCursorGrabbing = () => canvas.style.setProperty('cursor', 'grabbing', 'important')
 
-    // Set canvas size — On mobile use viewport-based sizing (container rect is unreliable during flex transitions).
-    // Hide canvas during resize on mobile to prevent "bottom-left stays, right expands" visual glitch.
-    const isMobile = () => window.innerWidth < 768
+    // Resize handler: app.setSize resizes the WebGL renderer buffer but does NOT update the
+    // camera's projection matrix. Without updating camera.aspect the scene is projected with
+    // the wrong aspect ratio and the model appears squashed/stretched.
+    const getContainerSize = (): { w: number; h: number } | null => {
+      const rect = container.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        return { w: Math.round(rect.width), h: Math.round(rect.height) }
+      }
+      return null
+    }
+    const applySize = (appInstance?: Application | null) => {
+      const size = getContainerSize()
+      if (!size) return
+      const app = appInstance ?? splineAppRef.current
+      if (app) {
+        app.setSize(size.w, size.h)
+        // Fix camera aspect ratio so the scene is not squashed/stretched.
+        // app.setSize only resizes the renderer buffer; it does not touch the camera.
+        const cam = (app as any).camera
+        if (cam && typeof cam.aspect === 'number' && size.h > 0) {
+          cam.aspect = size.w / size.h
+          if (typeof cam.updateProjectionMatrix === 'function') {
+            cam.updateProjectionMatrix()
+          }
+        }
+      } else {
+        canvas.width = size.w
+        canvas.height = size.h
+      }
+    }
     const setCanvasSize = () => {
-      requestAnimationFrame(() => {
-        const vw = window.innerWidth
-        const vh = window.innerHeight
-        const absMax = 1200
-        const maxW = Math.min(vw, absMax)
-        const maxH = Math.min(vh, absMax)
-
-        let width: number
-        let height: number
-
-        if (isMobile()) {
-          // Mobile: use viewport fractions — container rect is unreliable during selector transitions
-          width = Math.round(Math.min(vw, 600))
-          height = Math.round(Math.min(vh * 0.55, 600)) // ~55dvh when collapsed
-          width = Math.min(Math.max(width, 100), maxW)
-          height = Math.min(Math.max(height, 100), maxH)
-        } else {
-          const rect = container.getBoundingClientRect()
-          const rawW = rect.width || 0
-          const rawH = rect.height || 0
-          const valid = rawW > 0 && rawH > 0 && rawW < vw * 2 && rawH < vh * 2
-          width = valid
-            ? Math.round(Math.min(Math.max(rawW, 100), maxW))
-            : Math.min(800, maxW)
-          height = valid
-            ? Math.round(Math.min(Math.max(rawH, 100), maxH))
-            : Math.min(600, maxH)
-        }
-
-        if (canvas.width !== width || canvas.height !== height) {
-          if (isMobile()) {
-            canvas.style.opacity = '0'
-            canvas.style.transition = 'opacity 0.05s'
-          }
-          canvas.width = width
-          canvas.height = height
-          if (isMobile()) {
-            requestAnimationFrame(() => {
-              canvas.style.opacity = '1'
-              canvas.style.transition = ''
-            })
-          }
-        }
-      })
+      requestAnimationFrame(() => applySize())
     }
 
-    // Resize ONLY when chevron collapses/expands the selector — no window resize, no stabilization
     const EXPERIENCE_SELECTOR_SETTLED = 'experience-selector-settled'
     const handleSelectorSettled = () => setCanvasSize()
     window.addEventListener(EXPERIENCE_SELECTOR_SETTLED, handleSelectorSettled)
+    let resizeTimeout: ReturnType<typeof setTimeout>
+    const scheduleResize = () => {
+      clearTimeout(resizeTimeout)
+      // Shorter debounce (50ms) to reduce visible stretching during layout transitions
+      resizeTimeout = setTimeout(setCanvasSize, 50)
+    }
+    const resizeOb = new ResizeObserver(scheduleResize)
+    resizeOb.observe(container)
+    window.addEventListener('resize', scheduleResize)
+    window.addEventListener('orientationchange', scheduleResize)
+    if (typeof window.visualViewport !== 'undefined') {
+      window.visualViewport.addEventListener('resize', scheduleResize)
+      window.visualViewport.addEventListener('scroll', scheduleResize)
+    }
+
+    // Set initial canvas size before creating Application so the runtime gets correct dimensions from the start.
+    const initSize = getContainerSize()
+    const deferredResizeIds: ReturnType<typeof setTimeout>[] = []
+    if (initSize) {
+      canvas.width = initSize.w
+      canvas.height = initSize.h
+    }
+    // Container may have 0x0 on mount (flex layout not yet computed), or layout may settle after a frame.
+    // Schedule deferred resizes to pick up dimensions once layout settles — fixes Spline not showing until window resize.
+    ;[50, 150, 350, 600, 1000].forEach((ms) => {
+      deferredResizeIds.push(setTimeout(() => {
+        if (loadEffectIdRef.current !== thisRunId) return
+        scheduleResize()
+      }, ms))
+    })
+
+    const loadWithRetry = async (application: Application, maxAttempts = 3): Promise<void> => {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          await application.load(SCENE_PATH)
+          return
+        } catch (err) {
+          if (loadEffectIdRef.current !== thisRunId) throw err
+          if (attempt === maxAttempts) throw err
+          splineWarn('[Spline3D] Load failed, retrying...', attempt, (err as Error)?.message)
+          await new Promise((r) => setTimeout(r, 1000 * attempt))
+        }
+      }
+    }
 
     try {
-      // Force WebGL context with alpha so we can use transparent clear color for AR camera-feed mode.
-      // Must be done before Application() so Spline reuses this context.
-      if (!canvas.getContext('webgl2', { alpha: true }) && !canvas.getContext('webgl', { alpha: true })) {
-        // fallback: try without alpha so scene still loads
-      }
       const app = new Application(canvas, { renderMode: 'continuous' })
 
-      app.load(SCENE_PATH)
+      loadWithRetry(app)
         .then(() => {
           if (loadEffectIdRef.current !== thisRunId) {
             try { app.dispose?.() } catch { /* ignore */ }
             return
           }
           splineAppRef.current = app
+          setCanvasSize()
           // Override Spline's cursor hiding – force grab cursor to stay visible
           canvas.style.setProperty('cursor', 'grab', 'important')
           canvas.addEventListener('mousedown', forceCursorGrabbing)
@@ -1369,12 +1416,17 @@ export function Spline3DPreview({
             if (scene) scene.background = null
             if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
           }
+          // Show the scene as soon as it's loaded — no artificial delay.
+          // The 1000ms timeout was originally here to wait for scene traversal,
+          // but that traversal is now skipped in minimal mode (live experience).
+          setIsLoading(false)
+          reapplyTransparentBgIfAr()
+          requestAnimationFrame(() => reapplyTransparentBgIfAr())
+          setTimeout(() => reapplyTransparentBgIfAr(), 100)
+
+          // Deferred post-load work (debug traversal only in non-minimal mode)
           setTimeout(() => {
             if (loadEffectIdRef.current !== thisRunId) return
-            setIsLoading(false)
-            reapplyTransparentBgIfAr()
-            requestAnimationFrame(() => reapplyTransparentBgIfAr())
-            setTimeout(() => reapplyTransparentBgIfAr(), 100)
             // Search entire scene for all objects (for toggling)
             const searchEntireSceneForObjects = (): ObjectInfo[] => {
               const app = splineAppRef.current as any
@@ -2152,45 +2204,28 @@ export function Spline3DPreview({
               return layers
             }
             
-            // Inspect materials after a short delay to ensure scene is fully loaded
-            setTimeout(() => {
-              // Inspect PC Trans B object specifically
-              const pcTransBLayers = inspectPcTransB()
-              setPcTransBLayers(pcTransBLayers)
-              
-              // Search entire scene for ALL objects (for toggling)
-              const allObjects = searchEntireSceneForObjects()
-              setDiscoveredObjects(allObjects)
-              
-              // Search entire scene for ALL images (primary search)
-              const sceneLayers = searchEntireSceneForImages()
-              
-              // Also inspect PC materials for additional context
-              const pcLayers = inspectPCMaterials()
-              
-              // Combine results - scene-wide search is primary
-              const layerMap = new Map<string, LayerInfo>()
-              
-              // Add scene layers first (these are the most comprehensive)
-              sceneLayers.forEach(layer => {
-                const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
-                layerMap.set(key, layer)
-              })
-              
-              // Add PC layers (won't overwrite scene layers due to different keys)
-              pcLayers.forEach(layer => {
-                const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
-                if (!layerMap.has(key)) {
+            // Scene traversal for debug/dev tools — only runs in non-minimal (template-preview) mode.
+            // In minimal mode (live experience) this is skipped entirely to avoid blocking the main thread.
+            if (!minimal) {
+              setTimeout(() => {
+                const pcTransBLayers = inspectPcTransB()
+                setPcTransBLayers(pcTransBLayers)
+                const allObjects = searchEntireSceneForObjects()
+                setDiscoveredObjects(allObjects)
+                const sceneLayers = searchEntireSceneForImages()
+                const pcLayers = inspectPCMaterials()
+                const layerMap = new Map<string, LayerInfo>()
+                sceneLayers.forEach(layer => {
+                  const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
                   layerMap.set(key, layer)
-                }
-              })
-              
-              const allLayers = Array.from(layerMap.values())
-              setDiscoveredLayers(allLayers)
-              
-              splineLog(`[Spline3D] Total objects found: ${allObjects.length}`)
-              splineLog(`[Spline3D] Total layers found: ${allLayers.length} (${sceneLayers.length} from scene search, ${pcLayers.length} from PC inspection)`)
-            }, 500)
+                })
+                pcLayers.forEach(layer => {
+                  const key = `${layer.objectId}-${layer.layerIndex}-${layer.layerType}`
+                  if (!layerMap.has(key)) layerMap.set(key, layer)
+                })
+                setDiscoveredLayers(Array.from(layerMap.values()))
+              }, 500)
+            }
           }, 1000)
         })
         .catch((err) => {
@@ -2206,7 +2241,16 @@ export function Spline3DPreview({
     }
 
     return () => {
+      deferredResizeIds.forEach((id) => clearTimeout(id))
+      clearTimeout(resizeTimeout)
+      resizeOb.disconnect()
       window.removeEventListener(EXPERIENCE_SELECTOR_SETTLED, handleSelectorSettled)
+      window.removeEventListener('resize', scheduleResize)
+      window.removeEventListener('orientationchange', scheduleResize)
+      if (typeof window.visualViewport !== 'undefined') {
+        window.visualViewport.removeEventListener('resize', scheduleResize)
+        window.visualViewport.removeEventListener('scroll', scheduleResize)
+      }
       canvas.removeEventListener('mousedown', forceCursorGrabbing)
       canvas.removeEventListener('mouseup', forceCursorGrab)
       canvas.removeEventListener('mouseleave', forceCursorGrab)
@@ -2220,7 +2264,7 @@ export function Spline3DPreview({
         discoveredPanelsRef.current = { sideA: null, sideB: null }
       }
     }
-  }, [])
+  }, [retryTrigger])
 
   // Preload base image (internal.png) on mount so restore-to-base works before first texture update.
   useEffect(() => {
@@ -2788,7 +2832,7 @@ export function Spline3DPreview({
               3D preview unavailable — {error.includes('fetch') ? 'check your connection and refresh' : error}
             </p>
             <button
-              onClick={() => { setError(null); setIsLoading(true); }}
+              onClick={() => { setError(null); setIsLoading(true); setRetryTrigger((t) => t + 1); }}
               className={cn(
                 "mt-3 px-4 py-1.5 text-xs font-medium rounded-full transition-colors",
                 bgTheme === 'light'
@@ -2802,21 +2846,17 @@ export function Spline3DPreview({
         )}
         <canvas
           ref={canvasRef}
-          className="w-full h-full max-w-full max-h-full !cursor-grab active:!cursor-grabbing"
+          className="absolute inset-0 w-full h-full !cursor-grab active:!cursor-grabbing"
           style={{
             display: "block",
             width: "100%",
             height: "100%",
-            maxWidth: "100%",
-            maxHeight: "100%",
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             cursor: "grab",
-            transform: `rotate(${(((previewQuarterTurns % 4) + 4) % 4) * 90}deg) scale(${viewRollScale})`,
+            transform: `translateY(-4%) rotate(${(((previewQuarterTurns % 4) + 4) % 4) * 90}deg) scale(${viewRollScale})`,
             transformOrigin: "50% 50%",
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
-          width={800}
-          height={600}
         />
       </div>
     )

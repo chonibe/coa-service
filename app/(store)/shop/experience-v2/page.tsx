@@ -45,7 +45,7 @@ function filterLamp(products: ShopifyProduct[]) {
   )
 }
 
-async function ExperienceV2Loader({ lamp, initialArtistSlug }: { lamp: ShopifyProduct; initialArtistSlug?: string }) {
+async function ExperienceV2Loader({ lamp }: { lamp: ShopifyProduct }) {
   const [season1Result, season2Result] = await getCachedSeasonCollections()
 
   const productsSeason1 = filterLamp(
@@ -71,12 +71,11 @@ async function ExperienceV2Loader({ lamp, initialArtistSlug }: { lamp: ShopifyPr
       productsSeason2={productsSeason2}
       pageInfoSeason1={pageInfoSeason1}
       pageInfoSeason2={pageInfoSeason2}
-      initialArtistSlug={initialArtistSlug}
     />
   )
 }
 
-async function ExperienceV2LampLoader({ initialArtistSlug }: { initialArtistSlug?: string }) {
+async function ExperienceV2LampLoader() {
   const lamp = await getCachedLamp().catch(() => null)
 
   if (!lamp) {
@@ -100,22 +99,15 @@ async function ExperienceV2LampLoader({ initialArtistSlug }: { initialArtistSlug
 
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2Loader lamp={lamp} initialArtistSlug={initialArtistSlug} />
+      <ExperienceV2Loader lamp={lamp} />
     </Suspense>
   )
 }
 
-type ExperiencePageProps = {
-  searchParams: Promise<{ artist?: string; vendor?: string }>
-}
-
-export default async function ExperienceV2Page({ searchParams }: ExperiencePageProps) {
-  const resolved = await searchParams
-  const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
-
+export default function ExperienceV2Page() {
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2LampLoader initialArtistSlug={initialArtistSlug} />
+      <ExperienceV2LampLoader />
     </Suspense>
   )
 }

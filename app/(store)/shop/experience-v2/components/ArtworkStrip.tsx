@@ -159,6 +159,12 @@ interface ArtworkCardProps {
   showHighlightAnimation?: boolean
   /** Called when user tries a step (Info=0, Eye=1, Add=2) on first card */
   onStepTried?: (step: 0 | 1 | 2) => void
+  /** When true, show the looping tap-nudge animation on this card's image */
+  showTapNudge?: boolean
+  /** Delay in seconds before the nudge loop starts (for staggering across cards) */
+  tapNudgeDelay?: number
+  /** When true, show an Information button in the bottom bar (next to Add) for mobile */
+  isMobile?: boolean
 }
 
 function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
@@ -191,6 +197,9 @@ function ArtworkCard({
   highlightStep = 0,
   showHighlightAnimation = false,
   onStepTried,
+  showTapNudge = false,
+  tapNudgeDelay = 0,
+  isMobile = false,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
@@ -240,6 +249,8 @@ function ArtworkCard({
   const roundLeft = !isMerged || mergeWithRight
   const roundRight = !isMerged || mergeWithLeft
 
+  const showTapHint = showTapNudge && !isInCart && !isSoldOut && lampPosition === null
+
   return (
     <motion.div
       data-product-id={product.id}
@@ -254,7 +265,7 @@ function ArtworkCard({
         isInCart && !isMerged && 'scale-[0.95] ring-1 ring-[#FFBA94]/60',
       )}
     >
-      <div
+      <motion.div
         className={cn(
           'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
           roundLeft && roundRight && 'rounded-t-xl',
@@ -262,6 +273,17 @@ function ArtworkCard({
           !roundLeft && roundRight && 'rounded-tr-xl',
           isInCart ? 'bg-[#e8f4ff] dark:bg-[#171515]' : 'bg-neutral-100 dark:bg-[#201c1c]'
         )}
+        animate={showTapHint ? {
+          scale: [1, 0.955, 1, 0.955, 1],
+        } : { scale: 1 }}
+        transition={showTapHint ? {
+          duration: 1.6,
+          repeat: Infinity,
+          repeatDelay: 2.4,
+          delay: tapNudgeDelay,
+          ease: 'easeInOut',
+        } : undefined}
+        whileTap={{ scale: 0.95 }}
         onClick={handleImageClick}
         role="button"
         tabIndex={0}
@@ -339,7 +361,7 @@ function ArtworkCard({
             />
           </button>
         )}
-      </div>
+      </motion.div>
 
       <div
         className={cn(
@@ -427,6 +449,15 @@ function ArtworkCard({
             )}
           </button>
           <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(1); onViewDetail(product) }}
+            className="flex items-center justify-center w-5 h-5 rounded-full bg-white/90 dark:bg-[#171515]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70 transition-all shrink-0"
+            title="View artwork details"
+            aria-label="View artwork details"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
+          <button
             data-highlight-btn={isFirstCard ? 'add' : undefined}
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(2); onAddToCart(product) }}
@@ -500,6 +531,8 @@ interface ArtworkStripProps {
   newDropProductIds?: Set<string>
   /** When true, spotlight is unlisted; show "Early access" on spotlight artworks instead of "New Drop" */
   spotlightUnlisted?: boolean
+  /** When true, show Information button in card bottom bar (mobile) */
+  isMobile?: boolean
 }
 
 function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
@@ -514,6 +547,32 @@ function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
 }
 
 const SENTINEL_HEIGHT = 80
+
+// Stable seeded shuffle — always includes both first-row cards (indices 0 & 1) plus
+// 3 more random available cards from the rest of the grid.
+function seededNudgeIndices(products: ShopifyProduct[]): number[] {
+  if (products.length === 0) return []
+  // Simple hash from first few product IDs for stability
+  let seed = 0
+  for (let i = 0; i < Math.min(products.length, 4); i++) {
+    const id = products[i].id
+    for (let j = 0; j < id.length; j++) seed = (seed * 31 + id.charCodeAt(j)) >>> 0
+  }
+  // Always start with first-row cards that are available
+  const firstRow = [0, 1].filter((i) => i < products.length && products[i].availableForSale)
+  const available = products
+    .map((_, i) => i)
+    .filter((i) => i > 1 && products[i].availableForSale)
+  const extra: number[] = []
+  let s = seed
+  while (extra.length < 3 && available.length > 0) {
+    s = (s * 1664525 + 1013904223) >>> 0
+    const pick = s % available.length
+    extra.push(available[pick])
+    available.splice(pick, 1)
+  }
+  return [...firstRow, ...extra]
+}
 
 export function ArtworkStrip({
   scrollRef,
@@ -539,7 +598,26 @@ export function ArtworkStrip({
   collectedProductIds,
   newDropProductIds,
   spotlightUnlisted = false,
+  isMobile = false,
 }: ArtworkStripProps) {
+  // Tap-nudge: pick 4 random card indices, animate them one by one until user taps any card
+  const [nudgeDone, setNudgeDone] = useState(false)
+  const nudgeIndicesRef = useRef<number[]>([])
+  if (nudgeIndicesRef.current.length === 0 && products.length > 0) {
+    nudgeIndicesRef.current = seededNudgeIndices(products)
+  }
+  const nudgeIndices = nudgeIndicesRef.current
+
+  const handleLampSelectWithNudge = useCallback((product: ShopifyProduct) => {
+    setNudgeDone(true)
+    onLampSelect(product)
+  }, [onLampSelect])
+
+  const handleAddToCartWithNudge = useCallback((product: ShopifyProduct) => {
+    setNudgeDone(true)
+    onAddToCart(product)
+  }, [onAddToCart])
+
   const isProductCollected = useCallback((productId: string) => {
     if (!collectedProductIds?.size) return false
     const numeric = productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
@@ -698,12 +776,15 @@ export function ArtworkStrip({
                     isNewDrop={isProductNewDrop(product1.id)}
                     isEarlyAccess={spotlightUnlisted && isProductNewDrop(product1.id)}
                     onPreview={onPreview}
-                    onLampSelect={onLampSelect}
-                    onAddToCart={onAddToCart}
+                    onLampSelect={handleLampSelectWithNudge}
+                    onAddToCart={handleAddToCartWithNudge}
                     onViewDetail={onViewDetail}
                     highlightStep={highlightStep}
                     showHighlightAnimation={showHighlightAnimation}
                     onStepTried={onStepTried}
+                    showTapNudge={!nudgeDone && nudgeIndices.includes(startIdx)}
+                    tapNudgeDelay={nudgeIndices.indexOf(startIdx) * 1.2}
+                    isMobile={isMobile}
                   />
                 </div>
               )}
@@ -734,12 +815,15 @@ export function ArtworkStrip({
                     isNewDrop={isProductNewDrop(product2.id)}
                     isEarlyAccess={spotlightUnlisted && isProductNewDrop(product2.id)}
                     onPreview={onPreview}
-                    onLampSelect={onLampSelect}
-                    onAddToCart={onAddToCart}
+                    onLampSelect={handleLampSelectWithNudge}
+                    onAddToCart={handleAddToCartWithNudge}
                     onViewDetail={onViewDetail}
                     highlightStep={highlightStep}
                     showHighlightAnimation={showHighlightAnimation}
                     onStepTried={onStepTried}
+                    showTapNudge={!nudgeDone && nudgeIndices.includes(startIdx + 1)}
+                    tapNudgeDelay={nudgeIndices.indexOf(startIdx + 1) * 1.2}
+                    isMobile={isMobile}
                   />
                 </div>
               )}

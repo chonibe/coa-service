@@ -79,7 +79,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
       // pathname to avoid false "abandoned" events on normal forward navigation.
       const stillInQuiz =
         typeof window !== 'undefined' &&
-        window.location.pathname.startsWith('/shop/experience/onboarding')
+        window.location.pathname.startsWith('/shop/experience-v2/onboarding')
       if (!completedRef.current && !stillInQuiz) {
         const timeSpent = Math.floor((Date.now() - stepStartTimeRef.current) / 1000)
         if (timeSpent > 1) {

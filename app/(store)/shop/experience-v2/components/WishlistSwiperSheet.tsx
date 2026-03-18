@@ -868,7 +868,7 @@ export function WishlistSwiperSheet({
                     onClick={() => {
                       const next = !autoAddToWishlist
                       setAutoAddToWishlist(next)
-                      try { localStorage.setItem(AUTO_ADD_WISHLIST_KEY, String(next)) } catch {}
+                      try { localStorage.setItem(AUTO_ADD_WISHLIST_KEY, String(next)) } catch { /* ignore */ }
                     }}
                     className="flex items-center gap-1.5 shrink-0 text-left text-sm text-neutral-700 hover:opacity-80 transition-opacity"
                   >

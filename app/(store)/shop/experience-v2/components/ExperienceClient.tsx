@@ -116,7 +116,7 @@ function loadQuizAnswers(): QuizAnswers | null {
   }
 }
 
-const ONBOARDING_PATH = '/shop/experience/onboarding'
+const ONBOARDING_PATH = '/shop/experience-v2/onboarding'
 
 export function ExperienceClient({
   lamp,
@@ -223,7 +223,7 @@ export function ExperienceClient({
       setQuizAnswers(loggedInAnswers)
       setMounted(true)
       const q = new URLSearchParams(onboardingQueryParams).toString()
-      router.replace(q ? `/shop/experience?${q}` : '/shop/experience')
+      router.replace(q ? `/shop/experience-v2?${q}` : '/shop/experience-v2')
     } else {
       setRedirectingToOnboarding(true)
       const q = new URLSearchParams(onboardingQueryParams).toString()
