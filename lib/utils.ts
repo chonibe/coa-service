@@ -61,6 +61,15 @@ export function formatUSD(amount: number): string {
 }
 
 /**
+ * Formats price for compact display: rounds to nearest 0.5, then 1 decimal when fractional, no decimal when whole.
+ * Returns just the number part (caller adds $). e.g. 25.37 → "25.5", 25 → "25"
+ */
+export function formatPriceCompact(amount: number): string {
+  const rounded = Math.round(amount * 2) / 2
+  return rounded.toFixed(1).replace(/\.0$/, '')
+}
+
+/**
  * Formats file size in bytes to human-readable format
  * @param bytes File size in bytes
  * @returns Formatted string (e.g., "1.5 MB", "500 KB")

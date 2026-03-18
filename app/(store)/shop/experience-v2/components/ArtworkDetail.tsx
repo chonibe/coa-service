@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
 import { Check, ChevronDown, ChevronLeft, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X, Instagram } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
 
 interface ArtistData {
@@ -121,10 +121,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     ? Math.round(originalPriceAmount * 0.9 * 100) / 100
     : originalPriceAmount
   const price = originalPriceAmount > 0
-    ? `$${discountedPriceAmount.toFixed(2)}`
+    ? `$${formatPriceCompact(discountedPriceAmount)}`
     : ''
   const originalPrice = isEarlyAccess && originalPriceAmount > 0
-    ? `$${originalPriceAmount.toFixed(2)}`
+    ? `$${formatPriceCompact(originalPriceAmount)}`
     : ''
   const artist = product.vendor || ''
   const isSoldOut = !product.availableForSale

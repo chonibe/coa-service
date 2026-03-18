@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 
 interface ArtworkInfoProps {
   product: ShopifyProduct
@@ -14,7 +14,7 @@ interface ArtworkInfoProps {
 
 export function ArtworkInfo({ product, lampSide1, lampSide2, onViewDetail }: ArtworkInfoProps) {
   const price = product.priceRange?.minVariantPrice?.amount
-    ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}`
+    ? `$${formatPriceCompact(parseFloat(product.priceRange.minVariantPrice.amount))}`
     : ''
   const artist = product.vendor || ''
   const isSoldOut = !product.availableForSale

@@ -10,6 +10,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import type { QuizAnswers } from './IntroQuiz'
 import type { SeasonPageInfo } from './ExperienceClient'
+import { formatPriceCompact } from '@/lib/utils'
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -1929,10 +1930,10 @@ export function Configurator({
                   lampQuantity === 0 ? 'text-neutral-500' : 'text-neutral-300 font-medium'
                 )}>
                   {lampQuantity === 0
-                    ? `$${lampPrice.toFixed(2)}`
+                    ? `$${formatPriceCompact(lampPrice)}`
                     : lampTotal === 0
                       ? 'FREE'
-                      : `$${lampTotal.toFixed(2)}`}
+                      : `$${formatPriceCompact(lampTotal)}`}
                 </span>
                 {lampQuantity === 0 ? (
                   <button
@@ -1970,7 +1971,7 @@ export function Configurator({
                       {discountBarLabel}
                     </span>
                     {lampSavings > 0 && (
-                      <span className="text-[11px] font-semibold text-neutral-300 tabular-nums">-${lampSavings.toFixed(2)}</span>
+                      <span className="text-[11px] font-semibold text-neutral-300 tabular-nums">-${formatPriceCompact(lampSavings)}</span>
                     )}
                   </div>
                   <div className="relative h-1.5 rounded-full overflow-hidden flex bg-neutral-700">

@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
 import { Package, Shield, RotateCcw, Lock } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
 import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/google-analytics'
 import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, tagSessionForReplay } from '@/lib/posthog'
@@ -81,7 +81,7 @@ function AnimatedPrice({ value }: { value: number }) {
     requestAnimationFrame(tick)
   }, [value])
 
-  return <span className="tabular-nums">${display.toFixed(2)}</span>
+  return <span className="tabular-nums">${formatPriceCompact(display)}</span>
 }
 
 function LampQuantityInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
@@ -507,15 +507,15 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             {lampSavings > 0 && (
               <>
                 <TicketIcon className="w-4 h-4 shrink-0 text-green-600" aria-hidden />
-                <span className="text-green-600 whitespace-nowrap shrink-0">Saving ${lampSavings.toFixed(2)}</span>
+                <span className="text-green-600 whitespace-nowrap shrink-0">Saving ${formatPriceCompact(lampSavings)}</span>
               </>
             )}
             <div className="flex items-center gap-1.5 tabular-nums shrink-0 whitespace-nowrap">
               {lampSavings > 0 && (
-                <span className="line-through text-neutral-500 dark:text-[#c4a0a0]">${lampOriginalTotal.toFixed(2)}</span>
+                <span className="line-through text-neutral-500 dark:text-[#c4a0a0]">${formatPriceCompact(lampOriginalTotal)}</span>
               )}
               <span className={cn('font-medium text-sm', lampTotal === 0 ? 'text-green-600' : 'text-neutral-700 dark:text-[#d4b8b8]')}>
-                {lampTotal === 0 ? 'FREE' : `$${lampTotal.toFixed(2)}`}
+                {lampTotal === 0 ? 'FREE' : `$${formatPriceCompact(lampTotal)}`}
               </span>
             </div>
             <LampQuantityInput
@@ -555,7 +555,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                 {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
               </span>
             </div>
-            <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] tabular-nums shrink-0">${parsePrice(art).toFixed(2)}</span>
+            <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] tabular-nums shrink-0">${formatPriceCompact(parsePrice(art))}</span>
             <div className="w-9 h-6 flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-xs font-medium tabular-nums text-neutral-700 dark:text-[#d4b8b8] shrink-0">
               1
             </div>

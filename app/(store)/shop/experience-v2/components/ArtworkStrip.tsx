@@ -8,7 +8,7 @@ import { Check, Eye, Heart, Info } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -396,7 +396,7 @@ function ArtworkCard({
                 'text-[10px] line-through',
                 isInCart ? 'text-neutral-500 dark:text-[#c4a0a0]' : 'text-neutral-400 dark:text-[#a09090]'
               )}>
-                ${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}
+                ${formatPriceCompact(parseFloat(product.priceRange.minVariantPrice.amount))}
               </p>
             )}
           </div>
@@ -541,9 +541,9 @@ function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
   const originalPrice = parseFloat(amount)
   if (isEarlyAccess) {
     const discountedPrice = Math.round(originalPrice * 0.9 * 100) / 100
-    return `$${discountedPrice.toFixed(2)}`
+    return `$${formatPriceCompact(discountedPrice)}`
   }
-  return `$${originalPrice.toFixed(2)}`
+  return `$${formatPriceCompact(originalPrice)}`
 }
 
 const SENTINEL_HEIGHT = 80

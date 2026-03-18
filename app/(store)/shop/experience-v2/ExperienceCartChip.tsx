@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useExperienceOrder } from './ExperienceOrderContext'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 
 /** Shopping bag / cart icon matching Mixtiles photo-styler-cta style */
 function CartBagIcon({ className }: { className?: string }) {
@@ -55,7 +55,7 @@ export function ExperienceCartChip({
   const lampQuantity = orderBarProps?.lampQuantity ?? 0
 
   const displayTotal = Math.max(0, total - (promoDiscount ?? 0))
-  const formattedPrice = displayTotal > 0 ? `$${displayTotal.toFixed(2)}` : ''
+  const formattedPrice = displayTotal > 0 ? `$${formatPriceCompact(displayTotal)}` : ''
   const showPrice = hasExpanded && total > 0
 
   /** When priceBumpTrigger > 0, we remount with key and play expand-from-collapsed animation */

@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { formatPriceCompact } from '@/lib/utils'
 
 export interface DiscountCelebrationProps {
   amount: number
@@ -17,7 +18,7 @@ const pillClass =
   'inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-bold tabular-nums bg-white/95 dark:bg-neutral-800/95 text-neutral-800 dark:text-neutral-100 shadow-xl border border-neutral-200/80 dark:border-neutral-600/60 backdrop-blur-sm'
 
 export function DiscountCelebration({ amount, onComplete, popFromCart = false }: DiscountCelebrationProps) {
-  const formatted = amount >= 0.01 ? `$${amount.toFixed(2)}` : ''
+  const formatted = amount >= 0.01 ? `$${formatPriceCompact(amount)}` : ''
 
   // Timeline: quick pop in, long hold at full visibility, then fade out and float
   const holdEnd = (TOTAL_DURATION_MS - 500) / 1000
