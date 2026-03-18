@@ -243,7 +243,7 @@ function ArtworkCard({
   }
 
   // Unified wizard highlight style for consistent visual affordance
-  const wizardHighlightClass = 'ring-2 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
+  const wizardHighlightClass = 'ring-1 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
 
   const isMerged = isInCart && (mergeWithLeft || mergeWithRight)
   const roundLeft = !isMerged || mergeWithRight
@@ -262,7 +262,7 @@ function ArtworkCard({
         !roundLeft && roundRight && 'rounded-r-xl',
         (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
         isInCart && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isInCart && !isMerged && 'scale-[0.95] ring-1 ring-[#FFBA94]/60',
+        isInCart && !isMerged && 'scale-[0.95] ring-[0.5px] ring-[#FFBA94]/60',
       )}
     >
       <motion.div
@@ -752,7 +752,7 @@ export function ArtworkStrip({
           >
             <div className={cn(
               'relative',
-              shouldMerge ? 'flex rounded-xl border-2 border-[#FFBA94] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
+              shouldMerge ? 'flex rounded-xl border border-[#FFBA94] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
             )}>
               {shouldMerge && <MergeConfetti active={justMerged} />}
               {product1 && (
