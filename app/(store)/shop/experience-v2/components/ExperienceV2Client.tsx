@@ -4,17 +4,21 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
-import { useExperienceOrder } from '../../experience/ExperienceOrderContext'
+import { useExperienceOrder } from '../ExperienceOrderContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
-import { applyFilters, DEFAULT_FILTERS, type FilterState } from '../../experience/components/FilterPanel'
-import type { SpotlightData } from '../../experience/components/ArtistSpotlightBanner'
-import { SplineFullScreen } from './SplineFullScreen'
-import { ArtworkCarouselBar } from './ArtworkCarouselBar'
-import { ArtworkInfoBar } from './ArtworkInfoBar'
-import { ArtworkPickerSheet } from './ArtworkPickerSheet'
-import { ArtworkDetail } from '../../experience/components/ArtworkDetail'
-import { useExperienceTheme } from '../../experience/ExperienceThemeContext'
+import { applyFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
+import type { SpotlightData } from './ArtistSpotlightBanner'
+import { SplineFullScreen } from '../../experience/components/SplineFullScreen'
+import { ArtworkCarouselBar } from '../../experience/components/ArtworkCarouselBar'
+import { ArtworkInfoBar } from '../../experience/components/ArtworkInfoBar'
+import { ArtworkDetail } from './ArtworkDetail'
+
+const ArtworkPickerSheet = dynamic(
+  () => import('../../experience/components/ArtworkPickerSheet').then((m) => ({ default: m.ArtworkPickerSheet })),
+  { ssr: false }
+)
+import { useExperienceTheme } from '../ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
 const SEASON_1_HANDLE = 'season-1'
@@ -29,7 +33,7 @@ interface PageInfo {
 }
 
 const OrderBar = dynamic(
-  () => import('../../experience/components/OrderBar').then((m) => m.OrderBar),
+  () => import('./OrderBar').then((m) => m.OrderBar),
   { ssr: false }
 )
 
@@ -103,6 +107,7 @@ export function ExperienceV2Client({
   const [lampQuantity, setLampQuantity] = useState(() => loadedCart.lampQuantity)
   const [activeCarouselIndex, setActiveCarouselIndex] = useState<number>(-1)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
   const [rotateTrigger, setRotateTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
@@ -132,7 +137,9 @@ export function ExperienceV2Client({
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Defer artist spotlight fetch until picker opens (reduces initial load)
   useEffect(() => {
+    if (!isPickerOpen) return
     fetch('/api/shop/artist-spotlight')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -141,7 +148,7 @@ export function ExperienceV2Client({
         }
       })
       .catch(() => {})
-  }, [])
+  }, [isPickerOpen])
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -546,6 +553,7 @@ export function ExperienceV2Client({
 
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
+    setPickerHasBeenOpened(true)
     setIsPickerOpen(true)
   }, [cartOrder.length])
 
@@ -736,6 +744,7 @@ export function ExperienceV2Client({
           onOpenPicker={handleOpenPicker}
         />
 
+      {pickerHasBeenOpened && (
       <ArtworkPickerSheet
         isOpen={isPickerOpen}
         onClose={handleClosePicker}
@@ -759,6 +768,7 @@ export function ExperienceV2Client({
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}
       />
+      )}
 
       {detailProduct && (
         <ArtworkDetail
