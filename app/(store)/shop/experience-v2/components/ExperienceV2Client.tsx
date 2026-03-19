@@ -92,6 +92,8 @@ interface ExperienceV2ClientProps {
   productsSeason2: ShopifyProduct[]
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
+  /** When set (e.g. from ?artist= URL), fetch spotlight for this artist */
+  initialArtistSlug?: string
 }
 
 export function ExperienceV2Client({
@@ -100,6 +102,7 @@ export function ExperienceV2Client({
   productsSeason2: initialSeason2,
   pageInfoSeason1: initialPageInfo1,
   pageInfoSeason2: initialPageInfo2,
+  initialArtistSlug,
 }: ExperienceV2ClientProps) {
   const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } = useExperienceOrder()
 
@@ -150,18 +153,37 @@ export function ExperienceV2Client({
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Fetch artist spotlight on mount for placeholder when no artwork selected
+  // Fetch artist spotlight: use ?artist= when present (e.g. /shop/experience-v2?artist=jack-jc-art), else default latest
   useEffect(() => {
-    fetch('/api/shop/artist-spotlight')
+    const url = initialArtistSlug
+      ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
+      : '/api/shop/artist-spotlight'
+    fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.vendorName && data?.productIds?.length) {
+        if (data?.vendorName && Array.isArray(data?.productIds)) {
           setSpotlightData(data as SpotlightData)
-          setSpotlightProductsFromApi((data.products as ShopifyProduct[] | undefined) ?? [])
+          const products = (data.products as ShopifyProduct[] | undefined) ?? []
+          setSpotlightProductsFromApi(products)
+          // Merge spotlight products when from artist link (may include early-access not in season collections)
+          if (products.length && initialArtistSlug) {
+            setProductsSeason2((prev) => {
+              const existingIds = new Set(prev.map((p) => p.id))
+              const toAdd = products.filter((p) => !existingIds.has(p.id))
+              if (toAdd.length === 0) return prev
+              return [...prev, ...toAdd]
+            })
+          }
+        } else {
+          setSpotlightData(null)
+          setSpotlightProductsFromApi([])
         }
       })
-      .catch(() => {})
-  }, [])
+      .catch(() => {
+        setSpotlightData(null)
+        setSpotlightProductsFromApi([])
+      })
+  }, [initialArtistSlug])
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -537,6 +559,7 @@ export function ExperienceV2Client({
     if (isAdding) {
       scrollToSplineRef.current = true
       setPreviewSlideIndex(0)
+      setDisplayedProduct(product)
       const variant = product.variants?.edges?.[0]?.node
       trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
       setLampPreviewOrder((prev) => {
@@ -564,12 +587,21 @@ export function ExperienceV2Client({
 
   const handleTapCarouselItem = useCallback((index: number) => {
     const product = selectedArtworks[index]
-    if (product) {
-      scrollToSplineRef.current = true
-      setPreviewSlideIndex(0)
-      handleLampSelect(product)
+    if (!product) return
+    scrollToSplineRef.current = true
+    setPreviewSlideIndex(0)
+    setActiveCarouselIndex(index)
+    if (product.id === lamp.id) {
+      setDisplayedProduct(lamp)
+      return
     }
-  }, [selectedArtworks, handleLampSelect])
+    if (lampPreviewOrder.includes(product.id)) {
+      setRotateToSide(getSideToShowForProduct(lampPreviewOrder, product.id))
+      setRotateTrigger((t) => t + 1)
+      return
+    }
+    handleLampSelect(product)
+  }, [selectedArtworks, handleLampSelect, lampPreviewOrder, lamp.id, getSideToShowForProduct])
 
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -617,13 +649,27 @@ export function ExperienceV2Client({
     if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
   }, [lampPreviewOrder.length, lamp])
 
-  // Sync displayedIndex when user taps carousel item
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
   const lastClickedProductId = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex]?.id ?? null : null
+  const lastClickedProduct = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex] ?? null : null
   useEffect(() => {
-    if (!lastClickedProductId || !sideAProduct || !sideBProduct) return
-    if (sideAProduct.id === lastClickedProductId) setDisplayedIndex(0)
-    else if (sideBProduct.id === lastClickedProductId) setDisplayedIndex(1)
-  }, [lastClickedProductId, sideAProduct?.id, sideBProduct?.id])
+    if (!lastClickedProductId || !lastClickedProduct) return
+    if (lastClickedProduct.id === lamp.id) {
+      setDisplayedProduct(lamp)
+      return
+    }
+    if (sideAProduct && sideBProduct) {
+      if (sideAProduct.id === lastClickedProductId) {
+        setDisplayedIndex(0)
+        setDisplayedProduct(sideAProduct)
+      } else if (sideBProduct.id === lastClickedProductId) {
+        setDisplayedIndex(1)
+        setDisplayedProduct(sideBProduct)
+      }
+    } else {
+      setDisplayedProduct(lastClickedProduct)
+    }
+  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
 
   const isDesktop = !isMobile
   useEffect(() => {

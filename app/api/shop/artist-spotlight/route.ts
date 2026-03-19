@@ -25,8 +25,9 @@ export async function GET(request: Request) {
     const requestedArtist = searchParams.get('artist')?.trim() || searchParams.get('vendor')?.trim()
     const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
     if (requestedArtist) {
-      // Try collection by exact handle, then common variants (e.g. kymo → kymo-one). Allow Admin/COA fallback for early-access.
-      const handlesToTry = [requestedArtist, `${requestedArtist}-one`]
+      // Try collection by exact handle, then common variants (e.g. kymo → kymo-one, jack-jc-art → jack-j-c-art). Allow Admin/COA fallback for early-access.
+      const jcVariant = requestedArtist.replace(/-jc-/, '-j-c-') // jack-jc-art → jack-j-c-art
+      const handlesToTry = [requestedArtist, `${requestedArtist}-one`, ...(jcVariant !== requestedArtist ? [jcVariant, `${jcVariant}-one`] : [])]
       for (const h of handlesToTry) {
         const byCollection = await tryCollectionSpotlight(supabase, h, { allowEarlyAccessFallback: true })
         if (byCollection) {
@@ -41,10 +42,13 @@ export async function GET(request: Request) {
       }
     }
 
-    // 0. Default: Try Tyler Shelton first, then spotlight = artist of the latest 2 artworks in Season 2
-    const tylerSheltonResult = await tryTylerSheltonSpotlight(supabase)
-    if (tylerSheltonResult && !tylerSheltonResult.unlisted) return NextResponse.json(tylerSheltonResult)
-    
+    // Default: Jack J.C. Art spotlight first, then latest artist (Season 2, Shopify, Supabase)
+    const jackJcArtHandles = ['jack-jc-art', 'jack-j-c-art', 'jack-jc-art-one', 'jack-j-c-art-one']
+    for (const h of jackJcArtHandles) {
+      const jackResult = await tryCollectionSpotlight(supabase, h, { allowEarlyAccessFallback: false })
+      if (jackResult && !jackResult.unlisted) return NextResponse.json(jackResult)
+    }
+
     const season2Result = await trySeason2LatestSpotlight(supabase)
     if (season2Result && !season2Result.unlisted) return NextResponse.json(season2Result)
 

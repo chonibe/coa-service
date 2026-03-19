@@ -14,6 +14,8 @@ interface ExperienceV2ClientLoaderProps {
   productsSeason2: ShopifyProduct[]
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
+  /** When set (e.g. from ?artist= URL), fetch spotlight for this artist */
+  initialArtistSlug?: string
 }
 
 function LoadingSkeleton() {

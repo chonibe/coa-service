@@ -53,7 +53,14 @@ function buildProductsFromSeasons(season1Result: SeasonResult, season2Result: Se
   return { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 }
 }
 
-export default async function ExperienceV2Page() {
+type ExperienceV2PageProps = {
+  searchParams: Promise<{ artist?: string; vendor?: string }>
+}
+
+export default async function ExperienceV2Page({ searchParams }: ExperienceV2PageProps) {
+  const resolved = await searchParams
+  const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
+
   const [lamp, [season1Result, season2Result]] = await Promise.all([
     getCachedLamp().catch(() => null),
     getCachedSeasonCollections(),
@@ -88,6 +95,7 @@ export default async function ExperienceV2Page() {
       productsSeason2={productsSeason2}
       pageInfoSeason1={pageInfoSeason1}
       pageInfoSeason2={pageInfoSeason2}
+      initialArtistSlug={initialArtistSlug}
     />
   )
 }
