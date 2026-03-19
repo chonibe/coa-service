@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, User, ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap, Instagram } from 'lucide-react'
+import { ChevronDown, ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
+import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
 
 interface ArtistData {
   name: string
@@ -23,14 +24,16 @@ interface ArtworkAccordionsProps {
 }
 
 const artistCache = new Map<string, ArtistData | null>()
+type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
+const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
 export function ArtworkAccordions({ product, productIncludes, productSpecs }: ArtworkAccordionsProps) {
   useExperienceTheme() // ensures we're in theme context for dark: classes
   const [showDescription, setShowDescription] = useState(false)
-  const [showArtistBio, setShowArtistBio] = useState(false)
   const [showSpecs, setShowSpecs] = useState(false)
   const [showIncludes, setShowIncludes] = useState(false)
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
+  const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
 
   const descriptionRaw = product.description || product.descriptionHtml || ''
@@ -44,7 +47,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
 
   useEffect(() => {
     setShowDescription(false)
-    setShowArtistBio(false)
     setShowSpecs(false)
     setShowIncludes(false)
   }, [product.id])
@@ -53,6 +55,7 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
     if (!artist) return
     if (artistCache.has(slug)) {
       setArtistData(artistCache.get(slug) ?? null)
+      setSpotlightData(spotlightCache.get(slug) ?? null)
       return
     }
     let cancelled = false
@@ -65,10 +68,11 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
         let bio = a?.bio
         let image = a?.image
         let instagram = a?.instagram
+        let spot: SpotlightWithProducts | null = null
         // Spotlight fallback when artists API returns no bio (spotlight has working implementation)
         if ((!bio || !image || !instagram) && slug) {
           try {
-            const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
             if (spot && !cancelled) {
               if (!bio && spot.bio) bio = spot.bio
               if (!image && spot.image) image = spot.image
@@ -78,11 +82,61 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
             // ignore
           }
         }
-        const d = a ? { name: a.name ?? artist, slug: a.slug ?? slug, bio, image, instagram } : null
+        // When artists API fails entirely, use artist-spotlight as primary (same source as selector spotlight)
+        let d: ArtistData | null = null
+        if (a) {
+          d = { name: a.name ?? artist, slug: a.slug ?? slug, bio, image, instagram }
+        } else if (slug) {
+          try {
+            spot = spot ?? await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+              d = {
+                name: spot.vendorName ?? artist,
+                slug: spot.vendorSlug ?? slug,
+                bio: spot.bio,
+                image: spot.image,
+                instagram: spot.instagram,
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
         artistCache.set(slug, d)
+        spotlightCache.set(slug, spot)
         setArtistData(d)
+        setSpotlightData(spot)
       })
-      .catch(() => { if (!cancelled) setArtistData(null) })
+      .catch(async () => {
+        if (cancelled) return
+        // On artists API error, try artist-spotlight as primary (same source as selector spotlight)
+        try {
+          const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+          if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+            const d = {
+              name: spot.vendorName ?? artist,
+              slug: spot.vendorSlug ?? slug,
+              bio: spot.bio,
+              image: spot.image,
+              instagram: spot.instagram,
+            }
+            artistCache.set(slug, d)
+            spotlightCache.set(slug, spot)
+            setArtistData(d)
+            setSpotlightData(spot)
+          } else {
+            artistCache.set(slug, null)
+            spotlightCache.set(slug, null)
+            setArtistData(null)
+            setSpotlightData(null)
+          }
+        } catch {
+          artistCache.set(slug, null)
+          spotlightCache.set(slug, null)
+          setArtistData(null)
+          setSpotlightData(null)
+        }
+      })
       .finally(() => { if (!cancelled) setArtistLoading(false) })
     return () => { cancelled = true }
   }, [artist, slug])
@@ -214,84 +268,30 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
         </div>
       )}
 
-      {/* About the Artist — before Artwork details, large image when opened */}
+      {/* About the Artist — spotlight card (same as selector) instead of accordion */}
       {artist && !isLamp && (
         <div className="pb-0">
-          <button
-            onClick={() => {
-              setShowArtistBio(!showArtistBio)
-              if (!showArtistBio) setShowDescription(false)
-            }}
-            className={accordionCls}
-          >
-            <div className="flex items-center gap-3">
-              {artistData?.image || firstImage?.url ? (
-                <Image
-                  src={artistData?.image || firstImage!.url}
-                  alt={artistData?.name || artist}
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-lg object-cover"
-                />
-              ) : (
-                <div className={iconCls}>
-                  <User className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-                </div>
-              )}
-              <span className={labelCls}>About {artistData?.name || artist}</span>
+          {artistLoading ? (
+            <div className="py-4 flex justify-center">
+              <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
             </div>
-            <ChevronDown className={chevronCls(showArtistBio)} />
-          </button>
-          <AnimatePresence>
-            {showArtistBio && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                {artistLoading ? (
-                  <div className="py-4 flex justify-center">
-                    <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-                  </div>
-                ) : (
-                  <div className="pb-3 space-y-4">
-                    {(artistData?.image || firstImage?.url) && (
-                      <div className="relative w-full aspect-square max-w-[min(80vw,280px)] mx-auto rounded-2xl overflow-hidden">
-                        <Image
-                          src={artistData?.image || firstImage!.url}
-                          alt={artistData?.name || artist}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 480px) 80vw, 280px"
-                        />
-                      </div>
-                    )}
-                    <div className="space-y-3">
-                      {artistData?.bio && (
-                        <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>
-                      )}
-                      {artistData?.instagram && (
-                        <a
-                          href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"
-                        >
-                          <Instagram className="w-4 h-4" />
-                          @{artistData.instagram.replace(/^@/, '')}
-                        </a>
-                      )}
-                      {!artistData?.bio && !artistData?.instagram && (
-                        <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          ) : (() => {
+            const spotlight: SpotlightData | null = spotlightData ?? (artistData ? {
+              vendorName: artistData.name,
+              vendorSlug: artistData.slug,
+              bio: artistData.bio,
+              image: artistData.image,
+              instagram: artistData.instagram,
+              productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id],
+            } : null)
+            const spotlightProducts = (spotlightData as SpotlightWithProducts | null)?.products ?? [product]
+            return spotlight ? (
+              <ArtistSpotlightBanner
+                spotlight={spotlight}
+                spotlightProducts={spotlightProducts}
+              />
+            ) : null
+          })()}
         </div>
       )}
 

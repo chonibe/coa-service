@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, ChevronLeft, User, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X, Instagram } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
+import { ArtistSpotlightBanner, type SpotlightData } from './ArtistSpotlightBanner'
 
 interface ArtistData {
   name: string
@@ -48,6 +49,8 @@ interface ArtworkDetailProps {
 }
 
 const artistCache = new Map<string, ArtistData | null>()
+type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
+const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
 export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
@@ -58,8 +61,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const [imageIndex, setImageIndex] = useState(0)
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
+  const [spotlightData, setSpotlightData] = useState<SpotlightWithProducts | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
-  const [showArtistBio, setShowArtistBio] = useState(false)
   const [showDescription, setShowDescription] = useState(false)
   const [showSpecs, setShowSpecs] = useState(false)
   const [showIncludes, setShowIncludes] = useState(false)
@@ -74,7 +77,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   useEffect(() => {
     setImageIndex(0)
     setShowDescription(false)
-    setShowArtistBio(false)
     setShowSpecs(false)
     setShowIncludes(false)
     setImageZoom(1)
@@ -142,6 +144,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
     if (artistCache.has(slug)) {
       setArtistData(artistCache.get(slug) || null)
+      setSpotlightData(spotlightCache.get(slug) ?? null)
       return
     }
 
@@ -152,10 +155,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       .then(async (data) => {
         if (cancelled) return
         let valid = data && !data.error ? data : null
+        let spot: SpotlightWithProducts | null = null
         // Spotlight fallback when artists API returns no bio (spotlight has working implementation)
         if (valid && (!valid.bio || !valid.image || !valid.instagram) && slug) {
           try {
-            const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
             if (spot && !cancelled) {
               valid = {
                 ...valid,
@@ -168,17 +172,61 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             // ignore
           }
         }
+        // When artists API fails entirely, use artist-spotlight as primary (same source as selector spotlight)
+        if (!valid && slug) {
+          try {
+            spot = spot ?? await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+              valid = {
+                name: spot.vendorName ?? artist,
+                slug: spot.vendorSlug ?? slug,
+                bio: spot.bio,
+                image: spot.image,
+                instagram: spot.instagram,
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
         if (!cancelled) {
           artistCache.set(slug, valid)
+          spotlightCache.set(slug, spot)
           setArtistData(valid)
+          setSpotlightData(spot)
           setArtistLoading(false)
         }
       })
-      .catch(() => {
-        if (!cancelled) {
+      .catch(async () => {
+        if (cancelled) return
+        // On artists API error, try artist-spotlight as primary (same source as selector spotlight)
+        try {
+          const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+          if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+            const valid = {
+              name: spot.vendorName ?? artist,
+              slug: spot.vendorSlug ?? slug,
+              bio: spot.bio,
+              image: spot.image,
+              instagram: spot.instagram,
+            }
+            artistCache.set(slug, valid)
+            spotlightCache.set(slug, spot)
+            setArtistData(valid)
+            setSpotlightData(spot)
+          } else {
+            artistCache.set(slug, null)
+            spotlightCache.set(slug, null)
+            setArtistData(null)
+            setSpotlightData(null)
+          }
+        } catch {
           artistCache.set(slug, null)
-          setArtistLoading(false)
+          spotlightCache.set(slug, null)
+          setArtistData(null)
+          setSpotlightData(null)
         }
+        if (!cancelled) setArtistLoading(false)
       })
 
     return () => { cancelled = true }
@@ -228,13 +276,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   )
 
   const currentImage = displayImages[imageIndex]
-  const showingArtistInCarousel = showArtistBio && !!artistData?.image
 
   // Auto-rotate slideshow when user hasn't interacted
   useEffect(() => {
     if (
       hasUserInteracted ||
-      showingArtistInCarousel ||
       displayImages.length <= 1
     )
       return
@@ -242,11 +288,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       setImageIndex((i) => (i + 1) % displayImages.length)
     }, 4000)
     return () => clearInterval(id)
-  }, [hasUserInteracted, showingArtistInCarousel, displayImages.length])
+  }, [hasUserInteracted, displayImages.length])
 
-  const carouselImage = showingArtistInCarousel
-    ? { url: artistData!.image!, altText: artistData!.name }
-    : currentImage
+  const carouselImage = currentImage
 
   const isSlideout = !isMobile
 
@@ -255,20 +299,20 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     <>
       {/* Left: Image carousel + thumbnails */}
       <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
-        {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
+        {displayImages.length > 0 && (
           <div ref={constraintsRef} className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner">
             <AnimatePresence initial={false} mode="sync">
               <motion.div
-                key={showingArtistInCarousel ? `artist-${artistData?.image}` : `${imageIndex}-${currentImage?.url ?? ''}`}
+                key={`${imageIndex}-${currentImage?.url ?? ''}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
+                drag={imageZoom > 1 ? true : (displayImages.length > 1 ? 'x' : false)}
                 dragConstraints={imageZoom > 1 ? { left: -150, right: 150, top: -150, bottom: 150 } : { left: -280, right: 280 }}
                 dragElastic={imageZoom > 1 ? 0.1 : 0.2}
                 dragMomentum={false}
-                onDragEnd={imageZoom > 1 || showingArtistInCarousel ? undefined : handleDragEnd}
+                onDragEnd={imageZoom > 1 ? undefined : handleDragEnd}
                 style={{ x: imageZoom > 1 ? panX : dragX, y: imageZoom > 1 ? panY : 0, scale: imageZoom }}
                 className="absolute inset-0 cursor-grab active:cursor-grabbing"
               >
@@ -280,7 +324,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             <button type="button" onClick={handleZoomChange} className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors" aria-label={imageZoom > 1 ? 'Zoom out' : 'Zoom in'}>
               {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
             </button>
-            {!showingArtistInCarousel && displayImages.length > 1 && (
+            {displayImages.length > 1 && (
               <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
                 {displayImages.map((_, i) => (
                   <button key={i} onClick={() => goToIndex(i)} className={cn('w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0', i === imageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70')} style={{ width: 4, height: 4 }} aria-label={`Image ${i + 1}`} />
@@ -289,7 +333,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
           </div>
         )}
-        {!showingArtistInCarousel && displayImages.length > 1 && (
+        {displayImages.length > 1 && (
           <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
             {displayImages.map((img, i) => (
               <button key={i} onClick={() => goToIndex(i)} className={cn('w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors', i === imageIndex ? 'border-neutral-900 dark:border-white' : 'border-transparent opacity-60 hover:opacity-100')}>
@@ -326,26 +370,13 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           )}
           {artist && (
             <div className="py-3 border-b border-neutral-100 dark:border-white/10">
-              <button onClick={() => setShowArtistBio(!showArtistBio)} className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group">
-                <div className="flex items-center gap-3">
-                  {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? <Image src={artistData?.image || (displayImages[0] ?? allImages[0])!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" /> : <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0"><User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" /></div>}
-                  <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">About {artistData?.name || artist}</span>
-                </div>
-                <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showArtistBio && 'rotate-180')} />
-              </button>
-              <AnimatePresence>
-                {showArtistBio && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-                    {artistLoading ? <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div> : (
-                      <div className="pt-1 pb-2 space-y-3">
-                        {artistData?.bio && <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>}
-                        {artistData?.instagram && <a href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"><Instagram className="w-4 h-4" />@{artistData.instagram.replace(/^@/, '')}</a>}
-                        {!artistData?.bio && !artistData?.instagram && <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {artistLoading ? (
+                <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+              ) : (() => {
+                const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                const spotlightProducts = spotlightData?.products ?? [product]
+                return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+              })()}
             </div>
           )}
         </div>
@@ -433,19 +464,19 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <>
                 {/* Left: Image carousel + thumbnails — 48% for balanced artwork focus */}
                 <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
-                  {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
+                  {displayImages.length > 0 && (
                     <div
                       ref={constraintsRef}
                       className="relative flex-1 min-h-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner"
                     >
                       <AnimatePresence initial={false} mode="sync">
                         <motion.div
-                          key={showingArtistInCarousel ? `artist-${artistData?.image}` : `${imageIndex}-${currentImage?.url ?? ''}`}
+                          key={`${imageIndex}-${currentImage?.url ?? ''}`}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.15 }}
-                          drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
+                          drag={imageZoom > 1 ? true : (displayImages.length > 1 ? 'x' : false)}
                           dragConstraints={
                             imageZoom > 1
                               ? { left: -150, right: 150, top: -150, bottom: 150 }
@@ -453,7 +484,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           }
                           dragElastic={imageZoom > 1 ? 0.1 : 0.2}
                           dragMomentum={false}
-                          onDragEnd={imageZoom > 1 || showingArtistInCarousel ? undefined : handleDragEnd}
+                          onDragEnd={imageZoom > 1 ? undefined : handleDragEnd}
                           style={{
                             x: imageZoom > 1 ? panX : dragX,
                             y: imageZoom > 1 ? panY : 0,
@@ -482,7 +513,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       >
                         {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
                       </button>
-                      {!showingArtistInCarousel && displayImages.length > 1 && (
+                      {displayImages.length > 1 && (
                         <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
                           {displayImages.map((_, i) => (
                             <button
@@ -500,7 +531,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       )}
                     </div>
                   )}
-                  {!showingArtistInCarousel && displayImages.length > 1 && (
+                  {displayImages.length > 1 && (
                     <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
                       {displayImages.map((img, i) => (
                         <button
@@ -756,61 +787,13 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                   {artist && (
                     <div className="py-3 border-t border-neutral-100 dark:border-white/10">
-                      <button
-                        onClick={() => setShowArtistBio(!showArtistBio)}
-                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? (
-                            <Image src={artistData?.image || (displayImages[0] ?? allImages[0])!.url} alt={artistData?.name || artist} width={32} height={32} className="w-8 h-8 rounded-lg object-cover ring-1 ring-neutral-200 dark:ring-white/10 flex-shrink-0" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
-                              <User className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-                            </div>
-                          )}
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                            About {artistData?.name || artist}
-                          </span>
-                        </div>
-                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showArtistBio && 'rotate-180')} />
-                      </button>
-                      <AnimatePresence>
-                        {showArtistBio && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            {artistLoading ? (
-                              <div className="py-4 flex justify-center">
-                                <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-                              </div>
-                            ) : (
-                              <div className="pt-1 pb-2 space-y-3">
-                                {artistData?.bio && (
-                                  <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>
-                                )}
-                                {artistData?.instagram && (
-                                  <a
-                                    href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"
-                                  >
-                                    <Instagram className="w-4 h-4" />
-                                    @{artistData.instagram.replace(/^@/, '')}
-                                  </a>
-                                )}
-                                {!artistData?.bio && !artistData?.instagram && (
-                                  <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>
-                                )}
-                              </div>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {artistLoading ? (
+                        <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                      ) : (() => {
+                        const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                        const spotlightProducts = spotlightData?.products ?? [product]
+                        return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+                      })()}
                     </div>
                   )}
                   </div>
@@ -868,7 +851,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           /* Mobile: single scroll column */
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-64">
             {/* Swipeable image gallery */}
-            {(displayImages.length > 0 || (showArtistBio && artistData?.image)) && (
+            {displayImages.length > 0 && (
               <div
                 ref={constraintsRef}
                 className="relative aspect-[4/5] bg-neutral-50 dark:bg-[#1a1616] mx-4 rounded-lg overflow-hidden"
@@ -886,12 +869,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 )}
                 <AnimatePresence initial={false} mode="sync">
                   <motion.div
-                    key={showingArtistInCarousel ? `artist-${artistData?.image}` : `${imageIndex}-${currentImage?.url ?? ''}`}
+                    key={`${imageIndex}-${currentImage?.url ?? ''}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    drag={imageZoom > 1 ? true : (!showingArtistInCarousel && displayImages.length > 1 ? 'x' : false)}
+                    drag={imageZoom > 1 ? true : (displayImages.length > 1 ? 'x' : false)}
                     dragConstraints={
                       imageZoom > 1
                         ? { left: -150, right: 150, top: -150, bottom: 150 }
@@ -899,7 +882,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     }
                     dragElastic={imageZoom > 1 ? 0.1 : 0.2}
                     dragMomentum={false}
-                    onDragEnd={imageZoom > 1 || showingArtistInCarousel ? undefined : handleDragEnd}
+                    onDragEnd={imageZoom > 1 ? undefined : handleDragEnd}
                     style={{
                       x: imageZoom > 1 ? panX : dragX,
                       y: imageZoom > 1 ? panY : 0,
@@ -940,7 +923,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </button>
 
-                {!showingArtistInCarousel && displayImages.length > 1 && (
+                {displayImages.length > 1 && (
                   <>
                     <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
                       {displayImages.map((_, i) => (
@@ -1150,74 +1133,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
-            {/* About the Artist — underneath Description */}
+            {/* About the Artist — spotlight card (same as selector) */}
             {artist && (
-              <div className="px-4 pb-3">
-                <button
-                  onClick={() => setShowArtistBio(!showArtistBio)}
-                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
-                >
-                  <div className="flex items-center gap-3">
-                    {(artistData?.image || (displayImages[0] ?? allImages[0])?.url) ? (
-                      <Image
-                        src={artistData?.image || (displayImages[0] ?? allImages[0])!.url}
-                        alt={artistData?.name || artist}
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
-                        <User className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-                      </div>
-                    )}
-                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-                      About {artistData?.name || artist}
-                    </span>
-                  </div>
-                  <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
-                    showArtistBio && 'rotate-180'
-                  )} />
-                </button>
-
-                <AnimatePresence>
-                  {showArtistBio && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      {artistLoading ? (
-                        <div className="py-4 flex justify-center">
-                          <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="pb-3 space-y-3">
-                          {artistData?.bio && (
-                          <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{artistData.bio}</p>
-                          )}
-                          {artistData?.instagram && (
-                            <a
-                              href={`https://instagram.com/${artistData.instagram.replace(/^@/, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors"
-                            >
-                              <Instagram className="w-4 h-4" />
-                              @{artistData.instagram.replace(/^@/, '')}
-                            </a>
-                          )}
-                          {!artistData?.bio && !artistData?.instagram && (
-                            <p className="text-sm text-neutral-400 dark:text-[#b89090]">No bio available for this artist.</p>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
+                {artistLoading ? (
+                  <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                ) : (() => {
+                  const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                  const spotlightProducts = spotlightData?.products ?? [product]
+                  return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+                })()}
               </div>
             )}
 

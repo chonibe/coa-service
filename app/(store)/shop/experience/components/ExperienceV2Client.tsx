@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -95,6 +96,7 @@ export function ExperienceV2Client({
   pageInfoSeason2: initialPageInfo2,
   initialArtistSlug,
 }: ExperienceV2ClientProps) {
+  const searchParams = useSearchParams()
   const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } = useExperienceOrder()
 
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
@@ -161,15 +163,35 @@ export function ExperienceV2Client({
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Fetch early access coupon when visiting via early access link (?artist=...&token=...)
+  useEffect(() => {
+    if (!initialArtistSlug) return
+    const token = searchParams.get('token')?.trim()
+    if (!token) return
+    let cancelled = false
+    fetch(`/api/shop/early-access-coupon?artist=${encodeURIComponent(initialArtistSlug)}&token=${encodeURIComponent(token)}`)
+      .then((r) => {
+        if (cancelled) return
+        if (!r.ok) console.warn('Early access token invalid or expired')
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('Error fetching early access coupon:', err)
+      })
+    return () => { cancelled = true }
+  }, [initialArtistSlug, searchParams])
+
   const spotlightPreselectedRef = useRef(false)
   const spotlightFetchedRef = useRef(false)
+
+  const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
 
   const fetchSpotlight = useCallback(() => {
     if (spotlightFetchedRef.current) return
     spotlightFetchedRef.current = true
-    const url = initialArtistSlug
+    let url = initialArtistSlug
       ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
       : '/api/shop/artist-spotlight'
+    if (forceUnlisted) url += (url.includes('?') ? '&' : '?') + 'unlisted=1'
     fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -199,7 +221,7 @@ export function ExperienceV2Client({
         }
       })
       .catch(() => {})
-  }, [initialArtistSlug])
+  }, [initialArtistSlug, forceUnlisted])
 
   // When arriving via artist link, fetch spotlight on mount (needed for preselect). Otherwise defer until picker opens.
   useEffect(() => {
