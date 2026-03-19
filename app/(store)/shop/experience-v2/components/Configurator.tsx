@@ -1752,8 +1752,8 @@ export function Configurator({
             <ArtworkDetail
               inline
               product={detailProductFull ?? detailProduct}
-              artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
-              spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
+              artistSlugOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
+              spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData : null}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
                 const product = detailProductFull ?? detailProduct

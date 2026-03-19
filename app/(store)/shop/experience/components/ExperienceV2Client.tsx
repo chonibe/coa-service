@@ -820,8 +820,8 @@ export function ExperienceV2Client({
         )}
         galleryImages={galleryImages}
         displayedProduct={displayedProduct}
-        artistSlugOverride={displayedProduct?.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
-        spotlightDataOverride={displayedProduct?.id !== lamp.id ? spotlightData ?? null : undefined}
+        artistSlugOverride={displayedProduct?.id !== lamp.id && spotlightData?.vendorName === displayedProduct?.vendor ? spotlightData.vendorSlug : undefined}
+        spotlightDataOverride={displayedProduct?.id !== lamp.id && spotlightData?.vendorName === displayedProduct?.vendor ? spotlightData : null}
         productIncludes={
           displayedProduct?.id === lamp.id
             ? [
@@ -923,8 +923,8 @@ export function ExperienceV2Client({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
-          artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
-          spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
+          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
+          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData : null}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0

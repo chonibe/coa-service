@@ -859,6 +859,8 @@ export function ExperienceV2Client({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
+          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
+          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData : null}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0

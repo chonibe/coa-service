@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
 import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
@@ -46,13 +46,17 @@ interface ArtworkDetailProps {
   inline?: boolean
   /** When true, hide the add-to-order CTA button (e.g. for Experience V2 where selection is in picker) */
   hideCta?: boolean
+  /** Override slug for artist fetch — use spotlight's vendorSlug when available so artist bio matches selector (e.g. jack-jc-art vs jack-j-c-art) */
+  artistSlugOverride?: string
+  /** When provided, use this spotlight data directly (includes gifUrl) — same as selector */
+  spotlightDataOverride?: SpotlightData | null
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
 const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -137,10 +141,20 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
 
-  const slug = artist.toLowerCase().replace(/\s+/g, '-')
+  const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
+  const slug = artistSlugOverride || slugFromVendor
+
+  /** Slug variants for artist-spotlight (e.g. jack-j.c.-art → jack-jc-art, jack-j-c-art) — same source as selector */
+  const spotlightSlugsToTry = useMemo(() => {
+    const base = slug.replace(/\./g, '') // jack-j.c.-art → jack-jc-art
+    const withJc = base.replace(/-j-c-/g, '-jc-') // jack-j-c-art → jack-jc-art
+    const withJC = base.replace(/-jc-/g, '-j-c-') // jack-jc-art → jack-j-c-art
+    const set = new Set([slug, base, withJc, withJC].filter(Boolean))
+    return [...set]
+  }, [slug])
 
   useEffect(() => {
-    if (!artist) return
+    if (!artist && !artistSlugOverride) return
 
     if (artistCache.has(slug)) {
       setArtistData(artistCache.get(slug) || null)
@@ -150,70 +164,62 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
     let cancelled = false
     setArtistLoading(true)
-    fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then(async (data) => {
+
+    async function fetchSpotlight(): Promise<SpotlightWithProducts | null> {
+      for (const s of spotlightSlugsToTry) {
+        const r = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(s)}`)
+        const data = r.ok ? await r.json() : null
+        if (data?.vendorName && (data.bio || data.image || data.instagram)) return data
+      }
+      return null
+    }
+
+    // Use artist-spotlight as primary (same source as selector) — ensures bio matches
+    fetchSpotlight()
+      .then(async (spot) => {
         if (cancelled) return
-        let valid = data && !data.error ? data : null
-        let spot: SpotlightWithProducts | null = null
-        // Spotlight fallback when artists API returns no bio (spotlight has working implementation)
-        if (valid && (!valid.bio || !valid.image || !valid.instagram) && slug) {
-          try {
-            spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
-            if (spot && !cancelled) {
-              valid = {
-                ...valid,
-                bio: valid.bio || spot.bio,
-                image: valid.image || spot.image,
-                instagram: valid.instagram || spot.instagram,
-              }
-            }
-          } catch {
-            // ignore
+        if (spot && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+          const valid = {
+            name: spot.vendorName ?? artist,
+            slug: spot.vendorSlug ?? slug,
+            bio: spot.bio,
+            image: spot.image,
+            instagram: spot.instagram,
           }
-        }
-        // When artists API fails entirely, use artist-spotlight as primary (same source as selector spotlight)
-        if (!valid && slug) {
-          try {
-            spot = spot ?? await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
-            if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
-              valid = {
-                name: spot.vendorName ?? artist,
-                slug: spot.vendorSlug ?? slug,
-                bio: spot.bio,
-                image: spot.image,
-                instagram: spot.instagram,
-              }
-            }
-          } catch {
-            // ignore
-          }
-        }
-        if (!cancelled) {
           artistCache.set(slug, valid)
           spotlightCache.set(slug, spot)
           setArtistData(valid)
           setSpotlightData(spot)
-          setArtistLoading(false)
+        } else {
+          // Fallback: artists API
+          const r = await fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
+          const data = r.ok ? await r.json() : null
+          const a = data && !data.error ? data : null
+          if (a && !cancelled) {
+            artistCache.set(slug, a)
+            spotlightCache.set(slug, null)
+            setArtistData(a)
+            setSpotlightData(null)
+          } else {
+            artistCache.set(slug, null)
+            spotlightCache.set(slug, null)
+            setArtistData(null)
+            setSpotlightData(null)
+          }
         }
+        if (!cancelled) setArtistLoading(false)
       })
       .catch(async () => {
         if (cancelled) return
-        // On artists API error, try artist-spotlight as primary (same source as selector spotlight)
         try {
-          const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
-          if (spot && !cancelled && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
-            const valid = {
-              name: spot.vendorName ?? artist,
-              slug: spot.vendorSlug ?? slug,
-              bio: spot.bio,
-              image: spot.image,
-              instagram: spot.instagram,
-            }
-            artistCache.set(slug, valid)
-            spotlightCache.set(slug, spot)
-            setArtistData(valid)
-            setSpotlightData(spot)
+          const r = await fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
+          const data = r.ok ? await r.json() : null
+          const a = data && !data.error ? data : null
+          if (a && !cancelled) {
+            artistCache.set(slug, a)
+            spotlightCache.set(slug, null)
+            setArtistData(a)
+            setSpotlightData(null)
           } else {
             artistCache.set(slug, null)
             spotlightCache.set(slug, null)
@@ -230,7 +236,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       })
 
     return () => { cancelled = true }
-  }, [artist, slug])
+  }, [artist, slug, artistSlugOverride, spotlightSlugsToTry])
 
   const goToIndex = useCallback((i: number) => {
     setHasUserInteracted(true)
@@ -373,8 +379,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               {artistLoading ? (
                 <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
               ) : (() => {
-                const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                const spotlightProducts = spotlightData?.products ?? [product]
+                const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
                 return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
               })()}
             </div>
@@ -791,8 +797,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       {artistLoading ? (
                         <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
                       ) : (() => {
-                        const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                        const spotlightProducts = spotlightData?.products ?? [product]
+                        const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                        const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
                         return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
                       })()}
                     </div>
@@ -1140,8 +1146,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 {artistLoading ? (
                   <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
                 ) : (() => {
-                  const spotlight: SpotlightData | null = spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                  const spotlightProducts = spotlightData?.products ?? [product]
+                  const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
+                  const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
                   return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
                 })()}
               </div>
