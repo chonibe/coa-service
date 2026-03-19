@@ -1264,8 +1264,11 @@ export function Spline3DPreview({
     // the wrong aspect ratio and the model appears squashed/stretched.
     const getContainerSize = (): { w: number; h: number } | null => {
       const rect = container.getBoundingClientRect()
-      if (rect.width > 0 && rect.height > 0) {
-        return { w: Math.round(rect.width), h: Math.round(rect.height) }
+      const w = Math.round(rect.width)
+      const h = Math.round(rect.height)
+      // Guard: require minimum 10px to avoid WebGL/rendering glitches
+      if (w >= 10 && h >= 10) {
+        return { w, h }
       }
       return null
     }
@@ -1299,8 +1302,10 @@ export function Spline3DPreview({
     let resizeTimeout: ReturnType<typeof setTimeout>
     const scheduleResize = () => {
       clearTimeout(resizeTimeout)
-      // Shorter debounce (50ms) to reduce visible stretching during layout transitions
-      resizeTimeout = setTimeout(setCanvasSize, 50)
+      // Run immediately so layout changes (e.g. selector collapse, orientation) update quickly
+      setCanvasSize()
+      // Debounce (16ms ≈ 1 frame) to coalesce rapid successive resizes
+      resizeTimeout = setTimeout(setCanvasSize, 16)
     }
     const resizeOb = new ResizeObserver(scheduleResize)
     resizeOb.observe(container)
@@ -1320,7 +1325,8 @@ export function Spline3DPreview({
     }
     // Container may have 0x0 on mount (flex layout not yet computed), or layout may settle after a frame.
     // Schedule deferred resizes to pick up dimensions once layout settles — fixes Spline not showing until window resize.
-    ;[50, 150, 350, 600, 1000].forEach((ms) => {
+    // Extended timeouts for slow mobile layouts (Safari, keyboard, etc.)
+    ;[50, 150, 350, 600, 1000, 1500, 2000, 2500].forEach((ms) => {
       deferredResizeIds.push(setTimeout(() => {
         if (loadEffectIdRef.current !== thisRunId) return
         scheduleResize()
@@ -2452,18 +2458,15 @@ export function Spline3DPreview({
         return
       }
       const rect = container.getBoundingClientRect()
-      if (!rect.width || !rect.height) {
+      if (!rect.width || !rect.height || rect.width < 10 || rect.height < 10) {
         setViewRollScale(1)
         return
       }
       // For 90/270deg, fit swapped aspect into original viewport.
       const baseScale = Math.min(rect.width / rect.height, rect.height / rect.width)
-      // Mobile: force a stronger fill in sideways view (less zoomed-out feel).
-      const isMobile = window.innerWidth < 768
-      const adjustedScale = isMobile
-        ? 1.26
-        : baseScale
-      setViewRollScale(Number.isFinite(adjustedScale) && adjustedScale > 0 ? adjustedScale : 1)
+      // Clamp to sane bounds to avoid jitter during transient layout states.
+      const clampedScale = Math.min(1, Math.max(0.2, baseScale))
+      setViewRollScale(Number.isFinite(clampedScale) && clampedScale > 0 ? clampedScale : 1)
     }
 
     recomputeScale()
@@ -2797,6 +2800,7 @@ export function Spline3DPreview({
     const bgHex = cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515')
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
+    const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
     return (
       <div ref={containerRef} className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden [&_canvas]:!cursor-grab [&_canvas:active]:!cursor-grabbing cursor-grab active:cursor-grabbing")}>
         {/* Background layer - transparent in cameraFeedMode so video shows through */}
@@ -2853,7 +2857,7 @@ export function Spline3DPreview({
             height: "100%",
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             cursor: "grab",
-            transform: `translateY(-4%) rotate(${(((previewQuarterTurns % 4) + 4) % 4) * 90}deg) scale(${viewRollScale})`,
+            transform: `translateY(-4%) rotate(${normalizedTurns * 90}deg)`,
             transformOrigin: "50% 50%",
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}

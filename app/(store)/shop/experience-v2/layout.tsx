@@ -15,25 +15,17 @@ export const viewport = {
 
 export default function ExperienceV2Layout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <link
-        rel="preload"
-        href="/spline/splinemodel2/scene.splinecode"
-        as="fetch"
-        crossOrigin="anonymous"
-      />
-      <ExperienceOrderProvider>
-        <ExperienceThemeProvider>
-          <ExperienceAuthProvider>
-            <div className="fixed inset-0 z-[60] h-dvh max-h-dvh bg-white dark:bg-[#171515] overflow-hidden flex flex-col">
-              <ExperienceSlideoutMenu />
-              <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">
-                {children}
-              </div>
+    <ExperienceOrderProvider>
+      <ExperienceThemeProvider>
+        <ExperienceAuthProvider>
+          <div className="fixed inset-0 z-[60] h-dvh max-h-dvh bg-white dark:bg-[#171515] overflow-hidden flex flex-col">
+            <ExperienceSlideoutMenu />
+            <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">
+              {children}
             </div>
-          </ExperienceAuthProvider>
-        </ExperienceThemeProvider>
-      </ExperienceOrderProvider>
-    </>
+          </div>
+        </ExperienceAuthProvider>
+      </ExperienceThemeProvider>
+    </ExperienceOrderProvider>
   )
 }

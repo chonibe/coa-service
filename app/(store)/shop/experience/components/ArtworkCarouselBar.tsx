@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Plus, Trash2 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -92,11 +91,11 @@ export function ArtworkCarouselBar({
   }, [isDesktop])
 
   return (
-    <motion.div
-      className="absolute bottom-0 left-0 right-0 z-50 pb-safe"
-      initial={false}
-      animate={{ y: splineInView ? 0 : '100%' }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+    <div
+      className={cn(
+        'absolute bottom-0 left-0 right-0 z-50 pb-safe transition-transform duration-300 ease-out',
+        splineInView ? 'translate-y-0' : 'translate-y-full'
+      )}
     >
       <div className={cn(
         'relative pt-6 pb-4 px-4 md:pt-10 md:pb-5',
@@ -119,20 +118,16 @@ export function ArtworkCarouselBar({
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
           >
-            <AnimatePresence mode="popLayout">
+            <>
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
                 const isFirstItem = index === 0
 
                 return (
-                  <motion.div
+                  <div
                     key={artwork.id}
                     data-carousel-item
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
                     <div className="flex items-center justify-center gap-1.5">
@@ -148,12 +143,11 @@ export function ArtworkCarouselBar({
                         <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                       </button>
                     </div>
-                    <motion.button
+                    <button
                       type="button"
                       onClick={() => onTapItem(index)}
-                      whileTap={{ scale: 0.95 }}
                       className={cn(
-                        'relative block w-24 h-30 rounded-xl transition-all duration-200 aspect-[4/5]',
+                        'relative block w-24 h-30 rounded-xl transition-all duration-200 aspect-[4/5] active:scale-[0.95]',
                         isOnLamp ? 'opacity-100' : 'opacity-60 hover:opacity-85',
                         isOnLamp && (theme === 'light'
                           ? 'ring-2 ring-[#FFBA94] ring-offset-2 ring-offset-white'
@@ -185,20 +179,19 @@ export function ArtworkCarouselBar({
                           </div>
                         )}
                       </div>
-                    </motion.button>
-                  </motion.div>
+                    </button>
+                  </div>
                   )
               })}
               {/* + add card — inline on desktop; fixed on right for mobile */}
               {isDesktop && (
                 <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
                   <div className={cn('flex items-center justify-center w-5', selectedArtworks.length > 0 ? 'h-3.5' : 'h-5')} aria-hidden />
-                  <motion.button
+                  <button
                     type="button"
                     onClick={onOpenPicker}
-                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5]',
+                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5] active:scale-[0.95]',
                       theme === 'light'
                         ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
                         : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
@@ -206,18 +199,17 @@ export function ArtworkCarouselBar({
                     aria-label="Start your Collection"
                   >
                     <Plus className="w-8 h-8" strokeWidth={2} />
-                  </motion.button>
+                  </button>
                 </div>
               )}
               {!isDesktop && selectedArtworks.length === 0 && (
                 <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
                   <div className="flex items-center justify-center w-5 h-5" aria-hidden />
-                  <motion.button
+                  <button
                     type="button"
                     onClick={onOpenPicker}
-                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5]',
+                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5] active:scale-[0.95]',
                       theme === 'light'
                         ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
                         : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
@@ -225,21 +217,20 @@ export function ArtworkCarouselBar({
                     aria-label="Start your Collection"
                   >
                     <Plus className="w-8 h-8" strokeWidth={2} />
-                  </motion.button>
+                  </button>
                 </div>
               )}
-            </AnimatePresence>
+            </>
           </div>
           {/* Fixed + button on mobile when items exist — always visible on right */}
           {!isDesktop && selectedArtworks.length > 0 && (
             <div className="absolute right-4 bottom-3 flex flex-col items-center gap-1 z-10">
               <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
-              <motion.button
+              <button
                 type="button"
                 onClick={onOpenPicker}
-                whileTap={{ scale: 0.95 }}
                 className={cn(
-                  'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed shadow-lg aspect-[4/5]',
+                  'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed shadow-lg aspect-[4/5] active:scale-[0.95]',
                   theme === 'light'
                     ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
                     : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
@@ -247,7 +238,7 @@ export function ArtworkCarouselBar({
                 aria-label="Start your Collection"
               >
                 <Plus className="w-8 h-8" strokeWidth={2} />
-              </motion.button>
+              </button>
             </div>
           )}
         </div>
@@ -262,6 +253,6 @@ export function ArtworkCarouselBar({
           </p>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }

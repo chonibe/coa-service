@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { getCollectionInstagram } from '@/lib/shopify/artist-image'
 import { getCollection, getCollectionById, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { hasPage, getPage } from '@/content/shopify-content'
 
 function parseInstagramHandle(value: string): string {
   const trimmed = value.trim()
@@ -10,6 +11,22 @@ function parseInstagramHandle(value: string): string {
   if (match) return match[1]
   if (trimmed.startsWith('@')) return trimmed.slice(1)
   return trimmed
+}
+
+/** Get bio from synced Shopify page content — same fallback as artist page and information cards */
+function getBioFromShopifyPage(handle: string): string | undefined {
+  const base = handle.replace(/-\d+$/, '')
+  const handlesToTry = [handle, base, `${base}-one`].filter(Boolean)
+  const unique = [...new Set(handlesToTry)]
+  for (const h of unique) {
+    if (hasPage(h)) {
+      const page = getPage(h)
+      if (page?.body?.trim()) {
+        return page.body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+      }
+    }
+  }
+  return undefined
 }
 
 /**
@@ -151,10 +168,11 @@ export async function GET(
       if (!instagram && pairedCollectionHandle) {
         instagram = await getCollectionInstagram(pairedCollectionHandle)
       }
+      const bio = vendorBio || (collectionDesc || undefined) || getBioFromShopifyPage(slug)
       const artist = {
         name: vendorName || collection.title,
         slug,
-        bio: vendorBio || (collectionDesc || undefined),
+        bio: bio || undefined,
         image: collection.image?.url,
         instagram: instagram || undefined,
         products,
@@ -184,10 +202,12 @@ export async function GET(
           if (col?.title) {
             const name = vendorName || col.title || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
             const products = col.products?.edges?.map((e) => e.node) ?? []
+            const colBio = col.description?.trim() || (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '')
+            const bio = vendorBio || colBio || getBioFromShopifyPage(slug)
             const artist = {
               name,
               slug,
-              bio: vendorBio || (col.description?.trim() || (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '') || undefined),
+              bio: bio || undefined,
               image: col.image?.url,
               instagram: vendorInstagram || (await getCollectionInstagram(h)) || undefined,
               products,
@@ -228,10 +248,11 @@ export async function GET(
       const handle = vendorName ? getVendorCollectionHandle(vendorName) : slug
       instagram = await getCollectionInstagram(handle)
     }
+    const bio = vendorBio || collectionDesc || vendorProducts[0]?.description || getBioFromShopifyPage(slug)
     const artist = {
       name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
       slug,
-      bio: vendorBio || collectionDesc || vendorProducts[0]?.description || undefined,
+      bio: bio || undefined,
       image: vendorProducts[0]?.featuredImage?.url,
       instagram: instagram || undefined,
       products: vendorProducts,

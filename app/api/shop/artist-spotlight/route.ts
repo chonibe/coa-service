@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagram } from '@/lib/shopify/artist-image'
+import { hasPage, getPage } from '@/content/shopify-content'
 import { getCollectionProductHandlesByHandle, getCollectionGifUrlByAdmin, resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
 import { getCollection, getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 
@@ -573,7 +574,32 @@ async function getVendorMeta(
     }
   }
 
+  // Fallback: synced Shopify page content (same as artist page / information cards)
+  if (!bio) {
+    const handleToTry = vendorSlug || slugify(vendorName)
+    if (handleToTry) {
+      const pageBio = getBioFromShopifyPage(handleToTry)
+      if (pageBio) bio = pageBio
+    }
+  }
+
   return { bio, image, vendorSlug, instagram, gifUrl, unlisted }
+}
+
+/** Get bio from synced Shopify page content — same fallback as artist page and information cards */
+function getBioFromShopifyPage(handle: string): string | undefined {
+  const base = handle.replace(/-\d+$/, '')
+  const handlesToTry = [handle, base, `${base}-one`].filter(Boolean)
+  const unique = [...new Set(handlesToTry)]
+  for (const h of unique) {
+    if (hasPage(h)) {
+      const page = getPage(h)
+      if (page?.body?.trim()) {
+        return page.body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+      }
+    }
+  }
+  return undefined
 }
 
 /** Extract Instagram handle for display (@username) from URL or handle string */

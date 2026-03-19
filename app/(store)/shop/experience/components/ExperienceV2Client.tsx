@@ -12,7 +12,10 @@ import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlig
 import { SplineFullScreen } from './SplineFullScreen'
 import { ArtworkCarouselBar } from './ArtworkCarouselBar'
 import { ArtworkInfoBar } from './ArtworkInfoBar'
-import { ArtworkDetail } from '../../experience-v2/components/ArtworkDetail'
+const ArtworkDetail = dynamic(
+  () => import('../../experience-v2/components/ArtworkDetail').then((m) => ({ default: m.ArtworkDetail })),
+  { ssr: false }
+)
 
 const ArtworkPickerSheet = dynamic(
   () => import('./ArtworkPickerSheet').then((m) => ({ default: m.ArtworkPickerSheet })),
@@ -104,10 +107,10 @@ export function ExperienceV2Client({
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  const loadedCart = loadExperienceCart()
-  const [cartOrder, setCartOrder] = useState<string[]>(() => loadedCart.cartOrder)
-  const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>(() => loadedCart.lampPreviewOrder)
-  const [lampQuantity, setLampQuantity] = useState(() => loadedCart.lampQuantity)
+  const [initialCart] = useState(() => loadExperienceCart())
+  const [cartOrder, setCartOrder] = useState<string[]>(() => initialCart.cartOrder)
+  const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>(() => initialCart.lampPreviewOrder)
+  const [lampQuantity, setLampQuantity] = useState(() => initialCart.lampQuantity)
   const [activeCarouselIndex, setActiveCarouselIndex] = useState<number>(-1)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
@@ -183,7 +186,7 @@ export function ExperienceV2Client({
             })
           }
           // Preselect artist's 2 latest works when visiting via ?artist= and cart is empty (add to cart only, not on lamp)
-          if (initialArtistSlug && data.productIds.length >= 2 && loadedCart.cartOrder.length === 0 && !spotlightPreselectedRef.current) {
+          if (initialArtistSlug && data.productIds.length >= 2 && initialCart.cartOrder.length === 0 && !spotlightPreselectedRef.current) {
             spotlightPreselectedRef.current = true
             const ids = data.productIds.slice(0, 2)
             const toGid = (id: string) => (id.startsWith('gid:') ? id : `gid://shopify/Product/${id}`)
@@ -322,15 +325,37 @@ export function ExperienceV2Client({
   useEffect(() => {
     if (!sideAProduct || !image1) return
     const currentProductId = sideAProduct.id
-    fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(image1)}`)
-      .catch(() => {})
+    const url = image1
+    const schedule = (cb: () => void) =>
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(cb, { timeout: 500 })
+        : (setTimeout(cb, 500) as unknown as number)
+    const cancel = (id: number) =>
+      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
+    const id = schedule(() => {
+      fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(url)}`).catch(
+        () => {}
+      )
+    })
+    return () => cancel(id)
   }, [sideAProduct?.id, image1])
 
   useEffect(() => {
     if (!sideBProduct || !image2) return
     const currentProductId = sideBProduct.id
-    fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(image2)}`)
-      .catch(() => {})
+    const url = image2
+    const schedule = (cb: () => void) =>
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(cb, { timeout: 500 })
+        : (setTimeout(cb, 500) as unknown as number)
+    const cancel = (id: number) =>
+      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
+    const id = schedule(() => {
+      fetch(`/api/spline-artwork?productId=${encodeURIComponent(currentProductId)}&url=${encodeURIComponent(url)}`).catch(
+        () => {}
+      )
+    })
+    return () => cancel(id)
   }, [sideBProduct?.id, image2])
 
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')

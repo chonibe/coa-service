@@ -128,6 +128,12 @@ This creates a "rotating display" effect where tapping items beyond the first tw
 - OrderBar shows full checkout with Stripe integration
 - Header shows ExperienceCartChip with order total
 
+## Performance Notes
+
+- `experience-v2/layout.tsx` does not preload `scene.splinecode` in HTML anymore.
+- `SplineFullScreen` keeps the facade-first behavior and only mounts Spline after idle/tap.
+- `ExperienceV2Client` now reads `sc-experience-cart-v2` once at mount instead of parsing localStorage on every render.
+
 ## Data Flow
 
 ```
@@ -204,4 +210,4 @@ npm run dev
 
 - Created: 2026-03
 - Status: Experimental / Testing branch
-- Updated: 2026-03-18 — Added ArtworkInfoBar (top bar artwork name + artist, switch between 2 lamp sides)
+- Updated: 2026-03-19 — Reduced initial load contention by removing eager Spline scene preload and minimizing repeated localStorage reads.

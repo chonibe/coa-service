@@ -12,14 +12,7 @@ export const viewport = {
 export default function ExperienceLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      {/* Preload Spline scene in the HTML <head> so the 6.7MB download starts as soon
-          as the page is parsed — 2-3s earlier than the useEffect approach. */}
-      <link
-        rel="preload"
-        href="/spline/splinemodel2/scene.splinecode"
-        as="fetch"
-        crossOrigin="anonymous"
-      />
+      <link rel="preload" href="/internal.webp" as="image" />
       <ExperienceOrderProvider>
         <ExperienceThemeProvider>
           <ExperienceAuthProvider>

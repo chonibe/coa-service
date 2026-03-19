@@ -59,10 +59,26 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
     setArtistLoading(true)
     fetch(`/api/shop/artists/${slug}?vendor=${encodeURIComponent(artist)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return
         const a = data && !data.error ? data : null
-        const d = a ? { name: a.name ?? artist, slug: a.slug ?? slug, bio: a.bio, image: a.image, instagram: a.instagram } : null
+        let bio = a?.bio
+        let image = a?.image
+        let instagram = a?.instagram
+        // Spotlight fallback when artists API returns no bio (spotlight has working implementation)
+        if ((!bio || !image || !instagram) && slug) {
+          try {
+            const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            if (spot && !cancelled) {
+              if (!bio && spot.bio) bio = spot.bio
+              if (!image && spot.image) image = spot.image
+              if (!instagram && spot.instagram) instagram = spot.instagram
+            }
+          } catch {
+            // ignore
+          }
+        }
+        const d = a ? { name: a.name ?? artist, slug: a.slug ?? slug, bio, image, instagram } : null
         artistCache.set(slug, d)
         setArtistData(d)
       })

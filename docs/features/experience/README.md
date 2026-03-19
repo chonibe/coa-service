@@ -18,7 +18,7 @@ Artwork queueing, side replacement, and Spline rotate/settle behavior are docume
 
 1. **Streaming + Suspense** – Page shell renders immediately; data streams in via `loading.tsx` and Suspense fallback.
 2. **Lazy Spline 3D** – `Spline3DPreview` is loaded with `next/dynamic` only when the configurator mounts.
-3. **Spline scene preload** – `SplineScenePreload` in experience layout preloads `scene.splinecode` (~6.7MB) as soon as the page loads, so it's cached before the 3D preview is needed.
+3. **Deferred Spline scene fetch** – experience layout no longer preloads `scene.splinecode` in the initial HTML. The 3D scene is now fetched only when `SplineFullScreen` promotes from facade to live Spline, reducing first-load network contention.
 4. **Spline when visible** – `SplineWhenVisible` defers mounting Spline until the preview container is in the viewport (Intersection Observer).
 3. **Lightweight product payload** – `getCollectionWithListProducts` uses `PRODUCT_LIST_FRAGMENT` (no description, media, full variants) for the artwork strip; full product fetched on-demand when opening ArtworkDetail.
 4. **Virtualized ArtworkStrip** – `@tanstack/react-virtual` renders only visible rows (~10–15 cards instead of 100+).
@@ -212,5 +212,5 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 ## Version
 
-- Last updated: 2026-03-14
-- Version: 1.12.0
+- Last updated: 2026-03-19
+- Version: 1.13.0

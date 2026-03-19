@@ -94,11 +94,13 @@ export function ExperienceSlideoutMenu() {
           </Link>
         </div>
 
-        {/* Right: headerCenterContent on desktop, cart */}
+        {/* Desktop: title absolute center */}
+        <div className="hidden md:flex absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto">{headerCenterContent}</div>
+        </div>
+
+        {/* Right: cart (desktop); spacer for mobile balance */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden md:flex items-center">
-            {headerCenterContent}
-          </div>
           {!isOnOnboarding && (
             <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && pastLampPaywall ? 'md:ml-8 lg:ml-auto' : 'ml-auto')}>
               <ExperienceCartChip variant="light" />

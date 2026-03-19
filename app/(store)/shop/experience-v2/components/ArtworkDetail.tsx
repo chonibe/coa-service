@@ -149,9 +149,26 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     setArtistLoading(true)
     fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+      .then(async (data) => {
+        if (cancelled) return
+        let valid = data && !data.error ? data : null
+        // Spotlight fallback when artists API returns no bio (spotlight has working implementation)
+        if (valid && (!valid.bio || !valid.image || !valid.instagram) && slug) {
+          try {
+            const spot = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(slug)}`).then((r) => (r.ok ? r.json() : null))
+            if (spot && !cancelled) {
+              valid = {
+                ...valid,
+                bio: valid.bio || spot.bio,
+                image: valid.image || spot.image,
+                instagram: valid.instagram || spot.instagram,
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
         if (!cancelled) {
-          const valid = data && !data.error ? data : null
           artistCache.set(slug, valid)
           setArtistData(valid)
           setArtistLoading(false)
