@@ -483,13 +483,14 @@ export function ArtworkPickerSheet({
               className="flex-1 overflow-y-auto overscroll-contain px-2 py-3"
             >
               {/* Artist spotlight at top */}
-              {spotlightData && spotlightProducts.length > 0 && onSpotlightSelect && (
+              {spotlightData && onSpotlightSelect && (
                 <div className="mb-3">
                   <ArtistSpotlightBanner
                     spotlight={spotlightData}
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
                     showBadge
+                    expanded={!!filters?.artists?.includes(spotlightData.vendorName)}
                   />
                 </div>
               )}

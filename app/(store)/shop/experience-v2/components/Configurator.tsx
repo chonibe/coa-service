@@ -572,6 +572,16 @@ export function Configurator({
         if (!cancelled && data?.vendorName && Array.isArray(data?.productIds)) {
           setSpotlightData(data)
           spotlightFromAffiliateRef.current = !!initialArtistSlug
+          // Merge spotlight products so they appear in selector (Jack J.C. Art, etc.)
+          const products = (data.products as ShopifyProduct[] | undefined) ?? []
+          if (products.length) {
+            setProductsSeason2((prev) => {
+              const existingIds = new Set(prev.map((p) => p.id))
+              const toAdd = products.filter((p) => !existingIds.has(p.id))
+              if (toAdd.length === 0) return prev
+              return [...prev, ...toAdd]
+            })
+          }
         } else {
           setSpotlightData(null)
           spotlightFromAffiliateRef.current = false
@@ -1742,6 +1752,8 @@ export function Configurator({
             <ArtworkDetail
               inline
               product={detailProductFull ?? detailProduct}
+              artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
+              spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
                 const product = detailProductFull ?? detailProduct
@@ -1893,6 +1905,7 @@ export function Configurator({
               spotlightProducts={spotlightProducts}
               onSelect={handleSpotlightSelect}
               showBadge
+              expanded={isSpotlightFilterActive}
             />
           ) : null}
           {/* Street lamp — hidden; now in top toolbar only */}
@@ -2253,6 +2266,8 @@ export function Configurator({
       {detailProduct && isMobile && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
+          artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
+          spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
           isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}

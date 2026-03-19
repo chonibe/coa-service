@@ -165,8 +165,8 @@ export function ExperienceV2Client({
           setSpotlightData(data as SpotlightData)
           const products = (data.products as ShopifyProduct[] | undefined) ?? []
           setSpotlightProductsFromApi(products)
-          // Merge spotlight products when from artist link (may include early-access not in season collections)
-          if (products.length && initialArtistSlug) {
+          // Merge spotlight products so they appear in selector (Jack J.C. Art, ?artist= links, etc.)
+          if (products.length) {
             setProductsSeason2((prev) => {
               const existingIds = new Set(prev.map((p) => p.id))
               const toAdd = products.filter((p) => !existingIds.has(p.id))
@@ -849,7 +849,7 @@ export function ExperienceV2Client({
         onFilterOpen={() => setFilterOpen(true)}
         onFilterClose={() => setFilterOpen(false)}
         spotlightData={spotlightData}
-        spotlightProducts={spotlightProducts}
+        spotlightProducts={spotlightProducts.length > 0 ? spotlightProducts : spotlightProductsFromApi}
         onSpotlightSelect={handleSpotlightSelect}
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}

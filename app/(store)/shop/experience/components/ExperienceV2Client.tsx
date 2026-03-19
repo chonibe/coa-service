@@ -204,8 +204,8 @@ export function ExperienceV2Client({
           setSpotlightData(data as SpotlightData)
           const products = (data.products as ShopifyProduct[] | undefined) ?? []
           setSpotlightProductsFromApi(products)
-          // Merge spotlight products when from artist link (may include early-access not in season collections)
-          if (products.length && initialArtistSlug) {
+          // Merge spotlight products so they appear in selector (Jack J.C. Art, ?artist= links, etc.)
+          if (products.length) {
             setProductsSeason2((prev) => {
               const existingIds = new Set(prev.map((p) => p.id))
               const toAdd = products.filter((p) => !existingIds.has(p.id))
@@ -620,6 +620,7 @@ export function ExperienceV2Client({
     if (isAdding) {
       scrollToSplineRef.current = true
       setPreviewSlideIndex(0)
+      setDisplayedProduct(product)
       const variant = product.variants?.edges?.[0]?.node
       trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
       setLampPreviewOrder((prev) => {
@@ -647,12 +648,21 @@ export function ExperienceV2Client({
 
   const handleTapCarouselItem = useCallback((index: number) => {
     const product = selectedArtworks[index]
-    if (product) {
-      scrollToSplineRef.current = true
-      setPreviewSlideIndex(0)
-      handleLampSelect(product)
+    if (!product) return
+    scrollToSplineRef.current = true
+    setPreviewSlideIndex(0)
+    setActiveCarouselIndex(index)
+    if (product.id === lamp.id) {
+      setDisplayedProduct(lamp)
+      return
     }
-  }, [selectedArtworks, handleLampSelect])
+    if (lampPreviewOrder.includes(product.id)) {
+      setRotateToSide(getSideToShowForProduct(lampPreviewOrder, product.id))
+      setRotateTrigger((t) => t + 1)
+      return
+    }
+    handleLampSelect(product)
+  }, [selectedArtworks, handleLampSelect, lampPreviewOrder, lamp.id, getSideToShowForProduct])
 
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -699,13 +709,27 @@ export function ExperienceV2Client({
     if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
   }, [lampPreviewOrder.length, lamp])
 
-  // Sync displayedIndex when user taps carousel item
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
   const lastClickedProductId = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex]?.id ?? null : null
+  const lastClickedProduct = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex] ?? null : null
   useEffect(() => {
-    if (!lastClickedProductId || !sideAProduct || !sideBProduct) return
-    if (sideAProduct.id === lastClickedProductId) setDisplayedIndex(0)
-    else if (sideBProduct.id === lastClickedProductId) setDisplayedIndex(1)
-  }, [lastClickedProductId, sideAProduct?.id, sideBProduct?.id])
+    if (!lastClickedProductId || !lastClickedProduct) return
+    if (lastClickedProduct.id === lamp.id) {
+      setDisplayedProduct(lamp)
+      return
+    }
+    if (sideAProduct && sideBProduct) {
+      if (sideAProduct.id === lastClickedProductId) {
+        setDisplayedIndex(0)
+        setDisplayedProduct(sideAProduct)
+      } else if (sideBProduct.id === lastClickedProductId) {
+        setDisplayedIndex(1)
+        setDisplayedProduct(sideBProduct)
+      }
+    } else {
+      setDisplayedProduct(lastClickedProduct)
+    }
+  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -796,6 +820,8 @@ export function ExperienceV2Client({
         )}
         galleryImages={galleryImages}
         displayedProduct={displayedProduct}
+        artistSlugOverride={displayedProduct?.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
+        spotlightDataOverride={displayedProduct?.id !== lamp.id ? spotlightData ?? null : undefined}
         productIncludes={
           displayedProduct?.id === lamp.id
             ? [
@@ -887,7 +913,7 @@ export function ExperienceV2Client({
         onFilterOpen={() => setFilterOpen(true)}
         onFilterClose={() => setFilterOpen(false)}
         spotlightData={spotlightData}
-        spotlightProducts={spotlightProducts}
+        spotlightProducts={spotlightProducts.length > 0 ? spotlightProducts : spotlightProductsFromApi}
         onSpotlightSelect={handleSpotlightSelect}
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}
@@ -897,6 +923,8 @@ export function ExperienceV2Client({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
+          artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
+          spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0
