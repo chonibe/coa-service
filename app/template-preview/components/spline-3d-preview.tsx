@@ -196,7 +196,7 @@ export function Spline3DPreview({
   const frontLockUntilRef = useRef(0)
   // First artwork-driven rotate gets a full spin; later rotates are reduced to half spin.
   const hasCompletedArtworkSpinRef = useRef(false)
-  const [viewRollScale, setViewRollScale] = useState(1)
+  const [viewRollViewportScale, setViewRollViewportScale] = useState({ x: 1, y: 1 })
   const previewQuarterTurnsRef = useRef(previewQuarterTurns)
   previewQuarterTurnsRef.current = previewQuarterTurns
 
@@ -1263,9 +1263,13 @@ export function Spline3DPreview({
     // camera's projection matrix. Without updating camera.aspect the scene is projected with
     // the wrong aspect ratio and the model appears squashed/stretched.
     const getContainerSize = (): { w: number; h: number } | null => {
+      // Prefer the actual displayed canvas viewport so renderer/camera aspect stays in lockstep
+      // with sideways rotated viewport sizing. Fallback to container for first paint safety.
+      const canvasW = Math.round(canvas.clientWidth || 0)
+      const canvasH = Math.round(canvas.clientHeight || 0)
       const rect = container.getBoundingClientRect()
-      const w = Math.round(rect.width)
-      const h = Math.round(rect.height)
+      const w = canvasW >= 10 ? canvasW : Math.round(rect.width)
+      const h = canvasH >= 10 ? canvasH : Math.round(rect.height)
       // Guard: require minimum 10px to avoid WebGL/rendering glitches
       if (w >= 10 && h >= 10) {
         return { w, h }
@@ -1309,6 +1313,7 @@ export function Spline3DPreview({
     }
     const resizeOb = new ResizeObserver(scheduleResize)
     resizeOb.observe(container)
+    resizeOb.observe(canvas)
     window.addEventListener('resize', scheduleResize)
     window.addEventListener('orientationchange', scheduleResize)
     if (typeof window.visualViewport !== 'undefined') {
@@ -2454,19 +2459,20 @@ export function Spline3DPreview({
 
     const recomputeScale = () => {
       if (!isSideways) {
-        setViewRollScale(1)
+        setViewRollViewportScale({ x: 1, y: 1 })
         return
       }
       const rect = container.getBoundingClientRect()
       if (!rect.width || !rect.height || rect.width < 10 || rect.height < 10) {
-        setViewRollScale(1)
+        setViewRollViewportScale({ x: 1, y: 1 })
         return
       }
-      // For 90/270deg, fit swapped aspect into original viewport.
-      const baseScale = Math.min(rect.width / rect.height, rect.height / rect.width)
-      // Clamp to sane bounds to avoid jitter during transient layout states.
-      const clampedScale = Math.min(1, Math.max(0.2, baseScale))
-      setViewRollScale(Number.isFinite(clampedScale) && clampedScale > 0 ? clampedScale : 1)
+      // For 90/270deg, use swapped viewport dimensions instead of scaling model output.
+      const rawX = rect.height / rect.width
+      const rawY = rect.width / rect.height
+      const x = Number.isFinite(rawX) && rawX > 0 ? Math.min(4, Math.max(0.25, rawX)) : 1
+      const y = Number.isFinite(rawY) && rawY > 0 ? Math.min(4, Math.max(0.25, rawY)) : 1
+      setViewRollViewportScale({ x, y })
     }
 
     recomputeScale()
@@ -2801,6 +2807,9 @@ export function Spline3DPreview({
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
+    const isSidewaysTurn = normalizedTurns % 2 === 1
+    const widthPct = `${viewRollViewportScale.x * 100}%`
+    const heightPct = `${viewRollViewportScale.y * 100}%`
     return (
       <div ref={containerRef} className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden [&_canvas]:!cursor-grab [&_canvas:active]:!cursor-grabbing cursor-grab active:cursor-grabbing")}>
         {/* Background layer - transparent in cameraFeedMode so video shows through */}
@@ -2850,16 +2859,18 @@ export function Spline3DPreview({
         )}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full !cursor-grab active:!cursor-grabbing"
+          className="absolute !cursor-grab active:!cursor-grabbing"
           style={{
             display: "block",
-            width: "100%",
-            height: "100%",
+            top: "50%",
+            left: "50%",
+            width: isSidewaysTurn ? widthPct : "100%",
+            height: isSidewaysTurn ? heightPct : "100%",
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             cursor: "grab",
-            transform: `translateY(-4%) rotate(${normalizedTurns * 90}deg)`,
+            transform: `translate(-50%, -50%) translateY(-4%) rotate(${normalizedTurns * 90}deg)`,
             transformOrigin: "50% 50%",
-            transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 260ms cubic-bezier(0.22, 1, 0.36, 1), height 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
       </div>
