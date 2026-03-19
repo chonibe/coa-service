@@ -1752,8 +1752,8 @@ export function Configurator({
             <ArtworkDetail
               inline
               product={detailProductFull ?? detailProduct}
-              artistSlugOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
-              spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData?.vendorName === detailProduct.vendor ? spotlightData : null}
+              artistSlugOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
+              spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData : null}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
                 const product = detailProductFull ?? detailProduct
@@ -2266,8 +2266,8 @@ export function Configurator({
       {detailProduct && isMobile && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
-          artistSlugOverride={detailProduct.id !== lamp.id ? spotlightData?.vendorSlug : undefined}
-          spotlightDataOverride={detailProduct.id !== lamp.id ? spotlightData ?? null : undefined}
+          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData ? spotlightData.vendorSlug : undefined}
+          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData ? spotlightData : null}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
           isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
