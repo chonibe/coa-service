@@ -66,6 +66,10 @@ interface SplineFullScreenProps {
   onSplineInView?: (inView: boolean) => void
   /** When no artwork selected, use this image as placeholder (e.g. spotlight artwork) */
   spotlightFallbackImageUrl?: string | null
+  /** Override slug for artist bio fetch — use spotlight's vendorSlug so bio matches selector */
+  artistSlugOverride?: string
+  /** When provided, use this spotlight data directly (includes gifUrl) — same as selector */
+  spotlightDataOverride?: import('../../experience-v2/components/ArtistSpotlightBanner').SpotlightData | null
 }
 
 export function SplineFullScreen({
@@ -87,6 +91,8 @@ export function SplineFullScreen({
   onSlideChange,
   onSplineInView,
   spotlightFallbackImageUrl = null,
+  artistSlugOverride,
+  spotlightDataOverride,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -368,6 +374,8 @@ export function SplineFullScreen({
               product={displayedProduct}
               productIncludes={productIncludes}
               productSpecs={productSpecs}
+              artistSlugOverride={artistSlugOverride}
+              spotlightDataOverride={spotlightDataOverride}
             />
           </div>
         )}
