@@ -1263,13 +1263,12 @@ export function Spline3DPreview({
     // camera's projection matrix. Without updating camera.aspect the scene is projected with
     // the wrong aspect ratio and the model appears squashed/stretched.
     const getContainerSize = (): { w: number; h: number } | null => {
-      // Prefer the actual displayed canvas viewport so renderer/camera aspect stays in lockstep
-      // with sideways rotated viewport sizing. Fallback to container for first paint safety.
-      const canvasW = Math.round(canvas.clientWidth || 0)
-      const canvasH = Math.round(canvas.clientHeight || 0)
+      // ALWAYS use container bounds as the single source of truth.
+      // Canvas clientWidth/clientHeight can be inflated or transitional during layout settling
+      // (especially with CSS transforms for rotation), causing aspect ratio drift.
       const rect = container.getBoundingClientRect()
-      const w = canvasW >= 10 ? canvasW : Math.round(rect.width)
-      const h = canvasH >= 10 ? canvasH : Math.round(rect.height)
+      const w = Math.round(rect.width)
+      const h = Math.round(rect.height)
       // Guard: require minimum 10px to avoid WebGL/rendering glitches
       if (w >= 10 && h >= 10) {
         return { w, h }
@@ -1280,20 +1279,24 @@ export function Spline3DPreview({
       const size = getContainerSize()
       if (!size) return
       const app = appInstance ?? splineAppRef.current
+      const newAspect = size.w / size.h
       if (app) {
         app.setSize(size.w, size.h)
         // Fix camera aspect ratio so the scene is not squashed/stretched.
         // app.setSize only resizes the renderer buffer; it does not touch the camera.
         const cam = (app as any).camera
         if (cam && typeof cam.aspect === 'number' && size.h > 0) {
-          cam.aspect = size.w / size.h
+          const prevAspect = cam.aspect
+          cam.aspect = newAspect
           if (typeof cam.updateProjectionMatrix === 'function') {
             cam.updateProjectionMatrix()
           }
+          splineLog(`[Spline3D] applySize: ${size.w}x${size.h}, aspect ${prevAspect.toFixed(3)} -> ${newAspect.toFixed(3)}`)
         }
       } else {
         canvas.width = size.w
         canvas.height = size.h
+        splineLog(`[Spline3D] applySize (pre-app): ${size.w}x${size.h}, aspect ${newAspect.toFixed(3)}`)
       }
     }
     const setCanvasSize = () => {

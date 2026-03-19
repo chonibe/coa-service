@@ -230,7 +230,7 @@ export function SplineFullScreen({
         ref={scrollRef}
         onScroll={handleScroll}
         className={cn(
-          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[80dvh]'
+          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[80svh]'
         )}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
@@ -238,8 +238,10 @@ export function SplineFullScreen({
         <div
           ref={(r) => { slideRefs.current[0] = r }}
           className={cn(
-            'flex-shrink-0 flex flex-col relative',
-            hasCarousel ? 'w-full min-h-[100dvh]' : 'w-full flex-1 min-w-0'
+            'flex-shrink-0 flex flex-col relative w-full',
+            // Use stable height: when scrollable (carousel), use svh which doesn't change
+            // with mobile browser chrome (unlike dvh). Otherwise flex-grow to fill.
+            hasCarousel ? 'min-h-[100svh]' : 'flex-1 min-w-0'
           )}
         >
           <div className="flex-1 min-h-0 min-w-0 relative">

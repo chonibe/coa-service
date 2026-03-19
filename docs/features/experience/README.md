@@ -27,6 +27,20 @@ Artwork queueing, side replacement, and Spline rotate/settle behavior are docume
 7. **Carousel image loading** – ArtworkStrip uses `getShopifyImageUrl(url, 500)` to request 500px-wide thumbnails from Shopify CDN, plus `priority` and `loading="eager"` for the first 6 cards to improve above-the-fold load time.
 8. **Detail preload** – When cards enter the virtualized view, Configurator prefetches full product data (`/api/shop/products/[handle]`) into cache so the detail drawer opens instantly when the user taps.
 
+### Spline Viewport Sizing (2026-03-19)
+
+Fixed inconsistent 3D model proportions ("squished" appearance) across different screen sizes:
+
+1. **Container as single source of truth**: `spline-3d-preview.tsx` now uses container `getBoundingClientRect()` exclusively for renderer/camera sizing, instead of prioritizing `canvas.clientWidth/clientHeight` which can be inflated or transitional during layout settling.
+
+2. **Stable viewport height**: `SplineFullScreen.tsx` uses `svh` (small viewport height) units instead of `dvh` (dynamic viewport height) for scrollable carousel mode. `svh` doesn't change with mobile browser chrome appearance/disappearance, avoiding layout shifts that cause aspect ratio drift.
+
+3. **Debug logging**: Added dev-only aspect ratio logging in `applySize()` (controlled by `NEXT_PUBLIC_SPLINE_VERBOSE=1`) to help verify sizing during resize/rotate transitions.
+
+**Files changed**:
+- [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — sizing logic and debug logs
+- [`app/(store)/shop/experience/components/SplineFullScreen.tsx`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) — viewport height units
+
 ### Spline Scene Optimization (Optional)
 
 The `scene.splinecode` file is ~6.7MB. To reduce it in the Spline editor:
@@ -213,4 +227,4 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 ## Version
 
 - Last updated: 2026-03-19
-- Version: 1.13.0
+- Version: 1.14.0
