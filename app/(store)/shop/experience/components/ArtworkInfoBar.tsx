@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Box, RotateCw } from 'lucide-react'
+import { Box, Info, RotateCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -271,6 +271,29 @@ export function ArtworkInfoBar({
                     ) : (
                       <Box className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} strokeWidth={1.5} />
                     )}
+                  </button>
+                  {/* Info icon — scroll to artist bio & artwork details section */}
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onGoToSlide?.(1)
+                    }}
+                    title="View details"
+                    className={cn(
+                      'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
+                      currentSlide === 1
+                        ? theme === 'light'
+                          ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
+                          : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                        : theme === 'light'
+                          ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
+                          : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                    )}
+                  >
+                    <Info className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} />
                   </button>
                   {galleryImages.map((img, idx) => (
                     <button
