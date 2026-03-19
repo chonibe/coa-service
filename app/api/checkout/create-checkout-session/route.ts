@@ -132,16 +132,18 @@ export async function POST(request: NextRequest) {
       ).slice(0, 500),
     }
     if (shippingAddress) {
-      metadata.shipping_address = JSON.stringify({
-        fullName: shippingAddress.fullName,
-        addressLine1: shippingAddress.addressLine1,
-        addressLine2: shippingAddress.addressLine2,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-        postalCode: shippingAddress.postalCode,
-        country: shippingAddress.country,
-        phoneNumber: shippingAddress.phoneNumber,
-      }).slice(0, 500)
+      // Stripe metadata values are limited to 500 chars; truncate fields to ensure valid JSON
+      const addr: Record<string, string> = {
+        fullName: (shippingAddress.fullName || '').slice(0, 60),
+        addressLine1: (shippingAddress.addressLine1 || '').slice(0, 80),
+        addressLine2: (shippingAddress.addressLine2 || '').slice(0, 60),
+        city: (shippingAddress.city || '').slice(0, 40),
+        state: (shippingAddress.state || '').slice(0, 40),
+        postalCode: (shippingAddress.postalCode || '').slice(0, 20),
+        country: (shippingAddress.country || 'US').slice(0, 2),
+        phoneNumber: (shippingAddress.phoneNumber || '').slice(0, 25),
+      }
+      metadata.shipping_address = JSON.stringify(addr)
     }
 
     // Look up existing Stripe customer so returning users can reuse saved payment methods

@@ -687,7 +687,14 @@ export function PaymentStep(props: PaymentStepProps) {
     }
   }, [preloadedClientSecret])
 
+  // Only fetch when we have email (required for PayPal). Reset when address becomes available
+  // so we don't create a session without shipping details before the user enters them.
+  const hasRequiredAddress = !!(props.customerEmail?.trim() || props.shippingAddress?.email?.trim())
   React.useEffect(() => {
+    if (!hasRequiredAddress) {
+      fetchedRef.current = false
+      return
+    }
     if (fetchedRef.current) return
     fetchedRef.current = true
 
@@ -710,7 +717,7 @@ export function PaymentStep(props: PaymentStepProps) {
         setIntentError(err?.message || 'Could not load payment form')
         fetchedRef.current = false
       })
-  }, [props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret, appliedPromo])
+  }, [hasRequiredAddress, props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret, appliedPromo])
 
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
@@ -757,8 +764,14 @@ export function PaymentStep(props: PaymentStepProps) {
   if (!clientSecret) {
     return (
       <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <span className="text-sm">Preparing payment...</span>
+        {!hasRequiredAddress ? (
+          <span className="text-sm">Add your email and address above to continue</span>
+        ) : (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm">Preparing payment...</span>
+          </>
+        )}
       </div>
     )
   }

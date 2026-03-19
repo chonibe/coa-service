@@ -278,6 +278,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   })
   React.useEffect(() => {
     if (!drawerOpen || itemCount === 0 || !allAvailable) return
+    // Don't preload until we have address with email — ensures PayPal orders get customer details
+    if (!checkout.address?.email?.trim()) return
     const items = buildLineItems()
     if (items.length === 0) return
 

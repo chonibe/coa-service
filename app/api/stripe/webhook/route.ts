@@ -214,7 +214,23 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       productHandle: itemsJsonMap[v.variantId]?.productHandle ?? '',
     }))
 
-    // Get shipping details (from Stripe or metadata for experience_checkout)
+    // Skip if complete-order already fulfilled (e.g. success page called it with sessionStorage data)
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : (session.payment_intent as Stripe.PaymentIntent)?.id
+    if (paymentIntentId) {
+      const { data: existing } = await supabase
+        .from('stripe_purchases')
+        .select('id')
+        .eq('stripe_payment_intent', paymentIntentId)
+        .maybeSingle()
+      if (existing) {
+        console.log(`Skipping handleCheckoutCompleted: order already fulfilled for pi ${paymentIntentId}`)
+        return
+      }
+    }
+
+    // Get shipping details (from Stripe or metadata for experience_checkout/PayPal)
     let shipping = session.shipping_details
     if (!shipping?.address && session.metadata?.shipping_address) {
       try {
@@ -235,13 +251,46 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       }
     }
     const customer = session.customer_details ?? {
-      email: session.metadata?.collector_email ?? session.customer_email ?? '',
-      phone: '',
+      email: session.metadata?.collector_email ?? session.metadata?.collector_identifier ?? session.customer_email ?? '',
+      phone: session.metadata?.shipping_address ? (() => {
+        try {
+          const m = JSON.parse(session.metadata.shipping_address)
+          return m.phoneNumber || ''
+        } catch { return '' }
+      })() : '',
       address: null,
-      name: '',
+      name: session.metadata?.shipping_address ? (() => {
+        try {
+          const m = JSON.parse(session.metadata.shipping_address)
+          return m.fullName || ''
+        } catch { return '' }
+      })() : '',
     }
 
-    // Create Shopify draft order via Admin API
+    // Build billing from customer_details or fallback to shipping (PayPal often omits customer_details)
+    const billingFromSession = session.customer_details?.address
+    const billingFromShipping = shipping?.address
+    const billingAddress = billingFromSession ? {
+      first_name: (customer?.name || '').split(' ')[0] || '',
+      last_name: (customer?.name || '').split(' ').slice(1).join(' ') || '',
+      address1: billingFromSession.line1 || '',
+      address2: billingFromSession.line2 || '',
+      city: billingFromSession.city || '',
+      province: billingFromSession.state || '',
+      country: billingFromSession.country || '',
+      zip: billingFromSession.postal_code || '',
+    } : billingFromShipping ? {
+      first_name: (shipping?.name || '').split(' ')[0] || '',
+      last_name: (shipping?.name || '').split(' ').slice(1).join(' ') || '',
+      address1: billingFromShipping.line1 || '',
+      address2: billingFromShipping.line2 || '',
+      city: billingFromShipping.city || '',
+      province: billingFromShipping.state || '',
+      country: billingFromShipping.country || '',
+      zip: billingFromShipping.postal_code || '',
+    } : undefined
+
+    // Create Shopify draft order via Admin API (shipping required for physical goods)
     const draftOrderData = {
       draft_order: {
         line_items: variants.map(v => ({
@@ -252,8 +301,8 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
           email: customer.email,
         } : undefined,
         shipping_address: shipping?.address ? {
-          first_name: shipping.name?.split(' ')[0] || '',
-          last_name: shipping.name?.split(' ').slice(1).join(' ') || '',
+          first_name: (shipping.name || '').split(' ')[0] || '',
+          last_name: (shipping.name || '').split(' ').slice(1).join(' ') || '',
           address1: shipping.address.line1 || '',
           address2: shipping.address.line2 || '',
           city: shipping.address.city || '',
@@ -262,16 +311,7 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
           zip: shipping.address.postal_code || '',
           phone: customer?.phone || '',
         } : undefined,
-        billing_address: session.customer_details?.address ? {
-          first_name: customer?.name?.split(' ')[0] || '',
-          last_name: customer?.name?.split(' ').slice(1).join(' ') || '',
-          address1: session.customer_details.address.line1 || '',
-          address2: session.customer_details.address.line2 || '',
-          city: session.customer_details.address.city || '',
-          province: session.customer_details.address.state || '',
-          country: session.customer_details.address.country || '',
-          zip: session.customer_details.address.postal_code || '',
-        } : undefined,
+        billing_address: billingAddress,
         email: customer?.email || '',
         note: `Stripe Payment ID: ${session.payment_intent}\nStripe Session ID: ${session.id}\nSource: Headless Storefront`,
         note_attributes: session.metadata?.affiliate_vendor_id

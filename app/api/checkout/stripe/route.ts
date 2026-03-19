@@ -255,9 +255,14 @@ export async function GET(request: NextRequest) {
       console.debug('Could not fetch series progress:', error)
     }
     
+    const sessionPaymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : (session.payment_intent as Stripe.PaymentIntent)?.id ?? null
+
     return NextResponse.json({
       session: {
         id: session.id,
+        paymentIntentId: sessionPaymentIntentId,
         status: session.status,
         paymentStatus: session.payment_status,
         customerEmail: session.customer_details?.email || session.customer_email,

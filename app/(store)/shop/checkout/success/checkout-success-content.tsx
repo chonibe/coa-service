@@ -180,10 +180,10 @@ export function CheckoutSuccessContent() {
       try {
         // For PaymentIntent returns (PayPal redirect or inline), ensure order is fulfilled.
         // The complete-order endpoint is idempotent (skips if already fulfilled).
-        if (paymentIntentId) {
-          const pendingItems = sessionStorage.getItem('sc_checkout_items')
-          const pendingAddress = sessionStorage.getItem('sc_checkout_address')
+        const pendingItems = sessionStorage.getItem('sc_checkout_items')
+        const pendingAddress = sessionStorage.getItem('sc_checkout_address')
 
+        if (paymentIntentId) {
           if (pendingItems && pendingAddress) {
             try {
               await fetch('/api/checkout/complete-order', {
@@ -234,6 +234,34 @@ export function CheckoutSuccessContent() {
             }
             setLoading(false)
             return
+          }
+        }
+
+        // For session_id returns (PayPal via Checkout Session): if we have sessionStorage data,
+        // fetch session to get payment_intent and call complete-order so order has customer details.
+        if (sessionId && pendingItems && pendingAddress) {
+          try {
+            const sessionRes = await fetch(`/api/checkout/stripe?session_id=${sessionId}`)
+            if (sessionRes.ok) {
+              const { session: sess } = await sessionRes.json()
+              const pid = sess?.paymentIntentId
+              if (pid) {
+                await fetch('/api/checkout/complete-order', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    paymentIntentId: pid,
+                    items: JSON.parse(pendingItems),
+                    shippingAddress: JSON.parse(pendingAddress),
+                  }),
+                })
+              }
+            }
+          } catch {
+            // Best-effort; webhook may have already fulfilled
+          } finally {
+            sessionStorage.removeItem('sc_checkout_items')
+            sessionStorage.removeItem('sc_checkout_address')
           }
         }
 
