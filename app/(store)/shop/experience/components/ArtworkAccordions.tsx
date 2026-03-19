@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap } from 'lucide-react'
+import { ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
-import { cn } from '@/lib/utils'
 import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
+import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 
 interface ArtistData {
   name: string
@@ -29,27 +29,14 @@ const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
 export function ArtworkAccordions({ product, productIncludes, productSpecs }: ArtworkAccordionsProps) {
   useExperienceTheme() // ensures we're in theme context for dark: classes
-  const [showDescription, setShowDescription] = useState(false)
-  const [showSpecs, setShowSpecs] = useState(false)
-  const [showIncludes, setShowIncludes] = useState(false)
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
 
-  const descriptionRaw = product.description || product.descriptionHtml || ''
-  const description = typeof descriptionRaw === 'string'
-    ? descriptionRaw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-    : ''
   const isLamp = !!(productIncludes && productIncludes.length > 0)
   const artist = product.vendor || ''
   const slug = artist.toLowerCase().replace(/\s+/g, '-')
   const firstImage = product.featuredImage ?? product.images?.edges?.[0]?.node
-
-  useEffect(() => {
-    setShowDescription(false)
-    setShowSpecs(false)
-    setShowIncludes(false)
-  }, [product.id])
 
   useEffect(() => {
     if (!artist) return
@@ -162,115 +149,47 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
     zap: Zap,
   }
 
-  const accordionCls = 'w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group'
   const iconCls = 'w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center'
-  const labelCls = 'text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors'
-  const chevronCls = (open: boolean) => cn('w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform', open && 'rotate-180')
+  const labelCls = 'text-sm font-medium text-neutral-700 dark:text-[#d4b8b8]'
+  const editionSize = (() => {
+    const m = product.metafields?.find(
+      (x) => x && x.namespace === 'custom' && x.key === 'edition_size'
+    )
+    return m?.value ? parseInt(m.value, 10) : null
+  })()
+  const releaseDateRaw = (() => {
+    const m = product.metafields?.find(
+      (x) =>
+        x?.value &&
+        (x.key?.toLowerCase() === 'release_date' ||
+          x.key?.toLowerCase() === 'release date' ||
+          x.key?.toLowerCase() === 'launch_date')
+    )
+    return m?.value ?? null
+  })()
+  const releaseDateFormatted =
+    releaseDateRaw &&
+    (() => {
+      try {
+        const d = new Date(releaseDateRaw)
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })
+        }
+      } catch {
+        // ignore
+      }
+      return releaseDateRaw
+    })()
 
   return (
-    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-0">
-      {/* What's included */}
-      {productIncludes && productIncludes.length > 0 && (
-        <div className="pb-0">
-          <button onClick={() => setShowIncludes(!showIncludes)} className={accordionCls}>
-            <div className="flex items-center gap-3">
-              <div className={iconCls}>
-                <Package className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-              </div>
-              <span className={labelCls}>What&apos;s included</span>
-            </div>
-            <ChevronDown className={chevronCls(showIncludes)} />
-          </button>
-          <AnimatePresence>
-            {showIncludes && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-wrap gap-2 pt-2 pb-3 justify-center">
-                  {productIncludes.map((item, i) => {
-                    const Icon = iconMap[item.icon]
-                    return (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
-                      >
-                        <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
-                        {item.label}
-                      </span>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Specifications */}
-      {productSpecs && productSpecs.length > 0 && (
-        <div className="pb-0">
-          <button onClick={() => setShowSpecs(!showSpecs)} className={accordionCls}>
-            <div className="flex items-center gap-3">
-              <div className={iconCls}>
-                <List className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-              </div>
-              <span className={labelCls}>Specifications</span>
-            </div>
-            <ChevronDown className={chevronCls(showSpecs)} />
-          </button>
-          <AnimatePresence>
-            {showSpecs && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="grid gap-3 sm:grid-cols-2 pt-2 pb-3">
-                  {productSpecs.map((spec, i) => {
-                    const SpecIcon = spec.icon ? specIconMap[spec.icon] : List
-                    const isSingleValue = spec.items.length === 1
-                    return (
-                      <div
-                        key={i}
-                        className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                          <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
-                            {spec.title}
-                          </h4>
-                        </div>
-                        {isSingleValue ? (
-                          <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
-                        ) : (
-                          <ul className="space-y-1.5">
-                            {spec.items.map((item, j) => (
-                              <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
-                                <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* About the Artist — spotlight card (same as selector) instead of accordion */}
+    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-4">
+      {/* About the Artist — spotlight card (shown first for artworks) */}
       {artist && !isLamp && (
-        <div className="pb-0">
+        <div>
           {artistLoading ? (
             <div className="py-4 flex justify-center">
               <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
@@ -295,36 +214,146 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs }: Ar
         </div>
       )}
 
-      {/* Description / Product details */}
-      {description && (
-        <div className="pb-0">
-          <button
-            onClick={() => setShowDescription(!showDescription)}
-            className={accordionCls}
-          >
-            <div className="flex items-center gap-3">
-              <div className={iconCls}>
-                <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-              </div>
-              <span className={labelCls}>
-                {isLamp ? 'About the Street Lamp' : 'Artwork details'}
-              </span>
+      {/* Artwork Details — redesigned for artworks (no Shopify description — we show title, edition, release date) */}
+      {!isLamp && (firstImage?.url || product.title) && (
+        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+          {/* Artwork image */}
+          {firstImage?.url && (
+            <div className="relative w-full aspect-[4/5] overflow-hidden">
+              <Image
+                src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
+                alt={product.title || 'Artwork'}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 92vw, 520px"
+              />
             </div>
-            <ChevronDown className={chevronCls(showDescription)} />
-          </button>
-          <AnimatePresence>
-            {showDescription && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pb-3">{description}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          )}
+          <div className="p-4 sm:p-5 text-center">
+            {/* Title + Edition size + Release date */}
+            <div className="mb-4">
+              {product.title && (
+                <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-white">
+                  {product.title}
+                </h2>
+              )}
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-0.5 mt-2 text-sm text-neutral-500 dark:text-[#c4a0a0]">
+                {editionSize != null && (
+                  <span className="font-medium">Edition of {editionSize}</span>
+                )}
+                {releaseDateFormatted && (
+                  <span>Released {releaseDateFormatted}</span>
+                )}
+              </div>
+            </div>
+            {/* Scarcity bar */}
+            <div className="mt-0 flex justify-center">
+              <ScarcityBadge
+                quantityAvailable={
+                  typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+                    ? product.variants.edges[0].node.quantityAvailable
+                    : undefined
+                }
+                editionSize={editionSize}
+                availableForSale={product.availableForSale ?? true}
+                variant="bar"
+                productId={product.id}
+                productImage={firstImage?.url ?? null}
+                productTitle={product.title ?? undefined}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lamp details — image only, no Shopify description */}
+      {isLamp && firstImage?.url && (
+        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={iconCls}>
+              <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
+            </div>
+            <span className={labelCls}>About the Street Lamp</span>
+          </div>
+          <div className="relative w-full aspect-[4/5] rounded-lg overflow-hidden">
+            <Image
+              src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
+              alt={product.title || 'Lamp'}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 92vw, 520px"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* What's included — always open */}
+      {productIncludes && productIncludes.length > 0 && (
+        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={iconCls}>
+              <Package className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
+            </div>
+            <span className={labelCls}>What&apos;s Included</span>
+          </div>
+          <div className="flex flex-wrap gap-2 justify-start">
+            {productIncludes.map((item, i) => {
+              const Icon = iconMap[item.icon]
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#2a2424] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
+                >
+                  <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
+                  {item.label}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Specifications — always open */}
+      {productSpecs && productSpecs.length > 0 && (
+        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={iconCls}>
+              <List className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
+            </div>
+            <span className={labelCls}>Specifications</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {productSpecs.map((spec, i) => {
+              const SpecIcon = spec.icon ? specIconMap[spec.icon] : List
+              const isSingleValue = spec.items.length === 1
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg bg-neutral-100/50 dark:bg-[#2a2424]/50 px-3 py-2"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <SpecIcon className="w-3.5 h-3.5 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
+                    <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
+                      {spec.title}
+                    </h4>
+                  </div>
+                  {isSingleValue ? (
+                    <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {spec.items.map((item, j) => (
+                        <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                          <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

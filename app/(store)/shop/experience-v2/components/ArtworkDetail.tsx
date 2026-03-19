@@ -56,7 +56,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
-  const displayImages = allImages.length > 1 ? allImages.slice(1) : allImages
+  const displayImages = allImages
 
   const [imageIndex, setImageIndex] = useState(0)
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
@@ -333,11 +333,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
           </div>
         )}
-        {displayImages.length > 1 && (
-          <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
+        {displayImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4 flex-shrink-0">
             {displayImages.map((img, i) => (
               <button key={i} onClick={() => goToIndex(i)} className={cn('w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors', i === imageIndex ? 'border-neutral-900 dark:border-white' : 'border-transparent opacity-60 hover:opacity-100')}>
-                <Image src={img.url} alt={img.altText || `Image ${i + 1}`} width={56} height={56} className="w-full h-full object-cover" loading="lazy" />
+                <Image src={img.url} alt={img.altText || `Image ${i + 1}`} width={56} height={56} className="w-full h-full object-cover" loading="lazy" unoptimized />
               </button>
             ))}
           </div>
@@ -531,8 +531,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       )}
                     </div>
                   )}
-                  {displayImages.length > 1 && (
-                    <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide flex-shrink-0">
+                  {displayImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4 flex-shrink-0">
                       {displayImages.map((img, i) => (
                         <button
                           key={i}
@@ -549,6 +549,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             height={56}
                             className="w-full h-full object-cover"
                             loading="lazy"
+                            unoptimized
                           />
                         </button>
                       ))}

@@ -40,9 +40,40 @@ export async function GET(
     }
     const data = await res.json()
     const variants = data?.product?.variants ?? []
-    const total = variants.reduce((sum: number, v: { inventory_quantity?: number }) => sum + (v.inventory_quantity ?? 0), 0)
-    const firstVariant = variants[0]
-    const quantityAvailable = firstVariant?.inventory_quantity ?? total
+    // Sum inventory across ALL variants — for multi-variant products (e.g. sizes),
+    // first variant alone would undercount. For single-variant limited editions, total = first.
+    const totalFromVariants = variants.reduce(
+      (sum: number, v: { inventory_quantity?: number }) => sum + (v.inventory_quantity ?? 0),
+      0
+    )
+    // If variant.inventory_quantity is deprecated/missing (all undefined), try inventory_levels API
+    const hasVariantInventoryData = variants.some(
+      (v: { inventory_quantity?: number }) => typeof v.inventory_quantity === 'number'
+    )
+    let quantityAvailable: number | null = hasVariantInventoryData ? totalFromVariants : null
+    if (quantityAvailable === null && variants.length > 0) {
+      const inventoryItemIds = variants
+        .map((v: { inventory_item_id?: number }) => v.inventory_item_id)
+        .filter((id): id is number => typeof id === 'number')
+      if (inventoryItemIds.length > 0) {
+        const levelsUrl = `https://${SHOPIFY_SHOP}/admin/api/2024-01/inventory_levels.json?inventory_item_ids=${inventoryItemIds.join(',')}`
+        const levelsRes = await fetch(levelsUrl, {
+          headers: {
+            'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN!,
+            'Content-Type': 'application/json',
+          },
+        })
+        if (levelsRes.ok) {
+          const levelsData = await levelsRes.json()
+          const levels = levelsData?.inventory_levels ?? []
+          quantityAvailable = levels.reduce(
+            (sum: number, l: { available?: number; inventory_quantity?: number }) =>
+              sum + (l.available ?? l.inventory_quantity ?? 0),
+            0
+          )
+        }
+      }
+    }
     return NextResponse.json({
       quantityAvailable: typeof quantityAvailable === 'number' ? quantityAvailable : null,
       editionSize: null,

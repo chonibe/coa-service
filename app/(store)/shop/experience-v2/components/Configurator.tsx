@@ -1892,6 +1892,7 @@ export function Configurator({
               spotlight={spotlightData}
               spotlightProducts={spotlightProducts}
               onSelect={handleSpotlightSelect}
+              showBadge
             />
           ) : null}
           {/* Street lamp — hidden; now in top toolbar only */}

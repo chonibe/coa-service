@@ -80,6 +80,8 @@ interface ArtworkInfoBarProps {
   onRotate?: () => void
   /** When true, hide title/artist (moved to header center on desktop) */
   hideTitle?: boolean
+  /** Slide index for first gallery image (1 when no accordion, 2 when accordion present) */
+  gallerySlideOffset?: number
 }
 
 export function ArtworkInfoBar({
@@ -96,6 +98,7 @@ export function ArtworkInfoBar({
   thumbnailPlacement = 'inline',
   onRotate,
   hideTitle = false,
+  gallerySlideOffset = 1,
 }: ArtworkInfoBarProps) {
   const { theme } = useExperienceTheme()
   const hasA = !!sideAProduct
@@ -167,7 +170,7 @@ export function ArtworkInfoBar({
     [productForImages, productForImages?.images?.edges?.length, productForImages?.media?.edges?.length]
   )
   const galleryImages = useMemo(
-    () => (orderedImages.length > 1 ? orderedImages.slice(1) : []),
+    () => orderedImages,
     [orderedImages]
   )
 
@@ -236,7 +239,7 @@ export function ArtworkInfoBar({
         {/* Thumbnails: [Spline] [img1] [img2]... — inline or portaled to right */}
         {(galleryImages.length > 0 || imagesLoading) && (() => {
           const thumbnails = (
-            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="flex flex-col gap-1.5">
               {imagesLoading ? (
                 <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-white/10')} />
               ) : (
@@ -274,11 +277,11 @@ export function ArtworkInfoBar({
                       key={img.url || idx}
                       type="button"
                       onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGoToSlide?.(idx + 1) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGoToSlide?.(gallerySlideOffset + idx) }}
                       title="View full image"
                       className={cn(
                         'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
-                      currentSlide === idx + 1
+                      currentSlide === gallerySlideOffset + idx
                         ? 'border-[#FFBA94]'
                           : theme === 'light'
                             ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
@@ -289,6 +292,7 @@ export function ArtworkInfoBar({
                         src={getShopifyImageUrl(img.url, 88) ?? img.url}
                         alt={img.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
                         fill
+                        unoptimized
                         className="object-cover pointer-events-none"
                         sizes="32px"
                         loading="eager"

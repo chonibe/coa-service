@@ -538,6 +538,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     height={28}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-[#b89090] text-sm">

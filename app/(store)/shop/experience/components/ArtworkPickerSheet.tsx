@@ -63,9 +63,14 @@ function MergeConfetti({ active }: { active: boolean }) {
   )
 }
 
-function formatPrice(product: ShopifyProduct): string {
+function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
   const price = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  return price > 0 ? `$${price.toFixed(2)}` : 'Free'
+  if (price <= 0) return 'Free'
+  if (isEarlyAccess) {
+    const discounted = Math.round(price * 0.9 * 100) / 100
+    return `$${discounted.toFixed(2)}`
+  }
+  return `$${price.toFixed(2)}`
 }
 
 interface ArtworkCardV2Props {
@@ -99,6 +104,8 @@ function ArtworkCardV2({
   const isMerged = isSelected && (mergeWithLeft || mergeWithRight)
   const roundLeft = !isMerged || mergeWithRight
   const roundRight = !isMerged || mergeWithLeft
+  const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
+  const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
 
   const handleClick = useCallback(() => {
     onSelect(product)
@@ -140,11 +147,13 @@ function ArtworkCardV2({
               src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
+              unoptimized
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
-              loading={priorityLoad ? 'eager' : 'lazy'}
+              loading="eager"
               onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
             />
           </>
         ) : (
@@ -203,10 +212,21 @@ function ArtworkCardV2({
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
         </div>
-        <p className={cn(
-          'text-xs flex-shrink-0 font-medium',
-          isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]'
-        )}>{formatPrice(product)}</p>
+        <div className="flex flex-col items-end">
+          <p className={cn(
+            'text-xs flex-shrink-0 font-medium',
+            showEarlyAccessPrice
+              ? 'text-violet-700 dark:text-violet-300'
+              : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
+          )}>
+            {formatPrice(product, isEarlyAccess)}
+          </p>
+          {showEarlyAccessPrice && (
+            <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
+              ${originalPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
       </div>
     </motion.div>
   )
@@ -341,7 +361,7 @@ export function ArtworkPickerSheet({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT_ESTIMATE,
-    overscan: 3,
+    overscan: 6,
   })
 
   return (
@@ -469,6 +489,7 @@ export function ArtworkPickerSheet({
                     spotlight={spotlightData}
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
+                    showBadge
                   />
                 </div>
               )}

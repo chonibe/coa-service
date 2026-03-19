@@ -64,8 +64,9 @@ export function ScarcityBadge({
   if (variant === 'bar') {
     const total = editionSize && editionSize > 0 ? editionSize : 90
     const available = quantityAvailable ?? (loading ? null : total)
+    // Cap at 100% when available exceeds edition size (data sync edge case)
     const percentRemaining = total > 0 && available != null
-      ? Math.round((available / total) * 100)
+      ? Math.min(100, Math.round((available / total) * 100))
       : loading ? 100 : 100
     const barWidth = Math.min(100, Math.max(0, percentRemaining))
 

@@ -84,7 +84,7 @@ interface ExperienceV2ClientProps {
   productsSeason2: ShopifyProduct[]
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
-  /** When set (e.g. from ?artist= URL), fetch spotlight for this artist and preselect their 2 latest works */
+  /** When set (e.g. from ?artist= URL), fetch spotlight for this artist */
   initialArtistSlug?: string
 }
 
@@ -107,6 +107,7 @@ export function ExperienceV2Client({
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
+  const [spotlightProductsFromApi, setSpotlightProductsFromApi] = useState<ShopifyProduct[]>([])
   const [loadingMore, setLoadingMore] = useState(false)
 
   const [initialCart] = useState(() => loadExperienceCart())
@@ -151,10 +152,17 @@ export function ExperienceV2Client({
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
-    setProductsSeason2(initialSeason2)
+    setProductsSeason2((prev) => {
+      const base = initialSeason2
+      if (spotlightProductsFromApi.length === 0) return base
+      const baseIds = new Set(base.map((p) => p.id))
+      const toMerge = spotlightProductsFromApi.filter((p) => !baseIds.has(p.id))
+      if (toMerge.length === 0) return base
+      return [...base, ...toMerge]
+    })
     setPageInfoSeason1(initialPageInfo1)
     setPageInfoSeason2(initialPageInfo2)
-  }, [initialSeason1, initialSeason2, initialPageInfo1, initialPageInfo2])
+  }, [initialSeason1, initialSeason2, initialPageInfo1, initialPageInfo2, spotlightProductsFromApi])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -180,26 +188,24 @@ export function ExperienceV2Client({
     return () => { cancelled = true }
   }, [initialArtistSlug, searchParams])
 
-  const spotlightPreselectedRef = useRef(false)
-  const spotlightFetchedRef = useRef(false)
-
   const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
 
-  const fetchSpotlight = useCallback(() => {
-    if (spotlightFetchedRef.current) return
-    spotlightFetchedRef.current = true
+  const fetchAndApplySpotlight = useCallback(() => {
+    let cancelled = false
     let url = initialArtistSlug
       ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
       : '/api/shop/artist-spotlight'
-    if (forceUnlisted) url += (url.includes('?') ? '&' : '?') + 'unlisted=1'
+    if (forceUnlisted && initialArtistSlug) url += '&unlisted=1'
     fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.vendorName && data?.productIds?.length) {
+        if (cancelled) return
+        if (data?.vendorName && Array.isArray(data?.productIds)) {
           setSpotlightData(data as SpotlightData)
+          const products = (data.products as ShopifyProduct[] | undefined) ?? []
+          setSpotlightProductsFromApi(products)
           // Merge spotlight products when from artist link (may include early-access not in season collections)
-          const products = data.products as ShopifyProduct[] | undefined
-          if (products?.length && initialArtistSlug) {
+          if (products.length && initialArtistSlug) {
             setProductsSeason2((prev) => {
               const existingIds = new Set(prev.map((p) => p.id))
               const toAdd = products.filter((p) => !existingIds.has(p.id))
@@ -207,30 +213,30 @@ export function ExperienceV2Client({
               return [...prev, ...toAdd]
             })
           }
-          // Preselect artist's 2 latest works when visiting via ?artist= and cart is empty (add to cart only, not on lamp)
-          if (initialArtistSlug && data.productIds.length >= 2 && initialCart.cartOrder.length === 0 && !spotlightPreselectedRef.current) {
-            spotlightPreselectedRef.current = true
-            const ids = data.productIds.slice(0, 2)
-            const toGid = (id: string) => (id.startsWith('gid:') ? id : `gid://shopify/Product/${id}`)
-            const cartIds = products?.length
-              ? [products[0].id, products[1].id]
-              : ids.map(toGid)
-            setCartOrder(cartIds)
-            // Don't set lampPreviewOrder — artworks are added but not "clicked" on lamp
-          }
+        } else {
+          setSpotlightData(null)
+          setSpotlightProductsFromApi([])
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) {
+          setSpotlightData(null)
+          setSpotlightProductsFromApi([])
+        }
+      })
+    return () => { cancelled = true }
   }, [initialArtistSlug, forceUnlisted])
 
-  // When arriving via artist link, fetch spotlight on mount (needed for preselect). Otherwise defer until picker opens.
+  // Match experience-v2 behavior: fetch immediately for artist links; otherwise defer until picker opens.
   useEffect(() => {
-    if (initialArtistSlug) fetchSpotlight()
-  }, [initialArtistSlug, fetchSpotlight])
+    if (!initialArtistSlug) return
+    return fetchAndApplySpotlight()
+  }, [initialArtistSlug, fetchAndApplySpotlight])
 
   useEffect(() => {
-    if (!initialArtistSlug && isPickerOpen) fetchSpotlight()
-  }, [initialArtistSlug, isPickerOpen, fetchSpotlight])
+    if (initialArtistSlug || !isPickerOpen) return
+    return fetchAndApplySpotlight()
+  }, [initialArtistSlug, isPickerOpen, fetchAndApplySpotlight])
 
   // Preload first few product images when carousel is visible so selector opens with cached images
   useEffect(() => {
@@ -301,6 +307,18 @@ export function ExperienceV2Client({
         numericSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, ''))
     )
   }, [allProducts, spotlightData])
+
+  const spotlightPlaceholders = useMemo(() => {
+    if (!spotlightData || cartOrder.length > 0) return []
+    const source = spotlightProductsFromApi.length > 0 ? spotlightProductsFromApi : spotlightProducts
+    return source.slice(0, 2)
+  }, [spotlightData, cartOrder.length, spotlightProductsFromApi, spotlightProducts])
+
+  const spotlightFallbackImageUrl = useMemo(() => {
+    const first = spotlightProductsFromApi[0] ?? spotlightProducts[0] ?? productsSeason2[0]
+    if (!first) return null
+    return getShopifyImageUrl(getFirstImage(first), 1200) ?? getFirstImage(first)
+  }, [spotlightProductsFromApi, spotlightProducts, productsSeason2])
 
   const handleSpotlightSelect = useCallback(
     (isExpanding: boolean) => {
@@ -654,10 +672,8 @@ export function ExperienceV2Client({
   }, [])
 
   const handleGoToSlide = useCallback((index: number) => {
-    const hasAccordion = !!displayedProduct
-    const slideIndex = index === 0 ? 0 : index + (hasAccordion ? 1 : 0)
-    setPreviewSlideIndex(slideIndex)
-  }, [displayedProduct])
+    setPreviewSlideIndex(index)
+  }, [])
 
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
@@ -725,8 +741,11 @@ export function ExperienceV2Client({
     return () => setHeaderCenterContent(null)
   }, [isDesktop, displayedProduct, lamp.id, theme, handleViewDetail, setHeaderCenterContent])
 
-  // When switching 1|2: clamp slide index; scroll to Spline (0) when user taps 1|2, else scroll to accordion
-  const slideCount = 1 + (displayedProduct ? 1 : 0) + galleryImages.length
+  // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
+  const hasAccordion = !!displayedProduct
+  const hasGallery = galleryImages.length > 1 // First image shown in artwork details, need 2+ for gallery section
+  const sectionCount = 1 + (hasAccordion ? 1 : 0) + (hasGallery ? 1 : 0)
+  const gallerySectionIndex = hasAccordion ? 2 : 1
   const prevDisplayedIdRef = useRef<string | null>(null)
   useEffect(() => {
     const currentId = displayedProduct?.id ?? null
@@ -737,21 +756,20 @@ export function ExperienceV2Client({
     scrollToSplineRef.current = false
 
     setPreviewSlideIndex((prev) => {
-      const max = Math.max(0, slideCount - 1)
+      const max = Math.max(0, sectionCount - 1)
       if (prev > max) return max
       // When user taps 1|2 or carousel item, scroll to Spline
       if (scrollToSpline) return 0
-      // When product changes from elsewhere (e.g. carousel tap), scroll to accordion
-      if (displayedProduct && prevId !== null && currentId !== prevId) return 1
       return prev
     })
-  }, [displayedProduct?.id, galleryImages.length, slideCount])
+  }, [displayedProduct?.id, galleryImages.length, sectionCount])
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <SplineFullScreen
         image1={image1}
         image2={image2}
+        spotlightFallbackImageUrl={spotlightFallbackImageUrl}
         rotateToSide={rotateToSide}
         rotateTrigger={rotateTrigger}
         resetTrigger={resetTrigger}
@@ -767,11 +785,8 @@ export function ExperienceV2Client({
             lastClickedProductId={lastClickedProductId}
             onGalleryImagesChange={handleGalleryImagesChange}
             onGoToSlide={handleGoToSlide}
-            currentSlide={
-              displayedProduct && previewSlideIndex > 1
-                ? previewSlideIndex - 1
-                : previewSlideIndex
-            }
+            currentSlide={previewSlideIndex}
+            gallerySlideOffset={gallerySectionIndex}
             onViewDetail={handleViewDetail}
             onDisplayedProductChange={setDisplayedProduct}
             thumbnailPlacement="right"
@@ -843,13 +858,15 @@ export function ExperienceV2Client({
 
       <ArtworkCarouselBar
         splineInView={splineInView}
-          selectedArtworks={selectedArtworks}
-          activeIndex={activeCarouselIndex}
-          lampPreviewOrder={lampPreviewOrder}
-          onTapItem={handleTapCarouselItem}
-          onRemoveItem={handleRemoveFromCarousel}
-          onOpenPicker={handleOpenPicker}
-        />
+        selectedArtworks={selectedArtworks}
+        spotlightPlaceholders={spotlightPlaceholders}
+        activeIndex={activeCarouselIndex}
+        lampPreviewOrder={lampPreviewOrder}
+        onTapItem={handleTapCarouselItem}
+        onRemoveItem={handleRemoveFromCarousel}
+        onOpenPicker={handleOpenPicker}
+        onAddProduct={handleToggleSelect}
+      />
 
       {pickerHasBeenOpened && (
       <ArtworkPickerSheet

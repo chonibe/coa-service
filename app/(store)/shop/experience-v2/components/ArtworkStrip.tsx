@@ -299,11 +299,13 @@ function ArtworkCard({
               src={getShopifyImageUrl(imageUrl, 500) ?? imageUrl}
               alt={product.title}
               fill
+              unoptimized
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
-              loading={priorityLoad ? 'eager' : 'lazy'}
+              loading="eager"
               onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
             />
           </>
         ) : (
@@ -636,7 +638,7 @@ export function ArtworkStrip({
     count: totalRows,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => (index >= rowCount ? SENTINEL_HEIGHT : ROW_HEIGHT_ESTIMATE),
-    overscan: 3,
+    overscan: 6,
   })
 
   const virtualRows = rowVirtualizer.getVirtualItems()

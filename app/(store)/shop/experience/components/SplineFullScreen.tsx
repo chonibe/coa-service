@@ -17,7 +17,6 @@ import {
 } from '@/lib/experience-image-position'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { ArtworkAccordions } from './ArtworkAccordions'
 
 function SplinePreviewLoading() {
@@ -59,12 +58,14 @@ interface SplineFullScreenProps {
   /** When displayedProduct is the lamp, pass these for accordion */
   productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
-  /** Current slide index: 0 = Spline, 1 = Accordion (if displayedProduct), 2+ = image index */
+  /** Current slide index: 0 = Spline, 1+ = gallery images. Accordion is not a slide. */
   currentSlide?: number
   /** Called when user swipes to a different slide */
   onSlideChange?: (index: number) => void
   /** Called when Spline section enters/leaves view (for carousel visibility) */
   onSplineInView?: (inView: boolean) => void
+  /** When no artwork selected, use this image as placeholder (e.g. spotlight artwork) */
+  spotlightFallbackImageUrl?: string | null
 }
 
 export function SplineFullScreen({
@@ -85,6 +86,7 @@ export function SplineFullScreen({
   currentSlide = 0,
   onSlideChange,
   onSplineInView,
+  spotlightFallbackImageUrl = null,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -169,45 +171,71 @@ export function SplineFullScreen({
   const lampVariant = theme === 'light' ? 'light' : 'dark'
   const scrollRef = useRef<HTMLDivElement>(null)
   const hasAccordion = !!displayedProduct
-  const slideCount = 1 + (hasAccordion ? 1 : 0) + galleryImages.length
+  const hasGallery = galleryImages.length > 1 // Skip first image (shown in details), need 2+ for gallery section
+  const sectionCount = 1 + (hasAccordion ? 1 : 0) + (hasGallery ? 1 : 0)
 
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([])
-  const skipScrollFromHandleScrollRef = useRef(false)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const lastReportedSectionRef = useRef(currentSlide)
+  const scrollRafRef = useRef<number | null>(null)
+  const lastProgrammaticSectionRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!scrollRef.current || slideCount <= 1) return
-    if (skipScrollFromHandleScrollRef.current) {
-      skipScrollFromHandleScrollRef.current = false
+    if (!scrollRef.current || sectionCount <= 1) return
+    if (lastProgrammaticSectionRef.current === currentSlide) {
+      lastProgrammaticSectionRef.current = null
       return
     }
-    const target = slideRefs.current[currentSlide]
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [currentSlide, slideCount])
+    const target = sectionRefs.current[currentSlide]
+    if (!target) return
+
+    lastProgrammaticSectionRef.current = currentSlide
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [currentSlide, sectionCount])
 
   const handleScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el || !onSlideChange || slideCount <= 1) return
-    const viewportMid = el.scrollTop + el.clientHeight / 2
-    let best = 0
-    let bestDist = Infinity
-    for (let i = 0; i < slideCount; i++) {
-      const ref = slideRefs.current[i]
-      if (!ref) continue
-      const slideMid = ref.offsetTop + ref.offsetHeight / 2
-      const dist = Math.abs(viewportMid - slideMid)
-      if (dist < bestDist) {
-        bestDist = dist
-        best = i
+    if (!onSlideChange || sectionCount <= 1) return
+    if (scrollRafRef.current !== null) return
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null
+      const el = scrollRef.current
+      if (!el) return
+      const viewportMid = el.scrollTop + el.clientHeight / 2
+      let best = 0
+      let bestDist = Infinity
+      for (let i = 0; i < sectionCount; i++) {
+        const ref = sectionRefs.current[i]
+        if (!ref) continue
+        const sectionMid = ref.offsetTop + ref.offsetHeight / 2
+        const dist = Math.abs(viewportMid - sectionMid)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = i
+        }
+      }
+      if (best === lastReportedSectionRef.current) return
+      lastReportedSectionRef.current = best
+      lastProgrammaticSectionRef.current = best
+      onSlideChange(best)
+    })
+  }, [onSlideChange, sectionCount])
+
+  useEffect(() => {
+    lastReportedSectionRef.current = currentSlide
+  }, [currentSlide])
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current)
+        scrollRafRef.current = null
       }
     }
-    skipScrollFromHandleScrollRef.current = true
-    onSlideChange(best)
-  }, [onSlideChange, slideCount])
+  }, [])
 
   // Report when Spline section is in view (for carousel visibility)
   useEffect(() => {
     const scrollEl = scrollRef.current
-    const splineEl = slideRefs.current[0]
+    const splineEl = sectionRefs.current[0]
     if (!scrollEl || !splineEl || !onSplineInView) return
     const observer = new IntersectionObserver(
       ([entry]) => onSplineInView(entry.isIntersecting),
@@ -216,8 +244,6 @@ export function SplineFullScreen({
     observer.observe(splineEl)
     return () => observer.disconnect()
   }, [onSplineInView])
-
-  const hasCarousel = galleryImages.length > 0
 
   return (
     <div className={cn(
@@ -230,19 +256,23 @@ export function SplineFullScreen({
         ref={scrollRef}
         onScroll={handleScroll}
         className={cn(
-          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[80svh]'
+          'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[20vh] touch-pan-y overscroll-contain'
         )}
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          scrollSnapType: 'y proximity',
+        } as React.CSSProperties}
       >
         {/* Section 0: Spline 3D — facade (LCP) then deferred Spline mount */}
         <div
-          ref={(r) => { slideRefs.current[0] = r }}
+          ref={(r) => { sectionRefs.current[0] = r }}
           className={cn(
             'flex-shrink-0 flex flex-col relative w-full',
-            // Use stable height: when scrollable (carousel), use svh which doesn't change
-            // with mobile browser chrome (unlike dvh). Otherwise flex-grow to fill.
-            hasCarousel ? 'min-h-[100svh]' : 'flex-1 min-w-0'
+            hasGallery || hasAccordion ? 'min-h-[100svh]' : 'flex-1 min-w-0'
           )}
+          style={{ scrollSnapAlign: 'start' }}
         >
           <div className="flex-1 min-h-0 min-w-0 relative">
           {!splineReady ? (
@@ -253,27 +283,41 @@ export function SplineFullScreen({
               aria-label="Load 3D preview"
             >
               <Image
-                src={SPLINE_FACADE_SRC}
+                src={image1 ?? image2 ?? spotlightFallbackImageUrl ?? SPLINE_FACADE_SRC}
                 alt="Street Lamp preview"
                 fill
                 className="object-contain"
                 sizes="100vw"
                 priority
+                unoptimized={!!(image1 ?? image2 ?? spotlightFallbackImageUrl)}
               />
             </button>
           ) : (
           <ComponentErrorBoundary
             componentName="Spline3DPreview"
             fallback={
-              <div className={cn(
-                'flex h-full w-full items-center justify-center',
-                theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
-              )}>
-                <div className="text-center px-4">
-                  <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
-                  <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
+              (image1 ?? image2 ?? spotlightFallbackImageUrl) ? (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={image1 ?? image2 ?? spotlightFallbackImageUrl!}
+                    alt="Artwork preview"
+                    fill
+                    className="object-contain"
+                    sizes="100vw"
+                    unoptimized
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className={cn(
+                  'flex h-full w-full items-center justify-center',
+                  theme === 'light' ? 'bg-neutral-200/80' : 'bg-neutral-900/80'
+                )}>
+                  <div className="text-center px-4">
+                    <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>3D preview unavailable</p>
+                    <p className={cn('text-xs mt-1', theme === 'light' ? 'text-neutral-500' : 'text-white/50')}>You can still browse and add artworks below.</p>
+                  </div>
+                </div>
+              )
             }
           >
             <Spline3DPreview
@@ -312,42 +356,13 @@ export function SplineFullScreen({
           </div>
         </div>
 
-        {/* Accordion sections (What's included, Specs, Description, About Artist) — before gallery */}
+        {/* Section 1: Artist Bio & Artwork Details (with image and scarcity bar) */}
         {hasAccordion && displayedProduct && (
           <div
-            ref={(r) => { slideRefs.current[1] = r }}
-            className="flex-shrink-0 w-full flex flex-col items-center justify-center py-4"
+            ref={(r) => { sectionRefs.current[1] = r }}
+            className="flex-shrink-0 w-full min-h-[60svh] flex flex-col items-center justify-start py-8"
+            style={{ scrollSnapAlign: 'start' }}
           >
-            {/* Scarcity bar — above artwork details, hidden for lamp */}
-            {!productIncludes && displayedProduct && (
-              <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pb-3">
-                <ScarcityBadge
-                  quantityAvailable={
-                    typeof displayedProduct.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                      ? displayedProduct.variants.edges[0].node.quantityAvailable
-                      : undefined
-                  }
-                  editionSize={
-                    (() => {
-                      const m = displayedProduct.metafields?.find(
-                        (x) => x && x.namespace === 'custom' && x.key === 'edition_size'
-                      )
-                      return m?.value ? parseInt(m.value, 10) : null
-                    })()
-                  }
-                  availableForSale={displayedProduct.availableForSale ?? true}
-                  variant="bar"
-                  productId={displayedProduct.id}
-                  productImage={
-                    displayedProduct.featuredImage?.url ??
-                    displayedProduct.images?.edges?.[0]?.node?.url ??
-                    null
-                  }
-                  productTitle={displayedProduct.title ?? undefined}
-                  className="w-full"
-                />
-              </div>
-            )}
             <ArtworkAccordions
               key={displayedProduct.id}
               product={displayedProduct}
@@ -357,25 +372,32 @@ export function SplineFullScreen({
           </div>
         )}
 
-        {/* Images stacked in one reel — scroll through continuously */}
-        {galleryImages.map((img, idx) => (
+        {/* Section 2 (or 1 if no accordion): Gallery — skip first image (artwork shown in details), show remaining */}
+        {galleryImages.length > 1 && (
           <div
-            key={img.url || idx}
-            ref={(r) => { slideRefs.current[(hasAccordion ? 2 : 1) + idx] = r }}
-            className="flex-shrink-0 w-full flex items-center justify-center py-3 px-4"
+            ref={(r) => { sectionRefs.current[hasAccordion ? 2 : 1] = r }}
+            className="flex-shrink-0 w-full flex flex-col items-center py-4"
+            style={{ scrollSnapAlign: 'start' }}
           >
-            <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
-              <Image
-                src={getShopifyImageUrl(img.url, 1200) ?? img.url}
-                alt={img.altText ?? `Artwork ${idx + 1}`}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority={idx === 0}
-              />
-            </div>
+            {galleryImages.slice(1).map((img, idx) => (
+              <div
+                key={img.url || idx}
+                className="w-full flex items-center justify-center py-3 px-4"
+              >
+                <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
+                  <Image
+                    src={getShopifyImageUrl(img.url, 1200) ?? img.url}
+                    alt={img.altText ?? `Gallery ${idx + 2}`}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    priority={idx === 0}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container */}

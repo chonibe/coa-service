@@ -197,18 +197,18 @@ async function tryCollectionSpotlight(
 
     const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
     const handle = vendorSlug || slugify(vendorName) || collectionHandle
-    const artistImage = image || imageFromCol || (await getArtistImageByHandle(handle))
-    const collectionBio = bio || bioFromCol || (!bio && !bioFromCol ? await getCollectionDescription(handle) : undefined)
-    const collectionInstagram = instagram || instagramFromCol || (!instagram && !instagramFromCol ? await getCollectionInstagram(handle) : undefined)
+    const artistImage = imageFromCol || image || (await getArtistImageByHandle(handle))
+    const collectionBio = bioFromCol || bio || (!bioFromCol && !bio ? await getCollectionDescription(handle) : undefined)
+    const collectionInstagram = instagramFromCol || instagram || (!instagramFromCol && !instagram ? await getCollectionInstagram(handle) : undefined)
 
-    const imageUrl = image || imageFromCol || artistImage
+    const imageUrl = imageFromCol || image || artistImage
       || (newest?.featuredImage?.url) || newest?.images?.edges?.[0]?.node?.url
 
     return {
       vendorName,
       vendorSlug: handle,
-      bio: bio || bioFromCol || collectionBio,
-      instagram: instagram || instagramFromCol || collectionInstagram,
+      bio: bioFromCol || bio || collectionBio,
+      instagram: instagramFromCol || instagram || collectionInstagram,
       image: imageUrl || undefined,
       productIds: productIds.length > 0 ? productIds : (newest ? [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id] : []),
       seriesName: col.title !== vendorName ? col.title : undefined,

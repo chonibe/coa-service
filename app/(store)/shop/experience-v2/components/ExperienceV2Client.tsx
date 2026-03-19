@@ -111,6 +111,7 @@ export function ExperienceV2Client({
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
+  const [spotlightProductsFromApi, setSpotlightProductsFromApi] = useState<ShopifyProduct[]>([])
   const [loadingMore, setLoadingMore] = useState(false)
 
   const [initialCart] = useState(() => loadExperienceCart())
@@ -149,18 +150,18 @@ export function ExperienceV2Client({
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Defer artist spotlight fetch until picker opens (reduces initial load)
+  // Fetch artist spotlight on mount for placeholder when no artwork selected
   useEffect(() => {
-    if (!isPickerOpen) return
     fetch('/api/shop/artist-spotlight')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.vendorName && data?.productIds?.length) {
           setSpotlightData(data as SpotlightData)
+          setSpotlightProductsFromApi((data.products as ShopifyProduct[] | undefined) ?? [])
         }
       })
       .catch(() => {})
-  }, [isPickerOpen])
+  }, [])
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -227,6 +228,12 @@ export function ExperienceV2Client({
         numericSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, ''))
     )
   }, [allProducts, spotlightData])
+
+  const spotlightFallbackImageUrl = useMemo(() => {
+    const first = spotlightProductsFromApi[0] ?? spotlightProducts[0] ?? productsSeason2[0]
+    if (!first) return null
+    return getShopifyImageUrl(getFirstImage(first), 1200) ?? getFirstImage(first)
+  }, [spotlightProductsFromApi, spotlightProducts, productsSeason2])
 
   const handleSpotlightSelect = useCallback(
     (isExpanding: boolean) => {
@@ -582,10 +589,8 @@ export function ExperienceV2Client({
   }, [])
 
   const handleGoToSlide = useCallback((index: number) => {
-    const hasAccordion = !!displayedProduct
-    const slideIndex = index === 0 ? 0 : index + (hasAccordion ? 1 : 0)
-    setPreviewSlideIndex(slideIndex)
-  }, [displayedProduct])
+    setPreviewSlideIndex(index)
+  }, [])
 
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
@@ -654,8 +659,11 @@ export function ExperienceV2Client({
     return () => setHeaderCenterContent(null)
   }, [isDesktop, displayedProduct, lamp.id, theme, handleViewDetail, setHeaderCenterContent])
 
-  // When switching 1|2: clamp slide index; scroll to Spline (0) when user taps 1|2, else scroll to accordion
-  const slideCount = 1 + (displayedProduct ? 1 : 0) + galleryImages.length
+  // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
+  const hasAccordion = !!displayedProduct
+  const hasGallery = galleryImages.length > 1 // First image shown in artwork details, need 2+ for gallery section
+  const sectionCount = 1 + (hasAccordion ? 1 : 0) + (hasGallery ? 1 : 0)
+  const gallerySectionIndex = hasAccordion ? 2 : 1
   const prevDisplayedIdRef = useRef<string | null>(null)
   useEffect(() => {
     const currentId = displayedProduct?.id ?? null
@@ -666,21 +674,20 @@ export function ExperienceV2Client({
     scrollToSplineRef.current = false
 
     setPreviewSlideIndex((prev) => {
-      const max = Math.max(0, slideCount - 1)
+      const max = Math.max(0, sectionCount - 1)
       if (prev > max) return max
       // When user taps 1|2 or carousel item, scroll to Spline
       if (scrollToSpline) return 0
-      // When product changes from elsewhere (e.g. carousel tap), scroll to accordion
-      if (displayedProduct && prevId !== null && currentId !== prevId) return 1
       return prev
     })
-  }, [displayedProduct?.id, galleryImages.length, slideCount])
+  }, [displayedProduct?.id, galleryImages.length, sectionCount])
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <SplineFullScreen
         image1={image1}
         image2={image2}
+        spotlightFallbackImageUrl={spotlightFallbackImageUrl}
         rotateToSide={rotateToSide}
         rotateTrigger={rotateTrigger}
         resetTrigger={resetTrigger}
@@ -696,11 +703,8 @@ export function ExperienceV2Client({
             lastClickedProductId={lastClickedProductId}
             onGalleryImagesChange={handleGalleryImagesChange}
             onGoToSlide={handleGoToSlide}
-            currentSlide={
-              displayedProduct && previewSlideIndex > 1
-                ? previewSlideIndex - 1
-                : previewSlideIndex
-            }
+            currentSlide={previewSlideIndex}
+            gallerySlideOffset={gallerySectionIndex}
             onViewDetail={handleViewDetail}
             onDisplayedProductChange={setDisplayedProduct}
             thumbnailPlacement="right"

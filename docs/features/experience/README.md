@@ -27,15 +27,40 @@ Artwork queueing, side replacement, and Spline rotate/settle behavior are docume
 7. **Carousel image loading** – ArtworkStrip uses `getShopifyImageUrl(url, 500)` to request 500px-wide thumbnails from Shopify CDN, plus `priority` and `loading="eager"` for the first 6 cards to improve above-the-fold load time.
 8. **Detail preload** – When cards enter the virtualized view, Configurator prefetches full product data (`/api/shop/products/[handle]`) into cache so the detail drawer opens instantly when the user taps.
 
+### Spline Scroll / Touch Release (2026-03-19)
+
+When the Spline 3D model captured touch for rotation, users couldn't scroll the page. Multiple fixes applied:
+
+1. **Canvas pointer-events disabled** — The Spline canvas has `pointerEvents: 'none'` and `touchAction: 'none'` so Spline's internal event listeners never receive events. All interaction is handled by the container div which has `touchAction: 'pan-y'`.
+2. **Orbit controls fully disabled** — Spline's internal orbit controls called `preventDefault()` on touch/wheel, blocking scroll. Now `controls.enableZoom = false`, `controls.enabled = false`, and `controls.dispose()` are called to remove all internal event listeners. Rotation is handled by the custom `tick()` rAF loop.
+3. **Gesture direction detection** — Touch handlers on the container defer `isPointerOverRef` until gesture direction is committed. A `gestureIsVerticalRef` flag persists for the entire gesture once set, ensuring vertical swipes are never captured for rotation.
+4. **touch-action: pan-y** — Applied to container so browser handles vertical scrolling natively.
+5. **Passive slide tracking** — `handleScroll` reports visible slide to parent without triggering `scrollIntoView` fights. Uses `lastProgrammaticSlideRef` to skip redundant scrolls.
+6. **scroll-snap** — `scroll-snap-type: y proximity` on container with `scroll-snap-align: start` on slides provides native smooth snapping without JS intervention.
+7. **Bottom padding reduced** — Changed from `pb-[80svh]` to `pb-[20vh]` so gallery doesn't have excessive empty space.
+8. **Accordion removed from slide system** — The accordion (artist bio, specs, description) is no longer tracked as a "slide". It's now a separate scrollable section between Spline and gallery, allowing natural interaction without the slide system interfering.
+
+**Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Smooth, fluid scrolling between Spline, accordions, and gallery. Accordion buttons work without being blocked by slide transitions.
+
+**Files changed**:
+- [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — canvas pointer-events disabled, orbit controls disabled, gesture detection on container
+- [`app/(store)/shop/experience/components/SplineFullScreen.tsx`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) — scroll-snap, passive slide tracking, reduced padding, accordion removed from slide refs
+- [`app/(store)/shop/experience/components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience/components/ExperienceV2Client.tsx) — slide count updated, gallerySlideOffset simplified
+- [`app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — same updates for v2
+
 ### Spline Viewport Sizing (2026-03-19)
 
-Fixed inconsistent 3D model proportions ("squished" appearance) across different screen sizes:
+The Spline preview is responsive: the model scales down as the screen becomes smaller so it fits the viewport height and width without skewing.
 
-1. **Container as single source of truth**: `spline-3d-preview.tsx` now uses container `getBoundingClientRect()` exclusively for renderer/camera sizing, instead of prioritizing `canvas.clientWidth/clientHeight` which can be inflated or transitional during layout settling.
+1. **Fit-within-viewport sizing**: `getContainerSize()` computes a size that fits within the container while preserving the lamp aspect ratio (4:5). On smaller screens the model scales down proportionally; on wider viewports it is letterboxed to avoid distortion.
 
-2. **Stable viewport height**: `SplineFullScreen.tsx` uses `svh` (small viewport height) units instead of `dvh` (dynamic viewport height) for scrollable carousel mode. `svh` doesn't change with mobile browser chrome appearance/disappearance, avoiding layout shifts that cause aspect ratio drift.
+2. **Centered canvas**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds.
 
-3. **Debug logging**: Added dev-only aspect ratio logging in `applySize()` (controlled by `NEXT_PUBLIC_SPLINE_VERBOSE=1`) to help verify sizing during resize/rotate transitions.
+3. **Container as single source of truth**: `getContainerSize()` uses container `getBoundingClientRect()` for renderer/camera sizing (not `canvas.clientWidth/clientHeight` which can be transitional during layout settling).
+
+4. **Stable viewport height**: `SplineFullScreen.tsx` uses `svh` (small viewport height) instead of `dvh` for scrollable carousel mode. `svh` doesn't change with mobile browser chrome, avoiding layout shifts.
+
+5. **Debug logging**: Dev-only aspect ratio logging in `applySize()` (controlled by `NEXT_PUBLIC_SPLINE_VERBOSE=1`).
 
 **Files changed**:
 - [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — sizing logic and debug logs
@@ -207,11 +232,21 @@ API: `GET /api/shop/artist-spotlight` returns `{ vendorName, vendorSlug, bio, im
 
 **Unlisted products (early access)**: The Storefront API omits [unlisted products](https://shopify.dev/docs/apps/build/product-merchandising/unlisted-products) from `collection.products`. To show them, the app uses the **Shopify Admin API** to read the collection’s product handles (including unlisted), then fetches each product by handle via Storefront. **Public** Storefront tokens often return `null` for unlisted products even when querying by handle; set **`SHOPIFY_STOREFRONT_PRIVATE_TOKEN`** (a private Storefront API token, server-only) so unlisted products are returned. Optional: set `custom.product_handles` on the collection to override or limit which products are shown. Implementation: [`lib/shopify/admin-collection-products.ts`](../../../lib/shopify/admin-collection-products.ts); [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) (`getProductsByHandles` private-token fallback); experience page and artist-spotlight API call it when Storefront returns 0 products for a collection. **Online Store only in default experience:** Products not active on the Online Store channel (e.g. COA app channel only) are excluded from the normal experience; the default spotlight and product list use only Storefront (Online Store). Admin/COA fallback runs only for `?artist=<handle>` early-access links, so artists with no Online Store products do not appear as the default spotlight.
 
+## Scarcity Counter (2026-03-19)
+
+The scarcity bar on artwork detail shows remaining inventory as a percentage of edition size.
+
+- **Data source**: `quantityAvailable` from Storefront API (full product) or fallback to `GET /api/shop/products/by-id/[id]/quantity`.
+- **Quantity API**: Sums inventory across all variants (not just first variant). If `inventory_quantity` is deprecated/missing on variants, falls back to Inventory Levels API.
+- **Display**: Bar width = `min(100, (available / editionSize) * 100)`; capped at 100% when data is inconsistent.
+- **Implementation**: [`ScarcityBadge.tsx`](../../../app/(store)/shop/experience-v2/components/ScarcityBadge.tsx), [`quantity/route.ts`](../../../app/api/shop/products/by-id/[id]/quantity/route.ts).
+
 ## API Endpoints (Products)
 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/shop/products/[handle]` | Full product for ArtworkDetail (on-demand) |
+| `GET /api/shop/products/by-id/[id]/quantity` | Inventory quantity for scarcity bar (Admin API + Inventory Levels fallback) |
 | `GET /api/shop/artists/[slug]` | Artist bio/filter when arriving from `?artist=` link |
 | `GET /api/shop/collected-products` | Product IDs user owns (for Collected badge) |
 | `GET /api/shop/artist-spotlight` | Most recent vendor new drop (for spotlight banner) |

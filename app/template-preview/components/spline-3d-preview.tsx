@@ -196,10 +196,8 @@ export function Spline3DPreview({
   const frontLockUntilRef = useRef(0)
   // First artwork-driven rotate gets a full spin; later rotates are reduced to half spin.
   const hasCompletedArtworkSpinRef = useRef(false)
-  const [viewRollViewportScale, setViewRollViewportScale] = useState({ x: 1, y: 1 })
   const previewQuarterTurnsRef = useRef(previewQuarterTurns)
   previewQuarterTurnsRef.current = previewQuarterTurns
-
   const SCENE_PATH = '/spline/splinemodel2/scene.splinecode'
   /** Base image shown when an artwork is deselected (served from public). */
   const BASE_IMAGE_URL = '/internal.webp'
@@ -1259,21 +1257,28 @@ export function Spline3DPreview({
     const forceCursorGrab = () => canvas.style.setProperty('cursor', 'grab', 'important')
     const forceCursorGrabbing = () => canvas.style.setProperty('cursor', 'grabbing', 'important')
 
-    // Resize handler: app.setSize resizes the WebGL renderer buffer but does NOT update the
-    // camera's projection matrix. Without updating camera.aspect the scene is projected with
-    // the wrong aspect ratio and the model appears squashed/stretched.
+    /** Lamp aspect ratio (width/height) for mobile — model fits without skewing. */
+    const LAMP_ASPECT = 4 / 5
     const getContainerSize = (): { w: number; h: number } | null => {
-      // ALWAYS use container bounds as the single source of truth.
-      // Canvas clientWidth/clientHeight can be inflated or transitional during layout settling
-      // (especially with CSS transforms for rotation), causing aspect ratio drift.
       const rect = container.getBoundingClientRect()
-      const w = Math.round(rect.width)
-      const h = Math.round(rect.height)
-      // Guard: require minimum 10px to avoid WebGL/rendering glitches
-      if (w >= 10 && h >= 10) {
-        return { w, h }
+      const cw = rect.width
+      const ch = rect.height
+      if (cw < 10 || ch < 10) return null
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+      if (isDesktop) {
+        // Desktop: fill viewport — use full container for best fit
+        return { w: Math.round(cw), h: Math.round(ch) }
       }
-      return null
+      // Mobile: fit within viewport preserving aspect ratio
+      let w: number, h: number
+      if (cw / ch > LAMP_ASPECT) {
+        h = ch
+        w = ch * LAMP_ASPECT
+      } else {
+        w = cw
+        h = cw / LAMP_ASPECT
+      }
+      return { w: Math.round(w), h: Math.round(h) }
     }
     const applySize = (appInstance?: Application | null) => {
       const size = getContainerSize()
@@ -1282,16 +1287,13 @@ export function Spline3DPreview({
       const newAspect = size.w / size.h
       if (app) {
         app.setSize(size.w, size.h)
-        // Fix camera aspect ratio so the scene is not squashed/stretched.
-        // app.setSize only resizes the renderer buffer; it does not touch the camera.
         const cam = (app as any).camera
         if (cam && typeof cam.aspect === 'number' && size.h > 0) {
-          const prevAspect = cam.aspect
           cam.aspect = newAspect
           if (typeof cam.updateProjectionMatrix === 'function') {
             cam.updateProjectionMatrix()
           }
-          splineLog(`[Spline3D] applySize: ${size.w}x${size.h}, aspect ${prevAspect.toFixed(3)} -> ${newAspect.toFixed(3)}`)
+          splineLog(`[Spline3D] applySize: ${size.w}x${size.h}, aspect ${newAspect.toFixed(3)}`)
         }
       } else {
         canvas.width = size.w
@@ -1316,7 +1318,6 @@ export function Spline3DPreview({
     }
     const resizeOb = new ResizeObserver(scheduleResize)
     resizeOb.observe(container)
-    resizeOb.observe(canvas)
     window.addEventListener('resize', scheduleResize)
     window.addEventListener('orientationchange', scheduleResize)
     if (typeof window.visualViewport !== 'undefined') {
@@ -1400,27 +1401,19 @@ export function Spline3DPreview({
               setSceneBackground(scene, hex, app)
             }
           }
-          // Overwrite only conflicting control settings so custom drag logic remains stable.
+          // Fully disable orbit controls so they don't capture touch/wheel events.
+          // Rotation is handled by custom tick() rAF loop; orbit controls would block scroll.
           try {
             const a = app as any
             const controls = a.controls || a._controls || a.orbitControls || a.cameraControls ||
               (a.manager && (a.manager.controls || a.manager._controls)) ||
               (a._manager && (a._manager.controls || a._manager._controls))
-            const cam = a.camera
             if (controls) {
               if (typeof controls.enableRotate === 'boolean') controls.enableRotate = false
               if (typeof controls.enablePan === 'boolean') controls.enablePan = false
-              // Keep zoom/control loop alive; fully disabling controls caused unstable behavior.
-              if (typeof controls.enableZoom === 'boolean') controls.enableZoom = true
-              if (typeof controls.enabled === 'boolean') controls.enabled = true
-              if (cam && controls.getDistance && typeof controls.getDistance === 'function') {
-                const d = controls.getDistance()
-                const minD = Math.max(1, d * 0.9)
-                const maxD = d * 1.05
-                if (controls.minDistance !== undefined) controls.minDistance = minD
-                if (controls.maxDistance !== undefined) controls.maxDistance = maxD
-              }
-              if (typeof controls.update === 'function') controls.update()
+              if (typeof controls.enableZoom === 'boolean') controls.enableZoom = false
+              if (typeof controls.enabled === 'boolean') controls.enabled = false
+              if (typeof controls.dispose === 'function') controls.dispose()
             }
           } catch (_) { /* camera controls unavailable */ }
           const reapplyTransparentBgIfAr = () => {
@@ -2453,41 +2446,6 @@ export function Spline3DPreview({
     } catch (_) { /* camera reset unavailable */ }
   }, [resetTrigger, isLoading, error, onFrontSideSettled])
 
-  // Rotate rendered view in 90deg increments (portrait/landscape) without rotating model axis.
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-    const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
-    const isSideways = normalizedTurns % 2 === 1
-
-    const recomputeScale = () => {
-      if (!isSideways) {
-        setViewRollViewportScale({ x: 1, y: 1 })
-        return
-      }
-      const rect = container.getBoundingClientRect()
-      if (!rect.width || !rect.height || rect.width < 10 || rect.height < 10) {
-        setViewRollViewportScale({ x: 1, y: 1 })
-        return
-      }
-      // For 90/270deg, use swapped viewport dimensions instead of scaling model output.
-      const rawX = rect.height / rect.width
-      const rawY = rect.width / rect.height
-      const x = Number.isFinite(rawX) && rawX > 0 ? Math.min(4, Math.max(0.25, rawX)) : 1
-      const y = Number.isFinite(rawY) && rawY > 0 ? Math.min(4, Math.max(0.25, rawY)) : 1
-      setViewRollViewportScale({ x, y })
-    }
-
-    recomputeScale()
-    const ro = new ResizeObserver(recomputeScale)
-    ro.observe(container)
-    window.addEventListener('resize', recomputeScale)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', recomputeScale)
-    }
-  }, [previewQuarterTurns])
-
   useEffect(() => {
     if (!animate || isLoading || error) return
 
@@ -2530,15 +2488,39 @@ export function Spline3DPreview({
       isPointerOverRef.current = false
       cursorTargetRef.current = { x: 0, y: 0 }
     }
-    const handleTouchStart = () => {
+    const touchStartRef = { x: 0, y: 0 }
+    const gestureCommittedRef = { value: false }
+    const gestureIsVerticalRef = { value: false }
+    const handleTouchStart = (e: TouchEvent) => {
       if (!container || !interactive) return
-      isPointerOverRef.current = true
+      const touch = e.touches[0]
+      if (touch) {
+        touchStartRef.x = touch.clientX
+        touchStartRef.y = touch.clientY
+        gestureCommittedRef.value = false
+        gestureIsVerticalRef.value = false
+      }
     }
     const handleTouchMove = (e: TouchEvent) => {
       if (!container || !interactive) return
       const touch = e.touches[0]
       if (!touch) return
-      isPointerOverRef.current = true
+      if (gestureIsVerticalRef.value) return
+      if (!gestureCommittedRef.value) {
+        const dx = Math.abs(touch.clientX - touchStartRef.x)
+        const dy = Math.abs(touch.clientY - touchStartRef.y)
+        const threshold = 10
+        if (dx > threshold || dy > threshold) {
+          gestureCommittedRef.value = true
+          if (dy > dx * 1.2) {
+            gestureIsVerticalRef.value = true
+            isPointerOverRef.current = false
+            return
+          }
+          isPointerOverRef.current = true
+        }
+        return
+      }
       const rect = container.getBoundingClientRect()
       const x = (touch.clientX - rect.left) / rect.width
       const y = (touch.clientY - rect.top) / rect.height
@@ -2547,6 +2529,7 @@ export function Spline3DPreview({
     const handleTouchEnd = () => {
       isPointerOverRef.current = false
       cursorTargetRef.current = { x: 0, y: 0 }
+      gestureIsVerticalRef.value = false
     }
 
     if (interactive && container) {
@@ -2810,11 +2793,12 @@ export function Spline3DPreview({
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
-    const isSidewaysTurn = normalizedTurns % 2 === 1
-    const widthPct = `${viewRollViewportScale.x * 100}%`
-    const heightPct = `${viewRollViewportScale.y * 100}%`
     return (
-      <div ref={containerRef} className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden [&_canvas]:!cursor-grab [&_canvas:active]:!cursor-grabbing cursor-grab active:cursor-grabbing")}>
+      <div
+        ref={containerRef}
+        className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing")}
+        style={{ touchAction: 'pan-y' }}
+      >
         {/* Background layer - transparent in cameraFeedMode so video shows through */}
         <div
           className="absolute inset-0 -z-10"
@@ -2823,7 +2807,7 @@ export function Spline3DPreview({
         />
         {isLoading && !error && (
           <div
-            className="absolute inset-0 flex items-center justify-center z-10"
+            className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
             style={{ backgroundColor: bgHex }}
           >
             <div className="flex flex-col items-center gap-3">
@@ -2862,18 +2846,17 @@ export function Spline3DPreview({
         )}
         <canvas
           ref={canvasRef}
-          className="absolute !cursor-grab active:!cursor-grabbing"
+          className="block"
           style={{
             display: "block",
-            top: "50%",
-            left: "50%",
-            width: isSidewaysTurn ? widthPct : "100%",
-            height: isSidewaysTurn ? heightPct : "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
-            cursor: "grab",
-            transform: `translate(-50%, -50%) translateY(-4%) rotate(${normalizedTurns * 90}deg)`,
+            pointerEvents: 'none',
+            touchAction: 'none',
+            transform: `translateY(-4%) rotate(${normalizedTurns * 90}deg)`,
             transformOrigin: "50% 50%",
-            transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 260ms cubic-bezier(0.22, 1, 0.36, 1), height 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
       </div>
