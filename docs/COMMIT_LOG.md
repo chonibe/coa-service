@@ -1,5 +1,20 @@
 # Commit Log
 
+## Commit: style(experience): center footers, remove row/spine borders (2026-03-20)
+
+**Ref:** `af72f76ce`
+
+### Summary
+Picker and strip: **centered** artwork title and price under each image; removed **border between image and footer** on strip cards; removed **outer border** on 2-up artist rows; center **artist spine** is text-only (**no** background or vertical borders).
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) – footer layout, row wrapper, spine
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) – footer layout, row wrapper, spine
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: feat(experience): artist-grouped rows, center spine, title+price footers (2026-03-20)
 
 **Ref:** `df1826a02`
