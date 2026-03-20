@@ -10,6 +10,11 @@ import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { buildArtworkRowsByArtist, rowIndexForProductId } from '@/lib/shop/experience-artwork-rows'
+import {
+  experienceArtistRowDefaultClass,
+  experienceArtistRowMergeClass,
+  getStripArtworkCardSurfaces,
+} from '@/lib/shop/experience-artwork-card-surfaces'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -253,6 +258,7 @@ function ArtworkCard({
   const flushToSpine = isMerged || spinePairLayout
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
+  const surfaces = getStripArtworkCardSurfaces(isMerged, isInCart)
 
   const showTapHint = showTapNudge && !isInCart && !isSoldOut && lampPosition === null
 
@@ -262,28 +268,20 @@ function ArtworkCard({
       data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
         'relative box-border border-2 border-transparent origin-center',
-        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
+        surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
-        (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
-        isInCart && !isMerged && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isMerged && 'bg-[#f0f9ff] dark:bg-[#2c2828]',
-        isInCart && !isMerged && 'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
+        (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden'
       )}
     >
       <motion.div
         className={cn(
           'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
-          'transition-[background-color] duration-200 ease-out',
+          surfaces.imageWell,
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
-          !roundLeft && roundRight && 'rounded-tr-xl',
-          isMerged
-            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-            : isInCart
-              ? 'bg-[#e8f4ff] dark:bg-[#171515]'
-              : 'bg-neutral-100 dark:bg-[#201c1c]'
+          !roundLeft && roundRight && 'rounded-tr-xl'
         )}
         animate={showTapHint ? {
           scale: [1, 0.955, 1, 0.955, 1],
@@ -380,22 +378,13 @@ function ArtworkCard({
       <div
         className={cn(
           'px-2 flex flex-col gap-1 overflow-hidden cursor-pointer',
-          'transition-[background-color,color] duration-200 ease-out',
+          surfaces.meta,
           isMerged ? 'pt-0 pb-0.5' : 'pt-0.5 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
-          !roundLeft && roundRight && 'rounded-br-xl',
-          isMerged
-            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-            : isInCart
-              ? 'bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
-              : 'bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
+          !roundLeft && roundRight && 'rounded-br-xl'
         )}
-        style={
-          isMerged
-            ? undefined
-            : { backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }
-        }
+        style={surfaces.metaStyle}
         onClick={(e) => {
           if (isSoldOut) return
           if ((e.target as HTMLElement).closest('button')) return
@@ -786,10 +775,7 @@ export function ArtworkStrip({
               <div
                 className={cn(
                   'relative flex rounded-xl overflow-hidden',
-                  'transition-[background-color] duration-200 ease-out',
-                  shouldMerge
-                    ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-                    : 'bg-white dark:bg-[#171515]'
+                  shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
                 )}
               >
                 {shouldMerge && <MergeConfetti active={justMerged} />}

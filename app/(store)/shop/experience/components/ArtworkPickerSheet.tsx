@@ -12,6 +12,11 @@ import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/c
 import { FilterPanel, hasActiveFilters, type FilterState } from '../../experience-v2/components/FilterPanel'
 import { cn } from '@/lib/utils'
 import { buildArtworkRowsByArtist } from '@/lib/shop/experience-artwork-rows'
+import {
+  experienceArtistRowDefaultClass,
+  experienceArtistRowMergeClass,
+  getPickerArtworkCardSurfaces,
+} from '@/lib/shop/experience-artwork-card-surfaces'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -110,6 +115,7 @@ function ArtworkCardV2({
   const roundRight = !flushToSpine || mergeWithLeft
   const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
   const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
+  const surfaces = getPickerArtworkCardSurfaces(isSelected)
 
   const handleClick = useCallback(() => {
     onSelect(product)
@@ -120,21 +126,19 @@ function ArtworkCardV2({
       data-product-id={product.id}
       className={cn(
         'relative box-border border-2 border-transparent origin-center overflow-hidden',
-        'transition-[background-color] duration-200 ease-out',
+        surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
-        !roundLeft && roundRight && 'rounded-r-xl',
-        isSelected && 'bg-[#f0f9ff]'
+        !roundLeft && roundRight && 'rounded-r-xl'
       )}
     >
       <motion.div
         className={cn(
           'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
-          'transition-[background-color] duration-200 ease-out',
+          surfaces.imageWell,
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
-          !roundLeft && roundRight && 'rounded-tr-xl',
-          isSelected ? 'bg-[#f0f9ff] dark:bg-[#171515]' : 'bg-white dark:bg-[#171515]'
+          !roundLeft && roundRight && 'rounded-tr-xl'
         )}
         whileTap={{ scale: 0.99 }}
         transition={{ duration: 0.12, ease: 'easeOut' }}
@@ -144,23 +148,17 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
-        {isSelected && (
-          <div
-            className="hidden dark:block absolute inset-x-0 bottom-0 top-1/2 z-[1] pointer-events-none bg-[#2c2828]/90 transition-opacity duration-200"
-            aria-hidden
-          />
-        )}
         {imageUrl ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 z-[2] bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
+              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
               src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
-              className={cn('object-cover transition-opacity duration-200 z-[2]', imageLoaded ? 'opacity-100' : 'opacity-0')}
+              className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
               loading="eager"
@@ -170,7 +168,7 @@ function ArtworkCardV2({
           </>
         ) : (
           <div className={cn(
-            'relative z-[2] w-full h-full flex items-center justify-center text-xs',
+            'w-full h-full flex items-center justify-center text-xs',
             isSelected ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
           )}>
             No image
@@ -210,14 +208,11 @@ function ArtworkCardV2({
       <div
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
-          'transition-[background-color,color] duration-200 ease-out',
+          surfaces.meta,
           (mergeWithLeft || mergeWithRight) ? 'pt-0 pb-0.5' : 'pt-0.5 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
-          !roundLeft && roundRight && 'rounded-br-xl',
-          isSelected
-            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-            : 'bg-white dark:bg-[#171515]'
+          !roundLeft && roundRight && 'rounded-br-xl'
         )}
         onClick={handleClick}
       >
@@ -550,8 +545,9 @@ export function ArtworkPickerSheet({
                         <div
                           className={cn(
                             'relative flex rounded-xl overflow-hidden',
-                            'transition-[background-color] duration-200 ease-out',
-                            shouldMerge ? 'py-1 mx-0.5 my-0.5 bg-[#f0f9ff] dark:bg-[#2c2828]' : 'pb-2 bg-white dark:bg-[#171515]'
+                            shouldMerge
+                              ? cn('py-1 mx-0.5 my-0.5', experienceArtistRowMergeClass)
+                              : cn('pb-2', experienceArtistRowDefaultClass)
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
