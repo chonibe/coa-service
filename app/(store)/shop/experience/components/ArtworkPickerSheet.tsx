@@ -205,7 +205,7 @@ function ArtworkCardV2({
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
           'transition-[background-color,color] duration-200 ease-out',
-          (mergeWithLeft || mergeWithRight) ? 'py-1' : 'py-1.5',
+          (mergeWithLeft || mergeWithRight) ? 'pt-0 pb-0.5' : 'pt-0.5 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',

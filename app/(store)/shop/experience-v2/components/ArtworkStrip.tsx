@@ -379,9 +379,9 @@ function ArtworkCard({
 
       <div
         className={cn(
-          'px-2 flex flex-col gap-1.5 overflow-hidden cursor-pointer',
+          'px-2 flex flex-col gap-1 overflow-hidden cursor-pointer',
           'transition-[background-color,color] duration-200 ease-out',
-          isMerged ? 'py-1' : 'py-1.5',
+          isMerged ? 'pt-0 pb-0.5' : 'pt-0.5 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',
