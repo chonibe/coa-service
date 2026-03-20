@@ -148,17 +148,26 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
+        {isSelected && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-1/2 bottom-0 z-[1] hidden bg-[#2c2828]/90 transition-[background-color] duration-200 ease-out dark:block"
+            aria-hidden
+          />
+        )}
         {imageUrl ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
+              <div className="absolute inset-0 z-[2] bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
               src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
-              className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
+              className={cn(
+                'z-[2] object-cover transition-opacity duration-200',
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              )}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
               loading="eager"
@@ -168,7 +177,7 @@ function ArtworkCardV2({
           </>
         ) : (
           <div className={cn(
-            'w-full h-full flex items-center justify-center text-xs',
+            'relative z-[2] w-full h-full flex items-center justify-center text-xs',
             isSelected ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
           )}>
             No image

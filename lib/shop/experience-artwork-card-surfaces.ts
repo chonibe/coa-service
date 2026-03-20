@@ -27,8 +27,12 @@ export function getPickerArtworkCardSurfaces(isSelected: boolean): PickerArtwork
   const t = `transition-[background-color] ${BG_EASE}`
   const tm = `transition-[background-color,color] ${BG_EASE}`
   return {
-    shell: cn(t, isSelected && 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
-    imageWell: cn(t, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
+    // Dark + selected: no full shell tint — image well uses base + bottom-half overlay in the component.
+    shell: cn(t, isSelected && 'bg-[#f0f9ff] dark:bg-transparent'),
+    imageWell: cn(
+      t,
+      isSelected ? 'bg-[#f0f9ff] dark:bg-[#171515]' : 'bg-white dark:bg-[#171515]'
+    ),
     meta: cn(tm, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
   }
 }
