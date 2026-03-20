@@ -191,7 +191,7 @@ function ArtworkCardV2({
 
       <div
         className={cn(
-          'px-2 flex items-center justify-between gap-2 transition-colors overflow-hidden cursor-pointer',
+          'px-2 flex flex-col items-center justify-center text-center transition-colors overflow-hidden cursor-pointer',
           (mergeWithLeft || mergeWithRight) ? 'py-1' : 'py-1.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
@@ -202,12 +202,12 @@ function ArtworkCardV2({
         )}
         onClick={handleClick}
       >
-        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <div className="w-full min-w-0 flex flex-col gap-0.5 items-center">
           <p className={cn(
-            'text-xs font-medium truncate',
+            'text-xs font-medium truncate max-w-full',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
               'text-xs font-medium',
               showEarlyAccessPrice
@@ -534,7 +534,7 @@ export function ArtworkPickerSheet({
                             shouldMerge ? 'py-1 mx-1 my-0.5' : 'pb-2',
                             shouldMerge
                               ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
-                              : 'flex rounded-xl overflow-hidden border border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#171515]'
+                              : 'flex rounded-xl overflow-hidden bg-white dark:bg-[#171515]'
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -554,14 +554,7 @@ export function ArtworkPickerSheet({
                               />
                             </div>
                           )}
-                          <div
-                            className={cn(
-                              'shrink-0 flex flex-col items-center justify-center px-1',
-                              shouldMerge
-                                ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-                                : 'bg-neutral-50 dark:bg-[#201c1c] border-x border-neutral-200 dark:border-[#2c2828]'
-                            )}
-                          >
+                          <div className="shrink-0 flex flex-col items-center justify-center px-1 bg-transparent">
                             <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-1">
                               {artistLabel}
                             </span>

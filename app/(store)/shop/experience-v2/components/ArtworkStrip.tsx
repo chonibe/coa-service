@@ -377,16 +377,16 @@ function ArtworkCard({
 
       <div
         className={cn(
-          'px-2 flex items-center gap-1 transition-colors overflow-hidden cursor-pointer',
-          isMerged ? 'py-1' : 'py-1.5 border-t',
+          'px-2 flex flex-col gap-1.5 transition-colors overflow-hidden cursor-pointer',
+          isMerged ? 'py-1' : 'py-1.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',
           isMerged
             ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
             : isInCart
-              ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
-              : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
+              ? 'bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
+              : 'bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
         )}
         style={
           isMerged
@@ -399,12 +399,12 @@ function ArtworkCard({
           handleLampSelect()
         }}
       >
-        <div className="flex-1 min-w-0">
+        <div className="w-full min-w-0 flex flex-col items-center text-center">
           <p className={cn(
-            'text-xs font-medium truncate',
+            'text-xs font-medium truncate max-w-full',
             isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
           )}>{product.title}</p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
               'text-xs',
               isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]',
@@ -428,7 +428,7 @@ function ArtworkCard({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0 justify-end w-full">
           <button
             data-highlight-btn={isFirstCard ? 'eye' : undefined}
             type="button"
@@ -784,7 +784,7 @@ export function ArtworkStrip({
                   'relative',
                   shouldMerge
                     ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
-                    : 'flex rounded-xl overflow-hidden border border-neutral-200/80 dark:border-[#2c2828] bg-white dark:bg-[#171515]'
+                    : 'flex rounded-xl overflow-hidden bg-white dark:bg-[#171515]'
                 )}
               >
                 {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -822,14 +822,7 @@ export function ArtworkStrip({
                     />
                   </div>
                 )}
-                <div
-                  className={cn(
-                    'shrink-0 flex flex-col items-center justify-center px-1.5',
-                    shouldMerge
-                      ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
-                      : 'bg-neutral-50 dark:bg-[#201c1c] border-x border-neutral-200/80 dark:border-[#2c2828]'
-                  )}
-                >
+                <div className="shrink-0 flex flex-col items-center justify-center px-1.5 bg-transparent">
                   <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
                     {artistLabel}
                   </span>
