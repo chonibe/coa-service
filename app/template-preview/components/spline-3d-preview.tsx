@@ -6,6 +6,8 @@ import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Application } from "@splinetool/runtime"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
+import { cn } from "@/lib/utils"
+import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
 
 const __SPLINE_DEV__ = process.env.NODE_ENV === "development"
 const __SPLINE_VERBOSE__ = process.env.NEXT_PUBLIC_SPLINE_VERBOSE === '1'
@@ -51,8 +53,40 @@ function getImageLoadUrl(imageUrl: string): string {
     return imageUrl
   }
 }
-import { cn } from "@/lib/utils"
-import { DEFAULT_SIDE_POSITION } from "@/lib/experience-image-position"
+
+/** Artwork grid / detail panel in shop experience — 3D column has no scrollable ancestor (sibling scroll). */
+const EXPERIENCE_ARTWORK_SCROLL_SELECTOR = "[data-experience-artwork-scroll]"
+
+function findFirstVerticallyScrollableAncestor(start: HTMLElement | null): HTMLElement | null {
+  let el: HTMLElement | null = start
+  while (el) {
+    const { overflowY } = window.getComputedStyle(el)
+    if (
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      el.scrollHeight > el.clientHeight + 1
+    ) {
+      return el
+    }
+    el = el.parentElement
+  }
+  return null
+}
+
+function findExperienceDesignatedScrollRegion(): HTMLElement | null {
+  if (typeof document === "undefined") return null
+  const list = document.querySelectorAll<HTMLElement>(EXPERIENCE_ARTWORK_SCROLL_SELECTOR)
+  for (const el of list) {
+    const { overflowY } = window.getComputedStyle(el)
+    if (
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      el.scrollHeight > el.clientHeight + 1
+    ) {
+      return el
+    }
+  }
+  return null
+}
+
 interface Spline3DPreviewProps {
   image1: string | null
   image2: string | null
@@ -2401,6 +2435,33 @@ export function Spline3DPreview({
   useEffect(() => {
     setBackgroundFromVariant()
   }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
+
+  // Wheel over the preview: scroll nearest scrollable ancestor (e.g. SplineFullScreen reel), or the
+  // designated artwork panel when 3D and list are siblings (Configurator desktop / mobile split).
+  useEffect(() => {
+    if (!minimal) return
+    const root = containerRef.current
+    if (!root) return
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      const t = e.target
+      if (!(t instanceof Node) || !root.contains(t)) return
+      const startEl = t instanceof HTMLElement ? t : t.parentElement
+      let scrollEl = findFirstVerticallyScrollableAncestor(startEl)
+      if (!scrollEl) scrollEl = findExperienceDesignatedScrollRegion()
+      if (!scrollEl) return
+      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight
+      if (maxScroll <= 0) return
+      const atTop = scrollEl.scrollTop <= 0
+      const atBottom = scrollEl.scrollTop >= maxScroll - 1
+      if (e.deltaY < 0 && atTop) return
+      if (e.deltaY > 0 && atBottom) return
+      scrollEl.scrollTop += e.deltaY
+      e.preventDefault()
+    }
+    root.addEventListener("wheel", onWheel, { passive: false })
+    return () => root.removeEventListener("wheel", onWheel)
+  }, [minimal])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })

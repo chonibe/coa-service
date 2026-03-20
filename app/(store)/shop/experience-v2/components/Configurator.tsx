@@ -47,16 +47,30 @@ function loadExperienceCart(ownsLamp: boolean): {
   }
 }
 
-const Spline3DPreview = dynamic(
-  () =>
-    import('@/app/template-preview/components/spline-3d-preview').then((m) => ({
-      default: m.Spline3DPreview,
-    })),
-  {
-    ssr: false,
-    loading: () => <SplinePreviewLoading />,
-  }
-)
+/** Retry chunk load on ChunkLoadError; reload page once if retry fails (stale dev cache). */
+const CHUNK_RELOAD_KEY = 'spline_chunk_reload'
+const loadSpline3DPreview = () =>
+  import('@/app/template-preview/components/spline-3d-preview')
+    .then((m) => ({ default: m.Spline3DPreview }))
+    .catch((err) => {
+      const isChunkError = err?.name === 'ChunkLoadError' || err?.message?.includes?.('Loading chunk')
+      if (!isChunkError) throw err
+      return import('@/app/template-preview/components/spline-3d-preview')
+        .then((m) => ({ default: m.Spline3DPreview }))
+        .catch((retryErr) => {
+          if (typeof window !== 'undefined' && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+            sessionStorage.setItem(CHUNK_RELOAD_KEY, '1')
+            window.location.reload()
+            return new Promise(() => {})
+          }
+          throw retryErr
+        })
+    })
+
+const Spline3DPreview = dynamic(loadSpline3DPreview, {
+  ssr: false,
+  loading: () => <SplinePreviewLoading />,
+})
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { LampGridCard } from './LampGridCard'
@@ -1841,6 +1855,7 @@ export function Configurator({
         {/* Artwork strip */}
         <div
           ref={artworkStripScrollRef}
+          data-experience-artwork-scroll
           onScroll={() => showLampPaywall && gridBlurred && setGridBlurred(false)}
           className={cn(
             'flex-1 overflow-y-auto overflow-x-hidden px-5 pt-3 min-h-0',

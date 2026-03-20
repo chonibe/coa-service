@@ -39,11 +39,14 @@ When the Spline 3D model captured touch for rotation, users couldn't scroll the 
 6. **scroll-snap** — `scroll-snap-type: y proximity` on container with `scroll-snap-align: start` on slides provides native smooth snapping without JS intervention.
 7. **Bottom padding reduced** — Changed from `pb-[80svh]` to `pb-[20vh]` so gallery doesn't have excessive empty space.
 8. **Accordion removed from slide system** — The accordion (artist bio, specs, description) is no longer tracked as a "slide". It's now a separate scrollable section between Spline and gallery, allowing natural interaction without the slide system interfering.
+9. **Wheel over 3D column → artwork scroll (2026-03-20)** — On the Configurator, the 3D preview and artwork grid are **siblings** inside a fixed layout: the pointer may sit over the model while the only vertical scroll container is the grid/detail panel. Native wheel events do not scroll a sibling, so `Spline3DPreview` (minimal mode) listens for `wheel` with `{ passive: false }`, finds the nearest scrollable **ancestor** when present (e.g. `SplineFullScreen` reel), otherwise scrolls the first `[data-experience-artwork-scroll]` region (artwork strip or inline ArtworkDetail body).
 
-**Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Smooth, fluid scrolling between Spline, accordions, and gallery. Accordion buttons work without being blocked by slide transitions.
+**Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Smooth, fluid scrolling between Spline, accordions, and gallery. Accordion buttons work without being blocked by slide transitions. Trackpad/mouse wheel over the lamp scrolls the artwork list or reel as expected.
 
 **Files changed**:
-- [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — canvas pointer-events disabled, orbit controls disabled, gesture detection on container
+- [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — canvas pointer-events disabled, orbit controls disabled, gesture detection on container, wheel forwarding for sibling scroll regions
+- [`app/(store)/shop/experience-v2/components/Configurator.tsx`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) — `data-experience-artwork-scroll` on artwork strip
+- [`app/(store)/shop/experience-v2/components/ArtworkDetail.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) — `data-experience-artwork-scroll` on desktop info column scroll
 - [`app/(store)/shop/experience/components/SplineFullScreen.tsx`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) — scroll-snap, passive slide tracking, reduced padding, accordion removed from slide refs
 - [`app/(store)/shop/experience/components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience/components/ExperienceV2Client.tsx) — slide count updated, gallerySlideOffset simplified
 - [`app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — same updates for v2

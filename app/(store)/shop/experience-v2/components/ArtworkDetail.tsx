@@ -351,7 +351,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       </div>
       {/* Right: Product info — artist, title, edition, scarcity, add button */}
       <div className="flex-1 min-w-0 flex flex-col pl-2 overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
+        <div
+          data-experience-artwork-scroll
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8"
+        >
           <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
             {artist && <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">{artist}</p>}
             <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">{product.title}</h2>
