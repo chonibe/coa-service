@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: refactor(experience): centralize artwork card surfaces (picker + strip) (2026-03-20)
+
+**Ref:** `0d99abd23`
+
+### Summary
+Introduced [`lib/shop/experience-artwork-card-surfaces.ts`](lib/shop/experience-artwork-card-surfaces.ts): **`getPickerArtworkCardSurfaces`**, **`getStripArtworkCardSurfaces`**, and **`experienceArtistRowMergeClass` / `experienceArtistRowDefaultClass`** for 2-up artist rows. **V1** [`ArtworkPickerSheet.tsx`](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and **V2** [`ArtworkStrip.tsx`](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) consume these instead of repeating hex pairs and transition strings on shell, image well, and meta/footer.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-artwork-card-surfaces.ts](lib/shop/experience-artwork-card-surfaces.ts)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: style(experience): picker full selected fill in light, half-tint in dark (2026-03-20)
 
 **Ref:** _(after commit)_
