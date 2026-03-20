@@ -32,6 +32,11 @@ const ArtworkPickerSheet = dynamic(
   { ssr: false }
 )
 import { cn } from '@/lib/utils'
+import {
+  carouselSlotIndexForProductId,
+  clampCarouselIndex,
+  uniqueCartIdsInOrder,
+} from '@/lib/shop/experience-carousel-cart'
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -60,12 +65,17 @@ function loadExperienceCart(): { cartOrder: string[]; lampQuantity: number; lamp
     if (!raw) return { cartOrder: [], lampQuantity: 1, lampPreviewOrder: [] }
     const p = JSON.parse(raw) as Record<string, unknown>
     const cart = Array.isArray(p.cartOrder) ? p.cartOrder : []
-    const lampPreview = Array.isArray(p.lampPreviewOrder) ? p.lampPreviewOrder : []
-    const validPreview = lampPreview.filter((id: string) => cart.includes(id)).slice(0, 2)
+    const hasLampPreviewKey = Object.prototype.hasOwnProperty.call(p, 'lampPreviewOrder')
+    const lampPreviewOrder = (() => {
+      if (hasLampPreviewKey && Array.isArray(p.lampPreviewOrder)) {
+        return (p.lampPreviewOrder as string[]).filter((id: string) => cart.includes(id)).slice(0, 2)
+      }
+      return cart.length > 0 ? cart.slice(0, 2) : []
+    })()
     return {
       cartOrder: cart,
       lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 1,
-      lampPreviewOrder: validPreview.length > 0 ? validPreview : cart.slice(0, 2),
+      lampPreviewOrder,
     }
   } catch {
     return { cartOrder: [], lampQuantity: 1, lampPreviewOrder: [] }
@@ -229,6 +239,11 @@ export function ExperienceV2Client({
     [allProducts, cartOrder]
   )
 
+  const carouselArtworks = useMemo(() => {
+    const ids = uniqueCartIdsInOrder(cartOrder)
+    return ids.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[]
+  }, [allProducts, cartOrder])
+
   const productsForActiveSeason = useMemo(
     () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
     [activeSeason, productsSeason1, productsSeason2]
@@ -376,42 +391,82 @@ export function ExperienceV2Client({
     return 'A'
   }, [])
 
-  const handleRemoveFromCarousel = useCallback((index: number) => {
-    const removedId = cartOrder[index]
+  /** Remove one cart line (OrderBar quantity −1). Indices are `cartOrder` positions. */
+  const handleRemoveCartOrderItemAtIndex = useCallback((cartIndex: number) => {
     setCartOrder((prev) => {
-      const filtered = prev.filter((_, i) => i !== index)
+      if (cartIndex < 0 || cartIndex >= prev.length) return prev
+      const removedId = prev[cartIndex]!
+      const filtered = prev.filter((_, i) => i !== cartIndex)
+
       if (filtered.length === 0) {
         setResetTrigger((t) => t + 1)
         setRotateToSide(null)
         setActiveCarouselIndex(-1)
         setLampPreviewOrder([])
-      } else {
-        setLampPreviewOrder((prev) => {
-          const next = prev.filter((id) => id !== removedId)
+        return filtered
+      }
+
+      setLampPreviewOrder((prevLamp) => {
+        const next = prevLamp.filter((id) => id !== removedId)
+        if (next.length === 0) {
+          setRotateToSide(null)
+          setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
+          return []
+        }
+        if (next.length < prevLamp.length) {
+          const remainingId = next[0]
+          const sideToShow = getSideToShowForProduct(next, remainingId)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+          setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, remainingId))
+        } else {
+          setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
+        }
+        return next
+      })
+
+      return filtered
+    })
+  }, [getSideToShowForProduct])
+
+  /** Carousel trash: remove every line for that product (deduped tile). */
+  const handleRemoveCarouselSlot = useCallback(
+    (carouselIndex: number) => {
+      const product = carouselArtworks[carouselIndex]
+      if (!product) return
+      const removedId = product.id
+      setCartOrder((prev) => {
+        const filtered = prev.filter((id) => id !== removedId)
+        if (filtered.length === 0) {
+          setResetTrigger((t) => t + 1)
+          setRotateToSide(null)
+          setActiveCarouselIndex(-1)
+          setLampPreviewOrder([])
+          return filtered
+        }
+        setLampPreviewOrder((prevLamp) => {
+          const next = prevLamp.filter((id) => id !== removedId)
           if (next.length === 0) {
             setRotateToSide(null)
-            setActiveCarouselIndex(-1)
+            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
             return []
           }
-          if (next.length < prev.length) {
+          if (next.length < prevLamp.length) {
             const remainingId = next[0]
             const sideToShow = getSideToShowForProduct(next, remainingId)
             setRotateTrigger((t) => t + 1)
             setRotateToSide(sideToShow)
-            setActiveCarouselIndex(filtered.indexOf(remainingId))
+            setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, remainingId))
           } else {
-            setActiveCarouselIndex((current) => {
-              if (current === index) return Math.max(0, index - 1)
-              if (current > index) return current - 1
-              return current
-            })
+            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
           }
           return next
         })
-      }
-      return filtered
-    })
-  }, [cartOrder, getSideToShowForProduct])
+        return filtered
+      })
+    },
+    [carouselArtworks, getSideToShowForProduct]
+  )
 
   const handleAdjustArtworkQuantity = useCallback(
     (runStartIndex: number, delta: 1 | -1) => {
@@ -422,7 +477,7 @@ export function ExperienceV2Client({
         let end = runStartIndex
         while (end < prev.length && prev[end] === id) end++
         if (end <= runStartIndex) return
-        handleRemoveFromCarousel(end - 1)
+        handleRemoveCartOrderItemAtIndex(end - 1)
         return
       }
       setCartOrder((prev) => {
@@ -435,7 +490,7 @@ export function ExperienceV2Client({
         return next
       })
     },
-    [cartOrder, handleRemoveFromCarousel]
+    [cartOrder, handleRemoveCartOrderItemAtIndex]
   )
 
   useEffect(() => {
@@ -515,7 +570,7 @@ export function ExperienceV2Client({
           const sideToShow = getSideToShowForProduct(newOrder, remainingId)
           setRotateTrigger((t) => t + 1)
           setRotateToSide(sideToShow)
-          setActiveCarouselIndex(cartOrder.indexOf(remainingId))
+          setActiveCarouselIndex(carouselSlotIndexForProductId(cartOrder, remainingId))
         }
         return newOrder
       }
@@ -527,7 +582,7 @@ export function ExperienceV2Client({
       const sideToShow = getSideToShowForProduct(newOrder, product.id)
       setRotateTrigger((t) => t + 1)
       setRotateToSide(sideToShow)
-      setActiveCarouselIndex(cartOrder.indexOf(product.id))
+      setActiveCarouselIndex(carouselSlotIndexForProductId(cartOrder, product.id))
       return newOrder
     })
   }, [getSideToShowForProduct, cartOrder])
@@ -555,15 +610,10 @@ export function ExperienceV2Client({
                 const sideToShow = getSideToShowForProduct(next, next[0])
                 setRotateTrigger((t) => t + 1)
                 setRotateToSide(sideToShow)
-                setActiveCarouselIndex(filtered.indexOf(next[0]))
+                setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, next[0]))
               }
             } else {
-              setActiveCarouselIndex((current) => {
-                const removedIdx = prev.indexOf(product.id)
-                if (current === removedIdx) return Math.max(0, removedIdx - 1)
-                if (current > removedIdx) return current - 1
-                return current
-              })
+              setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
             }
             return next
           })
@@ -573,6 +623,7 @@ export function ExperienceV2Client({
       return [...prev, product.id]
     })
     if (isAdding) {
+      const nextCart = [...cartOrder, product.id]
       scrollToSplineRef.current = true
       setPreviewSlideIndex(0)
       setDisplayedProduct(product)
@@ -584,7 +635,7 @@ export function ExperienceV2Client({
           const sideToShow = getSideToShowForProduct(prev, product.id)
           setRotateTrigger((t) => t + 1)
           setRotateToSide(sideToShow)
-          setActiveCarouselIndex(cartOrder.length)
+          setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
           return prev
         }
         const newOrder = prev.length >= 2
@@ -595,14 +646,14 @@ export function ExperienceV2Client({
         const sideToShow = getSideToShowForProduct(newOrder, product.id)
         setRotateTrigger((t) => t + 1)
         setRotateToSide(sideToShow)
-        setActiveCarouselIndex(cartOrder.length)
+        setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
         return newOrder
       })
     }
-  }, [activeCarouselIndex, cartOrder, getSideToShowForProduct])
+  }, [cartOrder, getSideToShowForProduct])
 
   const handleTapCarouselItem = useCallback((index: number) => {
-    const product = selectedArtworks[index]
+    const product = carouselArtworks[index]
     if (!product) return
     scrollToSplineRef.current = true
     setPreviewSlideIndex(0)
@@ -611,13 +662,9 @@ export function ExperienceV2Client({
       setDisplayedProduct(lamp)
       return
     }
-    if (lampPreviewOrder.includes(product.id)) {
-      setRotateToSide(getSideToShowForProduct(lampPreviewOrder, product.id))
-      setRotateTrigger((t) => t + 1)
-      return
-    }
+    // Toggle lamp preview: off-lamp → assign to a side; on-lamp → remove so that side shows base Spline mesh
     handleLampSelect(product)
-  }, [selectedArtworks, handleLampSelect, lampPreviewOrder, lamp.id, getSideToShowForProduct])
+  }, [carouselArtworks, handleLampSelect, lamp.id])
 
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -666,8 +713,8 @@ export function ExperienceV2Client({
   }, [lampPreviewOrder.length, lamp])
 
   // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
-  const lastClickedProductId = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex]?.id ?? null : null
-  const lastClickedProduct = activeCarouselIndex >= 0 ? selectedArtworks[activeCarouselIndex] ?? null : null
+  const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
+  const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
   useEffect(() => {
     if (!lastClickedProductId || !lastClickedProduct) return
     if (lastClickedProduct.id === lamp.id) {
@@ -839,11 +886,11 @@ export function ExperienceV2Client({
 
       <ArtworkCarouselBar
         splineInView={splineInView}
-          selectedArtworks={selectedArtworks}
+          selectedArtworks={carouselArtworks}
           activeIndex={activeCarouselIndex}
           lampPreviewOrder={lampPreviewOrder}
           onTapItem={handleTapCarouselItem}
-          onRemoveItem={handleRemoveFromCarousel}
+          onRemoveItem={handleRemoveCarouselSlot}
           onOpenPicker={handleOpenPicker}
         />
 

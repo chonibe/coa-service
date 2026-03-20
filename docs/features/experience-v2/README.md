@@ -98,6 +98,7 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 
 Horizontal tappable carousel at the bottom of the Spline view:
 
+- Shows **one thumbnail per product** even when `cartOrder` lists the same artwork multiple times (quantity); dedupe uses first-seen order — [`experience-carousel-cart.ts`](../../../lib/shop/experience-carousel-cart.ts). **Trash** on a carousel tile removes **all** cart lines for that product. **OrderBar** quantity −1 still removes a single line via `handleRemoveCartOrderItemAtIndex`
 - Shows selected artworks as thumbnails (`w-24` aspect 4/5)
 - First two display on lamp (green numbered badges)
 - Tapping rotates lamp to show that artwork

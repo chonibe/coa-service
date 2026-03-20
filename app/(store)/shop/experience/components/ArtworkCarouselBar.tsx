@@ -95,8 +95,26 @@ export function ArtworkCarouselBar({
     }
   }, [isDesktop])
 
+  const hasCarouselArtworks = selectedArtworks.length > 0
+
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
+
+  const glassAddButtonClass = cn(
+    'flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-200 active:scale-[0.95]',
+    'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
+    theme === 'light'
+      ? [
+          'border-white/80 bg-white/45 text-neutral-800',
+          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
+          'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
+        ]
+      : [
+          'border-white/30 bg-white/18 text-white',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
+        ]
+  )
 
   return (
     <div
@@ -105,24 +123,47 @@ export function ArtworkCarouselBar({
         splineInView ? 'translate-y-0' : 'translate-y-full'
       )}
     >
-      <div className={cn(
-        'relative pt-6 pb-4 px-4 md:pt-10 md:pb-5',
-        theme === 'light'
-          ? 'bg-gradient-to-t from-white/90 via-white/60 to-transparent'
-          : 'bg-gradient-to-t from-black/80 via-black/40 to-transparent'
-      )}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative w-full">
+      <div className="relative pt-6 pb-4 px-4 md:pt-10 md:pb-5">
+        {/* Bottom fade into page bg — same as Spline column (#F5F5F5 / #171515), not a drop shadow */}
+        <div
+          className={cn(
+            'pointer-events-none absolute bottom-0 left-0 right-0 h-[min(200px,48vh)]',
+            theme === 'light'
+              ? 'bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5]/55 to-transparent'
+              : 'bg-gradient-to-t from-[#171515] via-[#171515]/50 to-transparent'
+          )}
+          aria-hidden
+        />
+        <div className="relative z-[1] flex flex-col items-center gap-2">
+          <div className="relative flex w-full flex-col gap-2">
+          <div className="flex flex-col items-center gap-1.5 px-3">
+            <button
+              type="button"
+              onClick={onOpenPicker}
+              className={glassAddButtonClass}
+              aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
+            >
+              <Plus className="w-6 h-6" strokeWidth={2.25} />
+            </button>
+            {!hasCarouselArtworks && (
+              <p
+                className={cn(
+                  'text-center text-sm font-semibold',
+                  theme === 'light' ? 'text-neutral-800' : 'text-[#f0e8e8]'
+                )}
+              >
+                Start your Collection
+              </p>
+            )}
+          </div>
           <div
             ref={scrollRef}
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
               'flex items-end gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory flex-1 min-w-0 pb-3',
-              selectedArtworks.length === 0 && 'justify-center pl-3 pr-3',
-              selectedArtworks.length > 0 && 'pl-3 pr-3',
-              !isDesktop && selectedArtworks.length > 0 && 'pr-28',
-              isDesktop && selectedArtworks.length > 0 && 'md:justify-center md:pr-3 cursor-grab active:cursor-grabbing select-none'
+              'justify-center pl-3 pr-3',
+              isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
           >
@@ -134,7 +175,7 @@ export function ArtworkCarouselBar({
 
                 return (
                   <div
-                    key={`${artwork.id}-${index}`}
+                    key={artwork.id}
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
@@ -155,11 +196,10 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={() => onTapItem(index)}
                       className={cn(
-                        'relative block w-24 h-30 rounded-xl transition-all duration-200 aspect-[4/5] active:scale-[0.95]',
-                        isOnLamp ? 'opacity-100' : 'opacity-60 hover:opacity-85',
-                        isOnLamp && (theme === 'light'
-                          ? 'ring-2 ring-[#FFBA94] ring-offset-2 ring-offset-white'
-                          : 'ring-2 ring-[#FFBA94] ring-offset-2 ring-offset-[#171515]')
+                        'relative block w-24 h-30 rounded-xl transition-[transform,box-shadow] duration-200 aspect-[4/5] active:scale-[0.95]',
+                        isOnLamp
+                          ? 'shadow-[inset_0_0_6px_rgba(255,186,148,0.35),inset_0_0_12px_rgba(255,186,148,0.12)]'
+                          : 'shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
                       aria-current={isOnLamp ? 'true' : undefined}
@@ -245,75 +285,10 @@ export function ArtworkCarouselBar({
                   </div>
                 )
               })}
-              {/* + add card — inline on desktop; fixed on right for mobile */}
-              {isDesktop && (
-                <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
-                  <div className={cn('flex items-center justify-center w-5', selectedArtworks.length > 0 ? 'h-3.5' : 'h-5')} aria-hidden />
-                  <button
-                    type="button"
-                    onClick={onOpenPicker}
-                    className={cn(
-                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5] active:scale-[0.95]',
-                      theme === 'light'
-                        ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
-                        : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
-                    )}
-                    aria-label="Start your Collection"
-                  >
-                    <Plus className="w-8 h-8" strokeWidth={2} />
-                  </button>
-                </div>
-              )}
-              {!isDesktop && selectedArtworks.length === 0 && (
-                <div className="flex flex-shrink-0 snap-center flex-col items-center gap-1">
-                  <div className="flex items-center justify-center w-5 h-5" aria-hidden />
-                  <button
-                    type="button"
-                    onClick={onOpenPicker}
-                    className={cn(
-                      'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed aspect-[4/5] active:scale-[0.95]',
-                      theme === 'light'
-                        ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
-                        : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
-                    )}
-                    aria-label="Start your Collection"
-                  >
-                    <Plus className="w-8 h-8" strokeWidth={2} />
-                  </button>
-                </div>
-              )}
             </>
           </div>
-          {/* Fixed + button on mobile when items exist — always visible on right */}
-          {!isDesktop && selectedArtworks.length > 0 && (
-            <div className="absolute right-4 bottom-3 flex flex-col items-center gap-1 z-10">
-              <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
-              <button
-                type="button"
-                onClick={onOpenPicker}
-                className={cn(
-                  'relative flex w-24 h-30 rounded-xl items-center justify-center transition-all duration-200 border-2 border-dashed shadow-lg aspect-[4/5] active:scale-[0.95]',
-                  theme === 'light'
-                    ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:border-neutral-400 text-neutral-600'
-                    : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-white/80'
-                )}
-                aria-label="Start your Collection"
-              >
-                <Plus className="w-8 h-8" strokeWidth={2} />
-              </button>
-            </div>
-          )}
+          </div>
         </div>
-        </div>
-
-        {selectedArtworks.length === 0 && !showSpotlightPlaceholders && (
-          <p className={cn(
-            'text-center text-sm mt-2',
-            theme === 'light' ? 'text-neutral-600' : 'text-white/60'
-          )}>
-            Tap + to start your collection
-          </p>
-        )}
       </div>
     </div>
   )
