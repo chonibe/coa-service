@@ -86,18 +86,19 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **No Add button** — tap card/Eye to toggle selection
 - **Numbered badges** (1, 2, 3…) on selected artworks
 - Lamp position indicators (1, 2) for artworks on lamp sides
+- **Selected state** — full card (image + title/price row): **2px peach border** (`border-[#FFBA94]/45`) with **transparent** border when unselected so layout does not shift; light **inset wash** for warmth. Picker matches [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) cards
 - Tapping toggles selection and adds to cart
 - "Done" button closes the sheet
 - **Load more** — infinite scroll fetches `/api/shop/experience/collection-products` per season
 - Theme-aware styling
 
-**Implementation:** [`components/ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkPickerSheet.tsx)
+**Implementation:** [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
 
 ### ArtworkCarouselBar
 
 Horizontal tappable carousel at the bottom of the Spline view:
 
-- Shows selected artworks as 64×64px thumbnails
+- Shows selected artworks as thumbnails (`w-24` aspect 4/5)
 - First two display on lamp (green numbered badges)
 - Tapping rotates lamp to show that artwork
 - **+** opens the picker: **always centered above** the horizontal strip — **glassmorphism** circular control (`backdrop-blur-xl`, translucent fill, light border, inset highlight + soft shadow). When the cart is **empty**, **“Start your Collection”** appears centered under that button. The strip holds **only** selected artworks and spotlight placeholders (no add tile in the row)

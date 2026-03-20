@@ -256,13 +256,13 @@ function ArtworkCard({
       data-product-id={product.id}
       data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
-        'relative transition-all duration-200 origin-center',
+        'relative box-border border-2 border-transparent transition-all duration-200 origin-center',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
         (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
         isInCart && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isInCart && !isMerged && 'scale-[0.95] ring-[0.5px] ring-[#FFBA94]/60',
+        isInCart && !isMerged && 'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
       )}
     >
       <motion.div

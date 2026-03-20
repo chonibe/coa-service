@@ -115,12 +115,12 @@ function ArtworkCardV2({
     <motion.div
       data-product-id={product.id}
       className={cn(
-        'relative transition-all duration-200 origin-center overflow-hidden',
+        'relative box-border border-2 border-transparent transition-all duration-200 origin-center overflow-hidden',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
         isSelected && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isSelected && !isMerged && 'scale-[0.95] ring-1 ring-[#FFBA94]/60',
+        isSelected && !isMerged && 'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
       )}
     >
       <motion.div
