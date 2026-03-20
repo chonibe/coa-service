@@ -125,7 +125,7 @@ function ArtworkCardV2({
     <motion.div
       data-product-id={product.id}
       className={cn(
-        'relative box-border origin-center overflow-hidden',
+        'relative box-border border-2 border-transparent origin-center overflow-hidden',
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
@@ -148,26 +148,17 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
-        {isSelected && (
-          <div
-            className="pointer-events-none absolute inset-x-0 top-1/2 bottom-0 z-[1] hidden bg-[#2c2828]/90 transition-[background-color] duration-200 ease-out dark:block"
-            aria-hidden
-          />
-        )}
         {imageUrl ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 z-[2] bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
+              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
               src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
-              className={cn(
-                'z-[2] object-cover transition-opacity duration-200',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              )}
+              className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
               loading="eager"
@@ -177,7 +168,7 @@ function ArtworkCardV2({
           </>
         ) : (
           <div className={cn(
-            'relative z-[2] w-full h-full flex items-center justify-center text-xs',
+            'w-full h-full flex items-center justify-center text-xs',
             isSelected ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
           )}>
             No image
@@ -204,11 +195,11 @@ function ArtworkCardV2({
               exit={{ opacity: 0, scale: 0.94 }}
               transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
               className={cn(
-                'absolute top-2 z-10 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/20 pointer-events-none',
-                (isNewDrop || isEarlyAccess) ? 'right-2' : 'left-2'
+                'absolute top-1.5 z-10 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/15 pointer-events-none',
+                (isNewDrop || isEarlyAccess) ? 'right-1.5' : 'left-1.5'
               )}
             >
-              <span className="text-xs font-bold text-white">{selectionNumber}</span>
+              <span className="text-[9px] font-bold leading-none text-white tabular-nums">{selectionNumber}</span>
             </motion.div>
           )}
         </AnimatePresence>
