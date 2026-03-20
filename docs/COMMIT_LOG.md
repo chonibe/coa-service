@@ -1,32 +1,16 @@
 # Commit Log
 
-## Commit: style(experience): remove artwork card borders (strip ring + shell placeholder) (2026-03-20)
+## Commit: style(experience): smaller selection badges and strip action chrome (2026-03-20)
 
-**Ref:** `fbb798436`
+**Ref:** `96eda5159`
 
 ### Summary
-**Strip** in-cart: removed **`border-[#FFBA94]/45`** and **inset peach shadow** from [`getStripArtworkCardSurfaces`](lib/shop/experience-artwork-card-surfaces.ts) (background tint only). **Picker + strip** card shells: dropped **`border-2 border-transparent`**. Strip shell transitions now **`background-color`** only.
+**Picker** [`ArtworkPickerSheet.tsx`](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx): selection badge **`w-4 h-4`**, **`text-[9px]`**, **`top-1.5`**. **Strip** [`ArtworkStrip.tsx`](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx): green lamp number **`w-4`/`text-[9px]`**; eye / footer info / add row **`w-4`/`h-5`**; **`SparkleCheck`** tick pulse **`1.12`**; wizard **scale** pulses **`1.08`/`1.05`**. [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md) version note.
 
 ### Implementation Checklist
 
-- [x] [lib/shop/experience-artwork-card-surfaces.ts](lib/shop/experience-artwork-card-surfaces.ts)
 - [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
 - [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
-- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
-
----
-
-## Commit: style(experience): picker dark selected tint on lower half of image only (2026-03-20)
-
-**Ref:** `8dfb61cd6`
-
-### Summary
-**Picker** `ArtworkCardV2`: **dark + selected** — outer shell **`dark:bg-transparent`**; image well **`dark:bg-[#171515]`** with **`absolute top-1/2 bottom-0`** overlay **`bg-[#2c2828]/90`** (`hidden dark:block`); image / skeleton / placeholder **`z-[2]`**. **Light** selected unchanged (full `#f0f9ff`). Tokens: [`getPickerArtworkCardSurfaces`](lib/shop/experience-artwork-card-surfaces.ts).
-
-### Implementation Checklist
-
-- [x] [lib/shop/experience-artwork-card-surfaces.ts](lib/shop/experience-artwork-card-surfaces.ts)
-- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
 - [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
 
 ---
