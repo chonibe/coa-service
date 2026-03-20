@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: fix(experience): snappier tap, tween selection badge (2026-03-20)
+
+**Ref:** `8f3b924ee`
+
+### Summary
+Removes **spring** on `whileTap` (replaced with **0.12s easeOut** + **0.99** scale) so tap doesn’t “bounce” against CSS background transitions. Picker **selection badge** uses **AnimatePresence** with **140ms tween** (no spring). State **CSS transitions** shortened to **200ms ease-out** (cards, footers, merge row, Add button).
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+
+---
+
 ## Commit: style(experience): smoother on/off transitions for cards (2026-03-20)
 
 **Ref:** `ecbc52b5b`
