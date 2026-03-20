@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: style(experience): smoother on/off transitions for cards (2026-03-20)
+
+**Ref:** `ecbc52b5b`
+
+### Summary
+**Picker** and **strip** artwork cards use **300ms** eased transitions for backgrounds, borders, inset shadow, and footer colors; tap feedback uses a **spring** (`whileTap` 0.97). Picker **selection number** badge enters/exits with **AnimatePresence** + spring. **2-up artist rows** animate background when merge (both in cart) toggles.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+
+---
+
 ## Commit: style(experience): center footers, remove row/spine borders (2026-03-20)
 
 **Ref:** `af72f76ce`
