@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: style(experience): picker selected tint on lower half of image only (2026-03-20)
+
+**Ref:** `4c7cb56a0`
+
+### Summary
+**ArtworkPickerSheet** `ArtworkCardV2`: removed full-card and full-image-well selected fill. When selected, a **semi-opaque wash** (`#f0f9ff` / `#2c2828` at 90%) covers only the **bottom half** of the image area (`top-1/2` → `bottom`); image/skeleton sit above (`z-[2]`). Footer title row still uses full selected background.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: fix(experience): dedupe artwork carousel when quantity >1 (2026-03-20)
 
 **Ref:** `998613df7`

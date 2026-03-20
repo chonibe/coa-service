@@ -123,8 +123,7 @@ function ArtworkCardV2({
         'transition-[background-color] duration-200 ease-out',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
-        !roundLeft && roundRight && 'rounded-r-xl',
-        isSelected && 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+        !roundLeft && roundRight && 'rounded-r-xl'
       )}
     >
       <motion.div
@@ -134,7 +133,7 @@ function ArtworkCardV2({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'
+          'bg-white dark:bg-[#171515]'
         )}
         whileTap={{ scale: 0.99 }}
         transition={{ duration: 0.12, ease: 'easeOut' }}
@@ -144,17 +143,23 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
+        {isSelected && (
+          <div
+            className="absolute inset-x-0 bottom-0 top-1/2 z-[1] pointer-events-none bg-[#f0f9ff]/90 dark:bg-[#2c2828]/90 transition-opacity duration-200"
+            aria-hidden
+          />
+        )}
         {imageUrl ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
+              <div className="absolute inset-0 z-[2] bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
               src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
-              className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
+              className={cn('object-cover transition-opacity duration-200 z-[2]', imageLoaded ? 'opacity-100' : 'opacity-0')}
               sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
               priority={priorityLoad}
               loading="eager"
@@ -164,7 +169,7 @@ function ArtworkCardV2({
           </>
         ) : (
           <div className={cn(
-            'w-full h-full flex items-center justify-center text-xs',
+            'relative z-[2] w-full h-full flex items-center justify-center text-xs',
             isSelected ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
           )}>
             No image
