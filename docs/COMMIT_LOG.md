@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: feat(experience): artist-grouped rows, center spine, title+price footers (2026-03-20)
+
+**Ref:** `df1826a02`
+
+### Summary
+Picker and configurator strip now lay out **virtual rows by artist (Shopify `vendor`)**: pairs in one row share a **vertical artist label** in the center (same structure as the old “both selected” merge). Picker cards no longer show the artist in the footer—only **artwork title** with **price on the line below**. Odd per-artist counts use one **half-width centered** card. Shared row builder lives in `lib/shop/experience-artwork-rows.ts`; scroll-to-product and prefetch use the new row model.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-artwork-rows.ts](lib/shop/experience-artwork-rows.ts) – `buildArtworkRowsByArtist`, `rowIndexForProductId`
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) – artist rows, always-on spine for pairs, `spinePairLayout` + `flushToSpine` rounding on `ArtworkCardV2`, footer title + stacked price
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) – same row model, spine for pairs, centered single-card rows, prefetch + `scrollToProductId` via `rowIndexForProductId`
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md) – picker / grid documentation updated
+
+---
+
 ## Commit: Lighthouse Performance and Best Practices (2026-03-10)
 
 **Ref:** `70813b0a82`  
