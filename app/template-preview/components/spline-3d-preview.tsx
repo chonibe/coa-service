@@ -151,6 +151,11 @@ interface Spline3DPreviewProps {
   onFrontSideSettled?: (side: 'A' | 'B') => void
   /** View rotation in 90deg steps (0..3) for portrait/landscape inspection */
   previewQuarterTurns?: number
+  /**
+   * `contain` — preview is inside a parent vertical scroller (e.g. SplineFullScreen reel); use native wheel/touch.
+   * `isolate` — preview column has no scrollable ancestor (e.g. Configurator); wheel layer forwards to artwork panel.
+   */
+  parentScrollMode?: "contain" | "isolate"
 }
 
 export function Spline3DPreview({ 
@@ -190,6 +195,7 @@ export function Spline3DPreview({
   rotateTrigger = 0,
   onFrontSideSettled,
   previewQuarterTurns = 0,
+  parentScrollMode = "isolate",
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -2439,10 +2445,10 @@ export function Spline3DPreview({
     setBackgroundFromVariant()
   }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
 
-  // Wheel over the WebGL surface: even with canvas `pointer-events: none`, some runtimes still get wheel
-  // first. A transparent layer stacked above the canvas receives wheel reliably (see wheelCaptureLayerRef).
+  // Wheel forwarding only when parent does not scroll the preview (`isolate`, e.g. Configurator split).
+  // `contain` (SplineFullScreen reel): native wheel on the parent overflow-y scroller — no overlay / preventDefault.
   useEffect(() => {
-    if (!minimal) return
+    if (!minimal || parentScrollMode !== "isolate") return
     const layer = wheelCaptureLayerRef.current
     if (!layer) return
     const onWheel = (e: WheelEvent) => {
@@ -2464,7 +2470,7 @@ export function Spline3DPreview({
     }
     layer.addEventListener("wheel", onWheel, { passive: false })
     return () => layer.removeEventListener("wheel", onWheel)
-  }, [minimal, isLoading, error])
+  }, [minimal, parentScrollMode, isLoading, error])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })
@@ -2923,13 +2929,14 @@ export function Spline3DPreview({
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
-        {/* Above canvas: WebGL still receives wheel in some browsers despite pointer-events:none on canvas */}
-        <div
-          ref={wheelCaptureLayerRef}
-          className="absolute inset-0 z-[5]"
-          style={{ touchAction: "pan-y" }}
-          aria-hidden
-        />
+        {parentScrollMode === "isolate" && (
+          <div
+            ref={wheelCaptureLayerRef}
+            className="absolute inset-0 z-[5]"
+            style={{ touchAction: "pan-y" }}
+            aria-hidden
+          />
+        )}
       </div>
     )
   }

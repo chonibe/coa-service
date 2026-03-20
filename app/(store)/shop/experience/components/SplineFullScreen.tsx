@@ -34,10 +34,30 @@ function SplinePreviewLoading() {
   )
 }
 
-const Spline3DPreview = dynamic(
-  () => import('@/app/template-preview/components/spline-3d-preview').then((mod) => mod.Spline3DPreview),
-  { ssr: false, loading: () => <SplinePreviewLoading /> }
-)
+/** Retry chunk load on ChunkLoadError; reload page once if retry fails (stale dev cache). */
+const CHUNK_RELOAD_KEY = 'spline_chunk_reload'
+const loadSpline3DPreview = () =>
+  import('@/app/template-preview/components/spline-3d-preview')
+    .then((mod) => mod.Spline3DPreview)
+    .catch((err) => {
+      const isChunkError = err?.name === 'ChunkLoadError' || err?.message?.includes?.('Loading chunk')
+      if (!isChunkError) throw err
+      return import('@/app/template-preview/components/spline-3d-preview')
+        .then((m) => m.Spline3DPreview)
+        .catch((retryErr) => {
+          if (typeof window !== 'undefined' && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+            sessionStorage.setItem(CHUNK_RELOAD_KEY, '1')
+            window.location.reload()
+            return new Promise(() => {}) // Never resolves; page is reloading
+          }
+          throw retryErr
+        })
+    })
+
+const Spline3DPreview = dynamic(loadSpline3DPreview, {
+  ssr: false,
+  loading: () => <SplinePreviewLoading />,
+})
 
 interface SplineFullScreenProps {
   image1: string | null
@@ -184,6 +204,9 @@ export function SplineFullScreen({
   const lastReportedSectionRef = useRef(currentSlide)
   const scrollRafRef = useRef<number | null>(null)
   const lastProgrammaticSectionRef = useRef<number | null>(null)
+  /** While > Date.now(), ignore midpoint-based slide sync (avoids fighting smooth scrollIntoView from thumbnails). */
+  const ignoreSlideSyncUntilRef = useRef(0)
+  const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!scrollRef.current || sectionCount <= 1) return
@@ -191,11 +214,38 @@ export function SplineFullScreen({
       lastProgrammaticSectionRef.current = null
       return
     }
+    const el = scrollRef.current
     const target = sectionRefs.current[currentSlide]
     if (!target) return
 
     lastProgrammaticSectionRef.current = currentSlide
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const slideIndex = currentSlide
+    const clearProgrammaticScrollGuard = () => {
+      ignoreSlideSyncUntilRef.current = 0
+      lastReportedSectionRef.current = slideIndex
+      if (programmaticScrollTimeoutRef.current) {
+        clearTimeout(programmaticScrollTimeoutRef.current)
+        programmaticScrollTimeoutRef.current = null
+      }
+    }
+    const onScrollEnd = () => {
+      el.removeEventListener("scrollend", onScrollEnd)
+      clearProgrammaticScrollGuard()
+    }
+    ignoreSlideSyncUntilRef.current = Date.now() + 800
+    el.addEventListener("scrollend", onScrollEnd, { passive: true })
+    programmaticScrollTimeoutRef.current = setTimeout(() => {
+      el.removeEventListener("scrollend", onScrollEnd)
+      clearProgrammaticScrollGuard()
+    }, 850)
+    target.scrollIntoView({ behavior: "smooth", block: "start" })
+    return () => {
+      el.removeEventListener("scrollend", onScrollEnd)
+      if (programmaticScrollTimeoutRef.current) {
+        clearTimeout(programmaticScrollTimeoutRef.current)
+        programmaticScrollTimeoutRef.current = null
+      }
+    }
   }, [currentSlide, sectionCount])
 
   const handleScroll = useCallback(() => {
@@ -203,6 +253,7 @@ export function SplineFullScreen({
     if (scrollRafRef.current !== null) return
     scrollRafRef.current = requestAnimationFrame(() => {
       scrollRafRef.current = null
+      if (Date.now() < ignoreSlideSyncUntilRef.current) return
       const el = scrollRef.current
       if (!el) return
       const viewportMid = el.scrollTop + el.clientHeight / 2
@@ -334,6 +385,7 @@ export function SplineFullScreen({
               side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"
               side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
               minimal
+              parentScrollMode="contain"
               animate
               interactive
               idleSpinEnabled={lampPreviewCount < 2}
