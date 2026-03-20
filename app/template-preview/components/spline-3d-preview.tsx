@@ -2436,18 +2436,22 @@ export function Spline3DPreview({
     setBackgroundFromVariant()
   }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
 
-  // Wheel over the preview: scroll nearest scrollable ancestor (e.g. SplineFullScreen reel), or the
-  // designated artwork panel when 3D and list are siblings (Configurator desktop / mobile split).
+  // Wheel over the preview: Spline/WebGL often attaches wheel listeners on the canvas (capture) and
+  // stops propagation — a listener on the container never runs when the pointer is over the model.
+  // Intercept at document capture + hit-test the preview rect, then scroll ancestor or designated panel.
   useEffect(() => {
-    if (!minimal) return
-    const root = containerRef.current
-    if (!root) return
-    const onWheel = (e: WheelEvent) => {
+    if (!minimal || typeof document === "undefined") return
+    const onWheelCapture = (e: WheelEvent) => {
       if (e.ctrlKey) return
-      const t = e.target
-      if (!(t instanceof Node) || !root.contains(t)) return
-      const startEl = t instanceof HTMLElement ? t : t.parentElement
-      let scrollEl = findFirstVerticallyScrollableAncestor(startEl)
+      const root = containerRef.current
+      if (!root) return
+      const rect = root.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return
+      const { clientX, clientY } = e
+      if (clientX < rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom) {
+        return
+      }
+      let scrollEl = findFirstVerticallyScrollableAncestor(root)
       if (!scrollEl) scrollEl = findExperienceDesignatedScrollRegion()
       if (!scrollEl) return
       const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight
@@ -2458,9 +2462,10 @@ export function Spline3DPreview({
       if (e.deltaY > 0 && atBottom) return
       scrollEl.scrollTop += e.deltaY
       e.preventDefault()
+      e.stopPropagation()
     }
-    root.addEventListener("wheel", onWheel, { passive: false })
-    return () => root.removeEventListener("wheel", onWheel)
+    document.addEventListener("wheel", onWheelCapture, { passive: false, capture: true })
+    return () => document.removeEventListener("wheel", onWheelCapture, true)
   }, [minimal])
 
   // Cursor-following or subtle rotation (when animate=true)
