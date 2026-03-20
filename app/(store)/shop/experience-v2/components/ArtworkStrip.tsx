@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,6 +9,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
 import { cn, formatPriceCompact } from '@/lib/utils'
+import { buildArtworkRowsByArtist, rowIndexForProductId } from '@/lib/shop/experience-artwork-rows'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -144,6 +145,8 @@ interface ArtworkCardProps {
   mergeWithLeft?: boolean
   /** When true, this card merges with the one on its right (round only left corners) */
   mergeWithRight?: boolean
+  /** True when in a 2-up artist row with center spine (flush inner corners). */
+  spinePairLayout?: boolean
   /** When true, user already owns this artwork (from past orders) */
   isCollected?: boolean
   /** When true, artwork is part of the current artist spotlight "New Drop" */
@@ -187,6 +190,7 @@ function ArtworkCard({
   crewCount = 0,
   mergeWithLeft = false,
   mergeWithRight = false,
+  spinePairLayout = false,
   isCollected = false,
   isNewDrop = false,
   isEarlyAccess = false,
@@ -246,8 +250,9 @@ function ArtworkCard({
   const wizardHighlightClass = 'ring-1 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
 
   const isMerged = isInCart && (mergeWithLeft || mergeWithRight)
-  const roundLeft = !isMerged || mergeWithRight
-  const roundRight = !isMerged || mergeWithLeft
+  const flushToSpine = isMerged || spinePairLayout
+  const roundLeft = !flushToSpine || mergeWithRight
+  const roundRight = !flushToSpine || mergeWithLeft
 
   const showTapHint = showTapNudge && !isInCart && !isSoldOut && lampPosition === null
 
@@ -643,7 +648,15 @@ export function ArtworkStrip({
     return newDropProductIds.has(productId) || newDropProductIds.has(numeric)
   }, [newDropProductIds])
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
-  const rowCount = Math.ceil(products.length / 2)
+  const rows = useMemo(() => buildArtworkRowsByArtist(products), [products])
+  const productIndexById = useMemo(() => {
+    const m = new Map<string, number>()
+    products.forEach((p, i) => {
+      m.set(p.id, i)
+    })
+    return m
+  }, [products])
+  const rowCount = rows.length
   const totalRows = rowCount + (hasMore ? 1 : 0)
 
   const rowVirtualizer = useVirtualizer({
@@ -673,24 +686,21 @@ export function ArtworkStrip({
 
   useEffect(() => {
     if (!scrollToProductId) return
-    const idx = products.findIndex((p) => p.id === scrollToProductId)
-    if (idx >= 0) {
-      const rowIdx = Math.floor(idx / 2)
-      rowVirtualizer.scrollToIndex(rowIdx, { align: 'center', behavior: 'smooth' })
-    }
-  }, [scrollToProductId, products, rowVirtualizer])
+    const rowIdx = rowIndexForProductId(rows, scrollToProductId)
+    rowVirtualizer.scrollToIndex(rowIdx, { align: 'center', behavior: 'smooth' })
+  }, [scrollToProductId, rows, rowVirtualizer])
 
   // Prefetch full product data when cards enter the virtualized view
   useEffect(() => {
     if (!onPrefetchProduct) return
     virtualRows.forEach((vr) => {
       if (vr.index >= rowCount) return
-      const p1 = products[vr.index * 2]
-      const p2 = products[vr.index * 2 + 1]
-      if (p1?.handle) onPrefetchProduct(p1)
-      if (p2?.handle) onPrefetchProduct(p2)
+      const row = rows[vr.index]
+      row.forEach((p) => {
+        if (p?.handle) onPrefetchProduct(p)
+      })
     })
-  }, [virtualRows, products, rowCount, onPrefetchProduct])
+  }, [virtualRows, rows, rowCount, onPrefetchProduct])
 
   const getLampPosition = (productId: string): 1 | 2 | null => {
     const idx = lampPreviewOrder.indexOf(productId)
@@ -738,14 +748,18 @@ export function ArtworkStrip({
             </div>
           )
         }
-        const startIdx = virtualRow.index * 2
-        const product1 = products[startIdx]
-        const product2 = products[startIdx + 1]
+        const row = rows[virtualRow.index]
+        const product1 = row[0]
+        const product2 = row[1]
+        const g1 = product1 ? (productIndexById.get(product1.id) ?? -1) : -1
+        const g2 = product2 ? (productIndexById.get(product2.id) ?? -1) : -1
         const p1InCart = product1 && cartOrder.includes(product1.id)
         const p2InCart = product2 && cartOrder.includes(product2.id)
         const bothInCart = !!(p1InCart && p2InCart)
         const sameVendor = !!(product1 && product2 && product1.vendor === product2.vendor)
         const shouldMerge = bothInCart && sameVendor
+        const showArtistSpine = row.length === 2
+        const artistLabel = (product1?.vendor || product2?.vendor || 'Artist').trim() || 'Artist'
         const justMerged = shouldMerge && (
           product1?.id === lastAddedProductId ||
           product2?.id === lastAddedProductId
@@ -764,86 +778,133 @@ export function ArtworkStrip({
               transform: `translateY(${virtualRow.start}px)`,
             }}
           >
-            <div className={cn(
-              'relative',
-              shouldMerge
-                ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
-                : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
-            )}>
-              {shouldMerge && <MergeConfetti active={justMerged} />}
-              {product1 && (
-                <div className={shouldMerge ? 'flex-1 min-w-0' : undefined}>
-                  <ArtworkCard
-                    key={product1.id}
-                    product={product1}
-                    globalIdx={startIdx}
-                    isPreviewed={startIdx === previewIndex}
-                    isInCart={p1InCart}
-                    justAdded={product1.id === lastAddedProductId}
-                    isFirstCard={startIdx === 0}
-                    priorityLoad={startIdx < 6}
-                    lampPosition={getLampPosition(product1.id)}
-                    isSoldOut={!product1.availableForSale}
-                    imageUrl={product1.featuredImage?.url ?? product1.images?.edges?.[0]?.node?.url}
-                    showWishlistHearts={showWishlistHearts}
-                    crewCount={crewCountMap?.[product1.id]}
-                    mergeWithRight={shouldMerge}
-                    isCollected={isProductCollected(product1.id)}
-                    isNewDrop={isProductNewDrop(product1.id)}
-                    isEarlyAccess={spotlightUnlisted && isProductNewDrop(product1.id)}
-                    onPreview={onPreview}
-                    onLampSelect={handleLampSelectWithNudge}
-                    onAddToCart={handleAddToCartWithNudge}
-                    onViewDetail={onViewDetail}
-                    highlightStep={highlightStep}
-                    showHighlightAnimation={showHighlightAnimation}
-                    onStepTried={onStepTried}
-                    showTapNudge={!nudgeDone && nudgeIndices.includes(startIdx)}
-                    tapNudgeDelay={nudgeIndices.indexOf(startIdx) * 1.2}
-                    isMobile={isMobile}
-                  />
-                </div>
-              )}
-              {shouldMerge && product1 && (
-                <div className="shrink-0 flex flex-col items-center justify-center bg-[#f0f9ff] dark:bg-[#2c2828] px-1.5">
+            {showArtistSpine ? (
+              <div
+                className={cn(
+                  'relative',
+                  shouldMerge
+                    ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
+                    : 'flex rounded-xl overflow-hidden border border-neutral-200/80 dark:border-[#2c2828] bg-white dark:bg-[#171515]'
+                )}
+              >
+                {shouldMerge && <MergeConfetti active={justMerged} />}
+                {product1 && g1 >= 0 && (
+                  <div className="flex-1 min-w-0">
+                    <ArtworkCard
+                      key={product1.id}
+                      product={product1}
+                      globalIdx={g1}
+                      isPreviewed={g1 === previewIndex}
+                      isInCart={p1InCart}
+                      justAdded={product1.id === lastAddedProductId}
+                      isFirstCard={g1 === 0}
+                      priorityLoad={g1 < 6}
+                      lampPosition={getLampPosition(product1.id)}
+                      isSoldOut={!product1.availableForSale}
+                      imageUrl={product1.featuredImage?.url ?? product1.images?.edges?.[0]?.node?.url}
+                      showWishlistHearts={showWishlistHearts}
+                      crewCount={crewCountMap?.[product1.id]}
+                      mergeWithRight
+                      spinePairLayout
+                      isCollected={isProductCollected(product1.id)}
+                      isNewDrop={isProductNewDrop(product1.id)}
+                      isEarlyAccess={spotlightUnlisted && isProductNewDrop(product1.id)}
+                      onPreview={onPreview}
+                      onLampSelect={handleLampSelectWithNudge}
+                      onAddToCart={handleAddToCartWithNudge}
+                      onViewDetail={onViewDetail}
+                      highlightStep={highlightStep}
+                      showHighlightAnimation={showHighlightAnimation}
+                      onStepTried={onStepTried}
+                      showTapNudge={!nudgeDone && nudgeIndices.includes(g1)}
+                      tapNudgeDelay={nudgeIndices.indexOf(g1) * 1.2}
+                      isMobile={isMobile}
+                    />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    'shrink-0 flex flex-col items-center justify-center px-1.5',
+                    shouldMerge
+                      ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+                      : 'bg-neutral-50 dark:bg-[#201c1c] border-x border-neutral-200/80 dark:border-[#2c2828]'
+                  )}
+                >
                   <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
-                    {product1.vendor}
+                    {artistLabel}
                   </span>
                 </div>
-              )}
-              {product2 && (
-                <div className={shouldMerge ? 'flex-1 min-w-0' : undefined}>
-                  <ArtworkCard
-                    key={product2.id}
-                    product={product2}
-                    globalIdx={startIdx + 1}
-                    isPreviewed={startIdx + 1 === previewIndex}
-                    isInCart={p2InCart}
-                    justAdded={product2.id === lastAddedProductId}
-                    priorityLoad={startIdx + 1 < 6}
-                    lampPosition={getLampPosition(product2.id)}
-                    isSoldOut={!product2.availableForSale}
-                    imageUrl={product2.featuredImage?.url ?? product2.images?.edges?.[0]?.node?.url}
-                    showWishlistHearts={showWishlistHearts}
-                    crewCount={crewCountMap?.[product2.id]}
-                    mergeWithLeft={shouldMerge}
-                    isCollected={isProductCollected(product2.id)}
-                    isNewDrop={isProductNewDrop(product2.id)}
-                    isEarlyAccess={spotlightUnlisted && isProductNewDrop(product2.id)}
-                    onPreview={onPreview}
-                    onLampSelect={handleLampSelectWithNudge}
-                    onAddToCart={handleAddToCartWithNudge}
-                    onViewDetail={onViewDetail}
-                    highlightStep={highlightStep}
-                    showHighlightAnimation={showHighlightAnimation}
-                    onStepTried={onStepTried}
-                    showTapNudge={!nudgeDone && nudgeIndices.includes(startIdx + 1)}
-                    tapNudgeDelay={nudgeIndices.indexOf(startIdx + 1) * 1.2}
-                    isMobile={isMobile}
-                  />
-                </div>
-              )}
-            </div>
+                {product2 && g2 >= 0 && (
+                  <div className="flex-1 min-w-0">
+                    <ArtworkCard
+                      key={product2.id}
+                      product={product2}
+                      globalIdx={g2}
+                      isPreviewed={g2 === previewIndex}
+                      isInCart={p2InCart}
+                      justAdded={product2.id === lastAddedProductId}
+                      isFirstCard={g2 === 0}
+                      priorityLoad={g2 < 6}
+                      lampPosition={getLampPosition(product2.id)}
+                      isSoldOut={!product2.availableForSale}
+                      imageUrl={product2.featuredImage?.url ?? product2.images?.edges?.[0]?.node?.url}
+                      showWishlistHearts={showWishlistHearts}
+                      crewCount={crewCountMap?.[product2.id]}
+                      mergeWithLeft
+                      spinePairLayout
+                      isCollected={isProductCollected(product2.id)}
+                      isNewDrop={isProductNewDrop(product2.id)}
+                      isEarlyAccess={spotlightUnlisted && isProductNewDrop(product2.id)}
+                      onPreview={onPreview}
+                      onLampSelect={handleLampSelectWithNudge}
+                      onAddToCart={handleAddToCartWithNudge}
+                      onViewDetail={onViewDetail}
+                      highlightStep={highlightStep}
+                      showHighlightAnimation={showHighlightAnimation}
+                      onStepTried={onStepTried}
+                      showTapNudge={!nudgeDone && nudgeIndices.includes(g2)}
+                      tapNudgeDelay={nudgeIndices.indexOf(g2) * 1.2}
+                      isMobile={isMobile}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative flex justify-center pb-2 md:pb-3">
+                {product1 && g1 >= 0 && (
+                  <div className="w-[calc(50%-0.25rem)] md:w-[calc(50%-0.375rem)]">
+                    <ArtworkCard
+                      key={product1.id}
+                      product={product1}
+                      globalIdx={g1}
+                      isPreviewed={g1 === previewIndex}
+                      isInCart={!!p1InCart}
+                      justAdded={product1.id === lastAddedProductId}
+                      isFirstCard={g1 === 0}
+                      priorityLoad={g1 < 6}
+                      lampPosition={getLampPosition(product1.id)}
+                      isSoldOut={!product1.availableForSale}
+                      imageUrl={product1.featuredImage?.url ?? product1.images?.edges?.[0]?.node?.url}
+                      showWishlistHearts={showWishlistHearts}
+                      crewCount={crewCountMap?.[product1.id]}
+                      isCollected={isProductCollected(product1.id)}
+                      isNewDrop={isProductNewDrop(product1.id)}
+                      isEarlyAccess={spotlightUnlisted && isProductNewDrop(product1.id)}
+                      onPreview={onPreview}
+                      onLampSelect={handleLampSelectWithNudge}
+                      onAddToCart={handleAddToCartWithNudge}
+                      onViewDetail={onViewDetail}
+                      highlightStep={highlightStep}
+                      showHighlightAnimation={showHighlightAnimation}
+                      onStepTried={onStepTried}
+                      showTapNudge={!nudgeDone && nudgeIndices.includes(g1)}
+                      tapNudgeDelay={nudgeIndices.indexOf(g1) * 1.2}
+                      isMobile={isMobile}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )
       })}

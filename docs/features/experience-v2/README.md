@@ -81,8 +81,8 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **Artist spotlight banner** at top (from `/api/shop/artist-spotlight`) — expand to filter by artist
 - **Bar with Filter + Season 1/2** — same as V1 Configurator
 - **FilterPanel** — artists, tags, price range, sort, in-stock, star rating (reused from V1)
-- 2-column virtualized grid (`@tanstack/react-virtual`)
-- Cards show: image, title, price, Eye button, Info button
+- Virtualized **rows grouped by artist (vendor)** — two artworks per row when an artist has a pair; **vertical artist name** in the center spine (same layout as the former “both selected” merge). Odd count: one **centered** half-width card for that artist. Row building: [`experience-artwork-rows.ts`](../../../lib/shop/experience-artwork-rows.ts)
+- Cards show: image, **artwork title** with **price on the line below** (artist name is **not** repeated in the card footer — it’s only on the center spine when two pieces share a row)
 - **No Add button** — tap card/Eye to toggle selection
 - **Numbered badges** (1, 2, 3…) on selected artworks
 - Lamp position indicators (1, 2) for artworks on lamp sides

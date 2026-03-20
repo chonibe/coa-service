@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { ChevronRight, SlidersHorizontal, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -11,6 +11,7 @@ import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { FilterPanel, hasActiveFilters, type FilterState } from '../../experience-v2/components/FilterPanel'
 import { cn } from '@/lib/utils'
+import { buildArtworkRowsByArtist } from '@/lib/shop/experience-artwork-rows'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -81,6 +82,8 @@ interface ArtworkCardV2Props {
   priorityLoad?: boolean
   mergeWithLeft?: boolean
   mergeWithRight?: boolean
+  /** True when this card sits in a 2-up artist row with center spine (flush inner corners). */
+  spinePairLayout?: boolean
   /** Show "New Drop" chip when product is in spotlight (featured artist) */
   isNewDrop?: boolean
   /** Show "Early access" chip when spotlight is unlisted */
@@ -95,15 +98,16 @@ function ArtworkCardV2({
   priorityLoad = false,
   mergeWithLeft = false,
   mergeWithRight = false,
+  spinePairLayout = false,
   isNewDrop = false,
   isEarlyAccess = false,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
-  const { theme } = useExperienceTheme()
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
   const isMerged = isSelected && (mergeWithLeft || mergeWithRight)
-  const roundLeft = !isMerged || mergeWithRight
-  const roundRight = !isMerged || mergeWithLeft
+  const flushToSpine = isMerged || spinePairLayout
+  const roundLeft = !flushToSpine || mergeWithRight
+  const roundRight = !flushToSpine || mergeWithLeft
   const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
   const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
 
@@ -119,8 +123,7 @@ function ArtworkCardV2({
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
-        isSelected && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        isSelected && !isMerged && 'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
+        isSelected && 'bg-[#f0f9ff] dark:bg-[#2c2828]'
       )}
     >
       <motion.div
@@ -129,7 +132,7 @@ function ArtworkCardV2({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          isSelected ? 'bg-[#e8f4ff] dark:bg-[#171515]' : 'bg-neutral-100 dark:bg-[#201c1c]'
+          isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'
         )}
         whileTap={{ scale: 0.95 }}
         onClick={handleClick}
@@ -188,44 +191,37 @@ function ArtworkCardV2({
 
       <div
         className={cn(
-          'px-2 flex items-center justify-between gap-2 border-t transition-colors overflow-hidden cursor-pointer',
+          'px-2 flex items-center justify-between gap-2 transition-colors overflow-hidden cursor-pointer',
           (mergeWithLeft || mergeWithRight) ? 'py-1' : 'py-1.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',
           isSelected
-            ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
-            : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
+            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+            : 'bg-white dark:bg-[#171515]'
         )}
-        style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
         onClick={handleClick}
       >
-        <div className="flex-1 min-w-0">
-          {product.vendor && (
-            <p className={cn(
-              'text-[10px] truncate',
-              isSelected ? 'text-neutral-700 dark:text-[#d4b8b8]' : 'text-neutral-600 dark:text-[#c4a0a0]'
-            )}>{product.vendor}</p>
-          )}
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
           <p className={cn(
             'text-xs font-medium truncate',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
-        </div>
-        <div className="flex flex-col items-end">
-          <p className={cn(
-            'text-xs flex-shrink-0 font-medium',
-            showEarlyAccessPrice
-              ? 'text-violet-700 dark:text-violet-300'
-              : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
-          )}>
-            {formatPrice(product, isEarlyAccess)}
-          </p>
-          {showEarlyAccessPrice && (
-            <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
-              ${originalPrice.toFixed(2)}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className={cn(
+              'text-xs font-medium',
+              showEarlyAccessPrice
+                ? 'text-violet-700 dark:text-violet-300'
+                : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
+            )}>
+              {formatPrice(product, isEarlyAccess)}
+            </p>
+            {showEarlyAccessPrice && (
+              <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
+                ${originalPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -283,7 +279,15 @@ export function ArtworkPickerSheet({
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const prevSeasonRef = useRef(activeSeason)
   const { theme } = useExperienceTheme()
+
+  useEffect(() => {
+    if (prevSeasonRef.current !== activeSeason && isOpen && scrollRef.current) {
+      scrollRef.current.scrollTop = 0
+    }
+    prevSeasonRef.current = activeSeason
+  }, [activeSeason, isOpen])
 
   const selectedIds = useMemo(() => new Set(selectedArtworks.map((a) => a.id)), [selectedArtworks])
 
@@ -349,13 +353,7 @@ export function ArtworkPickerSheet({
     }
   }, [isOpen])
 
-  const rows = useMemo(() => {
-    const result: ShopifyProduct[][] = []
-    for (let i = 0; i < products.length; i += 2) {
-      result.push(products.slice(i, i + 2))
-    }
-    return result
-  }, [products])
+  const rows = useMemo(() => buildArtworkRowsByArtist(products), [products])
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -511,6 +509,8 @@ export function ArtworkPickerSheet({
                   const bothSelected = !!(p1Selected && p2Selected)
                   const sameVendor = !!(product1 && product2 && product1.vendor === product2.vendor)
                   const shouldMerge = bothSelected && sameVendor
+                  const showArtistSpine = row.length === 2
+                  const artistLabel = (product1?.vendor || product2?.vendor || 'Artist').trim() || 'Artist'
                   const justMerged = shouldMerge && (
                     (product1?.id === lastAddedProductId) || (product2?.id === lastAddedProductId)
                   )
@@ -527,54 +527,80 @@ export function ArtworkPickerSheet({
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
-                      <div
-                        className={cn(
-                          'relative',
-                          shouldMerge ? 'py-1 mx-1 my-0.5' : 'pb-2',
-                          shouldMerge
-                            ? 'flex box-border rounded-xl border-2 border-[#FFBA94]/45 overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616] shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
-                            : 'grid grid-cols-2 gap-2'
-                        )}
-                      >
-                        {shouldMerge && <MergeConfetti active={justMerged} />}
-                        {product1 && (
-                          <div className={shouldMerge ? 'flex-1 min-w-0' : undefined}>
-                            <ArtworkCardV2
-                              key={product1.id}
-                              product={product1}
-                              isSelected={p1Selected}
-                              selectionNumber={getSelectionNumber(product1.id)}
-                              onSelect={onToggleSelect}
-                              priorityLoad={virtualRow.index < 3}
-                              mergeWithRight={shouldMerge}
-                              isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
-                              isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
-                            />
-                          </div>
-                        )}
-                        {shouldMerge && product1 && (
-                          <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-[#1a1616] px-1 border-l border-r border-[#FFBA94]/30 dark:border-[#FFBA94]/20">
+                      {showArtistSpine ? (
+                        <div
+                          className={cn(
+                            'relative',
+                            shouldMerge ? 'py-1 mx-1 my-0.5' : 'pb-2',
+                            shouldMerge
+                              ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
+                              : 'flex rounded-xl overflow-hidden border border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#171515]'
+                          )}
+                        >
+                          {shouldMerge && <MergeConfetti active={justMerged} />}
+                          {product1 && (
+                            <div className="flex-1 min-w-0">
+                              <ArtworkCardV2
+                                key={product1.id}
+                                product={product1}
+                                isSelected={p1Selected}
+                                selectionNumber={getSelectionNumber(product1.id)}
+                                onSelect={onToggleSelect}
+                                priorityLoad={virtualRow.index < 3}
+                                mergeWithRight
+                                spinePairLayout
+                                isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
+                                isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                              />
+                            </div>
+                          )}
+                          <div
+                            className={cn(
+                              'shrink-0 flex flex-col items-center justify-center px-1',
+                              shouldMerge
+                                ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+                                : 'bg-neutral-50 dark:bg-[#201c1c] border-x border-neutral-200 dark:border-[#2c2828]'
+                            )}
+                          >
                             <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-1">
-                              {product1.vendor}
+                              {artistLabel}
                             </span>
                           </div>
-                        )}
-                        {product2 && (
-                          <div className={shouldMerge ? 'flex-1 min-w-0' : undefined}>
-                            <ArtworkCardV2
-                              key={product2.id}
-                              product={product2}
-                              isSelected={p2Selected}
-                              selectionNumber={getSelectionNumber(product2.id)}
-                              onSelect={onToggleSelect}
-                              priorityLoad={virtualRow.index < 3}
-                              mergeWithLeft={shouldMerge}
-                              isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
-                              isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
-                            />
-                          </div>
-                        )}
-                      </div>
+                          {product2 && (
+                            <div className="flex-1 min-w-0">
+                              <ArtworkCardV2
+                                key={product2.id}
+                                product={product2}
+                                isSelected={p2Selected}
+                                selectionNumber={getSelectionNumber(product2.id)}
+                                onSelect={onToggleSelect}
+                                priorityLoad={virtualRow.index < 3}
+                                mergeWithLeft
+                                spinePairLayout
+                                isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
+                                isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="relative flex justify-center pb-2">
+                          {product1 && (
+                            <div className="w-[calc(50%-0.25rem)]">
+                              <ArtworkCardV2
+                                key={product1.id}
+                                product={product1}
+                                isSelected={!!p1Selected}
+                                selectionNumber={getSelectionNumber(product1.id)}
+                                onSelect={onToggleSelect}
+                                priorityLoad={virtualRow.index < 3}
+                                isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
+                                isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -583,12 +609,34 @@ export function ArtworkPickerSheet({
               {hasMore && <div ref={sentinelRef} className="h-20" />}
 
               {!hasMore && products.length > 0 && (
-                <p className={cn(
-                  'text-center text-sm py-6',
-                  theme === 'light' ? 'text-neutral-500' : 'text-neutral-500'
-                )}>
-                  You&apos;ve seen all artworks
-                </p>
+                onSeasonChange ? (
+                  <div className="flex flex-col items-center py-6 px-2 pb-8">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSeasonChange(activeSeason === 'season1' ? 'season2' : 'season1')
+                      }
+                      className={cn(
+                        'inline-flex items-center gap-1 text-sm font-semibold transition-colors',
+                        theme === 'light'
+                          ? 'text-[#047AFF] hover:text-[#0366d6]'
+                          : 'text-[#60A5FA] hover:text-[#93C5FD]'
+                      )}
+                    >
+                      {activeSeason === 'season1' ? 'Browse Season 2' : 'Browse Season 1'}
+                      <ChevronRight className="w-4 h-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <p
+                    className={cn(
+                      'text-center text-sm py-6',
+                      theme === 'light' ? 'text-neutral-500' : 'text-neutral-500'
+                    )}
+                  >
+                    You&apos;ve seen all artworks
+                  </p>
+                )
               )}
             </div>
 
