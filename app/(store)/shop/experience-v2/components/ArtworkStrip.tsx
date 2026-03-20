@@ -261,7 +261,8 @@ function ArtworkCard({
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
         (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
-        isInCart && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
+        isInCart && !isMerged && 'bg-[#e8f4ff] dark:bg-[#1a1616]',
+        isMerged && 'bg-[#f0f9ff] dark:bg-[#2c2828]',
         isInCart && !isMerged && 'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
       )}
     >
@@ -271,7 +272,11 @@ function ArtworkCard({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          isInCart ? 'bg-[#e8f4ff] dark:bg-[#171515]' : 'bg-neutral-100 dark:bg-[#201c1c]'
+          isMerged
+            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+            : isInCart
+              ? 'bg-[#e8f4ff] dark:bg-[#171515]'
+              : 'bg-neutral-100 dark:bg-[#201c1c]'
         )}
         animate={showTapHint ? {
           scale: [1, 0.955, 1, 0.955, 1],
@@ -367,15 +372,22 @@ function ArtworkCard({
 
       <div
         className={cn(
-          'px-2 py-1.5 flex items-center gap-1 border-t transition-colors overflow-hidden cursor-pointer',
+          'px-2 flex items-center gap-1 transition-colors overflow-hidden cursor-pointer',
+          isMerged ? 'py-1' : 'py-1.5 border-t',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl',
-          isInCart
-            ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
-            : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
+          isMerged
+            ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
+            : isInCart
+              ? 'border-blue-200/60 dark:border-white/20 bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'
+              : 'border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'
         )}
-        style={{ backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }}
+        style={
+          isMerged
+            ? undefined
+            : { backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)' }
+        }
         onClick={(e) => {
           if (isSoldOut) return
           if ((e.target as HTMLElement).closest('button')) return
@@ -755,7 +767,7 @@ export function ArtworkStrip({
             <div className={cn(
               'relative',
               shouldMerge
-                ? 'flex box-border rounded-xl border-2 border-[#FFBA94]/45 overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616] shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
+                ? 'flex rounded-xl overflow-hidden bg-[#f0f9ff] dark:bg-[#2c2828]'
                 : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
             )}>
               {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -793,7 +805,7 @@ export function ArtworkStrip({
                 </div>
               )}
               {shouldMerge && product1 && (
-                <div className="shrink-0 flex flex-col items-center justify-center bg-[#e8f4ff] dark:bg-[#1a1616] px-1.5 border-l border-r border-[#FFBA94]/30 dark:border-[#FFBA94]/20">
+                <div className="shrink-0 flex flex-col items-center justify-center bg-[#f0f9ff] dark:bg-[#2c2828] px-1.5">
                   <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
                     {product1.vendor}
                   </span>

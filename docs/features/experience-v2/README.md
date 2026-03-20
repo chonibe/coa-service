@@ -86,10 +86,10 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **No Add button** — tap card/Eye to toggle selection
 - **Numbered badges** (1, 2, 3…) on selected artworks
 - Lamp position indicators (1, 2) for artworks on lamp sides
-- **Selected state** — full card (image + title/price row): **2px peach border** (`border-[#FFBA94]/45`) with **transparent** border when unselected so layout does not shift; light **inset wash** for warmth. Picker matches [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) cards. **Merged same-vendor pair** rows use the same border opacity and inset shadow on the outer flex wrapper (one continuous frame around both cards + vendor spine)
+- **Unselected** — image + footer use the same **`bg-white` / `bg-[#171515]`** as the sheet. **Selected** — **brighter lift** (`#f0f9ff` light / `#2c2828` dark) on shell, image well, and title row (no ring); [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) still uses the full-card peach **border** for **single** in-cart tiles only. **Merged same-vendor pair** (picker + strip): one continuous **`#f0f9ff` / `#2c2828`** row, **no** peach frame, spine lines, or **image↔title** divider on the merged halves — see [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and [`ArtworkStrip.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
 - Tapping toggles selection and adds to cart
 - "Done" button closes the sheet
-- **Load more** — infinite scroll fetches `/api/shop/experience/collection-products` per season
+- **Load more** — infinite scroll fetches `/api/shop/experience/collection-products` per season; when the list has no next page, a **Browse Season 1 / Season 2** button at the bottom switches the other collection (`onSeasonChange`; no extra caption)
 - Theme-aware styling
 
 **Implementation:** [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
@@ -103,7 +103,7 @@ Horizontal tappable carousel at the bottom of the Spline view:
 - Tapping rotates lamp to show that artwork
 - **+** opens the picker: **always centered above** the horizontal strip — **glassmorphism** circular control (`backdrop-blur-xl`, translucent fill, light border, inset highlight + soft shadow). When the cart is **empty**, **“Start your Collection”** appears centered under that button. The strip holds **only** selected artworks and spotlight placeholders (no add tile in the row)
 - Animated with Framer Motion `AnimatePresence`
-- Theme-aware styling; bottom panel has no fill (`bg-transparent`) so the Spline preview shows through
+- Theme-aware styling; **bottom gradient fade** (`bg-gradient-to-t` from the same `#F5F5F5` / `#171515` as the Spline column) lifts the strip off the 3D preview without a hard shadow
 
 **Implementation:** [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
 
