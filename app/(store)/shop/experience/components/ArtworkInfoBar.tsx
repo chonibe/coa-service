@@ -80,7 +80,7 @@ interface ArtworkInfoBarProps {
   onRotate?: () => void
   /** When true, hide title/artist (moved to header center on desktop) */
   hideTitle?: boolean
-  /** Slide index for first gallery image (1 when no accordion, 2 when accordion present) */
+  /** Slide index for gallery image at thumb idx 1 (second image). Idx 0 uses slide 1 (details). */
   gallerySlideOffset?: number
 }
 
@@ -184,6 +184,10 @@ export function ArtworkInfoBar({
   }, [])
 
   if (!displayedProduct) return null
+
+  /** Reel slide index for product image thumbnail idx (0 = hero in details section). */
+  const slideForImageThumb = (idx: number) =>
+    idx === 0 ? 1 : gallerySlideOffset + idx - 1
 
   const isLamp = displayedProduct?.id === lampProduct?.id
   const title = displayedProduct.title ?? ''
@@ -300,11 +304,15 @@ export function ArtworkInfoBar({
                       key={img.url || idx}
                       type="button"
                       onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onGoToSlide?.(gallerySlideOffset + idx) }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onGoToSlide?.(slideForImageThumb(idx))
+                      }}
                       title="View full image"
                       className={cn(
                         'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
-                      currentSlide === gallerySlideOffset + idx
+                      currentSlide === slideForImageThumb(idx)
                         ? 'border-[#FFBA94]'
                           : theme === 'light'
                             ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'

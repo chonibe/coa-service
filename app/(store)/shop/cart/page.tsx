@@ -217,26 +217,26 @@ function CartContentInner() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-center gap-1 shrink-0">
+                <div className="flex items-center justify-center gap-0.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-8 h-8 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    className="qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
                     aria-label="Decrease quantity"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-3 h-3" strokeWidth={2.25} />
                   </button>
-                  <span className="min-w-[2rem] text-center text-sm font-medium tabular-nums">
+                  <span className="min-w-[1.25rem] text-center text-xs font-medium tabular-nums">
                     {item.quantity}
                   </span>
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
-                    className="w-8 h-8 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
+                    className="qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
                     aria-label="Increase quantity"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3 h-3" strokeWidth={2.25} />
                   </button>
                 </div>
 

@@ -198,7 +198,9 @@ export function SplineFullScreen({
   const scrollRef = useRef<HTMLDivElement>(null)
   const hasAccordion = !!displayedProduct
   const hasGallery = galleryImages.length > 1 // Skip first image (shown in details), need 2+ for gallery section
-  const sectionCount = 1 + (hasAccordion ? 1 : 0) + (hasGallery ? 1 : 0)
+  /** One scroll section per image after the first (matches thumbnail slide indices from ArtworkInfoBar). */
+  const gallerySectionCount = hasGallery ? galleryImages.length - 1 : 0
+  const sectionCount = 1 + (hasAccordion ? 1 : 0) + gallerySectionCount
 
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
   const lastReportedSectionRef = useRef(currentSlide)
@@ -319,7 +321,8 @@ export function SplineFullScreen({
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
-          scrollSnapType: 'y proximity',
+          // No scroll-snap: JS wheel forwarding sets scrollTop + preventDefault; y proximity snap
+          // was snapping the reel back (scrollTop stuck ~64 while deltaY kept firing — see debug-2240e8.log).
         } as React.CSSProperties}
       >
         {/* Section 0: Spline 3D — facade (LCP) then deferred Spline mount */}
@@ -329,7 +332,6 @@ export function SplineFullScreen({
             'flex-shrink-0 flex flex-col relative w-full',
             hasGallery || hasAccordion ? 'min-h-[100svh]' : 'flex-1 min-w-0'
           )}
-          style={{ scrollSnapAlign: 'start' }}
         >
           <div className="flex-1 min-h-0 min-w-0 relative">
           {!splineReady ? (
@@ -420,7 +422,6 @@ export function SplineFullScreen({
           <div
             ref={(r) => { sectionRefs.current[1] = r }}
             className="flex-shrink-0 w-full min-h-[60svh] flex flex-col items-center justify-start py-8"
-            style={{ scrollSnapAlign: 'start' }}
           >
             <ArtworkAccordions
               key={displayedProduct.id}
@@ -433,32 +434,34 @@ export function SplineFullScreen({
           </div>
         )}
 
-        {/* Section 2 (or 1 if no accordion): Gallery — skip first image (artwork shown in details), show remaining */}
-        {galleryImages.length > 1 && (
-          <div
-            ref={(r) => { sectionRefs.current[hasAccordion ? 2 : 1] = r }}
-            className="flex-shrink-0 w-full flex flex-col items-center py-4"
-            style={{ scrollSnapAlign: 'start' }}
-          >
-            {galleryImages.slice(1).map((img, idx) => (
+        {/* Gallery: one scroll section per image after the first (thumb idx 1+ → slide galleryBase+idx-1) */}
+        {galleryImages.length > 1 &&
+          galleryImages.slice(1).map((img, idx) => {
+            const galleryBase = hasAccordion ? 2 : 1
+            const sectionIndex = galleryBase + idx
+            return (
               <div
                 key={img.url || idx}
-                className="w-full flex items-center justify-center py-3 px-4"
+                ref={(r) => {
+                  sectionRefs.current[sectionIndex] = r
+                }}
+                className="flex-shrink-0 w-full flex flex-col items-center py-4"
               >
-                <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
-                  <Image
-                    src={getShopifyImageUrl(img.url, 1200) ?? img.url}
-                    alt={img.altText ?? `Gallery ${idx + 2}`}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                    priority={idx === 0}
-                  />
+                <div className="w-full flex items-center justify-center py-3 px-4">
+                  <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
+                    <Image
+                      src={getShopifyImageUrl(img.url, 1200) ?? img.url}
+                      alt={img.altText ?? `Gallery ${idx + 2}`}
+                      fill
+                      className="object-cover"
+                      sizes="100vw"
+                      priority={idx === 0}
+                    />
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            )
+          })}
       </div>
 
       {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container.

@@ -104,6 +104,12 @@ button[aria-label] svg {
   min-width: 20px;
 }
 
+/* Opt out of 44px touch floor for inline quantity steppers (explicit size in component) */
+button.qty-stepper-compact {
+  min-height: 0;
+  min-width: 0;
+}
+
 /* Google Places autocomplete dropdown — above modals, styled to match app.
    pointer-events: auto required so clicks work when Radix Dialog sets pointer-events: none on body. */
 .pac-container {

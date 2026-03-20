@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, us
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
-import { Package, Shield, RotateCcw, Lock } from 'lucide-react'
+import { Package, Shield, RotateCcw, Lock, Minus, Plus } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
@@ -32,12 +32,38 @@ const PaymentStep = dynamic(
   }
 )
 
+/** Compact ± controls — globals.css gives all buttons min 44×44; qty-stepper-compact opts out */
+const qtyStepperBtnClass =
+  'qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 text-neutral-700 dark:text-[#d4b8b8] bg-neutral-50 dark:bg-[#201c1c] hover:bg-neutral-100 dark:hover:bg-[#2a2424] transition-colors disabled:opacity-40 disabled:pointer-events-none'
+
+/** Consecutive identical product IDs in cart order are one line with quantity = run length. */
+function groupConsecutiveArtworks(products: ShopifyProduct[]): Array<{
+  product: ShopifyProduct
+  quantity: number
+  runStartIndex: number
+}> {
+  const runs: Array<{ product: ShopifyProduct; quantity: number; runStartIndex: number }> = []
+  let i = 0
+  while (i < products.length) {
+    const product = products[i]
+    let j = i + 1
+    while (j < products.length && products[j].id === product.id) j++
+    runs.push({ product, quantity: j - i, runStartIndex: i })
+    i = j
+  }
+  return runs
+}
+
 interface OrderBarProps {
   lamp: ShopifyProduct
   selectedArtworks: ShopifyProduct[]
   lampQuantity: number
   onLampQuantityChange: (qty: number) => void
-  onRemoveArtwork: (id: string) => void
+  /**
+   * Adjust quantity for a consecutive run of the same artwork.
+   * `runStartIndex` is the `selectedArtworks` index where that run begins.
+   */
+  onAdjustArtworkQuantity: (runStartIndex: number, delta: 1 | -1) => void
   onSelectArtwork?: (product: ShopifyProduct) => void
   onViewLampDetail?: (product: ShopifyProduct) => void
   isGift: boolean
@@ -84,56 +110,6 @@ function AnimatedPrice({ value }: { value: number }) {
   return <span className="tabular-nums">${formatPriceCompact(display)}</span>
 }
 
-function LampQuantityInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const [local, setLocal] = useState(String(value))
-  useEffect(() => {
-    setLocal(String(value))
-  }, [value])
-  const commit = useCallback(
-    (raw: string) => {
-      const trimmed = raw.trim()
-      if (trimmed === '') {
-        onChange(0)
-        setLocal('0')
-        return
-      }
-      const n = parseInt(trimmed, 10)
-      if (!Number.isNaN(n) && n >= 0) {
-        const clamped = Math.min(99, n)
-        onChange(clamped)
-        setLocal(String(clamped))
-      } else {
-        setLocal(String(value))
-      }
-    },
-    [onChange, value]
-  )
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={local}
-      onChange={(e) => {
-        const v = e.target.value.replace(/[^0-9]/g, '')
-        if (v === '') {
-          setLocal('')
-          return
-        }
-        const n = parseInt(v, 10)
-        setLocal(String(Math.min(99, n)))
-      }}
-      onBlur={() => commit(local)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur()
-      }}
-      onClick={(e) => e.stopPropagation()}
-      className="w-12 h-7 text-center text-xs font-medium rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#047AFF]/50 focus:border-[#047AFF]"
-      aria-label="Lamp quantity (0 to remove)"
-    />
-  )
-}
-
 const ARTWORKS_PER_FREE_LAMP = 14
 const DISCOUNT_PER_ARTWORK = 7.5
 
@@ -148,7 +124,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   selectedArtworks,
   lampQuantity,
   onLampQuantityChange,
-  onRemoveArtwork,
+  onAdjustArtworkQuantity,
   onSelectArtwork,
   isGift,
   collectedProductIds,
@@ -174,6 +150,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const lampPrice = parsePrice(lamp)
   const artworkCount = selectedArtworks.length
+  const artworkRuns = React.useMemo(() => groupConsecutiveArtworks(selectedArtworks), [selectedArtworks])
   const includeLamp = lampQuantity > 0
 
   const lampPrices = React.useMemo(() => {
@@ -204,16 +181,20 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     if (itemCount === 0) return
     if (firedBeginCheckoutRef.current) return
     firedBeginCheckoutRef.current = true
-    const items = lampQuantity > 0
-      ? [
-          storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
-          ...selectedArtworks.map((p) =>
-            storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-          ),
-        ]
-      : selectedArtworks.map((p) =>
-          storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-        )
+    const artworkLineItems: ReturnType<typeof storefrontProductToItem>[] = []
+    let ai = 0
+    while (ai < selectedArtworks.length) {
+      const p = selectedArtworks[ai]
+      let aj = ai + 1
+      while (aj < selectedArtworks.length && selectedArtworks[aj].id === p.id) aj++
+      const qty = aj - ai
+      artworkLineItems.push(storefrontProductToItem(p, p.variants?.edges?.[0]?.node, qty))
+      ai = aj
+    }
+    const items =
+      lampQuantity > 0
+        ? [storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity), ...artworkLineItems]
+        : artworkLineItems
     trackBeginCheckout(items, total, 'USD', {
       em: checkout.address?.email || undefined,
     })
@@ -246,8 +227,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       }
     }
 
-    for (const art of selectedArtworks) {
-      if (!art.availableForSale) continue
+    let wi = 0
+    while (wi < selectedArtworks.length) {
+      const art = selectedArtworks[wi]
+      let wj = wi + 1
+      while (wj < selectedArtworks.length && selectedArtworks[wj].id === art.id) wj++
+      if (!art.availableForSale) {
+        wi = wj
+        continue
+      }
+      const qty = wj - wi
       items.push({
         productId: art.id.replace('gid://shopify/Product/', ''),
         variantId: getVariantId(art),
@@ -255,9 +244,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         handle: art.handle,
         title: art.title,
         price: parsePrice(art),
-        quantity: 1,
+        quantity: qty,
         image: art.featuredImage?.url ?? undefined,
       })
+      wi = wj
     }
     return items
   }, [lamp, lampQuantity, lampPrices, selectedArtworks])
@@ -499,38 +489,59 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       {/* Compact cart lines */}
       <div className="pt-2 space-y-2 max-h-[35vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
+            <div className="flex items-center gap-2 min-w-0 justify-self-start">
               <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-7 h-7 shrink-0', 'text-neutral-400 dark:text-[#d4b8b8]')} xmlns="http://www.w3.org/2000/svg">
                 <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
               </svg>
               <span className="text-sm text-neutral-900 dark:text-[#f0e8e8] truncate min-w-0">Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
             </div>
-            {lampSavings > 0 && (
-              <>
-                <TicketIcon className="w-4 h-4 shrink-0 text-green-600" aria-hidden />
-                <span className="text-green-600 whitespace-nowrap shrink-0">Saving ${formatPriceCompact(lampSavings)}</span>
-              </>
-            )}
-            <div className="flex items-center gap-1.5 tabular-nums shrink-0 whitespace-nowrap">
-              {lampSavings > 0 && (
-                <span className="line-through text-neutral-500 dark:text-[#c4a0a0]">${formatPriceCompact(lampOriginalTotal)}</span>
-              )}
-              <span className={cn('font-medium text-sm', lampTotal === 0 ? 'text-green-600' : 'text-neutral-700 dark:text-[#d4b8b8]')}>
-                {lampTotal === 0 ? 'FREE' : `$${formatPriceCompact(lampTotal)}`}
+            <div className="flex items-center justify-center gap-0.5 shrink-0 justify-self-center">
+              <button
+                type="button"
+                onClick={() => onLampQuantityChange(Math.max(0, lampQuantity - 1))}
+                className={qtyStepperBtnClass}
+                aria-label="Decrease lamp quantity"
+              >
+                <Minus className="w-2.5 h-2.5" strokeWidth={2.5} />
+              </button>
+              <span className="min-w-[1.125rem] text-center text-[10px] font-medium tabular-nums text-neutral-900 dark:text-[#f0e8e8]">
+                {lampQuantity}
               </span>
+              <button
+                type="button"
+                onClick={() => onLampQuantityChange(Math.min(99, lampQuantity + 1))}
+                disabled={lampQuantity >= 99}
+                className={qtyStepperBtnClass}
+                aria-label="Increase lamp quantity"
+              >
+                <Plus className="w-2.5 h-2.5" strokeWidth={2.5} />
+              </button>
             </div>
-            <LampQuantityInput
-              value={lampQuantity}
-              onChange={onLampQuantityChange}
-            />
+            <div className="flex flex-col items-end gap-0.5 shrink-0 justify-self-end min-w-0">
+              {lampSavings > 0 && (
+                <span className="flex items-center gap-1 text-green-600 text-xs whitespace-nowrap">
+                  <TicketIcon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                  Saving ${formatPriceCompact(lampSavings)}
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 tabular-nums whitespace-nowrap">
+                {lampSavings > 0 && (
+                  <span className="line-through text-neutral-500 dark:text-[#c4a0a0]">${formatPriceCompact(lampOriginalTotal)}</span>
+                )}
+                <span className={cn('font-medium text-sm', lampTotal === 0 ? 'text-green-600' : 'text-neutral-700 dark:text-[#d4b8b8]')}>
+                  {lampTotal === 0 ? 'FREE' : `$${formatPriceCompact(lampTotal)}`}
+                </span>
+              </div>
+            </div>
           </div>
         )}
-        {selectedArtworks.map((art) => {
+        {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
+          const lineSubtotal = parsePrice(art) * quantity
           return (
-          <div key={art.id} className="flex items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
+            <div className="flex items-center gap-2 min-w-0 justify-self-start">
               <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
                 {art.featuredImage?.url ? (
                   <Image
@@ -558,10 +569,31 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                 {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
               </span>
             </div>
-            <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] tabular-nums shrink-0">${formatPriceCompact(parsePrice(art))}</span>
-            <div className="w-9 h-6 flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 bg-neutral-50 dark:bg-[#201c1c] text-xs font-medium tabular-nums text-neutral-700 dark:text-[#d4b8b8] shrink-0">
-              1
+            <div className="flex items-center justify-center gap-0.5 shrink-0 justify-self-center">
+              <button
+                type="button"
+                onClick={() => onAdjustArtworkQuantity(runStartIndex, -1)}
+                className={qtyStepperBtnClass}
+                aria-label={`Remove one ${art.title} from order`}
+              >
+                <Minus className="w-2.5 h-2.5" strokeWidth={2.5} />
+              </button>
+              <span className="min-w-[1.125rem] text-center text-[10px] font-medium tabular-nums text-neutral-900 dark:text-[#f0e8e8]">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => onAdjustArtworkQuantity(runStartIndex, 1)}
+                disabled={!art.availableForSale}
+                className={qtyStepperBtnClass}
+                aria-label={`Add another ${art.title}`}
+              >
+                <Plus className="w-2.5 h-2.5" strokeWidth={2.5} />
+              </button>
             </div>
+            <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] tabular-nums shrink-0 justify-self-end whitespace-nowrap">
+              ${formatPriceCompact(lineSubtotal)}
+            </span>
           </div>
         )})}
         {lampQuantity === 0 && (

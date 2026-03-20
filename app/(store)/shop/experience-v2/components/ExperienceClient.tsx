@@ -347,7 +347,7 @@ export function ExperienceClient({
     selectedArtworks: [] as ShopifyProduct[],
     lampQuantity: 0,
     onLampQuantityChange: () => {},
-    onRemoveArtwork: () => {},
+    onAdjustArtworkQuantity: () => {},
     onSelectArtwork: undefined,
     onViewLampDetail: undefined,
     isGift: false,

@@ -679,6 +679,24 @@ export function Configurator({
     }
   }, [])
 
+  const handleAdjustArtworkQuantity = useCallback((runStartIndex: number, delta: 1 | -1) => {
+    setCartOrder((prev) => {
+      const id = prev[runStartIndex]
+      if (!id) return prev
+      let end = runStartIndex
+      while (end < prev.length && prev[end] === id) end++
+      if (delta === -1) {
+        if (end === runStartIndex) return prev
+        const next = [...prev]
+        next.splice(end - 1, 1)
+        return next
+      }
+      const next = [...prev]
+      next.splice(end, 0, id)
+      return next
+    })
+  }, [])
+
   /** Lamp card: on ads use session skip only (card shows every new session, skip hides for current session). Else use persisted skip. */
   const showLampPaywall = lampQuantity === 0 && (adPreset ? !sessionLampPaywallSkipped : !lampPaywallSkipped)
   const showHighlightAnimation = false // temporarily hidden for user testing
@@ -904,7 +922,7 @@ export function Configurator({
       selectedArtworks: selectedProducts,
       lampQuantity,
       onLampQuantityChange: handleLampQuantityChange,
-      onRemoveArtwork: (id) => setCartOrder((prev) => prev.filter((oid) => oid !== id)),
+      onAdjustArtworkQuantity: handleAdjustArtworkQuantity,
       onSelectArtwork: (product) => {
         const inSeason1 = productsSeason1.some((p) => p.id === product.id)
         if (inSeason1 && activeSeason !== 'season1') setActiveSeasonAndReset('season1')
@@ -929,6 +947,7 @@ export function Configurator({
     selectedProducts,
     lampQuantity,
     handleLampQuantityChange,
+    handleAdjustArtworkQuantity,
     productsSeason1,
     activeSeason,
     setActiveSeasonAndReset,

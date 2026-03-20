@@ -20,7 +20,7 @@ export interface OrderBarContextProps {
   selectedArtworks: ShopifyProduct[]
   lampQuantity: number
   onLampQuantityChange: (qty: number) => void
-  onRemoveArtwork: (id: string) => void
+  onAdjustArtworkQuantity: (runStartIndex: number, delta: 1 | -1) => void
   onSelectArtwork?: (product: ShopifyProduct) => void
   onViewLampDetail?: (product: ShopifyProduct) => void
   isGift: boolean

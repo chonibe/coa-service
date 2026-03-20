@@ -437,26 +437,6 @@ export function ExperienceV2Client({
     return 'A'
   }, [])
 
-  const handleRemoveArtwork = useCallback((id: string) => {
-    setCartOrder((prev) => {
-      const filtered = prev.filter((pid) => pid !== id)
-      setLampPreviewOrder((prevLamp) => {
-        const next = prevLamp.filter((lid) => lid !== id)
-        if (next.length === 0) {
-          setRotateToSide(null)
-          setActiveCarouselIndex(-1)
-        } else if (next.length < prevLamp.length) {
-          const sideToShow = getSideToShowForProduct(next, next[0])
-          setRotateTrigger((t) => t + 1)
-          setRotateToSide(sideToShow)
-          setActiveCarouselIndex(filtered.indexOf(next[0]))
-        }
-        return next
-      })
-      return filtered
-    })
-  }, [getSideToShowForProduct])
-
   const handleRemoveFromCarousel = useCallback((index: number) => {
     const removedId = cartOrder[index]
     setCartOrder((prev) => {
@@ -494,13 +474,38 @@ export function ExperienceV2Client({
     })
   }, [cartOrder, getSideToShowForProduct])
 
+  const handleAdjustArtworkQuantity = useCallback(
+    (runStartIndex: number, delta: 1 | -1) => {
+      if (delta === -1) {
+        const prev = cartOrder
+        const id = prev[runStartIndex]
+        if (!id) return
+        let end = runStartIndex
+        while (end < prev.length && prev[end] === id) end++
+        if (end <= runStartIndex) return
+        handleRemoveFromCarousel(end - 1)
+        return
+      }
+      setCartOrder((prev) => {
+        const id = prev[runStartIndex]
+        if (!id) return prev
+        let end = runStartIndex
+        while (end < prev.length && prev[end] === id) end++
+        const next = [...prev]
+        next.splice(end, 0, id)
+        return next
+      })
+    },
+    [cartOrder, handleRemoveFromCarousel]
+  )
+
   useEffect(() => {
     setOrderBarProps({
       lamp,
       selectedArtworks,
       lampQuantity,
       onLampQuantityChange: handleLampQuantityChange,
-      onRemoveArtwork: handleRemoveArtwork,
+      onAdjustArtworkQuantity: handleAdjustArtworkQuantity,
       onViewLampDetail: setDetailProduct,
       isGift: false,
       lampPrice,
@@ -509,7 +514,18 @@ export function ExperienceV2Client({
       lampSavings,
       pastLampPaywall: true,
     })
-  }, [lamp, selectedArtworks, lampQuantity, lampPrice, lampTotal, artworkCount, lampSavings, handleLampQuantityChange, handleRemoveArtwork, setOrderBarProps])
+  }, [
+    lamp,
+    selectedArtworks,
+    lampQuantity,
+    lampPrice,
+    lampTotal,
+    artworkCount,
+    lampSavings,
+    handleLampQuantityChange,
+    handleAdjustArtworkQuantity,
+    setOrderBarProps,
+  ])
 
   useEffect(() => {
     if (!detailProduct) {
@@ -768,7 +784,8 @@ export function ExperienceV2Client({
   // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
   const hasAccordion = !!displayedProduct
   const hasGallery = galleryImages.length > 1 // First image shown in artwork details, need 2+ for gallery section
-  const sectionCount = 1 + (hasAccordion ? 1 : 0) + (hasGallery ? 1 : 0)
+  const sectionCount =
+    1 + (hasAccordion ? 1 : 0) + (hasGallery ? galleryImages.length - 1 : 0)
   const gallerySectionIndex = hasAccordion ? 2 : 1
   const prevDisplayedIdRef = useRef<string | null>(null)
   useEffect(() => {
@@ -1007,7 +1024,7 @@ export function ExperienceV2Client({
         selectedArtworks={selectedArtworks}
         lampQuantity={lampQuantity}
         onLampQuantityChange={handleLampQuantityChange}
-        onRemoveArtwork={handleRemoveArtwork}
+        onAdjustArtworkQuantity={handleAdjustArtworkQuantity}
         isGift={false}
       />
     </div>

@@ -91,7 +91,7 @@ export function ExperienceOnboardingClient({
       selectedArtworks: [],
       lampQuantity: 0,
       onLampQuantityChange: () => {},
-      onRemoveArtwork: () => {},
+      onAdjustArtworkQuantity: () => {},
       onSelectArtwork: undefined,
       onViewLampDetail: undefined,
       isGift: false,
@@ -181,7 +181,7 @@ export function ExperienceOnboardingClient({
         selectedArtworks={[]}
         lampQuantity={0}
         onLampQuantityChange={() => {}}
-        onRemoveArtwork={() => {}}
+        onAdjustArtworkQuantity={() => {}}
         onSelectArtwork={undefined}
         onViewLampDetail={undefined}
         isGift={false}
