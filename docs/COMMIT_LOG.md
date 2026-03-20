@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: style(experience): remove artwork card borders (strip ring + shell placeholder) (2026-03-20)
+
+**Ref:** `fbb798436`
+
+### Summary
+**Strip** in-cart: removed **`border-[#FFBA94]/45`** and **inset peach shadow** from [`getStripArtworkCardSurfaces`](lib/shop/experience-artwork-card-surfaces.ts) (background tint only). **Picker + strip** card shells: dropped **`border-2 border-transparent`**. Strip shell transitions now **`background-color`** only.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-artwork-card-surfaces.ts](lib/shop/experience-artwork-card-surfaces.ts)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: style(experience): picker dark selected tint on lower half of image only (2026-03-20)
 
 **Ref:** `8dfb61cd6`
