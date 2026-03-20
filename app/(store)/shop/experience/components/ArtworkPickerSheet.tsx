@@ -123,7 +123,8 @@ function ArtworkCardV2({
         'transition-[background-color] duration-200 ease-out',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
-        !roundLeft && roundRight && 'rounded-r-xl'
+        !roundLeft && roundRight && 'rounded-r-xl',
+        isSelected && 'bg-[#f0f9ff]'
       )}
     >
       <motion.div
@@ -133,7 +134,7 @@ function ArtworkCardV2({
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
-          'bg-white dark:bg-[#171515]'
+          isSelected ? 'bg-[#f0f9ff] dark:bg-[#171515]' : 'bg-white dark:bg-[#171515]'
         )}
         whileTap={{ scale: 0.99 }}
         transition={{ duration: 0.12, ease: 'easeOut' }}
@@ -145,7 +146,7 @@ function ArtworkCardV2({
       >
         {isSelected && (
           <div
-            className="absolute inset-x-0 bottom-0 top-1/2 z-[1] pointer-events-none bg-[#f0f9ff]/90 dark:bg-[#2c2828]/90 transition-opacity duration-200"
+            className="hidden dark:block absolute inset-x-0 bottom-0 top-1/2 z-[1] pointer-events-none bg-[#2c2828]/90 transition-opacity duration-200"
             aria-hidden
           />
         )}

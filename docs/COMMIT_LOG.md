@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: style(experience): picker full selected fill in light, half-tint in dark (2026-03-20)
+
+**Ref:** _(after commit)_
+
+### Summary
+**ArtworkPickerSheet** `ArtworkCardV2`: **light** mode selected restores **full** `#f0f9ff` on **outer shell + image well** (no half-overlay). **Dark** mode keeps **lower-half only** wash (`#2c2828`/90%) on the image well; shell stays without that outer tint.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: style(experience): picker selected tint on lower half of image only (2026-03-20)
 
 **Ref:** `4c7cb56a0`
