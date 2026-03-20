@@ -794,7 +794,7 @@ export function ArtworkStrip({
               >
                 {shouldMerge && <MergeConfetti active={justMerged} />}
                 {product1 && g1 >= 0 && (
-                  <div className="flex-1 min-w-0">
+                  <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-1')}>
                     <ArtworkCard
                       key={product1.id}
                       product={product1}
@@ -827,13 +827,23 @@ export function ArtworkStrip({
                     />
                   </div>
                 )}
-                <div className="shrink-0 flex flex-col items-center justify-center px-1.5 bg-transparent">
-                  <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-2">
+                <div
+                  className={cn(
+                    'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
+                    shouldMerge ? 'px-0' : 'px-1.5'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase whitespace-nowrap [writing-mode:vertical-rl] rotate-180',
+                      shouldMerge ? 'py-0.5 tracking-wide' : 'py-2 tracking-widest'
+                    )}
+                  >
                     {artistLabel}
                   </span>
                 </div>
                 {product2 && g2 >= 0 && (
-                  <div className="flex-1 min-w-0">
+                  <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-1')}>
                     <ArtworkCard
                       key={product2.id}
                       product={product2}

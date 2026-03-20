@@ -545,12 +545,12 @@ export function ArtworkPickerSheet({
                           className={cn(
                             'relative flex rounded-xl overflow-hidden',
                             'transition-[background-color] duration-200 ease-out',
-                            shouldMerge ? 'py-1 mx-1 my-0.5 bg-[#f0f9ff] dark:bg-[#2c2828]' : 'pb-2 bg-white dark:bg-[#171515]'
+                            shouldMerge ? 'py-1 mx-0.5 my-0.5 bg-[#f0f9ff] dark:bg-[#2c2828]' : 'pb-2 bg-white dark:bg-[#171515]'
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
                           {product1 && (
-                            <div className="flex-1 min-w-0">
+                            <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-1')}>
                               <ArtworkCardV2
                                 key={product1.id}
                                 product={product1}
@@ -565,13 +565,23 @@ export function ArtworkPickerSheet({
                               />
                             </div>
                           )}
-                          <div className="shrink-0 flex flex-col items-center justify-center px-1 bg-transparent">
-                            <span className="text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase tracking-widest whitespace-nowrap [writing-mode:vertical-rl] rotate-180 py-1">
+                          <div
+                            className={cn(
+                              'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
+                              shouldMerge ? 'px-0' : 'px-1'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase whitespace-nowrap [writing-mode:vertical-rl] rotate-180',
+                                shouldMerge ? 'py-0.5 tracking-wide' : 'py-1 tracking-widest'
+                              )}
+                            >
                               {artistLabel}
                             </span>
                           </div>
                           {product2 && (
-                            <div className="flex-1 min-w-0">
+                            <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-1')}>
                               <ArtworkCardV2
                                 key={product2.id}
                                 product={product2}
