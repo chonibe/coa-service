@@ -44,6 +44,8 @@ When the Spline 3D model captured touch for rotation, users couldn't scroll the 
 
 11. **Reel: suppress slide sync during `scrollIntoView`** — When thumbnails call `onGoToSlide`, `SplineFullScreen` runs smooth `scrollIntoView`. Mid-animation, midpoint-based `handleScroll` could report the wrong section and fight the parent `currentSlide`. `ignoreSlideSyncUntilRef` blocks `onSlideChange` from `handleScroll` until `scrollend` on the reel (where supported) or an ~850ms timeout; then `lastReportedSectionRef` is aligned to the target slide.
 
+12. **Gallery: Back to top** — When there are multiple gallery images (`galleryImages.length > 1`), a pill button scrolls the reel to section 0 (Spline), calls `onSlideChange(0)`, and uses the same slide-sync guard as other programmatic jumps. While the Spline section is still largely in view, the button sits **below the last gallery image**. Once the user scrolls past the top reel (IntersectionObserver on section 0; when visible fraction drops below ~12% the 3D + thumbnail stack is effectively gone), the **inline** control hides and a **docked** pill appears at the **bottom of the preview column** (`absolute`) so it stays reachable without scrolling to the gallery end.
+
 **Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Reel uses native scrolling over the model; Configurator still scrolls the artwork panel from the 3D column. Thumbnail highlights stay stable during smooth section jumps.
 
 **Files changed**:
@@ -60,7 +62,7 @@ The Spline preview is responsive: the model scales down as the screen becomes sm
 
 1. **Fit-within-viewport sizing**: `getContainerSize()` computes a size that fits within the container while preserving the lamp aspect ratio (4:5). On smaller screens the model scales down proportionally; on wider viewports it is letterboxed to avoid distortion.
 
-2. **Centered canvas**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds.
+2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-10%)` (with quarter-turn rotation) so the lamp sits slightly higher in the frame.
 
 3. **Container as single source of truth**: `getContainerSize()` uses container `getBoundingClientRect()` for renderer/camera sizing (not `canvas.clientWidth/clientHeight` which can be transitional during layout settling).
 

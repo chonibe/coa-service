@@ -54,6 +54,7 @@ Wrapper around `Spline3DPreview` using **exact same configuration** as Experienc
 - Loads image position from localStorage via `loadImagePosition()`
 - Theme-aware (light/dark mode toggle)
 - Rotate/quarter-turn controls
+- Shared minimal canvas framing: `translateY(-10%)` with quarter-turn rotation in [`spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) (see [Experience README](../experience/README.md#spline-viewport-sizing-2026-03-19))
 
 **Implementation:** [`components/SplineFullScreen.tsx`](../../../app/(store)/shop/experience-v2/components/SplineFullScreen.tsx)
 
@@ -99,11 +100,11 @@ Horizontal tappable carousel at the bottom of the Spline view:
 - Shows selected artworks as 64×64px thumbnails
 - First two display on lamp (green numbered badges)
 - Tapping rotates lamp to show that artwork
-- "+" button opens the picker sheet
+- **+** opens the picker: **always centered above** the horizontal strip — **glassmorphism** circular control (`backdrop-blur-xl`, translucent fill, light border, inset highlight + soft shadow). When the cart is **empty**, **“Start your Collection”** appears centered under that button. The strip holds **only** selected artworks and spotlight placeholders (no add tile in the row)
 - Animated with Framer Motion `AnimatePresence`
-- Theme-aware styling
+- Theme-aware styling; bottom panel has no fill (`bg-transparent`) so the Spline preview shows through
 
-**Implementation:** [`components/ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkCarouselBar.tsx)
+**Implementation:** [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
 
 ## Lamp Side Assignment Logic
 
@@ -112,12 +113,9 @@ The lamp has two sides (A and B). With `swapLampSides=true`:
 - `image1` renders on Side B object
 - `image2` renders on Side A object
 
-When tapping a carousel item:
-- Index 0 → rotate to show Side B (where image1 renders)
-- Index 1 → rotate to show Side A (where image2 renders)
-- Index ≥2 → swap with the *non-active* side and rotate to show it
+When tapping a carousel item, `handleLampSelect` **toggles** lamp assignment (see [`ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)): if the artwork is **not** on the lamp yet, it is placed in a free slot (or replaces the hidden side when both slots are full); if it **is** already on the lamp, it is **removed** from `lampPreviewOrder` so that side’s textures clear and the Spline model shows its **base** mesh for that side. The artwork stays in the cart.
 
-This creates a "rotating display" effect where tapping items beyond the first two cycles artworks through the two lamp slots.
+Persisted carts: if `lampPreviewOrder` is present in `localStorage` (including as an empty array), that value is honored on load; older saves without the key still default preview to the first two cart IDs.
 
 ## Cart Integration
 
