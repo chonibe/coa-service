@@ -44,7 +44,7 @@ When the Spline 3D model captured touch for rotation, users couldn't scroll the 
 
 11. **Reel: suppress slide sync during `scrollIntoView`** — When thumbnails call `onGoToSlide`, `SplineFullScreen` runs smooth `scrollIntoView`. Mid-animation, midpoint-based `handleScroll` could report the wrong section and fight the parent `currentSlide`. `ignoreSlideSyncUntilRef` blocks `onSlideChange` from `handleScroll` until `scrollend` on the reel (where supported) or an ~850ms timeout; then `lastReportedSectionRef` is aligned to the target slide.
 
-12. **Gallery: Back to top** — When there are multiple gallery images (`galleryImages.length > 1`), a pill button scrolls the reel to section 0 (Spline), calls `onSlideChange(0)`, and uses the same slide-sync guard as other programmatic jumps. While the Spline section is still largely in view, the button sits **below the last gallery image**. Once the user scrolls past the top reel (IntersectionObserver on section 0; when visible fraction drops below ~12% the 3D + thumbnail stack is effectively gone), the **inline** control hides and a **docked** pill appears at the **bottom of the preview column** (`absolute`) so it stays reachable without scrolling to the gallery end.
+12. **Gallery: Back to top** — When there are multiple gallery images (`galleryImages.length > 1`), a pill button scrolls the reel to section 0 (Spline), calls `onSlideChange(0)`, and uses the same slide-sync guard as other programmatic jumps. While the Spline section is still largely in view, the button sits **below the last gallery image**. Once the user scrolls past the top reel (IntersectionObserver on section 0; when visible fraction drops below ~12% the 3D + thumbnail stack is effectively gone), the **inline** control hides and a **docked** pill appears at the **bottom of the preview column** (`absolute`) so it stays reachable without scrolling to the gallery end. Both pills use **glassmorphism** (`backdrop-blur-xl`, translucent fill, light border, inset + soft drop shadow) aligned with the bottom [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) **+** control.
 
 **Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Reel uses native scrolling over the model; Configurator still scrolls the artwork panel from the 3D column. Thumbnail highlights stay stable during smooth section jumps.
 
@@ -68,7 +68,9 @@ The Spline preview is responsive: the model scales down as the screen becomes sm
 
 4. **Stable viewport height**: `SplineFullScreen.tsx` uses `svh` (small viewport height) instead of `dvh` for scrollable carousel mode. `svh` doesn't change with mobile browser chrome, avoiding layout shifts.
 
-5. **Debug logging**: Dev-only aspect ratio logging in `applySize()` (controlled by `NEXT_PUBLIC_SPLINE_VERBOSE=1`).
+5. **Artist bio section higher in reel**: When the accordion (artist bio / details) is shown, section 0 uses `min-h-[78svh]` instead of `100svh` so the second block starts sooner while scrolling; gallery-only reels (no accordion) still use `100svh`. Accordion wrapper uses lighter top padding (`pt-3` / `md:pt-4`).
+
+6. **Debug logging**: Dev-only aspect ratio logging in `applySize()` (controlled by `NEXT_PUBLIC_SPLINE_VERBOSE=1`).
 
 **Files changed**:
 - [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — sizing logic and debug logs

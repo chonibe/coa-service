@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { RotateCw } from 'lucide-react'
+import { ArrowUp, RotateCw } from 'lucide-react'
 
 /** Static facade (87 KB) as LCP candidate; Spline 6.7MB scene mounts via requestIdleCallback. */
 const SPLINE_FACADE_SRC = '/internal.webp'
@@ -117,6 +117,8 @@ export function SplineFullScreen({
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
+  /** True when Spline + top thumb column have scrolled mostly out of the reel — show a docked Back to top FAB. */
+  const [backToTopDocked, setBackToTopDocked] = useState(false)
   // Facade pattern: show static image as LCP; mount Spline via requestIdleCallback (3s timeout) or tap
   const [splineReady, setSplineReady] = useState(false)
   useEffect(() => {
@@ -195,6 +197,22 @@ export function SplineFullScreen({
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
+  /** Glass pill — same language as [`ArtworkCarouselBar`](./ArtworkCarouselBar.tsx) glass + control. */
+  const backToTopGlassClass = cn(
+    'inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]',
+    'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
+    theme === 'light'
+      ? [
+          'border border-white/80 bg-white/45 text-neutral-800',
+          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
+          'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
+        ]
+      : [
+          'border border-white/30 bg-white/18 text-[#f0e8e8]',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
+        ]
+  )
   const scrollRef = useRef<HTMLDivElement>(null)
   const hasAccordion = !!displayedProduct
   const hasGallery = galleryImages.length > 1 // Skip first image (shown in details), need 2+ for gallery section
@@ -278,6 +296,17 @@ export function SplineFullScreen({
     })
   }, [onSlideChange, sectionCount])
 
+  const handleGalleryBackToTop = useCallback(() => {
+    const el = scrollRef.current
+    const target = sectionRefs.current[0]
+    if (!el || !target) return
+    ignoreSlideSyncUntilRef.current = Date.now() + 800
+    lastReportedSectionRef.current = 0
+    lastProgrammaticSectionRef.current = 0
+    onSlideChange?.(0)
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [onSlideChange])
+
   useEffect(() => {
     lastReportedSectionRef.current = currentSlide
   }, [currentSlide])
@@ -303,6 +332,41 @@ export function SplineFullScreen({
     observer.observe(splineEl)
     return () => observer.disconnect()
   }, [onSplineInView])
+
+  // Dock Back to top at bottom of preview once the top reel (3D + thumbnail stack) is largely scrolled away
+  useEffect(() => {
+    if (!hasGallery) {
+      setBackToTopDocked(false)
+      return
+    }
+    let observer: IntersectionObserver | null = null
+    let cancelled = false
+    let rafOuter = 0
+    let rafInner = 0
+    const run = () => {
+      const root = scrollRef.current
+      const target = sectionRefs.current[0]
+      if (!root || !target || cancelled) return
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (cancelled) return
+          // Below ~12% visible ≈ user has scrolled into details / gallery; top "slider" no longer usable
+          setBackToTopDocked(entry.intersectionRatio < 0.12)
+        },
+        { root, rootMargin: '0px', threshold: [0, 0.05, 0.12, 0.2, 0.35, 0.5, 1] }
+      )
+      observer.observe(target)
+    }
+    rafOuter = requestAnimationFrame(() => {
+      rafInner = requestAnimationFrame(run)
+    })
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafOuter)
+      cancelAnimationFrame(rafInner)
+      observer?.disconnect()
+    }
+  }, [hasGallery, sectionCount, galleryImages.length, hasAccordion, displayedProduct?.id])
 
   return (
     <div className={cn(
@@ -330,7 +394,11 @@ export function SplineFullScreen({
           ref={(r) => { sectionRefs.current[0] = r }}
           className={cn(
             'flex-shrink-0 flex flex-col relative w-full',
-            hasGallery || hasAccordion ? 'min-h-[100svh]' : 'flex-1 min-w-0'
+            !hasGallery && !hasAccordion
+              ? 'flex-1 min-w-0'
+              : hasAccordion
+                ? 'min-h-[78svh]'
+                : 'min-h-[100svh]'
           )}
         >
           <div className="flex-1 min-h-0 min-w-0 relative">
@@ -421,7 +489,7 @@ export function SplineFullScreen({
         {hasAccordion && displayedProduct && (
           <div
             ref={(r) => { sectionRefs.current[1] = r }}
-            className="flex-shrink-0 w-full min-h-[60svh] flex flex-col items-center justify-start py-8"
+            className="flex-shrink-0 w-full min-h-[50svh] flex flex-col items-center justify-start pt-3 pb-6 md:pt-4 md:pb-8"
           >
             <ArtworkAccordions
               key={displayedProduct.id}
@@ -462,7 +530,35 @@ export function SplineFullScreen({
               </div>
             )
           })}
+        {hasGallery && !backToTopDocked && (
+          <div className="flex-shrink-0 flex justify-center pb-10 pt-4 px-4">
+            <button
+              type="button"
+              onClick={handleGalleryBackToTop}
+              className={backToTopGlassClass}
+              aria-label="Back to top of preview"
+            >
+              <ArrowUp className="w-4 h-4 shrink-0" strokeWidth={2.5} aria-hidden />
+              Back to top
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Docked Back to top — only after scrolling past the Spline / thumbnail area (inline button hidden to avoid duplicate) */}
+      {hasGallery && backToTopDocked && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[19] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={handleGalleryBackToTop}
+            className={cn('pointer-events-auto', backToTopGlassClass)}
+            aria-label="Back to top of preview"
+          >
+            <ArrowUp className="w-4 h-4 shrink-0" strokeWidth={2.5} aria-hidden />
+            Back to top
+          </button>
+        </div>
+      )}
 
       {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container.
           pointer-events-none on shells so empty flex space does not block wheel/touch on the 3D preview below. */}
