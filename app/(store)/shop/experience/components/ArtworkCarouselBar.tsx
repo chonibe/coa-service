@@ -134,7 +134,7 @@ export function ArtworkCarouselBar({
 
                 return (
                   <div
-                    key={artwork.id}
+                    key={`${artwork.id}-${index}`}
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
