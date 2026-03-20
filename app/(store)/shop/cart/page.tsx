@@ -182,7 +182,7 @@ function CartContentInner() {
           {items.map((item) => (
             <div 
               key={item.id}
-              className="flex gap-4 p-4 bg-white rounded-lg border border-slate-200"
+              className="flex gap-4 p-4 bg-white rounded-lg border border-slate-200 items-start"
             >
               {/* Image */}
               <div className="relative w-24 h-24 bg-slate-100 rounded-md overflow-hidden flex-shrink-0">
@@ -200,47 +200,57 @@ function CartContentInner() {
                 )}
               </div>
 
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <Link 
-                  href={`/shop/${item.handle}`}
-                  className="font-semibold text-slate-900 hover:text-slate-600 line-clamp-1"
-                >
-                  {item.title}
-                </Link>
-                {item.variantTitle && (
-                  <p className="text-sm text-slate-500">{item.variantTitle}</p>
-                )}
-                {item.artistName && (
-                  <p className="text-sm text-slate-500">by {item.artistName}</p>
-                )}
-                <p className="font-semibold text-slate-900 mt-1">
+              {/* Title — qty — price (stacked on narrow, row on sm+) */}
+              <div className="flex-1 min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <Link 
+                    href={`/shop/${item.handle}`}
+                    className="font-semibold text-slate-900 hover:text-slate-600 line-clamp-1"
+                  >
+                    {item.title}
+                  </Link>
+                  {item.variantTitle && (
+                    <p className="text-sm text-slate-500">{item.variantTitle}</p>
+                  )}
+                  {item.artistName && (
+                    <p className="text-sm text-slate-500">by {item.artistName}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    className="w-8 h-8 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="min-w-[2rem] text-center text-sm font-medium tabular-nums">
+                    {item.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
+                    className="w-8 h-8 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className="font-semibold text-slate-900 shrink-0 whitespace-nowrap sm:text-right sm:min-w-[4.5rem]">
                   ${item.price.toFixed(2)}
                 </p>
               </div>
 
-              {/* Quantity */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                  className="p-1 rounded hover:bg-slate-100"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
-                  className="p-1 rounded hover:bg-slate-100 disabled:opacity-50"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
               {/* Remove */}
               <button
+                type="button"
                 onClick={() => removeItem(item.id)}
-                className="p-2 text-slate-400 hover:text-red-500"
+                className="p-2 text-slate-400 hover:text-red-500 shrink-0"
+                aria-label="Remove item"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
