@@ -120,7 +120,7 @@ function ArtworkCardV2({
       data-product-id={product.id}
       className={cn(
         'relative box-border border-2 border-transparent origin-center overflow-hidden',
-        'transition-[background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+        'transition-[background-color] duration-200 ease-out',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
@@ -130,14 +130,14 @@ function ArtworkCardV2({
       <motion.div
         className={cn(
           'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
-          'transition-[background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+          'transition-[background-color] duration-200 ease-out',
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
           isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'
         )}
-        whileTap={{ scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 520, damping: 28 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ duration: 0.12, ease: 'easeOut' }}
         onClick={handleClick}
         role="button"
         tabIndex={0}
@@ -182,16 +182,16 @@ function ArtworkCardV2({
           </span>
         )}
 
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {isSelected && selectionNumber !== null && (
             <motion.div
-              key={`badge-${product.id}`}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.65, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 480, damping: 24, mass: 0.65 }}
+              key="selection-badge"
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
               className={cn(
-                'absolute top-2 z-10 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-md shadow-blue-600/25',
+                'absolute top-2 z-10 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/20 pointer-events-none',
                 (isNewDrop || isEarlyAccess) ? 'right-2' : 'left-2'
               )}
             >
@@ -204,7 +204,7 @@ function ArtworkCardV2({
       <div
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
-          'transition-[background-color,color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+          'transition-[background-color,color] duration-200 ease-out',
           (mergeWithLeft || mergeWithRight) ? 'py-1' : 'py-1.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
@@ -217,12 +217,12 @@ function ArtworkCardV2({
       >
         <div className="w-full min-w-0 flex flex-col gap-0.5 items-center">
           <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
-              'text-xs font-medium transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+              'text-xs font-medium transition-colors duration-200 ease-out',
               showEarlyAccessPrice
                 ? 'text-violet-700 dark:text-violet-300'
                 : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
@@ -544,7 +544,7 @@ export function ArtworkPickerSheet({
                         <div
                           className={cn(
                             'relative flex rounded-xl overflow-hidden',
-                            'transition-[background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+                            'transition-[background-color] duration-200 ease-out',
                             shouldMerge ? 'py-1 mx-1 my-0.5 bg-[#f0f9ff] dark:bg-[#2c2828]' : 'pb-2 bg-white dark:bg-[#171515]'
                           )}
                         >

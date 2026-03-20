@@ -262,7 +262,7 @@ function ArtworkCard({
       data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
         'relative box-border border-2 border-transparent origin-center',
-        'transition-[background-color,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
@@ -275,7 +275,7 @@ function ArtworkCard({
       <motion.div
         className={cn(
           'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
-          'transition-[background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+          'transition-[background-color] duration-200 ease-out',
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
           !roundLeft && roundRight && 'rounded-tr-xl',
@@ -294,8 +294,8 @@ function ArtworkCard({
           repeatDelay: 2.4,
           delay: tapNudgeDelay,
           ease: 'easeInOut',
-        } : { type: 'spring', stiffness: 520, damping: 28 }}
-        whileTap={{ scale: 0.97 }}
+        } : { duration: 0.12, ease: 'easeOut' }}
+        whileTap={{ scale: 0.99 }}
         onClick={handleImageClick}
         role="button"
         tabIndex={0}
@@ -380,7 +380,7 @@ function ArtworkCard({
       <div
         className={cn(
           'px-2 flex flex-col gap-1.5 overflow-hidden cursor-pointer',
-          'transition-[background-color,color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+          'transition-[background-color,color] duration-200 ease-out',
           isMerged ? 'py-1' : 'py-1.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
@@ -404,12 +404,12 @@ function ArtworkCard({
       >
         <div className="w-full min-w-0 flex flex-col items-center text-center">
           <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
             isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
-              'text-xs transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+              'text-xs transition-colors duration-200 ease-out',
               isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]',
               isEarlyAccess && 'text-violet-600 dark:text-violet-400 font-semibold'
             )}>{formatPrice(product, isEarlyAccess)}</p>
@@ -487,7 +487,7 @@ function ArtworkCard({
             title={isInCart ? 'Remove from order' : 'Add artwork to order'}
             className={cn(
               'flex items-center justify-center shrink-0 overflow-visible',
-              'transition-[background-color,border-color,color,box-shadow,width,height,padding] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+              'transition-[background-color,border-color,color,box-shadow,width,height,padding] duration-200 ease-out',
               isFirstCard && showHighlightAnimation && highlightStep === 2 && `${wizardHighlightClass} text-blue-50 bg-blue-500/70 rounded-md`,
               isInCart && 'h-6 w-6 p-0',
               !isInCart && 'h-6 px-2.5 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#262222]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-white/80 dark:hover:bg-[#2c2828]/90',
@@ -786,7 +786,7 @@ export function ArtworkStrip({
               <div
                 className={cn(
                   'relative flex rounded-xl overflow-hidden',
-                  'transition-[background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]',
+                  'transition-[background-color] duration-200 ease-out',
                   shouldMerge
                     ? 'bg-[#f0f9ff] dark:bg-[#2c2828]'
                     : 'bg-white dark:bg-[#171515]'
