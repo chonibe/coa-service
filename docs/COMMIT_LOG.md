@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: style(experience): tighter footer under card images (2026-03-20)
+
+**Ref:** `f5c3f167c`
+
+### Summary
+Reduced **top/bottom padding** on picker and strip card footers so **title + price** sit closer to the image; strip **text vs actions** gap `1.5` → `1`.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) – `ArtworkCardV2` footer `pt-0.5 pb-1` / merged `pt-0 pb-0.5`
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) – same padding pattern, `gap-1`
+
+---
+
 ## Commit: fix(experience): snappier tap, tween selection badge (2026-03-20)
 
 **Ref:** `8f3b924ee`
