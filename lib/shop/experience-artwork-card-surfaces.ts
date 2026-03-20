@@ -45,12 +45,12 @@ export type StripArtworkCardSurfaces = {
 }
 
 /**
- * Configurator strip card: shell (incl. peach ring when in cart), image well, meta bar.
+ * Configurator strip card: shell, image well, meta bar (no outer border).
  * `isMerged` = in cart + spine pair + both sides selected styling (#f0f9ff / #2c2828).
  */
 export function getStripArtworkCardSurfaces(isMerged: boolean, isInCart: boolean): StripArtworkCardSurfaces {
   const tImg = `transition-[background-color] ${BG_EASE}`
-  const tShell = `transition-[background-color,border-color,box-shadow] ${BG_EASE}`
+  const tShell = `transition-[background-color] ${BG_EASE}`
   const tm = `transition-[background-color,color] ${BG_EASE}`
   const metaBlur: CSSProperties = {
     backdropFilter: 'blur(16px) saturate(180%)',
@@ -67,11 +67,7 @@ export function getStripArtworkCardSurfaces(isMerged: boolean, isInCart: boolean
   }
   if (isInCart) {
     return {
-      shell: cn(
-        tShell,
-        'bg-[#e8f4ff] dark:bg-[#1a1616]',
-        'border-[#FFBA94]/45 shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
-      ),
+      shell: cn(tShell, 'bg-[#e8f4ff] dark:bg-[#1a1616]'),
       imageWell: cn(tImg, 'bg-[#e8f4ff] dark:bg-[#171515]'),
       meta: cn(tm, 'bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'),
       metaStyle: metaBlur,

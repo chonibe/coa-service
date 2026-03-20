@@ -125,7 +125,7 @@ function ArtworkCardV2({
     <motion.div
       data-product-id={product.id}
       className={cn(
-        'relative box-border border-2 border-transparent origin-center overflow-hidden',
+        'relative box-border origin-center overflow-hidden',
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',

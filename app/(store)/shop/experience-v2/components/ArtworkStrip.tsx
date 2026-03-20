@@ -267,7 +267,7 @@ function ArtworkCard({
       data-product-id={product.id}
       data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
-        'relative box-border border-2 border-transparent origin-center',
+        'relative box-border origin-center',
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
