@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(experience): dedupe artwork carousel when quantity >1 (2026-03-20)
+
+**Ref:** `998613df7`
+
+### Summary
+`cartOrder` may repeat the same product ID (line-item quantity). The bottom **ArtworkCarouselBar** now receives **`carouselArtworks`** (one tile per product, first-seen order). **Carousel trash** clears **all** lines for that product. **OrderBar** −1 still removes one line via **`handleRemoveCartOrderItemAtIndex`**. Shared helpers: [`lib/shop/experience-carousel-cart.ts`](lib/shop/experience-carousel-cart.ts). Applied to **V1** and **V2** `ExperienceV2Client`; carousel item **`key={artwork.id}`**.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-carousel-cart.ts](lib/shop/experience-carousel-cart.ts)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: style(experience): merged pair cards closer (2026-03-20)
 
 **Ref:** `0297537d6`
