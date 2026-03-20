@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: style(experience): merged pair cards closer (2026-03-20)
+
+**Ref:** `0297537d6`
+
+### Summary
+When **both** artworks in a row are selected / in-cart (**`shouldMerge`**): **`-mr-1` / `-ml-1`** on card wrappers pulls tiles toward the center spine; spine uses **`px-0`**, shorter label **`py`**, and **`tracking-wide`** vs `tracking-widest`; picker merge row **`mx-1` → `mx-0.5`**. Unmerged pairs keep previous spine padding.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+
+---
+
 ## Commit: style(experience): tighter footer under card images (2026-03-20)
 
 **Ref:** `f5c3f167c`
