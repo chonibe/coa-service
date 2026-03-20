@@ -386,6 +386,7 @@ export function SplineFullScreen({
               side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
               minimal
               parentScrollMode="contain"
+              reelScrollContainerRef={scrollRef}
               animate
               interactive
               idleSpinEnabled={lampPreviewCount < 2}
@@ -460,19 +461,20 @@ export function SplineFullScreen({
         )}
       </div>
 
-      {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container */}
-      <div className="absolute top-3 left-0 right-0 z-10 pt-safe md:left-1/2 md:right-auto md:w-full md:max-w-[min(92vw,768px)] md:-translate-x-1/2 md:px-4">
-        <div className="flex items-start justify-between gap-4 px-4 md:px-0">
+      {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container.
+          pointer-events-none on shells so empty flex space does not block wheel/touch on the 3D preview below. */}
+      <div className="pointer-events-none absolute top-3 left-0 right-0 z-10 pt-safe md:left-1/2 md:right-auto md:w-full md:max-w-[min(92vw,768px)] md:-translate-x-1/2 md:px-4">
+        <div className="pointer-events-none flex items-start justify-between gap-4 px-4 md:px-0">
           {/* Title/artist on left — hidden on desktop (moved to header center) */}
           {topBarContent && (
-            <div className={cn('flex-1 min-w-0 flex justify-start', isDesktop && 'hidden')}>
+            <div className={cn('pointer-events-auto flex-1 min-w-0 flex justify-start', isDesktop && 'hidden')}>
               {typeof topBarContent === 'function'
                 ? topBarContent({ onRotate: () => setPreviewQuarterTurns((prev) => (prev + 3) % 4), isDesktop })
                 : topBarContent}
             </div>
           )}
           {/* Thumbnails + rotate on right — ml-auto on desktop when title in header */}
-          <div className={cn('flex flex-col items-end gap-2 flex-shrink-0', isDesktop && 'md:ml-auto')}>
+          <div className={cn('pointer-events-auto flex flex-col items-end gap-2 flex-shrink-0', isDesktop && 'md:ml-auto')}>
             {galleryImages.length === 0 && (
               <button
                 type="button"

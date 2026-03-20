@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, type RefObject } from "react"
 
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Application } from "@splinetool/runtime"
@@ -152,10 +152,12 @@ interface Spline3DPreviewProps {
   /** View rotation in 90deg steps (0..3) for portrait/landscape inspection */
   previewQuarterTurns?: number
   /**
-   * `contain` — preview is inside a parent vertical scroller (e.g. SplineFullScreen reel); use native wheel/touch.
-   * `isolate` — preview column has no scrollable ancestor (e.g. Configurator); wheel layer forwards to artwork panel.
+   * `contain` — preview is inside a vertical reel; pass `reelScrollContainerRef` so wheel over WebGL scrolls that element.
+   * `isolate` — preview column has no reel (e.g. Configurator); wheel layer forwards to ancestor or `[data-experience-artwork-scroll]`.
    */
   parentScrollMode?: "contain" | "isolate"
+  /** Reel `overflow-y` container — required for reliable scroll when `parentScrollMode="contain"` (native wheel often never reaches it over canvas). */
+  reelScrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 export function Spline3DPreview({ 
@@ -196,6 +198,7 @@ export function Spline3DPreview({
   onFrontSideSettled,
   previewQuarterTurns = 0,
   parentScrollMode = "isolate",
+  reelScrollContainerRef,
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -2445,18 +2448,23 @@ export function Spline3DPreview({
     setBackgroundFromVariant()
   }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
 
-  // Wheel forwarding only when parent does not scroll the preview (`isolate`, e.g. Configurator split).
-  // `contain` (SplineFullScreen reel): native wheel on the parent overflow-y scroller — no overlay / preventDefault.
+  // Transparent layer above canvas: WebGL often receives wheel first. `contain` scrolls `reelScrollContainerRef`;
+  // `isolate` scrolls nearest scroll ancestor or `[data-experience-artwork-scroll]`.
   useEffect(() => {
-    if (!minimal || parentScrollMode !== "isolate") return
+    if (!minimal) return
     const layer = wheelCaptureLayerRef.current
     if (!layer) return
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) return
+      let scrollEl: HTMLElement | null = null
       const root = containerRef.current
-      if (!root) return
-      let scrollEl = findFirstVerticallyScrollableAncestor(root)
-      if (!scrollEl) scrollEl = findExperienceDesignatedScrollRegion()
+      if (parentScrollMode === "contain") {
+        scrollEl = reelScrollContainerRef?.current ?? (root ? findFirstVerticallyScrollableAncestor(root) : null)
+      } else {
+        if (!root) return
+        scrollEl = findFirstVerticallyScrollableAncestor(root)
+        if (!scrollEl) scrollEl = findExperienceDesignatedScrollRegion()
+      }
       if (!scrollEl) return
       const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight
       if (maxScroll <= 0) return
@@ -2470,7 +2478,7 @@ export function Spline3DPreview({
     }
     layer.addEventListener("wheel", onWheel, { passive: false })
     return () => layer.removeEventListener("wheel", onWheel)
-  }, [minimal, parentScrollMode, isLoading, error])
+  }, [minimal, parentScrollMode, reelScrollContainerRef, isLoading, error])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })
@@ -2929,14 +2937,12 @@ export function Spline3DPreview({
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
-        {parentScrollMode === "isolate" && (
-          <div
-            ref={wheelCaptureLayerRef}
-            className="absolute inset-0 z-[5]"
-            style={{ touchAction: "pan-y" }}
-            aria-hidden
-          />
-        )}
+        <div
+          ref={wheelCaptureLayerRef}
+          className="absolute inset-0 z-[5]"
+          style={{ touchAction: "pan-y" }}
+          aria-hidden
+        />
       </div>
     )
   }
