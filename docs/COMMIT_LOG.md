@@ -1,5 +1,20 @@
 # Commit Log
 
+## Commit: style(experience): picker dark selected tint on lower half of image only (2026-03-20)
+
+**Ref:** `8dfb61cd6`
+
+### Summary
+**Picker** `ArtworkCardV2`: **dark + selected** — outer shell **`dark:bg-transparent`**; image well **`dark:bg-[#171515]`** with **`absolute top-1/2 bottom-0`** overlay **`bg-[#2c2828]/90`** (`hidden dark:block`); image / skeleton / placeholder **`z-[2]`**. **Light** selected unchanged (full `#f0f9ff`). Tokens: [`getPickerArtworkCardSurfaces`](lib/shop/experience-artwork-card-surfaces.ts).
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-artwork-card-surfaces.ts](lib/shop/experience-artwork-card-surfaces.ts)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: refactor(experience): centralize artwork card surfaces (picker + strip) (2026-03-20)
 
 **Ref:** `0d99abd23`
