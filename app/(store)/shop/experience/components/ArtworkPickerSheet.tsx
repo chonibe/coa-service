@@ -532,7 +532,7 @@ export function ArtworkPickerSheet({
                           'relative',
                           shouldMerge ? 'py-1 mx-1 my-0.5' : 'pb-2',
                           shouldMerge
-                            ? 'flex rounded-xl border-2 border-[#FFBA94] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]'
+                            ? 'flex box-border rounded-xl border-2 border-[#FFBA94]/45 overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616] shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
                             : 'grid grid-cols-2 gap-2'
                         )}
                       >

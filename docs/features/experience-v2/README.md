@@ -86,7 +86,7 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **No Add button** — tap card/Eye to toggle selection
 - **Numbered badges** (1, 2, 3…) on selected artworks
 - Lamp position indicators (1, 2) for artworks on lamp sides
-- **Selected state** — full card (image + title/price row): **2px peach border** (`border-[#FFBA94]/45`) with **transparent** border when unselected so layout does not shift; light **inset wash** for warmth. Picker matches [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) cards
+- **Selected state** — full card (image + title/price row): **2px peach border** (`border-[#FFBA94]/45`) with **transparent** border when unselected so layout does not shift; light **inset wash** for warmth. Picker matches [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) cards. **Merged same-vendor pair** rows use the same border opacity and inset shadow on the outer flex wrapper (one continuous frame around both cards + vendor spine)
 - Tapping toggles selection and adds to cart
 - "Done" button closes the sheet
 - **Load more** — infinite scroll fetches `/api/shop/experience/collection-products` per season

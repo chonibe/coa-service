@@ -754,7 +754,9 @@ export function ArtworkStrip({
           >
             <div className={cn(
               'relative',
-              shouldMerge ? 'flex rounded-xl border border-[#FFBA94] overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616]' : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
+              shouldMerge
+                ? 'flex box-border rounded-xl border-2 border-[#FFBA94]/45 overflow-hidden bg-[#e8f4ff] dark:bg-[#1a1616] shadow-[inset_0_0_12px_rgba(255,186,148,0.1)]'
+                : 'grid grid-cols-2 gap-x-2 md:gap-x-3'
             )}>
               {shouldMerge && <MergeConfetti active={justMerged} />}
               {product1 && (
