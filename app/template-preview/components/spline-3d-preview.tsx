@@ -76,6 +76,7 @@ function findExperienceDesignatedScrollRegion(): HTMLElement | null {
   if (typeof document === "undefined") return null
   const list = document.querySelectorAll<HTMLElement>(EXPERIENCE_ARTWORK_SCROLL_SELECTOR)
   for (const el of list) {
+    if (el.getClientRects().length === 0) continue
     const { overflowY } = window.getComputedStyle(el)
     if (
       (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
@@ -192,6 +193,8 @@ export function Spline3DPreview({
 }: Spline3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  /** Sits above the WebGL canvas so wheel hits our element (canvas still receives wheel in some browsers). */
+  const wheelCaptureLayerRef = useRef<HTMLDivElement>(null)
   const splineAppRef = useRef<Application | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -2436,21 +2439,16 @@ export function Spline3DPreview({
     setBackgroundFromVariant()
   }, [sceneBgTheme, isLoading, cameraFeedMode, setBackgroundFromVariant])
 
-  // Wheel over the preview: Spline/WebGL often attaches wheel listeners on the canvas (capture) and
-  // stops propagation — a listener on the container never runs when the pointer is over the model.
-  // Intercept at document capture + hit-test the preview rect, then scroll ancestor or designated panel.
+  // Wheel over the WebGL surface: even with canvas `pointer-events: none`, some runtimes still get wheel
+  // first. A transparent layer stacked above the canvas receives wheel reliably (see wheelCaptureLayerRef).
   useEffect(() => {
-    if (!minimal || typeof document === "undefined") return
-    const onWheelCapture = (e: WheelEvent) => {
+    if (!minimal) return
+    const layer = wheelCaptureLayerRef.current
+    if (!layer) return
+    const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) return
       const root = containerRef.current
       if (!root) return
-      const rect = root.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) return
-      const { clientX, clientY } = e
-      if (clientX < rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom) {
-        return
-      }
       let scrollEl = findFirstVerticallyScrollableAncestor(root)
       if (!scrollEl) scrollEl = findExperienceDesignatedScrollRegion()
       if (!scrollEl) return
@@ -2464,9 +2462,9 @@ export function Spline3DPreview({
       e.preventDefault()
       e.stopPropagation()
     }
-    document.addEventListener("wheel", onWheelCapture, { passive: false, capture: true })
-    return () => document.removeEventListener("wheel", onWheelCapture, true)
-  }, [minimal])
+    layer.addEventListener("wheel", onWheel, { passive: false })
+    return () => layer.removeEventListener("wheel", onWheel)
+  }, [minimal, isLoading, error])
 
   // Cursor-following or subtle rotation (when animate=true)
   const cursorTargetRef = useRef({ x: 0, y: 0 })
@@ -2924,6 +2922,13 @@ export function Spline3DPreview({
             transformOrigin: "50% 50%",
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
+        />
+        {/* Above canvas: WebGL still receives wheel in some browsers despite pointer-events:none on canvas */}
+        <div
+          ref={wheelCaptureLayerRef}
+          className="absolute inset-0 z-[5]"
+          style={{ touchAction: "pan-y" }}
+          aria-hidden
         />
       </div>
     )
