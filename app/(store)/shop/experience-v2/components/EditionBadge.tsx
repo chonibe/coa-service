@@ -13,6 +13,7 @@ import {
   getProductEditionMetrics,
   getProductEditionSize,
 } from '@/lib/shop/edition-stages'
+import { EditionWatchControl } from './EditionWatchControl'
 
 function EditionStageLeadIcon({
   kind,
@@ -275,15 +276,24 @@ export function EditionBadgeForProduct({
   if (!metrics) return null
 
   return (
-    <EditionBadge
-      editionNumber={metrics.editionNumberSold}
-      totalEditions={metrics.totalEditions}
-      artistName={artistName ?? product.vendor ?? ''}
-      className={className}
-      compact={compact}
-      prominent={prominent}
-      unifiedSection={unifiedSection}
-      chipOnly={chipOnly}
-    />
+    <div className={cn('flex w-full flex-col items-center', className)}>
+      <EditionBadge
+        editionNumber={metrics.editionNumberSold}
+        totalEditions={metrics.totalEditions}
+        artistName={artistName ?? product.vendor ?? ''}
+        compact={compact}
+        prominent={prominent}
+        unifiedSection={unifiedSection}
+        chipOnly={chipOnly}
+      />
+      <EditionWatchControl
+        product={product}
+        editionNumberSold={metrics.editionNumberSold}
+        totalEditions={metrics.totalEditions}
+        artistName={artistName ?? product.vendor ?? ''}
+        compact={compact}
+        chipOnly={chipOnly}
+      />
+    </div>
   )
 }

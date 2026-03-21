@@ -4,6 +4,7 @@ import { SHOPIFY_WEBHOOK_SECRET } from "@/lib/env"
 import crypto from "crypto"
 import { createClient } from "@/lib/supabase/server"
 import { updateProductVariantsWithBarcodes } from "@/lib/shopify/product-creation"
+import { processEditionWatchlistStageChange } from "@/lib/shop/edition-watchlist-notifications"
 
 /**
  * Shopify Product Webhook Handler
@@ -49,6 +50,12 @@ export async function POST(request: NextRequest) {
       await updateProductVariantsWithBarcodes(productId)
 
       console.log(`✅ Barcodes processed for product ${productId} (${eventType})`)
+
+      try {
+        await processEditionWatchlistStageChange(productId)
+      } catch (watchErr: any) {
+        console.error(`[product webhook] Edition watchlist stage notify failed for ${productId}:`, watchErr?.message)
+      }
 
       // Log successful barcode processing
       await supabase.from("webhook_logs").insert({

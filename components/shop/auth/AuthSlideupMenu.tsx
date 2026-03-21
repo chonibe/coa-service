@@ -27,6 +27,8 @@ export interface AuthSlideupMenuProps {
   onClose: () => void
   /** Redirect path after successful login (default: /experience) */
   redirectTo?: string
+  /** Called after OTP verification + ensure-profile, before close and redirect (e.g. save deferred watchlist). */
+  onAuthenticated?: () => void | Promise<void>
 }
 
 const COLLECTOR_REDIRECT = '/experience'
@@ -44,7 +46,12 @@ function isEmailRateLimitError(message: string): boolean {
 
 type Step = 'email' | 'code'
 
-export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT }: AuthSlideupMenuProps) {
+export function AuthSlideupMenu({
+  open,
+  onClose,
+  redirectTo = COLLECTOR_REDIRECT,
+  onAuthenticated,
+}: AuthSlideupMenuProps) {
   const { theme } = useExperienceTheme()
   const router = useRouter()
   const supabase = createClient()
@@ -182,6 +189,11 @@ export function AuthSlideupMenu({ open, onClose, redirectTo = COLLECTOR_REDIRECT
         })
         if (!res.ok) {
           console.warn('[AuthSlideup] ensure-profile failed:', await res.text())
+        }
+        try {
+          await onAuthenticated?.()
+        } catch (e) {
+          console.warn('[AuthSlideup] onAuthenticated:', e)
         }
         handleClose()
         router.push(redirectTo)

@@ -204,6 +204,14 @@ export const FunnelEvents = {
   experience_artwork_previewed: "experience_artwork_previewed",
   experience_artwork_preview_time: "experience_artwork_preview_time",
   experience_filter_interaction: "experience_filter_interaction",
+  /** Edition watchlist (badge + /collector/watchlist) */
+  watchlist_clicked: "watchlist_clicked",
+  watchlist_auth_completed: "watchlist_auth_completed",
+  watchlist_saved: "watchlist_saved",
+  watchlist_notification_sent: "watchlist_notification_sent",
+  watchlist_converted: "watchlist_converted",
+  watchlist_removed: "watchlist_removed",
+  watchlist_page_viewed: "watchlist_page_viewed",
   /** Collector claim flow */
   collector_claim_page_viewed: "collector_claim_page_viewed",
   collector_claim_google_clicked: "collector_claim_google_clicked",

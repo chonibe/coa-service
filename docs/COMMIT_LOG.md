@@ -1,5 +1,30 @@
 # Commit Log
 
+## Commit: feat(watchlist): edition watchlist badge, API, emails, collector page (2026-03-21)
+
+**Ref:** _(run `git log -1 --format=%h` after merge)_
+
+### Summary
+**Branch:** `feature/wishlist-edition`. **Watch button** on [`EditionBadgeForProduct`](app/(store)/shop/experience-v2/components/EditionBadge.tsx) via [`EditionWatchControl.tsx`](app/(store)/shop/experience-v2/components/EditionWatchControl.tsx): labels per stage (incl. sold out), auth via [`AuthSlideupMenu`](components/shop/auth/AuthSlideupMenu.tsx) + `onAuthenticated` + `sessionStorage` for OAuth return. **API** [`/api/shop/watchlist`](app/api/shop/watchlist/route.ts) GET/POST/DELETE with service role + session. **Supabase** tables in [`20260321120000_edition_watchlist.sql`](supabase/migrations/20260321120000_edition_watchlist.sql). **Stage emails:** [`edition-watchlist-notifications.ts`](lib/shop/edition-watchlist-notifications.ts) on Shopify product webhook (cold start = no blast); Resend/Gmail via [`sendEmail`](lib/email/client.ts). **Conversion:** [`edition-watchlist-conversion.ts`](lib/shop/edition-watchlist-conversion.ts) on paid order webhook + PostHog. **Collector UI:** [`/collector/watchlist`](app/collector/watchlist/page.tsx). **PostHog:** client `captureFunnelEvent` + server `capturePostHogServerEvent`; names in [`FunnelEvents`](lib/posthog.ts).
+
+### Implementation Checklist
+
+- [x] [supabase/migrations/20260321120000_edition_watchlist.sql](supabase/migrations/20260321120000_edition_watchlist.sql)
+- [x] [app/api/shop/watchlist/route.ts](app/api/shop/watchlist/route.ts)
+- [x] [lib/shop/edition-watchlist-notifications.ts](lib/shop/edition-watchlist-notifications.ts)
+- [x] [lib/shop/edition-watchlist-conversion.ts](lib/shop/edition-watchlist-conversion.ts)
+- [x] [lib/shop/admin-product-edition-state.ts](lib/shop/admin-product-edition-state.ts)
+- [x] [app/(store)/shop/experience-v2/components/EditionWatchControl.tsx](app/(store)/shop/experience-v2/components/EditionWatchControl.tsx)
+- [x] [app/(store)/shop/experience-v2/components/EditionBadge.tsx](app/(store)/shop/experience-v2/components/EditionBadge.tsx)
+- [x] [app/collector/watchlist/page.tsx](app/collector/watchlist/page.tsx)
+- [x] [components/shop/auth/AuthSlideupMenu.tsx](components/shop/auth/AuthSlideupMenu.tsx)
+- [x] [app/api/webhooks/shopify/products/route.ts](app/api/webhooks/shopify/products/route.ts)
+- [x] [app/api/webhooks/shopify/orders/route.ts](app/api/webhooks/shopify/orders/route.ts)
+- [x] [types/supabase.ts](types/supabase.ts)
+- [x] [lib/posthog.ts](lib/posthog.ts)
+
+---
+
 ## Commit: feat(experience-v2): EditionBadge in ArtworkDetail + edition stage lib (2026-03-20)
 
 **Ref:** `1621dd51e`

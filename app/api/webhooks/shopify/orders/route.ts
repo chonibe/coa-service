@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { syncShopifyOrder } from "@/lib/shopify/order-sync-utils"
 import { sendOrderConfirmationWithTracking } from "@/lib/notifications/order-confirmation"
 import { createRefundDeductionByVendor } from "@/lib/banking/refund-deduction"
+import { processWatchlistConversionOnOrder } from "@/lib/shop/edition-watchlist-conversion"
 
 /**
  * Shopify Order Webhook Handler
@@ -117,6 +118,12 @@ async function syncOrderToDatabase(order: any, supabase: any) {
           console.log(`[webhook] Stored purchase data for GA4 client-side tracking: ${order.name}`)
         } catch (gaError) {
           console.error(`[webhook] Error storing GA purchase data for order ${order.name}:`, gaError)
+        }
+
+        try {
+          await processWatchlistConversionOnOrder(order, supabase)
+        } catch (wlConvErr) {
+          console.error(`[webhook] Watchlist conversion tracking failed for ${order.name}:`, wlConvErr)
         }
 
         // Create tracking link and send order confirmation email
