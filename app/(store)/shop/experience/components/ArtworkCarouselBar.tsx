@@ -100,10 +100,10 @@ export function ArtworkCarouselBar({
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
-  /* 14×21 rect (0.25rem grid); 15px corner radius */
-  /** 14×21 + 15px corners; carousel thumbs use 14×20 (slightly shorter) */
+  /* 12×18 (same 14:21 ratio, smaller); 12px corners */
+  /** Carousel thumbs stay w-24; + control scaled down */
   const glassAddButtonClass = cn(
-    'flex h-[5.25rem] w-[3.5rem] shrink-0 items-center justify-center rounded-[15px] border transition-all duration-200 active:scale-[0.95]',
+    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
       ? [
@@ -145,7 +145,7 @@ export function ArtworkCarouselBar({
               className={glassAddButtonClass}
               aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
             >
-              <Plus className="w-6 h-6" strokeWidth={2.25} />
+              <Plus className="w-5 h-5" strokeWidth={2.25} />
             </button>
             {!hasCarouselArtworks && (
               <p
