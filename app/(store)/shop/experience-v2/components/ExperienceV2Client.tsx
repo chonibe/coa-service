@@ -804,7 +804,6 @@ export function ExperienceV2Client({
         rotateTrigger={rotateTrigger}
         resetTrigger={resetTrigger}
         onFrontSideSettled={handleFrontSideSettled}
-        lampPreviewCount={lampPreviewOrder.length}
         pickerOpen={isPickerOpen}
         topBarContent={({ onRotate, isDesktop }) => (
           <ArtworkInfoBar

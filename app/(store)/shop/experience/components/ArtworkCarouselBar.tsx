@@ -223,9 +223,9 @@ export function ArtworkCarouselBar({
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
-                /* Eye on every tile assigned to the lamp (up to two sides). */
-                const showViewingEye = isOnLamp
+                /* One eye: only the carousel tile you’re focused on (tap), not the other side on the lamp. */
                 const isCarouselCurrent = activeIndex >= 0 && index === activeIndex
+                const showViewingEye = isCarouselCurrent && isOnLamp
                 const isFirstItem = index === 0
 
                 return (
