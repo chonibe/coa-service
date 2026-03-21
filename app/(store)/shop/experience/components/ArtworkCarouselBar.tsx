@@ -101,7 +101,7 @@ export function ArtworkCarouselBar({
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
   /* 14×21 rect (0.25rem grid); 15px corner radius */
-  /** Same 14×21 proportion and 15px corners as artwork tiles below */
+  /** 14×21 + 15px corners; carousel thumbs use 14×20 (slightly shorter) */
   const glassAddButtonClass = cn(
     'flex h-[5.25rem] w-[3.5rem] shrink-0 items-center justify-center rounded-[15px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
@@ -198,7 +198,7 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={() => onTapItem(index)}
                       className={cn(
-                        'relative block w-24 aspect-[14/21] rounded-[15px] transition-[transform,box-shadow] duration-200 active:scale-[0.95]',
+                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-[transform,box-shadow] duration-200 active:scale-[0.95]',
                         isOnLamp
                           ? 'shadow-[inset_0_0_6px_rgba(255,186,148,0.35),inset_0_0_12px_rgba(255,186,148,0.12)]'
                           : 'shadow-none'
@@ -248,7 +248,7 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={() => onAddProduct ? onAddProduct(artwork) : onOpenPicker()}
                       className={cn(
-                        'relative block w-24 aspect-[14/21] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
+                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
                         theme === 'light'
                           ? 'ring-1 ring-neutral-300/80 hover:ring-neutral-400'
                           : 'ring-1 ring-white/25 hover:ring-white/35'
