@@ -142,8 +142,8 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <main
         id="main-content"
         className={cn(
-          hasMounted && isLandingOrStreetCollector ? 'flex-initial' : 'flex-1',
-          hasMounted && isLandingOrStreetCollector && 'bg-[#251212]'
+          /* flex-none immediately for landing + street-collector so main never flex-grows empty space above the footer on mobile */
+          isLandingOrStreetCollector ? 'flex-none bg-[#251212]' : 'flex-1'
         )}
       >
         {children}
@@ -157,6 +157,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}
+        className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
       />
     </div>
   )

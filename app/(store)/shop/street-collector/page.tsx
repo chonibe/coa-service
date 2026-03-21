@@ -218,7 +218,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <main className="dark bg-[#390000] text-[#FFBA94] pb-16 md:pb-0 h-[5950px]">
+    <div className="dark w-full bg-[#390000] text-[#FFBA94] pb-16 md:pb-0">
       {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
       <DesktopTopBar
         text={streetCollectorContent.hero.cta.text}
@@ -493,6 +493,6 @@ export default async function StreetCollectorPage() {
         title={streetCollectorContent.faq.title}
         groups={streetCollectorContent.faq.groups}
       />
-    </main>
+    </div>
   )
 }

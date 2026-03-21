@@ -2,20 +2,20 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { FaFacebook, FaInstagram, FaPinterest, FaTiktok } from 'react-icons/fa6'
 import { cn } from '@/lib/utils'
 import { Container } from './Container'
 
 import { openTawkChat } from '@/lib/tawk'
 import { PaymentIcons } from './PaymentIcons'
-import { Input } from './Input'
-import { Button } from './Button'
+import { socialLinks as themeSocialLinks } from '@/lib/design-system/tokens'
 
 /**
  * Impact Theme Footer
- * 
- * Enhanced with GSAP scroll animations:
- * - Sections stagger in on scroll
- * - Subtle parallax on newsletter section
+ *
+ * Mobile: single centered column — FOLLOW US as full-width icon chips (stacked),
+ * other sections as flat blocks with top borders (no accordion).
+ * Desktop: multi-column grid unchanged.
  */
 
 export interface FooterLink {
@@ -44,6 +44,37 @@ export interface FooterProps {
   className?: string
 }
 
+const footerLinkClassDesktop =
+  'text-sm text-[#ffba94]/70 hover:text-[#ffba94] transition-colors'
+
+const footerLinkClassMobileStack = cn(
+  'inline-flex min-h-11 w-full max-w-xs items-center justify-center rounded-full px-4 text-sm text-[#ffba94]/85 transition-colors',
+  'hover:text-[#ffba94] active:bg-[#ffba94]/5'
+)
+
+const socialChipClass = cn(
+  'inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-full border border-[#ffba94]/25',
+  'bg-[#ffba94]/10 px-4 py-3 text-sm font-medium text-[#ffba94]',
+  'transition-colors hover:border-[#ffba94]/40 hover:bg-[#ffba94]/15'
+)
+
+function SocialIconForLabel(label: string) {
+  const key = label.toLowerCase()
+  if (key.includes('instagram')) return <FaInstagram className="h-5 w-5 shrink-0" aria-hidden />
+  if (key.includes('facebook')) return <FaFacebook className="h-5 w-5 shrink-0" aria-hidden />
+  if (key.includes('tiktok')) return <FaTiktok className="h-5 w-5 shrink-0" aria-hidden />
+  if (key.includes('pinterest')) return <FaPinterest className="h-5 w-5 shrink-0" aria-hidden />
+  return null
+}
+
+/** Prefer theme token URLs for Instagram/Facebook when labels match. */
+function resolveSocialHref(label: string, fallback: string): string {
+  const key = label.toLowerCase()
+  if (key.includes('instagram')) return themeSocialLinks.instagram
+  if (key.includes('facebook')) return themeSocialLinks.facebook
+  return fallback
+}
+
 const Footer = React.forwardRef<HTMLElement, FooterProps>(
   (
     {
@@ -66,11 +97,11 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
     const [email, setEmail] = React.useState('')
     const [loading, setLoading] = React.useState(false)
     const [submitted, setSubmitted] = React.useState(false)
-    
+
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
       if (!email) return
-      
+
       setLoading(true)
       try {
         if (onNewsletterSubmit) {
@@ -84,40 +115,101 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
         setLoading(false)
       }
     }
-    
+
     const currentYear = new Date().getFullYear()
-    
+
+    const followUsSection = sections.find(
+      (s) => s.title.trim().toUpperCase() === 'FOLLOW US'
+    )
+    const linkSections = sections.filter(
+      (s) => s.title.trim().toUpperCase() !== 'FOLLOW US'
+    )
+
+    const renderSectionLinks = (
+      section: FooterSection,
+      variant: 'desktop' | 'mobile-stack' | 'mobile-social'
+    ) => {
+      const links = section.links || []
+      if (variant === 'mobile-social') {
+        return (
+          <ul className="flex w-full flex-col items-center gap-3">
+            {links.map((link) => {
+              const external = /^https?:\/\//i.test(link.href)
+              const href = resolveSocialHref(link.label, link.href)
+              const icon = SocialIconForLabel(link.label)
+              return (
+                <li key={link.href} className="w-full max-w-sm">
+                  <Link
+                    href={href}
+                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className={socialChipClass}
+                  >
+                    {icon}
+                    <span>{link.label}</span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )
+      }
+
+      return (
+        <ul className={variant === 'desktop' ? 'space-y-3' : 'flex flex-col items-center gap-2'}>
+          {links.map((link) => {
+            const external = /^https?:\/\//i.test(link.href)
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className={
+                    variant === 'desktop' ? footerLinkClassDesktop : footerLinkClassMobileStack
+                  }
+                >
+                  {link.label}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )
+    }
+
     return (
       <footer
         ref={ref}
         className={cn(
-          'bg-[#251212]', // Slightly brighter dark warm (was #1a0a0a)
-          'text-[#ffba94]', // Impact theme footer text
-          'mt-0 flex-shrink-0 -mt-8 sm:mt-0', // Pull up on mobile to remove white stripe above; no gap on desktop
-          newsletterEnabled ? 'pt-3 pb-8 sm:pt-4' : 'pt-12 pb-8 sm:pt-16',
+          'bg-[#251212]',
+          'text-[#ffba94]',
+          'mt-0 flex-shrink-0 -mt-8 sm:mt-0',
+          newsletterEnabled ? 'pt-3 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pb-8 sm:pt-4' : 'pt-12 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pb-8 sm:pt-16',
           className
         )}
       >
         <Container maxWidth="default" paddingX="gutter">
-          {/* Newsletter signup - above FOLLOW US section, centered, narrower width */}
           {newsletterEnabled && (
-            <div className="py-6 border-b border-[#ffba94]/10 max-w-2xl mx-auto flex flex-row flex-wrap sm:flex-nowrap items-center justify-between gap-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+            <div
+              className={cn(
+                'mx-auto flex max-w-2xl flex-col items-center gap-6 border-b border-[#ffba94]/10 py-6 text-center',
+                'sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:text-left'
+              )}
+            >
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">
                   {newsletterTitle}
                 </h3>
                 {newsletterDescription && (
-                  <p className="text-sm text-[#ffba94]/70 hidden sm:block">
-                    {newsletterDescription}
-                  </p>
+                  <p className="hidden text-sm text-[#ffba94]/70 sm:block">{newsletterDescription}</p>
                 )}
               </div>
               {submitted ? (
-                <p className="text-sm text-[#00a341]">
-                  Thanks for subscribing!
-                </p>
+                <p className="text-sm text-[#00a341]">Thanks for subscribing!</p>
               ) : (
-                <form onSubmit={handleSubmit} className="flex items-center gap-2 min-w-[200px]">
+                <form
+                  onSubmit={handleSubmit}
+                  className="flex w-full max-w-md items-center gap-2 sm:min-w-[200px] sm:w-auto"
+                >
                   <input
                     type="email"
                     value={email}
@@ -125,13 +217,8 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     placeholder="E-mail"
                     required
                     className={cn(
-                      'flex-1 h-10 px-4 min-w-0 text-sm leading-none',
-                      'bg-[#ffba94]/10 text-[#ffba94] placeholder:text-[#ffba94]/50',
-                      'border border-[#ffba94]/20',
-                      'rounded-full',
-                      'focus:outline-none focus:ring-2 focus:ring-[#ffba94]/50 focus:border-transparent',
-                      'transition-all duration-200',
-                      'box-border'
+                      'box-border h-10 min-w-0 flex-1 rounded-full border border-[#ffba94]/20 bg-[#ffba94]/10 px-4 text-sm leading-none text-[#ffba94] placeholder:text-[#ffba94]/50',
+                      'transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#ffba94]/50'
                     )}
                   />
                   <button
@@ -139,18 +226,14 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     disabled={loading}
                     aria-label="Subscribe"
                     className={cn(
-                      'h-10 w-10 flex items-center justify-center shrink-0 rounded-full',
-                      'bg-[#ffba94] text-[#390000]',
-                      'rounded-full',
-                      'hover:opacity-90',
-                      'disabled:opacity-50',
-                      'transition-opacity duration-200'
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffba94] text-[#390000]',
+                      'transition-opacity hover:opacity-90 disabled:opacity-50'
                     )}
                   >
                     {loading ? (
                       <span className="text-sm">...</span>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                         <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
@@ -160,47 +243,77 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             </div>
           )}
 
-          {/* Main footer content - no scroll animation so items show immediately (fixes mobile) */}
-          <div className={cn('grid gap-10 sm:gap-8 lg:grid-cols-12 lg:gap-12', newsletterEnabled && 'pt-8')}>
-            {/* Navigation sections */}
+          <div className={cn('lg:grid lg:grid-cols-12 lg:gap-12', newsletterEnabled && 'pt-8')}>
             <div className={cn(aboutTitle ? 'lg:col-span-8' : 'lg:col-span-12')}>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-10 sm:gap-8 lg:gap-12">
-                {sections.map((section) => (
-                  <div key={section.title}>
-                    <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
-                      {section.title}
+              {/* Mobile: centered column, bordered blocks */}
+              <div className="flex w-full flex-col items-center sm:hidden">
+                {followUsSection ? (
+                  <div className="w-full max-w-sm px-2 pb-12 text-center">
+                    <h3 className="mb-4 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
+                      {followUsSection.title}
                     </h3>
-                    <ul className="space-y-3">
-                      {(section.links || []).map((link) => (
-                        <li key={link.href}>
-                          <Link
-                            href={link.href}
-                            className="text-sm text-[#ffba94]/70 hover:text-[#ffba94] transition-colors"
-                          >
-                            {link.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    {renderSectionLinks(followUsSection, 'mobile-social')}
+                  </div>
+                ) : null}
+                {linkSections.map((section, idx) => (
+                  <div
+                    key={`m-${section.title}-${idx}`}
+                    className="w-full max-w-sm border-t border-[#ffba94]/20 px-2 py-10 text-center"
+                  >
+                    <nav className="flex flex-col items-center" aria-labelledby={`footer-m-${idx}`}>
+                      <h3
+                        id={`footer-m-${idx}`}
+                        className="mb-3 font-heading text-[11px] font-semibold uppercase tracking-wider text-[#ffba94]"
+                      >
+                        {section.title}
+                      </h3>
+                      {renderSectionLinks(section, 'mobile-stack')}
+                    </nav>
                   </div>
                 ))}
-                {/* Need Help quadrant - opens Tawk chat */}
-                <div>
-                  <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
-                    Need Help?
+                <div className="flex w-full max-w-sm flex-col items-center border-t border-[#ffba94]/20 px-2 py-10 text-center">
+                  <h3 className="mb-2 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
+                    Need help?
                   </h3>
-                  <p className="text-sm text-[#ffba94]/70 mb-5">
+                  <p className="mb-4 text-sm leading-relaxed text-[#ffba94]/75">
                     Talk to our real support team every day 7am to midnight EST
                   </p>
                   <button
                     type="button"
                     onClick={openTawkChat}
                     className={cn(
-                      'inline-flex items-center justify-center',
-                      'px-5 py-2.5 rounded-full',
-                      'bg-[#ffba94] text-[#390000]',
-                      'text-sm font-medium',
-                      'hover:opacity-90 transition-opacity'
+                      'flex min-h-12 w-full max-w-sm items-center justify-center rounded-full bg-[#ffba94] px-5 text-base font-semibold text-[#390000]',
+                      'transition-opacity hover:opacity-90 active:opacity-95'
+                    )}
+                  >
+                    Chat with us
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop: original grid */}
+              <div className="hidden grid-cols-4 gap-8 sm:grid lg:gap-12">
+                {sections.map((section) => (
+                  <div key={section.title}>
+                    <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
+                      {section.title}
+                    </h3>
+                    {renderSectionLinks(section, 'desktop')}
+                  </div>
+                ))}
+                <div>
+                  <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
+                    Need Help?
+                  </h3>
+                  <p className="mb-5 text-sm text-[#ffba94]/70">
+                    Talk to our real support team every day 7am to midnight EST
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openTawkChat}
+                    className={cn(
+                      'inline-flex items-center justify-center rounded-full px-5 py-2.5',
+                      'bg-[#ffba94] text-[#390000] text-sm font-medium transition-opacity hover:opacity-90'
                     )}
                   >
                     Chat with Us
@@ -209,42 +322,45 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
               </div>
             </div>
 
-            {/* About Section - optional */}
             {aboutTitle && (
-              <div className="lg:col-span-4">
-                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider mb-5">
+              <div className="mt-10 hidden lg:col-span-4 lg:mt-0 lg:block">
+                <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
                   {aboutTitle}
                 </h3>
                 {(aboutText || tagline) && (
-                  <p className="text-sm text-[#ffba94]/70 leading-relaxed">
-                    {aboutText || tagline}
-                  </p>
+                  <p className="text-sm leading-relaxed text-[#ffba94]/70">{aboutText || tagline}</p>
                 )}
               </div>
             )}
           </div>
-          
-          {/* Payment Icons */}
+
           {showPaymentIcons && (
-            <div className={cn('pt-10 pb-2 border-t border-[#ffba94]/10', newsletterEnabled ? 'mt-10' : 'mt-12')}>
-              <PaymentIcons className="text-[#ffba94]/90" />
+            <div
+              className={cn(
+                'border-t border-[#ffba94]/10 pb-2 pt-8 sm:pt-10',
+                newsletterEnabled ? 'mt-8 sm:mt-10' : 'mt-10 sm:mt-12'
+              )}
+            >
+              <PaymentIcons className="mx-auto max-w-full justify-center text-[#ffba94]/90 sm:mx-0 sm:justify-start" />
             </div>
           )}
-          
-          {/* Bottom bar - Copyright and Legal links */}
-          <div className="mt-10 pt-8 border-t border-[#ffba94]/10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <p className="text-xs text-[#ffba94]/80">
+
+          <div className="mt-8 border-t border-[#ffba94]/10 pt-8 sm:mt-10">
+            <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left">
+              <p className="text-sm text-[#ffba94]/80 sm:text-xs">
                 {copyrightText || `© ${currentYear} Street Collector`}
               </p>
-              
+
               {legalLinks.length > 0 && (
-                <nav className="flex flex-wrap gap-4" aria-label="Legal">
+                <nav
+                  className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:justify-end"
+                  aria-label="Legal"
+                >
                   {legalLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="text-xs text-[#ffba94]/80 hover:text-[#ffba94] transition-colors"
+                      className="inline-flex min-h-11 items-center text-sm text-[#ffba94]/80 transition-colors hover:text-[#ffba94] sm:min-h-0 sm:text-xs"
                     >
                       {link.label}
                     </Link>
@@ -260,9 +376,6 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
 )
 Footer.displayName = 'Footer'
 
-/**
- * Simple footer for minimal pages
- */
 export interface SimpleFooterProps {
   copyrightText?: string
   className?: string
@@ -271,18 +384,14 @@ export interface SimpleFooterProps {
 const SimpleFooter = React.forwardRef<HTMLElement, SimpleFooterProps>(
   ({ copyrightText, className }, ref) => {
     const currentYear = new Date().getFullYear()
-    
+
     return (
       <footer
         ref={ref}
-        className={cn(
-          'bg-[#450000] text-[#ffba94]',
-          'py-6',
-          className
-        )}
+        className={cn('bg-[#450000] py-6 text-[#ffba94]', className)}
       >
         <Container maxWidth="default" paddingX="gutter">
-          <p className="text-xs text-[#ffba94]/80 text-center">
+          <p className="text-center text-xs text-[#ffba94]/80">
             {copyrightText || `© ${currentYear} Street Collector. All rights reserved.`}
           </p>
         </Container>
