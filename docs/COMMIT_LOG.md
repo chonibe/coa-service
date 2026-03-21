@@ -2,7 +2,7 @@
 
 ## Commit: fix(experience-v2): scarcity bar in image/detail column; watch stays on edition badge (2026-03-21)
 
-**Ref:** `8e0bfcdb9`
+**Ref:** `851c6519b`
 
 ### Summary
 **[`ScarcityBadge.tsx`](app/(store)/shop/experience-v2/components/ScarcityBadge.tsx)** — bar + remaining copy only (no watch UI). **[`EditionBadge.tsx`](app/(store)/shop/experience-v2/components/EditionBadge.tsx)** — **`afterCta`** passes **`EditionWatchControl`** under edition story. **[`ArtworkDetail.tsx`](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)** — scarcity in bordered card under **left** thumbnails (inline + slideout desktop) and after **mobile** carousel; removed from **`ArtworkEditionUnifiedSection`**. **[`ArtworkAccordions.tsx`](app/(store)/shop/experience/components/ArtworkAccordions.tsx)** — scarcity inside **Artwork Details** card; edition block is badge-only.
