@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -124,15 +124,28 @@ export function ArtworkCarouselBar({
       )}
     >
       <div className="relative pt-6 pb-4 px-4 md:pt-10 md:pb-5">
-        {/* Bottom fade into page bg — same as Spline column (#F5F5F5 / #171515), not a drop shadow */}
+        {/* Frosted glass scrim — blurs scroll content; tint + gradient keep chips readable */}
         <div
           className={cn(
             'pointer-events-none absolute bottom-0 left-0 right-0',
-            /* Light: stronger scrim so scroll content doesn’t read through; dark keeps softer peek */
+            'backdrop-blur-2xl backdrop-saturate-150',
             theme === 'light'
-              ? 'h-[min(360px,72vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-[72%] to-transparent'
-              : 'h-[min(240px,52vh)] bg-gradient-to-t from-[#171515] via-[#171515]/32 to-transparent'
+              ? [
+                  'h-[min(300px,62vh)]',
+                  'border-t border-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_-12px_40px_rgba(0,0,0,0.04)]',
+                  'bg-gradient-to-t from-[#F5F5F5]/92 from-[8%] via-white/45 via-[46%] to-transparent',
+                ]
+              : [
+                  'h-[min(280px,56vh)]',
+                  'border-t border-white/[0.14] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_-16px_48px_rgba(0,0,0,0.35)]',
+                  'bg-gradient-to-t from-[#171515]/88 from-[8%] via-[#171515]/40 via-[46%] to-transparent',
+                ]
           )}
+          style={
+            (theme === 'light'
+              ? { WebkitBackdropFilter: 'blur(24px) saturate(1.5)' }
+              : { WebkitBackdropFilter: 'blur(24px) saturate(1.25)' }) satisfies CSSProperties
+          }
           aria-hidden
         />
         <div className="relative z-[1] flex flex-col items-center gap-2">
