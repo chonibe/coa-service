@@ -29,6 +29,7 @@ export function EditionWatchControl({
   artistName,
   compact,
   chipOnly,
+  className,
 }: {
   product: ShopifyProduct
   editionNumberSold: number
@@ -36,6 +37,7 @@ export function EditionWatchControl({
   artistName: string
   compact?: boolean
   chipOnly?: boolean
+  className?: string
 }) {
   const { isAuthenticated, loading: authLoading } = useShopAuthContext()
   const [watching, setWatching] = useState<boolean | null>(null)
@@ -184,7 +186,7 @@ export function EditionWatchControl({
   if (chipOnly || !stage) return null
 
   return (
-    <div className={cn('w-full flex justify-center', compact && 'pt-0.5')}>
+    <div className={cn('w-full flex justify-center', compact && 'pt-0.5', className)}>
       <button
         type="button"
         disabled={busy || authLoading}

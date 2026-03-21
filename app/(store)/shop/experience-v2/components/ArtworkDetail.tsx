@@ -430,6 +430,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     productTitle={product.title}
                     unifiedSection
                     className="w-full"
+                    product={product}
+                    artistName={editionArtistName}
                   />
                 )}
               </ArtworkEditionUnifiedSection>
@@ -890,6 +892,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             productTitle={product.title}
                             unifiedSection
                             className="w-full"
+                            product={product}
+                            artistName={editionArtistName}
                           />
                         )}
                       </ArtworkEditionUnifiedSection>
@@ -1269,6 +1273,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       productTitle={product.title}
                       unifiedSection
                       className="w-full"
+                      product={product}
+                      artistName={editionArtistName}
                     />
                   )}
                 </ArtworkEditionUnifiedSection>

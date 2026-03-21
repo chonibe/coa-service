@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { EditionWatchControl } from './EditionWatchControl'
 
 function ScarcityBarPanel({
   title,
@@ -47,6 +49,10 @@ interface ScarcityBadgeProps {
   panelTitle?: string
   /** Bar + caption only — use inside {@link ArtworkEditionUnifiedSection} (no nested panel) */
   unifiedSection?: boolean
+  /** When set with bar + edition caption, edition watch appears after “remaining in this edition” */
+  product?: ShopifyProduct
+  /** Overrides `product.vendor` for watchlist / display */
+  artistName?: string
 }
 
 export function ScarcityBadge({
@@ -60,6 +66,8 @@ export function ScarcityBadge({
   className,
   panelTitle,
   unifiedSection = false,
+  product,
+  artistName,
 }: ScarcityBadgeProps) {
   const [fetchedQuantity, setFetchedQuantity] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -145,6 +153,19 @@ export function ScarcityBadge({
       </p>
     ) : null
 
+    const editionWatchBlock =
+      product && showCaption && editionSize && editionSize > 0 && typeof available === 'number' ? (
+        <EditionWatchControl
+          product={product}
+          editionNumberSold={Math.min(editionSize, Math.max(0, editionSize - available))}
+          totalEditions={editionSize}
+          artistName={artistName ?? product.vendor ?? ''}
+          compact={!!unifiedSection}
+          chipOnly={false}
+          className="mt-2"
+        />
+      ) : null
+
     if (loading && available == null) {
       if (unifiedSection) {
         return (
@@ -219,13 +240,23 @@ export function ScarcityBadge({
             {barMotion}
           </div>
           {editionCaption}
+          {editionWatchBlock}
         </div>
       )
     }
 
     if (panelTitle) {
       return (
-        <ScarcityBarPanel title={panelTitle} className={className} footer={editionCaption}>
+        <ScarcityBarPanel
+          title={panelTitle}
+          className={className}
+          footer={
+            <>
+              {editionCaption}
+              {editionWatchBlock}
+            </>
+          }
+        >
           <div className="relative h-8 flex items-center justify-center w-full max-w-md mx-auto">
             {barMotion}
           </div>

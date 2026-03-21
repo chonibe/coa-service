@@ -255,6 +255,8 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
             productTitle={product.title ?? undefined}
             unifiedSection
             className="w-full"
+            product={product}
+            artistName={detailArtistName || undefined}
           />
         </ArtworkEditionUnifiedSection>
       )}
