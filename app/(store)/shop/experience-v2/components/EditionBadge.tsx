@@ -21,11 +21,18 @@ function EditionStageLeadIcon({
   kind: EditionStageVisualKind
   compact?: boolean
 }) {
-  const lucideClass = cn('shrink-0 opacity-90', compact ? 'h-3 w-3' : 'h-3.5 w-3.5')
+  const lucideClass = cn(
+    'shrink-0 text-neutral-100 opacity-90 dark:text-[#f6f2f2] dark:opacity-100',
+    'drop-shadow-[0_0_1px_rgba(0,0,0,0.5)] dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.25)]',
+    compact ? 'h-3 w-3' : 'h-3.5 w-3.5'
+  )
   switch (kind) {
     case 'spark':
       return (
-        <span className="shrink-0 select-none text-[0.92em] leading-none opacity-95" aria-hidden>
+        <span
+          className="shrink-0 select-none text-[0.92em] leading-none text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100 dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
+          aria-hidden
+        >
           ✦
         </span>
       )
@@ -35,7 +42,13 @@ function EditionStageLeadIcon({
       return <Eye className={lucideClass} strokeWidth={2.25} aria-hidden />
     case 'mallet':
       return (
-        <span className={cn('shrink-0 leading-none', compact ? 'text-[11px]' : 'text-[13px]')} aria-hidden>
+        <span
+          className={cn(
+            'shrink-0 leading-none drop-shadow-[0_0_1px_rgba(0,0,0,0.4)] dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.15)]',
+            compact ? 'text-[11px]' : 'text-[13px]'
+          )}
+          aria-hidden
+        >
           🔨
         </span>
       )
@@ -99,7 +112,8 @@ export function EditionBadge({
           className={cn(
             'inline-flex max-w-full min-w-0 items-center justify-center gap-1 font-semibold uppercase',
             'rounded-md px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.06em]',
-            'bg-neutral-900 text-neutral-100 dark:bg-[#0c0b0b] dark:text-[#e6e2e2]'
+            'bg-neutral-900 text-neutral-100',
+            'dark:bg-[#2a2626] dark:text-[#f4f0f0] dark:ring-1 dark:ring-white/15'
           )}
           title={copy.badge}
         >
@@ -116,12 +130,12 @@ export function EditionBadge({
         className={cn(
           'inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 font-semibold uppercase text-neutral-100',
           unifiedSection &&
-            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#141010] dark:text-[#e8e4e4]',
+            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#2e2a2a] dark:text-[#f4f0f0] dark:ring-1 dark:ring-white/12',
           !unifiedSection &&
             (prominent
-              ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-neutral-950 ring-1 ring-black/20 dark:bg-[#050505] dark:ring-white/10'
+              ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-neutral-950 ring-1 ring-black/20 dark:bg-[#2c2828] dark:ring-white/15'
               : cn(
-                  'rounded-sm px-1.5 py-0.5 bg-neutral-900 dark:bg-[#0c0b0b] dark:text-[#e6e2e2] tracking-[0.06em]',
+                  'rounded-sm px-1.5 py-0.5 bg-neutral-900 tracking-[0.06em] dark:bg-[#2a2626] dark:text-[#f0ecec] dark:ring-1 dark:ring-white/12',
                   compact ? 'text-[8px]' : 'text-[9px]'
                 ))
         )}
