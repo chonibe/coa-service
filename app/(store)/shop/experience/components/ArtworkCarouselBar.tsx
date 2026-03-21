@@ -100,9 +100,9 @@ export function ArtworkCarouselBar({
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
-  /* 14×21 rect (0.25rem grid); 20px corner radius */
+  /* 14×21 rect (0.25rem grid); 10px corner radius */
   const glassAddButtonClass = cn(
-    'flex h-[5.25rem] w-[3.5rem] shrink-0 items-center justify-center rounded-[20px] border transition-all duration-200 active:scale-[0.95]',
+    'flex h-[5.25rem] w-[3.5rem] shrink-0 items-center justify-center rounded-[10px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
       ? [
