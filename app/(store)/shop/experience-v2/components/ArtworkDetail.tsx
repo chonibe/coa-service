@@ -380,8 +380,23 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             ))}
           </div>
         )}
+        {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
+          <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
+            <ScarcityBadge
+              quantityAvailable={quantityAvailable}
+              editionSize={editionSizeNum}
+              availableForSale={product.availableForSale}
+              variant="bar"
+              productId={product.id}
+              productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+              productTitle={product.title}
+              unifiedSection
+              className="w-full"
+            />
+          </div>
+        )}
       </div>
-      {/* Right: Product info — artist, title, edition, scarcity, add button */}
+      {/* Right: Product info — artist, title, edition, add button */}
       <div className="flex-1 min-w-0 flex flex-col pl-2 overflow-hidden">
         <div
           data-experience-artwork-scroll
@@ -419,21 +434,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   unifiedSection
                   className="w-full"
                 />
-                {!hideScarcityBar && (
-                  <ScarcityBadge
-                    quantityAvailable={quantityAvailable}
-                    editionSize={editionSizeNum}
-                    availableForSale={product.availableForSale}
-                    variant="bar"
-                    productId={product.id}
-                    productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                    productTitle={product.title}
-                    unifiedSection
-                    className="w-full"
-                    product={product}
-                    artistName={editionArtistName}
-                  />
-                )}
               </ArtworkEditionUnifiedSection>
             </div>
           )}
@@ -638,6 +638,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           />
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
+                    <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
+                      <ScarcityBadge
+                        quantityAvailable={quantityAvailable}
+                        editionSize={editionSizeNum}
+                        availableForSale={product.availableForSale}
+                        variant="bar"
+                        productId={product.id}
+                        productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                        productTitle={product.title}
+                        unifiedSection
+                        className="w-full"
+                      />
                     </div>
                   )}
                 </div>
@@ -881,21 +896,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           unifiedSection
                           className="w-full"
                         />
-                        {!hideScarcityBar && (
-                          <ScarcityBadge
-                            quantityAvailable={quantityAvailable}
-                            editionSize={editionSizeNum}
-                            availableForSale={product.availableForSale}
-                            variant="bar"
-                            productId={product.id}
-                            productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                            productTitle={product.title}
-                            unifiedSection
-                            className="w-full"
-                            product={product}
-                            artistName={editionArtistName}
-                          />
-                        )}
                       </ArtworkEditionUnifiedSection>
                     </div>
                   )}
@@ -1063,6 +1063,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
+            {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
+              <div className="mx-4 mt-3 rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
+                <ScarcityBadge
+                  quantityAvailable={quantityAvailable}
+                  editionSize={editionSizeNum}
+                  availableForSale={product.availableForSale}
+                  variant="bar"
+                  productId={product.id}
+                  productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                  productTitle={product.title}
+                  unifiedSection
+                  className="w-full"
+                />
+              </div>
+            )}
 
             {/* Tags */}
             {product.tags && product.tags.length > 0 && (
@@ -1262,21 +1277,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     unifiedSection
                     className="w-full"
                   />
-                  {!hideScarcityBar && (
-                    <ScarcityBadge
-                      quantityAvailable={quantityAvailable}
-                      editionSize={editionSizeNum}
-                      availableForSale={product.availableForSale}
-                      variant="bar"
-                      productId={product.id}
-                      productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                      productTitle={product.title}
-                      unifiedSection
-                      className="w-full"
-                      product={product}
-                      artistName={editionArtistName}
-                    />
-                  )}
                 </ArtworkEditionUnifiedSection>
               </div>
             )}

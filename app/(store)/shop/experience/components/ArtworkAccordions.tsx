@@ -241,23 +241,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
             unifiedSection
             className="w-full"
           />
-          <ScarcityBadge
-            quantityAvailable={
-              typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                ? product.variants.edges[0].node.quantityAvailable
-                : undefined
-            }
-            editionSize={editionSize}
-            availableForSale={product.availableForSale ?? true}
-            variant="bar"
-            productId={product.id}
-            productImage={firstImage?.url ?? null}
-            productTitle={product.title ?? undefined}
-            unifiedSection
-            className="w-full"
-            product={product}
-            artistName={detailArtistName || undefined}
-          />
         </ArtworkEditionUnifiedSection>
       )}
 
@@ -320,6 +303,25 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
                 )}
               </div>
             </div>
+            {editionSize != null && editionSize > 0 && (
+              <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
+                <ScarcityBadge
+                  quantityAvailable={
+                    typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+                      ? product.variants.edges[0].node.quantityAvailable
+                      : undefined
+                  }
+                  editionSize={editionSize}
+                  availableForSale={product.availableForSale ?? true}
+                  variant="bar"
+                  productId={product.id}
+                  productImage={firstImage?.url ?? null}
+                  productTitle={product.title ?? undefined}
+                  unifiedSection
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
