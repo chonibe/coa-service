@@ -151,7 +151,7 @@ export function ArtistSpotlightBanner({
               )}
             </div>
             {spotlight.bio && (
-              <div className="pt-4 sm:pt-5 mt-2 sm:mt-0 border-t border-neutral-200/60 dark:border-white/10 w-full text-center">
+              <div className="pt-4 sm:pt-5 mt-2 sm:mt-0 w-full text-center">
                 <p className="text-base sm:text-lg text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line">
                   {spotlight.bio}
                 </p>
