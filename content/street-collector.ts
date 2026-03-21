@@ -349,9 +349,9 @@ export const streetCollectorContent = {
               'On a full charge you’re looking at roughly 8 hours of run time from the 2500 mAh battery. Plug it in with USB-C or the magnetic cable and it’ll usually be good to go again in about 3–4 hours. Prefer to leave it on? No problem. You can run it plugged in all the time too.',
           },
           {
-            question: 'How do I swap around my artworks?',
+            question: 'Is it easy to swap the artworks on the lamp?',
             answer:
-              'The lamp uses a simple press-and-click mechanism so you can change artworks quickly whenever you want. Buy the lamp once and refresh your display anytime.',
+              'Super easy. They slide in and out with a simple press-and-click mechanism, no tools needed, so you can change the look whenever you feel like it.',
           },
           {
             question: 'Do you ship internationally?',
