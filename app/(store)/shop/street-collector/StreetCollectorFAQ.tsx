@@ -37,7 +37,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
           </h2>
         </div>
 
-        <div className="mx-auto max-w-2xl space-y-5 pb-10 sm:pb-12 md:pb-14">
+        <div className="mx-auto max-w-2xl space-y-5 pb-10 text-left sm:pb-12 md:pb-14">
           {groups.map((group) => {
             const Icon = groupIcons[group.title] ?? Lamp
             const groupKey = group.title.trim() || 'faq'
@@ -47,7 +47,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                 className="rounded-xl bg-[#201c1c]/55 p-4 sm:rounded-2xl sm:p-5"
               >
                 {group.title.trim() ? (
-                  <div className="mb-3 flex items-center justify-center gap-2.5 text-center sm:justify-start">
+                  <div className="mb-3 flex items-center justify-start gap-2.5 text-left">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ffba94]/10 text-[#FFBA94]">
                       <Icon className="h-5 w-5" strokeWidth={1.5} />
                     </div>
@@ -69,16 +69,16 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                     >
                       <AccordionTrigger
                         className={cn(
-                          'flex w-full flex-row items-center justify-center gap-3 py-0 hover:no-underline group text-[#FFBA94]',
+                          'flex w-full flex-row items-center justify-between gap-3 py-0 text-left hover:no-underline group text-[#FFBA94]',
                           '[&[data-state=open]]:text-[#FFBA94] [&[data-state=open]]:font-medium',
                           'text-sm sm:text-[15px]',
                           'hover:text-[#FFBA94]/90 transition-colors',
                           '[&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0 [&>svg]:text-[#FFBA94]'
                         )}
                       >
-                        <span className="max-w-xl text-center leading-snug">{item.question}</span>
+                        <span className="min-w-0 flex-1 pr-2 text-left leading-snug">{item.question}</span>
                       </AccordionTrigger>
-                      <AccordionContent className="pb-2 pt-1.5 text-center text-xs leading-snug text-[#FFBA94]/90 sm:text-sm">
+                      <AccordionContent className="pb-2 pt-1.5 text-left text-xs leading-snug text-[#FFBA94]/90 sm:text-sm">
                         {item.answer}
                       </AccordionContent>
                     </AccordionItem>
