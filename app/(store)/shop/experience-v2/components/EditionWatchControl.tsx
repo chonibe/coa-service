@@ -11,6 +11,7 @@ import {
   type EditionStageKey,
 } from '@/lib/shop/edition-stages'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 
 const PENDING_KEY = 'sc_watchlist_pending'
 
@@ -103,7 +104,12 @@ export function EditionWatchControl({
           artist_name: p.artist_name,
         }),
       })
-      if (r.ok) setWatching(true)
+      if (r.ok) {
+        setWatching(true)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(EXPERIENCE_WATCHLIST_UPDATED))
+        }
+      }
     } finally {
       setBusy(false)
     }
@@ -134,6 +140,9 @@ export function EditionWatchControl({
           }),
         })
         setWatching(true)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(EXPERIENCE_WATCHLIST_UPDATED))
+        }
       })()
     } catch {
       sessionStorage.removeItem(PENDING_KEY)
@@ -166,7 +175,12 @@ export function EditionWatchControl({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ shopify_product_id: product.id }),
         })
-        if (r.ok) setWatching(false)
+        if (r.ok) {
+          setWatching(false)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(EXPERIENCE_WATCHLIST_UPDATED))
+          }
+        }
       } finally {
         setBusy(false)
       }
@@ -193,12 +207,12 @@ export function EditionWatchControl({
         onClick={() => void onWatchClick()}
         className={cn(
           'inline-flex items-center justify-center min-h-9 rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.07em]',
-          'ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#141010]',
+          'ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#171515]',
           'disabled:pointer-events-none disabled:opacity-50',
           !watching &&
-            'bg-transparent text-neutral-800 ring-1 ring-neutral-300 hover:bg-neutral-50 dark:text-[#f0ecec] dark:ring-white/20 dark:hover:bg-white/5',
+            'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50 dark:bg-white/5 dark:text-[#f0e8e8] dark:ring-white/28 dark:hover:bg-white/10',
           watching &&
-            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#FFBA94]/12 dark:text-[#FFBA94] dark:ring-[#FFBA94]/35 dark:hover:bg-[#FFBA94]/18'
+            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#FFBA94]/18 dark:text-[#FFBA94] dark:ring-[#FFBA94]/45 dark:hover:bg-[#FFBA94]/26'
         )}
       >
         {busy ? '…' : label}
@@ -226,6 +240,9 @@ export function EditionWatchControl({
           })
           setWatching(true)
           sessionStorage.removeItem(PENDING_KEY)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(EXPERIENCE_WATCHLIST_UPDATED))
+          }
         }}
       />
     </div>

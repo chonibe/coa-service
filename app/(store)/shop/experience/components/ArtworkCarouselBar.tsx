@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, type RefObject } from 'react'
 import Image from 'next/image'
-import { Eye, Plus, Trash2 } from 'lucide-react'
+import { Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -22,6 +22,10 @@ interface ArtworkCarouselBarProps {
   splineInView?: boolean
   /** Ref to [`SplineFullScreen`](./SplineFullScreen.tsx) vertical reel (`useRef<HTMLDivElement | null>(null)`); vertical wheel over the carousel scrolls this container. */
   experienceReelRef?: RefObject<HTMLDivElement | null> | { current: HTMLDivElement | null }
+  /** Collection strip vs edition watchlist strip */
+  stripMode?: 'collection' | 'watchlist'
+  /** When in watchlist mode, switch back to collection thumbnails */
+  onSwitchToCollection?: () => void
 }
 
 export function ArtworkCarouselBar({
@@ -35,6 +39,8 @@ export function ArtworkCarouselBar({
   onAddProduct,
   splineInView = true,
   experienceReelRef,
+  stripMode = 'collection',
+  onSwitchToCollection,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -143,7 +149,8 @@ export function ArtworkCarouselBar({
 
   const hasCarouselArtworks = selectedArtworks.length > 0
 
-  const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
+  const showSpotlightPlaceholders =
+    stripMode === 'collection' && selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
@@ -189,15 +196,28 @@ export function ArtworkCarouselBar({
             ref={carouselWheelHostRef}
             className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 px-3"
           >
-            <button
-              type="button"
-              onClick={onOpenPicker}
-              className={glassAddButtonClass}
-              aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
-            >
-              <Plus className="w-5 h-5" strokeWidth={2.25} />
-            </button>
-            {!hasCarouselArtworks && (
+            <div className="flex flex-row items-end justify-center gap-2">
+              {stripMode === 'watchlist' && onSwitchToCollection && (
+                <button
+                  type="button"
+                  onClick={onSwitchToCollection}
+                  className={glassAddButtonClass}
+                  aria-label="Back to collection"
+                  title="Back to collection"
+                >
+                  <LayoutGrid className="w-5 h-5" strokeWidth={2.25} />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onOpenPicker}
+                className={glassAddButtonClass}
+                aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
+              >
+                <Plus className="w-5 h-5" strokeWidth={2.25} />
+              </button>
+            </div>
+            {!hasCarouselArtworks && stripMode === 'collection' && (
               <p
                 className={cn(
                   'text-center text-sm font-semibold',
@@ -205,6 +225,16 @@ export function ArtworkCarouselBar({
                 )}
               >
                 Start your Collection
+              </p>
+            )}
+            {!hasCarouselArtworks && stripMode === 'watchlist' && (
+              <p
+                className={cn(
+                  'text-center text-xs font-medium max-w-[14rem] leading-snug',
+                  theme === 'light' ? 'text-neutral-600' : 'text-[#c4a0a0]'
+                )}
+              >
+                No editions on your watchlist yet — tap + to browse, or use Watch on an artwork.
               </p>
             )}
           <div
@@ -243,7 +273,11 @@ export function ArtworkCarouselBar({
                           'flex items-center justify-center transition-opacity opacity-40 hover:opacity-100',
                           theme === 'light' ? 'text-neutral-700' : 'text-white/80'
                         )}
-                        aria-label={`Remove ${artwork.title} from selection`}
+                        aria-label={
+                          stripMode === 'watchlist'
+                            ? `Remove ${artwork.title} from watchlist`
+                            : `Remove ${artwork.title} from selection`
+                        }
                       >
                         <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                       </button>

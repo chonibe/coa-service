@@ -30,6 +30,58 @@ import {
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { Bell } from 'lucide-react'
+import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
+
+type WatchlistApiRow = {
+  id: string
+  shopify_product_id: string
+  stage_at_save: string
+  product_title: string | null
+  product_handle: string | null
+  artist_name: string | null
+  created_at: string
+}
+
+function productGidFromWatchlistRow(row: WatchlistApiRow): string {
+  const raw = row.shopify_product_id
+  if (raw.includes('gid://')) return raw
+  const n = normalizeShopifyProductId(raw)
+  return n ? `gid://shopify/Product/${n}` : raw
+}
+
+function stubProductFromWatchlistRow(row: WatchlistApiRow): ShopifyProduct {
+  const id = productGidFromWatchlistRow(row)
+  const z = { amount: '0', currencyCode: 'USD' }
+  return {
+    id,
+    handle: row.product_handle || 'artwork',
+    title: row.product_title || 'Artwork',
+    description: '',
+    descriptionHtml: '',
+    vendor: row.artist_name || '',
+    productType: '',
+    tags: [],
+    availableForSale: true,
+    priceRange: { minVariantPrice: z, maxVariantPrice: z },
+    compareAtPriceRange: { minVariantPrice: z, maxVariantPrice: z },
+    featuredImage: null,
+    images: { edges: [] },
+    variants: { edges: [] },
+    options: [],
+    metafields: null,
+  }
+}
+
+function resolveWatchlistProducts(rows: WatchlistApiRow[], catalog: ShopifyProduct[]): ShopifyProduct[] {
+  return rows.map((row) => {
+    const n = normalizeShopifyProductId(row.shopify_product_id)
+    const hit = catalog.find((p) => normalizeShopifyProductId(p.id) === n)
+    return hit ?? stubProductFromWatchlistRow(row)
+  })
+}
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -108,7 +160,13 @@ export function ExperienceV2Client({
   initialArtistSlug,
 }: ExperienceV2ClientProps) {
   const searchParams = useSearchParams()
-  const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } = useExperienceOrder()
+  const {
+    setOrderSummary,
+    setOrderBarProps,
+    triggerPriceBump,
+    setHeaderCenterContent,
+    setHeaderTrailingContent,
+  } = useExperienceOrder()
 
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
@@ -148,6 +206,52 @@ export function ExperienceV2Client({
     () => [...productsSeason1, ...productsSeason2],
     [productsSeason1, productsSeason2]
   )
+
+  const { isAuthenticated, loading: shopAuthLoading } = useShopAuthContext()
+  const [watchlistRows, setWatchlistRows] = useState<WatchlistApiRow[]>([])
+  const [carouselStripMode, setCarouselStripMode] = useState<'collection' | 'watchlist'>('collection')
+
+  const refreshWatchlist = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      const r = await fetch('/api/shop/watchlist', { credentials: 'include' })
+      const j = (await r.json()) as { items?: WatchlistApiRow[] }
+      if (r.ok && Array.isArray(j.items)) setWatchlistRows(j.items)
+    } catch {
+      // ignore
+    }
+  }, [isAuthenticated])
+
+  const watchlistDisplayProducts = useMemo(
+    () => resolveWatchlistProducts(watchlistRows, allProducts),
+    [watchlistRows, allProducts]
+  )
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setWatchlistRows([])
+      setCarouselStripMode('collection')
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated || shopAuthLoading) return
+    void refreshWatchlist()
+  }, [isAuthenticated, shopAuthLoading, refreshWatchlist])
+
+  useEffect(() => {
+    if (carouselStripMode !== 'watchlist' || !isAuthenticated) return
+    void refreshWatchlist()
+  }, [carouselStripMode, isAuthenticated, refreshWatchlist])
+
+  useEffect(() => {
+    const onUpdated = () => {
+      if (isAuthenticated) void refreshWatchlist()
+    }
+    window.addEventListener(EXPERIENCE_WATCHLIST_UPDATED, onUpdated)
+    return () => window.removeEventListener(EXPERIENCE_WATCHLIST_UPDATED, onUpdated)
+  }, [isAuthenticated, refreshWatchlist])
+
   const productsForActiveSeason = useMemo(
     () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
     [activeSeason, productsSeason1, productsSeason2]
@@ -165,6 +269,29 @@ export function ExperienceV2Client({
     const ids = uniqueCartIdsInOrder(cartOrder)
     return ids.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[]
   }, [allProducts, cartOrder])
+
+  const activeStripProducts = useMemo(
+    () => (carouselStripMode === 'watchlist' ? watchlistDisplayProducts : carouselArtworks),
+    [carouselStripMode, watchlistDisplayProducts, carouselArtworks]
+  )
+
+  const resolveProductById = useCallback(
+    (id: string | null | undefined): ShopifyProduct | null => {
+      if (!id) return null
+      const fromCatalog = allProducts.find((p) => p.id === id)
+      if (fromCatalog) return fromCatalog
+      return watchlistDisplayProducts.find((p) => p.id === id) ?? null
+    },
+    [allProducts, watchlistDisplayProducts]
+  )
+
+  useEffect(() => {
+    setActiveCarouselIndex((idx) => {
+      if (activeStripProducts.length === 0) return -1
+      if (idx < 0) return idx
+      return Math.min(idx, activeStripProducts.length - 1)
+    })
+  }, [activeStripProducts.length, carouselStripMode])
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -367,8 +494,8 @@ export function ExperienceV2Client({
   }, [cartOrder, lampQuantity, lampPreviewOrder])
 
   // V1 logic: lampPreviewOrder[0] -> image1 (Side B), lampPreviewOrder[1] -> image2 (Side A)
-  const sideAProduct = lampPreviewOrder[0] ? allProducts.find((p) => p.id === lampPreviewOrder[0]) ?? null : null
-  const sideBProduct = lampPreviewOrder[1] ? allProducts.find((p) => p.id === lampPreviewOrder[1]) ?? null : null
+  const sideAProduct = resolveProductById(lampPreviewOrder[0])
+  const sideBProduct = resolveProductById(lampPreviewOrder[1])
 
   const image1 = sideAProduct ? (getShopifyImageUrl(getFirstImage(sideAProduct), 1200) ?? getFirstImage(sideAProduct)) : null
   const image2 = sideBProduct ? (getShopifyImageUrl(getFirstImage(sideBProduct), 1200) ?? getFirstImage(sideBProduct)) : null
@@ -523,6 +650,29 @@ export function ExperienceV2Client({
     [carouselArtworks, getSideToShowForProduct]
   )
 
+  const handleCarouselBarRemove = useCallback(
+    async (carouselIndex: number) => {
+      if (carouselStripMode === 'watchlist') {
+        const product = watchlistDisplayProducts[carouselIndex]
+        if (!product) return
+        try {
+          const r = await fetch('/api/shop/watchlist', {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shopify_product_id: product.id }),
+          })
+          if (r.ok) await refreshWatchlist()
+        } catch {
+          // ignore
+        }
+        return
+      }
+      handleRemoveCarouselSlot(carouselIndex)
+    },
+    [carouselStripMode, watchlistDisplayProducts, refreshWatchlist, handleRemoveCarouselSlot]
+  )
+
   const handleAdjustArtworkQuantity = useCallback(
     (runStartIndex: number, delta: 1 | -1) => {
       if (delta === -1) {
@@ -612,35 +762,46 @@ export function ExperienceV2Client({
     return () => { cancelled = true }
   }, [detailProduct, lamp.id])
 
-  const handleLampSelect = useCallback((product: ShopifyProduct) => {
-    setLampPreviewOrder((prev) => {
-      const idx = prev.indexOf(product.id)
-      if (idx >= 0) {
-        const newOrder = prev.filter((id) => id !== product.id)
-        if (newOrder.length === 0) {
-          setRotateToSide(null)
-          setActiveCarouselIndex(-1)
-        } else {
-          const remainingId = newOrder[0]
-          const sideToShow = getSideToShowForProduct(newOrder, remainingId)
-          setRotateTrigger((t) => t + 1)
-          setRotateToSide(sideToShow)
-          setActiveCarouselIndex(carouselSlotIndexForProductId(cartOrder, remainingId))
-        }
-        return newOrder
+  const handleLampSelect = useCallback(
+    (product: ShopifyProduct, explicitStripIndex?: number) => {
+      const resolveCarouselSlot = (productId: string, explicit?: number) => {
+        if (explicit !== undefined) return explicit
+        const stripIdx = activeStripProducts.findIndex((p) => p.id === productId)
+        if (stripIdx >= 0) return stripIdx
+        return carouselSlotIndexForProductId(cartOrder, productId)
       }
-      const newOrder = prev.length >= 2
-        ? (currentFrontSideRef.current === 'A'
-          ? [product.id, prev[1]]
-          : [prev[0], product.id])
-        : [...prev, product.id]
-      const sideToShow = getSideToShowForProduct(newOrder, product.id)
-      setRotateTrigger((t) => t + 1)
-      setRotateToSide(sideToShow)
-      setActiveCarouselIndex(carouselSlotIndexForProductId(cartOrder, product.id))
-      return newOrder
-    })
-  }, [getSideToShowForProduct, cartOrder])
+
+      setLampPreviewOrder((prev) => {
+        const idx = prev.indexOf(product.id)
+        if (idx >= 0) {
+          const newOrder = prev.filter((id) => id !== product.id)
+          if (newOrder.length === 0) {
+            setRotateToSide(null)
+            setActiveCarouselIndex(-1)
+          } else {
+            const remainingId = newOrder[0]
+            const sideToShow = getSideToShowForProduct(newOrder, remainingId)
+            setRotateTrigger((t) => t + 1)
+            setRotateToSide(sideToShow)
+            setActiveCarouselIndex(resolveCarouselSlot(remainingId))
+          }
+          return newOrder
+        }
+        const newOrder =
+          prev.length >= 2
+            ? currentFrontSideRef.current === 'A'
+              ? [product.id, prev[1]!]
+              : [prev[0]!, product.id]
+            : [...prev, product.id]
+        const sideToShow = getSideToShowForProduct(newOrder, product.id)
+        setRotateTrigger((t) => t + 1)
+        setRotateToSide(sideToShow)
+        setActiveCarouselIndex(resolveCarouselSlot(product.id, explicitStripIndex))
+        return newOrder
+      })
+    },
+    [getSideToShowForProduct, cartOrder, activeStripProducts]
+  )
 
   const handleToggleSelect = useCallback((product: ShopifyProduct) => {
     const isAdding = !cartOrder.includes(product.id)
@@ -707,19 +868,22 @@ export function ExperienceV2Client({
     }
   }, [cartOrder, getSideToShowForProduct])
 
-  const handleTapCarouselItem = useCallback((index: number) => {
-    const product = carouselArtworks[index]
-    if (!product) return
-    scrollToSplineRef.current = true
-    setPreviewSlideIndex(0)
-    setActiveCarouselIndex(index)
-    if (product.id === lamp.id) {
-      setDisplayedProduct(lamp)
-      return
-    }
-    // Toggle lamp preview: off-lamp → assign to a side; on-lamp → remove so that side shows base Spline mesh
-    handleLampSelect(product)
-  }, [carouselArtworks, handleLampSelect, lamp.id])
+  const handleTapCarouselItem = useCallback(
+    (index: number) => {
+      const product = activeStripProducts[index]
+      if (!product) return
+      scrollToSplineRef.current = true
+      setPreviewSlideIndex(0)
+      setActiveCarouselIndex(index)
+      if (product.id === lamp.id) {
+        setDisplayedProduct(lamp)
+        return
+      }
+      // Toggle lamp preview: off-lamp → assign to a side; on-lamp → remove so that side shows base Spline mesh
+      handleLampSelect(product, carouselStripMode === 'watchlist' ? index : undefined)
+    },
+    [activeStripProducts, handleLampSelect, lamp.id, carouselStripMode]
+  )
 
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -754,7 +918,8 @@ export function ExperienceV2Client({
       triggerPriceBump()
     }
     setIsPickerOpen(false)
-  }, [cartOrder.length, triggerPriceBump])
+    if (isAuthenticated) void refreshWatchlist()
+  }, [cartOrder.length, triggerPriceBump, isAuthenticated, refreshWatchlist])
 
   const handleViewDetail = useCallback((product: ShopifyProduct) => {
     setDetailProduct(product)
@@ -768,8 +933,10 @@ export function ExperienceV2Client({
   }, [lampPreviewOrder.length, lamp])
 
   // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
-  const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
-  const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
+  const lastClickedProductId =
+    activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex]?.id ?? null : null
+  const lastClickedProduct =
+    activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex] ?? null : null
   useEffect(() => {
     if (!lastClickedProductId || !lastClickedProduct) return
     if (lastClickedProduct.id === lamp.id) {
@@ -822,6 +989,50 @@ export function ExperienceV2Client({
     )
     return () => setHeaderCenterContent(null)
   }, [isDesktop, displayedProduct, lamp.id, theme, handleViewDetail, setHeaderCenterContent])
+
+  useEffect(() => {
+    if (!isAuthenticated || shopAuthLoading) {
+      setHeaderTrailingContent(null)
+      return () => setHeaderTrailingContent(null)
+    }
+    setHeaderTrailingContent(
+      <button
+        type="button"
+        onClick={() => {
+          setCarouselStripMode((m) => {
+            const next = m === 'collection' ? 'watchlist' : 'collection'
+            if (next === 'watchlist') void refreshWatchlist()
+            return next
+          })
+          setActiveCarouselIndex(-1)
+        }}
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors',
+          theme === 'light'
+            ? 'text-neutral-800 hover:bg-black/5'
+            : 'text-white/90 hover:bg-white/10',
+          carouselStripMode === 'watchlist' &&
+            (theme === 'light' ? 'bg-black/10 ring-1 ring-black/10' : 'bg-white/15 ring-1 ring-white/20')
+        )}
+        aria-label={
+          carouselStripMode === 'watchlist'
+            ? 'Show collection in carousel strip'
+            : 'Show edition watchlist in carousel strip'
+        }
+        aria-pressed={carouselStripMode === 'watchlist'}
+      >
+        <Bell className="h-5 w-5" strokeWidth={2} aria-hidden />
+      </button>
+    )
+    return () => setHeaderTrailingContent(null)
+  }, [
+    isAuthenticated,
+    shopAuthLoading,
+    carouselStripMode,
+    theme,
+    refreshWatchlist,
+    setHeaderTrailingContent,
+  ])
 
   // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
   const hasAccordion = !!displayedProduct
@@ -944,12 +1155,21 @@ export function ExperienceV2Client({
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
-        selectedArtworks={carouselArtworks}
+        selectedArtworks={activeStripProducts}
+        stripMode={carouselStripMode}
+        onSwitchToCollection={
+          isAuthenticated
+            ? () => {
+                setCarouselStripMode('collection')
+                setActiveCarouselIndex(-1)
+              }
+            : undefined
+        }
         spotlightPlaceholders={spotlightPlaceholders}
         activeIndex={activeCarouselIndex}
         lampPreviewOrder={lampPreviewOrder}
         onTapItem={handleTapCarouselItem}
-        onRemoveItem={handleRemoveCarouselSlot}
+        onRemoveItem={(i) => void handleCarouselBarRemove(i)}
         onOpenPicker={handleOpenPicker}
         onAddProduct={handleToggleSelect}
       />

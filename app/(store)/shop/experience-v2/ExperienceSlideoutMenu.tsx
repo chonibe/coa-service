@@ -26,7 +26,7 @@ export function ExperienceSlideoutMenu() {
   const pathname = usePathname()
   const isOnOnboarding = pathname?.startsWith(ONBOARDING_PATH_PREFIX) ?? false
   const { menuOpen: open, setMenuOpen: setOpen, openAuthWhenMenuOpens, setOpenAuthWhenMenuOpens, onboardingRedirectPath } = useExperienceAuthContext()
-  const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount, discountCelebrationAmount, setDiscountCelebrationAmount, headerCenterContent } = useExperienceOrder()
+  const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount, discountCelebrationAmount, setDiscountCelebrationAmount, headerCenterContent, headerTrailingContent } = useExperienceOrder()
   const [shouldPulse, setShouldPulse] = useState(false)
   const prevLampQuantity = useRef(0)
   const { theme } = useExperienceTheme()
@@ -102,7 +102,8 @@ export function ExperienceSlideoutMenu() {
         {/* Right: cart (desktop); spacer for mobile balance */}
         <div className="flex items-center gap-2 shrink-0">
           {!isOnOnboarding && (
-            <div className={cn('relative flex items-center self-center shrink-0', showLampCard && lamp && pastLampPaywall ? 'md:ml-8 lg:ml-auto' : 'ml-auto')}>
+            <div className={cn('relative flex items-center gap-2 self-center shrink-0', showLampCard && lamp && pastLampPaywall ? 'md:ml-8 lg:ml-auto' : 'ml-auto')}>
+              {headerTrailingContent}
               <ExperienceCartChip variant="light" />
               {discountCelebrationAmount !== null && (
                 <DiscountCelebration
