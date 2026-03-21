@@ -106,18 +106,6 @@ export function ArtistSpotlightBanner({
                 {spotlight.seriesName && (
                   <p className="text-base text-neutral-500 dark:text-[#c4a0a0]">{spotlight.seriesName}</p>
                 )}
-                {spotlight.instagram && (
-                  <a
-                    href={`https://instagram.com/${spotlight.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 text-base text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
-                  >
-                    <Instagram className="w-4 h-4 flex-shrink-0" />
-                    <span>@{spotlight.instagram}</span>
-                  </a>
-                )}
               </div>
               <div
                 className={cn(
@@ -150,11 +138,28 @@ export function ArtistSpotlightBanner({
                 </div>
               )}
             </div>
-            {spotlight.bio && (
+            {(spotlight.bio || spotlight.instagram) && (
               <div className="pt-4 sm:pt-5 mt-2 sm:mt-0 w-full text-center">
-                <p className="text-base sm:text-lg text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line">
-                  {spotlight.bio}
-                </p>
+                {spotlight.bio && (
+                  <p className="text-base sm:text-lg text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line">
+                    {spotlight.bio}
+                  </p>
+                )}
+                {spotlight.instagram && (
+                  <a
+                    href={`https://instagram.com/${spotlight.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 text-base text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors',
+                      spotlight.bio ? 'mt-4' : 'mt-0'
+                    )}
+                  >
+                    <Instagram className="w-4 h-4 shrink-0" />
+                    <span>@{spotlight.instagram}</span>
+                  </a>
+                )}
               </div>
             )}
             {isCollapsible && (
