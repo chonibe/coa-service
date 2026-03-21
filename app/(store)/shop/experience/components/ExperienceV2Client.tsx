@@ -32,7 +32,7 @@ import {
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
-import { Bell } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 
 type WatchlistApiRow = {
@@ -841,7 +841,7 @@ export function ExperienceV2Client({
     if (isAdding) {
       const nextCart = [...cartOrder, product.id]
       scrollToSplineRef.current = true
-      setPreviewSlideIndex(0)
+      setPreviewSlideIndex(product.id === lamp.id ? 0 : 1)
       setDisplayedProduct(product)
       const variant = product.variants?.edges?.[0]?.node
       trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
@@ -873,7 +873,7 @@ export function ExperienceV2Client({
       const product = activeStripProducts[index]
       if (!product) return
       scrollToSplineRef.current = true
-      setPreviewSlideIndex(0)
+      setPreviewSlideIndex(product.id === lamp.id ? 0 : 1)
       setActiveCarouselIndex(index)
       if (product.id === lamp.id) {
         setDisplayedProduct(lamp)
@@ -898,10 +898,15 @@ export function ExperienceV2Client({
     setPreviewSlideIndex(0)
   }, [])
 
-  const handleGalleryImagesChange = useCallback((images: { url: string; altText?: string | null }[]) => {
-    setGalleryImages(images)
-    setPreviewSlideIndex(0)
-  }, [])
+  const handleGalleryImagesChange = useCallback(
+    (images: { url: string; altText?: string | null }[]) => {
+      setGalleryImages(images)
+      setPreviewSlideIndex(
+        displayedProduct && displayedProduct.id !== lamp.id ? 1 : 0
+      )
+    },
+    [displayedProduct, lamp.id]
+  )
 
   const handleGoToSlide = useCallback((index: number) => {
     setPreviewSlideIndex(index)
@@ -1021,7 +1026,11 @@ export function ExperienceV2Client({
         }
         aria-pressed={carouselStripMode === 'watchlist'}
       >
-        <Bell className="h-5 w-5" strokeWidth={2} aria-hidden />
+        <Heart
+          className={cn('h-5 w-5', carouselStripMode === 'watchlist' && 'fill-current')}
+          strokeWidth={2}
+          aria-hidden
+        />
       </button>
     )
     return () => setHeaderTrailingContent(null)
@@ -1034,12 +1043,15 @@ export function ExperienceV2Client({
     setHeaderTrailingContent,
   ])
 
-  // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
+  // Reel: artworks with edition-above-Spline use slide 0=edition,1=Spline,2=details,3+=gallery; lamp uses 0=Spline,…
   const hasAccordion = !!displayedProduct
-  const hasGallery = galleryImages.length > 1 // First image shown in artwork details, need 2+ for gallery section
+  const hasGallery = galleryImages.length > 1
+  const editionLeadBeforeSpline = !!(displayedProduct && displayedProduct.id !== lamp.id)
+  const reelSplineSlideIndex = editionLeadBeforeSpline ? 1 : 0
+  const gallerySlideOffsetReel = editionLeadBeforeSpline ? 3 : hasAccordion ? 2 : 1
   const sectionCount =
-    1 + (hasAccordion ? 1 : 0) + (hasGallery ? galleryImages.length - 1 : 0)
-  const gallerySectionIndex = hasAccordion ? 2 : 1
+    (editionLeadBeforeSpline ? 3 : hasAccordion ? 2 : 1) +
+    (hasGallery ? galleryImages.length - 1 : 0)
   const prevDisplayedIdRef = useRef<string | null>(null)
   useEffect(() => {
     const currentId = displayedProduct?.id ?? null
@@ -1052,11 +1064,10 @@ export function ExperienceV2Client({
     setPreviewSlideIndex((prev) => {
       const max = Math.max(0, sectionCount - 1)
       if (prev > max) return max
-      // When user taps 1|2 or carousel item, scroll to Spline
-      if (scrollToSpline) return 0
+      if (scrollToSpline) return reelSplineSlideIndex
       return prev
     })
-  }, [displayedProduct?.id, galleryImages.length, sectionCount])
+  }, [displayedProduct?.id, galleryImages.length, sectionCount, reelSplineSlideIndex])
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
@@ -1080,7 +1091,8 @@ export function ExperienceV2Client({
             onGalleryImagesChange={handleGalleryImagesChange}
             onGoToSlide={handleGoToSlide}
             currentSlide={previewSlideIndex}
-            gallerySlideOffset={gallerySectionIndex}
+            gallerySlideOffset={gallerySlideOffsetReel}
+            editionLeadBeforeSpline={editionLeadBeforeSpline}
             onViewDetail={handleViewDetail}
             onDisplayedProductChange={setDisplayedProduct}
             thumbnailPlacement="right"
@@ -1150,6 +1162,7 @@ export function ExperienceV2Client({
         onSlideChange={setPreviewSlideIndex}
         onSplineInView={setSplineInView}
         experienceReelRef={experienceReelRef}
+        editionLeadBeforeSpline={editionLeadBeforeSpline}
       />
 
       <ArtworkCarouselBar

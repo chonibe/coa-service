@@ -23,6 +23,8 @@ interface ArtistData {
   instagram?: string
 }
 
+export type ArtworkAccordionsVariant = 'full' | 'editionOnly' | 'contentOnly'
+
 interface ArtworkAccordionsProps {
   product: ShopifyProduct
   productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
@@ -31,13 +33,22 @@ interface ArtworkAccordionsProps {
   artistSlugOverride?: string
   /** When provided, use this spotlight data directly (includes gifUrl) — same as selector, no fetch needed */
   spotlightDataOverride?: SpotlightData | null
+  /** `editionOnly` / `contentOnly`: split reel with edition above Spline in SplineFullScreen */
+  variant?: ArtworkAccordionsVariant
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
 const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
-export function ArtworkAccordions({ product, productIncludes, productSpecs, artistSlugOverride, spotlightDataOverride }: ArtworkAccordionsProps) {
+export function ArtworkAccordions({
+  product,
+  productIncludes,
+  productSpecs,
+  artistSlugOverride,
+  spotlightDataOverride,
+  variant = 'full',
+}: ArtworkAccordionsProps) {
   useExperienceTheme() // ensures we're in theme context for dark: classes
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
@@ -196,6 +207,24 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
     return m?.value ? parseInt(m.value, 10) : null
   })()
 
+  if (variant === 'editionOnly') {
+    if (isLamp) return null
+    return (
+      <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-4 pb-2 md:pb-3">
+        <ArtworkEditionUnifiedSection className="w-full">
+          <EditionBadgeForProduct
+            product={product}
+            artistName={detailArtistName || undefined}
+            unifiedSection
+            className="w-full"
+          />
+        </ArtworkEditionUnifiedSection>
+      </div>
+    )
+  }
+
+  const showEditionInBody = !isLamp && variant === 'full'
+
   return (
     <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-5">
       {/* Collection GIF — outside spotlight card, above edition / scarcity */}
@@ -205,8 +234,8 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
         </div>
       )}
 
-      {/* Edition story + availability — before artwork card + artist spotlight */}
-      {!isLamp && (
+      {/* Edition story + availability — before artwork card + artist spotlight (omitted when rendered above Spline) */}
+      {showEditionInBody && (
         <ArtworkEditionUnifiedSection className="w-full">
           <EditionBadgeForProduct
             product={product}

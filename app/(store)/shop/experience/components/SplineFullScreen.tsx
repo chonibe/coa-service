@@ -99,6 +99,8 @@ interface SplineFullScreenProps {
   spotlightDataOverride?: import('../../experience-v2/components/ArtistSpotlightBanner').SpotlightData | null
   /** Ref to the main vertical reel (`overflow-y-auto`); used by [`ArtworkCarouselBar`](./ArtworkCarouselBar.tsx) to scroll the page while over the carousel. */
   experienceReelRef?: Ref<HTMLDivElement | null>
+  /** When true and an artwork (not lamp) is shown, edition status renders above the Spline in the reel */
+  editionLeadBeforeSpline?: boolean
 }
 
 export function SplineFullScreen({
@@ -123,6 +125,7 @@ export function SplineFullScreen({
   artistSlugOverride,
   spotlightDataOverride,
   experienceReelRef,
+  editionLeadBeforeSpline = false,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -237,7 +240,15 @@ export function SplineFullScreen({
   const hasGallery = galleryImages.length > 1 // Skip first image (shown in details), need 2+ for gallery section
   /** One scroll section per image after the first (matches thumbnail slide indices from ArtworkInfoBar). */
   const gallerySectionCount = hasGallery ? galleryImages.length - 1 : 0
-  const sectionCount = 1 + (hasAccordion ? 1 : 0) + gallerySectionCount
+  const editionLead = !!(editionLeadBeforeSpline && hasAccordion && displayedProduct)
+  /** Reel section index of the Spline block (0 when no edition lead; 1 when edition strip is above). */
+  const splineSectionIndex = editionLead ? 1 : 0
+  /** Reel section index of accordion body (details / GIF / artist); -1 if no accordion. */
+  const accordionContentSectionIndex = editionLead ? 2 : hasAccordion ? 1 : -1
+  /** First gallery image section index in the reel. */
+  const galleryBaseSectionIndex = editionLead ? 3 : hasAccordion ? 2 : 1
+  const sectionCount =
+    (editionLead ? 3 : hasAccordion ? 2 : 1) + gallerySectionCount
 
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
   const lastReportedSectionRef = useRef(currentSlide)
@@ -317,14 +328,14 @@ export function SplineFullScreen({
 
   const handleGalleryBackToTop = useCallback(() => {
     const el = scrollRef.current
-    const target = sectionRefs.current[0]
+    const target = sectionRefs.current[splineSectionIndex]
     if (!el || !target) return
     ignoreSlideSyncUntilRef.current = Date.now() + 800
-    lastReportedSectionRef.current = 0
-    lastProgrammaticSectionRef.current = 0
-    onSlideChange?.(0)
+    lastReportedSectionRef.current = splineSectionIndex
+    lastProgrammaticSectionRef.current = splineSectionIndex
+    onSlideChange?.(splineSectionIndex)
     target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [onSlideChange])
+  }, [onSlideChange, splineSectionIndex])
 
   useEffect(() => {
     lastReportedSectionRef.current = currentSlide
@@ -381,7 +392,7 @@ export function SplineFullScreen({
   // Report when Spline section is in view (for carousel visibility)
   useEffect(() => {
     const scrollEl = scrollRef.current
-    const splineEl = sectionRefs.current[0]
+    const splineEl = sectionRefs.current[splineSectionIndex]
     if (!scrollEl || !splineEl || !onSplineInView) return
     const observer = new IntersectionObserver(
       ([entry]) => onSplineInView(entry.isIntersecting),
@@ -389,7 +400,7 @@ export function SplineFullScreen({
     )
     observer.observe(splineEl)
     return () => observer.disconnect()
-  }, [onSplineInView])
+  }, [onSplineInView, splineSectionIndex])
 
   // Dock Back to top at bottom of preview once the top reel (3D + thumbnail stack) is largely scrolled away
   useEffect(() => {
@@ -403,7 +414,7 @@ export function SplineFullScreen({
     let rafInner = 0
     const run = () => {
       const root = scrollRef.current
-      const target = sectionRefs.current[0]
+      const target = sectionRefs.current[splineSectionIndex]
       if (!root || !target || cancelled) return
       observer = new IntersectionObserver(
         ([entry]) => {
@@ -424,7 +435,7 @@ export function SplineFullScreen({
       cancelAnimationFrame(rafInner)
       observer?.disconnect()
     }
-  }, [hasGallery, sectionCount, galleryImages.length, hasAccordion, displayedProduct?.id])
+  }, [hasGallery, sectionCount, galleryImages.length, hasAccordion, displayedProduct?.id, splineSectionIndex])
 
   return (
     <div
@@ -450,14 +461,32 @@ export function SplineFullScreen({
           // was snapping the reel back (scrollTop stuck ~64 while deltaY kept firing — see debug-2240e8.log).
         } as React.CSSProperties}
       >
-        {/* Section 0: Spline 3D — facade (LCP) then deferred Spline mount */}
+        {/* Edition status (artworks only) — above Spline when editionLeadBeforeSpline */}
+        {editionLead && displayedProduct && (
+          <div
+            ref={(r) => { sectionRefs.current[0] = r }}
+            className="flex-shrink-0 w-full relative z-0"
+          >
+            <ArtworkAccordions
+              key={`${displayedProduct.id}-edition-lead`}
+              variant="editionOnly"
+              product={displayedProduct}
+              productIncludes={productIncludes}
+              productSpecs={productSpecs}
+              artistSlugOverride={artistSlugOverride}
+              spotlightDataOverride={spotlightDataOverride}
+            />
+          </div>
+        )}
+
+        {/* Spline 3D — facade (LCP) then deferred Spline mount */}
         <div
-          ref={(r) => { sectionRefs.current[0] = r }}
+          ref={(r) => { sectionRefs.current[splineSectionIndex] = r }}
           className={cn(
             'flex-shrink-0 flex flex-col relative w-full',
             !hasGallery && !hasAccordion
               ? 'flex-1 min-w-0'
-              :             hasAccordion
+              : hasAccordion
                 ? 'min-h-[72svh]'
                 : 'min-h-[100svh]'
           )}
@@ -546,18 +575,18 @@ export function SplineFullScreen({
           </div>
         </div>
 
-        {/* Section 1: Artist Bio & Artwork Details (with image and scarcity bar) */}
-        {hasAccordion && displayedProduct && (
+        {/* Artist bio, artwork card, specs (full stack or content-only when edition is above Spline) */}
+        {hasAccordion && displayedProduct && accordionContentSectionIndex >= 0 && (
           <div
-            ref={(r) => { sectionRefs.current[1] = r }}
+            ref={(r) => { sectionRefs.current[accordionContentSectionIndex] = r }}
             className={cn(
               'relative z-0 flex-shrink-0 w-full min-h-[46svh] flex flex-col items-center justify-start',
-              /* Normal flow under Spline — no overlap; padding clears docked carousel */
               'mt-0 pt-5 pb-6 md:pt-6 md:pb-8'
             )}
           >
             <ArtworkAccordions
               key={displayedProduct.id}
+              variant={editionLead ? 'contentOnly' : 'full'}
               product={displayedProduct}
               productIncludes={productIncludes}
               productSpecs={productSpecs}
@@ -567,11 +596,10 @@ export function SplineFullScreen({
           </div>
         )}
 
-        {/* Gallery: one scroll section per image after the first (thumb idx 1+ → slide galleryBase+idx-1) */}
+        {/* Gallery: one scroll section per image after the first */}
         {galleryImages.length > 1 &&
           galleryImages.slice(1).map((img, idx) => {
-            const galleryBase = hasAccordion ? 2 : 1
-            const sectionIndex = galleryBase + idx
+            const sectionIndex = galleryBaseSectionIndex + idx
             return (
               <div
                 key={img.url || idx}

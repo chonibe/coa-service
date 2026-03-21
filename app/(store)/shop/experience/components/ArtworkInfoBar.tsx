@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Box, Info, RotateCw } from 'lucide-react'
+import { Award, Box, Info, RotateCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -82,6 +82,8 @@ interface ArtworkInfoBarProps {
   hideTitle?: boolean
   /** Slide index for gallery image at thumb idx 1 (second image). Idx 0 uses slide 1 (details). */
   gallerySlideOffset?: number
+  /** When true, reel has edition status as slide 0; Spline is slide 1, details slide 2 */
+  editionLeadBeforeSpline?: boolean
 }
 
 export function ArtworkInfoBar({
@@ -99,6 +101,7 @@ export function ArtworkInfoBar({
   onRotate,
   hideTitle = false,
   gallerySlideOffset = 1,
+  editionLeadBeforeSpline = false,
 }: ArtworkInfoBarProps) {
   const { theme } = useExperienceTheme()
   const hasA = !!sideAProduct
@@ -185,16 +188,20 @@ export function ArtworkInfoBar({
 
   if (!displayedProduct) return null
 
+  const editionSlide = editionLeadBeforeSpline ? 0 : null
+  const splineSlide = editionLeadBeforeSpline ? 1 : 0
+  const detailSlide = editionLeadBeforeSpline ? 2 : 1
+
   /** Reel slide index for product image thumbnail idx (0 = hero in details section). */
   const slideForImageThumb = (idx: number) =>
-    idx === 0 ? 1 : gallerySlideOffset + idx - 1
+    idx === 0 ? detailSlide : gallerySlideOffset + idx - 1
 
   const isLamp = displayedProduct?.id === lampProduct?.id
   const title = displayedProduct.title ?? ''
   const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
 
   /** Mobile: title only on hero (Spline slide); desktop title lives in page header via hideTitle */
-  const showMobileHeroTitle = !hideTitle && currentSlide === 0
+  const showMobileHeroTitle = !hideTitle && currentSlide === splineSlide
 
   return (
     <div
@@ -255,20 +262,44 @@ export function ArtworkInfoBar({
                 <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-white/10')} />
               ) : (
                 <>
-                  {/* Thumb 0: Spline / 3D lamp — when selected, becomes rotate button */}
+                  {editionLeadBeforeSpline && editionSlide !== null && (
+                    <button
+                      type="button"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onGoToSlide?.(editionSlide)
+                      }}
+                      title="Edition status"
+                      className={cn(
+                        'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
+                        currentSlide === editionSlide
+                          ? theme === 'light'
+                            ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
+                            : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                          : theme === 'light'
+                            ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
+                            : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                      )}
+                    >
+                      <Award className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} strokeWidth={2} />
+                    </button>
+                  )}
+                  {/* Spline / 3D lamp — when selected, becomes rotate button */}
                   <button
                     type="button"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      if (currentSlide === 0 && onRotate) onRotate()
-                      else onGoToSlide?.(0)
+                      if (currentSlide === splineSlide && onRotate) onRotate()
+                      else onGoToSlide?.(splineSlide)
                     }}
-                    title={currentSlide === 0 && onRotate ? 'Rotate 90 degrees' : '3D lamp view'}
+                    title={currentSlide === splineSlide && onRotate ? 'Rotate 90 degrees' : '3D lamp view'}
                     className={cn(
                       'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
-                    currentSlide === 0
+                    currentSlide === splineSlide
                       ? theme === 'light'
                         ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
                         : 'border-[#FFBA94] bg-[#FFBA94]/10'
@@ -277,7 +308,7 @@ export function ArtworkInfoBar({
                           : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
                     )}
                   >
-                    {currentSlide === 0 && onRotate ? (
+                    {currentSlide === splineSlide && onRotate ? (
                       <RotateCw className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} />
                     ) : (
                       <Box className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} strokeWidth={1.5} />
@@ -290,12 +321,12 @@ export function ArtworkInfoBar({
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      onGoToSlide?.(1)
+                      onGoToSlide?.(detailSlide)
                     }}
                     title="View details"
                     className={cn(
                       'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
-                      currentSlide === 1
+                      currentSlide === detailSlide
                         ? theme === 'light'
                           ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
                           : 'border-[#FFBA94] bg-[#FFBA94]/10'

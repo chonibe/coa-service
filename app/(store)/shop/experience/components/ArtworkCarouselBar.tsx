@@ -208,14 +208,16 @@ export function ArtworkCarouselBar({
                   <LayoutGrid className="w-5 h-5" strokeWidth={2.25} />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={onOpenPicker}
-                className={glassAddButtonClass}
-                aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
-              >
-                <Plus className="w-5 h-5" strokeWidth={2.25} />
-              </button>
+              {stripMode === 'collection' && (
+                <button
+                  type="button"
+                  onClick={onOpenPicker}
+                  className={glassAddButtonClass}
+                  aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
+                >
+                  <Plus className="w-5 h-5" strokeWidth={2.25} />
+                </button>
+              )}
             </div>
             {!hasCarouselArtworks && stripMode === 'collection' && (
               <p
@@ -234,7 +236,7 @@ export function ArtworkCarouselBar({
                   theme === 'light' ? 'text-neutral-600' : 'text-[#c4a0a0]'
                 )}
               >
-                No editions on your watchlist yet — tap + to browse, or use Watch on an artwork.
+                No editions on your watchlist yet — switch back to your collection to browse, or tap Watch on an artwork.
               </p>
             )}
           <div

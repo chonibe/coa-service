@@ -212,7 +212,7 @@ export function EditionWatchControl({
           !watching &&
             'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50 dark:bg-white/5 dark:text-[#f0e8e8] dark:ring-white/28 dark:hover:bg-white/10',
           watching &&
-            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#FFBA94]/18 dark:text-[#FFBA94] dark:ring-[#FFBA94]/45 dark:hover:bg-[#FFBA94]/26'
+            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]'
         )}
       >
         {busy ? '…' : label}
