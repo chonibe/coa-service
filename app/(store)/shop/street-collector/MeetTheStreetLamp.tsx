@@ -7,15 +7,17 @@ import { LazyVideo } from '@/components/LazyVideo'
 export interface MeetTheLampStage {
   title: string
   description: string
+  /** Shopify CDN or any URL; proxied when not cdn.shopify.com in parent */
+  desktopVideo: string
+  mobileVideo: string
+  /** Poster image URL (typically proxied on the server) */
+  poster: string
 }
 
 interface MeetTheStreetLampProps {
   title: string
   stages: MeetTheLampStage[]
-  desktopVideo: string
-  mobileVideo: string
-  poster: string
-  /** Momentum cue—subtle link after section (e.g. "Explore available artworks.") */
+  /** Momentum cue—subtle link after section */
   cue?: string
   cueHref?: string
   className?: string
@@ -48,9 +50,6 @@ function useIsDesktop() {
 export function MeetTheStreetLamp({
   title,
   stages,
-  desktopVideo,
-  mobileVideo,
-  poster,
   cue,
   cueHref = '/experience',
   className,
@@ -58,12 +57,23 @@ export function MeetTheStreetLamp({
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const isDesktop = useIsDesktop()
-  const videoUrl = isDesktop ? desktopVideo : mobileVideo
-  const videoSrc = videoUrl.startsWith('https://cdn.shopify.com/') ? videoUrl : `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
+  const activeStage = stages[activeIndex] ?? stages[0]
+  const videoUrl = activeStage
+    ? isDesktop
+      ? activeStage.desktopVideo
+      : activeStage.mobileVideo
+    : ''
+  const poster = activeStage?.poster ?? ''
+  const videoSrc = videoUrl.startsWith('https://cdn.shopify.com/')
+    ? videoUrl
+    : `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
 
   const goToNext = useCallback(() => {
     setProgress(0)
-    setActiveIndex((i) => (i + 1) % stages.length)
+    setActiveIndex((i) => {
+      if (stages.length <= 0) return 0
+      return (i + 1) % stages.length
+    })
   }, [stages.length])
 
   /** Timer-driven stage rotation + progress bar (faster cycle) */
@@ -82,6 +92,10 @@ export function MeetTheStreetLamp({
     return () => clearInterval(id)
   }, [goToNext])
 
+  if (!stages.length) {
+    return null
+  }
+
   const handleSelectIndex = (index: number) => {
     if (index === activeIndex) return
     setProgress(0)
@@ -90,10 +104,10 @@ export function MeetTheStreetLamp({
 
   const stageList = (
     <ul className="space-y-0">
-      {stages.map((stage, index) => {
+          {stages.map((stage, index) => {
         const isActive = activeIndex === index
         return (
-          <li key={stage.title}>
+          <li key={`${stage.title}-${index}`}>
             <button
               type="button"
               onClick={() => handleSelectIndex(index)}
@@ -185,7 +199,7 @@ export function MeetTheStreetLamp({
           <div>{titleBlock}</div>
           <div className="relative w-full overflow-hidden rounded-2xl aspect-[3/4]">
             <LazyVideo
-              key={`mobile-${videoUrl}`}
+              key={`mobile-${activeIndex}-${videoUrl}`}
               src={videoSrc}
               poster={poster}
               autoPlay
@@ -206,7 +220,7 @@ export function MeetTheStreetLamp({
           </div>
           <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-800 aspect-[4/5] max-h-[640px]">
             <LazyVideo
-              key={`desktop-${videoUrl}`}
+              key={`desktop-${activeIndex}-${videoUrl}`}
               src={videoSrc}
               poster={poster}
               autoPlay

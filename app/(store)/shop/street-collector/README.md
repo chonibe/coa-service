@@ -33,10 +33,21 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 | [`MultiColumnVideoSection.tsx`](./MultiColumnVideoSection.tsx) | Client component; value props with autoplay videos (horizontal scroll on mobile, 3-col on desktop) |
 | [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) | Client component; testimonials with media (video/image), stars, quote, author; arrows + dots |
 | [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, video/poster URLs, testimonials with media, collection handles) |
+| [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) | Client section after hero: rotating stage copy + **per-stage video** when Shopify provides media |
+| [`lib/shopify/meet-the-street-lamp-media.ts`](../../../lib/shopify/meet-the-street-lamp-media.ts) | Storefront query: parent metaobject → list of linked child metaobjects → video/poster per stage |
 
 ---
 
 ## Implementation Details
+
+### Meet the Street Lamp + Shopify metaobjects
+
+- **Implementation:** [`lib/shopify/meet-the-street-lamp-media.ts`](../../../lib/shopify/meet-the-street-lamp-media.ts) (`fetchMeetTheStreetLampStageMediaFromShopify`), merged in [`page.tsx`](./page.tsx) with [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp` as fallback titles, descriptions, and default videos/posters.
+- **Parent entry (defaults):** type `under_the_fold_section`, handle `under-the-fold-section-gedomnm3`. Override with `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_TYPE` and `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_HANDLE`.
+- **Parent shape:** one field whose type is a **list of metaobject references** (e.g. keys `slides`, `items`, `steps`, `blocks`, `sections`). Order in Shopify = stage order (aligned by index with `meetTheLamp.stages`).
+- **Each child metaobject:** optional `video` (or `video_desktop` / `video_mobile`), optional `poster` / `preview_image` / `image`, optional `title` / `heading`, optional `description` / `body` / `text`. File references resolve to CDN URLs like other metaobject helpers.
+- **Storefront scope:** `unauthenticated_read_metaobjects` (same as homepage banner metaobject).
+- **Tests:** No automated tests; verify in admin that the list field references one child per stage and that videos play when selecting each title on `/shop/street-collector`.
 
 ### Data Fetching
 
@@ -68,4 +79,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Created:** 2026-02-27
 - **Implementation:** Street Collector–inspired landing flow into `/shop/experience` with bridge + FAQ conversion layers
-- **Updated:** 2026-03-21 — Meet the Street Lamp `stages` copy and order refreshed; earlier same day: removed duplicate value-prop tagline, trust bar SVGs (`public/street-collector/trust/`), README CTAs note
+- **Updated:** 2026-03-21 — Meet the Street Lamp: per-stage video/poster from Shopify metaobject list (`meet-the-street-lamp-media.ts`); env overrides for type/handle; copy/order and trust bar updates as before

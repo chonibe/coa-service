@@ -1,3 +1,22 @@
+## Commit: Street Collector — Meet the Lamp videos from Shopify metaobjects (2026-03-21)
+
+### Summary
+Meet the Street Lamp (first section after the hero) now loads **per-stage** desktop/mobile video and poster from a Shopify metaobject entry that contains a **list of metaobject references** (default parent: type `under_the_fold_section`, handle `under-the-fold-section-gedomnm3`). Stage order matches the list order, merged by index with `streetCollectorContent.meetTheLamp.stages` for fallback copy and default CDN videos. `MeetTheStreetLamp` switches `LazyVideo` when the active stage changes.
+
+### ✅ Implementation Checklist
+
+- [x] [`lib/shopify/meet-the-street-lamp-media.ts`](../lib/shopify/meet-the-street-lamp-media.ts) — Storefront GraphQL (`references` nodes + edges), child field parsing (`video` / `video_desktop` / `video_mobile`, poster, optional title/description)
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Fetch + merge into `MeetTheLampStage[]`, proxied posters
+- [x] [`app/(store)/shop/street-collector/MeetTheStreetLamp.tsx`](../app/(store)/shop/street-collector/MeetTheStreetLamp.tsx) — Per-stage `desktopVideo` / `mobileVideo` / `poster`; remount video on stage change
+- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Metaobject shape, env vars, implementation links
+
+### 📌 Notes
+
+- Override parent with `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_TYPE` / `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_HANDLE` if the definition handle differs.
+- If the parent has no list field or the fetch fails, behavior matches previous static `meetTheLamp` videos for all stages.
+
+---
+
 ## Commit: Street Collector — remove Meet the Lamp footer cue (2026-03-21)
 
 ### Summary
