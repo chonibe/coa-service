@@ -1,5 +1,20 @@
 # Commit Log
 
+## Commit: fix(shop): remove redundant Edition of from artwork headers (2026-03-21)
+
+**Ref:** `5c2d31806`
+
+### Summary
+Removed **Edition of N** / **Limited Edition of N** from product header rows in [`ArtworkDetail.tsx`](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (inline desktop, slideout desktop, mobile sticky bar); edition size remains in scarcity bar and edition badge. **[`ArtworkAccordions.tsx`](app/(store)/shop/experience/components/ArtworkAccordions.tsx)** artwork details card now shows **artist** (uppercase label) + **title** only; dropped edition line and release date from that card.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/ArtworkDetail.tsx](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkAccordions.tsx](app/(store)/shop/experience/components/ArtworkAccordions.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience-v2): scarcity bar in image/detail column; watch stays on edition badge (2026-03-21)
 
 **Ref:** `851c6519b`
