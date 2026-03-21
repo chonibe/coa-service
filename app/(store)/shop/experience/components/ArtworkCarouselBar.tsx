@@ -200,7 +200,9 @@ export function ArtworkCarouselBar({
                       className={cn(
                         'relative block w-24 aspect-[14/20] rounded-[15px] transition-[transform,box-shadow] duration-200 active:scale-[0.95]',
                         isOnLamp
-                          ? 'shadow-[inset_0_0_8px_rgba(255,200,170,0.55),inset_0_0_14px_rgba(255,186,148,0.28)]'
+                          ? theme === 'light'
+                            ? 'shadow-[inset_0_0_10px_rgba(255,220,200,0.65),inset_0_0_18px_rgba(255,186,148,0.42),0_0_0_2px_rgba(255,160,120,0.9),0_0_14px_rgba(255,186,148,0.45)]'
+                            : 'shadow-[inset_0_0_10px_rgba(255,210,185,0.55),inset_0_0_18px_rgba(255,186,148,0.5),0_0_0_2px_rgba(255,200,170,0.95),0_0_16px_rgba(255,186,148,0.55)]'
                           : 'shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
