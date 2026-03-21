@@ -412,7 +412,7 @@ export function ArtworkPickerSheet({
             onClick={onClose}
           />
 
-          <div className="fixed inset-0 z-[71] flex items-end justify-center pointer-events-none">
+          <div className="fixed inset-0 z-[71] flex items-end justify-center pointer-events-none md:px-4 md:pb-5">
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
@@ -422,17 +422,18 @@ export function ArtworkPickerSheet({
                 'flex w-full flex-col pointer-events-auto shadow-2xl',
                 /* Mobile: nearly full viewport sheet */
                 'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
-                /* Desktop: same max width as gallery + details column in SplineFullScreen / ArtworkAccordions */
-                'md:max-w-[min(65vh,520px)] md:rounded-t-2xl md:h-auto md:min-h-[65vh] md:max-h-[96vh]',
+                /* Desktop: wider shell (matches experience top chrome); floated panel with full rounding */
+                'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]',
                 theme === 'light' ? 'bg-white' : 'bg-[#171515]'
               )}
             >
-            {/* Header: Title + Close (mobile: title + close only; desktop: title + seasons + filter + close) */}
+            {/* Header: mobile = title + Done; desktop = two-zone bar (title block | tools) */}
             <div className={cn(
-              'flex-shrink-0 flex items-center gap-3 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
+              'flex-shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
+              'md:flex-nowrap md:items-center md:justify-between md:gap-4 md:px-6 md:py-3.5',
               theme === 'light' ? 'border-neutral-200' : 'border-neutral-800'
             )}>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-none md:max-w-[55%]">
                 <h2 className={cn(
                   'text-base font-semibold leading-tight',
                   theme === 'light' ? 'text-neutral-900' : 'text-white'
@@ -449,7 +450,7 @@ export function ArtworkPickerSheet({
                   <span className="hidden md:inline">Click to add</span>
                 </p>
               </div>
-              {/* Desktop: Season + Filter in header */}
+              <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0 md:gap-3">
               {onSeasonChange && (
                 <div className={cn(
                   'hidden md:flex rounded-lg border p-0.5 flex-shrink-0',
@@ -518,7 +519,7 @@ export function ArtworkPickerSheet({
                 onClick={onClose}
                 aria-label="Done"
                 className={cn(
-                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold -my-2 ml-auto transition-colors shrink-0',
+                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold -my-2 transition-colors shrink-0',
                   theme === 'light'
                     ? 'text-[#047AFF] hover:text-[#0366d6] hover:bg-neutral-100'
                     : 'text-[#60A5FA] hover:text-[#93C5FD] hover:bg-[#262222]'
@@ -526,12 +527,14 @@ export function ArtworkPickerSheet({
               >
                 Done
               </button>
+              </div>
             </div>
 
             <div
               ref={scrollRef}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3 md:px-2"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3 md:px-5 md:py-4"
             >
+              <div className="md:mx-auto md:w-full md:max-w-[min(65vh,520px)]">
               {/* Artist spotlight at top */}
               {spotlightData && onSpotlightSelect && (
                 <div className="mb-3">
@@ -694,6 +697,7 @@ export function ArtworkPickerSheet({
                   </p>
                 )
               )}
+              </div>
             </div>
 
             {/* Mobile bottom bar: Season 1/2 + Filter */}
