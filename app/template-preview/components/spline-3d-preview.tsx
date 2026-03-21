@@ -2564,8 +2564,9 @@ export function Spline3DPreview({
     baseYawRef.current = rotatable.rotation.y || 0
 
     const container = containerRef.current
-    const maxYaw = 0.5
-    const maxPitch = 0.08
+    /* Drag sensitivity: higher = more spin per pointer travel; lerp = how fast the lamp catches the cursor. */
+    const maxYaw = 0.82
+    const maxPitch = 0.12
     const turntableSpeed = 0.003
     const sidewaysTurntableSpeed = 0.001
 
@@ -2602,10 +2603,10 @@ export function Spline3DPreview({
       if (!gestureCommittedRef.value) {
         const dx = Math.abs(touch.clientX - touchStartRef.x)
         const dy = Math.abs(touch.clientY - touchStartRef.y)
-        const threshold = 10
+        const threshold = 6
         if (dx > threshold || dy > threshold) {
           gestureCommittedRef.value = true
-          if (dy > dx * 1.2) {
+          if (dy > dx * 1.35) {
             gestureIsVerticalRef.value = true
             isPointerOverRef.current = false
             return
@@ -2649,7 +2650,7 @@ export function Spline3DPreview({
       if (interactive && isPointerOverRef.current) {
         const t = cursorTargetRef.current
         const c = cursorCurrentRef.current
-        const lerpFactor = 0.08
+        const lerpFactor = 0.18
         c.x += (t.x - c.x) * lerpFactor
         c.y += (t.y - c.y) * lerpFactor
         // Remap drag vector from rotated view-space back into model control-space.
