@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, useMemo, type RefObject } from 'react'
+import { useRef, useEffect, useState, type RefObject } from 'react'
 import Image from 'next/image'
 import { Eye, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -146,14 +146,6 @@ export function ArtworkCarouselBar({
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
-  /** When `activeIndex` is still -1 (e.g. after load), show the eye on the first carousel tile that is on the lamp. */
-  const firstOnLampCarouselIndex = useMemo(
-    () => selectedArtworks.findIndex((a) => lampPreviewOrder.includes(a.id)),
-    [selectedArtworks, lampPreviewOrder]
-  )
-  const viewingCarouselIndex =
-    activeIndex >= 0 ? activeIndex : firstOnLampCarouselIndex >= 0 ? firstOnLampCarouselIndex : -1
-
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
   /** Carousel thumbs stay w-24; + control scaled down */
   const glassAddButtonClass = cn(
@@ -231,8 +223,9 @@ export function ArtworkCarouselBar({
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
-                /* One badge at a time: last-tapped slot when set; otherwise first tile that is on the lamp */
-                const showViewingEye = isOnLamp && index === viewingCarouselIndex
+                /* Eye on every tile assigned to the lamp (up to two sides). */
+                const showViewingEye = isOnLamp
+                const isCarouselCurrent = activeIndex >= 0 && index === activeIndex
                 const isFirstItem = index === 0
 
                 return (
@@ -261,7 +254,7 @@ export function ArtworkCarouselBar({
                         'relative isolate block w-24 aspect-[14/20] overflow-visible rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
-                      aria-current={showViewingEye ? 'true' : undefined}
+                      aria-current={isCarouselCurrent ? 'true' : undefined}
                     >
                       {showViewingEye ? (
                         <span
