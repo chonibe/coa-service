@@ -1,16 +1,48 @@
 'use client'
 
-import { Gavel } from 'lucide-react'
+import { ArrowUp, Eye, Lock } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
+import type { EditionStageVisualKind } from '@/lib/shop/edition-stages'
 import {
   buildEditionMetrics,
   getEditionStageCopy,
   getEditionStageKey,
+  getEditionStageVisualKind,
   getProductEditionMetrics,
   getProductEditionSize,
 } from '@/lib/shop/edition-stages'
+
+function EditionStageLeadIcon({
+  kind,
+  compact = false,
+}: {
+  kind: EditionStageVisualKind
+  compact?: boolean
+}) {
+  const lucideClass = cn('shrink-0 opacity-90', compact ? 'h-3 w-3' : 'h-3.5 w-3.5')
+  switch (kind) {
+    case 'spark':
+      return (
+        <span className="shrink-0 select-none text-[0.92em] leading-none opacity-95" aria-hidden>
+          ✦
+        </span>
+      )
+    case 'arrowUp':
+      return <ArrowUp className={lucideClass} strokeWidth={2.25} aria-hidden />
+    case 'eye':
+      return <Eye className={lucideClass} strokeWidth={2.25} aria-hidden />
+    case 'mallet':
+      return (
+        <span className={cn('shrink-0 leading-none', compact ? 'text-[11px]' : 'text-[13px]')} aria-hidden>
+          🔨
+        </span>
+      )
+    case 'lock':
+      return <Lock className={lucideClass} strokeWidth={2.25} aria-hidden />
+  }
+}
 
 export type EditionBadgeProps = {
   editionNumber: number
@@ -40,36 +72,39 @@ export function EditionBadge({
   unifiedSection = false,
   chipOnly = false,
 }: EditionBadgeProps) {
-  const copy = useMemo(() => {
+  const resolved = useMemo(() => {
     const stage = getEditionStageKey(editionNumber, totalEditions)
     if (!stage) return null
     const remaining = Math.max(0, totalEditions - editionNumber)
     const x = editionNumber
     const n = Math.min(totalEditions, editionNumber + 1)
     const artist = artistName.trim() || 'this artist'
-    return getEditionStageCopy(stage, {
+    const copy = getEditionStageCopy(stage, {
       artist,
       x,
       n,
       total: totalEditions,
       remaining,
     })
+    return { stage, copy, visualKind: getEditionStageVisualKind(stage) }
   }, [editionNumber, totalEditions, artistName])
 
-  if (!copy) return null
+  if (!resolved) return null
+  const { copy, visualKind } = resolved
 
   if (chipOnly) {
     return (
       <div className={cn('w-full flex justify-center', className)}>
         <span
           className={cn(
-            'inline-flex max-w-full min-w-0 items-center justify-center font-semibold uppercase',
+            'inline-flex max-w-full min-w-0 items-center justify-center gap-1 font-semibold uppercase',
             'rounded-md px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.06em]',
             'bg-neutral-900 text-neutral-100 dark:bg-[#0c0b0b] dark:text-[#e6e2e2]'
           )}
           title={copy.badge}
         >
-          <span className="truncate">{copy.badge}</span>
+          <EditionStageLeadIcon kind={visualKind} compact />
+          <span className="min-w-0 truncate">{copy.badge}</span>
         </span>
       </div>
     )
@@ -79,9 +114,9 @@ export function EditionBadge({
     <>
       <span
         className={cn(
-          'inline-flex max-w-full min-w-0 items-center justify-center font-semibold uppercase text-neutral-100',
+          'inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 font-semibold uppercase text-neutral-100',
           unifiedSection &&
-            'gap-1.5 rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#141010] dark:text-[#e8e4e4]',
+            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#141010] dark:text-[#e8e4e4]',
           !unifiedSection &&
             (prominent
               ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-neutral-950 ring-1 ring-black/20 dark:bg-[#050505] dark:ring-white/10'
@@ -91,14 +126,8 @@ export function EditionBadge({
                 ))
         )}
       >
-        {unifiedSection ? (
-          <>
-            <Gavel className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
-            <span className="min-w-0 truncate">{copy.badge}</span>
-          </>
-        ) : (
-          <span className="truncate">{copy.badge}</span>
-        )}
+        <EditionStageLeadIcon kind={visualKind} compact={compact && !unifiedSection && !prominent} />
+        <span className="min-w-0 truncate">{copy.badge}</span>
       </span>
       <p
         className={cn(

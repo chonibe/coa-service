@@ -109,6 +109,33 @@ export const editionStages = {
 
 export type EditionStageKey = keyof typeof editionStages
 
+/**
+ * Badge lead visuals by stage (aligned with product copy tiers).
+ * spark = discovery, arrowUp = movement, eye = attention, mallet = scarcity, lock = closed.
+ */
+export type EditionStageVisualKind = 'spark' | 'arrowUp' | 'eye' | 'mallet' | 'lock'
+
+export function getEditionStageVisualKind(stage: EditionStageKey): EditionStageVisualKind {
+  switch (stage) {
+    case 'justOpened':
+    case 'fresh':
+    case 'early':
+      return 'spark'
+    case 'firstWave':
+    case 'gathering':
+      return 'arrowUp'
+    case 'momentum':
+    case 'breakthrough':
+      return 'eye'
+    case 'scarce':
+    case 'final':
+    case 'lastChance':
+      return 'mallet'
+    case 'soldOut':
+      return 'lock'
+  }
+}
+
 export type EditionStageCopy = {
   badge: string
   subline: string
