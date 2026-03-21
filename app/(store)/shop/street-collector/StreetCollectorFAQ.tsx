@@ -69,7 +69,10 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                     <AccordionItem
                       key={item.question}
                       value={`${group.title}-${idx}`}
-                      className={cn('border-0', 'py-2.5 first:pt-0 last:pb-0')}
+                      className={cn(
+                        'border-0',
+                        'py-3.5 first:pt-0 last:pb-0 sm:py-4'
+                      )}
                     >
                       <AccordionTrigger
                         className={cn(
@@ -81,7 +84,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                       >
                         <span className="pr-2 leading-snug">{item.question}</span>
                       </AccordionTrigger>
-                      <AccordionContent className="pb-1 pt-1 text-xs leading-snug text-[#FFBA94]/90 sm:text-sm">
+                      <AccordionContent className="pb-2 pt-1.5 text-xs leading-snug text-[#FFBA94]/90 sm:text-sm">
                         {item.answer}
                       </AccordionContent>
                     </AccordionItem>
