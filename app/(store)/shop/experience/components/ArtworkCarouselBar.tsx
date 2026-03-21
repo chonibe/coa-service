@@ -130,7 +130,7 @@ export function ArtworkCarouselBar({
             'pointer-events-none absolute bottom-0 left-0 right-0',
             /* Light: stronger scrim so scroll content doesn’t read through; dark keeps softer peek */
             theme === 'light'
-              ? 'h-[min(280px,58vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-42% to-transparent'
+              ? 'h-[min(360px,72vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-[72%] to-transparent'
               : 'h-[min(240px,52vh)] bg-gradient-to-t from-[#171515] via-[#171515]/32 to-transparent'
           )}
           aria-hidden
