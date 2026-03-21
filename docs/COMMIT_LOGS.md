@@ -1,21 +1,15 @@
-## Commit: Street Collector — Meet the Lamp videos from Shopify metaobject (2026-03-21)
+## Commit: Street Collector — hero three-line overlay + VideoPlayer heroSubtext (2026-03-21)
 
 ### Summary
-Meet the Street Lamp now loads per-stage video URLs from the Shopify Storefront metaobject entry `under_the_fold_section` / `under-the-fold-section-gedomnm3` (overridable via env). Supports file-reference fields on the parent keyed by stage-title slug and list-of-child-metaobject entries matched by title. Client component swaps the `<video>` source when the active stage changes. Static URLs in `content/street-collector.ts` remain fallbacks.
+Hero copy is now: “Not just a lamp.” (subheadline), “A living art collection.” (headline), “One lamp. Endless art. Swap in seconds.” (new optional `overlay.heroSubtext`). `VideoPlayer` renders the third line in the top title stack so it appears on mobile and desktop with the Street Collector `ctaPosition: 'bottom'` layout.
 
 ### ✅ Implementation Checklist
 
-- [x] [`lib/shopify/metaobjects.ts`](../lib/shopify/metaobjects.ts) — `GenericFile` on `reference`; `referenceToUrl()`; fix image URL resolution in `getMetaobjectFileUrl`
-- [x] [`lib/shopify/meet-the-street-lamp-metaobject.ts`](../lib/shopify/meet-the-street-lamp-metaobject.ts) — Storefront query with nested `references`; fetch/merge helpers
-- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — When Storefront configured, fetch and merge stages before passing to `MeetTheStreetLamp`
-- [x] [`app/(store)/shop/street-collector/MeetTheStreetLamp.tsx`](../app/(store)/shop/street-collector/MeetTheStreetLamp.tsx) — Optional `videoUrl` per stage; `LazyVideo` key includes stage index + URL
-- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Metaobject field naming and env vars
+- [x] [`content/street-collector.ts`](../content/street-collector.ts) — `hero.headline`, `hero.subheadline`, `hero.heroSubtext`
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Pass `heroSubtext` into `VideoPlayer` overlay
+- [x] [`components/sections/VideoPlayer.tsx`](../components/sections/VideoPlayer.tsx) — `OverlayHeroSubtext` + `overlay.heroSubtext` in title stacks
+- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Hero structure note
 - [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
-
-### 📌 Notes
-
-- If the Storefront query errors (e.g. unsupported `references` shape on an older API), the fetch helper logs and falls back to static content videos.
-- Confirm the metaobject **definition type** string in Shopify matches `under_the_fold_section` or set `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`.
 
 ---
 

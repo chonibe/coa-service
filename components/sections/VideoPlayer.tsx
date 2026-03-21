@@ -12,6 +12,36 @@ import { Container } from '@/components/impact'
  * Supports autoplay, play/pause controls, and text overlay.
  */
 
+function OverlayHeroSubtext({
+  text,
+  headlineSize,
+  textColor,
+  className,
+}: {
+  text: string
+  headlineSize?: 'default' | 'large' | 'medium'
+  textColor?: string
+  /** e.g. mt-0 when wrapped in a block that already handles vertical rhythm */
+  className?: string
+}) {
+  return (
+    <p
+      className={cn(
+        'max-w-xl mx-auto',
+        className ?? 'mt-4',
+        headlineSize === 'large'
+          ? 'text-lg sm:text-xl md:text-xl'
+          : headlineSize === 'medium'
+            ? 'text-base sm:text-lg md:text-lg'
+            : 'text-base sm:text-lg'
+      )}
+      style={{ color: textColor || '#ffffff' }}
+    >
+      {text}
+    </p>
+  )
+}
+
 export interface VideoPlayerProps {
   video: {
     url: string
@@ -26,6 +56,8 @@ export interface VideoPlayerProps {
   overlay?: {
     headline?: string
     subheadline?: string
+    /** Optional third line under the headline (e.g. hero tagline); not linked */
+    heroSubtext?: string
     /** Micro cue—subtle directional text under subheadline (e.g. "Discover this month's drop.") */
     microCue?: string
     ctaUrl?: string
@@ -186,7 +218,9 @@ export function VideoPlayer({
       )}
 
       {/* Content */}
-      {overlay && (overlay.headline || overlay.subheadline || overlay.cta) && (() => {
+      {overlay &&
+        (overlay.headline || overlay.subheadline || overlay.heroSubtext || overlay.cta) &&
+        (() => {
         const isCtaAtBottom = overlay.ctaPosition === 'bottom' && overlay.position === 'top-center'
         return (
         <div
@@ -234,6 +268,13 @@ export function VideoPlayer({
                           {overlay.headline}
                         </h1>
                       )}
+                      {overlay.heroSubtext && (
+                        <OverlayHeroSubtext
+                          text={overlay.heroSubtext}
+                          headlineSize={overlay.headlineSize}
+                          textColor={overlay.textColor}
+                        />
+                      )}
                     </>
                   ) : (
                     <>
@@ -265,6 +306,13 @@ export function VideoPlayer({
                         >
                           {overlay.subheadline}
                         </p>
+                      )}
+                      {overlay.heroSubtext && (
+                        <OverlayHeroSubtext
+                          text={overlay.heroSubtext}
+                          headlineSize={overlay.headlineSize}
+                          textColor={overlay.textColor}
+                        />
                       )}
                     </>
                   )}
@@ -340,7 +388,8 @@ export function VideoPlayer({
                   {overlay.headline && (
                     <h1
                       className={cn(
-                        'font-heading font-semibold tracking-[-0.02em] mb-8 sm:mb-10',
+                        'font-heading font-semibold tracking-[-0.02em]',
+                        overlay.heroSubtext ? 'mb-2 sm:mb-3' : 'mb-8 sm:mb-10',
                         overlay.headlineSize === 'large'
                           ? 'text-6xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl sm:whitespace-nowrap'
                           : overlay.headlineSize === 'medium'
@@ -351,6 +400,16 @@ export function VideoPlayer({
                     >
                       {overlay.headline}
                     </h1>
+                  )}
+                  {overlay.heroSubtext && (
+                    <div className="mb-8 sm:mb-10">
+                      <OverlayHeroSubtext
+                        text={overlay.heroSubtext}
+                        headlineSize={overlay.headlineSize}
+                        textColor={overlay.textColor}
+                        className="mt-2 sm:mt-3"
+                      />
+                    </div>
                   )}
                 </>
               ) : (
@@ -373,7 +432,7 @@ export function VideoPlayer({
                   {overlay.subheadline && (
                     <p
                       className={cn(
-                        'mb-8 sm:mb-10',
+                        overlay.heroSubtext ? 'mb-2 sm:mb-3' : 'mb-8 sm:mb-10',
                         overlay.headlineSize === 'large'
                           ? 'text-3xl sm:text-2xl md:text-3xl lg:text-4xl'
                           : overlay.headlineSize === 'medium'
@@ -384,6 +443,16 @@ export function VideoPlayer({
                     >
                       {overlay.subheadline}
                     </p>
+                  )}
+                  {overlay.heroSubtext && (
+                    <div className="mb-8 sm:mb-10">
+                      <OverlayHeroSubtext
+                        text={overlay.heroSubtext}
+                        headlineSize={overlay.headlineSize}
+                        textColor={overlay.textColor}
+                        className="mt-2 sm:mt-3"
+                      />
+                    </div>
                   )}
                 </>
               )}

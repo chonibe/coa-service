@@ -15,10 +15,6 @@ import {
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
-import {
-  fetchMeetTheStreetLampVideoUrls,
-  mergeMeetTheLampStagesWithShopifyVideos,
-} from '@/lib/shopify/meet-the-street-lamp-metaobject'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
@@ -264,16 +260,6 @@ export default async function StreetCollectorPage() {
     apiError = 'Shopify Storefront API not configured.'
   }
 
-  let meetTheLampStages = streetCollectorContent.meetTheLamp.stages
-  if (apiConfigured) {
-    const pack = await fetchMeetTheStreetLampVideoUrls()
-    meetTheLampStages = mergeMeetTheLampStagesWithShopifyVideos(
-      streetCollectorContent.meetTheLamp.stages,
-      pack.byNormalizedTitle,
-      pack.parentMetaobject
-    )
-  }
-
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
       {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
@@ -344,6 +330,7 @@ export default async function StreetCollectorPage() {
           overlay={{
             headline: streetCollectorContent.hero.headline,
             subheadline: streetCollectorContent.hero.subheadline,
+            heroSubtext: streetCollectorContent.hero.heroSubtext,
             ctaUrl: streetCollectorContent.experienceUrl,
             cta: {
               text: streetCollectorContent.hero.cta.text,
@@ -369,7 +356,7 @@ export default async function StreetCollectorPage() {
       {/* Meet the Street Lamp — one video (desktop/mobile), progress bar rotates through stage texts */}
       <MeetTheStreetLamp
         title={streetCollectorContent.meetTheLamp.title}
-        stages={meetTheLampStages}
+        stages={streetCollectorContent.meetTheLamp.stages}
         desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
         mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
         poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}

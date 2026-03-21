@@ -13,6 +13,8 @@ export const streetCollectorContent = {
   hero: {
     headline: 'A living art collection.',
     subheadline: 'Not just a lamp.',
+    /** Third line under headline in VideoPlayer overlay */
+    heroSubtext: 'One lamp. Endless art. Swap in seconds.',
     cta: {
       text: 'Start your collection',
       url: EXPERIENCE_URL,
