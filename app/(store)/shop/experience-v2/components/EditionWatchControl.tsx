@@ -184,7 +184,7 @@ export function EditionWatchControl({
   if (chipOnly || !stage) return null
 
   return (
-    <div className={cn('w-full flex justify-center mt-2', compact && 'mt-1')}>
+    <div className={cn('w-full flex justify-center', compact && 'pt-0.5')}>
       <button
         type="button"
         disabled={busy || authLoading}

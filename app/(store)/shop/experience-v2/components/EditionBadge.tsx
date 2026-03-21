@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { ArrowUp, Eye, Lock } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -71,6 +72,8 @@ export type EditionBadgeProps = {
   unifiedSection?: boolean
   /** Strip / picker: stage chip only (no subline or CTA) */
   chipOnly?: boolean
+  /** Rendered below the CTA line (e.g. edition watch control) */
+  afterCta?: ReactNode
 }
 
 /**
@@ -85,6 +88,7 @@ export function EditionBadge({
   prominent = false,
   unifiedSection = false,
   chipOnly = false,
+  afterCta,
 }: EditionBadgeProps) {
   const resolved = useMemo(() => {
     const stage = getEditionStageKey(editionNumber, totalEditions)
@@ -178,6 +182,7 @@ export function EditionBadge({
       >
         {copy.cta}
       </p>
+      {afterCta}
     </>
   )
 
@@ -276,24 +281,27 @@ export function EditionBadgeForProduct({
   if (!metrics) return null
 
   return (
-    <div className={cn('flex w-full flex-col items-center', className)}>
-      <EditionBadge
-        editionNumber={metrics.editionNumberSold}
-        totalEditions={metrics.totalEditions}
-        artistName={artistName ?? product.vendor ?? ''}
-        compact={compact}
-        prominent={prominent}
-        unifiedSection={unifiedSection}
-        chipOnly={chipOnly}
-      />
-      <EditionWatchControl
-        product={product}
-        editionNumberSold={metrics.editionNumberSold}
-        totalEditions={metrics.totalEditions}
-        artistName={artistName ?? product.vendor ?? ''}
-        compact={compact}
-        chipOnly={chipOnly}
-      />
-    </div>
+    <EditionBadge
+      editionNumber={metrics.editionNumberSold}
+      totalEditions={metrics.totalEditions}
+      artistName={artistName ?? product.vendor ?? ''}
+      className={className}
+      compact={compact}
+      prominent={prominent}
+      unifiedSection={unifiedSection}
+      chipOnly={chipOnly}
+      afterCta={
+        chipOnly ? null : (
+          <EditionWatchControl
+            product={product}
+            editionNumberSold={metrics.editionNumberSold}
+            totalEditions={metrics.totalEditions}
+            artistName={artistName ?? product.vendor ?? ''}
+            compact={compact}
+            chipOnly={chipOnly}
+          />
+        )
+      }
+    />
   )
 }
