@@ -12,14 +12,16 @@ import {
   getCollectionWithListProducts,
   isStorefrontConfigured,
 } from '@/lib/shopify/storefront-client'
-import { fetchMeetTheStreetLampStageMediaFromShopify } from '@/lib/shopify/meet-the-street-lamp-media'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import {
+  fetchMeetTheStreetLampVideoUrls,
+  mergeMeetTheLampStagesWithShopifyVideos,
+} from '@/lib/shopify/meet-the-street-lamp-metaobject'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
-import type { MeetTheLampStage } from './MeetTheStreetLamp'
 
 const DesktopTopBar = dynamic(
   () => import('./DesktopTopBar').then((m) => ({ default: m.DesktopTopBar }))
@@ -262,33 +264,15 @@ export default async function StreetCollectorPage() {
     apiError = 'Shopify Storefront API not configured.'
   }
 
-  const lamp = streetCollectorContent.meetTheLamp
-  const shopifyLampStages = apiConfigured
-    ? await fetchMeetTheStreetLampStageMediaFromShopify()
-    : []
-
-  const meetTheStreetLampStages: MeetTheLampStage[] = lamp.stages.map(
-    (base, i) => {
-      const s = shopifyLampStages[i]
-      const desktop =
-        (s?.desktopVideo?.trim() && s.desktopVideo) || lamp.desktopVideo
-      const mobile =
-        (s?.mobileVideo?.trim() && s.mobileVideo) ||
-        (s?.desktopVideo?.trim() && s.desktopVideo) ||
-        lamp.mobileVideo
-      const rawPoster =
-        (s?.poster?.trim() && s.poster) || lamp.poster
-      return {
-        title: s?.title?.trim() ? s.title.trim() : base.title,
-        description: s?.description?.trim()
-          ? s.description.trim()
-          : base.description,
-        desktopVideo: desktop,
-        mobileVideo: mobile,
-        poster: getProxiedImageUrl(rawPoster),
-      }
-    }
-  )
+  let meetTheLampStages = streetCollectorContent.meetTheLamp.stages
+  if (apiConfigured) {
+    const pack = await fetchMeetTheStreetLampVideoUrls()
+    meetTheLampStages = mergeMeetTheLampStagesWithShopifyVideos(
+      streetCollectorContent.meetTheLamp.stages,
+      pack.byNormalizedTitle,
+      pack.parentMetaobject
+    )
+  }
 
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
@@ -384,9 +368,12 @@ export default async function StreetCollectorPage() {
 
       {/* Meet the Street Lamp — one video (desktop/mobile), progress bar rotates through stage texts */}
       <MeetTheStreetLamp
-        title={lamp.title}
-        stages={meetTheStreetLampStages}
-        cue={lamp.cue}
+        title={streetCollectorContent.meetTheLamp.title}
+        stages={meetTheLampStages}
+        desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
+        mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
+        poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
+        cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
       />
 

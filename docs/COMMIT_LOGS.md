@@ -1,19 +1,21 @@
-## Commit: Street Collector — Meet the Lamp videos from Shopify metaobjects (2026-03-21)
+## Commit: Street Collector — Meet the Lamp videos from Shopify metaobject (2026-03-21)
 
 ### Summary
-Meet the Street Lamp (first section after the hero) now loads **per-stage** desktop/mobile video and poster from a Shopify metaobject entry that contains a **list of metaobject references** (default parent: type `under_the_fold_section`, handle `under-the-fold-section-gedomnm3`). Stage order matches the list order, merged by index with `streetCollectorContent.meetTheLamp.stages` for fallback copy and default CDN videos. `MeetTheStreetLamp` switches `LazyVideo` when the active stage changes.
+Meet the Street Lamp now loads per-stage video URLs from the Shopify Storefront metaobject entry `under_the_fold_section` / `under-the-fold-section-gedomnm3` (overridable via env). Supports file-reference fields on the parent keyed by stage-title slug and list-of-child-metaobject entries matched by title. Client component swaps the `<video>` source when the active stage changes. Static URLs in `content/street-collector.ts` remain fallbacks.
 
 ### ✅ Implementation Checklist
 
-- [x] [`lib/shopify/meet-the-street-lamp-media.ts`](../lib/shopify/meet-the-street-lamp-media.ts) — Storefront GraphQL (`references` nodes + edges), child field parsing (`video` / `video_desktop` / `video_mobile`, poster, optional title/description)
-- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Fetch + merge into `MeetTheLampStage[]`, proxied posters
-- [x] [`app/(store)/shop/street-collector/MeetTheStreetLamp.tsx`](../app/(store)/shop/street-collector/MeetTheStreetLamp.tsx) — Per-stage `desktopVideo` / `mobileVideo` / `poster`; remount video on stage change
-- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Metaobject shape, env vars, implementation links
+- [x] [`lib/shopify/metaobjects.ts`](../lib/shopify/metaobjects.ts) — `GenericFile` on `reference`; `referenceToUrl()`; fix image URL resolution in `getMetaobjectFileUrl`
+- [x] [`lib/shopify/meet-the-street-lamp-metaobject.ts`](../lib/shopify/meet-the-street-lamp-metaobject.ts) — Storefront query with nested `references`; fetch/merge helpers
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — When Storefront configured, fetch and merge stages before passing to `MeetTheStreetLamp`
+- [x] [`app/(store)/shop/street-collector/MeetTheStreetLamp.tsx`](../app/(store)/shop/street-collector/MeetTheStreetLamp.tsx) — Optional `videoUrl` per stage; `LazyVideo` key includes stage index + URL
+- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Metaobject field naming and env vars
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
 
 ### 📌 Notes
 
-- Override parent with `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_TYPE` / `SHOPIFY_MEET_THE_STREET_LAMP_SECTION_HANDLE` if the definition handle differs.
-- If the parent has no list field or the fetch fails, behavior matches previous static `meetTheLamp` videos for all stages.
+- If the Storefront query errors (e.g. unsupported `references` shape on an older API), the fetch helper logs and falls back to static content videos.
+- Confirm the metaobject **definition type** string in Shopify matches `under_the_fold_section` or set `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`.
 
 ---
 
