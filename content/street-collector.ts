@@ -351,7 +351,7 @@ export const streetCollectorContent = {
           {
             question: 'Is it easy to swap the artworks on the lamp?',
             answer:
-              'Super easy. They slide in and out with a simple press-and-click mechanism, no tools needed, so you can change the look whenever you feel like it.',
+              'Super easy. Pieces slide in and out with a simple press-and-click mechanism, no tools needed. Swap them whenever you want to brighten the mood, refresh your space, or let a new piece inspire the room around you.',
           },
           {
             question: 'Do you ship internationally?',
