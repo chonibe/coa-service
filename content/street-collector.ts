@@ -327,65 +327,36 @@ export const streetCollectorContent = {
     },
   },
   faq: {
-    title: 'Questions before you start?',
+    title: 'Frequently Asked Questions',
     groups: [
       {
-        title: 'About the Lamp',
+        /** Empty title: home FAQ renders as a single centered list (no category chips). */
+        title: '',
         items: [
           {
-            question: 'Can I mount the lamp on a wall?',
+            question: 'How big are the Street Lamps?',
             answer:
-              'Yes. The Street Lamp supports wall mounting and magnetic placement, so you can display it in portrait or landscape.',
+              'Each Street Lamp measures about 21 × 14 × 7 cm (8.1 × 5.7 × 2.7 in) and weighs roughly 1.1 kg (2.4 lb)—compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
           },
           {
-            question: 'How do I control the lamp light?',
+            question: 'How long does shipping take?',
             answer:
-              'Use the touch control to switch on/off, dim brightness, and cycle between warm, cold, and daylight tones.',
+              'Delivery time depends on your region and the shipping method you choose at checkout. You’ll get tracking details as soon as your order ships; express options are available where offered.',
           },
           {
-            question: 'How do I charge it?',
+            question: 'How long does the charge last?',
             answer:
-              'The lamp charges via USB-C with the included magnetic cable and adapter.',
-          },
-        ],
-      },
-      {
-        title: 'About Artworks',
-        items: [
-          {
-            question: 'How do I swap around the artwork?',
-            answer:
-              'Yes. The press-and-click mechanism is built for fast swaps, so your display can evolve anytime.',
+              'The built-in 2500 mAh battery delivers up to about 8 hours of continuous use on a full charge. A full charge typically takes around 3–4 hours using the USB-C port or the included magnetic charging cable.',
           },
           {
-            question: 'Are artworks limited edition?',
+            question: 'How do I swap around my artworks?',
             answer:
-              'Many drops are limited editions and include authenticity context, helping you collect with confidence.',
+              'The lamp uses a simple press-and-click mechanism so you can change artworks quickly whenever you want—buy the lamp once and refresh your display anytime.',
           },
-          {
-            question: 'Do artists benefit from purchases?',
-            answer:
-              'Yes. Street Collector is built to support independent artists through every collection cycle.',
-          },
-        ],
-      },
-      {
-        title: 'Shipping & Delivery',
-        items: [
           {
             question: 'Do you ship internationally?',
             answer:
-              'Yes, international shipping is supported for eligible destinations.',
-          },
-          {
-            question: 'Will I get tracking details?',
-            answer:
-              'Yes. You receive tracking information as soon as your order is dispatched.',
-          },
-          {
-            question: 'Are taxes or duties included?',
-            answer:
-              'Import duties and local taxes may apply depending on destination and are handled by local customs.',
+              'Yes. We ship to many international destinations where carriers and regulations allow. Import duties, taxes, and customs fees may apply depending on your country and are handled locally on delivery.',
           },
         ],
       },
