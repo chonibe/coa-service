@@ -70,7 +70,7 @@ export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between px-3 sm:px-4 py-1.5 bg-white/80 dark:bg-[#171515]/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-white/10"
+      className="fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4"
       style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
     >
       <div className="flex items-center gap-1.5 sm:gap-2">

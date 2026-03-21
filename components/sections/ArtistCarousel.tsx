@@ -89,7 +89,17 @@ export interface ArtistCarouselProps {
   /** Optional override for section title color (e.g. text-[#390000] or text-[#FFBA94]) */
   titleClassName?: string
   /** Section background variant (e.g. 'header' for dark red #390000, 'headerSubtle' for 10% opacity) */
-  sectionBackground?: 'default' | 'muted' | 'dark' | 'header' | 'headerSubtle' | 'primary' | 'secondary' | 'transparent' | 'gradient'
+  sectionBackground?:
+    | 'default'
+    | 'muted'
+    | 'dark'
+    | 'header'
+    | 'experience'
+    | 'headerSubtle'
+    | 'primary'
+    | 'secondary'
+    | 'transparent'
+    | 'gradient'
   /** Footer cue link (e.g. "View limited editions.") */
   footerCue?: string
   /** Footer cue link URL */
@@ -145,6 +155,10 @@ export function ArtistCarousel({
   className,
 }: ArtistCarouselProps) {
   const safeArtists = Array.isArray(artists) ? artists : []
+  const isExperienceCanvas =
+    sectionBackground === 'header' || sectionBackground === 'experience'
+  const sectionBgForWrapper =
+    sectionBackground === 'experience' ? 'experience' : sectionBackground
   const sectionRef = useRef<HTMLElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const cardsContainerRef = useRef<HTMLDivElement>(null)
@@ -293,7 +307,7 @@ export function ArtistCarousel({
     <SectionWrapper
       ref={sectionRef}
       spacing="md"
-      background={sectionBackground}
+      background={sectionBgForWrapper}
       fullWidth={fullWidth}
       className={className}
     >
@@ -312,7 +326,7 @@ export function ArtistCarousel({
                   'w-fit max-w-full rounded-xl px-4 py-2.5 sm:px-5 sm:py-3',
                   'text-center',
                   headerAlignment === 'center' && 'mx-auto',
-                  sectionBackground === 'header'
+                  isExperienceCanvas
                     ? 'bg-[#FFBA94]/10 border border-[#FFBA94]/20'
                     : 'bg-[#390000]/10 border border-[#390000]/20'
                 )}
@@ -320,7 +334,7 @@ export function ArtistCarousel({
                 <h2
                   className={cn(
                     'font-serif text-sm sm:text-base font-medium tracking-tight',
-                    titleClassName ?? (sectionBackground === 'header' ? 'text-[#FFBA94]' : 'text-[#390000]')
+                    titleClassName ?? (isExperienceCanvas ? 'text-[#FFBA94]' : 'text-[#390000]')
                   )}
                 >
                   {title}
@@ -329,7 +343,7 @@ export function ArtistCarousel({
                   <p
                     className={cn(
                       'mt-0.5 text-xs sm:text-sm',
-                      sectionBackground === 'header' ? 'text-[#FFBA94]/80' : 'text-[#390000]/80'
+                      isExperienceCanvas ? 'text-[#FFBA94]/80' : 'text-[#390000]/80'
                     )}
                   >
                     {subtitle}
@@ -366,9 +380,9 @@ export function ArtistCarousel({
         {description && (
           <div className={cn(
             'mb-8 max-w-3xl text-base leading-relaxed',
-            sectionBackground === 'header' && 'text-[#FFBA94]/90',
+            isExperienceCanvas && 'text-[#FFBA94]/90',
             sectionBackground === 'headerSubtle' && 'text-[#390000]/90',
-            sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
+            !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
           )}>
             {description}
           </div>
@@ -394,9 +408,9 @@ export function ArtistCarousel({
                   <div
                     className={cn(
                       'pt-3 text-center',
-                      sectionBackground === 'header' && 'text-[#FFBA94]',
+                      isExperienceCanvas && 'text-[#FFBA94]',
                       sectionBackground === 'headerSubtle' && 'text-[#390000]',
-                      sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-700'
+                      !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-700'
                     )}
                   >
                     <h3 className="font-semibold text-base sm:text-lg">{artist.name}</h3>
@@ -430,7 +444,14 @@ export function ArtistCarousel({
                     
                     {/* Rest state: name + city overlay (when namePosition is overlay) */}
                     {namePosition === 'overlay' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#390000]/90 via-[#390000]/50 to-transparent p-4 sm:p-5 text-[#FFBA94]">
+                    <div
+                      className={cn(
+                        'absolute bottom-0 left-0 right-0 bg-gradient-to-t p-4 sm:p-5 text-[#FFBA94]',
+                        isExperienceCanvas
+                          ? 'from-black/90 via-black/50 to-transparent'
+                          : 'from-[#390000]/90 via-[#390000]/50 to-transparent'
+                      )}
+                    >
                       <h3 className="font-semibold text-lg sm:text-xl">{artist.name}</h3>
                       {artist.location && (
                         <p className="text-sm opacity-90">{artist.location}</p>
@@ -439,10 +460,13 @@ export function ArtistCarousel({
                     )}
                     
                     {/* Hover/click overlay: dark bg + description only (no name/city) */}
-                    <div className={cn(
-                      'absolute inset-0 bg-[#390000]/70 transition-opacity duration-300 opacity-0 group-hover:opacity-100',
-                      showInfoSheet && 'group-data-[revealed=true]:opacity-100'
-                    )} />
+                    <div
+                      className={cn(
+                        'absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100',
+                        isExperienceCanvas ? 'bg-black/70' : 'bg-[#390000]/70',
+                        showInfoSheet && 'group-data-[revealed=true]:opacity-100'
+                      )}
+                    />
                     {(showInfoSheet && artist.description) ? (
                       <div className={cn(
                         'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 text-[#FFBA94] transition-opacity duration-300',
@@ -456,7 +480,14 @@ export function ArtistCarousel({
                         </div>
                       </div>
                     ) : !showInfoSheet ? (
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#390000]/80 via-[#390000]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div
+                        className={cn(
+                          'absolute inset-0 bg-gradient-to-t opacity-0 transition-opacity duration-300 group-hover:opacity-100',
+                          isExperienceCanvas
+                            ? 'from-black/80 via-black/25 to-transparent'
+                            : 'from-[#390000]/80 via-[#390000]/20 to-transparent'
+                        )}
+                      />
                     ) : null}
                   </div>
                   {namePosition === 'below' && nameBlock}
@@ -532,7 +563,7 @@ export function ArtistCarousel({
                     'w-12 h-12 flex items-center justify-center rounded-full shadow-lg',
                     'hover:opacity-90 hidden sm:flex',
                     arrowButtonClassName ??
-                      (sectionBackground === 'header'
+                      (isExperienceCanvas
                         ? 'bg-[#FFBA94] text-[#390000]'
                         : 'bg-white text-neutral-900'),
                     !canScrollLeft && 'opacity-50 cursor-not-allowed pointer-events-none'
@@ -551,7 +582,7 @@ export function ArtistCarousel({
                     'w-12 h-12 flex items-center justify-center rounded-full shadow-lg',
                     'hover:opacity-90 hidden sm:flex',
                     arrowButtonClassName ??
-                      (sectionBackground === 'header'
+                      (isExperienceCanvas
                         ? 'bg-[#FFBA94] text-[#390000]'
                         : 'bg-white text-neutral-900'),
                     !canScrollRight && 'opacity-50 cursor-not-allowed pointer-events-none'
@@ -566,10 +597,18 @@ export function ArtistCarousel({
 
             {/* Progress Bar */}
             {showProgressBar && !autoScroll && (
-              <div className="mt-6 w-full h-1 bg-gray-200 rounded-full overflow-hidden px-5 sm:px-8 lg:px-12">
+              <div
+                className={cn(
+                  'mt-6 h-1 w-full overflow-hidden rounded-full px-5 sm:px-8 lg:px-12',
+                  isExperienceCanvas ? 'bg-white/15' : 'bg-gray-200'
+                )}
+              >
                 <div
                   ref={progressBarRef}
-                  className="h-full bg-gray-900 rounded-full transition-all duration-300"
+                  className={cn(
+                    'h-full rounded-full transition-all duration-300',
+                    isExperienceCanvas ? 'bg-[#FFBA94]/80' : 'bg-gray-900'
+                  )}
                   style={{ width: `${scrollProgress * 100}%` }}
                 />
               </div>
@@ -589,9 +628,9 @@ export function ArtistCarousel({
                   href={footerCueHref}
                   className={cn(
                     'block text-base sm:text-lg underline underline-offset-2 transition-colors',
-                    sectionBackground === 'header' && 'text-[#FFBA94] hover:text-[#FFBA94]/90',
+                    isExperienceCanvas && 'text-[#FFBA94] hover:text-[#FFBA94]/90',
                     sectionBackground === 'headerSubtle' && 'text-[#390000] hover:text-[#390000]/90',
-                    sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600 hover:text-neutral-900'
+                    !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600 hover:text-neutral-900'
                   )}
                 >
                   {footerCue}
@@ -600,9 +639,9 @@ export function ArtistCarousel({
               {footerCue && !footerCueHref && (
                 <p className={cn(
                   'text-base sm:text-lg',
-                  sectionBackground === 'header' && 'text-[#FFBA94]',
+                  isExperienceCanvas && 'text-[#FFBA94]',
                   sectionBackground === 'headerSubtle' && 'text-[#390000]',
-                  sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
+                  !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
                 )}>
                   {footerCue}
                 </p>
@@ -610,17 +649,24 @@ export function ArtistCarousel({
               {footerScarcity && (
                 <div
                   className={cn(
-                    'inline-flex flex-col items-center gap-3 rounded-2xl px-6 py-5 sm:px-8 sm:py-6',
-                    'bg-[#390000]/10 text-center max-w-md mx-auto'
+                    'inline-flex max-w-md flex-col items-center gap-3 rounded-2xl px-6 py-5 text-center sm:px-8 sm:py-6',
+                    isExperienceCanvas
+                      ? 'border border-[#ffba94]/15 bg-[#201c1c]/55'
+                      : 'bg-[#390000]/10'
                   )}
                 >
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-[#390000]/10">
+                  <div
+                    className={cn(
+                      'flex h-12 w-12 items-center justify-center rounded-xl sm:h-14 sm:w-14',
+                      isExperienceCanvas ? 'border border-[#ffba94]/20 bg-[#ffba94]/10' : 'bg-[#390000]/10'
+                    )}
+                  >
                     <svg
                       className={cn(
                         'w-6 h-6 sm:w-7 sm:h-7',
-                        sectionBackground === 'header' && 'text-[#FFBA94]',
+                        isExperienceCanvas && 'text-[#FFBA94]',
                         sectionBackground === 'headerSubtle' && 'text-[#390000]',
-                        sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
+                        !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
                       )}
                       viewBox="0 0 24 24"
                       fill="none"
@@ -636,9 +682,9 @@ export function ArtistCarousel({
                   <p
                     className={cn(
                       'text-sm sm:text-base',
-                      sectionBackground === 'header' && 'text-[#FFBA94]/90',
+                      isExperienceCanvas && 'text-[#FFBA94]/90',
                       sectionBackground === 'headerSubtle' && 'text-[#390000]',
-                      sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
+                      !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
                     )}
                   >
                     {footerScarcity}
@@ -661,16 +707,17 @@ export function ArtistCarousel({
                   <div
                     key={i}
                     className={cn(
-                      'flex flex-col gap-2 sm:gap-3 text-center items-center w-full',
-                      'bg-[#390000]/10 rounded-xl p-4 sm:p-5',
-                      'border border-[#390000]/20'
+                      'flex w-full flex-col items-center gap-2 text-center sm:gap-3',
+                      'rounded-xl p-4 sm:p-5',
+                      isExperienceCanvas
+                        ? 'border border-[#ffba94]/15 bg-[#201c1c]/55'
+                        : 'border border-[#390000]/20 bg-[#390000]/10'
                     )}
                   >
                     <span
                       className={cn(
-                        'inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full',
-                        'font-body text-sm sm:text-base font-medium tabular-nums',
-                        'bg-[#390000] text-white'
+                        'inline-flex h-7 w-7 items-center justify-center rounded-full font-body text-sm font-medium tabular-nums sm:h-8 sm:w-8 sm:text-base',
+                        isExperienceCanvas ? 'bg-[#FFBA94] text-[#390000]' : 'bg-[#390000] text-white'
                       )}
                     >
                       {i + 1}
@@ -678,9 +725,9 @@ export function ArtistCarousel({
                     <h3
                       className={cn(
                         'font-body text-sm sm:text-base md:text-lg font-normal tracking-tight',
-                        sectionBackground === 'header' && 'text-[#FFBA94]',
+                        isExperienceCanvas && 'text-[#FFBA94]',
                         sectionBackground === 'headerSubtle' && 'text-[#390000]',
-                        sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-900'
+                        !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-900'
                       )}
                     >
                       {prop.title}
@@ -688,9 +735,9 @@ export function ArtistCarousel({
                     <p
                       className={cn(
                         'font-body text-xs sm:text-sm leading-relaxed max-w-none',
-                        sectionBackground === 'header' && 'text-[#FFBA94]/90',
+                        isExperienceCanvas && 'text-[#FFBA94]/90',
                         sectionBackground === 'headerSubtle' && 'text-neutral-600',
-                        sectionBackground !== 'header' && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
+                        !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-600'
                       )}
                     >
                       {prop.description}

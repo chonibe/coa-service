@@ -119,7 +119,12 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className={cn(
+        'flex min-h-screen flex-col',
+        isLandingOrStreetCollector && 'bg-[#171515]'
+      )}
+    >
       <Suspense fallback={null}>
         <AffiliatePersistence />
       </Suspense>
@@ -142,9 +147,9 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <main
         id="main-content"
         className={cn(
-          /* flex-none + burgundy shell so hero/top matches page (no #251212 band). Kill global main pb-5rem on mobile (globals.css). */
+          /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
           isLandingOrStreetCollector
-            ? 'flex-none bg-[#390000] max-md:!pb-0'
+            ? 'flex-none bg-[#171515] max-md:!pb-0'
             : 'flex-1'
         )}
       >

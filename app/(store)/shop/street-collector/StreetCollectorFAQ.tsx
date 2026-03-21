@@ -29,7 +29,7 @@ const groupIcons: Record<string, React.ElementType> = {
 
 export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
   return (
-    <SectionWrapper spacing="lg" background="header" className="mb-0 bg-[#1a0a0a] !pt-10 pb-16 sm:!pt-14 md:!pt-16 md:pb-0">
+    <SectionWrapper spacing="lg" background="experience" className="mb-0 !pt-10 pb-16 sm:!pt-14 md:!pt-16 md:pb-0">
       <Container maxWidth="default" paddingX="gutter">
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] mb-4 tracking-tight">
@@ -47,16 +47,16 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 pb-16 sm:pb-20 md:pb-24">
+        <div className="grid grid-cols-1 gap-8 pb-16 sm:pb-20 md:grid-cols-3 md:gap-6 lg:gap-8 md:pb-24">
           {groups.map((group) => {
             const Icon = groupIcons[group.title] ?? Lamp
             return (
               <section
                 key={group.title}
-                className="rounded-2xl sm:rounded-3xl bg-[#FFBA94]/10 p-6 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300"
+                className="rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 shadow-sm transition-shadow hover:shadow-md sm:rounded-3xl sm:p-8"
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-[#FFBA94]/20 flex items-center justify-center text-[#FFBA94]">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#ffba94]/20 bg-[#ffba94]/10 text-[#FFBA94]">
                     <Icon className="w-6 h-6" strokeWidth={1.5} />
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold text-[#FFBA94] tracking-tight">

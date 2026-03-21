@@ -25,19 +25,19 @@ const DesktopTopBar = dynamic(
 
 const MeetTheStreetLamp = dynamic(
   () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
-  { loading: () => <section className="min-h-[280px] bg-experience-dark" aria-hidden /> }
+  { loading: () => <section className="min-h-[280px] bg-[#171515]" aria-hidden /> }
 )
 const TestimonialCarousel = dynamic(
   () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
-  { loading: () => <section className="min-h-[200px] bg-experience-dark" aria-hidden /> }
+  { loading: () => <section className="min-h-[200px] bg-[#171515]" aria-hidden /> }
 )
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
-  { loading: () => <section className="min-h-[120px] bg-experience-dark" aria-hidden /> }
+  { loading: () => <section className="min-h-[120px] bg-[#171515]" aria-hidden /> }
 )
 const ArtistCarousel = dynamic(
   () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
-  { loading: () => <section className="min-h-[400px] bg-experience-dark" aria-hidden /> }
+  { loading: () => <section className="min-h-[400px] bg-[#171515]" aria-hidden /> }
 )
 
 // 64×64 request for 32px display (2x) to minimize file size
@@ -219,7 +219,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <div className="dark w-full bg-experience-dark text-[#FFBA94] pb-16 md:pb-0">
+    <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
       {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
       <DesktopTopBar
         text={streetCollectorContent.hero.cta.text}
@@ -330,9 +330,8 @@ export default async function StreetCollectorPage() {
           namePosition="below"
           headerAlignment="center"
           titleClassName="font-serif font-medium text-[#FFBA94]"
-          sectionBackground="header"
+          sectionBackground="experience"
           arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
-          className="bg-experience-dark"
           subtitle={streetCollectorContent.featuredArtists.subtitle}
           artists={featuredArtists}
           autoScroll={true}
@@ -389,7 +388,7 @@ export default async function StreetCollectorPage() {
       )}
 
       {/* Value prop banner — desktop only. Image right above the banner card. */}
-      <section className="hidden md:block bg-experience-dark pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
+      <section className="hidden md:block bg-[#171515] pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
             {/* Image right above the banner — proxied to avoid third-party cookies */}
@@ -437,7 +436,7 @@ export default async function StreetCollectorPage() {
       />
 
       {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
-      <SectionWrapper spacing="xs" background="header" className="bg-experience-dark pb-0">
+      <SectionWrapper spacing="xs" background="experience" className="pb-0">
         <Container maxWidth="default" paddingX="gutter">
           <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8 md:mb-10">
             We&apos;ve got you covered

@@ -79,7 +79,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
     <section
       className={cn(
         'w-full py-6 sm:py-10 md:py-16',
-        'bg-experience-dark text-[#FFBA94]',
+        'bg-[#171515] text-[#FFBA94]',
         className
       )}
     >

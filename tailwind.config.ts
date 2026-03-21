@@ -99,6 +99,8 @@ const config: Config = {
           'highlight': '#FFBA94',
           'highlight-muted': '#e8a87a',
           'highlight-soft': '#ffc9a8',
+          /** Same canvas as experience layout dark shell (`dark:bg-[#171515]`) — use on home/street-collector */
+          'dark': '#171515',
         },
       },
       borderRadius: {

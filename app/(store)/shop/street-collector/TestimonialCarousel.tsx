@@ -120,7 +120,7 @@ export function TestimonialCarousel({
   const currentIndex = n > 0 ? currentCardIndex % n : 0
 
   return (
-    <SectionWrapper spacing="sm" fullWidth={fullWidth} background="header" className={cn('bg-[#1a0a0a]', className)}>
+    <SectionWrapper spacing="sm" fullWidth={fullWidth} background="experience" className={className}>
       <Container maxWidth="default" paddingX="gutter">
         {(title || subtitle) && (
           <div className="text-center mb-6 sm:mb-8 px-0">
@@ -141,7 +141,7 @@ export function TestimonialCarousel({
         <article
           className={cn(
             'w-full overflow-hidden',
-            'bg-[#1a0a0a] rounded-2xl shadow-lg',
+            'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
             'p-4 sm:p-6 md:p-8'
           )}
         >
