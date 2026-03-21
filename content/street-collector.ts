@@ -237,7 +237,6 @@ export const streetCollectorContent = {
     { label: '12 month guarantee', description: 'Full coverage on your lamp.', icon: 'guarantee' },
     { label: 'Easy 30 days returns', description: 'No hassle if you change your mind.', icon: 'returns' },
   ],
-  trustBarCue: 'Ready to start?',
   featuredArtistsCue: '',
   featuredArtistsScarcity: '', // Hidden for now: 'Editions are limited. Once sold out, they do not return.'
   collections: {
@@ -255,10 +254,10 @@ export const streetCollectorContent = {
     },
   },
   featuredArtists: {
-    title: 'In Collaboration With',
+    title: 'In collaboration with',
     subtitle: '',
-    description:
-      'Every month, we curate and showcase new artists from around the globe on our platform. Offering a dynamic array of styles and perspectives. From avant-garde digital and contemporary artists to boundary-pushing graphic designers and bold street artists, our collaborations guarantee a rich tapestry of unique artworks exclusively crafted for the Street Lamp. New York, Tokyo, Berlin, Tel Aviv, Los Angeles, Mexico City, Madrid, Paris, Cairo, and Mumbai… Each city has its own rhythm, and the art it inspires reflects its unique culture and spirit. “Art is different wherever you go.”',
+    afterCarousel: 'Artists from around the world',
+    description: '',
     linkText: 'Start your collection',
     linkHref: EXPERIENCE_URL,
     collections: [
@@ -363,7 +362,7 @@ export const streetCollectorContent = {
   },
   finalCta: {
     headline: 'Not just a lamp. A living Art Collection',
-    subheadline: 'Buy the lamp once and change the artwork anytime.',
+    subheadline: '',
     cta: {
       text: 'Start your collection',
       url: EXPERIENCE_URL,

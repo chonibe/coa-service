@@ -21,7 +21,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 4. **Featured Artists** — Horizontal artist carousel with CTA to `/shop/experience`
 5. **What Happens Next** — 3-step bridge section (choose lamp, preview/select artworks, checkout)
 6. **FAQ** — Decision-focused groups: Lamp, Artworks, Shipping
-7. **Final CTA** — "Buy the lamp once and change the artwork anytime" with `Start your collection`
+7. **CTAs** — Hero overlay, sticky mobile bar, and desktop top bar use `Start your collection` → `/shop/experience` (no duplicate tagline under the numbered value-prop cards)
 
 ---
 
@@ -68,4 +68,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Created:** 2026-02-27
 - **Implementation:** Street Collector–inspired landing flow into `/shop/experience` with bridge + FAQ conversion layers
-- **Updated:** 2026-03-10 — Lighthouse: video captions (hero, Meet the Street Lamp, testimonials), 24px touch targets for carousel/press-quote dots
+- **Updated:** 2026-03-21 — Removed duplicate “Buy the lamp once…” tagline under value-prop cards; trust bar uses local SVG icons (`public/street-collector/trust/`); README structure note for CTAs

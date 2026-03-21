@@ -53,6 +53,48 @@ export const metadata: Metadata = {
 // Allow revalidation so bfcache can work; page uses Shopify API so short revalidate
 export const revalidate = 60
 
+type TrustBarItem = (typeof streetCollectorContent.trustBar)[number]
+
+const TRUST_BAR_ICON_SRC: Record<TrustBarItem['icon'], string> = {
+  shipping: '/street-collector/trust/shipping.svg',
+  guarantee: '/street-collector/trust/12months.svg',
+  returns: '/street-collector/trust/returns.svg',
+}
+
+function TrustBarItemIcon({
+  item,
+  variant,
+}: {
+  item: TrustBarItem
+  variant: 'compact' | 'featured'
+}) {
+  const wrap =
+    variant === 'compact'
+      ? 'inline-flex shrink-0 items-center justify-center'
+      : 'inline-flex items-center justify-center'
+  const isLargeTrustIcon = item.icon === 'returns' || item.icon === 'shipping'
+  const iconClass =
+    variant === 'featured'
+      ? 'h-20 w-20'
+      : isLargeTrustIcon
+        ? 'h-20 w-20'
+        : 'h-14 w-14'
+  const dim = variant === 'featured' ? 80 : isLargeTrustIcon ? 80 : 56
+
+  return (
+    <span className={wrap} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element -- local flat SVG assets */}
+      <img
+        src={TRUST_BAR_ICON_SRC[item.icon]}
+        alt=""
+        className={cn(iconClass, 'object-contain')}
+        width={dim}
+        height={dim}
+      />
+    </span>
+  )
+}
+
 export default async function StreetCollectorPage() {
   const apiConfigured = isStorefrontConfigured()
   let apiError: string | null = null
@@ -346,6 +388,13 @@ export default async function StreetCollectorPage() {
           footerScarcity={streetCollectorContent.featuredArtistsScarcity}
           footerCueHref={streetCollectorContent.experienceUrl}
           valueProps={[]}
+          trailingContent={
+            streetCollectorContent.featuredArtists.afterCarousel ? (
+              <p className="text-center font-body text-lg text-[#FFBA94]/90 sm:text-xl md:text-2xl">
+                {streetCollectorContent.featuredArtists.afterCarousel}
+              </p>
+            ) : null
+          }
           leadingContent={
             <div className="space-y-6 sm:space-y-8">
               <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center">
@@ -378,9 +427,6 @@ export default async function StreetCollectorPage() {
                     ))}
                   </div>
                 </div>
-                <p className="font-body text-lg sm:text-xl text-[#FFBA94] text-center mt-6">
-                  Buy the lamp once, change the artwork anytime.
-                </p>
               </div>
             </div>
           }
@@ -420,9 +466,6 @@ export default async function StreetCollectorPage() {
                 ))}
               </div>
             </div>
-            <p className="font-body text-lg sm:text-xl md:text-2xl text-[#FFBA94] text-center mt-6 md:mt-8">
-              Buy the lamp once, change the artwork anytime.
-            </p>
           </div>
         </Container>
       </section>
@@ -436,58 +479,51 @@ export default async function StreetCollectorPage() {
       />
 
       {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
-      <SectionWrapper spacing="xs" background="experience" className="pb-0">
+      <SectionWrapper
+        spacing="xs"
+        background="experience"
+        className="pb-0 !py-5 sm:!py-6 md:!py-8 xl:!py-10"
+      >
         <Container maxWidth="default" paddingX="gutter">
-          <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8 md:mb-10">
+          <h2 className="mb-4 text-center font-serif text-3xl font-medium tracking-tight text-experience-highlight-soft sm:mb-6 sm:text-4xl md:mb-8 md:text-5xl lg:mb-10 lg:text-6xl">
             We&apos;ve got you covered
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 py-6 md:py-8">
+          {/* Mobile: stacked rows, no card or dividers */}
+          <div className="mx-auto flex max-w-md flex-col items-center gap-10 md:hidden">
             {streetCollectorContent.trustBar.map((item) => (
               <div
                 key={item.label}
-                className="flex flex-col items-center rounded-2xl bg-[#201c1c]/55 p-6 text-center sm:p-8"
+                className={cn(
+                  'flex flex-col items-center gap-3 text-center',
+                  item.icon === 'guarantee' && '-translate-y-2'
+                )}
               >
-                <div className="w-24 h-24 mb-5 flex items-center justify-center">
-                  {item.icon === 'shipping' && (
-                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
-                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#390000]">Free</span>
-                    </div>
-                  )}
-                  {item.icon === 'guarantee' && (
-                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
-                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#390000]">12 mo</span>
-                    </div>
-                  )}
-                  {item.icon === 'returns' && (
-                    <div className="relative w-full h-full rounded-2xl bg-[#FFBA94]/10 flex items-center justify-center">
-                      <svg className="w-10 h-10 text-[#FFBA94]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
-                      </svg>
-                      <span className="absolute -bottom-1.5 right-1.5 rounded-full bg-[#FFBA94] px-2 py-0.5 text-[10px] font-bold tracking-tight text-[#390000]">30d</span>
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-[#FFBA94] mb-2">{item.label}</h3>
-                <p className="text-sm sm:text-base text-[#FFBA94]/90 leading-snug">{item.description ?? ''}</p>
+                <TrustBarItemIcon item={item} variant="compact" />
+                <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-experience-highlight-muted">
+                  {item.label}
+                </p>
               </div>
             ))}
           </div>
-          {streetCollectorContent.trustBarCue && (
-            <div className="text-center pt-4">
-              <a
-                href={streetCollectorContent.experienceUrl}
-                className="text-base sm:text-lg text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
+          {/* md+: equal-height cards (testimonials-style surface) */}
+          <div className="hidden py-2 md:grid md:grid-cols-3 md:items-stretch md:gap-6 lg:gap-8 md:py-8">
+            {streetCollectorContent.trustBar.map((item) => (
+              <div
+                key={item.label}
+                className="flex h-full w-full flex-col rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 p-6 text-center shadow-[0_0_0_1px_rgba(255,186,148,0.05)_inset] lg:p-8"
               >
-                {streetCollectorContent.trustBarCue}
-              </a>
-            </div>
-          )}
+                <div className="flex h-28 shrink-0 items-center justify-center lg:h-32">
+                  <TrustBarItemIcon item={item} variant="featured" />
+                </div>
+                <p className="text-base font-bold leading-snug text-experience-highlight-muted lg:text-lg">
+                  {item.label}
+                </p>
+                <p className="mt-2 min-h-0 flex-1 text-base font-normal leading-relaxed text-experience-highlight-soft/90">
+                  {item.description ?? ''}
+                </p>
+              </div>
+            ))}
+          </div>
         </Container>
       </SectionWrapper>
 

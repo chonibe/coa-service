@@ -1,3 +1,23 @@
+## Commit: Street Collector — hide value-prop tagline + trust bar assets (2026-03-21)
+
+### Summary
+Removed the repeated marketing line “Buy the lamp once, change the artwork anytime.” from the mobile and desktop numbered value-prop banner blocks on `/shop/street-collector`. Cleared the same copy from `streetCollectorContent.finalCta.subheadline` for consistency. Trust bar now uses flat SVG assets under `public/street-collector/trust/` with separate mobile (stacked) and desktop (equal-height cards) layouts; featured artists section can show `afterCarousel` as trailing copy.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Remove duplicate tagline `<p>` under value-prop grids (mobile + desktop)
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Trust bar: `TrustBarItemIcon` + local SVGs; mobile stack vs md+ card grid; optional `trailingContent` for featured artists
+- [x] [`content/street-collector.ts`](../content/street-collector.ts) — Set `finalCta.subheadline` to empty string
+- [x] [`public/street-collector/trust/`](../public/street-collector/trust/) — Add shipping, guarantee (12 months), returns SVG icons
+- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Page structure: CTAs note; version updated
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+### 📌 Notes
+
+- Hero overlay still uses `hero.subheadline` (`Not just a lamp.`); only the value-prop duplicate line was removed.
+
+---
+
 ## Commit: Experience 90+ Lighthouse Score — Round 3 (2026-03-16)
 
 ### Summary
