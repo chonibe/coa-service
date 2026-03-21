@@ -396,8 +396,8 @@ export function SplineFullScreen({
             'flex-shrink-0 flex flex-col relative w-full',
             !hasGallery && !hasAccordion
               ? 'flex-1 min-w-0'
-              : hasAccordion
-                ? 'min-h-[78svh]'
+              :             hasAccordion
+                ? 'min-h-[72svh]'
                 : 'min-h-[100svh]'
           )}
         >
@@ -489,7 +489,11 @@ export function SplineFullScreen({
         {hasAccordion && displayedProduct && (
           <div
             ref={(r) => { sectionRefs.current[1] = r }}
-            className="flex-shrink-0 w-full min-h-[50svh] flex flex-col items-center justify-start pt-3 pb-6 md:pt-4 md:pb-8"
+            className={cn(
+              'relative z-0 flex-shrink-0 w-full min-h-[46svh] flex flex-col items-center justify-start',
+              /* Pull accordions up under the docked carousel so copy peeks through its bottom fade */
+              '-mt-[5.5rem] md:-mt-28 pt-1 pb-6 md:pt-2 md:pb-8'
+            )}
           >
             <ArtworkAccordions
               key={displayedProduct.id}
