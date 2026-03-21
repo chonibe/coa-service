@@ -624,22 +624,29 @@ export function SplineFullScreen({
       {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container.
           pointer-events-none on shells so empty flex space does not block wheel/touch on the 3D preview below. */}
       <div className="pointer-events-none absolute top-3 left-0 right-0 z-10 pt-safe md:left-1/2 md:right-auto md:w-full md:max-w-[min(92vw,768px)] md:-translate-x-1/2 md:px-4">
-        <div className="pointer-events-none flex flex-col items-center gap-2 md:flex-row md:items-start md:justify-between md:gap-4 px-4 md:px-0">
-          {/* Title/artist — mobile: centered above Spline (hero only, see ArtworkInfoBar); desktop: hidden here (header) */}
+        {/* Mobile: title absolutely centered in full width; thumbnails stay top-right in normal flow (same row as before). */}
+        <div className="pointer-events-none relative flex items-start justify-end gap-4 px-4 md:px-0">
           {topBarContent && (
             <div
               className={cn(
-                'pointer-events-auto flex w-full min-w-0 justify-center',
+                'pointer-events-none absolute inset-x-0 top-0 z-[1] flex justify-center px-12 md:px-0',
                 isDesktop && 'hidden'
               )}
             >
-              {typeof topBarContent === 'function'
-                ? topBarContent({ onRotate: () => setPreviewQuarterTurns((prev) => (prev + 3) % 4), isDesktop })
-                : topBarContent}
+              <div className="pointer-events-auto flex w-full max-w-[min(92vw,20rem)] justify-center min-w-0">
+                {typeof topBarContent === 'function'
+                  ? topBarContent({ onRotate: () => setPreviewQuarterTurns((prev) => (prev + 3) % 4), isDesktop })
+                  : topBarContent}
+              </div>
             </div>
           )}
-          {/* Thumbnails + rotate on right — ml-auto on desktop when title in header */}
-          <div className={cn('pointer-events-auto flex flex-col items-end gap-2 flex-shrink-0', isDesktop && 'md:ml-auto')}>
+          {/* Thumbnails + rotate — right-aligned; z above title band for taps */}
+          <div
+            className={cn(
+              'pointer-events-auto relative z-[2] flex flex-col items-end gap-2 flex-shrink-0',
+              isDesktop && 'md:ml-auto'
+            )}
+          >
             {galleryImages.length === 0 && (
               <button
                 type="button"
