@@ -89,6 +89,36 @@ export function ArtistSpotlightBanner({
           /* Expanded: full card with artist image, bio, optional GIF */
           <div className="flex flex-col items-center p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
+              <div className="flex flex-col items-center gap-1 sm:gap-2 w-full text-center">
+                {showBadge && (
+                  <span
+                    className={cn(
+                      'text-xs font-medium uppercase tracking-wider',
+                      spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
+                    )}
+                  >
+                    {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
+                  </span>
+                )}
+                <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94]">
+                  {spotlight.vendorName}
+                </h3>
+                {spotlight.seriesName && (
+                  <p className="text-base text-neutral-500 dark:text-[#c4a0a0]">{spotlight.seriesName}</p>
+                )}
+                {spotlight.instagram && (
+                  <a
+                    href={`https://instagram.com/${spotlight.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 text-base text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
+                  >
+                    <Instagram className="w-4 h-4 flex-shrink-0" />
+                    <span>@{spotlight.instagram}</span>
+                  </a>
+                )}
+              </div>
               <div
                 className={cn(
                   'relative mx-auto w-full max-w-full shrink-0 overflow-hidden rounded-xl bg-neutral-200 dark:bg-[#262222]',
@@ -110,75 +140,13 @@ export function ArtistSpotlightBanner({
                   </div>
                 )}
               </div>
-              <div className="flex flex-col items-center gap-2 sm:gap-3 w-full">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4">
-                  <div className="flex flex-col items-center gap-1 min-w-0">
-                    {showBadge && (
-                      <span
-                        className={cn(
-                          'text-xs font-medium uppercase tracking-wider',
-                          spotlight.unlisted ? 'text-violet-600 dark:text-violet-400' : 'text-amber-700 dark:text-amber-400'
-                        )}
-                      >
-                        {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
-                      </span>
-                    )}
-                    <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94]">
-                      {spotlight.vendorName}
-                    </h3>
-                    {spotlight.seriesName && (
-                      <p className="text-base text-neutral-500 dark:text-[#c4a0a0]">
-                        {spotlight.seriesName}
-                      </p>
-                    )}
-                    {spotlight.instagram && (
-                      <a
-                        href={`https://instagram.com/${spotlight.instagram}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 text-base text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors mt-1"
-                      >
-                        <Instagram className="w-4 h-4 flex-shrink-0" />
-                        <span>@{spotlight.instagram}</span>
-                      </a>
-                    )}
-                  </div>
-                  {spotlight.gifUrl && (
-                    <div className="w-full max-w-[140px] sm:max-w-[160px] sm:flex-shrink-0 rounded-xl overflow-hidden aspect-video mx-auto sm:mx-0" aria-hidden>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={spotlight.gifUrl} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Artwork thumbnails */}
-              {thumbnails.length > 0 && (
-                <div className="flex gap-2 justify-center flex-wrap">
-                  {thumbnails.map((p) => {
-                    const img = getProductImage(p)
-                    return (
-                      <div
-                        key={p.id}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-neutral-200 dark:bg-[#262222] shrink-0"
-                      >
-                        {img ? (
-                          <Image
-                            src={getShopifyImageUrl(img, 128) ?? img}
-                            alt={p.title}
-                            width={64}
-                            height={64}
-                            className="object-cover w-full h-full"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Sparkles className="w-6 h-6 text-amber-500/50" />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+              {spotlight.gifUrl && (
+                <div
+                  className="w-full max-w-[min(100%,240px)] sm:max-w-[280px] rounded-xl overflow-hidden aspect-video mx-auto"
+                  aria-hidden
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={spotlight.gifUrl} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
