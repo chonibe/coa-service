@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, type RefObject } from 'react'
 import Image from 'next/image'
-import { Plus, Trash2 } from 'lucide-react'
+import { Eye, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -233,6 +233,22 @@ export function ArtworkCarouselBar({
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
+                    <div className="flex h-7 w-full shrink-0 items-start justify-center">
+                      {showLampOutline ? (
+                        <span
+                          role="img"
+                          aria-label="Shown on lamp preview"
+                          className={cn(
+                            'inline-flex h-7 w-7 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm',
+                            theme === 'light'
+                              ? 'border-white/90 bg-white/90 text-neutral-700 shadow-black/10'
+                              : 'border-white/25 bg-white/15 text-[#f0e8e8] shadow-black/40'
+                          )}
+                        >
+                          <Eye className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         type="button"
@@ -250,12 +266,7 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={() => onTapItem(index)}
                       className={cn(
-                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-[transform,box-shadow] duration-200 active:scale-[0.95]',
-                        showLampOutline
-                          ? theme === 'light'
-                            ? 'shadow-[inset_0_0_10px_rgba(255,220,200,0.65),inset_0_0_18px_rgba(255,186,148,0.42),0_0_0_2px_rgba(255,160,120,0.9),0_0_14px_rgba(255,186,148,0.45)]'
-                            : 'shadow-[inset_0_0_10px_rgba(255,210,185,0.55),inset_0_0_18px_rgba(255,186,148,0.5),0_0_0_2px_rgba(255,200,170,0.95),0_0_16px_rgba(255,186,148,0.55)]'
-                          : 'shadow-none'
+                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
                       aria-current={showLampOutline ? 'true' : undefined}
@@ -297,7 +308,10 @@ export function ArtworkCarouselBar({
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
-                    <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
+                    <div className="flex h-7 w-full shrink-0 items-start justify-center" aria-hidden />
+                    <div className="flex min-h-[22px] items-center justify-center gap-1.5" aria-hidden>
+                      <span className="inline-block w-3.5 h-3.5" />
+                    </div>
                     <button
                       type="button"
                       onClick={() => onAddProduct ? onAddProduct(artwork) : onOpenPicker()}
