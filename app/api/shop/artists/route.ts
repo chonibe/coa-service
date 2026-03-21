@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { getProducts } from '@/lib/shopify/storefront-client'
 import { createClient } from '@/lib/supabase/server'
 
@@ -11,7 +12,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Fetch Shopify products and Supabase vendors in parallel
     const [shopifyResult, vendorProfiles] = await Promise.all([
@@ -22,19 +23,28 @@ export async function GET(request: NextRequest) {
     const { products } = shopifyResult
     
     // Group products by vendor
-    const vendorMap = new Map<string, { count: number; shopifyImage?: string }>()
-    
+    const vendorMap = new Map<
+      string,
+      { count: number; shopifyImage?: string; shopifyImageArea?: number }
+    >()
+
     products.forEach((product) => {
-      if (product.vendor) {
-        const existing = vendorMap.get(product.vendor)
-        if (existing) {
-          existing.count++
-        } else {
-          vendorMap.set(product.vendor, {
-            count: 1,
-            shopifyImage: product.featuredImage?.url,
-          })
+      if (!product.vendor) return
+      const existing = vendorMap.get(product.vendor)
+      const img = product.featuredImage
+      const area = img?.url ? (img.width || 0) * (img.height || 0) : 0
+      if (existing) {
+        existing.count++
+        if (area > (existing.shopifyImageArea ?? 0) && img?.url) {
+          existing.shopifyImage = img.url
+          existing.shopifyImageArea = area
         }
+      } else {
+        vendorMap.set(product.vendor, {
+          count: 1,
+          shopifyImage: img?.url,
+          shopifyImageArea: area,
+        })
       }
     })
 
@@ -50,7 +60,8 @@ export async function GET(request: NextRequest) {
         const profile = profileLookup.get(name.toLowerCase())
         return {
           name,
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          // Match Shopify collection handles (same as getVendorCollectionHandle — dots/punctuation → hyphens)
+          slug: getVendorCollectionHandle(name),
           productCount: data.count,
           // Supabase profile image takes priority over Shopify product image
           image: profile?.profile_picture_url || profile?.profile_image || data.shopifyImage,

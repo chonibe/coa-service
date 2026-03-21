@@ -9,7 +9,7 @@ import {
   SectionWrapper,
   SectionHeader,
 } from '@/components/impact'
-import { MediaGrid, type MediaGridItem } from '@/components/sections'
+import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 
 /**
  * Artists Listing Page
@@ -89,9 +89,11 @@ export default function ArtistsPage() {
                 <div className="aspect-square rounded-full overflow-hidden bg-[#f5f5f5] mb-4 mx-auto max-w-[200px] ring-4 ring-transparent group-hover:ring-[#f0c417]/50 transition-all duration-300">
                   {artist.image ? (
                     <img
-                      src={artist.image}
+                      src={getProxiedImageUrl(artist.image)}
                       alt={artist.name}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#390000] to-[#5a1a1a]">

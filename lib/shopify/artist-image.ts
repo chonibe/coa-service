@@ -16,6 +16,11 @@ import {
 /** Known handle variants (e.g. tiago-hep → tiago-hesp where Shopify uses different handle) */
 const HANDLE_ALIASES: Record<string, string[]> = {
   'tiago-hep': ['tiago-hesp'],
+  /** Jack J.C. Art — storefront / admin handle variants */
+  'jack-jc-art': ['jack-j-c-art'],
+  'jack-j-c-art': ['jack-jc-art'],
+  /** Legacy listing slug with dots in segment (before getVendorCollectionHandle on artists API) */
+  'jack-j.c.-art': ['jack-jc-art', 'jack-j-c-art'],
 }
 
 export async function getArtistImageByHandle(handle: string): Promise<string | undefined> {

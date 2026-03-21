@@ -52,6 +52,8 @@ export async function GET(
   const vendorParam = searchParams.get('vendor')
   const artistNameForMatch = (vendorParam || slug.replace(/-/g, ' ')).trim()
   const artistNameBase = slug.replace(/-\d+$/, '').replace(/-/g, ' ').trim()
+  /** Same normalization as artists listing API — fixes e.g. jack-j.c.-art → jack-j-c-art */
+  const slugAsShopifyHandle = getVendorCollectionHandle(artistNameForMatch)
 
   try {
     const supabase = createClient()
@@ -64,8 +66,8 @@ export async function GET(
 
     try {
       // 1a. Look up by vendor_collections.handle first (handles accents, e.g. Jérôme Masi -> jerome-masi)
-      const handlesToTry = [slug, slug.replace(/-\d+$/, '')].filter(Boolean)
-      for (const h of [...new Set(handlesToTry)]) {
+      const handlesToTry = [...new Set([slug, slug.replace(/-\d+$/, ''), slugAsShopifyHandle].filter(Boolean))]
+      for (const h of handlesToTry) {
         const { data: vc } = await supabase
           .from('vendor_collections')
           .select('vendor_id, shopify_collection_id, shopify_collection_handle, vendor_name')
@@ -139,6 +141,7 @@ export async function GET(
       const handlesToTry = [
         pairedCollectionHandle,
         canonicalHandle !== slug ? canonicalHandle : null,
+        slugAsShopifyHandle !== slug ? slugAsShopifyHandle : null,
         slug,
       ].filter(Boolean) as string[]
       const uniqueHandles = [...new Set(handlesToTry)]
@@ -195,7 +198,12 @@ export async function GET(
 
     if (vendorProducts.length === 0) {
       // Last resort: collection may exist in Shopify by handle but not in vendor_collections (e.g. unlisted)
-      const fallbackHandles = [slug, slug.replace(/-\d+$/, ''), `${slug.replace(/-\d+$/, '')}-one`]
+      const fallbackHandles = [
+        slug,
+        slug.replace(/-\d+$/, ''),
+        slugAsShopifyHandle,
+        `${slug.replace(/-\d+$/, '')}-one`,
+      ]
       for (const h of [...new Set(fallbackHandles)].filter(Boolean)) {
         try {
           const col = await getCollection(h, { first: 1 })
