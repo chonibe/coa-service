@@ -205,7 +205,7 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
         </div>
       )}
 
-      {/* Edition story + availability — own section, before artist bio */}
+      {/* Edition story + availability — before artwork card + artist spotlight */}
       {!isLamp && (
         <ArtworkEditionUnifiedSection className="w-full">
           <EditionBadgeForProduct
@@ -217,37 +217,9 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
         </ArtworkEditionUnifiedSection>
       )}
 
-      {/* About the Artist — spotlight card */}
-      {artist && !isLamp && (
-        <div>
-          {artistLoading ? (
-            <div className="py-4 flex justify-center">
-              <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-            </div>
-          ) : (() => {
-            const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? {
-              vendorName: artistData.name,
-              vendorSlug: artistData.slug,
-              bio: artistData.bio,
-              image: artistData.image,
-              instagram: artistData.instagram,
-              productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id],
-            } : null)
-            const spotlightProducts = (spotlightDataOverride as SpotlightWithProducts | null)?.products ?? (spotlightData as SpotlightWithProducts | null)?.products ?? [product]
-            return spotlight ? (
-              <ArtistSpotlightBanner
-                spotlight={{ ...spotlight, gifUrl: undefined }}
-                spotlightProducts={spotlightProducts}
-              />
-            ) : null
-          })()}
-        </div>
-      )}
-
-      {/* Artwork Details — redesigned for artworks (no Shopify description — we show title, edition, release date) */}
+      {/* Artwork Details — image, title, scarcity (before About the Artist) */}
       {!isLamp && (firstImage?.url || product.title) && (
         <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
-          {/* Artwork image */}
           {firstImage?.url && (
             <div className="relative w-full aspect-[4/5] overflow-hidden">
               <Image
@@ -260,7 +232,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
             </div>
           )}
           <div className="p-4 sm:p-5 text-center">
-            {/* Artist + artwork title (edition / scarcity live in ScarcityBadge + edition section below) */}
             <div className="mb-4">
               {detailArtistName && (
                 <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
@@ -293,6 +264,33 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* About the Artist — spotlight card */}
+      {artist && !isLamp && (
+        <div>
+          {artistLoading ? (
+            <div className="py-4 flex justify-center">
+              <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+            </div>
+          ) : (() => {
+            const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? {
+              vendorName: artistData.name,
+              vendorSlug: artistData.slug,
+              bio: artistData.bio,
+              image: artistData.image,
+              instagram: artistData.instagram,
+              productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id],
+            } : null)
+            const spotlightProducts = (spotlightDataOverride as SpotlightWithProducts | null)?.products ?? (spotlightData as SpotlightWithProducts | null)?.products ?? [product]
+            return spotlight ? (
+              <ArtistSpotlightBanner
+                spotlight={{ ...spotlight, gifUrl: undefined }}
+                spotlightProducts={spotlightProducts}
+              />
+            ) : null
+          })()}
         </div>
       )}
 
