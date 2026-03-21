@@ -341,7 +341,7 @@ export const streetCollectorContent = {
           {
             question: 'How long does shipping take?',
             answer:
-              'Delivery time depends on your region and the shipping method you choose at checkout. You’ll get tracking details as soon as your order ships; express options are available where offered.',
+              'Usually about three weeks. Expedited options are available in some countries. We will update you with your tracking number once the items are sent to you.',
           },
           {
             question: 'How long does the charge last?',
