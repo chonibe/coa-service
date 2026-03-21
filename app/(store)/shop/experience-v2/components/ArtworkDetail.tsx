@@ -396,7 +396,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           </div>
         )}
       </div>
-      {/* Right: Product info — artist, title, edition, add button */}
+      {/* Right: Product info — artist, title, add button */}
       <div className="flex-1 min-w-0 flex flex-col pl-2 overflow-hidden">
         <div
           data-experience-artwork-scroll
@@ -406,7 +406,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             {artist && <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">{artist}</p>}
             <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">{product.title}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              {editionSizeNum && editionSizeNum > 0 && <span className="text-xs text-neutral-500 dark:text-[#c4a0a0]">Edition of {editionSizeNum}</span>}
               {price && (
                 <div className="flex items-center gap-2">
                   <span className={cn('text-base font-semibold', isEarlyAccess && 'text-violet-600 dark:text-violet-400')}>{price}</span>
@@ -661,7 +660,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 <div className="flex-1 min-w-0 flex flex-col min-w-0 pl-2 overflow-hidden">
                   {/* Scrollable content — pb ensures bottom text isn't cut off when scrolling */}
                   <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
-                  {/* Header: artist, title, edition, price — immediate context */}
+                  {/* Header: artist, title, price — edition size shown in scarcity / edition blocks */}
                   <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
                     {artist && (
                       <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
@@ -672,11 +671,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       {product.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
-                      {editionSizeNum && editionSizeNum > 0 && (
-                        <span className="text-xs text-neutral-500 dark:text-[#c4a0a0]">
-                          Edition of {editionSizeNum}
-                        </span>
-                      )}
                       {price && (
                         <div className="flex items-center gap-2">
                           <span className={cn(
@@ -1382,11 +1376,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   <h2 className="text-sm font-semibold text-[#FFBA94] tracking-tight mt-0.5">
                     {product.title}
                   </h2>
-                  {editionSizeNum && editionSizeNum > 0 && !hideScarcityBar && (
-                    <span className="mt-1 text-[10px] text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
-                      Limited Edition of {editionSizeNum}
-                    </span>
-                  )}
                   {isSoldOut && (
                     <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
                       Sold out

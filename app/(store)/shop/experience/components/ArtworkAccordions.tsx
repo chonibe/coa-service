@@ -195,33 +195,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
     )
     return m?.value ? parseInt(m.value, 10) : null
   })()
-  const releaseDateRaw = (() => {
-    const m = product.metafields?.find(
-      (x) =>
-        x?.value &&
-        (x.key?.toLowerCase() === 'release_date' ||
-          x.key?.toLowerCase() === 'release date' ||
-          x.key?.toLowerCase() === 'launch_date')
-    )
-    return m?.value ?? null
-  })()
-  const releaseDateFormatted =
-    releaseDateRaw &&
-    (() => {
-      try {
-        const d = new Date(releaseDateRaw)
-        if (!isNaN(d.getTime())) {
-          return d.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })
-        }
-      } catch {
-        // ignore
-      }
-      return releaseDateRaw
-    })()
 
   return (
     <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-5">
@@ -287,21 +260,18 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
             </div>
           )}
           <div className="p-4 sm:p-5 text-center">
-            {/* Title + Edition size + Release date */}
+            {/* Artist + artwork title (edition / scarcity live in ScarcityBadge + edition section below) */}
             <div className="mb-4">
+              {detailArtistName && (
+                <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
+                  {detailArtistName}
+                </p>
+              )}
               {product.title && (
-                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0.5">
                   {product.title}
                 </h2>
               )}
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-0.5 mt-2 text-base text-neutral-500 dark:text-[#c4a0a0]">
-                {editionSize != null && (
-                  <span className="font-medium">Edition of {editionSize}</span>
-                )}
-                {releaseDateFormatted && (
-                  <span>Released {releaseDateFormatted}</span>
-                )}
-              </div>
             </div>
             {editionSize != null && editionSize > 0 && (
               <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
