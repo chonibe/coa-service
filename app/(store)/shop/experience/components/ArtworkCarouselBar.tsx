@@ -107,14 +107,14 @@ export function ArtworkCarouselBar({
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
       ? [
-          'border-white/80 bg-white/45 text-neutral-800',
-          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
+          'border-white bg-white/45 text-neutral-800',
+          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.9)]',
           'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
         ]
       : [
-          'border-white/30 bg-white/18 text-white',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
+          'border-white/45 bg-white/18 text-white',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.2)]',
+          'hover:bg-white/28 hover:border-white/55 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
         ]
   )
 
@@ -200,7 +200,7 @@ export function ArtworkCarouselBar({
                       className={cn(
                         'relative block w-24 aspect-[14/20] rounded-[15px] transition-[transform,box-shadow] duration-200 active:scale-[0.95]',
                         isOnLamp
-                          ? 'shadow-[inset_0_0_6px_rgba(255,186,148,0.35),inset_0_0_12px_rgba(255,186,148,0.12)]'
+                          ? 'shadow-[inset_0_0_8px_rgba(255,200,170,0.55),inset_0_0_14px_rgba(255,186,148,0.28)]'
                           : 'shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
@@ -250,8 +250,8 @@ export function ArtworkCarouselBar({
                       className={cn(
                         'relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
                         theme === 'light'
-                          ? 'ring-1 ring-neutral-300/80 hover:ring-neutral-400'
-                          : 'ring-1 ring-white/25 hover:ring-white/35'
+                          ? 'ring-1 ring-neutral-200/95 hover:ring-neutral-100'
+                          : 'ring-1 ring-white/45 hover:ring-white/60'
                       )}
                       aria-label={`Add ${artwork.title} to collection`}
                     >
