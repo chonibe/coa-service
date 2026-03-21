@@ -14,10 +14,8 @@ import { storefrontQuery } from './storefront-client'
 export interface MetaobjectFileReference {
   id: string
   alt?: string
-  /** GenericFile / direct file URL */
   url?: string
   sources?: Array<{ url: string; mimeType: string }>
-  image?: { url: string }
 }
 
 export interface MetaobjectField {
@@ -70,10 +68,6 @@ export async function getMetaobject(
                 url
                 mimeType
               }
-            }
-            ... on GenericFile {
-              id
-              url
             }
           }
         }
@@ -168,26 +162,6 @@ export function getMetaobjectField(
  * Get a file reference URL from a metaobject field
  * For file_reference type fields (images, videos)
  */
-/**
- * Resolve a playable or downloadable URL from a Storefront file reference
- * (Video, MediaImage, GenericFile).
- */
-export function referenceToUrl(
-  reference: MetaobjectFileReference | null | undefined
-): string | null {
-  if (!reference) return null
-  if (reference.sources && reference.sources.length > 0) {
-    return reference.sources[0].url
-  }
-  if (reference.image?.url) {
-    return reference.image.url
-  }
-  if (reference.url && /^https?:\/\//i.test(reference.url)) {
-    return reference.url
-  }
-  return null
-}
-
 export function getMetaobjectFileUrl(
   metaobject: Metaobject | null,
   key: string
@@ -196,8 +170,18 @@ export function getMetaobjectFileUrl(
   
   const field = metaobject.fields.find(f => f.key === key)
   if (!field?.reference) return null
-
-  return referenceToUrl(field.reference as MetaobjectFileReference)
+  
+  // Check for video sources
+  if ('sources' in field.reference && field.reference.sources && field.reference.sources.length > 0) {
+    return field.reference.sources[0].url
+  }
+  
+  // Check for image URL
+  if ('image' in field.reference && field.reference.url) {
+    return field.reference.url
+  }
+  
+  return field.reference.url || null
 }
 
 /**

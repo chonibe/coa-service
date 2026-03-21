@@ -8,40 +8,64 @@ import { LazyVideo } from '@/components/LazyVideo'
 /** Video aspect ratio 4×5 (width:height) so they render the same size. */
 const VIDEO_ASPECT_RATIO = 4 / 5
 
+/** Glass numeral — on dark overlay over video */
+const stepGlassBadgeInlineClass = cn(
+  'inline-flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full sm:size-12 md:size-[3.25rem]',
+  'font-body text-lg font-bold tabular-nums leading-none text-white sm:text-xl md:text-2xl',
+  'border border-white/20 bg-white/12 backdrop-blur-md backdrop-saturate-150',
+  'shadow-[0_4px_16px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]'
+)
+
+/** Glass bar: numeral + title one row, centered on video; vertically half above / half below top edge */
+const valuePropVideoOverlayBarClass = cn(
+  'pointer-events-none absolute left-1/2 top-0 z-20 flex w-max max-w-[calc(100%-0.75rem)] min-w-0 -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-2.5 rounded-lg sm:gap-3 md:gap-3.5',
+  'border border-white/[0.12] bg-black/65 px-2.5 py-1.5 backdrop-blur-xl backdrop-saturate-150 sm:px-3 sm:py-2',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.5)]'
+)
+
+/** Outer value-prop card — darker shell */
+const valuePropOuterCardClass = cn(
+  'w-full max-w-full overflow-visible',
+  'rounded-2xl border border-[#ffba94]/[0.07] bg-[#0c0b0b]/95 shadow-[0_16px_48px_rgba(0,0,0,0.55)]',
+  'p-4 sm:p-6 md:p-8'
+)
+
 /** Video card only (no section wrapper) - for embedding in other sections */
 export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
   return (
-    <article
-      className={cn(
-        'w-full overflow-hidden',
-        'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
-        'p-4 sm:p-6 md:p-8'
-      )}
-    >
+    <article className={valuePropOuterCardClass}>
       <div
         className={cn(
-          'flex flex-col gap-6 sm:gap-8',
-          'md:grid md:grid-cols-3 md:gap-8 md:items-start'
+          'flex flex-col gap-8 sm:gap-10',
+          'md:grid md:grid-cols-3 md:gap-10 lg:gap-12 md:items-start'
         )}
       >
         {items.map((prop, i) => (
           <div
             key={i}
-            className={cn(
-              'flex flex-col w-full overflow-hidden md:min-w-0',
-              i < 2 && 'hidden md:flex'
-            )}
+            className="flex flex-col w-full min-w-0"
           >
-            <div
-              className="relative w-full overflow-hidden flex-shrink-0 rounded-lg"
-              style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
-            >
-              <LazyVideo
-                src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
-                poster={getProxiedImageUrl(prop.poster)}
-                type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
-                autoPlay
-              />
+            <div className="relative w-full shrink-0 overflow-visible rounded-xl">
+              <div
+                className="relative z-0 w-full overflow-hidden rounded-xl bg-black/50"
+                style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
+              >
+                <LazyVideo
+                  src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
+                  poster={getProxiedImageUrl(prop.poster)}
+                  type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
+                  autoPlay
+                />
+              </div>
+              <div className={valuePropVideoOverlayBarClass}>
+                <span className={stepGlassBadgeInlineClass} aria-hidden>
+                  {i + 1}
+                </span>
+                <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                  <span className="sr-only">{`Step ${i + 1}: `}</span>
+                  {prop.title}
+                </h3>
+              </div>
             </div>
           </div>
         ))}
@@ -70,9 +94,8 @@ interface MultiColumnVideoSectionProps {
 }
 
 /**
- * Section with autoplay videos in a dark card and copy outside.
- * Card contains only videos; titles and descriptions sit below the card.
- * Mobile: stacked vertically; desktop: 3-col grid. Video ratio 4×5.
+ * Section with value-prop videos in a dark card.
+ * Each column: video with dark glass overlay bar (numeral + title); optional description tiles below the card.
  */
 export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experience', showTiles = true, className }: MultiColumnVideoSectionProps) {
   return (
@@ -90,71 +113,67 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
           </h2>
         )}
         {/* Card with videos only */}
-        <article
-          className={cn(
-            'w-full overflow-hidden',
-            'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
-            'p-4 sm:p-6 md:p-8'
-          )}
-        >
+        <article className={valuePropOuterCardClass}>
           <div
             className={cn(
-              'flex flex-col gap-6 sm:gap-8',
-              'md:grid md:grid-cols-3 md:gap-8 md:items-start'
+              'flex flex-col gap-8 sm:gap-10',
+              'md:grid md:grid-cols-3 md:gap-10 lg:gap-12 md:items-start'
             )}
           >
             {items.map((prop, i) => (
               <div
                 key={i}
-                className="flex flex-col w-full overflow-hidden md:min-w-0"
+                className="flex flex-col w-full min-w-0"
               >
-                <div
-                  className="relative w-full overflow-hidden flex-shrink-0 rounded-lg"
-                  style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
-                >
-                  <LazyVideo
-                    src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
-                    poster={getProxiedImageUrl(prop.poster)}
-                    type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
-                    autoPlay
-                  />
+                <div className="relative w-full shrink-0 overflow-visible rounded-xl">
+                  <div
+                    className="relative z-0 w-full overflow-hidden rounded-xl bg-black/50"
+                    style={{ aspectRatio: VIDEO_ASPECT_RATIO }}
+                  >
+                    <LazyVideo
+                      src={prop.video.startsWith('https://cdn.shopify.com/') ? prop.video : `/api/proxy-video?url=${encodeURIComponent(prop.video)}`}
+                      poster={getProxiedImageUrl(prop.poster)}
+                      type={prop.video.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4'}
+                      autoPlay
+                    />
+                  </div>
+                  <div className={valuePropVideoOverlayBarClass}>
+                    <span className={stepGlassBadgeInlineClass} aria-hidden>
+                      {i + 1}
+                    </span>
+                    <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                      <span className="sr-only">{`Step ${i + 1}: `}</span>
+                      {prop.title}
+                    </h3>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </article>
-        {/* Numbered tiles outside card — same width as video cards via matching padding + gap */}
+        {/* Copy under card — titles live on the card; tiles are description only */}
         {showTiles && (
         <div className="px-4 sm:px-6 md:px-8 mt-6 sm:mt-8">
           <div
             className={cn(
-              'flex flex-col gap-6 sm:gap-8',
-              'md:grid md:grid-cols-3 md:gap-8 md:items-stretch'
+              'flex flex-col gap-8 sm:gap-10',
+              'md:grid md:grid-cols-3 md:gap-10 lg:gap-12 md:items-stretch'
             )}
           >
           {items.map((prop, i) => (
             <div
               key={i}
               className={cn(
-                'flex flex-col gap-2 sm:gap-3 text-center items-center w-full',
+                'flex flex-col gap-2 text-center items-center w-full',
                 'rounded-xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-4 sm:p-5'
               )}
             >
-              <span
-                className={cn(
-                  'inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full',
-                  'font-body text-sm sm:text-base font-medium tabular-nums',
-                  'bg-[#FFBA94] text-[#390000]'
-                )}
-              >
-                {i + 1}
-              </span>
-              <h3 className="font-body text-sm sm:text-base md:text-lg font-normal tracking-tight text-[#FFBA94]">
-                {prop.title}
-              </h3>
               <p className="font-body text-xs sm:text-sm leading-relaxed text-[#FFBA94]/80 max-w-none">
                 {prop.description}
               </p>
+              <span className="sr-only">
+                {prop.title}
+              </span>
             </div>
           ))}
           </div>

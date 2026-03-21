@@ -221,7 +221,7 @@ export const scrollingTextSection = {
 // =============================================================================
 
 export const faqSection = {
-  title: 'FAQ',
+  title: 'Questions?',
   fullWidth: false,
   items: [
     {

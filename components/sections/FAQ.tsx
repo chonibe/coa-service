@@ -43,7 +43,7 @@ export interface FAQSectionProps {
 
 export function FAQSection({
   items,
-  title = 'FAQ',
+  title = 'Questions?',
   subtitle,
   content,
   textPosition = 'start',
@@ -88,7 +88,7 @@ export function FAQSection({
           )}>
             {title && (
               <h2
-                className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold tracking-[-0.02em]"
+                className="font-heading text-impact-h2-lg xl:text-[3.5rem] font-semibold leading-[1.15] tracking-[-0.02em]"
                 style={{ color: textColor || '#1a1a1a' }}
               >
                 {title}

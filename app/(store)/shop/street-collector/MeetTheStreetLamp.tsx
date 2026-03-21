@@ -7,18 +7,27 @@ import { LazyVideo } from '@/components/LazyVideo'
 export interface MeetTheLampStage {
   title: string
   description: string
-  /** Per-stage video from Shopify metaobject; falls back to section desktop/mobile URLs */
-  videoUrl?: string | null
 }
+
+/** Glass pills — aligned with VideoPlayer hero CTA / experience glass controls */
+const experiencePriceChipClass = cn(
+  'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full font-semibold',
+  'px-2 py-1 text-[11px] leading-tight sm:px-3 sm:py-1.5 sm:text-sm sm:leading-normal',
+  'text-white',
+  'border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150',
+  'shadow-[0_6px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
+)
 
 interface MeetTheStreetLampProps {
   title: string
+  /** e.g. Not just a lamp. / A living art collection. — under the h2 */
+  taglineLines?: readonly string[]
   stages: MeetTheLampStage[]
-  /** Used when a stage has no `videoUrl` (desktop breakpoint) */
   desktopVideo: string
-  /** Used when a stage has no `videoUrl` (mobile breakpoint) */
   mobileVideo: string
   poster: string
+  /** e.g. Starting at $99 / Artworks from $40 — glass pills over the video */
+  pricingChips?: string[]
   /** Momentum cue—subtle link after section (e.g. "Explore available artworks.") */
   cue?: string
   cueHref?: string
@@ -51,10 +60,12 @@ function useIsDesktop() {
  */
 export function MeetTheStreetLamp({
   title,
+  taglineLines,
   stages,
   desktopVideo,
   mobileVideo,
   poster,
+  pricingChips,
   cue,
   cueHref = '/experience',
   className,
@@ -62,14 +73,8 @@ export function MeetTheStreetLamp({
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const isDesktop = useIsDesktop()
-  const activeStage = stages[activeIndex]
-  const resolvedUrl =
-    (activeStage?.videoUrl && activeStage.videoUrl.trim()) ||
-    (isDesktop ? desktopVideo : mobileVideo)
-  const videoUrl = resolvedUrl
-  const videoSrc = videoUrl.startsWith('https://cdn.shopify.com/')
-    ? videoUrl
-    : `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
+  const videoUrl = isDesktop ? desktopVideo : mobileVideo
+  const videoSrc = videoUrl.startsWith('https://cdn.shopify.com/') ? videoUrl : `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
 
   const goToNext = useCallback(() => {
     setProgress(0)
@@ -181,29 +186,73 @@ export function MeetTheStreetLamp({
   )
 
   const titleBlock = (
-    <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] mb-4 md:mb-6 tracking-tight text-center lg:text-left">
-      {title}
-    </h2>
+    <div className="mb-3 space-y-2 sm:mb-4 md:mb-6 md:space-y-3">
+      <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center lg:text-left">
+        {title}
+      </h2>
+      {taglineLines && taglineLines.length > 0 ? (
+        <div className="flex flex-col gap-1 text-center font-body lg:text-left">
+          {taglineLines[0] ? (
+            <p className="text-base font-medium text-[#FFBA94]/90 sm:text-lg md:text-xl">
+              {taglineLines[0]}
+            </p>
+          ) : null}
+          {taglineLines[1] ? (
+            <p className="text-lg font-semibold tracking-tight text-[#FFBA94] sm:text-xl md:text-2xl">
+              {taglineLines[1]}
+            </p>
+          ) : null}
+          {taglineLines.slice(2).map((line) => (
+            <p key={line} className="text-base text-[#FFBA94]/85 sm:text-lg">
+              {line}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
+
+  /** Sits on top edge of video — slight overlap onto the frame (both breakpoints) */
+  const pricingChipsOverlay =
+    pricingChips && pricingChips.length > 0 ? (
+      <div
+        className="pointer-events-none absolute left-1/2 top-0 z-10 flex max-w-[calc(100%-0.25rem)] -translate-x-1/2 -translate-y-[28%] flex-nowrap items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-2"
+        role="list"
+        aria-label="Pricing"
+      >
+        {pricingChips.map((label) => (
+          <span
+            key={label}
+            role="listitem"
+            className={cn(experiencePriceChipClass, 'pointer-events-auto')}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    ) : null
 
   return (
     <section className={cn('w-full bg-[#171515] py-8 sm:py-10 md:py-16', className)}>
       <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
         {/* Mobile: title, video, then centered rotating stage text slideshow */}
         {!isDesktop && (
-        <div className="flex flex-col gap-8 sm:gap-10">
+        <div className="flex flex-col">
           <div>{titleBlock}</div>
-          <div className="relative w-full overflow-hidden rounded-2xl aspect-[3/4]">
-            <LazyVideo
-              key={`mobile-${activeIndex}-${videoUrl}`}
-              src={videoSrc}
-              poster={poster}
-              autoPlay
-            >
-              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
-            </LazyVideo>
+          <div className="relative mt-2 w-full overflow-visible rounded-2xl aspect-[3/4] sm:mt-3">
+            {pricingChipsOverlay}
+            <div className="relative h-full w-full overflow-hidden rounded-2xl">
+              <LazyVideo
+                key={`mobile-${videoUrl}`}
+                src={videoSrc}
+                poster={poster}
+                autoPlay
+              >
+                <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
+              </LazyVideo>
+            </div>
           </div>
-          <div>{mobileCenteredStage}</div>
+          <div className="mt-6 sm:mt-8">{mobileCenteredStage}</div>
         </div>
         )}
 
@@ -214,16 +263,19 @@ export function MeetTheStreetLamp({
             {titleBlock}
             {stageList}
           </div>
-          <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-800 aspect-[4/5] max-h-[640px]">
-            <LazyVideo
-              key={`desktop-${activeIndex}-${videoUrl}`}
-              src={videoSrc}
-              poster={poster}
-              autoPlay
-              className="rounded-2xl"
-            >
-              <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
-            </LazyVideo>
+          <div className="relative w-full overflow-visible rounded-2xl bg-neutral-800 aspect-[4/5] max-h-[640px]">
+            {pricingChipsOverlay}
+            <div className="relative h-full w-full overflow-hidden rounded-2xl">
+              <LazyVideo
+                key={`desktop-${videoUrl}`}
+                src={videoSrc}
+                poster={poster}
+                autoPlay
+                className="rounded-2xl"
+              >
+                <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
+              </LazyVideo>
+            </div>
           </div>
         </div>
         )}

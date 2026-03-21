@@ -73,8 +73,10 @@ export interface ArtistCarouselProps {
   /** Link text and href */
   linkText?: string
   linkHref?: string
-  /** Auto-scroll slideshow mode (hides CTA and arrows by default) */
+  /** Auto-scroll mode: smooth conveyor-belt drift (hides CTA and arrows by default) */
   autoScroll?: boolean
+  /** Horizontal drift speed when `autoScroll` is true (pixels per second). Default ~18. */
+  autoScrollSpeedPx?: number
   /** Show prev/next arrow buttons (use with autoScroll to allow manual navigation too) */
   showArrows?: boolean
   /** Show "View all" link (default true when linkText/linkHref provided) */
@@ -106,7 +108,7 @@ export interface ArtistCarouselProps {
   footerCueHref?: string
   /** Footer scarcity text (e.g. "Editions are limited. Once sold out, they do not return.") */
   footerScarcity?: string
-  /** Value prop tiles to show below artist cards (e.g. Collect original art, Live with it, Support artists) */
+  /** Value prop tiles to show below artist cards (e.g. Collect original art, Swap it. Make it yours., Support artists) */
   valueProps?: Array<{ title: string; description: string }>
   /** Render title as a long horizontal card with smaller text */
   titleAsCard?: boolean
@@ -120,6 +122,13 @@ export interface ArtistCarouselProps {
   namePosition?: 'overlay' | 'below'
   /** Override arrow button styling (e.g. "bg-[#FFBA94] text-[#390000]" for dark sections) */
   arrowButtonClassName?: string
+  /**
+   * Below `sm`: render artists as circular avatars (profile-style) with name under;
+   * `sm` and up keeps the standard portrait cards.
+   */
+  mobileAvatarStyle?: boolean
+  /** When true, artist cards are not links/buttons below `sm` (horizontal scroll still works). */
+  disableArtistClicksOnMobile?: boolean
   className?: string
 }
 
@@ -134,6 +143,7 @@ export function ArtistCarousel({
   linkText = 'View all artists',
   linkHref = '/shop/artists',
   autoScroll = false,
+  autoScrollSpeedPx = 18,
   showArrows = false,
   showLink = true,
   showInfoSheet = false,
@@ -152,9 +162,24 @@ export function ArtistCarousel({
   titleTag,
   namePosition = 'overlay',
   arrowButtonClassName,
+  mobileAvatarStyle = false,
+  disableArtistClicksOnMobile = false,
   className,
 }: ArtistCarouselProps) {
   const safeArtists = Array.isArray(artists) ? artists : []
+  const [isMaxSmViewport, setIsMaxSmViewport] = useState(false)
+  useEffect(() => {
+    if (!disableArtistClicksOnMobile) {
+      setIsMaxSmViewport(false)
+      return
+    }
+    const mq = window.matchMedia('(max-width: 639px)')
+    const sync = () => setIsMaxSmViewport(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [disableArtistClicksOnMobile])
+  const blockMobileArtistClicks = disableArtistClicksOnMobile && isMaxSmViewport
   const isExperienceCanvas =
     sectionBackground === 'header' || sectionBackground === 'experience'
   const sectionBgForWrapper =
@@ -167,6 +192,8 @@ export function ArtistCarousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const [revealedCardKey, setRevealedCardKey] = useState<string | null>(null)
+  /** Pause conveyor drift on hover so users can read cards */
+  const [conveyorPaused, setConveyorPaused] = useState(false)
 
   // Check scroll state
   const checkScrollState = useCallback(() => {
@@ -258,8 +285,8 @@ export function ArtistCarousel({
     }
   }, [checkScrollState])
 
-  // Defer artist duplication until auto-scroll actually starts so extra images
-  // don't load eagerly (saves ~2MB on initial paint for Lighthouse)
+  // Defer artist duplication until the track is near the viewport so extra images
+  // don't load eagerly (saves bandwidth on initial paint for Lighthouse)
   const [duplicated, setDuplicated] = useState(false)
   const displayArtists = duplicated && autoScroll && safeArtists.length > 0
     ? [...safeArtists, ...safeArtists]
@@ -267,39 +294,72 @@ export function ArtistCarousel({
 
   useEffect(() => {
     if (!autoScroll || safeArtists.length === 0) return
+    const el = cardsContainerRef.current
+    if (!el) return
 
-    let intervalId: ReturnType<typeof setInterval> | null = null
-    let timeoutId: ReturnType<typeof setTimeout>
-
-    const startScroll = () => {
-      setDuplicated(true)
-      const container = cardsContainerRef.current
-      if (!container) return false
-      const first = container.firstElementChild as HTMLElement
-      if (!first) return false
-      const step = (first.offsetWidth || cardWidth) + cardGap
-      intervalId = setInterval(() => {
-        const el = cardsContainerRef.current
-        if (!el) return
-        el.scrollLeft += step
-        if (el.scrollLeft >= (el.scrollWidth / 2) - step) {
-          el.scrollLeft = 0
-        }
-      }, 4000)
-      return true
+    let fallbackId: ReturnType<typeof setTimeout> | null = null
+    const clearFallback = () => {
+      if (fallbackId !== null) {
+        clearTimeout(fallbackId)
+        fallbackId = null
+      }
     }
 
-    timeoutId = setTimeout(() => {
-      if (!startScroll()) {
-        timeoutId = setTimeout(startScroll, 1000)
-      }
-    }, 4000)
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          clearFallback()
+          setDuplicated(true)
+        }
+      },
+      { rootMargin: '100px 0px', threshold: 0 }
+    )
+    io.observe(el)
+
+    fallbackId = setTimeout(() => {
+      fallbackId = null
+      setDuplicated(true)
+    }, 3500)
 
     return () => {
-      clearTimeout(timeoutId)
-      if (intervalId) clearInterval(intervalId)
+      clearFallback()
+      io.disconnect()
     }
-  }, [autoScroll, safeArtists.length, cardGap, cardWidth])
+  }, [autoScroll, safeArtists.length])
+
+  // Smooth conveyor-belt drift (linear scroll); loop using duplicated row
+  useEffect(() => {
+    if (!autoScroll || !duplicated || safeArtists.length === 0) return
+    const el = cardsContainerRef.current
+    if (!el) return
+
+    if (typeof window === 'undefined') return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (reduceMotion.matches) return
+
+    let raf = 0
+    let last = performance.now()
+
+    const tick = (now: number) => {
+      if (!conveyorPaused) {
+        const dt = Math.min((now - last) / 1000, 0.064)
+        last = now
+        const half = el.scrollWidth / 2
+        if (half > 1) {
+          el.scrollLeft += autoScrollSpeedPx * dt
+          if (el.scrollLeft >= half - 0.5) {
+            el.scrollLeft -= half
+          }
+        }
+      } else {
+        last = now
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [autoScroll, duplicated, safeArtists.length, conveyorPaused, autoScrollSpeedPx])
 
   if (safeArtists.length === 0) return null
 
@@ -312,7 +372,7 @@ export function ArtistCarousel({
       className={className}
     >
       <Container maxWidth="default" paddingX="gutter">
-        {leadingContent && <div className="mb-8 sm:mb-10">{leadingContent}</div>}
+        {leadingContent && <div className="mb-6 sm:mb-8">{leadingContent}</div>}
         {/* Header with Arrow Controls - stacks on mobile for better layout */}
         <div className={cn(
           'flex flex-col gap-4',
@@ -394,12 +454,23 @@ export function ArtistCarousel({
           <div ref={containerRef} className="relative">
             <div
               ref={cardsContainerRef}
-              className="overflow-x-auto overflow-y-hidden hide-scrollbar scroll-smooth flex-nowrap px-5 sm:px-8 lg:px-12"
+              className={cn(
+                'overflow-x-auto overflow-y-hidden hide-scrollbar flex-nowrap px-5 sm:px-8 lg:px-12',
+                !autoScroll && 'scroll-smooth',
+                mobileAvatarStyle && 'artist-carousel-mobile-avatar-track'
+              )}
+              onMouseEnter={() => autoScroll && setConveyorPaused(true)}
+              onMouseLeave={() => autoScroll && setConveyorPaused(false)}
               style={{
                 display: 'flex',
                 flexWrap: 'nowrap',
-                gap: `${cardGap}px`,
                 paddingBottom: '20px',
+                ...(mobileAvatarStyle
+                  ? ({
+                      ['--artist-carousel-card-w' as string]: `${cardWidth}px`,
+                      ['--artist-carousel-gap' as string]: `${cardGap}px`,
+                    } as React.CSSProperties)
+                  : { gap: `${cardGap}px` }),
               }}
             >
               {displayArtists.map((artist, index) => {
@@ -408,71 +479,143 @@ export function ArtistCarousel({
                   <div
                     className={cn(
                       'pt-3 text-center',
+                      mobileAvatarStyle && 'max-sm:pt-2',
                       isExperienceCanvas && 'text-[#FFBA94]',
                       sectionBackground === 'headerSubtle' && 'text-[#390000]',
                       !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-700'
                     )}
                   >
-                    <h3 className="font-semibold text-base sm:text-lg">{artist.name}</h3>
+                    <h3
+                      className={cn(
+                        'font-semibold',
+                        mobileAvatarStyle
+                          ? 'text-xs max-sm:line-clamp-2 max-sm:leading-tight sm:text-lg'
+                          : 'text-base sm:text-lg'
+                      )}
+                    >
+                      {artist.name}
+                    </h3>
                     {artist.location && (
-                      <p className="text-sm opacity-90 mt-0.5">{artist.location}</p>
+                      <p
+                        className={cn(
+                          'opacity-90 mt-0.5',
+                          mobileAvatarStyle ? 'text-[10px] sm:text-sm' : 'text-sm'
+                        )}
+                      >
+                        {artist.location}
+                      </p>
                     )}
                   </div>
                 )
 
-                const cardContent = (
-                  <div className={cn(namePosition === 'below' && 'flex flex-col')}>
-                  {/* Artist Card */}
-                  <div className="relative aspect-[3/5] overflow-hidden rounded-lg bg-gray-100">
-                    {artist.imageUrl ? (
-                      <img
-                        src={artist.imageUrl}
-                        alt={artist.name}
-                        loading="lazy"
-                        decoding="async"
-                        width={cardWidth}
-                        height={Math.round(cardWidth * 5 / 3)}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                        <span className="text-4xl font-bold text-gray-400">
-                          {artist.name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Rest state: name + city overlay (when namePosition is overlay) */}
-                    {namePosition === 'overlay' && (
+                const mobileAvatarCaption =
+                  mobileAvatarStyle && namePosition === 'overlay' ? (
                     <div
                       className={cn(
-                        'absolute bottom-0 left-0 right-0 bg-gradient-to-t p-4 sm:p-5 text-[#FFBA94]',
-                        isExperienceCanvas
-                          ? 'from-black/90 via-black/50 to-transparent'
-                          : 'from-[#390000]/90 via-[#390000]/50 to-transparent'
+                        'mt-2 text-center sm:hidden',
+                        isExperienceCanvas && 'text-[#FFBA94]',
+                        sectionBackground === 'headerSubtle' && 'text-[#390000]',
+                        !isExperienceCanvas && sectionBackground !== 'headerSubtle' && 'text-neutral-800'
                       )}
                     >
-                      <h3 className="font-semibold text-lg sm:text-xl">{artist.name}</h3>
+                      <h3 className="text-xs font-semibold leading-tight line-clamp-2 px-0.5">
+                        {artist.name}
+                      </h3>
                       {artist.location && (
-                        <p className="text-sm opacity-90">{artist.location}</p>
+                        <p className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{artist.location}</p>
                       )}
                     </div>
+                  ) : null
+
+                const cardContent = (
+                  <div
+                    className={cn(
+                      namePosition === 'below' && 'flex flex-col',
+                      mobileAvatarStyle && 'max-sm:items-center'
                     )}
-                    
+                  >
+                    {/* Artist Card / avatar (mobile) vs portrait (sm+) */}
+                    <div
+                      className={cn(
+                        'relative overflow-hidden bg-gray-100',
+                        mobileAvatarStyle
+                          ? cn(
+                              'size-[96px] shrink-0 rounded-full ring-2 shadow-md sm:aspect-[3/5] sm:size-auto sm:w-full sm:rounded-lg sm:ring-0 sm:shadow-none',
+                              isExperienceCanvas
+                                ? 'ring-[#FFBA94]/45'
+                                : 'ring-white'
+                            )
+                          : 'aspect-[3/5] rounded-lg'
+                      )}
+                    >
+                      {artist.imageUrl ? (
+                        <img
+                          src={artist.imageUrl}
+                          alt={artist.name}
+                          loading="lazy"
+                          decoding="async"
+                          width={mobileAvatarStyle ? 192 : cardWidth}
+                          height={
+                            mobileAvatarStyle ? 192 : Math.round((cardWidth * 5) / 3)
+                          }
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            'w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300',
+                            mobileAvatarStyle && 'max-sm:rounded-full'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'font-bold text-gray-400',
+                              mobileAvatarStyle
+                                ? 'text-xl max-sm:text-2xl sm:text-4xl'
+                                : 'text-4xl'
+                            )}
+                          >
+                            {artist.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+
+                    {/* Rest state: name + city overlay (when namePosition is overlay) */}
+                    {namePosition === 'overlay' && (
+                      <div
+                        className={cn(
+                          'absolute bottom-0 left-0 right-0 bg-gradient-to-t p-4 sm:p-5 text-[#FFBA94]',
+                          isExperienceCanvas
+                            ? 'from-black/90 via-black/50 to-transparent'
+                            : 'from-[#390000]/90 via-[#390000]/50 to-transparent',
+                          mobileAvatarStyle && 'hidden sm:block'
+                        )}
+                      >
+                        <h3 className="font-semibold text-lg sm:text-xl">{artist.name}</h3>
+                        {artist.location && (
+                          <p className="text-sm opacity-90">{artist.location}</p>
+                        )}
+                      </div>
+                    )}
+
                     {/* Hover/click overlay: dark bg + description only (no name/city) */}
                     <div
                       className={cn(
                         'absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100',
                         isExperienceCanvas ? 'bg-black/70' : 'bg-[#390000]/70',
-                        showInfoSheet && 'group-data-[revealed=true]:opacity-100'
+                        showInfoSheet && 'group-data-[revealed=true]:opacity-100',
+                        mobileAvatarStyle && 'max-sm:hidden'
                       )}
                     />
-                    {(showInfoSheet && artist.description) ? (
-                      <div className={cn(
-                        'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 text-[#FFBA94] transition-opacity duration-300',
-                        'opacity-0 group-hover:opacity-100',
-                        'group-data-[revealed=true]:opacity-100'
-                      )}>
+                    {showInfoSheet && artist.description ? (
+                      <div
+                        className={cn(
+                          'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 text-[#FFBA94] transition-opacity duration-300',
+                          'opacity-0 group-hover:opacity-100',
+                          'group-data-[revealed=true]:opacity-100',
+                          mobileAvatarStyle && 'max-sm:hidden sm:flex'
+                        )}
+                      >
                         <div className="overflow-y-auto max-h-full min-h-0 flex-1">
                           <p className="text-sm sm:text-base opacity-95 leading-relaxed whitespace-pre-line">
                             {artist.description}
@@ -485,22 +628,46 @@ export function ArtistCarousel({
                           'absolute inset-0 bg-gradient-to-t opacity-0 transition-opacity duration-300 group-hover:opacity-100',
                           isExperienceCanvas
                             ? 'from-black/80 via-black/25 to-transparent'
-                            : 'from-[#390000]/80 via-[#390000]/20 to-transparent'
+                            : 'from-[#390000]/80 via-[#390000]/20 to-transparent',
+                          mobileAvatarStyle && 'max-sm:hidden'
                         )}
                       />
                     ) : null}
                   </div>
+                  {mobileAvatarCaption}
                   {namePosition === 'below' && nameBlock}
+                  {mobileAvatarStyle && showInfoSheet && artist.description && (
+                    <div
+                      className={cn(
+                        'sm:hidden w-full max-w-[116px] mt-1',
+                        isExperienceCanvas && 'text-[#FFBA94]/90',
+                        sectionBackground === 'headerSubtle' && 'text-[#390000]',
+                        !isExperienceCanvas &&
+                          sectionBackground !== 'headerSubtle' &&
+                          'text-neutral-700'
+                      )}
+                    >
+                      {revealedCardKey === `${artist.handle}-${index}` && (
+                        <p className="text-[10px] leading-snug whitespace-pre-line max-h-32 overflow-y-auto hide-scrollbar">
+                          {artist.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   </div>
                 )
 
                 const cardHref = artist.href ?? (showInfoSheet ? undefined : `/shop?collection=${artist.handle}`)
                 const cardClassName = cn(
-                  'group flex-shrink-0 relative w-full transition-[transform,opacity] duration-500 ease-out',
-                  cardsVisible ? 'artist-card-enter' : 'opacity-0 translate-y-[50px] scale-95'
+                  'group flex-shrink-0 relative transition-[transform,opacity] duration-500 ease-out',
+                  mobileAvatarStyle
+                    ? 'w-[116px] sm:w-[var(--artist-carousel-card-w)]'
+                    : 'w-full',
+                  cardsVisible ? 'artist-card-enter' : 'opacity-0 translate-y-[50px] scale-95',
+                  blockMobileArtistClicks && 'pointer-events-none cursor-default'
                 )
                 const cardStyle: React.CSSProperties = {
-                  width: `${cardWidth}px`,
+                  ...(mobileAvatarStyle ? {} : { width: `${cardWidth}px` }),
                   ...(staggerDelay ? { animationDelay: staggerDelay } : {}),
                 }
 
@@ -513,6 +680,8 @@ export function ArtistCarousel({
                       rel="noopener noreferrer"
                       className={cardClassName}
                       style={cardStyle}
+                      tabIndex={blockMobileArtistClicks ? -1 : undefined}
+                      aria-disabled={blockMobileArtistClicks || undefined}
                     >
                       {cardContent}
                     </a>
@@ -522,6 +691,8 @@ export function ArtistCarousel({
                       href={cardHref}
                       className={cardClassName}
                       style={cardStyle}
+                      tabIndex={blockMobileArtistClicks ? -1 : undefined}
+                      aria-disabled={blockMobileArtistClicks || undefined}
                     >
                       {cardContent}
                     </Link>
@@ -533,18 +704,19 @@ export function ArtistCarousel({
                   key={cardKey}
                   className={cardClassName}
                   style={cardStyle}
-                  {...(showInfoSheet && {
-                    'data-revealed': revealedCardKey === cardKey,
-                    onClick: () => setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey)),
-                    role: 'button',
-                    tabIndex: 0,
-                    onKeyDown: (e: React.KeyboardEvent) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey))
-                      }
-                    },
-                  })}
+                  {...(showInfoSheet &&
+                    !blockMobileArtistClicks && {
+                      'data-revealed': revealedCardKey === cardKey,
+                      onClick: () => setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey)),
+                      role: 'button',
+                      tabIndex: 0,
+                      onKeyDown: (e: React.KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey))
+                        }
+                      },
+                    })}
                 >
                   {cardContent}
                 </div>
@@ -694,7 +866,7 @@ export function ArtistCarousel({
             </div>
           )}
 
-          {/* Value prop tiles (e.g. Collect original art, Live with it, Support artists) */}
+          {/* Value prop tiles (e.g. Collect original art, Swap it. Make it yours., Support artists) */}
           {valueProps && valueProps.length > 0 && (
             <div className="px-4 sm:px-6 md:px-8 mt-8 sm:mt-10">
               <div
@@ -767,6 +939,14 @@ export function ArtistCarousel({
         }
         @media (prefers-reduced-motion: reduce) {
           .artist-card-enter { animation: none; opacity: 1; transform: none; }
+        }
+        .artist-carousel-mobile-avatar-track {
+          gap: 18px;
+        }
+        @media (min-width: 640px) {
+          .artist-carousel-mobile-avatar-track {
+            gap: var(--artist-carousel-gap, 32px);
+          }
         }
       `}</style>
     </SectionWrapper>

@@ -125,9 +125,17 @@ export function TestimonialCarousel({
         {(title || subtitle) && (
           <div className="text-center mb-6 sm:mb-8 px-0">
             {title && (
-              <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight">
-                {title}
-              </h2>
+              <>
+                <p
+                  className="mb-3 text-center text-lg text-[#FFBA94] tracking-[0.35em] sm:text-xl md:text-2xl"
+                  aria-hidden
+                >
+                  ★★★★★
+                </p>
+                <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight">
+                  {title}
+                </h2>
+              </>
             )}
             {subtitle && (
               <p className="mt-3 sm:mt-4 text-base sm:text-xl md:text-2xl max-w-2xl mx-auto text-[#FFBA94]/80 px-2 sm:px-0">

@@ -32,7 +32,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
     <SectionWrapper spacing="md" background="experience" className="mb-0 !pt-6 pb-10 sm:!pt-8 md:!pt-10 md:pb-0">
       <Container maxWidth="default" paddingX="gutter">
         <div className="mx-auto mb-6 max-w-2xl text-center sm:mb-8">
-          <h2 className="font-serif text-2xl font-medium tracking-tight text-[#FFBA94] sm:text-3xl md:text-4xl">
+          <h2 className="font-serif text-3xl font-medium tracking-tight text-[#FFBA94] sm:text-4xl md:text-5xl lg:text-6xl">
             {title}
           </h2>
         </div>

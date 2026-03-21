@@ -16,7 +16,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 ## Page Structure
 
 1. **Hero** — Video background with three-line overlay: Not just a lamp. / A living art collection. / One lamp. Endless art. Swap in seconds. — plus `Start your collection` CTA to `/shop/experience` ([`VideoPlayer`](../../../components/sections/VideoPlayer.tsx) `heroSubtext`)
-2. **Value Props** — Multi-column section with autoplay videos + copy: Inspire in an instant, Build a real collection, Support Artists directly (videos from thestreetcollector.com CDN, proxied for playback)
+2. **Value Props** — Under “Bringing art into everyday life.”: numbered 1–3 with paired video + copy on mobile; stack order in [`content/street-collector.ts`](../../../content/street-collector.ts) `valueProps`: Swap it. Make it fit. → Support artists directly. → Collect original art.
 3. **Testimonials** — "Join 3000+ Collectors" carousel with video/image media, 5-star rating, quote text, and author (TestimonialCarousel)
 4. **Featured Artists** — Horizontal artist carousel with CTA to `/shop/experience`
 5. **What Happens Next** — 3-step bridge section (choose lamp, preview/select artworks, checkout)

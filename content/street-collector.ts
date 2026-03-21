@@ -29,6 +29,10 @@ export const streetCollectorContent = {
   /** Meet the Street Lamp: one video, stages rotate via progress bar on texts */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
+    /** Two lines under the section title */
+    taglineLines: ['Not just a lamp.', 'A living art collection.'],
+    /** Price callouts — glass pills over the video */
+    pricingChips: ['Starting at $99 · Artworks from $40'],
     /** Desktop video URL */
     desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
     /** Mobile video URL */
@@ -66,15 +70,15 @@ export const streetCollectorContent = {
   valuePropsSectionTitle: 'Bringing art into everyday life.',
   valueProps: [
     {
-      title: 'Collect original art.',
+      title: 'Collect original Art.',
       description:
         'No AI. No screens. Just original art, delivered to your door.',
       poster:
-        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
-      video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
+        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
+      video: 'https://cdn.shopify.com/videos/c/o/v/e6dbb48d20214a77b0009174129dc21d.mp4',
     },
     {
-      title: 'Live with it. Make it yours.',
+      title: 'Fit right in.',
       description:
         'Slide it in. Light it up. Swap in seconds. Art that evolves with you.',
       poster:
@@ -83,12 +87,12 @@ export const streetCollectorContent = {
         'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
     },
     {
-      title: 'Support artists directly.',
+      title: 'Support Artists directly.',
       description:
         'Every piece fuels the next one. Your purchase keeps culture alive.',
       poster:
-        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
-      video: 'https://cdn.shopify.com/videos/c/o/v/e6dbb48d20214a77b0009174129dc21d.mp4',
+        'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
+      video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
     },
   ],
   valuePropsCue: '',
@@ -254,9 +258,9 @@ export const streetCollectorContent = {
     },
   },
   featuredArtists: {
-    title: 'In collaboration with',
+    title: '100+ Artists. Every corner of the world.',
     subtitle: '',
-    afterCarousel: 'Artists from around the world',
+    afterCarousel: '',
     description: '',
     linkText: 'Start your collection',
     linkHref: EXPERIENCE_URL,
@@ -326,7 +330,7 @@ export const streetCollectorContent = {
     },
   },
   faq: {
-    title: 'Frequently Asked Questions',
+    title: 'Questions?',
     groups: [
       {
         /** Empty title: home FAQ renders as a single centered list (no category chips). */

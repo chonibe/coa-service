@@ -66,7 +66,10 @@ export function LazyVideo({
         disablePictureInPicture
         disableRemotePlayback
         controlsList="nodownload nofullscreen noremoteplayback"
-        className={cn('absolute inset-0 w-full h-full object-cover', className)}
+        className={cn(
+          'absolute inset-0 h-full w-full object-cover outline-none ring-0 focus:outline-none focus-visible:outline-none',
+          className
+        )}
         onLoadedData={(e) => {
           e.currentTarget.muted = true
           if (props.autoPlay) e.currentTarget.play().catch(() => {})

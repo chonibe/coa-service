@@ -241,6 +241,7 @@ export default async function ShopHomeV2Page() {
             cardWidth={320}
             cardGap={32}
             fullWidth={true}
+            mobileAvatarStyle
           />
         )}
 

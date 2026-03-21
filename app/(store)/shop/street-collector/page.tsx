@@ -72,7 +72,8 @@ function TrustBarItemIcon({
     variant === 'compact'
       ? 'inline-flex shrink-0 items-center justify-center'
       : 'inline-flex items-center justify-center'
-  const isLargeTrustIcon = item.icon === 'returns' || item.icon === 'shipping'
+  const isLargeTrustIcon =
+    item.icon === 'returns' || item.icon === 'shipping' || item.icon === 'guarantee'
   const iconClass =
     variant === 'featured'
       ? 'h-20 w-20'
@@ -293,14 +294,14 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      {/* Hero - Video with logo overlay */}
-      <div id="street-collector-hero" className="relative">
+      {/* Hero — md+ only (video + overlay logo). Mobile: Meet the Street Lamp is the hero under the in-flow logo below. */}
+      <div id="street-collector-hero" className="relative hidden md:block">
         <div
           id="street-collector-hero-sentinel"
           className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
           aria-hidden
         />
-        {/* Logo overlay on hero — z-[40] above VideoPlayer overlay (z-30) so it stays clickable */}
+        {/* Logo overlay on hero — z-[40] above VideoPlayer overlay (z-30) */}
         <Link
           href="/"
           aria-label="Street Collector Home"
@@ -353,20 +354,48 @@ export default async function StreetCollectorPage() {
         />
       </div>
 
-      {/* Meet the Street Lamp — one video (desktop/mobile), progress bar rotates through stage texts */}
+      {/* Mobile: logo in document flow, then Meet the Street Lamp as hero (no video hero) */}
+      <div className="flex justify-center px-5 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-2 md:hidden">
+        <Link
+          href="/"
+          aria-label="Street Collector Home"
+          className="inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105"
+        >
+          <Image
+            src={getProxiedImageUrl(HOME_LOGO_URL)}
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 object-contain drop-shadow-md"
+            loading="eager"
+            priority
+          />
+        </Link>
+      </div>
+
+      {/* Meet the Street Lamp — desktop: below hero; mobile: primary hero under logo */}
       <MeetTheStreetLamp
         title={streetCollectorContent.meetTheLamp.title}
+        taglineLines={streetCollectorContent.meetTheLamp.taglineLines}
         stages={streetCollectorContent.meetTheLamp.stages}
         desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
         mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
         poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
+        pricingChips={
+          Array.isArray(streetCollectorContent.meetTheLamp.pricingChips)
+            ? streetCollectorContent.meetTheLamp.pricingChips
+            : undefined
+        }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
+        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-14 md:pb-12"
       />
 
       {/* Bringing art into everyday life + In Collaboration With — unified section */}
       {featuredArtists.length > 0 && (
         <ArtistCarousel
+          className="!pt-5 !pb-10 sm:!pt-6 sm:!pb-12 md:!pt-8 md:!pb-14 xl:!pb-16"
+          disableArtistClicksOnMobile
           title={streetCollectorContent.featuredArtists.title}
           titleSize="2xl"
           titleTag="h2"
@@ -385,6 +414,7 @@ export default async function StreetCollectorPage() {
           cardWidth={280}
           cardGap={24}
           fullWidth={true}
+          mobileAvatarStyle
           footerCue={streetCollectorContent.featuredArtistsCue}
           footerScarcity={streetCollectorContent.featuredArtistsScarcity}
           footerCueHref={streetCollectorContent.experienceUrl}
@@ -397,7 +427,7 @@ export default async function StreetCollectorPage() {
             ) : null
           }
           leadingContent={
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-10 sm:space-y-6">
               <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center">
                 {streetCollectorContent.valuePropsSectionTitle}
               </h2>
@@ -409,33 +439,13 @@ export default async function StreetCollectorPage() {
                   video: p.video,
                 }))}
               />
-              {/* Banner on mobile only — directly under 3rd video */}
-              <div className="md:hidden">
-                <div className="w-full rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 sm:p-8">
-                  <div className="grid grid-cols-1 gap-6">
-                    {streetCollectorContent.valueProps.map((p, i) => (
-                      <div key={i} className="flex flex-col gap-2 text-center">
-                        <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-[#FFBA94] text-[#390000] font-body text-sm font-medium shrink-0 mx-auto">
-                          {i + 1}
-                        </span>
-                        <h3 className="font-body text-base sm:text-lg font-semibold text-[#FFBA94]">
-                          {p.title}
-                        </h3>
-                        <p className="font-body text-sm sm:text-base text-[#FFBA94]/90 leading-relaxed">
-                          {p.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           }
         />
       )}
 
       {/* Value prop banner — desktop only. Image right above the banner card. */}
-      <section className="hidden md:block bg-[#171515] pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
+      <section className="hidden md:block bg-[#171515] pt-6 md:pt-8 pb-8 md:pb-10 lg:pb-12 overflow-hidden">
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
             {/* Image right above the banner — proxied to avoid third-party cookies */}
@@ -473,31 +483,26 @@ export default async function StreetCollectorPage() {
 
       {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
       <TestimonialCarousel
+        className="!pt-8 !pb-10 sm:!pt-10 sm:!pb-12 md:!pt-12 md:!pb-14"
         title={streetCollectorContent.testimonials.title}
         subtitle={streetCollectorContent.testimonials.subtitle}
         testimonials={streetCollectorContent.testimonials.quotes}
         fullWidth={true}
       />
 
-      {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
+      {/* Trust Bar — Free shipping, Guarantee, Returns */}
       <SectionWrapper
         spacing="xs"
         background="experience"
-        className="pb-0 !py-5 sm:!py-6 md:!py-8 xl:!py-10"
+        className="!py-8 sm:!py-10 md:!py-12"
       >
         <Container maxWidth="default" paddingX="gutter">
-          <h2 className="mb-4 text-center font-serif text-3xl font-medium tracking-tight text-experience-highlight-soft sm:mb-6 sm:text-4xl md:mb-8 md:text-5xl lg:mb-10 lg:text-6xl">
-            We&apos;ve got you covered
-          </h2>
           {/* Mobile: stacked rows, no card or dividers */}
           <div className="mx-auto flex max-w-md flex-col items-center gap-10 md:hidden">
             {streetCollectorContent.trustBar.map((item) => (
               <div
                 key={item.label}
-                className={cn(
-                  'flex flex-col items-center gap-3 text-center',
-                  item.icon === 'guarantee' && '-translate-y-2'
-                )}
+                className="flex flex-col items-center gap-3 text-center"
               >
                 <TrustBarItemIcon item={item} variant="compact" />
                 <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-experience-highlight-muted">

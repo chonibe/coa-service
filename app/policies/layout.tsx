@@ -57,7 +57,7 @@ export default function PoliciesLayout({
           { platform: 'instagram', href: 'https://instagram.com/thestreetcollector' },
         ]}
         newsletterEnabled={true}
-        newsletterTitle="Sign up for new stories and personal offers"
+        newsletterTitle="Stay in the loop."
         newsletterDescription=""
         onNewsletterSubmit={handleNewsletterSubmit}
         tagline=""

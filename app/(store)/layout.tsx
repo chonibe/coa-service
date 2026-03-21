@@ -158,7 +158,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <Footer
         sections={footerSections}
         newsletterEnabled={true}
-        newsletterTitle="Sign up for new stories and personal offers"
+        newsletterTitle="Stay in the loop."
         newsletterDescription=""
         onNewsletterSubmit={handleNewsletterSubmit}
         tagline=""
