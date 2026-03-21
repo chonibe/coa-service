@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, type RefObject } from 'react'
+import { useRef, useEffect, useState, useMemo, type RefObject } from 'react'
 import Image from 'next/image'
 import { Eye, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -146,6 +146,14 @@ export function ArtworkCarouselBar({
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
+  /** When `activeIndex` is still -1 (e.g. after load), show the eye on the first carousel tile that is on the lamp. */
+  const firstOnLampCarouselIndex = useMemo(
+    () => selectedArtworks.findIndex((a) => lampPreviewOrder.includes(a.id)),
+    [selectedArtworks, lampPreviewOrder]
+  )
+  const viewingCarouselIndex =
+    activeIndex >= 0 ? activeIndex : firstOnLampCarouselIndex >= 0 ? firstOnLampCarouselIndex : -1
+
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
   /** Carousel thumbs stay w-24; + control scaled down */
   const glassAddButtonClass = cn(
@@ -223,8 +231,8 @@ export function ArtworkCarouselBar({
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
-                /* One outline at a time: last-tapped carousel slot, even if two artworks are on the lamp mesh */
-                const showLampOutline = isOnLamp && index === activeIndex
+                /* One badge at a time: last-tapped slot when set; otherwise first tile that is on the lamp */
+                const showViewingEye = isOnLamp && index === viewingCarouselIndex
                 const isFirstItem = index === 0
 
                 return (
@@ -233,22 +241,6 @@ export function ArtworkCarouselBar({
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
-                    <div className="flex h-7 w-full shrink-0 items-start justify-center">
-                      {showLampOutline ? (
-                        <span
-                          role="img"
-                          aria-label="Shown on lamp preview"
-                          className={cn(
-                            'inline-flex h-7 w-7 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm',
-                            theme === 'light'
-                              ? 'border-white/90 bg-white/90 text-neutral-700 shadow-black/10'
-                              : 'border-white/25 bg-white/15 text-[#f0e8e8] shadow-black/40'
-                          )}
-                        >
-                          <Eye className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-                        </span>
-                      ) : null}
-                    </div>
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         type="button"
@@ -266,11 +258,25 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={() => onTapItem(index)}
                       className={cn(
-                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
+                        'relative isolate block w-24 aspect-[14/20] overflow-visible rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
-                      aria-current={showLampOutline ? 'true' : undefined}
+                      aria-current={showViewingEye ? 'true' : undefined}
                     >
+                      {showViewingEye ? (
+                        <span
+                          role="img"
+                          aria-label="Shown on lamp preview"
+                          className={cn(
+                            'pointer-events-none absolute left-1/2 top-1 z-20 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm',
+                            theme === 'light'
+                              ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+                              : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
+                          )}
+                        >
+                          <Eye className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                        </span>
+                      ) : null}
                       <div className="absolute inset-0 rounded-[15px] overflow-hidden">
                         {imageUrl ? (
                           <Image
@@ -308,10 +314,7 @@ export function ArtworkCarouselBar({
                     data-carousel-item
                     className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
                   >
-                    <div className="flex h-7 w-full shrink-0 items-start justify-center" aria-hidden />
-                    <div className="flex min-h-[22px] items-center justify-center gap-1.5" aria-hidden>
-                      <span className="inline-block w-3.5 h-3.5" />
-                    </div>
+                    <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
                     <button
                       type="button"
                       onClick={() => onAddProduct ? onAddProduct(artwork) : onOpenPicker()}
