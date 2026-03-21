@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
-import { ChevronRight, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -10,7 +10,6 @@ import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import {
   ArtistSpotlightBanner,
-  SpotlightCollectionGif,
   type SpotlightData,
 } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { FilterPanel, hasActiveFilters, type FilterState } from '../../experience-v2/components/FilterPanel'
@@ -407,7 +406,7 @@ export function ArtworkPickerSheet({
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                'w-full max-w-2xl min-h-[60vh] max-h-[85vh] md:min-h-[70vh] md:max-h-[96vh] flex flex-col pointer-events-auto rounded-t-3xl md:rounded-t-2xl md:shadow-2xl',
+                'w-full max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] flex flex-col pointer-events-auto rounded-t-3xl shadow-2xl',
                 theme === 'light' ? 'bg-white' : 'bg-[#171515]'
               )}
             >
@@ -489,28 +488,25 @@ export function ArtworkPickerSheet({
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close"
+                aria-label="Done"
                 className={cn(
-                  'flex items-center justify-center w-9 h-9 rounded-lg -m-2 ml-auto transition-colors',
+                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold -my-2 ml-auto transition-colors shrink-0',
                   theme === 'light'
-                    ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
-                    : 'text-[#c4a0a0] hover:text-white hover:bg-[#262222]'
+                    ? 'text-[#047AFF] hover:text-[#0366d6] hover:bg-neutral-100'
+                    : 'text-[#60A5FA] hover:text-[#93C5FD] hover:bg-[#262222]'
                 )}
               >
-                <X className="w-5 h-5" />
+                Done
               </button>
             </div>
 
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto overscroll-contain px-2 py-3"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-3"
             >
               {/* Artist spotlight at top */}
               {spotlightData && onSpotlightSelect && (
-                <div className="mb-3 space-y-2">
-                  {spotlightData.gifUrl ? (
-                    <SpotlightCollectionGif gifUrl={spotlightData.gifUrl} />
-                  ) : null}
+                <div className="mb-3">
                   <ArtistSpotlightBanner
                     spotlight={{ ...spotlightData, gifUrl: undefined }}
                     spotlightProducts={spotlightProducts}

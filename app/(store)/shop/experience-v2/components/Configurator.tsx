@@ -77,7 +77,7 @@ import { LampGridCard } from './LampGridCard'
 import { getAdPreset, resolvePresetProducts } from '@/lib/experience/ad-presets'
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
-import { ArtistSpotlightBanner, SpotlightCollectionGif } from './ArtistSpotlightBanner'
+import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
@@ -1934,10 +1934,7 @@ export function Configurator({
               style={showLampPaywall && gridBlurred ? { filter: 'blur(3px)', transition: 'filter 0.35s ease-out', pointerEvents: 'none' } : { filter: 'none', transition: 'filter 0.35s ease-out' }}
             >
           {spotlightData && !showLampPaywall && (!adPreset || showAllArtworks) ? (
-            <div className="w-full space-y-3">
-              {spotlightData.gifUrl ? (
-                <SpotlightCollectionGif gifUrl={spotlightData.gifUrl} />
-              ) : null}
+            <div className="w-full">
               <ArtistSpotlightBanner
                 spotlight={{ ...spotlightData, gifUrl: undefined }}
                 spotlightProducts={spotlightProducts}
