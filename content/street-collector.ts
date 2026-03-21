@@ -58,7 +58,7 @@ export const streetCollectorContent = {
         description: 'Hundreds of artists. One piece that\'s yours.',
       },
     ],
-    cue: 'Explore available artworks.',
+    cue: '',
   },
   /** Value props with video + poster from thestreetcollector.com multi-column section */
   valuePropsSectionTitle: 'Bringing art into everyday life.',

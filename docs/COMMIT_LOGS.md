@@ -1,3 +1,14 @@
+## Commit: Street Collector — remove Meet the Lamp footer cue (2026-03-21)
+
+### Summary
+Removed the “Explore available artworks.” link under Meet the Street Lamp by clearing `meetTheLamp.cue` in Street Collector content (`MeetTheStreetLamp` only renders the cue when non-empty).
+
+### ✅ Implementation Checklist
+
+- [x] [`content/street-collector.ts`](../content/street-collector.ts) — Set `meetTheLamp.cue` to empty string
+
+---
+
 ## Commit: Street Collector — Meet the Street Lamp stage copy (2026-03-21)
 
 ### Summary
