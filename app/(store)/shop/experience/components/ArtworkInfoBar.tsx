@@ -70,8 +70,10 @@ interface ArtworkInfoBarProps {
   currentSlide?: number
   /** Optional: open artwork detail when tapped */
   onViewDetail?: (product: ShopifyProduct) => void
-  /** When two artworks on lamp: which is displayed (0 = sideA, 1 = sideB). Controlled by parent; 1|2 buttons live in header. */
+  /** When two artworks on lamp: fallback index if `focusProduct` is unset (0 = sideA, 1 = sideB). */
   displayedIndex?: number
+  /** When set, title/gallery/thumbs follow this product (last carousel selection). Lamp may still show two sides. */
+  focusProduct?: ShopifyProduct | null
   /** Called when the displayed product changes (full product when available from cache) */
   onDisplayedProductChange?: (product: ShopifyProduct | null) => void
   /** 'inline' = thumbnails below title (default). 'right' = thumbnails portaled under rotate button. */
@@ -94,6 +96,7 @@ export function ArtworkInfoBar({
   currentSlide = 0,
   onViewDetail,
   displayedIndex = 0,
+  focusProduct = null,
   onDisplayedProductChange,
   thumbnailPlacement = 'inline',
   onRotate,
@@ -105,9 +108,11 @@ export function ArtworkInfoBar({
   const hasB = !!sideBProduct
   const hasTwo = hasA && hasB && sideAProduct.id !== sideBProduct.id
 
-  const displayedProduct = hasTwo
+  const displayedProductFromSides = hasTwo
     ? (displayedIndex === 0 ? sideAProduct : sideBProduct)
     : (sideAProduct ?? sideBProduct ?? lampProduct)
+
+  const displayedProduct = focusProduct ?? displayedProductFromSides
 
   // Cache full products by handle — pre-fetch for BOTH lamp sides so we have all images
   const [fullProductCache, setFullProductCache] = useState<Map<string, ShopifyProduct>>(new Map())
@@ -120,6 +125,7 @@ export function ArtworkInfoBar({
     const handles = new Set<string>()
     if (sideAProduct?.handle) handles.add(sideAProduct.handle)
     if (sideBProduct?.handle && sideBProduct.handle !== sideAProduct?.handle) handles.add(sideBProduct.handle)
+    if (focusProduct?.handle) handles.add(focusProduct.handle)
     if (handles.size === 0) return
 
     const toFetch = [...handles].filter((h) => !cacheRef.current.has(h))
@@ -154,7 +160,7 @@ export function ArtworkInfoBar({
     })
 
     return () => { fetchAbortRef.current?.abort() }
-  }, [sideAProduct?.handle, sideBProduct?.handle])
+  }, [sideAProduct?.handle, sideBProduct?.handle, focusProduct?.handle])
 
   const productForImages =
     displayedProduct && displayedProduct.id !== lampProduct?.id

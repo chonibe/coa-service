@@ -222,10 +222,8 @@ export function ArtworkCarouselBar({
             <>
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
-                const isOnLamp = lampPreviewOrder.includes(artwork.id)
-                /* One eye: only the carousel tile you’re focused on (tap), not the other side on the lamp. */
-                const isCarouselCurrent = activeIndex >= 0 && index === activeIndex
-                const showViewingEye = isCarouselCurrent && isOnLamp
+                /* Eye only on last-selected carousel tile; lamp can still show two artworks. */
+                const showViewingEye = activeIndex >= 0 && index === activeIndex
                 const isFirstItem = index === 0
 
                 return (
@@ -254,12 +252,12 @@ export function ArtworkCarouselBar({
                         'relative isolate block w-24 aspect-[14/20] overflow-visible rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
-                      aria-current={isCarouselCurrent ? 'true' : undefined}
+                      aria-current={showViewingEye ? 'true' : undefined}
                     >
                       {showViewingEye ? (
                         <span
                           role="img"
-                          aria-label="Shown on lamp preview"
+                          aria-label="Last selected artwork"
                           className={cn(
                             'pointer-events-none absolute left-1/2 top-1 z-20 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm',
                             theme === 'light'

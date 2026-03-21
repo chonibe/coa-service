@@ -710,31 +710,35 @@ export function ExperienceV2Client({
   const { theme } = useExperienceTheme()
   const [splineInView, setSplineInView] = useState(true)
 
-  useEffect(() => {
-    if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
-  }, [lampPreviewOrder.length, lamp])
-
-  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
+  /** Carousel selection drives header + accordion; lamp mesh can still show two artworks. */
   const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
+
   useEffect(() => {
-    if (!lastClickedProductId || !lastClickedProduct) return
-    if (lastClickedProduct.id === lamp.id) {
+    if (lampPreviewOrder.length === 0) {
       setDisplayedProduct(lamp)
       return
     }
-    if (sideAProduct && sideBProduct) {
-      if (sideAProduct.id === lastClickedProductId) {
-        setDisplayedIndex(0)
-        setDisplayedProduct(sideAProduct)
-      } else if (sideBProduct.id === lastClickedProductId) {
-        setDisplayedIndex(1)
-        setDisplayedProduct(sideBProduct)
-      }
-    } else {
-      setDisplayedProduct(lastClickedProduct)
+    if (activeCarouselIndex < 0) return
+    const p = carouselArtworks[activeCarouselIndex]
+    if (!p) return
+    if (p.id === lamp.id) {
+      setDisplayedProduct(lamp)
+      return
     }
-  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
+    setDisplayedProduct(p)
+    if (sideAProduct && sideBProduct) {
+      if (p.id === sideAProduct.id) setDisplayedIndex(0)
+      else if (p.id === sideBProduct.id) setDisplayedIndex(1)
+    }
+  }, [
+    activeCarouselIndex,
+    carouselArtworks,
+    lamp,
+    lampPreviewOrder.length,
+    sideAProduct,
+    sideBProduct,
+  ])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -811,6 +815,7 @@ export function ExperienceV2Client({
             sideBProduct={sideBProduct}
             lampProduct={lampPreviewOrder.length === 0 ? lamp : null}
             displayedIndex={displayedIndex}
+            focusProduct={lastClickedProduct}
             lastClickedProductId={lastClickedProductId}
             onGalleryImagesChange={handleGalleryImagesChange}
             onGoToSlide={handleGoToSlide}
