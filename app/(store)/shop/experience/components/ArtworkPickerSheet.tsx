@@ -185,12 +185,15 @@ function ArtworkCardV2({
         )}
 
         {(isNewDrop || isEarlyAccess) && (
-          <span className={cn(
-            'absolute top-2 left-2 z-10 text-[10px] font-semibold px-1.5 py-0.5 rounded',
-            isEarlyAccess
-              ? 'text-violet-800 dark:text-violet-200 bg-violet-100/95 dark:bg-violet-900/50'
-              : 'text-amber-800 dark:text-amber-200 bg-amber-100/95 dark:bg-amber-900/50'
-          )}>
+          <span
+            className={cn(
+              'absolute top-2 left-2 z-10 text-[10px] font-semibold px-2 py-0.5 rounded-lg',
+              'backdrop-blur-md backdrop-saturate-150 border shadow-md shadow-black/20',
+              isEarlyAccess
+                ? 'text-violet-50 border-violet-200/35 bg-violet-950/40 dark:bg-violet-950/50'
+                : 'text-amber-50 border-amber-200/30 bg-amber-950/35 dark:bg-amber-950/45'
+            )}
+          >
             {isEarlyAccess ? 'Early access' : 'Featured Artist'}
           </span>
         )}
@@ -204,7 +207,9 @@ function ArtworkCardV2({
               exit={{ opacity: 0, scale: 0.94 }}
               transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
               className={cn(
-                'absolute top-1.5 z-10 w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/12 pointer-events-none',
+                'absolute top-1.5 z-10 w-3.5 h-3.5 rounded-full flex items-center justify-center pointer-events-none',
+                'border border-white/35 bg-blue-600/75 backdrop-blur-md backdrop-saturate-150',
+                'shadow-md shadow-black/25',
                 (isNewDrop || isEarlyAccess) ? 'right-1.5' : 'left-1.5'
               )}
             >

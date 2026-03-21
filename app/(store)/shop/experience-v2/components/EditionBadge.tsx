@@ -32,7 +32,12 @@ function EditionStageLeadIcon({
     case 'spark':
       return (
         <span
-          className="shrink-0 select-none text-[0.92em] leading-none text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100 dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]"
+          className={cn(
+            'shrink-0 select-none text-[0.92em] leading-none',
+            compact
+              ? 'text-white/95 drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]'
+              : 'text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100 dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]'
+          )}
           aria-hidden
         >
           ✦
@@ -116,9 +121,12 @@ export function EditionBadge({
         <span
           className={cn(
             'inline-flex max-w-full min-w-0 items-center justify-center gap-1 font-semibold uppercase',
-            'rounded-md px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.06em]',
-            'bg-neutral-900 text-neutral-100',
-            'dark:bg-[#2a2626] dark:text-[#f4f0f0] dark:ring-1 dark:ring-white/15'
+            'rounded-lg px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.06em]',
+            'text-white',
+            'border border-white/25 dark:border-white/20',
+            'bg-black/35 backdrop-blur-md backdrop-saturate-150',
+            'shadow-md shadow-black/25',
+            'dark:bg-black/45'
           )}
           title={copy.badge}
         >
