@@ -428,16 +428,27 @@ export function ArtworkPickerSheet({
               'flex-shrink-0 flex items-center gap-3 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
               theme === 'light' ? 'border-neutral-200' : 'border-neutral-800'
             )}>
-              <h2 className={cn(
-                'text-base font-semibold flex-shrink-0',
-                theme === 'light' ? 'text-neutral-900' : 'text-white'
-              )}>
-                Start your Collection
-              </h2>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <h2 className={cn(
+                  'text-base font-semibold leading-tight',
+                  theme === 'light' ? 'text-neutral-900' : 'text-white'
+                )}>
+                  Start your Collection
+                </h2>
+                <p
+                  className={cn(
+                    'text-[11px] sm:text-xs font-normal leading-snug',
+                    theme === 'light' ? 'text-neutral-500' : 'text-[#c4a0a0]'
+                  )}
+                >
+                  <span className="md:hidden">Tap to add</span>
+                  <span className="hidden md:inline">Click to add</span>
+                </p>
+              </div>
               {/* Desktop: Season + Filter in header */}
               {onSeasonChange && (
                 <div className={cn(
-                  'hidden md:flex rounded-lg border p-0.5 flex-shrink-0 ml-auto',
+                  'hidden md:flex rounded-lg border p-0.5 flex-shrink-0',
                   theme === 'light'
                     ? 'border-neutral-200 bg-neutral-50'
                     : 'border-[#2c2828] bg-[#201c1c]/50'
