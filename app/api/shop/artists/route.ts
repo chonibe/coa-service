@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { getVendorMeta } from '@/lib/shopify/vendor-meta'
 import { getProducts } from '@/lib/shopify/storefront-client'
 import { createClient } from '@/lib/supabase/server'
 
@@ -55,15 +57,13 @@ export async function GET(_request: NextRequest) {
     })
     
     // Merge Shopify vendor list with Supabase profile data
-    const artists = Array.from(vendorMap.entries())
+    const baseArtists = Array.from(vendorMap.entries())
       .map(([name, data]) => {
         const profile = profileLookup.get(name.toLowerCase())
         return {
           name,
-          // Match Shopify collection handles (same as getVendorCollectionHandle — dots/punctuation → hyphens)
           slug: getVendorCollectionHandle(name),
           productCount: data.count,
-          // Supabase profile image takes priority over Shopify product image
           image: profile?.profile_picture_url || profile?.profile_image || data.shopifyImage,
           bio: profile?.bio || profile?.artist_bio || undefined,
           instagramUrl: profile?.instagram_url || undefined,
@@ -71,7 +71,34 @@ export async function GET(_request: NextRequest) {
         }
       })
       .sort((a, b) => a.name.localeCompare(b.name))
-    
+
+    // Same image stack as artist-spotlight: getVendorMeta (portrait + collection) → getArtistImageByHandle → product thumb
+    const supabase = createClient()
+    const artists = await Promise.all(
+      baseArtists.map(async (artist) => {
+        try {
+          const meta = await getVendorMeta(supabase, artist.name, null)
+          const image =
+            meta.image ||
+            (await getArtistImageByHandle(meta.vendorSlug || artist.slug)) ||
+            (await getArtistImageByHandle(artist.slug)) ||
+            artist.image
+          const bio = artist.bio || meta.bio
+          const instagramUrl =
+            artist.instagramUrl ||
+            (meta.instagram ? `https://www.instagram.com/${meta.instagram}/` : undefined)
+          return {
+            ...artist,
+            image,
+            bio,
+            instagramUrl,
+          }
+        } catch {
+          return artist
+        }
+      })
+    )
+
     return NextResponse.json({ artists })
   } catch (error) {
     console.error('[Artists API] Error:', error)
@@ -87,7 +114,7 @@ export async function GET(_request: NextRequest) {
  */
 async function fetchVendorProfiles() {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('vendors')
       .select(`
