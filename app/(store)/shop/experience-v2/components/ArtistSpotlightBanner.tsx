@@ -34,6 +34,28 @@ function getProductImage(p: SpotlightProduct): string | null {
   return p.featuredImage?.url ?? p.images?.edges?.[0]?.node?.url ?? null
 }
 
+/** Collection GIF outside the spotlight card (e.g. above edition/scarcity). */
+export function SpotlightCollectionGif({
+  gifUrl,
+  className,
+}: {
+  gifUrl: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'w-full max-w-[min(100%,240px)] sm:max-w-[280px] rounded-xl overflow-hidden aspect-video mx-auto',
+        className
+      )}
+      aria-hidden
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={gifUrl} alt="" className="w-full h-full object-cover" />
+    </div>
+  )
+}
+
 interface ArtistSpotlightBannerProps {
   spotlight: SpotlightData
   /** Products in the selector that match this spotlight (for artwork thumbnails) */
@@ -86,7 +108,7 @@ export function ArtistSpotlightBanner({
         )}
       >
         {isExpanded ? (
-          /* Expanded: optional GIF above title, square image, bio */
+          /* Expanded: square image, bio (GIF rendered outside card via SpotlightCollectionGif) */
           <div className="flex flex-col items-center p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
               <div className="flex flex-col items-center gap-1 sm:gap-2 w-full text-center">
@@ -99,15 +121,6 @@ export function ArtistSpotlightBanner({
                   >
                     {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                   </span>
-                )}
-                {spotlight.gifUrl && (
-                  <div
-                    className="w-full max-w-[min(100%,240px)] sm:max-w-[280px] rounded-xl overflow-hidden aspect-video mx-auto"
-                    aria-hidden
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={spotlight.gifUrl} alt="" className="w-full h-full object-cover" />
-                  </div>
                 )}
                 <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94]">
                   {spotlight.vendorName}

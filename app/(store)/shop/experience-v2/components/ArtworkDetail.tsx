@@ -7,8 +7,9 @@ import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, S
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
-import { EditionBadge } from './EditionBadge'
-import { ArtistSpotlightBanner, type SpotlightData } from './ArtistSpotlightBanner'
+import { EditionBadgeForProduct } from './EditionBadge'
+import { ArtworkEditionUnifiedSection } from './ArtworkEditionUnifiedSection'
+import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
 
 interface ArtistData {
   name: string
@@ -142,19 +143,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
-  const editionSoldCount =
-    !isLampOrBundleProduct &&
-    editionSizeNum != null &&
-    editionSizeNum > 0 &&
-    typeof quantityAvailable === 'number'
-      ? Math.max(0, Math.min(editionSizeNum, editionSizeNum - quantityAvailable))
-      : null
   const editionArtistName = (
     artistData?.name ||
     spotlightDataOverride?.vendorName ||
     spotlightData?.vendorName ||
     artist
   ).trim()
+
+  const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
 
   const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
   const slug = artistSlugOverride || slugFromVendor
@@ -184,7 +180,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       for (const s of spotlightSlugsToTry) {
         const r = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(s)}`)
         const data = r.ok ? await r.json() : null
-        if (data?.vendorName && (data.bio || data.image || data.instagram)) return data
+        if (data?.vendorName && (data.bio || data.image || data.instagram || data.gifUrl)) return data
       }
       return null
     }
@@ -193,18 +189,39 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     fetchSpotlight()
       .then(async (spot) => {
         if (cancelled) return
-        if (spot && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+        let spotToUse = spot
+        if (spot?.vendorName && !spot.bio?.trim()) {
+          try {
+            const r = await fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
+            const data = r.ok ? await r.json() : null
+            const a = data && !data.error ? data : null
+            const extraBio = a?.bio?.trim()
+            if (extraBio) {
+              spotToUse = { ...spot, bio: extraBio }
+            }
+          } catch {
+            /* keep spot */
+          }
+        }
+        if (
+          spotToUse &&
+          (spotToUse.vendorName ||
+            spotToUse.bio ||
+            spotToUse.image ||
+            spotToUse.instagram ||
+            spotToUse.gifUrl)
+        ) {
           const valid = {
-            name: spot.vendorName ?? artist,
-            slug: spot.vendorSlug ?? slug,
-            bio: spot.bio,
-            image: spot.image,
-            instagram: spot.instagram,
+            name: spotToUse.vendorName ?? artist,
+            slug: spotToUse.vendorSlug ?? slug,
+            bio: spotToUse.bio,
+            image: spotToUse.image,
+            instagram: spotToUse.instagram,
           }
           artistCache.set(slug, valid)
-          spotlightCache.set(slug, spot)
+          spotlightCache.set(slug, spotToUse)
           setArtistData(valid)
-          setSpotlightData(spot)
+          setSpotlightData(spotToUse)
         } else {
           // Fallback: artists API
           const r = await fetch(`/api/shop/artists/${slug}${artist ? `?vendor=${encodeURIComponent(artist)}` : ''}`)
@@ -392,6 +409,32 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <span className="text-xs">Loading details…</span>
             </div>
           )}
+          {!isLampOrBundleProduct && (
+            <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
+              {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+              <ArtworkEditionUnifiedSection className="w-full">
+                <EditionBadgeForProduct
+                  product={product}
+                  artistName={editionArtistName}
+                  unifiedSection
+                  className="w-full"
+                />
+                {!hideScarcityBar && (
+                  <ScarcityBadge
+                    quantityAvailable={quantityAvailable}
+                    editionSize={editionSizeNum}
+                    availableForSale={product.availableForSale}
+                    variant="bar"
+                    productId={product.id}
+                    productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                    productTitle={product.title}
+                    unifiedSection
+                    className="w-full"
+                  />
+                )}
+              </ArtworkEditionUnifiedSection>
+            </div>
+          )}
           {artist && (
             <div className="py-3 border-b border-neutral-100 dark:border-white/10">
               {artistLoading ? (
@@ -399,21 +442,29 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               ) : (() => {
                 const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
                 const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+                return spotlight ? (
+                  <ArtistSpotlightBanner
+                    spotlight={{ ...spotlight, gifUrl: undefined }}
+                    spotlightProducts={spotlightProducts}
+                  />
+                ) : null
               })()}
             </div>
           )}
         </div>
-        <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
-          {editionSoldCount !== null && editionSizeNum != null && (
-            <EditionBadge
-              editionNumber={editionSoldCount}
-              totalEditions={editionSizeNum}
-              artistName={editionArtistName}
+        <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-3">
+          {isLampOrBundleProduct && !hideScarcityBar && (
+            <ScarcityBadge
+              quantityAvailable={quantityAvailable}
+              editionSize={editionSizeNum}
+              availableForSale={product.availableForSale}
+              variant="bar"
+              productId={product.id}
+              productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+              productTitle={product.title}
               className="w-full"
             />
           )}
-          {!hideScarcityBar && <ScarcityBadge quantityAvailable={quantityAvailable} editionSize={editionSizeNum} availableForSale={product.availableForSale} variant="bar" productId={product.id} productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null} productTitle={product.title} className="w-full" />}
           {!hideCta && (
             <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]')}>
               {isSelected ? <><Check className="w-4 h-4" />Added to order — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
@@ -818,6 +869,32 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       </AnimatePresence>
                     </div>
                   )}
+                  {!isLampOrBundleProduct && (
+                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
+                      {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                      <ArtworkEditionUnifiedSection className="w-full">
+                        <EditionBadgeForProduct
+                          product={product}
+                          artistName={editionArtistName}
+                          unifiedSection
+                          className="w-full"
+                        />
+                        {!hideScarcityBar && (
+                          <ScarcityBadge
+                            quantityAvailable={quantityAvailable}
+                            editionSize={editionSizeNum}
+                            availableForSale={product.availableForSale}
+                            variant="bar"
+                            productId={product.id}
+                            productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                            productTitle={product.title}
+                            unifiedSection
+                            className="w-full"
+                          />
+                        )}
+                      </ArtworkEditionUnifiedSection>
+                    </div>
+                  )}
                   {artist && (
                     <div className="py-3 border-t border-neutral-100 dark:border-white/10">
                       {artistLoading ? (
@@ -825,23 +902,20 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       ) : (() => {
                         const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
                         const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                        return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+                        return spotlight ? (
+                          <ArtistSpotlightBanner
+                            spotlight={{ ...spotlight, gifUrl: undefined }}
+                            spotlightProducts={spotlightProducts}
+                          />
+                        ) : null
                       })()}
                     </div>
                   )}
                   </div>
 
-                  {/* Fixed bar at bottom of right panel — scarcity + add button, flush with bottom to align with image carousel */}
-                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
-                    {editionSoldCount !== null && editionSizeNum != null && (
-                      <EditionBadge
-                        editionNumber={editionSoldCount}
-                        totalEditions={editionSizeNum}
-                        artistName={editionArtistName}
-                        className="w-full"
-                      />
-                    )}
-                    {!hideScarcityBar && (
+                  {/* Fixed bar at bottom of right panel — add button (+ lamp scarcity) */}
+                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-3">
+                    {isLampOrBundleProduct && !hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
                         editionSize={editionSizeNum}
@@ -1174,6 +1248,33 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
+            {!isLampOrBundleProduct && (
+              <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
+                {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                <ArtworkEditionUnifiedSection className="w-full">
+                  <EditionBadgeForProduct
+                    product={product}
+                    artistName={editionArtistName}
+                    unifiedSection
+                    className="w-full"
+                  />
+                  {!hideScarcityBar && (
+                    <ScarcityBadge
+                      quantityAvailable={quantityAvailable}
+                      editionSize={editionSizeNum}
+                      availableForSale={product.availableForSale}
+                      variant="bar"
+                      productId={product.id}
+                      productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                      productTitle={product.title}
+                      unifiedSection
+                      className="w-full"
+                    />
+                  )}
+                </ArtworkEditionUnifiedSection>
+              </div>
+            )}
+
             {/* About the Artist — spotlight card (same as selector) */}
             {artist && (
               <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
@@ -1182,7 +1283,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 ) : (() => {
                   const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
                   const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                  return spotlight ? <ArtistSpotlightBanner spotlight={spotlight} spotlightProducts={spotlightProducts} /> : null
+                  return spotlight ? (
+                    <ArtistSpotlightBanner
+                      spotlight={{ ...spotlight, gifUrl: undefined }}
+                      spotlightProducts={spotlightProducts}
+                    />
+                  ) : null
                 })()}
               </div>
             )}
@@ -1194,25 +1300,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           {/* Sticky action bar — mobile only; desktop has button/scarcity in right column */}
           {!isSlideout && (
           <div className="absolute bottom-0 left-0 right-0 z-10 pt-0">
-            {/* Scarcity bar — centered on top border */}
-            {!hideScarcityBar && (
-            <div className="absolute left-0 right-4 top-0 -translate-y-1/2 z-10">
-              <ScarcityBadge
-                quantityAvailable={quantityAvailable}
-                editionSize={editionSizeNum}
-                availableForSale={product.availableForSale}
-                variant="bar"
-                productId={product.id}
-                productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                productTitle={product.title}
-                className="w-full"
-              />
-            </div>
-            )}
             <div
               className={cn(
                 'space-y-3 p-5 bg-white/90 dark:bg-[#171515]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
-                productBadges?.length ? 'pt-4' : 'pt-7'
+                productBadges?.length ? 'pt-4' : 'pt-5'
               )}
               style={{ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' }}
             >
@@ -1313,13 +1404,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </div>
               </div>
-              {editionSoldCount !== null && editionSizeNum != null && (
-                <EditionBadge
-                  editionNumber={editionSoldCount}
-                  totalEditions={editionSizeNum}
-                  artistName={editionArtistName}
+              {isLampOrBundleProduct && !hideScarcityBar && (
+                <ScarcityBadge
+                  quantityAvailable={quantityAvailable}
+                  editionSize={editionSizeNum}
+                  availableForSale={product.availableForSale}
+                  variant="bar"
+                  productId={product.id}
+                  productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                  productTitle={product.title}
                   className="w-full"
-                  compact
                 />
               )}
               {!hideCta && (

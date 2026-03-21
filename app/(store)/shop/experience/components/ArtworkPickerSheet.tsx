@@ -8,7 +8,11 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
-import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
+import {
+  ArtistSpotlightBanner,
+  SpotlightCollectionGif,
+  type SpotlightData,
+} from '../../experience-v2/components/ArtistSpotlightBanner'
 import { FilterPanel, hasActiveFilters, type FilterState } from '../../experience-v2/components/FilterPanel'
 import { cn } from '@/lib/utils'
 import { buildArtworkRowsByArtist } from '@/lib/shop/experience-artwork-rows'
@@ -16,7 +20,9 @@ import {
   experienceArtistRowDefaultClass,
   experienceArtistRowMergeClass,
   getPickerArtworkCardSurfaces,
+  getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
+import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -93,6 +99,8 @@ interface ArtworkCardV2Props {
   isNewDrop?: boolean
   /** Show "Early access" chip when spotlight is unlisted */
   isEarlyAccess?: boolean
+  /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
+  suppressSelectionRing?: boolean
 }
 
 function ArtworkCardV2({
@@ -106,17 +114,18 @@ function ArtworkCardV2({
   spinePairLayout = false,
   isNewDrop = false,
   isEarlyAccess = false,
+  suppressSelectionRing = false,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
-  const isMerged = isSelected && (mergeWithLeft || mergeWithRight)
-  const flushToSpine = isMerged || spinePairLayout
+  const isMergedVisual = isSelected && (mergeWithLeft || mergeWithRight)
+  const flushToSpine = isMergedVisual || spinePairLayout
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
   const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
   const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
-
+  const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {
     onSelect(product)
   }, [product, onSelect])
@@ -125,7 +134,8 @@ function ArtworkCardV2({
     <motion.div
       data-product-id={product.id}
       className={cn(
-        'relative box-border border-2 border-transparent origin-center overflow-hidden',
+        'relative box-border overflow-hidden origin-center',
+        selectionChrome,
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
@@ -195,11 +205,11 @@ function ArtworkCardV2({
               exit={{ opacity: 0, scale: 0.94 }}
               transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
               className={cn(
-                'absolute top-1.5 z-10 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/15 pointer-events-none',
+                'absolute top-1.5 z-10 w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shadow-blue-600/12 pointer-events-none',
                 (isNewDrop || isEarlyAccess) ? 'right-1.5' : 'left-1.5'
               )}
             >
-              <span className="text-[9px] font-bold leading-none text-white tabular-nums">{selectionNumber}</span>
+              <span className="text-[8px] font-bold leading-none text-white tabular-nums">{selectionNumber}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -236,6 +246,7 @@ function ArtworkCardV2({
               </span>
             )}
           </div>
+          <EditionBadgeForProduct product={product} className="mt-1" chipOnly />
         </div>
       </div>
     </motion.div>
@@ -496,9 +507,12 @@ export function ArtworkPickerSheet({
             >
               {/* Artist spotlight at top */}
               {spotlightData && onSpotlightSelect && (
-                <div className="mb-3">
+                <div className="mb-3 space-y-2">
+                  {spotlightData.gifUrl ? (
+                    <SpotlightCollectionGif gifUrl={spotlightData.gifUrl} />
+                  ) : null}
                   <ArtistSpotlightBanner
-                    spotlight={spotlightData}
+                    spotlight={{ ...spotlightData, gifUrl: undefined }}
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
                     showBadge
@@ -546,13 +560,13 @@ export function ArtworkPickerSheet({
                           className={cn(
                             'relative flex rounded-xl overflow-hidden',
                             shouldMerge
-                              ? cn('py-1 mx-0.5 my-0.5', experienceArtistRowMergeClass)
+                              ? cn('py-0.5 my-0.5', experienceArtistRowMergeClass)
                               : cn('pb-2', experienceArtistRowDefaultClass)
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
                           {product1 && (
-                            <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-1')}>
+                            <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-px')}>
                               <ArtworkCardV2
                                 key={product1.id}
                                 product={product1}
@@ -564,6 +578,7 @@ export function ArtworkPickerSheet({
                                 spinePairLayout
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                                suppressSelectionRing={shouldMerge}
                               />
                             </div>
                           )}
@@ -583,7 +598,7 @@ export function ArtworkPickerSheet({
                             </span>
                           </div>
                           {product2 && (
-                            <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-1')}>
+                            <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-px')}>
                               <ArtworkCardV2
                                 key={product2.id}
                                 product={product2}
@@ -595,6 +610,7 @@ export function ArtworkPickerSheet({
                                 spinePairLayout
                                 isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
+                                suppressSelectionRing={shouldMerge}
                               />
                             </div>
                           )}

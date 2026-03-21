@@ -75,8 +75,9 @@ import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { ArtworkStrip } from './ArtworkStrip'
 import { LampGridCard } from './LampGridCard'
 import { getAdPreset, resolvePresetProducts } from '@/lib/experience/ad-presets'
+import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
-import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
+import { ArtistSpotlightBanner, SpotlightCollectionGif } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
@@ -1785,8 +1786,7 @@ export function Configurator({
             <ArtworkDetail
               inline
               product={detailProductFull ?? detailProduct}
-              artistSlugOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
-              spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData : null}
+              {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
                 const product = detailProductFull ?? detailProduct
@@ -1934,13 +1934,18 @@ export function Configurator({
               style={showLampPaywall && gridBlurred ? { filter: 'blur(3px)', transition: 'filter 0.35s ease-out', pointerEvents: 'none' } : { filter: 'none', transition: 'filter 0.35s ease-out' }}
             >
           {spotlightData && !showLampPaywall && (!adPreset || showAllArtworks) ? (
-            <ArtistSpotlightBanner
-              spotlight={spotlightData}
-              spotlightProducts={spotlightProducts}
-              onSelect={handleSpotlightSelect}
-              showBadge
-              expanded={isSpotlightFilterActive}
-            />
+            <div className="w-full space-y-3">
+              {spotlightData.gifUrl ? (
+                <SpotlightCollectionGif gifUrl={spotlightData.gifUrl} />
+              ) : null}
+              <ArtistSpotlightBanner
+                spotlight={{ ...spotlightData, gifUrl: undefined }}
+                spotlightProducts={spotlightProducts}
+                onSelect={handleSpotlightSelect}
+                showBadge
+                expanded={isSpotlightFilterActive}
+              />
+            </div>
           ) : null}
           {/* Street lamp — hidden; now in top toolbar only */}
           <div className="hidden">
@@ -2300,8 +2305,7 @@ export function Configurator({
       {detailProduct && isMobile && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
-          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData ? spotlightData.vendorSlug : undefined}
-          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData ? spotlightData : null}
+          {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
           isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
