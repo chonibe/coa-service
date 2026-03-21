@@ -491,8 +491,8 @@ export function SplineFullScreen({
             ref={(r) => { sectionRefs.current[1] = r }}
             className={cn(
               'relative z-0 flex-shrink-0 w-full min-h-[46svh] flex flex-col items-center justify-start',
-              /* Minimal lift under carousel — mostly sits below fade */
-              '-mt-8 md:-mt-14 pt-1 pb-6 md:pt-2 md:pb-8'
+              /* Normal flow under Spline — no overlap; padding clears docked carousel */
+              'mt-0 pt-5 pb-6 md:pt-6 md:pb-8'
             )}
           >
             <ArtworkAccordions
