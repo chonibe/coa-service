@@ -11,7 +11,6 @@ import {
   type EditionStageKey,
 } from '@/lib/shop/edition-stages'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
-import { Button } from '@/components/ui'
 
 const PENDING_KEY = 'sc_watchlist_pending'
 
@@ -186,19 +185,22 @@ export function EditionWatchControl({
 
   return (
     <div className={cn('w-full flex justify-center mt-2', compact && 'mt-1')}>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         disabled={busy || authLoading}
         onClick={() => void onWatchClick()}
         className={cn(
-          'text-xs font-semibold border-neutral-300 dark:border-white/20',
-          watching && 'border-emerald-600/50 text-emerald-800 dark:text-emerald-300'
+          'inline-flex items-center justify-center min-h-9 rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.07em]',
+          'ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#141010]',
+          'disabled:pointer-events-none disabled:opacity-50',
+          !watching &&
+            'bg-neutral-900 text-neutral-100 ring-black/20 hover:bg-neutral-800 dark:bg-[#2e2a2a] dark:text-[#f4f0f0] dark:ring-white/12 dark:hover:bg-[#3a3434]',
+          watching &&
+            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#FFBA94]/12 dark:text-[#FFBA94] dark:ring-[#FFBA94]/35 dark:hover:bg-[#FFBA94]/18'
         )}
       >
         {busy ? '…' : label}
-      </Button>
+      </button>
       <AuthSlideupMenu
         open={authOpen}
         onClose={() => setAuthOpen(false)}
