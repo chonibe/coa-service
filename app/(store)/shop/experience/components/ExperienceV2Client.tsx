@@ -29,6 +29,7 @@ import {
   clampCarouselIndex,
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
+import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -242,16 +243,11 @@ export function ExperienceV2Client({
     return () => { cancelled = true }
   }, [initialArtistSlug, forceUnlisted])
 
-  // Match experience-v2 behavior: fetch immediately for artist links; otherwise defer until picker opens.
+  // Fetch on load (same as experience-v2) so artist bio / Spline overrides / carousel spotlight data exist
+  // before the user opens the picker — deferred fetch left bio empty until selector mounted.
   useEffect(() => {
-    if (!initialArtistSlug) return
     return fetchAndApplySpotlight()
-  }, [initialArtistSlug, fetchAndApplySpotlight])
-
-  useEffect(() => {
-    if (initialArtistSlug || !isPickerOpen) return
-    return fetchAndApplySpotlight()
-  }, [initialArtistSlug, isPickerOpen, fetchAndApplySpotlight])
+  }, [fetchAndApplySpotlight])
 
   // Preload first few product images when carousel is visible so selector opens with cached images
   useEffect(() => {
@@ -730,6 +726,7 @@ export function ExperienceV2Client({
   }, [])
 
   const scrollToSplineRef = useRef(false)
+  const experienceReelRef = useRef<HTMLDivElement | null>(null)
   const handleSwitchToSide = useCallback((side: 'A' | 'B') => {
     scrollToSplineRef.current = true
     setRotateToSide(side)
@@ -882,8 +879,7 @@ export function ExperienceV2Client({
         )}
         galleryImages={galleryImages}
         displayedProduct={displayedProduct}
-        artistSlugOverride={displayedProduct?.id !== lamp.id && spotlightData && spotlightData.vendorName === displayedProduct?.vendor ? spotlightData.vendorSlug : undefined}
-        spotlightDataOverride={displayedProduct?.id !== lamp.id && spotlightData && spotlightData.vendorName === displayedProduct?.vendor ? spotlightData : null}
+        {...spotlightOverridesForProduct(displayedProduct ?? null, lamp.id, spotlightData)}
         productIncludes={
           displayedProduct?.id === lamp.id
             ? [
@@ -942,10 +938,12 @@ export function ExperienceV2Client({
         currentSlide={previewSlideIndex}
         onSlideChange={setPreviewSlideIndex}
         onSplineInView={setSplineInView}
+        experienceReelRef={experienceReelRef}
       />
 
       <ArtworkCarouselBar
         splineInView={splineInView}
+        experienceReelRef={experienceReelRef}
         selectedArtworks={carouselArtworks}
         spotlightPlaceholders={spotlightPlaceholders}
         activeIndex={activeCarouselIndex}
@@ -985,8 +983,7 @@ export function ExperienceV2Client({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
-          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
-          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData : null}
+          {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0

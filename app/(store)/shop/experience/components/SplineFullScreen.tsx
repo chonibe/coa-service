@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, type MutableRefObject, type Ref } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { ArrowUp, RotateCw } from 'lucide-react'
@@ -18,6 +18,12 @@ import {
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { ArtworkAccordions } from './ArtworkAccordions'
+
+function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
+  if (ref == null) return
+  if (typeof ref === 'function') ref(value)
+  else (ref as MutableRefObject<T | null>).current = value
+}
 
 function SplinePreviewLoading() {
   const { theme } = useExperienceTheme()
@@ -90,6 +96,8 @@ interface SplineFullScreenProps {
   artistSlugOverride?: string
   /** When provided, use this spotlight data directly (includes gifUrl) — same as selector */
   spotlightDataOverride?: import('../../experience-v2/components/ArtistSpotlightBanner').SpotlightData | null
+  /** Ref to the main vertical reel (`overflow-y-auto`); used by [`ArtworkCarouselBar`](./ArtworkCarouselBar.tsx) to scroll the page while over the carousel. */
+  experienceReelRef?: Ref<HTMLDivElement | null>
 }
 
 export function SplineFullScreen({
@@ -113,6 +121,7 @@ export function SplineFullScreen({
   spotlightFallbackImageUrl = null,
   artistSlugOverride,
   spotlightDataOverride,
+  experienceReelRef,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -214,6 +223,15 @@ export function SplineFullScreen({
         ]
   )
   const scrollRef = useRef<HTMLDivElement>(null)
+  const setScrollContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollRef.current = node
+      assignRef(experienceReelRef, node)
+    },
+    [experienceReelRef]
+  )
+  /** Outer flex shell (reel + overlays). Used to forward wheel to `scrollRef` when the pointer is over overlays (top bar) that sit outside the scrolling reel. */
+  const shellRef = useRef<HTMLDivElement>(null)
   const hasAccordion = !!displayedProduct
   const hasGallery = galleryImages.length > 1 // Skip first image (shown in details), need 2+ for gallery section
   /** One scroll section per image after the first (matches thumbnail slide indices from ArtworkInfoBar). */
@@ -320,6 +338,45 @@ export function SplineFullScreen({
     }
   }, [])
 
+  // Forward vertical wheel from overlay UI (top bar / thumbnail slot) into the main reel — those nodes are not inside `scrollRef`, so the browser would not scroll the reel.
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+
+    const wheelDeltaY = (e: WheelEvent, scrollEl: HTMLDivElement) => {
+      let dy = e.deltaY
+      if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) dy *= 16
+      if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) dy *= scrollEl.clientHeight
+      return dy
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      const scrollEl = scrollRef.current
+      if (!scrollEl) return
+      const t = e.target as Node | null
+      if (!t || !shell.contains(t)) return
+      if (scrollEl.contains(t)) return
+
+      const host = t instanceof Element ? t : t.parentElement
+      const horiz = host?.closest('[data-experience-carousel-strip], .overflow-x-auto')
+      if (horiz && Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
+
+      const dy = wheelDeltaY(e, scrollEl)
+      if (dy === 0) return
+      const max = scrollEl.scrollHeight - scrollEl.clientHeight
+      if (max <= 0) return
+      const st = scrollEl.scrollTop
+      if (dy < 0 && st <= 0) return
+      if (dy > 0 && st >= max - 1) return
+      scrollEl.scrollTop += dy
+      e.preventDefault()
+    }
+
+    shell.addEventListener('wheel', onWheel, { passive: false })
+    return () => shell.removeEventListener('wheel', onWheel)
+  }, [])
+
   // Report when Spline section is in view (for carousel visibility)
   useEffect(() => {
     const scrollEl = scrollRef.current
@@ -369,14 +426,17 @@ export function SplineFullScreen({
   }, [hasGallery, sectionCount, galleryImages.length, hasAccordion, displayedProduct?.id])
 
   return (
-    <div className={cn(
+    <div
+      ref={shellRef}
+      className={cn(
       'absolute inset-0 w-full h-full min-w-0 min-h-0 flex flex-col',
       theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]',
       className
-    )}>
+    )}
+    >
       {/* One continuous reel: Spline at top, then images stacked — scroll down through all */}
       <div
-        ref={scrollRef}
+        ref={setScrollContainerRef}
         onScroll={handleScroll}
         className={cn(
           'flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-hide pb-[20vh] touch-pan-y overscroll-contain'

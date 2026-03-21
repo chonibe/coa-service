@@ -37,6 +37,7 @@ import {
   clampCarouselIndex,
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
+import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -671,6 +672,7 @@ export function ExperienceV2Client({
   }, [])
 
   const scrollToSplineRef = useRef(false)
+  const experienceReelRef = useRef<HTMLDivElement | null>(null)
   const handleSwitchToSide = useCallback((side: 'A' | 'B') => {
     scrollToSplineRef.current = true
     setRotateToSide(side)
@@ -824,6 +826,7 @@ export function ExperienceV2Client({
         )}
         galleryImages={galleryImages}
         displayedProduct={displayedProduct}
+        {...spotlightOverridesForProduct(displayedProduct ?? null, lamp.id, spotlightData)}
         productIncludes={
           displayedProduct?.id === lamp.id
             ? [
@@ -882,10 +885,12 @@ export function ExperienceV2Client({
         currentSlide={previewSlideIndex}
         onSlideChange={setPreviewSlideIndex}
         onSplineInView={setSplineInView}
+        experienceReelRef={experienceReelRef}
       />
 
       <ArtworkCarouselBar
         splineInView={splineInView}
+        experienceReelRef={experienceReelRef}
           selectedArtworks={carouselArtworks}
           activeIndex={activeCarouselIndex}
           lampPreviewOrder={lampPreviewOrder}
@@ -923,8 +928,7 @@ export function ExperienceV2Client({
       {detailProduct && (
         <ArtworkDetail
           product={detailProductFull ?? detailProduct}
-          artistSlugOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData.vendorSlug : undefined}
-          spotlightDataOverride={detailProduct.id !== lamp.id && spotlightData && spotlightData.vendorName === detailProduct.vendor ? spotlightData : null}
+          {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0

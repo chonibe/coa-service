@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, type RefObject } from 'react'
 import Image from 'next/image'
 import { Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -20,6 +20,8 @@ interface ArtworkCarouselBarProps {
   onAddProduct?: (product: ShopifyProduct) => void
   /** When false, carousel is minimized (user scrolled past Spline preview) */
   splineInView?: boolean
+  /** Ref to [`SplineFullScreen`](./SplineFullScreen.tsx) vertical reel (`useRef<HTMLDivElement | null>(null)`); vertical wheel over the carousel scrolls this container. */
+  experienceReelRef?: RefObject<HTMLDivElement | null> | { current: HTMLDivElement | null }
 }
 
 export function ArtworkCarouselBar({
@@ -32,8 +34,10 @@ export function ArtworkCarouselBar({
   onOpenPicker,
   onAddProduct,
   splineInView = true,
+  experienceReelRef,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const carouselWheelHostRef = useRef<HTMLDivElement>(null)
   const { theme } = useExperienceTheme()
   const [isDesktop, setIsDesktop] = useState(false)
   const isDraggingRef = useRef(false)
@@ -95,6 +99,48 @@ export function ArtworkCarouselBar({
     }
   }, [isDesktop])
 
+  // Vertical wheel over the carousel (+ / thumb strip) scrolls the main reel; horizontal wheel scrolls the thumb strip only.
+  useEffect(() => {
+    const host = carouselWheelHostRef.current
+    const strip = scrollRef.current
+    if (!host || !experienceReelRef) return
+
+    const wheelDeltaY = (e: WheelEvent, scrollEl: HTMLElement) => {
+      let dy = e.deltaY
+      if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) dy *= 16
+      if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) dy *= scrollEl.clientHeight
+      return dy
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      if (!host.contains(e.target as Node)) return
+      const reel = experienceReelRef.current
+      if (!reel) return
+
+      const dy = wheelDeltaY(e, reel)
+      const dx = e.deltaX
+      const onStrip = strip?.contains(e.target as Node) ?? false
+
+      if (onStrip && Math.abs(dx) > Math.abs(dy)) {
+        return
+      }
+
+      if (dy === 0) return
+
+      const max = reel.scrollHeight - reel.clientHeight
+      if (max <= 0) return
+      const st = reel.scrollTop
+      if (dy < 0 && st <= 0) return
+      if (dy > 0 && st >= max - 1) return
+      reel.scrollTop += dy
+      e.preventDefault()
+    }
+
+    host.addEventListener('wheel', onWheel, { passive: false })
+    return () => host.removeEventListener('wheel', onWheel)
+  }, [experienceReelRef])
+
   const hasCarouselArtworks = selectedArtworks.length > 0
 
   const showSpotlightPlaceholders = selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
@@ -121,7 +167,8 @@ export function ArtworkCarouselBar({
   return (
     <div
       className={cn(
-        'absolute bottom-0 left-0 right-0 z-50 pb-safe transition-transform duration-300 ease-out',
+        /* Let wheel/touch pass through padding & fade so the main reel can scroll vertically */
+        'pointer-events-none absolute bottom-0 left-0 right-0 z-50 pb-safe transition-transform duration-300 ease-out',
         splineInView ? 'translate-y-0' : 'translate-y-full'
       )}
     >
@@ -136,9 +183,12 @@ export function ArtworkCarouselBar({
           )}
           aria-hidden
         />
-        <div className="relative z-[1] flex flex-col items-center gap-2">
+        <div className="relative z-[1] flex flex-col items-center gap-2 pointer-events-none">
           <div className="relative flex w-full flex-col gap-2">
-          <div className="flex flex-col items-center gap-1.5 px-3">
+          <div
+            ref={carouselWheelHostRef}
+            className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 px-3"
+          >
             <button
               type="button"
               onClick={onOpenPicker}
@@ -157,14 +207,14 @@ export function ArtworkCarouselBar({
                 Start your Collection
               </p>
             )}
-          </div>
           <div
             ref={scrollRef}
+            data-experience-carousel-strip
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              'flex items-end gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory flex-1 min-w-0 pb-3',
-              'justify-center pl-3 pr-3',
+              'touch-manipulation flex w-full min-w-0 items-end gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory flex-1 pb-3',
+              'justify-center pl-0 pr-0 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
@@ -292,6 +342,7 @@ export function ArtworkCarouselBar({
                 )
               })}
             </>
+          </div>
           </div>
           </div>
         </div>
