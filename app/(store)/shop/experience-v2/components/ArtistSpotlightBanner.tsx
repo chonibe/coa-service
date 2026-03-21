@@ -119,7 +119,7 @@ export function ArtistSpotlightBanner({
                         {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                       </span>
                     )}
-                    <h3 className="text-xl sm:text-2xl font-semibold text-[#FFBA94]">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94]">
                       {spotlight.vendorName}
                     </h3>
                     {spotlight.seriesName && (
@@ -222,7 +222,7 @@ export function ArtistSpotlightBanner({
                   {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                 </span>
               )}
-              <h3 className="text-base sm:text-lg font-semibold text-[#FFBA94] truncate">
+              <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-[#FFBA94] truncate">
                 {spotlight.vendorName}
               </h3>
               {spotlight.seriesName && (
