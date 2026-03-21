@@ -53,10 +53,10 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
             return (
               <section
                 key={group.title}
-                className="rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 shadow-sm transition-shadow hover:shadow-md sm:rounded-3xl sm:p-8"
+                className="rounded-2xl bg-[#201c1c]/55 p-6 sm:rounded-3xl sm:p-8"
               >
                 <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#ffba94]/20 bg-[#ffba94]/10 text-[#FFBA94]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ffba94]/10 text-[#FFBA94]">
                     <Icon className="w-6 h-6" strokeWidth={1.5} />
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold text-[#FFBA94] tracking-tight">
@@ -69,10 +69,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                     <AccordionItem
                       key={item.question}
                       value={`${group.title}-${idx}`}
-                      className={cn(
-                        'border-0 border-b border-[#FFBA94]/20 last:border-0',
-                        'py-4 first:pt-0 last:pb-0'
-                      )}
+                      className={cn('border-0', 'py-4 first:pt-0 last:pb-0')}
                     >
                       <AccordionTrigger
                         className={cn(
