@@ -213,8 +213,9 @@ export function ArtworkCarouselBar({
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              'touch-manipulation flex w-full min-w-0 items-end gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory flex-1 pb-3',
-              'justify-center pl-0 pr-0 overscroll-x-contain',
+              /* justify-start + snap-start: snap-center/mandatory clips first/last tiles and blocks full scroll */
+              'touch-manipulation flex w-full min-w-0 items-end justify-start gap-4 overflow-x-auto scrollbar-hide snap-x snap-proximity flex-1 pb-3',
+              'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
@@ -222,15 +223,17 @@ export function ArtworkCarouselBar({
             <>
               {selectedArtworks.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
-                /* Eye only on last-selected carousel tile; lamp can still show two artworks. */
-                const showViewingEye = activeIndex >= 0 && index === activeIndex
+                const isOnLamp = lampPreviewOrder.includes(artwork.id)
+                /* Eye on every tile assigned to the lamp (up to two sides). */
+                const showViewingEye = isOnLamp
+                const isCarouselCurrent = activeIndex >= 0 && index === activeIndex
                 const isFirstItem = index === 0
 
                 return (
                   <div
                     key={artwork.id}
                     data-carousel-item
-                    className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
+                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <button
@@ -252,12 +255,12 @@ export function ArtworkCarouselBar({
                         'relative isolate block w-24 aspect-[14/20] overflow-visible rounded-[15px] transition-transform duration-200 active:scale-[0.95] shadow-none'
                       )}
                       aria-label={`Select artwork ${index + 1}: ${artwork.title}`}
-                      aria-current={showViewingEye ? 'true' : undefined}
+                      aria-current={isCarouselCurrent ? 'true' : undefined}
                     >
                       {showViewingEye ? (
                         <span
                           role="img"
-                          aria-label="Last selected artwork"
+                          aria-label="Shown on lamp preview"
                           className={cn(
                             'pointer-events-none absolute left-1/2 top-1 z-20 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm',
                             theme === 'light'
@@ -303,7 +306,7 @@ export function ArtworkCarouselBar({
                   <div
                     key={`spotlight-placeholder-${artwork.id}`}
                     data-carousel-item
-                    className="flex-shrink-0 snap-center flex flex-col items-center gap-1"
+                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
                   >
                     <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
                     <button
@@ -349,6 +352,8 @@ export function ArtworkCarouselBar({
                   </div>
                 )
               })}
+              {/* Spacer so last tile can scroll fully into view past snap/edge clipping */}
+              <div className="shrink-0 w-3 sm:w-4" aria-hidden />
             </>
           </div>
           </div>
