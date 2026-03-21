@@ -19,13 +19,17 @@ import { EditionWatchControl } from './EditionWatchControl'
 function EditionStageLeadIcon({
   kind,
   compact = false,
+  flat = false,
 }: {
   kind: EditionStageVisualKind
   compact?: boolean
+  /** Strip/picker chips: no drop-shadow on glyph */
+  flat?: boolean
 }) {
   const lucideClass = cn(
     'shrink-0 text-neutral-100 opacity-90 dark:text-[#f6f2f2] dark:opacity-100',
-    'drop-shadow-[0_0_1px_rgba(0,0,0,0.5)] dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.25)]',
+    !flat &&
+      'drop-shadow-[0_0_1px_rgba(0,0,0,0.5)] dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.25)]',
     compact ? 'h-3 w-3' : 'h-3.5 w-3.5'
   )
   switch (kind) {
@@ -35,8 +39,14 @@ function EditionStageLeadIcon({
           className={cn(
             'shrink-0 select-none text-[0.92em] leading-none',
             compact
-              ? 'text-white/95 drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]'
-              : 'text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100 dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]'
+              ? cn(
+                  'text-white/95',
+                  !flat && 'drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]'
+                )
+              : cn(
+                  'text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100',
+                  !flat && 'dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]'
+                )
           )}
           aria-hidden
         >
@@ -51,7 +61,9 @@ function EditionStageLeadIcon({
       return (
         <span
           className={cn(
-            'shrink-0 leading-none drop-shadow-[0_0_1px_rgba(0,0,0,0.4)] dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.15)]',
+            'shrink-0 leading-none',
+            !flat &&
+              'drop-shadow-[0_0_1px_rgba(0,0,0,0.4)] dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.15)]',
             compact ? 'text-[11px]' : 'text-[13px]'
           )}
           aria-hidden
@@ -125,12 +137,11 @@ export function EditionBadge({
             'text-white',
             'border border-white/25 dark:border-white/20',
             'bg-black/35 backdrop-blur-md backdrop-saturate-150',
-            'shadow-md shadow-black/25',
             'dark:bg-black/45'
           )}
           title={copy.badge}
         >
-          <EditionStageLeadIcon kind={visualKind} compact />
+          <EditionStageLeadIcon kind={visualKind} compact flat />
           <span className="min-w-0 truncate">{copy.badge}</span>
         </span>
       </div>
