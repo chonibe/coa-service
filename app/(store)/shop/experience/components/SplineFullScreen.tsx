@@ -491,8 +491,8 @@ export function SplineFullScreen({
             ref={(r) => { sectionRefs.current[1] = r }}
             className={cn(
               'relative z-0 flex-shrink-0 w-full min-h-[46svh] flex flex-col items-center justify-start',
-              /* Pull accordions up under the docked carousel so copy peeks through its bottom fade */
-              '-mt-[5.5rem] md:-mt-28 pt-1 pb-6 md:pt-2 md:pb-8'
+              /* Pull accordions slightly under carousel fade; eased down vs earlier overlap */
+              '-mt-[4.5rem] md:-mt-24 pt-1 pb-6 md:pt-2 md:pb-8'
             )}
           >
             <ArtworkAccordions
