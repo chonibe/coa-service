@@ -422,8 +422,8 @@ export function ArtworkPickerSheet({
                 'flex w-full flex-col pointer-events-auto shadow-2xl',
                 /* Mobile: nearly full viewport sheet */
                 'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
-                /* Desktop: centered column, capped width + height (not full-screen) */
-                'md:max-w-2xl md:rounded-t-2xl md:h-auto md:min-h-[65vh] md:max-h-[96vh]',
+                /* Desktop: same max width as gallery + details column in SplineFullScreen / ArtworkAccordions */
+                'md:max-w-[min(65vh,520px)] md:rounded-t-2xl md:h-auto md:min-h-[65vh] md:max-h-[96vh]',
                 theme === 'light' ? 'bg-white' : 'bg-[#171515]'
               )}
             >
