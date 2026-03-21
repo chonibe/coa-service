@@ -1,5 +1,6 @@
 'use client'
 
+import { Hammer } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
@@ -78,9 +79,9 @@ export function EditionBadge({
     <>
       <span
         className={cn(
-          'inline-flex max-w-full items-center justify-center font-semibold uppercase text-neutral-100',
+          'inline-flex max-w-full min-w-0 items-center justify-center font-semibold uppercase text-neutral-100',
           unifiedSection &&
-            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#141010] dark:text-[#e8e4e4]',
+            'gap-1.5 rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#141010] dark:text-[#e8e4e4]',
           !unifiedSection &&
             (prominent
               ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-neutral-950 ring-1 ring-black/20 dark:bg-[#050505] dark:ring-white/10'
@@ -90,7 +91,14 @@ export function EditionBadge({
                 ))
         )}
       >
-        <span className="truncate">{copy.badge}</span>
+        {unifiedSection ? (
+          <>
+            <Hammer className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
+            <span className="min-w-0 truncate">{copy.badge}</span>
+          </>
+        ) : (
+          <span className="truncate">{copy.badge}</span>
+        )}
       </span>
       <p
         className={cn(
