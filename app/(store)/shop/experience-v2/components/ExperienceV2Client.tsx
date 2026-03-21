@@ -710,35 +710,31 @@ export function ExperienceV2Client({
   const { theme } = useExperienceTheme()
   const [splineInView, setSplineInView] = useState(true)
 
-  /** Carousel selection drives header + accordion; lamp mesh can still show two artworks. */
+  useEffect(() => {
+    if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
+  }, [lampPreviewOrder.length, lamp])
+
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
   const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
-
   useEffect(() => {
-    if (lampPreviewOrder.length === 0) {
+    if (!lastClickedProductId || !lastClickedProduct) return
+    if (lastClickedProduct.id === lamp.id) {
       setDisplayedProduct(lamp)
       return
     }
-    if (activeCarouselIndex < 0) return
-    const p = carouselArtworks[activeCarouselIndex]
-    if (!p) return
-    if (p.id === lamp.id) {
-      setDisplayedProduct(lamp)
-      return
-    }
-    setDisplayedProduct(p)
     if (sideAProduct && sideBProduct) {
-      if (p.id === sideAProduct.id) setDisplayedIndex(0)
-      else if (p.id === sideBProduct.id) setDisplayedIndex(1)
+      if (sideAProduct.id === lastClickedProductId) {
+        setDisplayedIndex(0)
+        setDisplayedProduct(sideAProduct)
+      } else if (sideBProduct.id === lastClickedProductId) {
+        setDisplayedIndex(1)
+        setDisplayedProduct(sideBProduct)
+      }
+    } else {
+      setDisplayedProduct(lastClickedProduct)
     }
-  }, [
-    activeCarouselIndex,
-    carouselArtworks,
-    lamp,
-    lampPreviewOrder.length,
-    sideAProduct,
-    sideBProduct,
-  ])
+  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -808,6 +804,7 @@ export function ExperienceV2Client({
         rotateTrigger={rotateTrigger}
         resetTrigger={resetTrigger}
         onFrontSideSettled={handleFrontSideSettled}
+        lampPreviewCount={lampPreviewOrder.length}
         pickerOpen={isPickerOpen}
         topBarContent={({ onRotate, isDesktop }) => (
           <ArtworkInfoBar
@@ -815,7 +812,6 @@ export function ExperienceV2Client({
             sideBProduct={sideBProduct}
             lampProduct={lampPreviewOrder.length === 0 ? lamp : null}
             displayedIndex={displayedIndex}
-            focusProduct={lastClickedProduct}
             lastClickedProductId={lastClickedProductId}
             onGalleryImagesChange={handleGalleryImagesChange}
             onGoToSlide={handleGoToSlide}
