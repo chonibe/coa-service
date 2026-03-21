@@ -1,9 +1,38 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+
+function ScarcityBarPanel({
+  title,
+  className,
+  children,
+  footer,
+}: {
+  title: string
+  className?: string
+  children: ReactNode
+  footer?: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border-2 border-neutral-200/90 dark:border-[#3d3636]',
+        'bg-gradient-to-b from-neutral-50 to-neutral-100/80 dark:from-[#242020] dark:to-[#181414]',
+        'px-4 pt-3 pb-4 shadow-md dark:shadow-black/35',
+        className
+      )}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-[#9a8888] text-center mb-3">
+        {title}
+      </p>
+      {children}
+      {footer}
+    </div>
+  )
+}
 
 interface ScarcityBadgeProps {
   quantityAvailable?: number
@@ -14,6 +43,10 @@ interface ScarcityBadgeProps {
   productImage?: string | null
   productTitle?: string
   className?: string
+  /** When set with variant `bar`, wraps the bar in a titled panel (e.g. artwork detail) */
+  panelTitle?: string
+  /** Bar + caption only — use inside {@link ArtworkEditionUnifiedSection} (no nested panel) */
+  unifiedSection?: boolean
 }
 
 export function ScarcityBadge({
@@ -25,6 +58,8 @@ export function ScarcityBadge({
   productImage,
   productTitle,
   className,
+  panelTitle,
+  unifiedSection = false,
 }: ScarcityBadgeProps) {
   const [fetchedQuantity, setFetchedQuantity] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -47,9 +82,39 @@ export function ScarcityBadge({
   if (!availableForSale) {
     if (variant === 'compact') return null
     if (variant === 'bar') {
+      const track = (
+        <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden" />
+      )
+      if (unifiedSection) {
+        return (
+          <div className={cn('w-full', className)}>
+            <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
+              {track}
+            </div>
+            <p className="text-center text-sm font-medium text-red-600 dark:text-red-400 mt-2.5">
+              Sold out
+            </p>
+          </div>
+        )
+      }
+      if (panelTitle) {
+        return (
+          <ScarcityBarPanel
+            title={panelTitle}
+            className={className}
+            footer={
+              <p className="text-center text-sm font-semibold text-red-600 dark:text-red-400 mt-4">
+                Sold out
+              </p>
+            }
+          >
+            <div className="relative h-1.5 w-full max-w-md mx-auto">{track}</div>
+          </ScarcityBarPanel>
+        )
+      }
       return (
         <div className={cn('relative h-1.5', className)}>
-          <div className="h-full bg-neutral-200 rounded-full overflow-hidden" />
+          {track}
         </div>
       )
     }
@@ -70,54 +135,107 @@ export function ScarcityBadge({
       : loading ? 100 : 100
     const barWidth = Math.min(100, Math.max(0, percentRemaining))
 
+    const showCaption = (panelTitle || unifiedSection) && editionSize && editionSize > 0 && typeof available === 'number'
+    const editionCaption = showCaption ? (
+      <p className="text-center text-xs font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums">
+        <span className="text-neutral-900 dark:text-[#f0e8e8]">{available}</span>
+        {' of '}
+        <span className="text-neutral-800 dark:text-[#e8dcd8]">{editionSize}</span>
+        {' remaining in this edition'}
+      </p>
+    ) : null
+
     if (loading && available == null) {
+      if (unifiedSection) {
+        return (
+          <div className={cn('w-full', className)}>
+            <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
+              <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full animate-pulse" />
+            </div>
+          </div>
+        )
+      }
+      if (panelTitle) {
+        return (
+          <ScarcityBarPanel title={panelTitle} className={className}>
+            <div className="relative h-1.5 w-full max-w-md mx-auto">
+              <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
+            </div>
+          </ScarcityBarPanel>
+        )
+      }
       return (
         <div className={cn('relative h-1.5', className)}>
-          <div className="h-full bg-neutral-200 rounded-full overflow-hidden animate-pulse" />
+          <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
         </div>
+      )
+    }
+
+    const barMotion = (
+      <div className="relative w-3/4 h-full">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-visible">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-rose-500 to-[#FFBA94]"
+            initial={{ width: '100%' }}
+            animate={{ width: `${barWidth}%` }}
+            transition={{ duration: 1, ease: 'easeInOut' }}
+          />
+        </div>
+        {productImage && barWidth > 3 && (
+          <motion.div
+            className="absolute top-1/2 w-10 h-8 overflow-hidden z-10 rounded-none"
+            initial={{ left: '100%', x: '-50%', y: '-50%', opacity: 0.9 }}
+            animate={{
+              left: `${Math.max(4, barWidth)}%`,
+              x: '-50%',
+              y: '-50%',
+              opacity: 1,
+              rotate: [0, -12, 12, 0],
+            }}
+            transition={{
+              left: { duration: 1, ease: 'easeInOut' },
+              x: { duration: 0 },
+              y: { duration: 0 },
+              opacity: { duration: 0.3 },
+              rotate: { repeat: Infinity, duration: 3, ease: 'easeInOut', delay: 1.2 },
+            }}
+          >
+            <Image
+              src={productImage}
+              alt={productTitle || 'Artwork'}
+              width={40}
+              height={32}
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        )}
+      </div>
+    )
+
+    if (unifiedSection) {
+      return (
+        <div className={cn('w-full', className)}>
+          <div className="relative h-8 flex items-center justify-center w-full max-w-md mx-auto">
+            {barMotion}
+          </div>
+          {editionCaption}
+        </div>
+      )
+    }
+
+    if (panelTitle) {
+      return (
+        <ScarcityBarPanel title={panelTitle} className={className} footer={editionCaption}>
+          <div className="relative h-8 flex items-center justify-center w-full max-w-md mx-auto">
+            {barMotion}
+          </div>
+        </ScarcityBarPanel>
       )
     }
 
     return (
       <div className={cn('relative h-8 flex items-center justify-center', className)}>
-        <div className="relative w-3/4 h-full">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 rounded-full overflow-visible">
-            <motion.div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-500 to-amber-400"
-              initial={{ width: '100%' }}
-              animate={{ width: `${barWidth}%` }}
-              transition={{ duration: 1, ease: 'easeInOut' }}
-            />
-          </div>
-          {productImage && barWidth > 3 && (
-            <motion.div
-              className="absolute top-1/2 w-10 h-8 overflow-hidden z-10 rounded-none"
-              initial={{ left: '100%', x: '-50%', y: '-50%', opacity: 0.9 }}
-              animate={{
-                left: `${Math.max(4, barWidth)}%`,
-                x: '-50%',
-                y: '-50%',
-                opacity: 1,
-                rotate: [0, -12, 12, 0],
-              }}
-              transition={{
-                left: { duration: 1, ease: 'easeInOut' },
-                x: { duration: 0 },
-                y: { duration: 0 },
-                opacity: { duration: 0.3 },
-                rotate: { repeat: Infinity, duration: 3, ease: 'easeInOut', delay: 1.2 },
-              }}
-            >
-              <Image
-                src={productImage}
-                alt={productTitle || 'Artwork'}
-                width={40}
-                height={32}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
-          )}
-        </div>
+        {barMotion}
       </div>
     )
   }
@@ -155,11 +273,11 @@ export function ScarcityBadge({
       <div className={cn('flex items-center gap-1', className)}>
         <div className={cn(
           'w-1.5 h-1.5 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : 'bg-amber-500'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : 'bg-rose-500 dark:bg-[#FFBA94]'
         )} />
         <span className={cn(
           'text-[10px] font-semibold',
-          isVeryScarce ? 'text-red-600' : 'text-amber-600'
+          isVeryScarce ? 'text-red-600' : 'text-rose-600 dark:text-[#FFBA94]'
         )}>
           {remaining} left
         </span>
@@ -174,11 +292,11 @@ export function ScarcityBadge({
       <div className={cn('flex items-center gap-2', className)}>
         <div className={cn(
           'w-2 h-2 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-amber-500' : 'bg-green-500'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-rose-500 dark:bg-[#FFBA94]' : 'bg-green-500'
         )} />
         <span className={cn(
           'text-xs font-semibold',
-          isVeryScarce ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-green-700'
+          isVeryScarce ? 'text-red-600' : isLowStock ? 'text-rose-600 dark:text-[#FFBA94]' : 'text-green-700'
         )}>
           {displayText}
         </span>
@@ -197,13 +315,13 @@ export function ScarcityBadge({
   const barColor = isVeryScarce
     ? 'bg-gradient-to-r from-red-500 to-red-400'
     : isLowStock
-      ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+      ? 'bg-gradient-to-r from-rose-500 to-[#FFBA94]'
       : 'bg-gradient-to-r from-blue-600 to-blue-500'
 
   const textColor = isVeryScarce
     ? 'text-red-600'
     : isLowStock
-      ? 'text-amber-600'
+      ? 'text-rose-600 dark:text-[#FFBA94]'
       : 'text-green-700'
 
   return (
@@ -224,7 +342,7 @@ export function ScarcityBadge({
       <div className={cn('flex items-center gap-1.5 text-xs font-medium', textColor)}>
         <div className={cn(
           'w-1.5 h-1.5 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-amber-500' : 'bg-green-600'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-rose-500 dark:bg-[#FFBA94]' : 'bg-green-600'
         )} />
         <span>{message}</span>
       </div>
