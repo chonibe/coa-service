@@ -143,7 +143,7 @@ function ArtworkCardV2({
     >
       <motion.div
         className={cn(
-          'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
+          'aspect-[4/5.15] relative overflow-hidden cursor-pointer touch-manipulation select-none',
           surfaces.imageWell,
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
@@ -163,12 +163,12 @@ function ArtworkCardV2({
               <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
-              src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
+              src={getShopifyImageUrl(imageUrl, 420) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
-              sizes="(max-width: 480px) 45vw, (max-width: 768px) 40vw, 200px"
+              sizes="(max-width: 480px) 48vw, (max-width: 768px) 42vw, 220px"
               priority={priorityLoad}
               loading="eager"
               onLoad={() => setImageLoaded(true)}
@@ -228,14 +228,14 @@ function ArtworkCardV2({
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
           surfaces.meta,
-          (mergeWithLeft || mergeWithRight) ? 'pt-0 pb-0.5' : 'pt-0.5 pb-1',
+          (mergeWithLeft || mergeWithRight) ? 'pt-1.5 pb-0.5' : 'pt-2 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl'
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-0.5 items-center">
+        <div className="w-full min-w-0 flex flex-col gap-1 items-center">
           <p className={cn(
             'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
@@ -261,7 +261,7 @@ function ArtworkCardV2({
   )
 }
 
-const ROW_HEIGHT_ESTIMATE = 280
+const ROW_HEIGHT_ESTIMATE = 292
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -511,7 +511,7 @@ export function ArtworkPickerSheet({
 
             <div
               ref={scrollRef}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-3"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3"
             >
               {/* Artist spotlight at top */}
               {spotlightData && onSpotlightSelect && (
@@ -566,7 +566,7 @@ export function ArtworkPickerSheet({
                             'relative flex rounded-xl overflow-hidden',
                             shouldMerge
                               ? cn('py-0.5 my-0.5', experienceArtistRowMergeClass)
-                              : cn('pb-2', experienceArtistRowDefaultClass)
+                              : cn('pb-1.5', experienceArtistRowDefaultClass)
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -590,7 +590,7 @@ export function ArtworkPickerSheet({
                           <div
                             className={cn(
                               'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
-                              shouldMerge ? 'px-0' : 'px-1'
+                              shouldMerge ? 'px-0' : 'px-0.5'
                             )}
                           >
                             <span
@@ -621,9 +621,9 @@ export function ArtworkPickerSheet({
                           )}
                         </div>
                       ) : (
-                        <div className="relative flex justify-center pb-2">
+                        <div className="relative flex justify-center pb-1.5">
                           {product1 && (
-                            <div className="w-[calc(50%-0.25rem)]">
+                            <div className="w-[calc(52.5%-0.125rem)] max-w-[280px]">
                               <ArtworkCardV2
                                 key={product1.id}
                                 product={product1}
