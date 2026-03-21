@@ -89,19 +89,25 @@ export function ArtistSpotlightBanner({
           /* Expanded: full card with artist image, bio, optional GIF */
           <div className="flex flex-col items-center p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
-              <div className="flex-shrink-0 w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 rounded-xl overflow-hidden bg-neutral-200 dark:bg-[#262222] mx-auto">
+              <div
+                className={cn(
+                  'relative mx-auto w-full max-w-full shrink-0 overflow-hidden rounded-xl bg-neutral-200 dark:bg-[#262222]',
+                  'aspect-square',
+                  'sm:h-44 sm:w-44 sm:max-w-none',
+                  'md:h-52 md:w-52'
+                )}
+              >
                 {spotlight.image ? (
                   <Image
-                    src={getShopifyImageUrl(spotlight.image, 416) ?? spotlight.image}
+                    src={getShopifyImageUrl(spotlight.image, 640) ?? spotlight.image}
                     alt={spotlight.vendorName}
-                    width={208}
-                    height={208}
-                    className="object-cover w-full h-full"
-                    sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, 208px"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 639px) 92vw, (max-width: 1023px) 176px, 208px"
                     unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center">
                     <Sparkles className="w-14 h-14 sm:w-16 sm:h-16 text-amber-500" />
                   </div>
                 )}
