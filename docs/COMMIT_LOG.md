@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: feat(experience-v2): EditionBadge in ArtworkDetail + edition stage lib (2026-03-20)
+
+**Ref:** `b1b3381e4`
+
+### Summary
+**[`lib/shop/edition-stages.ts`](lib/shop/edition-stages.ts)** — `editionStages` copy (badge, subline, CTA, email), `getEditionStageKey` (ratio-scaled bands + last-two guard for `total >= 3`), `getEditionCopyForStage` / `interpolateEditionTemplate`. **[`EditionBadge.tsx`](app/(store)/shop/experience-v2/components/EditionBadge.tsx)** — gallery-style UI. **[`ArtworkDetail.tsx`](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)** — sold count = `edition_size - quantityAvailable`; hidden when `productIncludes` (lamp/bundle); placed above scarcity / near mobile CTA (`compact` on mobile). [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md) architecture + **ArtworkDetail + EditionBadge** section.
+
+### Implementation Checklist
+
+- [x] [lib/shop/edition-stages.ts](lib/shop/edition-stages.ts)
+- [x] [app/(store)/shop/experience-v2/components/EditionBadge.tsx](app/(store)/shop/experience-v2/components/EditionBadge.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkDetail.tsx](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+
+---
+
 ## Commit: style(experience): smaller selection badges and strip action chrome (2026-03-20)
 
 **Ref:** `96eda5159`

@@ -21,8 +21,12 @@ experience-v2/
     ├── SplineFullScreen.tsx    # Full-viewport Spline 3D wrapper (exact V1 config)
     ├── ArtworkInfoBar.tsx      # Top bar: artwork name + artist, switch between 2 lamp sides
     ├── ArtworkPickerSheet.tsx  # Instagram-style slide-up selector (ArtworkStrip cards)
-    └── ArtworkCarouselBar.tsx  # Bottom carousel overlay
+    ├── ArtworkCarouselBar.tsx  # Bottom carousel overlay
+    ├── ArtworkDetail.tsx       # Product sheet / inline panel (scarcity, edition narrative, CTA)
+    └── EditionBadge.tsx        # Gallery-style edition stage copy (see lib/shop/edition-stages.ts)
 ```
+
+**Shared lib:** [`edition-stages.ts`](../../../lib/shop/edition-stages.ts) — stage thresholds, template interpolation, email strings.
 
 ## Components
 
@@ -108,6 +112,16 @@ Horizontal tappable carousel at the bottom of the Spline view:
 - Theme-aware styling; **bottom gradient fade** (`bg-gradient-to-t` from the same `#F5F5F5` / `#171515` as the Spline column) lifts the strip off the 3D preview without a hard shadow
 
 **Implementation:** [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+
+### ArtworkDetail + EditionBadge
+
+- **`ArtworkDetail`** — full-screen sheet, desktop slideout, or inline panel; scarcity bar, artist spotlight, add-to-order CTA.
+- **`EditionBadge`** — minimal “gallery label” block: stage pill, subline, and CTA copy driven by sold count vs edition size. Shown when the product has **`custom.edition_size`** and Shopify reports **`quantityAvailable`** on the first variant; **hidden** for lamp/bundle rows (`productIncludes` set). Sold count = `edition_size - quantityAvailable` (capped to edition size).
+- Stage bands match a 44-edition reference run but **scale by sold/total ratio** for other sizes; the **last two units** use the `final` band only when `totalEditions >= 3` and `sold >= total - 2` (avoids calling a 2-piece launch “final” at 0 sold).
+
+**Implementation:** [`ArtworkDetail.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) · [`EditionBadge.tsx`](../../../app/(store)/shop/experience-v2/components/EditionBadge.tsx) · [`edition-stages.ts`](../../../lib/shop/edition-stages.ts)
+
+**Tests:** No dedicated unit tests yet; verify manually on an artwork with edition metafield and inventory.
 
 ## Lamp Side Assignment Logic
 
@@ -214,3 +228,4 @@ npm run dev
 - Updated: 2026-03-19 — Reduced initial load contention by removing eager Spline scene preload and minimizing repeated localStorage reads.
 - Updated: 2026-03-20 — Centralized artwork card / 2-up row background classes in [`experience-artwork-card-surfaces.ts`](../../../lib/shop/experience-artwork-card-surfaces.ts) (picker + strip).
 - Updated: 2026-03-20 — Smaller selection UI: picker numbered badge **`w-4`/`text-[9px]`**; strip lamp badge **`w-4`/`text-[9px]`**; strip footer controls **`h-5`/`w-4`**; softer **scale** pulses on wizard highlights and add check.
+- Updated: 2026-03-20 — **EditionBadge** in artwork detail action areas (desktop inline/slideout + mobile sticky bar); copy + thresholds in [`edition-stages.ts`](../../../lib/shop/edition-stages.ts).

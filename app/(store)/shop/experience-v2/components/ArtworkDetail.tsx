@@ -7,6 +7,7 @@ import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, S
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
+import { EditionBadge } from './EditionBadge'
 import { ArtistSpotlightBanner, type SpotlightData } from './ArtistSpotlightBanner'
 
 interface ArtistData {
@@ -140,6 +141,20 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const quantityAvailable = typeof firstVariant?.quantityAvailable === 'number' ? firstVariant.quantityAvailable : undefined
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
+  const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+  const editionSoldCount =
+    !isLampOrBundleProduct &&
+    editionSizeNum != null &&
+    editionSizeNum > 0 &&
+    typeof quantityAvailable === 'number'
+      ? Math.max(0, Math.min(editionSizeNum, editionSizeNum - quantityAvailable))
+      : null
+  const editionArtistName = (
+    artistData?.name ||
+    spotlightDataOverride?.vendorName ||
+    spotlightData?.vendorName ||
+    artist
+  ).trim()
 
   const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
   const slug = artistSlugOverride || slugFromVendor
@@ -390,6 +405,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           )}
         </div>
         <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
+          {editionSoldCount !== null && editionSizeNum != null && (
+            <EditionBadge
+              editionNumber={editionSoldCount}
+              totalEditions={editionSizeNum}
+              artistName={editionArtistName}
+              className="w-full"
+            />
+          )}
           {!hideScarcityBar && <ScarcityBadge quantityAvailable={quantityAvailable} editionSize={editionSizeNum} availableForSale={product.availableForSale} variant="bar" productId={product.id} productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null} productTitle={product.title} className="w-full" />}
           {!hideCta && (
             <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]')}>
@@ -810,6 +833,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
                   {/* Fixed bar at bottom of right panel — scarcity + add button, flush with bottom to align with image carousel */}
                   <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-2">
+                    {editionSoldCount !== null && editionSizeNum != null && (
+                      <EditionBadge
+                        editionNumber={editionSoldCount}
+                        totalEditions={editionSizeNum}
+                        artistName={editionArtistName}
+                        className="w-full"
+                      />
+                    )}
                     {!hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
@@ -1282,6 +1313,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </div>
               </div>
+              {editionSoldCount !== null && editionSizeNum != null && (
+                <EditionBadge
+                  editionNumber={editionSoldCount}
+                  totalEditions={editionSizeNum}
+                  artistName={editionArtistName}
+                  className="w-full"
+                  compact
+                />
+              )}
               {!hideCta && (
                 <button
                   onClick={onToggleSelect}
