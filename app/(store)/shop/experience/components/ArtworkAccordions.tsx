@@ -182,34 +182,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
     )
     return m?.value ? parseInt(m.value, 10) : null
   })()
-  const releaseDateRaw = (() => {
-    const m = product.metafields?.find(
-      (x) =>
-        x?.value &&
-        (x.key?.toLowerCase() === 'release_date' ||
-          x.key?.toLowerCase() === 'release date' ||
-          x.key?.toLowerCase() === 'launch_date')
-    )
-    return m?.value ?? null
-  })()
-  const releaseDateFormatted =
-    releaseDateRaw &&
-    (() => {
-      try {
-        const d = new Date(releaseDateRaw)
-        if (!isNaN(d.getTime())) {
-          return d.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })
-        }
-      } catch {
-        // ignore
-      }
-      return releaseDateRaw
-    })()
-
   return (
     <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-5">
       {/* Edition story + availability — own section, before artist bio */}
@@ -263,42 +235,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
               />
             ) : null
           })()}
-        </div>
-      )}
-
-      {/* Artwork Details — redesigned for artworks (no Shopify description — we show title, edition, release date) */}
-      {!isLamp && (firstImage?.url || product.title) && (
-        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
-          {/* Artwork image */}
-          {firstImage?.url && (
-            <div className="relative w-full aspect-[4/5] overflow-hidden">
-              <Image
-                src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
-                alt={product.title || 'Artwork'}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 92vw, 520px"
-              />
-            </div>
-          )}
-          <div className="p-4 sm:p-5 text-center">
-            {/* Title + Edition size + Release date */}
-            <div className="mb-4">
-              {product.title && (
-                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">
-                  {product.title}
-                </h2>
-              )}
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-0.5 mt-2 text-base text-neutral-500 dark:text-[#c4a0a0]">
-                {editionSize != null && (
-                  <span className="font-medium">Edition of {editionSize}</span>
-                )}
-                {releaseDateFormatted && (
-                  <span>Released {releaseDateFormatted}</span>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
