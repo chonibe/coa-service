@@ -7,6 +7,8 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { ArtistSpotlightBanner, type SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
+import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
+import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 
 interface ArtistData {
@@ -42,6 +44,12 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
   const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
   const slug = artistSlugOverride || slugFromVendor
   const firstImage = product.featuredImage ?? product.images?.edges?.[0]?.node
+  const detailArtistName = (
+    artistData?.name ||
+    spotlightDataOverride?.vendorName ||
+    spotlightData?.vendorName ||
+    artist
+  ).trim()
 
   const spotlightSlugsToTry = useMemo(() => {
     const base = slug.replace(/\./g, '')
@@ -72,18 +80,32 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
     fetchSpotlight()
       .then(async (spot) => {
         if (cancelled) return
-        if (spot && (spot.vendorName || spot.bio || spot.image || spot.instagram)) {
+        let spotToUse = spot
+        if (spot?.vendorName && !spot.bio?.trim()) {
+          try {
+            const r = await fetch(`/api/shop/artists/${slug}?vendor=${encodeURIComponent(artist)}`)
+            const data = r.ok ? await r.json() : null
+            const a = data && !data.error ? data : null
+            const extraBio = a?.bio?.trim()
+            if (extraBio) {
+              spotToUse = { ...spot, bio: extraBio }
+            }
+          } catch {
+            /* keep spot without merged bio */
+          }
+        }
+        if (spotToUse && (spotToUse.vendorName || spotToUse.bio || spotToUse.image || spotToUse.instagram)) {
           const d = {
-            name: spot.vendorName ?? artist,
-            slug: spot.vendorSlug ?? slug,
-            bio: spot.bio,
-            image: spot.image,
-            instagram: spot.instagram,
+            name: spotToUse.vendorName ?? artist,
+            slug: spotToUse.vendorSlug ?? slug,
+            bio: spotToUse.bio,
+            image: spotToUse.image,
+            instagram: spotToUse.instagram,
           }
           artistCache.set(slug, d)
-          spotlightCache.set(slug, spot)
+          spotlightCache.set(slug, spotToUse)
           setArtistData(d)
-          setSpotlightData(spot)
+          setSpotlightData(spotToUse)
         } else {
           const r = await fetch(`/api/shop/artists/${slug}?vendor=${encodeURIComponent(artist)}`)
           const data = r.ok ? await r.json() : null
@@ -153,7 +175,7 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
   }
 
   const iconCls = 'w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center'
-  const labelCls = 'text-sm font-medium text-neutral-700 dark:text-[#d4b8b8]'
+  const labelCls = 'text-base font-medium text-neutral-700 dark:text-[#d4b8b8]'
   const editionSize = (() => {
     const m = product.metafields?.find(
       (x) => x && x.namespace === 'custom' && x.key === 'edition_size'
@@ -189,8 +211,35 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
     })()
 
   return (
-    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-4">
-      {/* About the Artist — spotlight card (shown first for artworks) */}
+    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-5">
+      {/* Edition story + availability — own section, before artist bio */}
+      {!isLamp && (
+        <ArtworkEditionUnifiedSection className="w-full">
+          <EditionBadgeForProduct
+            product={product}
+            artistName={detailArtistName || undefined}
+            unifiedSection
+            className="w-full"
+          />
+          <ScarcityBadge
+            quantityAvailable={
+              typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+                ? product.variants.edges[0].node.quantityAvailable
+                : undefined
+            }
+            editionSize={editionSize}
+            availableForSale={product.availableForSale ?? true}
+            variant="bar"
+            productId={product.id}
+            productImage={firstImage?.url ?? null}
+            productTitle={product.title ?? undefined}
+            unifiedSection
+            className="w-full"
+          />
+        </ArtworkEditionUnifiedSection>
+      )}
+
+      {/* About the Artist — spotlight card */}
       {artist && !isLamp && (
         <div>
           {artistLoading ? (
@@ -236,11 +285,11 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
             {/* Title + Edition size + Release date */}
             <div className="mb-4">
               {product.title && (
-                <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">
                   {product.title}
                 </h2>
               )}
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-0.5 mt-2 text-sm text-neutral-500 dark:text-[#c4a0a0]">
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-0.5 mt-2 text-base text-neutral-500 dark:text-[#c4a0a0]">
                 {editionSize != null && (
                   <span className="font-medium">Edition of {editionSize}</span>
                 )}
@@ -248,23 +297,6 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
                   <span>Released {releaseDateFormatted}</span>
                 )}
               </div>
-            </div>
-            {/* Scarcity bar */}
-            <div className="mt-0 flex justify-center">
-              <ScarcityBadge
-                quantityAvailable={
-                  typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                    ? product.variants.edges[0].node.quantityAvailable
-                    : undefined
-                }
-                editionSize={editionSize}
-                availableForSale={product.availableForSale ?? true}
-                variant="bar"
-                productId={product.id}
-                productImage={firstImage?.url ?? null}
-                productTitle={product.title ?? undefined}
-                className="w-full"
-              />
             </div>
           </div>
         </div>
@@ -306,7 +338,7 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
               return (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#2a2424] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#2a2424] text-neutral-700 dark:text-[#d4b8b8] text-sm font-medium"
                 >
                   <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
                   {item.label}
@@ -337,16 +369,16 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <SpecIcon className="w-3.5 h-3.5 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                    <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
+                    <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
                       {spec.title}
                     </h4>
                   </div>
                   {isSingleValue ? (
-                    <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
+                    <p className="text-base text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
                   ) : (
                     <ul className="space-y-1">
                       {spec.items.map((item, j) => (
-                        <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                        <li key={j} className="text-base text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
                           <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
                           <span>{item}</span>
                         </li>

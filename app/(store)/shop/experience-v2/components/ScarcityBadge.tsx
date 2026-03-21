@@ -25,7 +25,7 @@ function ScarcityBarPanel({
         className
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-[#9a8888] text-center mb-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-[#9a8888] text-center mb-3">
         {title}
       </p>
       {children}
@@ -137,7 +137,7 @@ export function ScarcityBadge({
 
     const showCaption = (panelTitle || unifiedSection) && editionSize && editionSize > 0 && typeof available === 'number'
     const editionCaption = showCaption ? (
-      <p className="text-center text-xs font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums">
+      <p className="text-center text-sm font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums leading-snug">
         <span className="text-neutral-900 dark:text-[#f0e8e8]">{available}</span>
         {' of '}
         <span className="text-neutral-800 dark:text-[#e8dcd8]">{editionSize}</span>
@@ -175,7 +175,7 @@ export function ScarcityBadge({
       <div className="relative w-3/4 h-full">
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-visible">
           <motion.div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-rose-500 to-[#FFBA94]"
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-500 to-amber-400"
             initial={{ width: '100%' }}
             animate={{ width: `${barWidth}%` }}
             transition={{ duration: 1, ease: 'easeInOut' }}
@@ -245,7 +245,7 @@ export function ScarcityBadge({
       return (
         <div className={cn('space-y-2', className)}>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 rounded-md border border-neutral-100">
-            <span className="text-xs font-medium text-neutral-500">Limited Edition of {editionSize}</span>
+            <span className="text-sm font-medium text-neutral-500">Limited Edition of {editionSize}</span>
           </div>
         </div>
       )
@@ -254,7 +254,7 @@ export function ScarcityBadge({
       return (
         <div className={cn('flex items-center gap-1.5', className)}>
           <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-          <span className="text-xs font-medium text-neutral-600">{editionSize ? `Ed. of ${editionSize}` : 'In stock'}</span>
+          <span className="text-sm font-medium text-neutral-600">{editionSize ? `Ed. of ${editionSize}` : 'In stock'}</span>
         </div>
       )
     }
@@ -273,11 +273,11 @@ export function ScarcityBadge({
       <div className={cn('flex items-center gap-1', className)}>
         <div className={cn(
           'w-1.5 h-1.5 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : 'bg-rose-500 dark:bg-[#FFBA94]'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : 'bg-amber-500'
         )} />
         <span className={cn(
-          'text-[10px] font-semibold',
-          isVeryScarce ? 'text-red-600' : 'text-rose-600 dark:text-[#FFBA94]'
+          'text-xs font-semibold',
+          isVeryScarce ? 'text-red-600' : 'text-amber-600'
         )}>
           {remaining} left
         </span>
@@ -292,11 +292,11 @@ export function ScarcityBadge({
       <div className={cn('flex items-center gap-2', className)}>
         <div className={cn(
           'w-2 h-2 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-rose-500 dark:bg-[#FFBA94]' : 'bg-green-500'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-amber-500' : 'bg-green-500'
         )} />
         <span className={cn(
-          'text-xs font-semibold',
-          isVeryScarce ? 'text-red-600' : isLowStock ? 'text-rose-600 dark:text-[#FFBA94]' : 'text-green-700'
+          'text-sm font-semibold',
+          isVeryScarce ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-green-700'
         )}>
           {displayText}
         </span>
@@ -315,20 +315,20 @@ export function ScarcityBadge({
   const barColor = isVeryScarce
     ? 'bg-gradient-to-r from-red-500 to-red-400'
     : isLowStock
-      ? 'bg-gradient-to-r from-rose-500 to-[#FFBA94]'
+      ? 'bg-gradient-to-r from-amber-500 to-amber-400'
       : 'bg-gradient-to-r from-blue-600 to-blue-500'
 
   const textColor = isVeryScarce
     ? 'text-red-600'
     : isLowStock
-      ? 'text-rose-600 dark:text-[#FFBA94]'
+      ? 'text-amber-600'
       : 'text-green-700'
 
   return (
     <div className={cn('space-y-2', className)}>
       {total > 0 && (
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 rounded-md border border-neutral-100">
-          <span className="text-xs font-medium text-neutral-500">Limited Edition of {total}</span>
+          <span className="text-sm font-medium text-neutral-500">Limited Edition of {total}</span>
         </div>
       )}
 
@@ -339,10 +339,10 @@ export function ScarcityBadge({
         />
       </div>
 
-      <div className={cn('flex items-center gap-1.5 text-xs font-medium', textColor)}>
+      <div className={cn('flex items-center gap-1.5 text-sm font-medium', textColor)}>
         <div className={cn(
           'w-1.5 h-1.5 rounded-full flex-shrink-0',
-          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-rose-500 dark:bg-[#FFBA94]' : 'bg-green-600'
+          isVeryScarce ? 'bg-red-500 animate-pulse' : isLowStock ? 'bg-amber-500' : 'bg-green-600'
         )} />
         <span>{message}</span>
       </div>
