@@ -108,6 +108,7 @@ export function SplineFullScreen({
   rotateTrigger,
   resetTrigger = 0,
   onFrontSideSettled,
+  lampPreviewCount = 0,
   pickerOpen = false,
   className,
   topBarContent,
