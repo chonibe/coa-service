@@ -17,6 +17,7 @@ import { socialLinks as themeSocialLinks } from '@/lib/design-system/tokens'
  * social network) as one horizontal row of icon-only links, not stacked text.
  * Other sections are flat blocks with top borders (no accordion).
  * Desktop: multi-column grid; social rows use flex-nowrap so icons stay on one line.
+ * TERMS & CONDITIONS: no visible title; two rows of links; lighter divider; rendered after Need help (mobile + desktop).
  */
 
 export interface FooterLink {
@@ -59,26 +60,87 @@ const socialIconButtonClass = cn(
   'hover:border-[#ffba94]/40 hover:bg-[#ffba94]/15'
 )
 
+const socialIconClass = 'h-5 w-5 shrink-0'
+
 function socialIconElementForLabel(label: string): React.ReactElement | null {
   const key = label.toLowerCase()
-  if (key.includes('instagram')) return <FaInstagram className="h-5 w-5 shrink-0" aria-hidden />
-  if (key.includes('facebook')) return <FaFacebook className="h-5 w-5 shrink-0" aria-hidden />
-  if (key.includes('tiktok')) return <FaTiktok className="h-5 w-5 shrink-0" aria-hidden />
-  if (key.includes('pinterest')) return <FaPinterest className="h-5 w-5 shrink-0" aria-hidden />
+  if (key.includes('instagram') || /\big\b/.test(key)) {
+    return <FaInstagram className={socialIconClass} aria-hidden />
+  }
+  if (key.includes('facebook') || key.includes('meta')) {
+    return <FaFacebook className={socialIconClass} aria-hidden />
+  }
+  if (key.includes('tiktok')) return <FaTiktok className={socialIconClass} aria-hidden />
+  if (key.includes('pinterest') || /\bpin\b/.test(key)) {
+    return <FaPinterest className={socialIconClass} aria-hidden />
+  }
   return null
+}
+
+function socialIconElementForHref(href: string): React.ReactElement | null {
+  const raw = href.trim()
+  if (!raw || !/^https?:\/\//i.test(raw)) return null
+  try {
+    const host = new URL(raw).hostname.replace(/^www\./i, '').toLowerCase()
+    if (host.includes('instagram') || host === 'instagr.am') {
+      return <FaInstagram className={socialIconClass} aria-hidden />
+    }
+    if (host.includes('facebook') || host === 'fb.com' || host.includes('fb.me')) {
+      return <FaFacebook className={socialIconClass} aria-hidden />
+    }
+    if (host.includes('tiktok')) return <FaTiktok className={socialIconClass} aria-hidden />
+    if (host.includes('pinterest') || host === 'pin.it') {
+      return <FaPinterest className={socialIconClass} aria-hidden />
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+/** Icon from menu label or URL (Shopify link titles vary). */
+function socialIconForLink(link: FooterLink): React.ReactElement | null {
+  return socialIconElementForLabel(link.label) ?? socialIconElementForHref(link.href)
+}
+
+function normalizeFooterSectionTitle(title: string): string {
+  return title.replace(/\u200b/g, '').replace(/\u00a0/g, ' ').trim().toUpperCase()
 }
 
 /** True when every link maps to a known social icon (Shopify menus sometimes omit "FOLLOW US" in the title). */
 function isSocialIconsOnlySection(section: FooterSection): boolean {
   const links = section.links || []
   if (links.length === 0) return false
-  return links.every((link) => socialIconElementForLabel(link.label) != null)
+  return links.every((link) => socialIconForLink(link) != null)
 }
 
 function shouldRenderSocialIconRow(section: FooterSection): boolean {
-  if (section.title.trim().toUpperCase() === 'FOLLOW US') return true
+  const t = normalizeFooterSectionTitle(section.title)
+  if (t === 'FOLLOW US' || t === 'FOLLOWUS') return true
+  if (t.includes('FOLLOW') && (t.includes(' US') || t.endsWith(' US') || t.includes('U.S'))) return true
+  if (
+    t === 'SOCIAL' ||
+    t === 'SOCIAL MEDIA' ||
+    t === 'FIND US' ||
+    t === 'CONNECT' ||
+    t === 'CONNECT WITH US'
+  ) {
+    return true
+  }
   return isSocialIconsOnlySection(section)
 }
+
+/** Footer column titled like Shopify "TERMS & CONDITIONS" — no visible heading; two rows of text links. */
+function isTermsConditionsSection(section: FooterSection): boolean {
+  const t = section.title.trim().toUpperCase()
+  if (t === 'TERMS & CONDITIONS' || t === 'TERMS AND CONDITIONS') return true
+  return t.includes('TERMS') && t.includes('CONDITION')
+}
+
+const termsConditionsLinkClass = cn(
+  footerLinkClassDesktop,
+  'inline py-0.5 underline-offset-[3px] hover:underline'
+)
 
 /** Prefer theme token URLs for Instagram/Facebook when labels match. */
 function resolveSocialHref(label: string, fallback: string): string {
@@ -97,7 +159,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       aboutText,
       sections = [],
       newsletterEnabled = true,
-      newsletterTitle = 'Sign up for new stories and personal offers',
+      newsletterTitle = 'Stay in the loop.',
       newsletterDescription = '',
       onNewsletterSubmit,
       copyrightText,
@@ -131,12 +193,51 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
 
     const currentYear = new Date().getFullYear()
 
-    const followUsSection = sections.find(
-      (s) => s.title.trim().toUpperCase() === 'FOLLOW US'
-    )
-    const linkSections = sections.filter(
-      (s) => s.title.trim().toUpperCase() !== 'FOLLOW US'
-    )
+    const followUsSection = sections.find((s) => {
+      const t = normalizeFooterSectionTitle(s.title)
+      return t === 'FOLLOW US' || t === 'FOLLOWUS'
+    })
+    const linkSections = sections.filter((s) => {
+      const t = normalizeFooterSectionTitle(s.title)
+      return t !== 'FOLLOW US' && t !== 'FOLLOWUS'
+    })
+    const linkSectionsNonTerms = linkSections.filter((s) => !isTermsConditionsSection(s))
+    const linkSectionsTerms = linkSections.filter((s) => isTermsConditionsSection(s))
+    const sectionsNonTerms = sections.filter((s) => !isTermsConditionsSection(s))
+    const sectionsTerms = sections.filter((s) => isTermsConditionsSection(s))
+
+    const renderTermsConditionsBlock = (section: FooterSection) => {
+      const links = section.links || []
+      if (links.length === 0) return null
+      const mid = Math.ceil(links.length / 2)
+      const row1 = links.slice(0, mid)
+      const row2 = links.slice(mid)
+
+      const linkEl = (link: FooterLink) => {
+        const external = /^https?:\/\//i.test(link.href)
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            className={termsConditionsLinkClass}
+          >
+            {link.label}
+          </Link>
+        )
+      }
+
+      return (
+        <div className="mx-auto flex w-full max-w-md flex-col gap-1 text-pretty sm:mx-0 sm:max-w-none">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 sm:justify-start">
+            {row1.map(linkEl)}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 sm:justify-start">
+            {row2.map(linkEl)}
+          </div>
+        </div>
+      )
+    }
 
     const renderSectionLinks = (
       section: FooterSection,
@@ -145,11 +246,11 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       const links = section.links || []
       if (variant === 'social-icons-row') {
         return (
-          <ul className="flex flex-row flex-nowrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
+          <ul className="m-0 flex list-none flex-row flex-nowrap items-center justify-center gap-2 p-0 sm:justify-start sm:gap-3">
             {links.map((link) => {
               const external = /^https?:\/\//i.test(link.href)
               const href = resolveSocialHref(link.label, link.href)
-              const icon = socialIconElementForLabel(link.label)
+              const icon = socialIconForLink(link)
               if (!icon) {
                 return (
                   <li key={link.href}>
@@ -164,7 +265,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                 )
               }
               return (
-                <li key={link.href}>
+                <li key={link.href} className="list-none">
                   <Link
                     href={href}
                     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
@@ -273,20 +374,23 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             <div className={cn(aboutTitle ? 'lg:col-span-8' : 'lg:col-span-12')}>
               {/* Mobile: centered column, bordered blocks */}
               <div className="flex w-full flex-col items-center sm:hidden">
-                {socialFooterSection ? (
+                {followUsSection ? (
                   <div className="w-full max-w-sm px-2 pb-12 text-center">
                     <h3 className="mb-4 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
-                      {socialFooterSection.title}
+                      {followUsSection.title}
                     </h3>
-                    {renderSectionLinks(socialFooterSection, 'social-icons-row')}
+                    {renderSectionLinks(followUsSection, 'social-icons-row')}
                   </div>
                 ) : null}
-                {linkSections.map((section, idx) => (
+                {linkSectionsNonTerms.map((section, idx) => (
                   <div
                     key={`m-${section.title}-${idx}`}
                     className="w-full max-w-sm border-t border-[#ffba94]/20 px-2 py-10 text-center"
                   >
-                    <nav className="flex flex-col items-center" aria-labelledby={`footer-m-${idx}`}>
+                    <nav
+                      className="flex flex-col items-center"
+                      aria-labelledby={`footer-m-${idx}`}
+                    >
                       <h3
                         id={`footer-m-${idx}`}
                         className="mb-3 font-heading text-[11px] font-semibold uppercase tracking-wider text-[#ffba94]"
@@ -318,21 +422,36 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     Chat with us
                   </button>
                 </div>
+                {linkSectionsTerms.map((section, idx) => (
+                  <div
+                    key={`m-terms-${section.title}-${idx}`}
+                    className="w-full max-w-sm border-t border-[#ffba94]/10 px-2 py-3 text-center"
+                  >
+                    <nav
+                      className="flex flex-col items-center"
+                      aria-label={section.title}
+                    >
+                      {renderTermsConditionsBlock(section)}
+                    </nav>
+                  </div>
+                ))}
               </div>
 
               {/* Desktop: original grid */}
               <div className="hidden grid-cols-4 gap-8 sm:grid lg:gap-12">
-                {sections.map((section) => (
+                {sectionsNonTerms.map((section) => (
                   <div key={section.title} className="min-w-0">
                     <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
                       {section.title}
                     </h3>
-                    {shouldRenderSocialIconRow(section)
-                      ? renderSectionLinks(section, 'social-icons-row')
-                      : renderSectionLinks(section, 'desktop')}
+                    {shouldRenderSocialIconRow(section) ? (
+                      renderSectionLinks(section, 'social-icons-row')
+                    ) : (
+                      renderSectionLinks(section, 'desktop')
+                    )}
                   </div>
                 ))}
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
                     Need Help?
                   </h3>
@@ -350,6 +469,13 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     Chat with Us
                   </button>
                 </div>
+                {sectionsTerms.map((section) => (
+                  <div key={section.title} className="min-w-0">
+                    <nav className="min-w-0" aria-label={section.title}>
+                      {renderTermsConditionsBlock(section)}
+                    </nav>
+                  </div>
+                ))}
               </div>
             </div>
 
