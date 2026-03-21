@@ -14,7 +14,9 @@ import {
   experienceArtistRowDefaultClass,
   experienceArtistRowMergeClass,
   getStripArtworkCardSurfaces,
+  getStripCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
+import { EditionBadgeForProduct } from './EditionBadge'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -173,6 +175,8 @@ interface ArtworkCardProps {
   tapNudgeDelay?: number
   /** When true, show an Information button in the bottom bar (next to Add) for mobile */
   isMobile?: boolean
+  /** Both artworks in 2-up row in cart — no per-card ring (shared row tint). */
+  suppressSelectionRing?: boolean
 }
 
 function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
@@ -209,6 +213,7 @@ function ArtworkCard({
   showTapNudge = false,
   tapNudgeDelay = 0,
   isMobile = false,
+  suppressSelectionRing = false,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
@@ -259,6 +264,7 @@ function ArtworkCard({
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
   const surfaces = getStripArtworkCardSurfaces(isMerged, isInCart)
+  const selectionChrome = getStripCardSelectionChrome(isInCart, suppressSelectionRing)
 
   const showTapHint = showTapNudge && !isInCart && !isSoldOut && lampPosition === null
 
@@ -267,7 +273,8 @@ function ArtworkCard({
       data-product-id={product.id}
       data-highlight-card={isFirstCard ? '' : undefined}
       className={cn(
-        'relative box-border border-2 border-transparent origin-center',
+        'relative box-border origin-center',
+        selectionChrome,
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
@@ -419,6 +426,7 @@ function ArtworkCard({
               {crewCount} in your crew
             </p>
           )}
+          <EditionBadgeForProduct product={product} className="mt-1" chipOnly />
         </div>
         <div className="flex items-center gap-0.5 flex-shrink-0 justify-end w-full">
           <button
@@ -764,7 +772,7 @@ export function ArtworkStrip({
             data-index={virtualRow.index}
             className={cn(
               'absolute top-0 left-0 w-full',
-              shouldMerge ? 'py-2 md:py-2' : 'pb-2 md:pb-3',
+              shouldMerge ? 'py-1 md:py-1' : 'pb-2 md:pb-3',
               virtualRow.index === 0 && showHighlightAnimation && 'z-10'
             )}
             style={{
@@ -780,7 +788,7 @@ export function ArtworkStrip({
               >
                 {shouldMerge && <MergeConfetti active={justMerged} />}
                 {product1 && g1 >= 0 && (
-                  <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-1')}>
+                  <div className={cn('flex-1 min-w-0', shouldMerge && '-mr-px')}>
                     <ArtworkCard
                       key={product1.id}
                       product={product1}
@@ -810,6 +818,7 @@ export function ArtworkStrip({
                       showTapNudge={!nudgeDone && nudgeIndices.includes(g1)}
                       tapNudgeDelay={nudgeIndices.indexOf(g1) * 1.2}
                       isMobile={isMobile}
+                      suppressSelectionRing={shouldMerge}
                     />
                   </div>
                 )}
@@ -829,7 +838,7 @@ export function ArtworkStrip({
                   </span>
                 </div>
                 {product2 && g2 >= 0 && (
-                  <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-1')}>
+                  <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-px')}>
                     <ArtworkCard
                       key={product2.id}
                       product={product2}
@@ -859,6 +868,7 @@ export function ArtworkStrip({
                       showTapNudge={!nudgeDone && nudgeIndices.includes(g2)}
                       tapNudgeDelay={nudgeIndices.indexOf(g2) * 1.2}
                       isMobile={isMobile}
+                      suppressSelectionRing={shouldMerge}
                     />
                   </div>
                 )}

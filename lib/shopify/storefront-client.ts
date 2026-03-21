@@ -577,12 +577,18 @@ const PRODUCT_LIST_FRAGMENT = `
       edges {
         node {
           id
+          quantityAvailable
           price {
             amount
             currencyCode
           }
         }
       }
+    }
+    metafields(identifiers: [{namespace: "custom", key: "edition_size"}]) {
+      namespace
+      key
+      value
     }
   }
 `

@@ -27,12 +27,9 @@ export function getPickerArtworkCardSurfaces(isSelected: boolean): PickerArtwork
   const t = `transition-[background-color] ${BG_EASE}`
   const tm = `transition-[background-color,color] ${BG_EASE}`
   return {
-    // Dark + selected: no full shell tint — image well uses base + bottom-half overlay in the component.
-    shell: cn(t, isSelected && 'bg-[#f0f9ff] dark:bg-transparent'),
-    imageWell: cn(
-      t,
-      isSelected ? 'bg-[#f0f9ff] dark:bg-[#171515]' : 'bg-white dark:bg-[#171515]'
-    ),
+    // Selected: same tint on shell + well + meta so no horizontal “seam” next to the full-card ring.
+    shell: cn(t, isSelected && 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
+    imageWell: cn(t, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
     meta: cn(tm, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
   }
 }
@@ -48,6 +45,19 @@ export type StripArtworkCardSurfaces = {
  * Configurator strip card: shell, image well, meta bar (no outer border).
  * `isMerged` = in cart + spine pair + both sides selected styling (#f0f9ff / #2c2828).
  */
+
+/** Subtle inset ring on one card. `suppressIndividualRing` = both sides of a 2-up row selected (merged tint only). */
+export function getPickerCardSelectionChrome(isSelected: boolean, suppressIndividualRing: boolean): string {
+  if (!isSelected || suppressIndividualRing) return ''
+  return 'ring-1 ring-inset ring-[#FFBA94]/40 dark:ring-[#FFBA94]/30'
+}
+
+/** Strip: same as picker — thin ring unless merged pair (both in cart) uses row tint only. */
+export function getStripCardSelectionChrome(isInCart: boolean, suppressIndividualRing: boolean): string {
+  if (!isInCart || suppressIndividualRing) return ''
+  return 'ring-1 ring-inset ring-[#FFBA94]/40 dark:ring-[#FFBA94]/30'
+}
+
 export function getStripArtworkCardSurfaces(isMerged: boolean, isInCart: boolean): StripArtworkCardSurfaces {
   const tImg = `transition-[background-color] ${BG_EASE}`
   const tShell = `transition-[background-color] ${BG_EASE}`

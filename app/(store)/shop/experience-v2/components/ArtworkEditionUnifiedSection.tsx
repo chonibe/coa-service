@@ -23,9 +23,6 @@ export function ArtworkEditionUnifiedSection({
       )}
       aria-label="Edition information"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.1em] text-neutral-400 dark:text-[#7d6e6e] text-center mb-3">
-        This edition
-      </p>
       <div className="flex flex-col items-center gap-5 max-w-md mx-auto w-full">{children}</div>
     </section>
   )
