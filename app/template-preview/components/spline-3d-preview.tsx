@@ -2660,12 +2660,12 @@ export function Spline3DPreview({
         if (isSidewaysView) {
           // In 90°/270° view, vertical drag should drive X-axis rotation.
           // Keep Y mostly anchored so it does not feel like yaw-spin while dragging.
-          rot.x = -c.y * maxYaw
-          rot.y = baseYawRef.current + c.x * maxPitch
+          rot.x = c.y * maxYaw
+          rot.y = baseYawRef.current - c.x * maxPitch
         } else {
-          // Portrait/upside-down views keep standard yaw-primary drag.
-          rot.y = baseYawRef.current + mappedX * maxYaw
-          rot.x = -mappedY * maxPitch
+          // Portrait/upside-down views keep standard yaw-primary drag (inverted vs mesh so drag pulls toward the other side).
+          rot.y = baseYawRef.current - mappedX * maxYaw
+          rot.x = mappedY * maxPitch
         }
       } else {
         if (Date.now() < frontLockUntilRef.current) {
