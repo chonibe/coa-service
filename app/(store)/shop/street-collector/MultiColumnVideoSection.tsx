@@ -14,7 +14,7 @@ export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
     <article
       className={cn(
         'w-full overflow-hidden',
-        'bg-[#1a0a0a] rounded-2xl shadow-lg',
+        'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
         'p-4 sm:p-6 md:p-8'
       )}
     >
@@ -79,7 +79,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
     <section
       className={cn(
         'w-full py-6 sm:py-10 md:py-16',
-        'bg-[#2a0000] text-[#FFBA94]',
+        'bg-experience-dark text-[#FFBA94]',
         className
       )}
     >
@@ -93,7 +93,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
         <article
           className={cn(
             'w-full overflow-hidden',
-            'bg-[#1a0a0a] rounded-2xl shadow-lg',
+            'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
             'p-4 sm:p-6 md:p-8'
           )}
         >
@@ -137,23 +137,22 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
               key={i}
               className={cn(
                 'flex flex-col gap-2 sm:gap-3 text-center items-center w-full',
-                'bg-[#390000]/10 rounded-xl p-4 sm:p-5',
-                'border border-[#390000]/20'
+                'rounded-xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-4 sm:p-5'
               )}
             >
               <span
                 className={cn(
                   'inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full',
                   'font-body text-sm sm:text-base font-medium tabular-nums',
-                  'bg-[#390000] text-white'
+                  'bg-[#FFBA94] text-[#390000]'
                 )}
               >
                 {i + 1}
               </span>
-              <h3 className="font-body text-sm sm:text-base md:text-lg font-normal tracking-tight text-[#390000]">
+              <h3 className="font-body text-sm sm:text-base md:text-lg font-normal tracking-tight text-[#FFBA94]">
                 {prop.title}
               </h3>
-              <p className="font-body text-xs sm:text-sm leading-relaxed text-neutral-600 max-w-none">
+              <p className="font-body text-xs sm:text-sm leading-relaxed text-[#FFBA94]/80 max-w-none">
                 {prop.description}
               </p>
             </div>

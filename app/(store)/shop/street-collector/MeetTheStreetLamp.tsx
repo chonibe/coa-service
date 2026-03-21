@@ -99,7 +99,7 @@ export function MeetTheStreetLamp({
               onClick={() => handleSelectIndex(index)}
               className={cn(
                 'relative w-full text-left py-3 md:py-4 pl-5 transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#390000]',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-experience-dark',
                 isActive ? 'text-[#FFBA94]' : 'text-[#FFBA94]/60 hover:text-[#FFBA94]/80'
               )}
             >
@@ -177,7 +177,7 @@ export function MeetTheStreetLamp({
   )
 
   return (
-    <section className={cn('w-full py-8 sm:py-10 md:py-16 bg-[#171515]', className)}>
+    <section className={cn('w-full bg-experience-dark py-8 sm:py-10 md:py-16', className)}>
       <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
         {/* Mobile: title, video, then centered rotating stage text slideshow */}
         {!isDesktop && (

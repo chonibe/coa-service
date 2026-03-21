@@ -33,7 +33,8 @@ export function ChatIconScrollReveal({ thresholdPx, className }: ChatIconScrollR
       onClick={openTawkChat}
       aria-label="Open chat"
       className={cn(
-        'fixed top-4 right-4 sm:top-5 sm:right-6 z-50',
+        'fixed right-4 z-50 sm:right-6',
+        'top-[max(1rem,env(safe-area-inset-top,0px))] sm:top-[max(1.25rem,env(safe-area-inset-top,0px))]',
         'inline-flex items-center justify-center p-2.5 rounded-full',
         'bg-white/95 backdrop-blur-sm border border-[#1a1a1a]/10 shadow-md',
         'text-[#1a1a1a]/80 hover:text-[#047AFF] hover:bg-white transition-all duration-300',

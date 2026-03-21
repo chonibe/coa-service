@@ -15,6 +15,7 @@ import {
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
 
@@ -24,19 +25,19 @@ const DesktopTopBar = dynamic(
 
 const MeetTheStreetLamp = dynamic(
   () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
-  { loading: () => <section className="min-h-[280px] bg-[#1a0a0a]" aria-hidden /> }
+  { loading: () => <section className="min-h-[280px] bg-experience-dark" aria-hidden /> }
 )
 const TestimonialCarousel = dynamic(
   () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
-  { loading: () => <section className="min-h-[200px] bg-[#1a0a0a]" aria-hidden /> }
+  { loading: () => <section className="min-h-[200px] bg-experience-dark" aria-hidden /> }
 )
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
-  { loading: () => <section className="min-h-[120px] bg-[#1a0a0a]" aria-hidden /> }
+  { loading: () => <section className="min-h-[120px] bg-experience-dark" aria-hidden /> }
 )
 const ArtistCarousel = dynamic(
   () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
-  { loading: () => <section className="min-h-[400px] bg-[#1a0a0a]" aria-hidden /> }
+  { loading: () => <section className="min-h-[400px] bg-experience-dark" aria-hidden /> }
 )
 
 // 64×64 request for 32px display (2x) to minimize file size
@@ -218,7 +219,7 @@ export default async function StreetCollectorPage() {
   }
 
   return (
-    <div className="dark w-full bg-[#390000] text-[#FFBA94] pb-16 md:pb-0">
+    <div className="dark w-full bg-experience-dark text-[#FFBA94] pb-16 md:pb-0">
       {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
       <DesktopTopBar
         text={streetCollectorContent.hero.cta.text}
@@ -261,7 +262,10 @@ export default async function StreetCollectorPage() {
         <Link
           href="/"
           aria-label="Street Collector Home"
-          className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[40] inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105 hover:opacity-100 safe-area-inset-top opacity-100 pointer-events-auto"
+          className={cn(
+            'absolute left-1/2 z-[40] inline-flex -translate-x-1/2 items-center justify-center p-2 -m-2 opacity-100 pointer-events-auto transition-transform hover:scale-105 hover:opacity-100',
+            'top-[max(1rem,env(safe-area-inset-top,0px))] sm:top-[max(1.5rem,env(safe-area-inset-top,0px))]'
+          )}
           style={{ boxSizing: 'content-box' }}
         >
           <Image
@@ -328,7 +332,7 @@ export default async function StreetCollectorPage() {
           titleClassName="font-serif font-medium text-[#FFBA94]"
           sectionBackground="header"
           arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
-          className="bg-[#1a0a0a]"
+          className="bg-experience-dark"
           subtitle={streetCollectorContent.featuredArtists.subtitle}
           artists={featuredArtists}
           autoScroll={true}
@@ -358,7 +362,7 @@ export default async function StreetCollectorPage() {
               />
               {/* Banner on mobile only — directly under 3rd video */}
               <div className="md:hidden">
-                <div className="w-full rounded-2xl bg-[#FFBA94]/10 border border-[#FFBA94]/20 p-6 sm:p-8">
+                <div className="w-full rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 sm:p-8">
                   <div className="grid grid-cols-1 gap-6">
                     {streetCollectorContent.valueProps.map((p, i) => (
                       <div key={i} className="flex flex-col gap-2 text-center">
@@ -385,7 +389,7 @@ export default async function StreetCollectorPage() {
       )}
 
       {/* Value prop banner — desktop only. Image right above the banner card. */}
-      <section className="hidden md:block bg-[#1a0a0a] pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
+      <section className="hidden md:block bg-experience-dark pt-2 sm:pt-4 md:pt-5 pb-8 sm:pb-10 md:pb-12 overflow-hidden">
         <Container maxWidth="default" paddingX="gutter">
           <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
             {/* Image right above the banner — proxied to avoid third-party cookies */}
@@ -400,7 +404,7 @@ export default async function StreetCollectorPage() {
               aria-hidden
             />
             {/* Banner card — directly below the image */}
-            <div className="w-full rounded-b-2xl rounded-t-none bg-[#1a0a0a] p-6 sm:p-8 md:p-10">
+            <div className="w-full rounded-b-2xl rounded-t-none border border-[#ffba94]/10 bg-[#201c1c]/50 p-6 sm:p-8 md:p-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 {streetCollectorContent.valueProps.map((p, i) => (
                   <div key={i} className="flex flex-col gap-2 text-center md:text-left">
@@ -433,7 +437,7 @@ export default async function StreetCollectorPage() {
       />
 
       {/* Trust Bar — Free shipping, Guarantee, Returns (We've got you covered) */}
-      <SectionWrapper spacing="xs" background="header" className="bg-[#2a0000] pb-0">
+      <SectionWrapper spacing="xs" background="header" className="bg-experience-dark pb-0">
         <Container maxWidth="default" paddingX="gutter">
           <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8 md:mb-10">
             We&apos;ve got you covered
@@ -442,7 +446,7 @@ export default async function StreetCollectorPage() {
             {streetCollectorContent.trustBar.map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl bg-[#FFBA94]/10 p-6 sm:p-8 text-center flex flex-col items-center"
+                className="rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 sm:p-8 text-center flex flex-col items-center"
               >
                 <div className="w-24 h-24 mb-5 flex items-center justify-center">
                   {item.icon === 'shipping' && (

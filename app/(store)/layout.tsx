@@ -142,8 +142,10 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <main
         id="main-content"
         className={cn(
-          /* flex-none immediately for landing + street-collector so main never flex-grows empty space above the footer on mobile */
-          isLandingOrStreetCollector ? 'flex-none bg-[#251212]' : 'flex-1'
+          /* flex-none + burgundy shell so hero/top matches page (no #251212 band). Kill global main pb-5rem on mobile (globals.css). */
+          isLandingOrStreetCollector
+            ? 'flex-none bg-[#390000] max-md:!pb-0'
+            : 'flex-1'
         )}
       >
         {children}
