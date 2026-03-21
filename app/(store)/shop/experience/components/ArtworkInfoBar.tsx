@@ -193,17 +193,24 @@ export function ArtworkInfoBar({
   const title = displayedProduct.title ?? ''
   const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
 
+  /** Mobile: title only on hero (Spline slide); desktop title lives in page header via hideTitle */
+  const showMobileHeroTitle = !hideTitle && currentSlide === 0
+
   return (
-    <div className="flex flex-col items-start gap-2">
-        {/* Row: artwork title and artist — hidden when in header (desktop) */}
-        {!hideTitle && (
-        <div className="flex items-center gap-3 min-w-0 max-w-full">
-          {/* Artwork name and artist */}
+    <div
+      className={cn(
+        'flex flex-col gap-2',
+        hideTitle ? 'items-start' : 'w-full max-w-full items-center text-center'
+      )}
+    >
+        {/* Row: artwork title and artist — desktop: hidden (header); mobile: hero slide only, centered above Spline */}
+        {showMobileHeroTitle && (
+        <div className="flex w-full min-w-0 max-w-[min(92vw,20rem)] flex-col items-center justify-center px-1">
           <button
             type="button"
             onClick={() => onViewDetail?.(displayedProduct)}
             className={cn(
-              'text-left min-w-0 flex-1 truncate',
+              'min-w-0 w-full text-center',
               !onViewDetail && 'cursor-default'
             )}
           >
@@ -214,11 +221,11 @@ export function ArtworkInfoBar({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.15 }}
-                className="space-y-0.5 min-w-0 truncate"
+                className="space-y-0.5 min-w-0 text-center"
               >
                 <p
                   className={cn(
-                    'text-sm font-semibold truncate',
+                    'text-sm font-semibold text-balance line-clamp-2',
                     theme === 'light' ? 'text-neutral-900' : 'text-white'
                   )}
                 >
@@ -227,7 +234,7 @@ export function ArtworkInfoBar({
                 {artist && (
                   <p
                     className={cn(
-                      'text-xs truncate',
+                      'text-xs text-balance line-clamp-2',
                       theme === 'light' ? 'text-neutral-500' : 'text-white/70'
                     )}
                   >

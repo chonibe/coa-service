@@ -624,10 +624,15 @@ export function SplineFullScreen({
       {/* Top bar + thumbnails: hug Spline preview on desktop with max-width container.
           pointer-events-none on shells so empty flex space does not block wheel/touch on the 3D preview below. */}
       <div className="pointer-events-none absolute top-3 left-0 right-0 z-10 pt-safe md:left-1/2 md:right-auto md:w-full md:max-w-[min(92vw,768px)] md:-translate-x-1/2 md:px-4">
-        <div className="pointer-events-none flex items-start justify-between gap-4 px-4 md:px-0">
-          {/* Title/artist on left — hidden on desktop (moved to header center) */}
+        <div className="pointer-events-none flex flex-col items-center gap-2 md:flex-row md:items-start md:justify-between md:gap-4 px-4 md:px-0">
+          {/* Title/artist — mobile: centered above Spline (hero only, see ArtworkInfoBar); desktop: hidden here (header) */}
           {topBarContent && (
-            <div className={cn('pointer-events-auto flex-1 min-w-0 flex justify-start', isDesktop && 'hidden')}>
+            <div
+              className={cn(
+                'pointer-events-auto flex w-full min-w-0 justify-center',
+                isDesktop && 'hidden'
+              )}
+            >
               {typeof topBarContent === 'function'
                 ? topBarContent({ onRotate: () => setPreviewQuarterTurns((prev) => (prev + 3) % 4), isDesktop })
                 : topBarContent}
