@@ -2,7 +2,7 @@
 
 ## Commit: feat(watchlist): edition watchlist badge, API, emails, collector page (2026-03-21)
 
-**Ref:** _(run `git log -1 --format=%h` after merge)_
+**Ref:** `6f30d470c`
 
 ### Summary
 **Branch:** `feature/wishlist-edition`. **Watch button** on [`EditionBadgeForProduct`](app/(store)/shop/experience-v2/components/EditionBadge.tsx) via [`EditionWatchControl.tsx`](app/(store)/shop/experience-v2/components/EditionWatchControl.tsx): labels per stage (incl. sold out), auth via [`AuthSlideupMenu`](components/shop/auth/AuthSlideupMenu.tsx) + `onAuthenticated` + `sessionStorage` for OAuth return. **API** [`/api/shop/watchlist`](app/api/shop/watchlist/route.ts) GET/POST/DELETE with service role + session. **Supabase** tables in [`20260321120000_edition_watchlist.sql`](supabase/migrations/20260321120000_edition_watchlist.sql). **Stage emails:** [`edition-watchlist-notifications.ts`](lib/shop/edition-watchlist-notifications.ts) on Shopify product webhook (cold start = no blast); Resend/Gmail via [`sendEmail`](lib/email/client.ts). **Conversion:** [`edition-watchlist-conversion.ts`](lib/shop/edition-watchlist-conversion.ts) on paid order webhook + PostHog. **Collector UI:** [`/collector/watchlist`](app/collector/watchlist/page.tsx). **PostHog:** client `captureFunnelEvent` + server `capturePostHogServerEvent`; names in [`FunnelEvents`](lib/posthog.ts).
