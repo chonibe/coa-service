@@ -1,6 +1,6 @@
 'use client'
 
-import { Hammer } from 'lucide-react'
+import { Gavel } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
@@ -93,7 +93,7 @@ export function EditionBadge({
       >
         {unifiedSection ? (
           <>
-            <Hammer className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
+            <Gavel className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.25} aria-hidden />
             <span className="min-w-0 truncate">{copy.badge}</span>
           </>
         ) : (
