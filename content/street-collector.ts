@@ -355,8 +355,7 @@ export const streetCollectorContent = {
           },
           {
             question: 'Do you ship internationally?',
-            answer:
-              'Yes. We ship to many international destinations where carriers and regulations allow. Import duties, taxes, and customs fees may apply depending on your country and are handled locally on delivery.',
+            answer: 'Yes, to most countries in the world!',
           },
         ],
       },
