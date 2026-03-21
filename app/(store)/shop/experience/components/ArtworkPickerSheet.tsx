@@ -212,6 +212,16 @@ function ArtworkCardV2({
             </motion.div>
           )}
         </AnimatePresence>
+
+        <EditionBadgeForProduct
+          product={product}
+          chipOnly
+          className={cn(
+            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5 pt-8',
+            'bg-gradient-to-t from-black/55 via-black/20 to-transparent',
+            '[&>span]:pointer-events-auto'
+          )}
+        />
       </motion.div>
 
       <div
@@ -245,7 +255,6 @@ function ArtworkCardV2({
               </span>
             )}
           </div>
-          <EditionBadgeForProduct product={product} className="mt-1" chipOnly />
         </div>
       </div>
     </motion.div>
