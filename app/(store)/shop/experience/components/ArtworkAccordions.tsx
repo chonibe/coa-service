@@ -229,30 +229,10 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
                 className="object-cover"
                 sizes="(max-width: 768px) 92vw, 520px"
               />
-              {editionSize != null && editionSize > 0 && (
-                <div className="absolute inset-x-0 bottom-0 z-10 px-3 pt-10 pb-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent">
-                  <ScarcityBadge
-                    quantityAvailable={
-                      typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                        ? product.variants.edges[0].node.quantityAvailable
-                        : undefined
-                    }
-                    editionSize={editionSize}
-                    availableForSale={product.availableForSale ?? true}
-                    variant="bar"
-                    productId={product.id}
-                    productImage={firstImage.url}
-                    productTitle={product.title ?? undefined}
-                    unifiedSection
-                    imageOverlay
-                    className="w-full"
-                  />
-                </div>
-              )}
             </div>
           )}
           <div className="p-4 sm:p-5 text-center">
-            <div className="mb-0">
+            <div className="mb-4">
               {detailArtistName && (
                 <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
                   {detailArtistName}
@@ -264,6 +244,25 @@ export function ArtworkAccordions({ product, productIncludes, productSpecs, arti
                 </h2>
               )}
             </div>
+            {editionSize != null && editionSize > 0 && (
+              <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
+                <ScarcityBadge
+                  quantityAvailable={
+                    typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+                      ? product.variants.edges[0].node.quantityAvailable
+                      : undefined
+                  }
+                  editionSize={editionSize}
+                  availableForSale={product.availableForSale ?? true}
+                  variant="bar"
+                  productId={product.id}
+                  productImage={firstImage?.url ?? null}
+                  productTitle={product.title ?? undefined}
+                  unifiedSection
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

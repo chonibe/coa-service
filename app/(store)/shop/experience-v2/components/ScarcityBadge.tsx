@@ -47,8 +47,6 @@ interface ScarcityBadgeProps {
   panelTitle?: string
   /** Bar + caption only — use inside {@link ArtworkEditionUnifiedSection} (no nested panel) */
   unifiedSection?: boolean
-  /** Light-on-dark styling for bar + caption over artwork imagery */
-  imageOverlay?: boolean
 }
 
 export function ScarcityBadge({
@@ -62,7 +60,6 @@ export function ScarcityBadge({
   className,
   panelTitle,
   unifiedSection = false,
-  imageOverlay = false,
 }: ScarcityBadgeProps) {
   const [fetchedQuantity, setFetchedQuantity] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -85,22 +82,16 @@ export function ScarcityBadge({
   if (!availableForSale) {
     if (variant === 'compact') return null
     if (variant === 'bar') {
-      const trackClass = imageOverlay
-        ? 'h-full bg-white/30 rounded-full overflow-hidden'
-        : 'h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden'
-      const track = <div className={trackClass} />
+      const track = (
+        <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden" />
+      )
       if (unifiedSection) {
         return (
           <div className={cn('w-full', className)}>
             <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
               {track}
             </div>
-            <p
-              className={cn(
-                'text-center text-sm font-medium mt-2.5',
-                imageOverlay ? 'text-red-300' : 'text-red-600 dark:text-red-400'
-              )}
-            >
+            <p className="text-center text-sm font-medium text-red-600 dark:text-red-400 mt-2.5">
               Sold out
             </p>
           </div>
@@ -146,36 +137,20 @@ export function ScarcityBadge({
 
     const showCaption = (panelTitle || unifiedSection) && editionSize && editionSize > 0 && typeof available === 'number'
     const editionCaption = showCaption ? (
-      <p
-        className={cn(
-          'text-center text-sm font-medium mt-3 tabular-nums leading-snug',
-          imageOverlay
-            ? 'text-white/85'
-            : 'text-neutral-600 dark:text-[#b8a8a8]'
-        )}
-      >
-        <span className={imageOverlay ? 'text-amber-200' : 'text-neutral-900 dark:text-[#f0e8e8]'}>{available}</span>
+      <p className="text-center text-sm font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums leading-snug">
+        <span className="text-neutral-900 dark:text-[#f0e8e8]">{available}</span>
         {' of '}
-        <span className={imageOverlay ? 'text-amber-100/90' : 'text-neutral-800 dark:text-[#e8dcd8]'}>{editionSize}</span>
+        <span className="text-neutral-800 dark:text-[#e8dcd8]">{editionSize}</span>
         {' remaining in this edition'}
       </p>
     ) : null
-
-    const barTrackClass = imageOverlay
-      ? 'absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-white/35 rounded-full overflow-visible'
-      : 'absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-visible'
 
     if (loading && available == null) {
       if (unifiedSection) {
         return (
           <div className={cn('w-full', className)}>
             <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  'h-full rounded-full animate-pulse',
-                  imageOverlay ? 'bg-white/30' : 'bg-neutral-200 dark:bg-[#3a3434]'
-                )}
-              />
+              <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full animate-pulse" />
             </div>
           </div>
         )
@@ -198,7 +173,7 @@ export function ScarcityBadge({
 
     const barMotion = (
       <div className="relative w-3/4 h-full">
-        <div className={barTrackClass}>
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-visible">
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-500 to-amber-400"
             initial={{ width: '100%' }}
@@ -208,10 +183,7 @@ export function ScarcityBadge({
         </div>
         {productImage && barWidth > 3 && (
           <motion.div
-            className={cn(
-              'absolute top-1/2 w-10 h-8 overflow-hidden z-10 rounded-none',
-              imageOverlay && 'ring-1 ring-white/45 shadow-sm'
-            )}
+            className="absolute top-1/2 w-10 h-8 overflow-hidden z-10 rounded-none"
             initial={{ left: '100%', x: '-50%', y: '-50%', opacity: 0.9 }}
             animate={{
               left: `${Math.max(4, barWidth)}%`,
