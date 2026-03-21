@@ -24,7 +24,7 @@ export const streetCollectorContent = {
   },
   /** Logo (Street Collector branding) */
   logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
-  /** Meet the Street Lamp — one video, stages rotate via progress bar on texts */
+  /** Meet the Street Lamp: one video, stages rotate via progress bar on texts */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
     /** Desktop video URL */
@@ -42,7 +42,7 @@ export const streetCollectorContent = {
       {
         title: 'Slide it in',
         description:
-          'Change your display in seconds with the press-and-click mechanism—no tools, no hassle.',
+          'Change your display in seconds with the press-and-click mechanism: no tools, no hassle.',
       },
       {
         title: 'Set the light',
@@ -57,7 +57,7 @@ export const streetCollectorContent = {
       {
         title: 'Rotate anytime',
         description:
-          'Showcase two artworks back-to-back and rotate whenever you want a change—inviting viewers to explore different perspectives in one captivating piece.',
+          'Showcase two artworks back-to-back and rotate whenever you want a change, inviting viewers to explore different perspectives in one captivating piece.',
       },
     ],
     cue: 'Explore available artworks.',
@@ -336,7 +336,7 @@ export const streetCollectorContent = {
           {
             question: 'How big are the Street Lamps?',
             answer:
-              'Each Street Lamp measures about 21 × 14 × 7 cm (8.1 × 5.7 × 2.7 in) and weighs roughly 1.1 kg (2.4 lb)—compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
+              'Each Street Lamp measures about 21 × 14 × 7 cm (8.1 × 5.7 × 2.7 in) and weighs roughly 1.1 kg (2.4 lb). Compact enough for a desk or shelf, substantial enough to feel like a real design piece.',
           },
           {
             question: 'How long does shipping take?',
@@ -346,12 +346,12 @@ export const streetCollectorContent = {
           {
             question: 'How long does the charge last?',
             answer:
-              'On a full charge you’re looking at roughly 8 hours of run time from the 2500 mAh battery. Plug it in with USB-C or the magnetic cable and it’ll usually be good to go again in about 3–4 hours. Prefer to leave it on? No problem—you can run it plugged in all the time too.',
+              'On a full charge you’re looking at roughly 8 hours of run time from the 2500 mAh battery. Plug it in with USB-C or the magnetic cable and it’ll usually be good to go again in about 3–4 hours. Prefer to leave it on? No problem. You can run it plugged in all the time too.',
           },
           {
             question: 'How do I swap around my artworks?',
             answer:
-              'The lamp uses a simple press-and-click mechanism so you can change artworks quickly whenever you want—buy the lamp once and refresh your display anytime.',
+              'The lamp uses a simple press-and-click mechanism so you can change artworks quickly whenever you want. Buy the lamp once and refresh your display anytime.',
           },
           {
             question: 'Do you ship internationally?',
