@@ -92,18 +92,16 @@ export function ArtistSpotlightBanner({
               <div
                 className={cn(
                   'relative mx-auto w-full max-w-full shrink-0 overflow-hidden rounded-xl bg-neutral-200 dark:bg-[#262222]',
-                  'aspect-square',
-                  'sm:h-44 sm:w-44 sm:max-w-none',
-                  'md:h-52 md:w-52'
+                  'aspect-square'
                 )}
               >
                 {spotlight.image ? (
                   <Image
-                    src={getShopifyImageUrl(spotlight.image, 640) ?? spotlight.image}
+                    src={getShopifyImageUrl(spotlight.image, 1024) ?? spotlight.image}
                     alt={spotlight.vendorName}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 639px) 92vw, (max-width: 1023px) 176px, 208px"
+                    sizes="(max-width: 768px) min(92vw, 360px), min(65vh, 520px)"
                     unoptimized
                   />
                 ) : (
