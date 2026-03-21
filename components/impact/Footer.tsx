@@ -13,9 +13,10 @@ import { socialLinks as themeSocialLinks } from '@/lib/design-system/tokens'
 /**
  * Impact Theme Footer
  *
- * Mobile: single centered column — FOLLOW US as full-width icon chips (stacked),
- * other sections as flat blocks with top borders (no accordion).
- * Desktop: multi-column grid unchanged.
+ * Mobile: single centered column — FOLLOW US (or footer blocks where every link is a known
+ * social network) as one horizontal row of icon-only links, not stacked text.
+ * Other sections are flat blocks with top borders (no accordion).
+ * Desktop: multi-column grid; social rows use flex-nowrap so icons stay on one line.
  */
 
 export interface FooterLink {
@@ -52,19 +53,31 @@ const footerLinkClassMobileStack = cn(
   'hover:text-[#ffba94] active:bg-[#ffba94]/5'
 )
 
-const socialChipClass = cn(
-  'inline-flex w-full max-w-sm items-center justify-center gap-2.5 rounded-full border border-[#ffba94]/25',
-  'bg-[#ffba94]/10 px-4 py-3 text-sm font-medium text-[#ffba94]',
-  'transition-colors hover:border-[#ffba94]/40 hover:bg-[#ffba94]/15'
+const socialIconButtonClass = cn(
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#ffba94]/25',
+  'bg-[#ffba94]/10 text-[#ffba94] transition-colors',
+  'hover:border-[#ffba94]/40 hover:bg-[#ffba94]/15'
 )
 
-function SocialIconForLabel(label: string) {
+function socialIconElementForLabel(label: string): React.ReactElement | null {
   const key = label.toLowerCase()
   if (key.includes('instagram')) return <FaInstagram className="h-5 w-5 shrink-0" aria-hidden />
   if (key.includes('facebook')) return <FaFacebook className="h-5 w-5 shrink-0" aria-hidden />
   if (key.includes('tiktok')) return <FaTiktok className="h-5 w-5 shrink-0" aria-hidden />
   if (key.includes('pinterest')) return <FaPinterest className="h-5 w-5 shrink-0" aria-hidden />
   return null
+}
+
+/** True when every link maps to a known social icon (Shopify menus sometimes omit "FOLLOW US" in the title). */
+function isSocialIconsOnlySection(section: FooterSection): boolean {
+  const links = section.links || []
+  if (links.length === 0) return false
+  return links.every((link) => socialIconElementForLabel(link.label) != null)
+}
+
+function shouldRenderSocialIconRow(section: FooterSection): boolean {
+  if (section.title.trim().toUpperCase() === 'FOLLOW US') return true
+  return isSocialIconsOnlySection(section)
 }
 
 /** Prefer theme token URLs for Instagram/Facebook when labels match. */
@@ -127,25 +140,38 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
 
     const renderSectionLinks = (
       section: FooterSection,
-      variant: 'desktop' | 'mobile-stack' | 'mobile-social'
+      variant: 'desktop' | 'mobile-stack' | 'social-icons-row'
     ) => {
       const links = section.links || []
-      if (variant === 'mobile-social') {
+      if (variant === 'social-icons-row') {
         return (
-          <ul className="flex w-full flex-col items-center gap-3">
+          <ul className="flex flex-row flex-nowrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
             {links.map((link) => {
               const external = /^https?:\/\//i.test(link.href)
               const href = resolveSocialHref(link.label, link.href)
-              const icon = SocialIconForLabel(link.label)
+              const icon = socialIconElementForLabel(link.label)
+              if (!icon) {
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={href}
+                      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      className={footerLinkClassDesktop}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                )
+              }
               return (
-                <li key={link.href} className="w-full max-w-sm">
+                <li key={link.href}>
                   <Link
                     href={href}
                     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className={socialChipClass}
+                    className={socialIconButtonClass}
+                    aria-label={link.label}
                   >
                     {icon}
-                    <span>{link.label}</span>
                   </Link>
                 </li>
               )
@@ -247,12 +273,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             <div className={cn(aboutTitle ? 'lg:col-span-8' : 'lg:col-span-12')}>
               {/* Mobile: centered column, bordered blocks */}
               <div className="flex w-full flex-col items-center sm:hidden">
-                {followUsSection ? (
+                {socialFooterSection ? (
                   <div className="w-full max-w-sm px-2 pb-12 text-center">
                     <h3 className="mb-4 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
-                      {followUsSection.title}
+                      {socialFooterSection.title}
                     </h3>
-                    {renderSectionLinks(followUsSection, 'mobile-social')}
+                    {renderSectionLinks(socialFooterSection, 'social-icons-row')}
                   </div>
                 ) : null}
                 {linkSections.map((section, idx) => (
@@ -267,7 +293,10 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                       >
                         {section.title}
                       </h3>
-                      {renderSectionLinks(section, 'mobile-stack')}
+                      {renderSectionLinks(
+                        section,
+                        shouldRenderSocialIconRow(section) ? 'social-icons-row' : 'mobile-stack'
+                      )}
                     </nav>
                   </div>
                 ))}
@@ -294,11 +323,13 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
               {/* Desktop: original grid */}
               <div className="hidden grid-cols-4 gap-8 sm:grid lg:gap-12">
                 {sections.map((section) => (
-                  <div key={section.title}>
+                  <div key={section.title} className="min-w-0">
                     <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
                       {section.title}
                     </h3>
-                    {renderSectionLinks(section, 'desktop')}
+                    {shouldRenderSocialIconRow(section)
+                      ? renderSectionLinks(section, 'social-icons-row')
+                      : renderSectionLinks(section, 'desktop')}
                   </div>
                 ))}
                 <div>
