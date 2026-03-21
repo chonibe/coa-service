@@ -35,29 +35,27 @@ export const streetCollectorContent = {
     poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
     stages: [
       {
-        title: 'Choose your art',
-        description:
-          'Browse curated pieces from hundreds of artists worldwide and pick the perfect artwork for your collection.',
-      },
-      {
-        title: 'Slide it in',
-        description:
-          'Change your display in seconds with the press-and-click mechanism: no tools, no hassle.',
-      },
-      {
         title: 'Set the light',
         description:
-          'Adjust between multiple levels of brightness with a single tap, transforming your artwork, intensifying colors and bringing out intricate details.',
-      },
-      {
-        title: 'Mount it',
-        description:
-          'Transform your art into a statement piece with our magnetic display feature, make it a sign.',
+          'One tap. Multiple brightness levels. Colors deepen, details surface.',
       },
       {
         title: 'Rotate anytime',
         description:
-          'Showcase two artworks back-to-back and rotate whenever you want a change, inviting viewers to explore different perspectives in one captivating piece.',
+          'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
+      },
+      {
+        title: 'Slide it in',
+        description:
+          'Press, click, done. No tools, no hassle — new art in seconds.',
+      },
+      {
+        title: 'Mount it',
+        description: 'Magnetic. Wall-ready. Makes a statement.',
+      },
+      {
+        title: 'Choose your art',
+        description: 'Hundreds of artists. One piece that\'s yours.',
       },
     ],
     cue: 'Explore available artworks.',

@@ -68,4 +68,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Created:** 2026-02-27
 - **Implementation:** Street Collector–inspired landing flow into `/shop/experience` with bridge + FAQ conversion layers
-- **Updated:** 2026-03-21 — Removed duplicate “Buy the lamp once…” tagline under value-prop cards; trust bar uses local SVG icons (`public/street-collector/trust/`); README structure note for CTAs
+- **Updated:** 2026-03-21 — Meet the Street Lamp `stages` copy and order refreshed; earlier same day: removed duplicate value-prop tagline, trust bar SVGs (`public/street-collector/trust/`), README CTAs note

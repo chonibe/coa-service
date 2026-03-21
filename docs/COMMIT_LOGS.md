@@ -1,3 +1,16 @@
+## Commit: Street Collector — Meet the Street Lamp stage copy (2026-03-21)
+
+### Summary
+Updated the first section after the hero (`MeetTheStreetLamp`) stage titles and descriptions in `streetCollectorContent.meetTheLamp.stages`, and reordered stages to: Set the light → Rotate anytime → Slide it in → Mount it → Choose your art.
+
+### ✅ Implementation Checklist
+
+- [x] [`content/street-collector.ts`](../content/street-collector.ts) — Replace `meetTheLamp.stages` copy and order per product copy
+- [x] [`app/(store)/shop/street-collector/README.md`](../app/(store)/shop/street-collector/README.md) — Version note
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+---
+
 ## Commit: Street Collector — hide value-prop tagline + trust bar assets (2026-03-21)
 
 ### Summary
