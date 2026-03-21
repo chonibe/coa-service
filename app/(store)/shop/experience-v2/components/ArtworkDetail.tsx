@@ -143,6 +143,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+  const showScarcityOnImage =
+    !hideScarcityBar &&
+    !isLampOrBundleProduct &&
+    editionSizeNum != null &&
+    editionSizeNum > 0
   const editionArtistName = (
     artistData?.name ||
     spotlightDataOverride?.vendorName ||
@@ -363,10 +368,33 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
             </button>
             {displayImages.length > 1 && (
-              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+              <div
+                className={cn(
+                  'absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10',
+                  showScarcityOnImage ? 'bottom-[6.75rem]' : 'bottom-2.5'
+                )}
+              >
                 {displayImages.map((_, i) => (
                   <button key={i} onClick={() => goToIndex(i)} className={cn('w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0', i === imageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70')} style={{ width: 4, height: 4 }} aria-label={`Image ${i + 1}`} />
                 ))}
+              </div>
+            )}
+            {showScarcityOnImage && (
+              <div className="absolute inset-x-0 bottom-0 z-[8] px-3 pt-12 pb-2 bg-gradient-to-t from-black/82 via-black/45 to-transparent pointer-events-none">
+                <div className="pointer-events-auto max-w-md mx-auto w-full">
+                  <ScarcityBadge
+                    quantityAvailable={quantityAvailable}
+                    editionSize={editionSizeNum}
+                    availableForSale={product.availableForSale}
+                    variant="bar"
+                    productId={product.id}
+                    productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                    productTitle={product.title}
+                    unifiedSection
+                    imageOverlay
+                    className="w-full"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -378,21 +406,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 <Image src={img.url} alt={img.altText || `Image ${i + 1}`} width={56} height={56} className="w-full h-full object-cover" loading="lazy" unoptimized />
               </button>
             ))}
-          </div>
-        )}
-        {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
-          <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
-            <ScarcityBadge
-              quantityAvailable={quantityAvailable}
-              editionSize={editionSizeNum}
-              availableForSale={product.availableForSale}
-              variant="bar"
-              productId={product.id}
-              productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-              productTitle={product.title}
-              unifiedSection
-              className="w-full"
-            />
           </div>
         )}
       </div>
@@ -598,7 +611,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         {imageZoom > 1 ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
                       </button>
                       {displayImages.length > 1 && (
-                        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                        <div
+                          className={cn(
+                            'absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10',
+                            showScarcityOnImage ? 'bottom-[6.75rem]' : 'bottom-2.5'
+                          )}
+                        >
                           {displayImages.map((_, i) => (
                             <button
                               key={i}
@@ -611,6 +629,24 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                               aria-label={`Image ${i + 1}`}
                             />
                           ))}
+                        </div>
+                      )}
+                      {showScarcityOnImage && (
+                        <div className="absolute inset-x-0 bottom-0 z-[8] px-3 pt-12 pb-2 bg-gradient-to-t from-black/82 via-black/45 to-transparent pointer-events-none">
+                          <div className="pointer-events-auto max-w-md mx-auto w-full">
+                            <ScarcityBadge
+                              quantityAvailable={quantityAvailable}
+                              editionSize={editionSizeNum}
+                              availableForSale={product.availableForSale}
+                              variant="bar"
+                              productId={product.id}
+                              productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                              productTitle={product.title}
+                              unifiedSection
+                              imageOverlay
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -637,21 +673,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           />
                         </button>
                       ))}
-                    </div>
-                  )}
-                  {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
-                    <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
-                      <ScarcityBadge
-                        quantityAvailable={quantityAvailable}
-                        editionSize={editionSizeNum}
-                        availableForSale={product.availableForSale}
-                        variant="bar"
-                        productId={product.id}
-                        productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                        productTitle={product.title}
-                        unifiedSection
-                        className="w-full"
-                      />
                     </div>
                   )}
                 </div>
@@ -1038,7 +1059,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
                 {displayImages.length > 1 && (
                   <>
-                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                    <div
+                      className={cn(
+                        'absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10',
+                        showScarcityOnImage ? 'bottom-[6.75rem]' : 'bottom-2.5'
+                      )}
+                    >
                       {displayImages.map((_, i) => (
                         <button
                           key={i}
@@ -1054,22 +1080,24 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     </div>
                   </>
                 )}
-              </div>
-            )}
-
-            {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
-              <div className="mx-4 mt-3 rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
-                <ScarcityBadge
-                  quantityAvailable={quantityAvailable}
-                  editionSize={editionSizeNum}
-                  availableForSale={product.availableForSale}
-                  variant="bar"
-                  productId={product.id}
-                  productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
-                  productTitle={product.title}
-                  unifiedSection
-                  className="w-full"
-                />
+                {showScarcityOnImage && (
+                  <div className="absolute inset-x-0 bottom-0 z-[8] px-3 pt-12 pb-2 bg-gradient-to-t from-black/82 via-black/45 to-transparent pointer-events-none">
+                    <div className="pointer-events-auto max-w-md mx-auto w-full">
+                      <ScarcityBadge
+                        quantityAvailable={quantityAvailable}
+                        editionSize={editionSizeNum}
+                        availableForSale={product.availableForSale}
+                        variant="bar"
+                        productId={product.id}
+                        productImage={product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null}
+                        productTitle={product.title}
+                        unifiedSection
+                        imageOverlay
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
