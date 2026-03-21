@@ -445,7 +445,7 @@ export default async function StreetCollectorPage() {
             {streetCollectorContent.trustBar.map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-6 sm:p-8 text-center flex flex-col items-center"
+                className="flex flex-col items-center rounded-2xl bg-[#201c1c]/55 p-6 text-center sm:p-8"
               >
                 <div className="w-24 h-24 mb-5 flex items-center justify-center">
                   {item.icon === 'shipping' && (
