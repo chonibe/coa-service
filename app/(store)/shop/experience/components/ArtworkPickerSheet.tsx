@@ -419,7 +419,11 @@ export function ArtworkPickerSheet({
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                'w-full max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] flex flex-col pointer-events-auto rounded-t-3xl shadow-2xl',
+                'flex w-full flex-col pointer-events-auto shadow-2xl',
+                /* Mobile: nearly full viewport sheet */
+                'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
+                /* Desktop: centered column, capped width + height (not full-screen) */
+                'md:max-w-2xl md:rounded-t-2xl md:h-auto md:min-h-[65vh] md:max-h-[96vh]',
                 theme === 'light' ? 'bg-white' : 'bg-[#171515]'
               )}
             >
@@ -526,7 +530,7 @@ export function ArtworkPickerSheet({
 
             <div
               ref={scrollRef}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3 md:px-2"
             >
               {/* Artist spotlight at top */}
               {spotlightData && onSpotlightSelect && (
