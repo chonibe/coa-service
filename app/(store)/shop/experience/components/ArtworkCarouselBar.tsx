@@ -107,14 +107,14 @@ export function ArtworkCarouselBar({
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
       ? [
-          'border-white bg-white/45 text-neutral-800',
-          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.9)]',
+          'border-white/80 bg-white/45 text-neutral-800',
+          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
           'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
         ]
       : [
-          'border-white/45 bg-white/18 text-white',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.2)]',
-          'hover:bg-white/28 hover:border-white/55 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
+          'border-white/30 bg-white/18 text-white',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
         ]
   )
 
