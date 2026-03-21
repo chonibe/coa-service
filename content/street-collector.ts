@@ -346,7 +346,7 @@ export const streetCollectorContent = {
           {
             question: 'How long does the charge last?',
             answer:
-              'The built-in 2500 mAh battery delivers up to about 8 hours of continuous use on a full charge. A full charge typically takes around 3–4 hours using the USB-C port or the included magnetic charging cable.',
+              'On a full charge you’re looking at roughly 8 hours of run time from the 2500 mAh battery. Plug it in with USB-C or the magnetic cable and it’ll usually be good to go again in about 3–4 hours. Prefer to leave it on? No problem—you can run it plugged in all the time too.',
           },
           {
             question: 'How do I swap around my artworks?',
