@@ -425,7 +425,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                 {linkSectionsTerms.map((section, idx) => (
                   <div
                     key={`m-terms-${section.title}-${idx}`}
-                    className="h-[100px] w-full max-w-sm border-t border-[#ffba94]/10 px-2 py-0 text-center"
+                    className="h-[160px] w-full max-w-sm border-t border-[#ffba94]/10 px-2 py-0 text-center"
                   >
                     <nav
                       className="flex flex-col items-center"
