@@ -333,7 +333,7 @@ export default async function StreetCollectorPage() {
       {/* Bringing art into everyday life + In Collaboration With — unified section */}
       {featuredArtists.length > 0 && (
         <ArtistCarousel
-          className="!pt-5 !pb-10 sm:!pt-6 sm:!pb-12 md:!pt-8 md:!pb-14 xl:!pb-16"
+          className="!pt-8 !pb-10 sm:!pt-9 sm:!pb-12 md:!pt-10 md:!pb-14 lg:!pt-12 xl:!pb-16"
           disableArtistClicksOnMobile
           title={streetCollectorContent.featuredArtists.title}
           titleSize="2xl"

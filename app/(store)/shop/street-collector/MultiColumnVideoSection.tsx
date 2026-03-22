@@ -10,15 +10,15 @@ const VIDEO_ASPECT_RATIO = 4 / 5
 
 /** Glass numeral — on dark overlay over video */
 const stepGlassBadgeInlineClass = cn(
-  'inline-flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full sm:size-12 md:size-[3.25rem]',
-  'font-body text-lg font-bold tabular-nums leading-none text-white sm:text-xl md:text-2xl',
+  'inline-flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full sm:size-[3.5rem] md:size-16',
+  'font-body text-xl font-bold tabular-nums leading-none text-white sm:text-2xl md:text-2xl',
   'border border-white/20 bg-white/12 backdrop-blur-md backdrop-saturate-150',
   'shadow-[0_4px_16px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]'
 )
 
-/** Glass bar: numeral + title one row, centered on video; vertically half above / half below top edge */
+/** Glass bar: numeral + title one row; left on mobile, centered sm+; md+ offset down from top */
 const valuePropVideoOverlayBarClass = cn(
-  'pointer-events-none absolute left-1/2 top-0 z-20 flex w-max max-w-[calc(100%-0.75rem)] min-w-0 -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-2.5 rounded-lg sm:gap-3 md:gap-3.5',
+  'pointer-events-none absolute left-3 top-0 z-20 flex w-max max-w-[calc(100%-1.5rem)] min-w-0 translate-x-0 -translate-y-1/2 flex-row items-center gap-2.5 rounded-lg sm:left-1/2 sm:max-w-[calc(100%-0.75rem)] sm:-translate-x-1/2 sm:gap-3 md:top-4 md:gap-3.5 lg:top-5 xl:top-6',
   'border border-white/[0.12] bg-black/65 px-2.5 py-1.5 backdrop-blur-xl backdrop-saturate-150 sm:px-3 sm:py-2',
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.5)]'
 )
