@@ -123,8 +123,8 @@ export interface ArtistCarouselProps {
   /** Override arrow button styling (e.g. "bg-[#FFBA94] text-[#390000]" for dark sections) */
   arrowButtonClassName?: string
   /**
-   * Below `sm`: render artists as circular avatars (profile-style) with name under;
-   * `sm` and up keeps the standard portrait cards.
+   * Circular artist photos at every breakpoint (ring + shadow); name/location follow
+   * `namePosition`. Smaller on narrow viewports, up to `min(200px, cardWidth)` on `sm+`.
    */
   mobileAvatarStyle?: boolean
   /** When true, artist cards are not links/buttons below `sm` (horizontal scroll still works). */
@@ -531,7 +531,7 @@ export function ArtistCarousel({
                   <div
                     className={cn(
                       namePosition === 'below' && 'flex flex-col',
-                      mobileAvatarStyle && 'max-sm:items-center'
+                      mobileAvatarStyle && 'items-center'
                     )}
                   >
                     {/* Artist Card / avatar (mobile) vs portrait (sm+) */}
@@ -540,7 +540,8 @@ export function ArtistCarousel({
                         'relative overflow-hidden bg-gray-100',
                         mobileAvatarStyle
                           ? cn(
-                              'size-[96px] shrink-0 rounded-full ring-2 shadow-md sm:aspect-[3/5] sm:size-auto sm:w-full sm:rounded-lg sm:ring-0 sm:shadow-none',
+                              'shrink-0 rounded-full ring-2 shadow-md',
+                              'size-[96px] sm:size-[min(200px,var(--artist-carousel-card-w))]',
                               isExperienceCanvas
                                 ? 'ring-[#FFBA94]/45'
                                 : 'ring-white'
@@ -554,9 +555,15 @@ export function ArtistCarousel({
                           alt={artist.name}
                           loading="lazy"
                           decoding="async"
-                          width={mobileAvatarStyle ? 192 : cardWidth}
+                          width={
+                            mobileAvatarStyle
+                              ? Math.min(560, Math.round(Math.min(200, cardWidth) * 2))
+                              : cardWidth
+                          }
                           height={
-                            mobileAvatarStyle ? 192 : Math.round((cardWidth * 5) / 3)
+                            mobileAvatarStyle
+                              ? Math.min(560, Math.round(Math.min(200, cardWidth) * 2))
+                              : Math.round((cardWidth * 5) / 3)
                           }
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
@@ -564,15 +571,13 @@ export function ArtistCarousel({
                         <div
                           className={cn(
                             'w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300',
-                            mobileAvatarStyle && 'max-sm:rounded-full'
+                            mobileAvatarStyle && 'rounded-full'
                           )}
                         >
                           <span
                             className={cn(
                               'font-bold text-gray-400',
-                              mobileAvatarStyle
-                                ? 'text-xl max-sm:text-2xl sm:text-4xl'
-                                : 'text-4xl'
+                              mobileAvatarStyle ? 'text-2xl sm:text-4xl' : 'text-4xl'
                             )}
                           >
                             {artist.name.charAt(0)}
@@ -598,12 +603,14 @@ export function ArtistCarousel({
                       </div>
                     )}
 
-                    {/* Hover/click overlay: dark bg + description only (no name/city) */}
+                    {/* Click/tap overlay: dark bg + description (no hover reveal) */}
                     <div
                       className={cn(
-                        'absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100',
+                        'absolute inset-0 transition-opacity duration-300 opacity-0',
+                        showInfoSheet
+                          ? 'group-data-[revealed=true]:opacity-100'
+                          : 'group-hover:opacity-100',
                         isExperienceCanvas ? 'bg-black/70' : 'bg-[#390000]/70',
-                        showInfoSheet && 'group-data-[revealed=true]:opacity-100',
                         mobileAvatarStyle && 'max-sm:hidden'
                       )}
                     />
@@ -611,8 +618,7 @@ export function ArtistCarousel({
                       <div
                         className={cn(
                           'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 text-[#FFBA94] transition-opacity duration-300',
-                          'opacity-0 group-hover:opacity-100',
-                          'group-data-[revealed=true]:opacity-100',
+                          'opacity-0 group-data-[revealed=true]:opacity-100',
                           mobileAvatarStyle && 'max-sm:hidden sm:flex'
                         )}
                       >

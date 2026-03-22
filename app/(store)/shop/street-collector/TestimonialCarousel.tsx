@@ -24,6 +24,8 @@ export interface TestimonialCarouselProps {
   testimonials: TestimonialCardItem[]
   fullWidth?: boolean
   className?: string
+  /** Optional hero image behind the section (proxied); fades into section background */
+  backdropImageSrc?: string
 }
 
 /** Video/image aspect ratio 4×5 to match value props section. */
@@ -40,6 +42,7 @@ export function TestimonialCarousel({
   testimonials,
   fullWidth = true,
   className,
+  backdropImageSrc,
 }: TestimonialCarouselProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const [currentCardIndex, setCurrentCardIndex] = React.useState(0)
@@ -120,8 +123,35 @@ export function TestimonialCarousel({
   const currentIndex = n > 0 ? currentCardIndex % n : 0
 
   return (
-    <SectionWrapper spacing="sm" fullWidth={fullWidth} background="experience" className={className}>
-      <Container maxWidth="default" paddingX="gutter">
+    <SectionWrapper
+      spacing="sm"
+      fullWidth={fullWidth}
+      background="experience"
+      className={cn('relative overflow-hidden', className)}
+    >
+      {backdropImageSrc ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center"
+          aria-hidden
+        >
+          <div className="relative h-[min(220px,42vw)] w-full max-w-4xl sm:h-[min(260px,40vw)] md:h-[min(320px,38vh)] lg:h-[min(360px,36vh)]">
+            <img
+              src={getProxiedImageUrl(backdropImageSrc)}
+              alt=""
+              width={1200}
+              height={280}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover object-top opacity-[0.38] sm:opacity-[0.42] md:opacity-[0.45]"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-[#171515]/25 via-[#171515]/60 to-[#171515]"
+              aria-hidden
+            />
+          </div>
+        </div>
+      ) : null}
+      <Container maxWidth="default" paddingX="gutter" className="relative z-10">
         {(title || subtitle) && (
           <div className="text-center mb-6 sm:mb-8 px-0">
             {title && (

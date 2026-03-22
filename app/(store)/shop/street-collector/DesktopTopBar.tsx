@@ -12,10 +12,9 @@ interface DesktopTopBarProps {
 }
 
 /**
- * Desktop top bar with logo, menu, and CTA. Shows when scrolled past hero (md+ only).
+ * Desktop top bar with logo, menu, and CTA (md+). Always visible — no full-width hero above the fold.
  */
 export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
-  const [pastHero, setPastHero] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<{
     open: boolean
@@ -31,42 +30,6 @@ export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
       )
     }
   }, [menuOpen, SlideoutMenu])
-
-  useEffect(() => {
-    let io: IntersectionObserver | null = null
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    let retries = 0
-    const maxRetries = 20
-    let cancelled = false
-
-    const setup = () => {
-      if (cancelled) return
-      const sentinel = document.getElementById('street-collector-hero-sentinel')
-      if (!sentinel) {
-        if (retries < maxRetries) {
-          retries += 1
-          timeoutId = setTimeout(setup, 100)
-        }
-        return
-      }
-      io = new IntersectionObserver(
-        (entries) => {
-          const e = entries[0]
-          if (e) setPastHero(!e.isIntersecting)
-        },
-        { threshold: 0 }
-      )
-      io.observe(sentinel)
-    }
-    setup()
-    return () => {
-      cancelled = true
-      if (timeoutId) clearTimeout(timeoutId)
-      io?.disconnect()
-    }
-  }, [])
-
-  if (!pastHero) return null
 
   return (
     <div

@@ -5,7 +5,6 @@ import {
   Container,
   SectionWrapper,
 } from '@/components/impact'
-import { VideoPlayer } from '@/components/sections'
 import { streetCollectorContent } from '@/content/street-collector'
 import {
   getCollection,
@@ -263,7 +262,7 @@ export default async function StreetCollectorPage() {
 
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
-      {/* Desktop top bar - logo, menu, CTA when scrolled past hero */}
+      {/* Desktop top bar — logo, menu, CTA (always visible; no full-width video hero) */}
       <DesktopTopBar
         text={streetCollectorContent.hero.cta.text}
         href={streetCollectorContent.experienceUrl}
@@ -294,67 +293,7 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      {/* Hero — md+ only (video + overlay logo). Mobile: Meet the Street Lamp is the hero under the in-flow logo below. */}
-      <div id="street-collector-hero" className="relative hidden md:block">
-        <div
-          id="street-collector-hero-sentinel"
-          className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-          aria-hidden
-        />
-        {/* Logo overlay on hero — z-[40] above VideoPlayer overlay (z-30) */}
-        <Link
-          href="/"
-          aria-label="Street Collector Home"
-          className={cn(
-            'absolute left-1/2 z-[40] inline-flex -translate-x-1/2 items-center justify-center p-2 -m-2 opacity-100 pointer-events-auto transition-transform hover:scale-105 hover:opacity-100',
-            'top-[max(1rem,env(safe-area-inset-top,0px))] sm:top-[max(1.5rem,env(safe-area-inset-top,0px))]'
-          )}
-          style={{ boxSizing: 'content-box' }}
-        >
-          <Image
-            src={getProxiedImageUrl(HOME_LOGO_URL)}
-            alt=""
-            width={32}
-            height={32}
-            className="shrink-0 w-8 h-8 object-contain drop-shadow-md opacity-100 pointer-events-none"
-            loading="eager"
-          />
-        </Link>
-        <VideoPlayer
-          video={{
-            url: streetCollectorContent.hero.video,
-            poster: getProxiedImageUrl(streetCollectorContent.hero.image),
-            autoplay: true,
-            loop: true,
-            muted: true,
-          }}
-          overlay={{
-            headline: streetCollectorContent.hero.headline,
-            subheadline: streetCollectorContent.hero.subheadline,
-            heroSubtext: streetCollectorContent.hero.heroSubtext,
-            ctaUrl: streetCollectorContent.experienceUrl,
-            cta: {
-              text: streetCollectorContent.hero.cta.text,
-              url: streetCollectorContent.experienceUrl,
-              style: 'glassmorphism',
-              backgroundColor: '#FFBA94',
-              color: '#390000',
-            },
-            position: 'top-center',
-            ctaPosition: 'bottom',
-            headlineSize: 'medium',
-            subheadlineFirst: true,
-            textColor: '#FFBA94',
-            overlayColor: '#000000',
-            overlayOpacity: 10,
-          }}
-          size="full"
-          fullWidth={true}
-          showControls={false}
-        />
-      </div>
-
-      {/* Mobile: logo in document flow, then Meet the Street Lamp as hero (no video hero) */}
+      {/* Mobile: in-flow logo, then Meet the Street Lamp as primary hero (no full-width video hero on any breakpoint) */}
       <div className="flex justify-center px-5 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-2 md:hidden">
         <Link
           href="/"
@@ -373,7 +312,7 @@ export default async function StreetCollectorPage() {
         </Link>
       </div>
 
-      {/* Meet the Street Lamp — desktop: below hero; mobile: primary hero under logo */}
+      {/* Meet the Street Lamp — desktop + mobile */}
       <MeetTheStreetLamp
         title={streetCollectorContent.meetTheLamp.title}
         taglineLines={streetCollectorContent.meetTheLamp.taglineLines}
@@ -388,7 +327,7 @@ export default async function StreetCollectorPage() {
         }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
-        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-14 md:pb-12"
+        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-14 md:pb-12 lg:pt-16"
       />
 
       {/* Bringing art into everyday life + In Collaboration With — unified section */}
@@ -444,49 +383,13 @@ export default async function StreetCollectorPage() {
         />
       )}
 
-      {/* Value prop banner — desktop only. Image right above the banner card. */}
-      <section className="hidden md:block bg-[#171515] pt-6 md:pt-8 pb-8 md:pb-10 lg:pb-12 overflow-hidden">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="flex flex-col items-center w-full max-w-4xl mx-auto gap-0">
-            {/* Image right above the banner — proxied to avoid third-party cookies */}
-            <img
-              src={getProxiedImageUrl('https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200')}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              width={1200}
-              height={280}
-              className="w-full max-w-4xl h-[280px] object-cover object-top pointer-events-none mx-auto block"
-              aria-hidden
-            />
-            {/* Banner card — directly below the image */}
-            <div className="w-full rounded-b-2xl rounded-t-none border border-[#ffba94]/10 bg-[#201c1c]/50 p-6 sm:p-8 md:p-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                {streetCollectorContent.valueProps.map((p, i) => (
-                  <div key={i} className="flex flex-col gap-2 text-center md:text-left">
-                    <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-[#FFBA94] text-[#390000] font-body text-sm font-medium shrink-0 md:mx-0 mx-auto">
-                      {i + 1}
-                    </span>
-                    <h3 className="font-body text-base sm:text-lg font-semibold text-[#FFBA94]">
-                      {p.title}
-                    </h3>
-                    <p className="font-body text-sm sm:text-base text-[#FFBA94]/90 leading-relaxed">
-                      {p.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
-
       {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
       <TestimonialCarousel
         className="!pt-8 !pb-10 sm:!pt-10 sm:!pb-12 md:!pt-12 md:!pb-14"
         title={streetCollectorContent.testimonials.title}
         subtitle={streetCollectorContent.testimonials.subtitle}
         testimonials={streetCollectorContent.testimonials.quotes}
+        backdropImageSrc={streetCollectorContent.testimonials.sectionBackdropImage}
         fullWidth={true}
       />
 
@@ -497,6 +400,11 @@ export default async function StreetCollectorPage() {
         className="!py-8 sm:!py-10 md:!py-12"
       >
         <Container maxWidth="default" paddingX="gutter">
+          {streetCollectorContent.trustBarTitle ? (
+            <h2 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-[#FFBA94] sm:mb-12 sm:text-4xl md:mb-14 md:text-5xl">
+              {streetCollectorContent.trustBarTitle}
+            </h2>
+          ) : null}
           {/* Mobile: stacked rows, no card or dividers */}
           <div className="mx-auto flex max-w-md flex-col items-center gap-10 md:hidden">
             {streetCollectorContent.trustBar.map((item) => (

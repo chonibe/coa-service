@@ -31,7 +31,7 @@ export const streetCollectorContent = {
     title: 'Meet the Street Lamp',
     /** Two lines under the section title */
     taglineLines: ['Not just a lamp.', 'A living art collection.'],
-    /** Price callouts — glass pills over the video */
+    /** Single glass price line on video (joined if multiple strings) */
     pricingChips: ['Starting at $99 · Artworks from $40'],
     /** Desktop video URL */
     desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
@@ -100,6 +100,9 @@ export const streetCollectorContent = {
   testimonials: {
     title: 'Join 3000+ Collectors',
     subtitle: '',
+    /** Decorative wide image behind the testimonial carousel (same asset as the old value-prop banner) */
+    sectionBackdropImage:
+      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200',
     quotes: [
       {
         id: '1',
@@ -236,6 +239,8 @@ export const streetCollectorContent = {
       },
     ],
   },
+  /** Displayed above the shipping / guarantee / returns row */
+  trustBarTitle: "We've got you Covered",
   trustBar: [
     { label: 'Free worldwide shipping', description: 'We cover delivery to any destination.', icon: 'shipping' },
     { label: '12 month guarantee', description: 'Full coverage on your lamp.', icon: 'guarantee' },

@@ -17,11 +17,13 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 1. **Hero** — Video background with three-line overlay: Not just a lamp. / A living art collection. / One lamp. Endless art. Swap in seconds. — plus `Start your collection` CTA to `/shop/experience` ([`VideoPlayer`](../../../components/sections/VideoPlayer.tsx) `heroSubtext`)
 2. **Value Props** — Under “Bringing art into everyday life.”: numbered 1–3 with paired video + copy on mobile; stack order in [`content/street-collector.ts`](../../../content/street-collector.ts) `valueProps`: Swap it. Make it fit. → Support artists directly. → Collect original art.
-3. **Testimonials** — "Join 3000+ Collectors" carousel with video/image media, 5-star rating, quote text, and author (TestimonialCarousel)
+3. **Testimonials** — "Join 3000+ Collectors" carousel with optional `sectionBackdropImage` (Group hero) behind the heading and carousel card ([`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx), [`content/street-collector.ts`](../../../content/street-collector.ts) `testimonials.sectionBackdropImage`)
 4. **Featured Artists** — Horizontal artist carousel with CTA to `/shop/experience`
 5. **What Happens Next** — 3-step bridge section (choose lamp, preview/select artworks, checkout)
 6. **FAQ** — Decision-focused groups: Lamp, Artworks, Shipping
-7. **CTAs** — Hero overlay, sticky mobile bar, and desktop top bar use `Start your collection` → `/shop/experience` (no duplicate tagline under the numbered value-prop cards)
+7. **CTAs** — Hero overlay, sticky mobile bar, and desktop top bar use `Start your collection` → `/shop/experience`
+
+**Note:** The numbered 1–3 value-prop copy appears via [`ValuePropVideoCard`](./MultiColumnVideoSection.tsx) inside the featured-artists section (`leadingContent` on [`page.tsx`](./page.tsx)). A separate desktop-only image + three-column banner after the carousel was removed to avoid duplication.
 
 ---
 
@@ -69,3 +71,5 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Created:** 2026-02-27
 - **Implementation:** Street Collector–inspired landing flow into `/shop/experience` with bridge + FAQ conversion layers
 - **Updated:** 2026-03-21 — Hero overlay copy + `heroSubtext` in [`content/street-collector.ts`](../../../content/street-collector.ts) / [`VideoPlayer`](../../../components/sections/VideoPlayer.tsx); Meet the Street Lamp stages; value-prop tagline removal; trust bar SVGs
+- **Updated:** 2026-03-22 — Removed desktop-only duplicate value-prop banner (image + numbered columns) after the artist carousel on [`page.tsx`](./page.tsx); value props remain in `leadingContent` only.
+- **Updated:** 2026-03-22 — Testimonials: `sectionBackdropImage` + `backdropImageSrc` on [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) to show the same wide hero image behind the carousel.
