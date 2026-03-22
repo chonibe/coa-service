@@ -200,8 +200,12 @@ export function ArtworkInfoBar({
   const title = displayedProduct.title ?? ''
   const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
 
-  /** Mobile: title only on hero (Spline slide); desktop title lives in page header via hideTitle */
-  const showMobileHeroTitle = !hideTitle && currentSlide === splineSlide
+  /**
+   * Mobile: title over Spline when that slide is active — unless the reel has edition above Spline
+   * (`editionLeadBeforeSpline`), in which case edition already surfaces artwork identity; hide duplicate.
+   */
+  const showMobileHeroTitle =
+    !hideTitle && currentSlide === splineSlide && !editionLeadBeforeSpline
 
   return (
     <div

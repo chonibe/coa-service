@@ -465,7 +465,7 @@ export function SplineFullScreen({
         {editionLead && displayedProduct && (
           <div
             ref={(r) => { sectionRefs.current[0] = r }}
-            className="flex-shrink-0 w-full relative z-0"
+            className="relative z-[5] -mb-5 flex w-full flex-shrink-0 sm:-mb-6 md:-mb-8"
           >
             <ArtworkAccordions
               key={`${displayedProduct.id}-edition-lead`}
@@ -483,7 +483,7 @@ export function SplineFullScreen({
         <div
           ref={(r) => { sectionRefs.current[splineSectionIndex] = r }}
           className={cn(
-            'flex-shrink-0 flex flex-col relative w-full',
+            'relative z-0 flex w-full flex-shrink-0 flex-col',
             !hasGallery && !hasAccordion
               ? 'flex-1 min-w-0'
               : hasAccordion
