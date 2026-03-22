@@ -78,7 +78,7 @@ export const streetCollectorContent = {
       video: 'https://cdn.shopify.com/videos/c/o/v/dc4d553853cc40b998a292ced715e802.mp4',
     },
     {
-      title: 'Transform any space in an instant.',
+      title: 'Transform any space instantly.',
       description:
         'Slide it in. Light it up. Swap in seconds. Art that evolves with you.',
       poster:
