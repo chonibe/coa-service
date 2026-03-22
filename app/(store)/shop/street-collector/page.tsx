@@ -327,7 +327,7 @@ export default async function StreetCollectorPage() {
         }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
-        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-14 md:pb-12 lg:pt-16"
+        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
       />
 
       {/* Bringing art into everyday life + In Collaboration With — unified section */}

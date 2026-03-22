@@ -196,10 +196,22 @@ export function MeetTheStreetLamp({
           key={activeIndex}
           className="animate-in fade-in slide-in-from-bottom-4 w-full duration-500"
         >
-          <h3 className="mb-2 text-xl font-semibold text-[#FFBA94] sm:text-2xl md:text-2xl">
+          <h3
+            className={cn(
+              'mb-2 font-semibold text-[#FFBA94]',
+              opts.variant === 'mobile' && 'text-xl sm:text-2xl',
+              opts.variant === 'desktop' && 'text-lg leading-snug lg:text-xl'
+            )}
+          >
             {stages[activeIndex]?.title}
           </h3>
-          <p className="mx-auto max-w-md text-base leading-relaxed text-[#FFBA94]/80 md:mx-0 md:max-w-lg">
+          <p
+            className={cn(
+              'leading-relaxed text-[#FFBA94]/80',
+              opts.variant === 'mobile' && 'mx-auto max-w-md text-base',
+              opts.variant === 'desktop' && 'max-w-md text-sm lg:max-w-lg'
+            )}
+          >
             {stages[activeIndex]?.description}
           </p>
         </div>
@@ -222,14 +234,19 @@ export function MeetTheStreetLamp({
   )
 
   return (
-    <section className={cn('w-full bg-[#171515] py-8 sm:py-10 md:pb-14 lg:pb-16', className)}>
-      <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+    <section
+      className={cn(
+        'w-full bg-[#171515] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-3.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
+        className
+      )}
+    >
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 md:flex md:min-h-0 md:max-w-none md:flex-1 md:flex-col md:px-5 lg:px-8 xl:px-12 2xl:px-16">
         {/* Mobile */}
         <div className="flex flex-col md:hidden">
           <div>{renderTitleBlock('stacked')}</div>
           <div className="relative mt-5 w-full overflow-visible rounded-2xl sm:mt-6">
             {renderPricingOnVideoMobile()}
-            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl">
+            <div className="relative aspect-[5/4] w-full overflow-hidden rounded-2xl">
               <LazyVideo
                 key={`meet-mobile-${mobileVideo}`}
                 src={mobileSrc}
@@ -243,37 +260,43 @@ export function MeetTheStreetLamp({
           {renderStageBlock({ variant: 'mobile' })}
         </div>
 
-        {/* Desktop: same aspect as video; title block vertically centered in upper area, stage pinned bottom */}
-        <div className="hidden md:flex md:flex-row md:items-start md:justify-center md:gap-x-10 lg:gap-x-14">
+        {/* Desktop: full-fold row — video left, copy + stages right */}
+        <div
+          className={cn(
+            'hidden md:flex md:min-h-0 md:w-full md:flex-1 md:flex-row md:items-stretch md:justify-center',
+            'md:gap-6 lg:gap-8 xl:gap-10 2xl:gap-12',
+            'md:max-h-[calc(100dvh-4.25rem)] md:py-4 lg:py-5'
+          )}
+        >
           <div
             className={cn(
-              'grid w-full min-w-0 max-w-md grid-rows-[1fr_auto]',
-              'aspect-[4/5] max-h-[min(640px,75vh)]'
+              'relative min-h-0 w-full min-w-0 max-w-lg overflow-hidden rounded-2xl bg-neutral-800 md:max-w-none md:flex-[0.58] lg:flex-[0.6]',
+              'md:self-stretch'
             )}
           >
-            <div className="flex min-h-0 w-full flex-col items-start justify-center overflow-y-auto px-2 text-left [scrollbar-width:thin]">
-              {renderTitleBlock('desktopLeft')}
-              {renderPricingBelowSubtitle()}
-            </div>
-            <div className="min-w-0 px-2 pb-1">{renderStageBlock({ variant: 'desktop' })}</div>
-          </div>
-          <div
-            className={cn(
-              'relative w-full min-w-0 max-w-md overflow-hidden rounded-2xl bg-neutral-800',
-              'aspect-[4/5] max-h-[min(640px,75vh)]'
-            )}
-          >
-            <div className="relative h-full w-full overflow-hidden rounded-2xl">
+            <div className="relative h-full min-h-[200px] w-full overflow-hidden rounded-2xl">
               <LazyVideo
                 key={`meet-desktop-${desktopVideo}`}
                 src={desktopSrc}
                 poster={poster}
                 autoPlay
-                className="h-full w-full rounded-2xl object-cover"
+                className="h-full w-full min-h-[200px] rounded-2xl object-cover"
               >
                 <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
               </LazyVideo>
             </div>
+          </div>
+          <div
+            className={cn(
+              'grid min-h-0 w-full min-w-0 max-w-lg grid-rows-[1fr_auto] md:max-w-none md:flex-[0.42] lg:flex-[0.4]',
+              'md:self-stretch'
+            )}
+          >
+            <div className="flex min-h-0 w-full flex-col items-start justify-center overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2">
+              {renderTitleBlock('desktopLeft')}
+              {renderPricingBelowSubtitle()}
+            </div>
+            <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">{renderStageBlock({ variant: 'desktop' })}</div>
           </div>
         </div>
         {cue && (
