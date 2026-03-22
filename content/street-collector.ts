@@ -75,10 +75,10 @@ export const streetCollectorContent = {
         'No AI. No screens. Just original art, delivered to your door.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
-      video: 'https://cdn.shopify.com/videos/c/o/v/e6dbb48d20214a77b0009174129dc21d.mp4',
+      video: 'https://cdn.shopify.com/videos/c/o/v/dc4d553853cc40b998a292ced715e802.mp4',
     },
     {
-      title: 'Fit right in.',
+      title: 'Transform any space in an instant.',
       description:
         'Slide it in. Light it up. Swap in seconds. Art that evolves with you.',
       poster:
