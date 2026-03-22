@@ -16,7 +16,7 @@
       }
 
       .cls-3 {
-        fill: rgba(72, 66, 66, 0.82);
+        fill: rgba(118, 112, 112, 0.82);
         stroke: rgba(22, 19, 19, 0.92);
         stroke-width: 0.5;
         stroke-linejoin: round;
