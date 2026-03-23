@@ -58,7 +58,13 @@
     "skill-evolution:run": "node scripts/run-skill-evolution-automated.mjs",
     "skills:sync": "node scripts/sync-skills.mjs to-cursor",
     "skills:import": "node scripts/sync-skills.mjs from-cursor",
-    "skills:pack": "node scripts/sync-skills.mjs pack"
+    "skills:pack": "node scripts/sync-skills.mjs pack",
+    "skills:hub": "node tools/skills-hub/server.mjs",
+    "skills:org:ping": "node scripts/skills-org.mjs ping",
+    "skills:org:manifest": "node scripts/skills-org.mjs manifest",
+    "skills:org:pull": "node scripts/skills-org.mjs pull",
+    "skills:org:publish": "node scripts/skills-org.mjs publish",
+    "skills:org:push-proposal": "node scripts/skills-org.mjs push-proposal"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

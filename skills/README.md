@@ -38,6 +38,15 @@ If you only edited under **`.cursor/skills/`**, run **`npm run skills:import`** 
 - Sync / pack: [`scripts/sync-skills.mjs`](../scripts/sync-skills.mjs)
 - Automated evolver: [`scripts/run-skill-evolution-automated.mjs`](../scripts/run-skill-evolution-automated.mjs)
 
+## Org hub (many machines / CLIs)
+
+Run a small **skills hub** so laptops, CI, and other nodes share the same catalog:
+
+- **Server:** `npm run skills:hub` (see [`tools/skills-hub/.env.example`](../tools/skills-hub/.env.example))
+- **Client:** `SKILLS_HUB_URL` + `SKILLS_HUB_TOKEN` → `npm run skills:org:pull` / `publish` / `push-proposal`
+
+Full API and security notes: [`docs/features/skills-hub/README.md`](../docs/features/skills-hub/README.md).
+
 ## How Claude knows this setup
 
 1. **Claude Code / repo-aware Claude** — This repo includes **[`CLAUDE.md`](../CLAUDE.md)** at the root. Many tools load it automatically when the project is open; if not, `@CLAUDE.md` or “read CLAUDE.md” in the first message.

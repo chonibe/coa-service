@@ -59,3 +59,4 @@ bfg.jar
 
 # Packed Claude .skill bundles (regenerate with npm run skills:pack)
 /artifacts/
+.skills-hub-data/

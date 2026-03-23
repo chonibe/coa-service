@@ -23,6 +23,10 @@ Project agent skills are **not** defined only for Cursor. The **canonical** copy
 
 Full commands and edge cases (e.g. `collector-data-integrity` → flat `.md` in Cursor): **[`skills/README.md`](skills/README.md)**.
 
+### Org / many computers
+
+A **skills hub** (HTTP + Bearer token) lets other machines run **`npm run skills:org:pull`** to sync `./skills/` from a central host, or **`push-proposal`** to submit zips for review. See **[`docs/features/skills-hub/README.md`](docs/features/skills-hub/README.md)**.
+
 ### Headless evolution (optional)
 
 `npm run skill-evolution:run` updates **`skills/`** and can sync to Cursor; see **`scripts/run-skill-evolution-automated.mjs`** and env vars in **`scripts/skill-evolution.env.example`**.
