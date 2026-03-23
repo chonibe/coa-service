@@ -110,27 +110,6 @@ export function ArtistSpotlightBanner({
         {isExpanded ? (
           /* Expanded: square image, bio (GIF rendered outside card via SpotlightCollectionGif) */
           <div className="flex flex-col items-center p-4 sm:p-6">
-            {isCollapsible && (
-              <div className="flex w-full justify-center -mt-1 mb-2 sm:mb-3">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onSelect?.(false)
-                  }}
-                  aria-label="Collapse spotlight"
-                  className={cn(
-                    'inline-flex items-center justify-center rounded-full p-2.5 transition-colors',
-                    'border shadow-sm',
-                    spotlight.unlisted
-                      ? 'border-violet-400/45 bg-violet-950/30 text-violet-100 hover:bg-violet-950/45 dark:border-violet-500/40'
-                      : 'border-amber-200/65 bg-white text-neutral-800 hover:bg-amber-50/90 dark:border-[#FFBA94]/45 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
-                  )}
-                >
-                  <ChevronUp className="w-5 h-5 shrink-0" strokeWidth={2.5} aria-hidden />
-                </button>
-              </div>
-            )}
             <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
               <div className="flex flex-col items-center gap-1 sm:gap-2 w-full text-center">
                 {showBadge && (
@@ -143,9 +122,41 @@ export function ArtistSpotlightBanner({
                     {spotlight.unlisted ? 'Early access' : 'Artist Spotlight'}
                   </span>
                 )}
-                <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94]">
-                  {spotlight.vendorName}
-                </h3>
+                <div
+                  className={cn(
+                    'relative w-full flex items-center justify-center',
+                    isCollapsible ? 'min-h-[2.25rem] sm:min-h-[2.75rem]' : ''
+                  )}
+                >
+                  <h3
+                    className={cn(
+                      'text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-[#FFBA94] text-center max-w-full',
+                      isCollapsible && 'px-11 sm:px-12'
+                    )}
+                  >
+                    {spotlight.vendorName}
+                  </h3>
+                  {isCollapsible && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSelect?.(false)
+                      }}
+                      aria-label="Collapse spotlight"
+                      className={cn(
+                        'absolute right-0 top-1/2 -translate-y-1/2 z-10',
+                        'inline-flex items-center justify-center rounded-full p-2 transition-colors',
+                        'border shadow-sm',
+                        spotlight.unlisted
+                          ? 'border-violet-400/45 bg-violet-950/30 text-violet-100 hover:bg-violet-950/45 dark:border-violet-500/40'
+                          : 'border-amber-200/65 bg-white text-neutral-800 hover:bg-amber-50/90 dark:border-[#FFBA94]/45 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
+                      )}
+                    >
+                      <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={2.5} aria-hidden />
+                    </button>
+                  )}
+                </div>
                 {spotlight.seriesName && (
                   <p className="text-base text-neutral-500 dark:text-[#c4a0a0]">{spotlight.seriesName}</p>
                 )}
