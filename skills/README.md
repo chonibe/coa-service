@@ -37,3 +37,15 @@ If you only edited under **`.cursor/skills/`**, run **`npm run skills:import`** 
 
 - Sync / pack: [`scripts/sync-skills.mjs`](../scripts/sync-skills.mjs)
 - Automated evolver: [`scripts/run-skill-evolution-automated.mjs`](../scripts/run-skill-evolution-automated.mjs)
+
+## How Claude knows this setup
+
+1. **Claude Code / repo-aware Claude** — This repo includes **[`CLAUDE.md`](../CLAUDE.md)** at the root. Many tools load it automatically when the project is open; if not, `@CLAUDE.md` or “read CLAUDE.md” in the first message.
+2. **Claude.ai Projects** — Add a **Project knowledge** file: upload or paste the contents of `CLAUDE.md`, or paste the block below into **Custom instructions**.
+3. **Copy-paste blurb** (minimal):
+
+   ```text
+   Skills for this repo live under skills/<name>/SKILL.md (canonical, in git). .cursor/skills/ is synced from skills/ via npm run skills:sync. To share skills with Claude as .skill bundles: npm run skills:pack, then install artifacts/claude-skills/*.skill. If edits landed only in .cursor/skills/, run npm run skills:import first. See CLAUDE.md and skills/README.md.
+   ```
+
+4. **After you change `skills/` in Claude** — If the session cannot run npm, note the diff for the human to run `npm run skills:sync` (Cursor) and/or `npm run skills:pack` (Claude bundles).
