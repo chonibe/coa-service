@@ -76,6 +76,8 @@ The script runs automatically during Vercel production deployments via the `post
    - Only run in production (`VERCEL_ENV=production`)
    - Log results to Vercel build logs
 
+3. **Sync cohort filter definitions after we change them in code:** By default, existing cohorts are **not** updated (you see `⏭️ Cohort exists` in build logs). So PostHog can keep **old, wrong rules** (e.g. “Returning users” = anyone with `session_context`) even though the app now sends the right person properties. Set **`POSTHOG_UPDATE_EXISTING_COHORTS=true`** in Vercel for **one production deploy** (or run locally with that env var), then remove it or set it back to `false`. That PATCHes each cohort’s `filters` from [`scripts/setup-posthog-insights.js`](../../scripts/setup-posthog-insights.js).
+
 To disable automatic setup, set `POSTHOG_SETUP_ENABLED=false` in Vercel environment variables.
 
 **Manual setup (one-time):**

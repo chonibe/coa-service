@@ -15,6 +15,11 @@
  *
  * Note: Cohorts require a Personal API key. If POSTHOG_PERSONAL_API_KEY is not set,
  * cohorts will be skipped but insights/dashboards will still be created.
+ *
+ * Env:
+ *   POSTHOG_UPDATE_EXISTING_COHORTS=true — PATCH cohorts that already exist so filter
+ *   definitions in PostHog match this script (default is skip-only, so broken cohorts
+ *   in the UI never get fixed until you set this once and redeploy or run locally).
  */
 
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY // Project API key (phc_...) - fallback
@@ -626,6 +631,10 @@ async function run() {
   const dashboardIds = {}
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
   const skipIfExists = process.env.POSTHOG_SKIP_IF_EXISTS !== 'false' // Default: skip if exists
+  const updateExistingCohorts = process.env.POSTHOG_UPDATE_EXISTING_COHORTS === 'true'
+  if (updateExistingCohorts) {
+    console.log('   POSTHOG_UPDATE_EXISTING_COHORTS=true — existing cohorts will be PATCHed\n')
+  }
 
   // 1. Create or find dashboards
   console.log('─── Setting up Dashboards ───')
@@ -728,7 +737,20 @@ async function run() {
       if (skipIfExists) {
         const existing = await findExisting(c.name, 'cohort')
         if (existing) {
-          console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
+          if (updateExistingCohorts) {
+            try {
+              await api('PATCH', `/cohorts/${existing.id}/`, {
+                name: c.name,
+                description: c.description,
+                filters: c.filters,
+              })
+              console.log(`  🔄 Cohort updated: "${c.name}" (id: ${existing.id})`)
+            } catch (err) {
+              console.error(`  ❌ Cohort update "${c.name}": ${err.message}`)
+            }
+          } else {
+            console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
+          }
           continue
         }
       }
