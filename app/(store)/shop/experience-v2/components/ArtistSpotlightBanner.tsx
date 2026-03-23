@@ -174,7 +174,7 @@ export function ArtistSpotlightBanner({
             {(spotlight.bio || spotlight.instagram) && (
               <div className="pt-4 sm:pt-5 mt-2 sm:mt-0 w-full text-center">
                 {spotlight.bio && (
-                  <p className="text-base sm:text-lg text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line">
+                  <p className="text-sm sm:text-[0.9375rem] text-neutral-600 dark:text-[#d4b8b8] leading-relaxed whitespace-pre-line max-w-prose mx-auto">
                     {spotlight.bio}
                   </p>
                 )}
@@ -185,8 +185,8 @@ export function ArtistSpotlightBanner({
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      'inline-flex items-center gap-1.5 text-base text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors',
-                      spotlight.bio ? 'mt-4' : 'mt-0'
+                      'inline-flex items-center gap-1.5 text-sm text-neutral-600 dark:text-[#c4a0a0] hover:text-pink-600 dark:hover:text-pink-400 transition-colors',
+                      spotlight.bio ? 'mt-3' : 'mt-0'
                     )}
                   >
                     <Instagram className="w-4 h-4 shrink-0" />
