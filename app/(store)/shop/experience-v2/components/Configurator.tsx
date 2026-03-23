@@ -1939,6 +1939,7 @@ export function Configurator({
                 spotlight={{ ...spotlightData, gifUrl: undefined }}
                 spotlightProducts={spotlightProducts}
                 onSelect={handleSpotlightSelect}
+                onExploreCollection={() => handleSpotlightSelect(false)}
                 showBadge
                 expanded={isSpotlightFilterActive}
               />
@@ -2077,6 +2078,25 @@ export function Configurator({
             isLoadingMore={loadingMore}
             isMobile={isMobile}
           />
+          {isSpotlightFilterActive && (!adPreset || showAllArtworks) && filteredProducts.length > 0 && (
+            <div className="flex flex-col items-center gap-1.5 pt-2 pb-4 px-2 max-w-2xl mx-auto w-full">
+              <button
+                type="button"
+                onClick={() => handleSpotlightSelect(false)}
+                className={cn(
+                  'w-full max-w-sm rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors border shadow-sm',
+                  spotlightData?.unlisted
+                    ? 'border-violet-400/40 bg-violet-950/20 text-violet-100 hover:bg-violet-950/35 dark:border-violet-500/35'
+                    : 'border-amber-200/50 bg-white/90 text-neutral-900 hover:bg-white dark:border-[#FFBA94]/35 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
+                )}
+              >
+                Explore full collection
+              </button>
+              <p className="text-center text-xs text-neutral-500 dark:text-[#a09090] max-w-sm">
+                Showing only {spotlightData?.vendorName}&apos;s works. Tap to see all artists in this season.
+              </p>
+            </div>
+          )}
             </div>
             {/* Tap-to-deblur overlay — sibling of blur div, anchors to the outer relative wrapper */}
             <AnimatePresence>

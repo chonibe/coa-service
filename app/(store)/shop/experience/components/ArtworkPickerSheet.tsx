@@ -542,6 +542,7 @@ export function ArtworkPickerSheet({
                     spotlight={{ ...spotlightData, gifUrl: undefined }}
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
+                    onExploreCollection={() => onSpotlightSelect(false)}
                     showBadge
                     expanded={!!filters?.artists?.includes(spotlightData.vendorName)}
                   />
@@ -664,6 +665,36 @@ export function ArtworkPickerSheet({
                   )
                 })}
               </div>
+
+              {spotlightData &&
+                onSpotlightSelect &&
+                filters?.artists?.includes(spotlightData.vendorName) &&
+                products.length > 0 && (
+                  <div className="flex flex-col items-center gap-1 pt-2 pb-1 px-2">
+                    <button
+                      type="button"
+                      onClick={() => onSpotlightSelect(false)}
+                      className={cn(
+                        'w-full max-w-sm rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors border shadow-sm',
+                        spotlightData.unlisted
+                          ? 'border-violet-400/40 bg-violet-950/15 text-violet-100 hover:bg-violet-950/30 dark:border-violet-500/35'
+                          : theme === 'light'
+                            ? 'border-amber-200/60 bg-white text-neutral-900 hover:bg-amber-50/80'
+                            : 'border-[#FFBA94]/35 bg-[#262222] text-[#FFBA94] hover:bg-[#2c2828]'
+                      )}
+                    >
+                      Explore full collection
+                    </button>
+                    <p
+                      className={cn(
+                        'text-center text-xs max-w-sm',
+                        theme === 'light' ? 'text-neutral-500' : 'text-[#a09090]'
+                      )}
+                    >
+                      Showing only {spotlightData.vendorName}&apos;s works in this season. Clear to see every artist.
+                    </p>
+                  </div>
+                )}
 
               {hasMore && <div ref={sentinelRef} className="h-20" />}
 
