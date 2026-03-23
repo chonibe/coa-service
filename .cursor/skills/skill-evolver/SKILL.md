@@ -149,15 +149,14 @@ Use this structure:
 
 ## Scheduled / periodic runs
 
-Cursor cannot run an agent unattended. **Schedule a reminder** so you still run evolution in chat.
+**Option A — reminder only (Cursor agent does the work):** `./scripts/install-skill-evolution-launchd.sh`  
+Monday **09:00**: notification + open Cursor. Then attach **skill-evolver** and run evolution in chat.
 
-**macOS (this repo):** from the repo root, run once:
+**Option B — headless (API, no Cursor UI):** `./scripts/install-skill-evolution-launchd.sh automated`  
+Same schedule; runs `scripts/run-skill-evolution-automated.mjs` via Anthropic. Create `~/.config/coa-service/skill-evolution.env` from [`scripts/skill-evolution.env.example`](../../../scripts/skill-evolution.env.example) with `ANTHROPIC_API_KEY=...` (optional: `ANTHROPIC_MODEL`, `SKILL_EVOLUTION_APPLY=1` to write live `.cursor/skills/**/SKILL.md`). Output: `docs/dev/skill-evolution/run-YYYY-MM-DD/changelog.md` and `proposed/` copies. Manual run: `npm run skill-evolution:run`.
 
-`./scripts/install-skill-evolution-launchd.sh`
-
-That installs `~/Library/LaunchAgents/com.coa-service.skill-evolution-weekly.plist` — **Monday 09:00**, shows a **Notification Center** message, and opens **Cursor** at this workspace. Then start an agent chat, attach **skill-evolver**, and ask for weekly skill evolution.
-
-Unload: `launchctl bootout gui/$(id -u)/com.coa-service.skill-evolution-weekly`
+Unload reminder: `launchctl bootout gui/$(id -u)/com.coa-service.skill-evolution-weekly`  
+Unload automated: `launchctl bootout gui/$(id -u)/com.coa-service.skill-evolution-automated`
 
 When run with no user in the loop, still write a short changelog (even if "no changes").
 

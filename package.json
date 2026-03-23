@@ -54,7 +54,8 @@
     "register:webhooks": "tsx scripts/register-shopify-product-webhook.js",
     "process:barcodes": "curl -X POST http://localhost:3000/api/admin/process-all-barcodes -H \"Content-Type: application/json\" -d '{\"limit\": 100}'",
     "register:payment-domains": "curl -s -X POST http://localhost:3000/api/admin/register-payment-domains -H \"Content-Type: application/json\" | jq . 2>/dev/null || curl -s -X POST http://localhost:3000/api/admin/register-payment-domains -H \"Content-Type: application/json\"",
-    "test:webhooks": "tsx scripts/test-barcode-webhooks.js"
+    "test:webhooks": "tsx scripts/test-barcode-webhooks.js",
+    "skill-evolution:run": "node scripts/run-skill-evolution-automated.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
