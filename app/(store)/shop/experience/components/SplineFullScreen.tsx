@@ -8,8 +8,8 @@ import { ArrowUp, RotateCw } from 'lucide-react'
 /** Static facade (87 KB) as LCP candidate; Spline 6.7MB scene mounts via requestIdleCallback. */
 const SPLINE_FACADE_SRC = '/internal.webp'
 
-/** Once per tab session — short reel scroll nudge so users notice vertical scroll (see scroll nudge effect in this file). */
-const EXPERIENCE_REEL_SCROLL_HINT_KEY = 'sc-experience-reel-scroll-hint-v1'
+/** Once per tab session — reel scroll hint past Spline / carousel hide (see scroll nudge effect in this file). */
+const EXPERIENCE_REEL_SCROLL_HINT_KEY = 'sc-experience-reel-scroll-hint-v2'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -261,7 +261,7 @@ export function SplineFullScreen({
   const ignoreSlideSyncUntilRef = useRef(0)
   const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // One-time subtle scroll down + back on the main reel so users notice they can scroll (runs while facade or after Spline mounts).
+  // One-time reel scroll: down past the Spline block (artwork carousel hides) then back — first visit / tab session only.
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return
@@ -274,8 +274,10 @@ export function SplineFullScreen({
     let intervalId: ReturnType<typeof setInterval> | null = null
     let timeoutIds: ReturnType<typeof setTimeout>[] = []
     let pollAttempts = 0
-    /** ~8s max wait for layout (accordion/gallery) to produce scrollable overflow */
-    const MAX_POLL_ATTEMPTS = 58
+    let rafChainPending = false
+    /** ~12s max wait for layout + Spline section height */
+    const MAX_POLL_ATTEMPTS = 85
+    const MIN_SCROLLABLE = 16
 
     const clearTimers = () => {
       if (intervalId !== null) {
@@ -287,7 +289,7 @@ export function SplineFullScreen({
     }
 
     const animateScroll = (
-      el: HTMLDivElement,
+      scrollEl: HTMLDivElement,
       from: number,
       to: number,
       durationMs: number,
@@ -298,60 +300,115 @@ export function SplineFullScreen({
         if (cancelled) return
         const u = Math.min(1, (now - t0) / durationMs)
         const eased = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2
-        el.scrollTop = from + (to - from) * eased
+        scrollEl.scrollTop = from + (to - from) * eased
         if (u < 1) requestAnimationFrame(step)
         else done()
       }
       requestAnimationFrame(step)
     }
 
-    const runNudge = (el: HTMLDivElement) => {
-      if (cancelled || sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return
-      const maxScroll = el.scrollHeight - el.clientHeight
-      if (maxScroll < 48) return
+    /** Content Y of spline section bottom; scrollTop >= this clears hero from view (matches carousel `splineInView` off). */
+    const splineBottomScrollTop = (scrollEl: HTMLDivElement, spline: HTMLDivElement): number => {
+      const portTop = scrollEl.getBoundingClientRect().top
+      const splineTopInContent =
+        spline.getBoundingClientRect().top - portTop + scrollEl.scrollTop
+      return splineTopInContent + spline.offsetHeight
+    }
+
+    const runNudge = (scrollEl: HTMLDivElement): boolean => {
+      if (cancelled || sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return false
+      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight
+      if (maxScroll < MIN_SCROLLABLE) return false
+
+      const spline = sectionRefs.current[splineSectionIndex]
+      const start = scrollEl.scrollTop
+
+      let target = maxScroll
+      if (spline && spline.offsetHeight >= 64) {
+        const pastSpline = splineBottomScrollTop(scrollEl, spline)
+        target = Math.min(maxScroll, Math.max(start + MIN_SCROLLABLE, pastSpline))
+      }
+
+      // If we still barely move (e.g. flex layout), use a strong “past the fold” scroll
+      if (target <= start + 24 && maxScroll > 40) {
+        target = Math.min(
+          maxScroll,
+          start + Math.max(Math.floor(scrollEl.clientHeight * 0.58), 120)
+        )
+      }
+
+      if (target <= start + 8) {
+        target = maxScroll
+      }
+      if (target <= start + 8) return false
 
       sessionStorage.setItem(EXPERIENCE_REEL_SCROLL_HINT_KEY, '1')
-      const start = el.scrollTop
-      const delta = Math.min(88, Math.max(40, Math.floor(maxScroll * 0.14)))
-      const target = Math.min(start + delta, maxScroll)
 
-      // Avoid thumbnail slide index jumping while the reel moves
-      ignoreSlideSyncUntilRef.current = Date.now() + 1800
+      // Longer guard: carousel animation + two scroll tweens
+      ignoreSlideSyncUntilRef.current = Date.now() + 5200
       lastReportedSectionRef.current = splineSectionIndex
       lastProgrammaticSectionRef.current = splineSectionIndex
 
-      const leadMs = splineReady ? 220 : 500
+      const leadMs = splineReady ? 380 : 720
+      const downMs = 1050
+      const pauseMs = 380
+      const upMs = 950
+
       const t = window.setTimeout(() => {
         if (cancelled) return
-        animateScroll(el, start, target, 480, () => {
+        animateScroll(scrollEl, start, target, downMs, () => {
           if (cancelled) return
           const t2 = window.setTimeout(() => {
             if (cancelled) return
-            animateScroll(el, el.scrollTop, start, 420, () => {
+            animateScroll(scrollEl, scrollEl.scrollTop, start, upMs, () => {
               lastReportedSectionRef.current = splineSectionIndex
               lastProgrammaticSectionRef.current = splineSectionIndex
             })
-          }, 140)
+          }, pauseMs)
           timeoutIds.push(t2)
         })
       }, leadMs)
       timeoutIds.push(t)
+      return true
     }
 
     const trySchedule = () => {
       const el = scrollRef.current
       if (!el || cancelled) return
       const maxScroll = el.scrollHeight - el.clientHeight
-      if (maxScroll >= 48) {
-        clearTimers()
-        runNudge(el)
+      if (maxScroll < MIN_SCROLLABLE) {
+        pollAttempts += 1
+        if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
         return
       }
-      pollAttempts += 1
-      if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
+      const spline = sectionRefs.current[splineSectionIndex]
+      if (!spline) {
+        pollAttempts += 1
+        if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
+        return
+      }
+      // Wait briefly for Spline / hero layout; then run anyway (fold fallback inside runNudge)
+      if (spline.offsetHeight < 48 && pollAttempts < 35) {
+        pollAttempts += 1
+        return
+      }
+      if (rafChainPending) return
+      rafChainPending = true
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          rafChainPending = false
+          if (cancelled) return
+          const started = runNudge(el)
+          if (started) clearTimers()
+          else {
+            pollAttempts += 1
+            if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
+          }
+        })
+      })
     }
 
-    intervalId = window.setInterval(trySchedule, 140)
+    intervalId = window.setInterval(trySchedule, 160)
     trySchedule()
 
     return () => {

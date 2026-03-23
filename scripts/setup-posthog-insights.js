@@ -20,6 +20,8 @@
  *   POSTHOG_UPDATE_EXISTING_COHORTS=true — PATCH cohorts that already exist so filter
  *   definitions in PostHog match this script (default is skip-only, so broken cohorts
  *   in the UI never get fixed until you set this once and redeploy or run locally).
+ *   POSTHOG_COHORTS_ONLY=true — Only run the cohort create/PATCH loop (REST API). Use
+ *   npm run sync:posthog-cohorts (loads .env.local when dotenv is available).
  */
 
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY // Project API key (phc_...) - fallback
@@ -623,6 +625,48 @@ const DASHBOARDS = [
   },
 ]
 
+// ─── COHORT SYNC (REST API: POST + PATCH) ───────────────────────────────────
+
+/**
+ * Create missing cohorts and optionally PATCH existing definitions from COHORTS.
+ * PostHog recalculates membership after filter changes (not instant).
+ */
+async function syncCohortDefinitions({ skipIfExists, updateExistingCohorts }) {
+  console.log('\n─── Setting up Cohorts ───')
+  for (const c of COHORTS) {
+    try {
+      if (skipIfExists) {
+        const existing = await findExisting(c.name, 'cohort')
+        if (existing) {
+          if (updateExistingCohorts) {
+            try {
+              await api('PATCH', `/cohorts/${existing.id}/`, {
+                name: c.name,
+                description: c.description,
+                filters: c.filters,
+              })
+              console.log(`  🔄 Cohort updated: "${c.name}" (id: ${existing.id})`)
+            } catch (err) {
+              console.error(`  ❌ Cohort update "${c.name}": ${err.message}`)
+            }
+          } else {
+            console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
+          }
+          continue
+        }
+      }
+      const result = await api('POST', '/cohorts/', c)
+      if (result) {
+        console.log(`  ✅ Cohort created: "${c.name}" (id: ${result.id})`)
+      } else {
+        console.log(`  ⏭️  Cohort already exists: "${c.name}"`)
+      }
+    } catch (err) {
+      console.error(`  ❌ Cohort "${c.name}": ${err.message}`)
+    }
+  }
+}
+
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 async function run() {
@@ -732,39 +776,7 @@ async function run() {
   }
 
   // 5. Create or find cohorts
-  console.log('\n─── Setting up Cohorts ───')
-  for (const c of COHORTS) {
-    try {
-      if (skipIfExists) {
-        const existing = await findExisting(c.name, 'cohort')
-        if (existing) {
-          if (updateExistingCohorts) {
-            try {
-              await api('PATCH', `/cohorts/${existing.id}/`, {
-                name: c.name,
-                description: c.description,
-                filters: c.filters,
-              })
-              console.log(`  🔄 Cohort updated: "${c.name}" (id: ${existing.id})`)
-            } catch (err) {
-              console.error(`  ❌ Cohort update "${c.name}": ${err.message}`)
-            }
-          } else {
-            console.log(`  ⏭️  Cohort exists: "${c.name}" (id: ${existing.id})`)
-          }
-          continue
-        }
-      }
-      const result = await api('POST', '/cohorts/', c)
-      if (result) {
-        console.log(`  ✅ Cohort created: "${c.name}" (id: ${result.id})`)
-      } else {
-        console.log(`  ⏭️  Cohort already exists: "${c.name}"`)
-      }
-    } catch (err) {
-      console.error(`  ❌ Cohort "${c.name}": ${err.message}`)
-    }
-  }
+  await syncCohortDefinitions({ skipIfExists, updateExistingCohorts })
 
   console.log('\n✅ Setup complete!\n')
   console.log('Next steps:')
@@ -774,7 +786,27 @@ async function run() {
   console.log('  4. Create heatmaps for: /shop/experience, /shop/cart, /collector/welcome')
 }
 
-run().catch((err) => {
+async function main() {
+  if (process.env.POSTHOG_COHORTS_ONLY === 'true') {
+    console.log(`\n🎯 PostHog cohort sync only — Project ${POSTHOG_PROJECT_ID}`)
+    console.log(`   Host: ${POSTHOG_HOST}`)
+    console.log('   Uses REST API: POST /cohorts/ (new), PATCH /cohorts/:id/ (updates)\n')
+    const skipIfExists = process.env.POSTHOG_SKIP_IF_EXISTS !== 'false'
+    const updateExistingCohorts =
+      process.env.POSTHOG_UPDATE_EXISTING_COHORTS === 'false'
+        ? false
+        : true
+    if (updateExistingCohorts) {
+      console.log('   Existing cohorts will be PATCHed with filters from this repo.\n')
+    }
+    await syncCohortDefinitions({ skipIfExists, updateExistingCohorts })
+    console.log('\n✅ Cohort sync finished. PostHog will recalculate membership in the background.\n')
+    return
+  }
+  await run()
+}
+
+main().catch((err) => {
   console.error('Fatal:', err)
   process.exit(1)
 })

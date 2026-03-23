@@ -42,6 +42,18 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **Event map:** [Events map: Shop & Experience](./EVENTS_MAP.md) lists all events and where they fire.
 - **Usage:** Use `captureFunnelEvent(name, props)` / helpers from `lib/posthog.ts`. Use `usePostHog()` from `posthog-js/react` in client components.
 
+### PostHog MCP vs REST API (cohorts)
+
+The Cursor **PostHog MCP** plugin is optional; if it errors or is disabled, cohorts are still managed with the **PostHog REST API** (same as the PostHog UI). This repo does **not** send raw event data through a separate “actions” pipeline—**persons enter cohorts when PostHog recalculates** definitions against events already ingested from the app.
+
+**Push cohort definitions from code (create + PATCH):**
+
+```bash
+npm run sync:posthog-cohorts
+```
+
+Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`phx_...`, scope `cohort:write`) and `POSTHOG_PROJECT_ID`. Set `POSTHOG_HOST` for EU (`https://eu.i.posthog.com`). To create-only (no PATCH), run with `POSTHOG_UPDATE_EXISTING_COHORTS=false npm run sync:posthog-cohorts`.
+
 ### Insight setup script
 
 To create all PostHog insights (10 funnels, 12 trends, 8 paths, 21 cohorts, 4 dashboards) run:
