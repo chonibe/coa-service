@@ -542,7 +542,6 @@ export function ArtworkPickerSheet({
                     spotlight={{ ...spotlightData, gifUrl: undefined }}
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
-                    onExploreCollection={() => onSpotlightSelect(false)}
                     showBadge
                     expanded={!!filters?.artists?.includes(spotlightData.vendorName)}
                   />
@@ -689,17 +688,6 @@ export function ArtworkPickerSheet({
                 )}
 
               {hasMore && <div ref={sentinelRef} className="h-20" />}
-
-              {!hasMore && products.length > 0 && (
-                <p
-                  className={cn(
-                    'text-center text-sm py-6',
-                    theme === 'light' ? 'text-neutral-500' : 'text-neutral-500'
-                  )}
-                >
-                  You&apos;ve seen all artworks
-                </p>
-              )}
               </div>
             </div>
 

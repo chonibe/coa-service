@@ -62,11 +62,6 @@ interface ArtistSpotlightBannerProps {
   spotlightProducts: SpotlightProduct[]
   /** Called when banner is clicked — (isExpanding) filter when true, remove filter when false */
   onSelect?: (isExpanding: boolean) => void
-  /**
-   * When expanded, show a dedicated control to clear the artist filter without relying on tapping the whole card.
-   * Should typically call the same handler as onSelect(false).
-   */
-  onExploreCollection?: () => void
   /** When true, show "Artist Spotlight" or "Early access" badge (e.g. in selector) */
   showBadge?: boolean
   /** When true, show expanded view (full card with bio). When false, show collapsed (compact with thumbnails). When onSelect provided, click toggles. */
@@ -77,7 +72,6 @@ export function ArtistSpotlightBanner({
   spotlight,
   spotlightProducts,
   onSelect,
-  onExploreCollection,
   showBadge = false,
   expanded = true,
 }: ArtistSpotlightBannerProps) {
@@ -200,26 +194,6 @@ export function ArtistSpotlightBanner({
                     <span>@{spotlight.instagram}</span>
                   </a>
                 )}
-              </div>
-            )}
-            {isCollapsible && onExploreCollection && (
-              <div className="pt-3 w-full flex flex-col items-center">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onExploreCollection()
-                  }}
-                  className={cn(
-                    'w-full max-w-sm rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-                    'border shadow-sm',
-                    spotlight.unlisted
-                      ? 'border-violet-400/40 bg-violet-950/20 text-violet-100 hover:bg-violet-950/35 dark:border-violet-500/35 dark:hover:bg-violet-950/40'
-                      : 'border-amber-200/50 bg-white/80 text-neutral-900 hover:bg-white dark:border-[#FFBA94]/35 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
-                  )}
-                >
-                  Explore full collection
-                </button>
               </div>
             )}
           </div>
