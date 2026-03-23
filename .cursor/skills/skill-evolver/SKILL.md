@@ -149,7 +149,15 @@ Use this structure:
 
 ## Scheduled / periodic runs
 
-Cursor has no built-in Cowork-style scheduler. For hands-off cadence (e.g. weekly), use **OS cron**, **Calendar reminder**, or a team habit—then run this skill manually with "weekly skill evolution."
+Cursor cannot run an agent unattended. **Schedule a reminder** so you still run evolution in chat.
+
+**macOS (this repo):** from the repo root, run once:
+
+`./scripts/install-skill-evolution-launchd.sh`
+
+That installs `~/Library/LaunchAgents/com.coa-service.skill-evolution-weekly.plist` — **Monday 09:00**, shows a **Notification Center** message, and opens **Cursor** at this workspace. Then start an agent chat, attach **skill-evolver**, and ask for weekly skill evolution.
+
+Unload: `launchctl bootout gui/$(id -u)/com.coa-service.skill-evolution-weekly`
 
 When run with no user in the loop, still write a short changelog (even if "no changes").
 
