@@ -12,6 +12,61 @@ import posthog from "posthog-js"
 const EXPERIENCE_QUIZ_STORAGE_KEY = "sc-experience-quiz"
 const EXPERIENCE_AB_COOKIE = "sc_experience_ab"
 
+/** sessionStorage: first path in this browser tab (PostHog “session” activity context for cohorts). */
+const SESS_ENTRY_PATH_KEY = "sc_ph_sess_entry_path"
+const SESS_ENTRY_AT_KEY = "sc_ph_sess_entry_at"
+
+/**
+ * Record the first pathname seen in this tab if not already set.
+ * Call on early pageviews so cohorts can use session_entry_path on later events.
+ */
+export function ensureSessionEntryForAnalytics() {
+  if (typeof window === "undefined") return
+  try {
+    const path = window.location.pathname || "/"
+    if (!sessionStorage.getItem(SESS_ENTRY_PATH_KEY)) {
+      sessionStorage.setItem(SESS_ENTRY_PATH_KEY, path)
+      sessionStorage.setItem(SESS_ENTRY_AT_KEY, new Date().toISOString())
+    }
+  } catch {
+    /* private mode / blocked storage */
+  }
+}
+
+/**
+ * Properties attached to custom + commerce events so PostHog cohorts can segment
+ * by “where this tab started” vs “where this event fired” (behavioral + event filters).
+ */
+export function getSessionActivityProperties(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  const deviceType = getDeviceType()
+  let entryPath = ""
+  let entryAt = ""
+  try {
+    entryPath = sessionStorage.getItem(SESS_ENTRY_PATH_KEY) || ""
+    entryAt = sessionStorage.getItem(SESS_ENTRY_AT_KEY) || ""
+  } catch {
+    /* ignore */
+  }
+  const activityPath = window.location.pathname || "/"
+  return {
+    device_type: deviceType,
+    session_entry_path: entryPath || activityPath,
+    activity_path: activityPath,
+    ...(entryAt ? { session_entry_at: entryAt } : {}),
+  }
+}
+
+function captureWithSessionActivity(
+  eventName: string,
+  properties?: Record<string, string | number | boolean | undefined>
+) {
+  const ph = getPostHog()
+  if (!ph) return
+  const sessionProps = getSessionActivityProperties()
+  ph.capture(eventName, { ...sessionProps, ...properties })
+}
+
 /**
  * Read segmentation traits from cookie + localStorage for `identify()` merges.
  * Keeps PostHog person properties aligned with quiz + A/B when users sign in.
@@ -49,9 +104,7 @@ export function captureFunnelEvent(
   eventName: string,
   properties?: Record<string, string | number | boolean | undefined>
 ) {
-  const ph = getPostHog()
-  if (!ph) return
-  ph.capture(eventName, properties)
+  captureWithSessionActivity(eventName, properties)
 }
 
 /** Identify user (call from client after login). Prefer PostHogIdentify in providers for shop users. */
@@ -79,9 +132,7 @@ export function setUserProperty(key: string, value: string | number | boolean) {
  * Use at critical drop-off points so sessions are easy to filter in PostHog.
  */
 export function tagSessionForReplay(tag: string) {
-  const ph = getPostHog()
-  if (!ph) return
-  ph.capture("session_tagged", { tag })
+  captureWithSessionActivity("session_tagged", { tag })
 }
 
 /**
@@ -103,6 +154,8 @@ export function captureSessionContext() {
   const ph = getPostHog()
   if (!ph) return
 
+  ensureSessionEntryForAnalytics()
+
   const isReturning = (() => {
     try {
       const visited = localStorage.getItem("sc_visited_before")
@@ -117,6 +170,7 @@ export function captureSessionContext() {
   })()
 
   const deviceType = getDeviceType()
+  const sessionProps = getSessionActivityProperties()
 
   ph.capture("session_context", {
     referrer: document.referrer || "direct",
@@ -125,11 +179,14 @@ export function captureSessionContext() {
     screen_width: window.screen.width,
     screen_height: window.screen.height,
     language: navigator.language,
+    ...sessionProps,
   })
   // Person properties for cohorts (requires person_profiles: "always" in init — see providers)
   ph.setPersonProperties({
     preferred_device: deviceType,
     is_returning_user: isReturning,
+    /** Latest tab entry path — useful for person-based “landed on X” cohorts */
+    last_session_entry_path: sessionProps.session_entry_path,
   })
 }
 
@@ -146,19 +203,19 @@ export interface PostHogProductItem {
 }
 
 export function captureViewItem(item: PostHogProductItem) {
-  getPostHog()?.capture("view_item", { ...item, currency: item.currency ?? "USD" })
+  captureWithSessionActivity("view_item", { ...item, currency: item.currency ?? "USD" })
 }
 
 export function captureAddToCart(item: PostHogProductItem) {
-  getPostHog()?.capture("add_to_cart", { ...item, currency: item.currency ?? "USD" })
+  captureWithSessionActivity("add_to_cart", { ...item, currency: item.currency ?? "USD" })
 }
 
 export function captureRemoveFromCart(item: PostHogProductItem) {
-  getPostHog()?.capture("remove_from_cart", { ...item, currency: item.currency ?? "USD" })
+  captureWithSessionActivity("remove_from_cart", { ...item, currency: item.currency ?? "USD" })
 }
 
 export function captureBeginCheckout(items: PostHogProductItem[], value?: number, currency = "USD") {
-  getPostHog()?.capture("begin_checkout", { items, value, currency })
+  captureWithSessionActivity("begin_checkout", { items, value, currency })
 }
 
 export function captureAddPaymentInfo(
@@ -167,7 +224,7 @@ export function captureAddPaymentInfo(
   value?: number,
   currency = "USD"
 ) {
-  getPostHog()?.capture("add_payment_info", {
+  captureWithSessionActivity("add_payment_info", {
     payment_type: paymentType,
     items,
     value,
@@ -183,15 +240,15 @@ export function capturePurchase(props: {
   shipping?: number
   items_count?: number
 }) {
-  getPostHog()?.capture("purchase", props)
+  captureWithSessionActivity("purchase", props)
 }
 
 export function captureSearch(searchTerm: string) {
-  getPostHog()?.capture("search", { search_term: searchTerm })
+  captureWithSessionActivity("search", { search_term: searchTerm })
 }
 
 export function captureViewCart(items: PostHogProductItem[], value?: number, currency = "USD") {
-  getPostHog()?.capture("view_cart", { items, value, currency })
+  captureWithSessionActivity("view_cart", { items, value, currency })
 }
 
 export function captureAddShippingInfo(
@@ -200,7 +257,7 @@ export function captureAddShippingInfo(
   country?: string,
   currency = "USD"
 ) {
-  getPostHog()?.capture("add_shipping_info", { items, value, country, currency })
+  captureWithSessionActivity("add_shipping_info", { items, value, country, currency })
 }
 
 /** Funnel: onboarding & experience (use for drop-off analysis). */

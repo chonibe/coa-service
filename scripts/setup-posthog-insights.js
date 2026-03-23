@@ -597,6 +597,7 @@ const COHORTS = [
   { name: 'Cohort · Collector Onboarding Skippers', description: 'Users who skipped collector onboarding', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_skipped', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · Repeat Purchasers', description: 'Users who performed purchase 2+ times (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'gte', operator_value: 2 }] } } },
   { name: 'Cohort · First-Time Purchasers', description: 'Users who performed purchase exactly once (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'eq', operator_value: 1 }] } } },
+  { name: 'Cohort · Tab started on Experience v2', description: 'First path in this browser tab included experience-v2 (person last_session_entry_path)', filters: { properties: { type: 'AND', values: [{ key: 'last_session_entry_path', value: 'experience-v2', type: 'person', operator: 'icontains' }] } } },
 ]
 
 const DASHBOARDS = [

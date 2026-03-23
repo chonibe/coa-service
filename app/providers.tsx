@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation"
 import posthog from "posthog-js"
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
 import { ShopAuthProvider, useShopAuthContext } from "@/lib/shop/ShopAuthContext"
-import { captureSessionContext, getPostHogIdentifyTraitsFromClientStorage } from "@/lib/posthog"
+import {
+  captureSessionContext,
+  ensureSessionEntryForAnalytics,
+  getPostHogIdentifyTraitsFromClientStorage,
+  getSessionActivityProperties,
+} from "@/lib/posthog"
 
 // Conditionally import React Query to avoid build errors if not installed
 let QueryClientProvider: any = null
@@ -156,10 +161,12 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
       (typeof window !== "undefined" && (window as unknown as { __POSTHOG_KEY__?: string }).__POSTHOG_KEY__) ||
       process.env.NEXT_PUBLIC_POSTHOG_KEY
     if (pathname && isValidPostHogKey(key)) {
+      ensureSessionEntryForAnalytics()
       posthog.capture("$pageview", {
         path: pathname,
         $current_url: typeof window !== "undefined" ? window.location.href : pathname,
         title: typeof document !== "undefined" ? document.title : undefined,
+        ...getSessionActivityProperties(),
       })
     }
   }, [pathname])
@@ -180,6 +187,8 @@ function PostHogIdentify() {
       filterDistinctIds.includes(user.id.toLowerCase())
 
     const fromClient = getPostHogIdentifyTraitsFromClientStorage()
+    const sess =
+      typeof window !== "undefined" ? getSessionActivityProperties() : ({} as Record<string, string>)
     posthog.identify(user.id, {
       email: user.email,
       collector_identifier: user.collectorIdentifier,
@@ -190,6 +199,9 @@ function PostHogIdentify() {
       is_member: user.isMember,
       membership_tier: user.membershipTier,
       ...fromClient,
+      ...(sess.session_entry_path
+        ? { last_session_entry_path: sess.session_entry_path }
+        : {}),
     })
     posthog.group("user", user.id, {
       roles: user.roles.join(","),
