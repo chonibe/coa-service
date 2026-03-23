@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Headless skill-evolver: reads Cursor agent-transcripts + project .cursor/skills,
- * calls Anthropic Messages API, writes changelog; optionally applies SKILL.md updates.
+ * Headless skill-evolver: reads Cursor agent-transcripts + canonical ./skills/ tree,
+ * calls Anthropic Messages API, writes changelog; optionally applies SKILL.md under skills/.
  *
  * Env:
  *   ANTHROPIC_API_KEY (required) or load from ~/.config/coa-service/skill-evolution.env
  *   ANTHROPIC_MODEL (default claude-3-5-haiku-20241022)
- *   SKILL_EVOLUTION_APPLY=1 — write proposed SKILL.md files under .cursor/skills/<name>/
+ *   SKILL_EVOLUTION_APPLY=1 — write live files under skills/<name>/SKILL.md
+ *   SKILL_EVOLUTION_SYNC_CURSOR=0 — skip `npm run skills:sync` after apply (default: run sync)
  *   SKILL_EVOLUTION_TRANSCRIPTS_DIR — override transcript root
  *   SKILL_EVOLUTION_MAX_TRANSCRIPTS (default 12)
  *   SKILL_EVOLUTION_CHARS_PER_TRANSCRIPT (default 14000)
@@ -16,6 +17,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import { spawnSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -41,6 +43,7 @@ loadDotEnvFile(path.join(REPO_ROOT, ".env.local"));
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022";
 const APPLY = process.env.SKILL_EVOLUTION_APPLY === "1";
+const SYNC_CURSOR_AFTER_APPLY = process.env.SKILL_EVOLUTION_SYNC_CURSOR !== "0";
 const MAX_TRANSCRIPTS = Math.min(50, Math.max(1, Number(process.env.SKILL_EVOLUTION_MAX_TRANSCRIPTS || 12)));
 const CHARS_PER = Math.min(200_000, Math.max(2000, Number(process.env.SKILL_EVOLUTION_CHARS_PER_TRANSCRIPT || 14000)));
 
@@ -85,10 +88,12 @@ function listSessionTranscripts(root) {
 }
 
 function readSkillSnippets() {
-  const skillsRoot = path.join(REPO_ROOT, ".cursor", "skills");
+  const skillsRoot = path.join(REPO_ROOT, "skills");
   if (!fs.existsSync(skillsRoot)) return [];
   const out = [];
-  for (const name of fs.readdirSync(skillsRoot, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+  for (const name of fs
+    .readdirSync(skillsRoot, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith("_"))) {
     const md = path.join(skillsRoot, name.name, "SKILL.md");
     if (!fs.existsSync(md)) continue;
     let text = fs.readFileSync(md, "utf8");
@@ -163,7 +168,7 @@ async function main() {
     .map((s) => `\n\n### SKILL ${s.dir} (${path.relative(REPO_ROOT, s.path)})\n${s.content}`)
     .join("");
 
-  const system = `You are the automated "skill-evolver" for a Cursor project. Analyze agent transcripts (JSONL-style lines with user/assistant messages) and the provided SKILL.md files.
+  const system = `You are the automated "skill-evolver" for a Cursor project. Canonical skill files live under the repository ./skills/<name>/SKILL.md (synced to .cursor/skills for Cursor and packable as Claude .skill zips). Analyze agent transcripts (JSONL-style lines with user/assistant messages) and the provided SKILL.md files.
 
 Output a single JSON object (no markdown outside JSON) with this shape:
 {
@@ -209,11 +214,11 @@ Rules:
     const md = u.fullMarkdown;
     if (!safeSkillDir(dir) || typeof md !== "string" || md.length < 50) continue;
     if (!md.includes("---")) continue;
-    const target = path.join(REPO_ROOT, ".cursor", "skills", dir, "SKILL.md");
+    const target = path.join(REPO_ROOT, "skills", dir, "SKILL.md");
     const proposedPath = path.join(outDir, "proposed", dir, "SKILL.md");
     fs.mkdirSync(path.dirname(proposedPath), { recursive: true });
     fs.writeFileSync(proposedPath, md, "utf8");
-    const skillDirPath = path.join(REPO_ROOT, ".cursor", "skills", dir);
+    const skillDirPath = path.join(REPO_ROOT, "skills", dir);
     if (APPLY && fs.existsSync(skillDirPath)) {
       fs.writeFileSync(target, md, "utf8");
       applied += 1;
@@ -221,8 +226,20 @@ Rules:
     }
   }
 
+  if (APPLY && applied > 0 && SYNC_CURSOR_AFTER_APPLY) {
+    const r = spawnSync(process.execPath, [path.join(REPO_ROOT, "scripts", "sync-skills.mjs"), "to-cursor"], {
+      cwd: REPO_ROOT,
+      stdio: "inherit",
+    });
+    if (r.status !== 0) {
+      console.error("skills:sync to-cursor exited", r.status);
+    }
+  }
+
   if (!APPLY && updates.length) {
-    console.error(`Proposed ${updates.length} update(s) under ${path.join(outDir, "proposed")}; set SKILL_EVOLUTION_APPLY=1 to write live .cursor/skills.`);
+    console.error(
+      `Proposed ${updates.length} update(s) under ${path.join(outDir, "proposed")}; set SKILL_EVOLUTION_APPLY=1 to write live skills/ (then syncs to .cursor/skills unless SKILL_EVOLUTION_SYNC_CURSOR=0).`,
+    );
   }
 
   console.log(JSON.stringify({ changelogPath, proposedDir: path.join(outDir, "proposed"), applied, transcripts: sessions.length }, null, 2));
