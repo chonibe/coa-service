@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
-import { ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -691,34 +691,14 @@ export function ArtworkPickerSheet({
               {hasMore && <div ref={sentinelRef} className="h-20" />}
 
               {!hasMore && products.length > 0 && (
-                onSeasonChange ? (
-                  <div className="flex flex-col items-center py-6 px-2 pb-8">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSeasonChange(activeSeason === 'season1' ? 'season2' : 'season1')
-                      }
-                      className={cn(
-                        'inline-flex items-center gap-1 text-sm font-semibold transition-colors',
-                        theme === 'light'
-                          ? 'text-[#047AFF] hover:text-[#0366d6]'
-                          : 'text-[#60A5FA] hover:text-[#93C5FD]'
-                      )}
-                    >
-                      {activeSeason === 'season1' ? 'Browse Season 2' : 'Browse Season 1'}
-                      <ChevronRight className="w-4 h-4 shrink-0" strokeWidth={2.25} aria-hidden />
-                    </button>
-                  </div>
-                ) : (
-                  <p
-                    className={cn(
-                      'text-center text-sm py-6',
-                      theme === 'light' ? 'text-neutral-500' : 'text-neutral-500'
-                    )}
-                  >
-                    You&apos;ve seen all artworks
-                  </p>
-                )
+                <p
+                  className={cn(
+                    'text-center text-sm py-6',
+                    theme === 'light' ? 'text-neutral-500' : 'text-neutral-500'
+                  )}
+                >
+                  You&apos;ve seen all artworks
+                </p>
               )}
               </div>
             </div>
