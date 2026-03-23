@@ -99,6 +99,15 @@ export function FeaturedProductSection({
                   muted
                   playsInline
                   className="w-full h-full object-cover"
+                  onLoadedData={
+                    enableVideoAutoplay
+                      ? (e) => {
+                          const el = e.currentTarget
+                          el.muted = true
+                          el.play().catch(() => {})
+                        }
+                      : undefined
+                  }
                 />
               ) : (
                 <img

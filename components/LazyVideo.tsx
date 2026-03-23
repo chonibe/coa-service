@@ -53,6 +53,17 @@ export function LazyVideo({
     return () => el.removeEventListener('volumechange', forceMute)
   }, [shouldLoad])
 
+  const tryMutedAutoplay = (el: HTMLVideoElement) => {
+    el.muted = true
+    if (!props.autoPlay) return
+    const attempt = () => {
+      if (!el.paused) return
+      el.play().catch(() => {})
+    }
+    attempt()
+    requestAnimationFrame(attempt)
+  }
+
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full">
       <video
@@ -71,9 +82,12 @@ export function LazyVideo({
           className
         )}
         onLoadedData={(e) => {
-          e.currentTarget.muted = true
-          if (props.autoPlay) e.currentTarget.play().catch(() => {})
+          tryMutedAutoplay(e.currentTarget)
           props.onLoadedData?.(e)
+        }}
+        onCanPlay={(e) => {
+          tryMutedAutoplay(e.currentTarget)
+          props.onCanPlay?.(e)
         }}
       >
         {shouldLoad && <source src={src} type={type} />}

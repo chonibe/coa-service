@@ -83,6 +83,8 @@ export interface VideoPlayerProps {
   showControls?: boolean
   allowTransparentHeader?: boolean
   className?: string
+  /** Delay before attaching video src (poster/LCP first). Increase for Lighthouse; default ~250ms. */
+  deferLoadMs?: number
 }
 
 export function VideoPlayer({
@@ -93,21 +95,22 @@ export function VideoPlayer({
   showControls = true,
   allowTransparentHeader: _allowTransparentHeader = true,
   className,
+  deferLoadMs = 250,
 }: VideoPlayerProps) {
+  const wantsAutoplay = video.autoplay !== false
   const videoRef = React.useRef<HTMLVideoElement>(null)
-  const [isPlaying, setIsPlaying] = React.useState(video.autoplay ?? true)
-  const [showPlayButton, setShowPlayButton] = React.useState(!video.autoplay)
+  const [isPlaying, setIsPlaying] = React.useState(wantsAutoplay)
+  const [showPlayButton, setShowPlayButton] = React.useState(!wantsAutoplay)
   const [videoLoadStarted, setVideoLoadStarted] = React.useState(false)
 
-  // Defer video load well past first paint so the 10MB video doesn't compete
-  // with critical resources during Lighthouse's measurement window
+  // Defer attaching src briefly after first paint so poster/LCP wins; tune deferLoadMs for Lighthouse
   React.useEffect(() => {
     const t = setTimeout(() => {
       setVideoLoadStarted(true)
       videoRef.current?.load?.()
-    }, 3000)
+    }, deferLoadMs)
     return () => clearTimeout(t)
-  }, [])
+  }, [deferLoadMs])
 
   // Force mute and lock audio: re-apply mute on volumechange so audio never plays through
   React.useEffect(() => {
@@ -178,7 +181,7 @@ export function VideoPlayer({
         src={videoLoadStarted ? video.url : undefined}
         poster={video.poster}
         preload="none"
-        autoPlay={video.autoplay}
+        autoPlay={wantsAutoplay}
         loop={video.loop ?? true}
         muted
         playsInline
@@ -190,7 +193,10 @@ export function VideoPlayer({
         onLoadedData={(e) => {
           const el = e.currentTarget
           el.muted = true
-          if (video.autoplay) el.play().catch(() => {})
+          if (!wantsAutoplay) return
+          el.play().catch((err) => {
+            console.warn('[VideoPlayer] muted autoplay failed', err)
+          })
         }}
       >
         {videoLoadStarted && (

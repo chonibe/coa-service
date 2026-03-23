@@ -42,6 +42,15 @@ const METAOBJECT_HANDLE = 'homepage-banner-video-3gqrnjc3' // Exact handle from 
 
 // Field keys in the metaobject
 // NOTE: video_banner_hero and video_banner_1 are file_reference types, not direct URLs
+/** Metaobject single-line text booleans: empty/missing → undefined so merge uses code fallback; explicit true/false strings are honored. */
+function parseMetaobjectBool(raw: string | undefined | null): boolean | undefined {
+  if (raw == null || String(raw).trim() === '') return undefined
+  const s = String(raw).trim().toLowerCase()
+  if (s === 'true' || s === '1') return true
+  if (s === 'false' || s === '0') return false
+  return undefined
+}
+
 const FIELD_KEYS = {
   VIDEO_BANNER_HERO: 'video_banner_hero', // Primary video (file_reference)
   VIDEO_BANNER_1: 'video_banner_1',       // Secondary video (file_reference)
@@ -110,9 +119,9 @@ export async function getHeroVideoSettings(): Promise<HomepageVideoSettings | nu
   return {
     url,
     poster: poster || undefined,
-    autoplay: autoplay === 'true' || autoplay === '1' || autoplay === 'True',
-    loop: loop === 'true' || loop === '1' || loop === 'True',
-    muted: muted === 'true' || muted === '1' || muted === 'True',
+    autoplay: parseMetaobjectBool(autoplay),
+    loop: parseMetaobjectBool(loop),
+    muted: parseMetaobjectBool(muted),
   }
 }
 
@@ -177,9 +186,9 @@ export async function getSecondaryVideoSettings(): Promise<HomepageVideoSettings
   return {
     url,
     poster: poster || undefined,
-    autoplay: autoplay === 'true' || autoplay === '1' || autoplay === 'True',
-    loop: loop === 'true' || loop === '1' || loop === 'True',
-    muted: muted === 'true' || muted === '1' || muted === 'True',
+    autoplay: parseMetaobjectBool(autoplay),
+    loop: parseMetaobjectBool(loop),
+    muted: parseMetaobjectBool(muted),
   }
 }
 

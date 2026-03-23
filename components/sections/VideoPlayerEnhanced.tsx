@@ -74,6 +74,7 @@ export function VideoPlayerEnhanced({
   enableScrollEffects = true,
   enableTextAnimation = true,
 }: VideoPlayerEnhancedProps) {
+  const wantsAutoplay = video.autoplay !== false
   const sectionRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -81,8 +82,8 @@ export function VideoPlayerEnhanced({
   const subheadlineRef = useRef<HTMLParagraphElement>(null)
   const ctaRef = useRef<HTMLDivElement>(null)
 
-  const [isPlaying, setIsPlaying] = React.useState(video.autoplay ?? true)
-  const [showPlayButton, setShowPlayButton] = React.useState(!video.autoplay)
+  const [isPlaying, setIsPlaying] = React.useState(wantsAutoplay)
+  const [showPlayButton, setShowPlayButton] = React.useState(!wantsAutoplay)
   const [videoError, setVideoError] = React.useState(false)
 
   // Force mute and lock audio: re-apply mute on volumechange so audio never plays through
@@ -262,7 +263,7 @@ export function VideoPlayerEnhanced({
             }}
             src={video.url}
             poster={video.poster}
-            autoPlay={video.autoplay}
+            autoPlay={wantsAutoplay}
             loop={video.loop ?? true}
             muted
             playsInline
@@ -271,7 +272,14 @@ export function VideoPlayerEnhanced({
             controlsList="nodownload nofullscreen noremoteplayback"
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-            onLoadedData={(e) => { e.currentTarget.muted = true }}
+            onLoadedData={(e) => {
+              const el = e.currentTarget
+              el.muted = true
+              if (!wantsAutoplay) return
+              el.play().catch((err) => {
+                console.warn('[VideoPlayerEnhanced] muted autoplay failed', err)
+              })
+            }}
             onError={(e) => {
               console.error('Video load error:', e)
               setVideoError(true)

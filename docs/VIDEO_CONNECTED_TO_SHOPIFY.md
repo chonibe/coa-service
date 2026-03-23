@@ -1,7 +1,7 @@
 # ✅ Video Now Connected to Shopify
 
 **Status:** Live and Working  
-**Last Updated:** 2026-02-04
+**Last Updated:** 2026-03-23
 
 ---
 
@@ -37,6 +37,15 @@ The code merges Shopify data with static fallbacks:
 - If metaobject has `headline` → Use it
 - If metaobject missing `headline` → Use static fallback ✅
 - This way nothing breaks!
+
+### Autoplay, loop, muted (metaobject text fields)
+
+- **Empty or missing field:** Treated as “not set”; the app uses values from [`content/homepage.ts`](../content/homepage.ts) (e.g. autoplay on for the hero).
+- **Explicit on:** `true`, `1` (case-insensitive) → enabled.
+- **Explicit off:** `false`, `0` (case-insensitive) → disabled.
+- **Implementation:** [`lib/shopify/homepage-settings.ts`](../lib/shopify/homepage-settings.ts) (`parseMetaobjectBool` + `?? fallback` merge).
+
+Hero playback UI uses [`components/sections/VideoPlayer.tsx`](../components/sections/VideoPlayer.tsx) / [`VideoPlayerEnhanced.tsx`](../components/sections/VideoPlayerEnhanced.tsx): autoplay defaults to **on** unless `autoplay: false` is passed explicitly.
 
 ---
 
@@ -82,9 +91,9 @@ That's it! The code will automatically use these values instead of the fallbacks
 |-------|--------|-------|
 | Video URL | ✅ Shopify Metaobject | Your uploaded video |
 | Video Poster | ✅ Shopify Metaobject | (if you added it) |
-| Autoplay | ✅ Shopify Metaobject | true/false |
-| Loop | ✅ Shopify Metaobject | true/false |
-| Muted | ✅ Shopify Metaobject | true/false |
+| Autoplay | ✅ Shopify Metaobject or fallback | See toggle rules below |
+| Loop | ✅ Shopify Metaobject or fallback | See toggle rules below |
+| Muted | ✅ Shopify Metaobject or fallback | See toggle rules below |
 | Headline | 📄 Static Fallback | "One lamp, Endless Inspiration.." |
 | Subheadline | 📄 Static Fallback | "" |
 | CTA Text | 📄 Static Fallback | "Shop Now" |
