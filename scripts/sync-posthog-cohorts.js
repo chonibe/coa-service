@@ -32,6 +32,11 @@ function loadEnvFile(file) {
 loadEnvFile('.env.local')
 loadEnvFile('.env')
 
+// API host must match project region (EU vs US). Frontend already uses NEXT_PUBLIC_POSTHOG_HOST.
+if (!process.env.POSTHOG_HOST && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+  process.env.POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST
+}
+
 process.env.POSTHOG_COHORTS_ONLY = 'true'
 if (process.env.POSTHOG_UPDATE_EXISTING_COHORTS === undefined) {
   process.env.POSTHOG_UPDATE_EXISTING_COHORTS = 'true'

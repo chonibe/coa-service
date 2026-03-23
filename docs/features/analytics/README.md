@@ -52,7 +52,7 @@ The Cursor **PostHog MCP** plugin is optional; if it errors or is disabled, coho
 npm run sync:posthog-cohorts
 ```
 
-Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`phx_...`, scope `cohort:write`) and `POSTHOG_PROJECT_ID`. Set `POSTHOG_HOST` for EU (`https://eu.i.posthog.com`). To create-only (no PATCH), run with `POSTHOG_UPDATE_EXISTING_COHORTS=false npm run sync:posthog-cohorts`.
+Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`phx_...`, scope `cohort:write`) and `POSTHOG_PROJECT_ID`. **Region:** If the project is on **EU cloud**, set `POSTHOG_HOST=https://eu.i.posthog.com` or ensure `NEXT_PUBLIC_POSTHOG_HOST` matches (the sync script copies it to `POSTHOG_HOST` when unset—using the US default with an EU key returns **401 invalid key**). To create-only (no PATCH), run with `POSTHOG_UPDATE_EXISTING_COHORTS=false npm run sync:posthog-cohorts`.
 
 ### Insight setup script
 
