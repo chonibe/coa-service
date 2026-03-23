@@ -148,6 +148,8 @@ export function ArtworkCarouselBar({
   }, [experienceReelRef])
 
   const hasCarouselArtworks = selectedArtworks.length > 0
+  /** Street lamp “start” step: no artworks in collection yet — blue + CTA, no carousel gradient. */
+  const emptyCollectionStart = !hasCarouselArtworks && stripMode === 'collection'
 
   const showSpotlightPlaceholders =
     stripMode === 'collection' && selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
@@ -171,6 +173,13 @@ export function ArtworkCarouselBar({
         ]
   )
 
+  const emptyCollectionPlusButtonClass = cn(
+    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95] shadow-lg',
+    theme === 'light'
+      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/25 hover:bg-blue-700 hover:border-blue-700'
+      : 'border-blue-500 bg-blue-600 text-white shadow-black/35 hover:bg-blue-500 hover:border-blue-400'
+  )
+
   return (
     <div
       className={cn(
@@ -180,13 +189,15 @@ export function ArtworkCarouselBar({
       )}
     >
       <div className="relative pt-6 pb-4 px-4 md:pt-10 md:pb-5">
-        {/* Solid fade into page bg — no backdrop blur (avoids “frosted gradient” look) */}
+        {/* Solid fade into page bg — hidden until first artwork is in the collection */}
         <div
           className={cn(
-            'pointer-events-none absolute bottom-0 left-0 right-0',
-            theme === 'light'
-              ? 'h-[min(280px,58vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-42% to-transparent'
-              : 'h-[min(240px,52vh)] bg-gradient-to-t from-[#171515] via-[#171515]/32 to-transparent'
+            'pointer-events-none absolute bottom-0 left-0 right-0 transition-opacity duration-300',
+            emptyCollectionStart
+              ? 'opacity-0 h-[min(280px,58vh)]'
+              : theme === 'light'
+                ? 'opacity-100 h-[min(280px,58vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-42% to-transparent'
+                : 'opacity-100 h-[min(240px,52vh)] bg-gradient-to-t from-[#171515] via-[#171515]/32 to-transparent'
           )}
           aria-hidden
         />
@@ -212,7 +223,7 @@ export function ArtworkCarouselBar({
                 <button
                   type="button"
                   onClick={onOpenPicker}
-                  className={glassAddButtonClass}
+                  className={emptyCollectionStart ? emptyCollectionPlusButtonClass : glassAddButtonClass}
                   aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
                 >
                   <Plus className="w-5 h-5" strokeWidth={2.25} />
