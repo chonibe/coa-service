@@ -116,6 +116,27 @@ export function ArtistSpotlightBanner({
         {isExpanded ? (
           /* Expanded: square image, bio (GIF rendered outside card via SpotlightCollectionGif) */
           <div className="flex flex-col items-center p-4 sm:p-6">
+            {isCollapsible && (
+              <div className="flex w-full justify-center -mt-1 mb-2 sm:mb-3">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelect?.(false)
+                  }}
+                  aria-label="Collapse spotlight"
+                  className={cn(
+                    'inline-flex items-center justify-center rounded-full p-2.5 transition-colors',
+                    'border shadow-sm',
+                    spotlight.unlisted
+                      ? 'border-violet-400/45 bg-violet-950/30 text-violet-100 hover:bg-violet-950/45 dark:border-violet-500/40'
+                      : 'border-amber-200/65 bg-white text-neutral-800 hover:bg-amber-50/90 dark:border-[#FFBA94]/45 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
+                  )}
+                >
+                  <ChevronUp className="w-5 h-5 shrink-0" strokeWidth={2.5} aria-hidden />
+                </button>
+              </div>
+            )}
             <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
               <div className="flex flex-col items-center gap-1 sm:gap-2 w-full text-center">
                 {showBadge && (
@@ -181,30 +202,24 @@ export function ArtistSpotlightBanner({
                 )}
               </div>
             )}
-            {isCollapsible && (
-              <div className="pt-3 w-full flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center gap-1 text-neutral-500 dark:text-[#c4a0a0]">
-                  <ChevronUp className="w-4 h-4 shrink-0" aria-hidden />
-                  <span className="text-sm text-center">Tap above to collapse & show all artists</span>
-                </div>
-                {onExploreCollection && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onExploreCollection()
-                    }}
-                    className={cn(
-                      'w-full max-w-sm rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-                      'border shadow-sm',
-                      spotlight.unlisted
-                        ? 'border-violet-400/40 bg-violet-950/20 text-violet-100 hover:bg-violet-950/35 dark:border-violet-500/35 dark:hover:bg-violet-950/40'
-                        : 'border-amber-200/50 bg-white/80 text-neutral-900 hover:bg-white dark:border-[#FFBA94]/35 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
-                    )}
-                  >
-                    Explore full collection
-                  </button>
-                )}
+            {isCollapsible && onExploreCollection && (
+              <div className="pt-3 w-full flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onExploreCollection()
+                  }}
+                  className={cn(
+                    'w-full max-w-sm rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
+                    'border shadow-sm',
+                    spotlight.unlisted
+                      ? 'border-violet-400/40 bg-violet-950/20 text-violet-100 hover:bg-violet-950/35 dark:border-violet-500/35 dark:hover:bg-violet-950/40'
+                      : 'border-amber-200/50 bg-white/80 text-neutral-900 hover:bg-white dark:border-[#FFBA94]/35 dark:bg-[#262222] dark:text-[#FFBA94] dark:hover:bg-[#2c2828]'
+                  )}
+                >
+                  Explore full collection
+                </button>
               </div>
             )}
           </div>

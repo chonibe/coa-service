@@ -2079,7 +2079,7 @@ export function Configurator({
             isMobile={isMobile}
           />
           {isSpotlightFilterActive && (!adPreset || showAllArtworks) && filteredProducts.length > 0 && (
-            <div className="flex flex-col items-center gap-1.5 pt-2 pb-4 px-2 max-w-2xl mx-auto w-full">
+            <div className="flex flex-col items-center pt-2 pb-4 px-2 max-w-2xl mx-auto w-full">
               <button
                 type="button"
                 onClick={() => handleSpotlightSelect(false)}
@@ -2092,9 +2092,6 @@ export function Configurator({
               >
                 Explore full collection
               </button>
-              <p className="text-center text-xs text-neutral-500 dark:text-[#a09090] max-w-sm">
-                Showing only {spotlightData?.vendorName}&apos;s works. Tap to see all artists in this season.
-              </p>
             </div>
           )}
             </div>

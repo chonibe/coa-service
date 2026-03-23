@@ -670,7 +670,7 @@ export function ArtworkPickerSheet({
                 onSpotlightSelect &&
                 filters?.artists?.includes(spotlightData.vendorName) &&
                 products.length > 0 && (
-                  <div className="flex flex-col items-center gap-1 pt-2 pb-1 px-2">
+                  <div className="flex flex-col items-center pt-2 pb-1 px-2">
                     <button
                       type="button"
                       onClick={() => onSpotlightSelect(false)}
@@ -685,14 +685,6 @@ export function ArtworkPickerSheet({
                     >
                       Explore full collection
                     </button>
-                    <p
-                      className={cn(
-                        'text-center text-xs max-w-sm',
-                        theme === 'light' ? 'text-neutral-500' : 'text-[#a09090]'
-                      )}
-                    >
-                      Showing only {spotlightData.vendorName}&apos;s works in this season. Clear to see every artist.
-                    </p>
                   </div>
                 )}
 
