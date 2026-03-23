@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import posthog from "posthog-js"
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
 import { ShopAuthProvider, useShopAuthContext } from "@/lib/shop/ShopAuthContext"
-import { captureSessionContext } from "@/lib/posthog"
+import { captureSessionContext, getPostHogIdentifyTraitsFromClientStorage } from "@/lib/posthog"
 
 // Conditionally import React Query to avoid build errors if not installed
 let QueryClientProvider: any = null
@@ -113,7 +113,9 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
           api_host: host,
           debug: isDebug,
           capture_pageview: false,
-          person_profiles: "identified_only",
+          // "always" so anonymous visitors get person profiles; cohorts using
+          // person properties (A/B variant, preferred_device, quiz_*, is_returning_user) work.
+          person_profiles: "always",
           disable_session_recording: !withRecording,
           session_recording: {
             recordCrossOriginIframes: false,
@@ -177,6 +179,7 @@ function PostHogIdentify() {
       (user.email && filterEmails.includes(user.email.toLowerCase())) ||
       filterDistinctIds.includes(user.id.toLowerCase())
 
+    const fromClient = getPostHogIdentifyTraitsFromClientStorage()
     posthog.identify(user.id, {
       email: user.email,
       collector_identifier: user.collectorIdentifier,
@@ -186,6 +189,7 @@ function PostHogIdentify() {
       is_admin: user.isAdmin,
       is_member: user.isMember,
       membership_tier: user.membershipTier,
+      ...fromClient,
     })
     posthog.group("user", user.id, {
       roles: user.roles.join(","),

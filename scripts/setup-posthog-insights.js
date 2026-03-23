@@ -106,8 +106,8 @@ const FUNNELS = [
         series: [
           { kind: 'EventsNode', event: 'experience_started', name: 'Experience Started' },
           { kind: 'EventsNode', event: 'experience_quiz_started', name: 'Quiz Started' },
-          { kind: 'EventsNode', event: 'experience_quiz_step_completed', name: 'Step 1 Completed', properties: [{ key: 'step', value: 1, operator: 'exact', type: 'event' }] },
-          { kind: 'EventsNode', event: 'experience_quiz_step_completed', name: 'Step 2 Completed', properties: [{ key: 'step', value: 2, operator: 'exact', type: 'event' }] },
+          { kind: 'EventsNode', event: 'experience_quiz_step_completed', name: 'Step 1 Completed', properties: [{ key: 'step_number', value: 1, operator: 'exact', type: 'event' }] },
+          { kind: 'EventsNode', event: 'experience_quiz_step_completed', name: 'Step 2 Completed', properties: [{ key: 'step_number', value: 2, operator: 'exact', type: 'event' }] },
           { kind: 'EventsNode', event: 'experience_quiz_completed', name: 'Quiz Completed' },
         ],
         dateRange: { date_from: '-30d' },
@@ -582,16 +582,16 @@ const COHORTS = [
   { name: 'Cohort · A/B Skip Variant', description: 'Users assigned to the skip A/B variant', filters: { properties: { type: 'AND', values: [{ key: 'experience_ab_variant', value: 'skip', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Mobile Users', description: 'Users whose preferred device is mobile', filters: { properties: { type: 'AND', values: [{ key: 'preferred_device', value: 'mobile', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Desktop Users', description: 'Users whose preferred device is desktop', filters: { properties: { type: 'AND', values: [{ key: 'preferred_device', value: 'desktop', type: 'person', operator: 'exact' }] } } },
-  { name: 'Cohort · Gift Purchasers', description: 'Users who completed the quiz (can be refined in PostHog UI to filter by purpose=gift)', filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_completed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Returning Users', description: 'Users who had a session_context event (can be refined in PostHog UI to filter by is_returning_user=true)', filters: { properties: { type: 'AND', values: [{ key: 'session_context', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  { name: 'Cohort · Gift Purchasers', description: 'Users who chose gift in the experience quiz (person property quiz_purpose)', filters: { properties: { type: 'AND', values: [{ key: 'quiz_purpose', value: 'gift', type: 'person', operator: 'exact' }] } } },
+  { name: 'Cohort · Returning Users', description: 'Repeat visitors (person property is_returning_user from session_context)', filters: { properties: { type: 'AND', values: [{ key: 'is_returning_user', value: true, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Used Promo Code', description: 'Users who applied a promo code', filters: { properties: { type: 'AND', values: [{ key: 'promo_code_applied', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · Redirected to Onboarding', description: 'Users who were redirected from experience to onboarding', filters: { properties: { type: 'AND', values: [{ key: 'experience_redirected_to_onboarding', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · High-Engagement (3+ Experience Sessions)', description: 'Users who started the experience 3+ times', filters: { properties: { type: 'AND', values: [{ key: 'experience_started', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator_value: 3, operator: 'gte' }] } } },
-  { name: 'Cohort · Lamp Owners', description: 'Users who completed the quiz (can be refined in PostHog UI to filter by owns_lamp=true)', filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_completed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  { name: 'Cohort · Lamp Owners', description: 'Users who said they already own a lamp in the quiz (person property quiz_owns_lamp)', filters: { properties: { type: 'AND', values: [{ key: 'quiz_owns_lamp', value: true, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Claim Flow Users', description: 'Guest purchasers who visited the claim page', filters: { properties: { type: 'AND', values: [{ key: 'collector_claim_page_viewed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · Collector Onboarding Skippers', description: 'Users who skipped collector onboarding', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_skipped', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Repeat Purchasers', description: 'Users with 2 or more purchases', filters: { properties: { type: 'AND', values: [{ key: 'total_purchases', value: '2', type: 'person', operator: 'gte' }] } } },
-  { name: 'Cohort · First-Time Purchasers', description: 'Users who made their first purchase this period', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }, { key: 'total_purchases', value: '1', type: 'person', operator: 'exact' }] } } },
+  { name: 'Cohort · Repeat Purchasers', description: 'Users who performed purchase 2+ times (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'gte', operator_value: 2 }] } } },
+  { name: 'Cohort · First-Time Purchasers', description: 'Users who performed purchase exactly once (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'eq', operator_value: 1 }] } } },
 ]
 
 const DASHBOARDS = [

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, Sparkles, User, Gift, ArrowLeft } from 'lucide-react'
-import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, getDeviceType, setUserProperty } from '@/lib/posthog'
 
 export interface QuizAnswers {
   ownsLamp: boolean
@@ -174,6 +174,8 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
       provided_name: !!answers.name,
       device_type: getDeviceType(),
     })
+    setUserProperty('quiz_owns_lamp', answers.ownsLamp)
+    setUserProperty('quiz_purpose', answers.purpose)
     onComplete(answers)
   }
 

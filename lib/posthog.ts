@@ -8,6 +8,37 @@
 
 import posthog from "posthog-js"
 
+/** localStorage key for persisted experience quiz (must match ExperienceClient). */
+const EXPERIENCE_QUIZ_STORAGE_KEY = "sc-experience-quiz"
+const EXPERIENCE_AB_COOKIE = "sc_experience_ab"
+
+/**
+ * Read segmentation traits from cookie + localStorage for `identify()` merges.
+ * Keeps PostHog person properties aligned with quiz + A/B when users sign in.
+ */
+export function getPostHogIdentifyTraitsFromClientStorage(): Record<string, string | boolean> {
+  const out: Record<string, string | boolean> = {}
+  if (typeof window === "undefined") return out
+  try {
+    const raw = localStorage.getItem(EXPERIENCE_QUIZ_STORAGE_KEY)
+    if (raw) {
+      const j = JSON.parse(raw) as { ownsLamp?: boolean; purpose?: string }
+      if (typeof j.ownsLamp === "boolean") out.quiz_owns_lamp = j.ownsLamp
+      if (j.purpose === "gift" || j.purpose === "self") out.quiz_purpose = j.purpose
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${EXPERIENCE_AB_COOKIE}=([^;]*)`))
+    const v = match?.[1]?.trim()
+    if (v === "onboarding" || v === "skip") out.experience_ab_variant = v
+  } catch {
+    /* ignore */
+  }
+  return out
+}
+
 function getPostHog(): typeof posthog | null {
   if (typeof window === "undefined") return null
   return posthog
@@ -95,7 +126,11 @@ export function captureSessionContext() {
     screen_height: window.screen.height,
     language: navigator.language,
   })
-  ph.setPersonProperties({ preferred_device: deviceType })
+  // Person properties for cohorts (requires person_profiles: "always" in init — see providers)
+  ph.setPersonProperties({
+    preferred_device: deviceType,
+    is_returning_user: isReturning,
+  })
 }
 
 /** E-commerce: mirror GA4-style events to PostHog for funnel analysis. */
