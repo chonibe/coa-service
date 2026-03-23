@@ -1,37 +1,42 @@
-# Using PostHog — reference
+# Using PostHog — reference index
 
-## PostHog docs
+Canonical links and pointers into this skill’s reference files. **No project-specific paths**—env var names and file layout are defined by each application.
 
-- [Model Context Protocol](https://posthog.com/docs/model-context-protocol) — MCP URLs (US/EU), pinning, `?features=` tool filtering, full tool tables, security notes.
-- [Cursor + MCP](https://posthog.com/docs/model-context-protocol/cursor.md) — editor setup.
-- [Cohorts API](https://posthog.com/docs/api/cohorts) — used by `scripts/sync-posthog-cohorts.js` / `setup-posthog-insights.js`.
+---
 
-## Env vars (cohort sync / audit)
+## In this skill
 
-| Variable | Role |
-|----------|------|
-| `POSTHOG_PERSONAL_API_KEY` | `phx_...` — cohort create/update (scopes e.g. cohort read/write) |
-| `POSTHOG_PROJECT_ID` | Numeric project id |
-| `POSTHOG_HOST` | e.g. `https://eu.i.posthog.com` or `https://us.i.posthog.com` — **must match project region** |
-| `NEXT_PUBLIC_POSTHOG_HOST` | If set, cohort sync may default `POSTHOG_HOST` to this |
+| File | Contents |
+|------|----------|
+| [references/product-domains.md](references/product-domains.md) | PostHog product areas: events, persons, cohorts, insights, flags, experiments, errors, warehouse, surveys, CDP, notebooks, LLM-related features |
+| [references/patterns-and-troubleshooting.md](references/patterns-and-troubleshooting.md) | Instrumentation patterns; symptom → approach tables; EU/US API notes |
+| [references/mcp-as-resource.md](references/mcp-as-resource.md) | When/how to use MCP for depth; `features=` matrix; endpoints; tool families; schema-first rule |
+| [references/agent-workflows.md](references/agent-workflows.md) | Generic task sequences (funnels, cohorts, flags, errors, SQL, API sync) |
 
-## MCP tool map (verify names against live schema)
+---
 
-The server exposes many tools; names are stable-ish but **always read the descriptor JSON** before calling. Grouped by purpose (from PostHog’s published MCP docs):
+## PostHog documentation (external)
 
-| Area | Representative tools |
-|------|------------------------|
-| Schema / definitions | `read-data-schema`, `event-definitions-list`, `properties-list` |
-| Query | `query-run`, `query-trends`, `query-funnel`, `execute-sql`, `query-generate-hogql-from-question` |
-| Insights | `insight-*`, `insights-get-all` |
-| Cohorts | `cohorts-list`, `cohorts-create`, `cohorts-partial-update`, … |
-| Feature flags | `create-feature-flag`, `update-feature-flag`, `feature-flag-get-all`, … |
-| Experiments | `experiment-create`, `experiment-results-get`, … |
-| Errors | `list-errors`, `error-details`, `error-tracking-issues-list`, … |
-| Docs | `docs-search` |
+- [Docs home](https://posthog.com/docs)
+- [Product analytics](https://posthog.com/docs/product-analytics)
+- [Feature flags](https://posthog.com/docs/feature-flags)
+- [Experiments](https://posthog.com/docs/experiments)
+- [Cohorts](https://posthog.com/docs/data/cohorts)
+- [Error tracking](https://posthog.com/docs/error-tracking)
+- [Data warehouse](https://posthog.com/docs/data-warehouse)
+- [Surveys](https://posthog.com/docs/surveys)
+- [API overview](https://posthog.com/docs/api/overview)
+- [posthog-js](https://posthog.com/docs/libraries/js)
 
-Server id in Cursor may be `posthog` or `plugin-posthog-posthog` depending on install type.
+---
 
-## Agent transcripts (this workspace)
+## MCP setup (external)
 
-Prior debugging for PostHog cohorts and sync is captured under the workspace agent transcripts path (see repo `CLAUDE.md` / Cursor docs). Search those JSONL files for `posthog`, `cohort`, `POSTHOG_HOST`, and `person_profiles` when you need full conversational context beyond this skill.
+- [Model Context Protocol (PostHog)](https://posthog.com/docs/model-context-protocol) — US/EU URLs, auth, pinning, `?features=`, security, full tool list
+- [Cursor](https://posthog.com/docs/model-context-protocol/cursor.md)
+
+---
+
+## API automation (generic)
+
+REST and personal API keys are **project- and region-specific**. Typical variables (names vary by team): personal API key (`phx_...`), project id, and API host matching the project’s **EU or US** stack. See [API overview](https://posthog.com/docs/api/overview) for authentication and regional endpoints.

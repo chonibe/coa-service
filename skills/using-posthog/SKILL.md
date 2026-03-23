@@ -1,80 +1,79 @@
 ---
 name: using-posthog
-description: Works with PostHog product analytics in this codebase—events, person properties, cohorts, funnels, feature flags, session context, and EU vs US hosting. Use when the user asks about PostHog, cohorts not matching, funnel or replay debugging, syncing definitions to PostHog, or verifying telemetry. Supplements the UI and REST scripts with optional MCP-backed inspection when the PostHog MCP server is available.
+description: Guides work across PostHog product analytics—events, person properties, cohorts, insights, dashboards, feature flags, experiments, error tracking, data warehouse, surveys, CDP, notebooks, and LLM-related analytics. Use when the user asks about PostHog instrumentation, segmentation, funnels, flags, regional (EU/US) setup, API automation, or troubleshooting empty or wrong cohorts and metrics. PostHog MCP is an optional resource to deepen or verify live project state when available; the skill applies without MCP via docs, UI, and SDKs.
 ---
 
-# Using PostHog (COA Service)
+# Using PostHog
 
 ## When to use
 
-- Instrumentation, event naming, or **why cohorts / insights look empty or wrong**.
-- **Person properties** and **session-scoped context** for behavioral segmentation.
-- **Pushing or updating** cohorts and related definitions (scripts + API).
-- **EU vs US** PostHog region mismatches (ingest, REST API, MCP).
-- Optional: **live project inspection** (schema, queries, flags) via PostHog’s MCP when it is connected and healthy.
+- **Instrumentation and taxonomy** — event names, properties, identify, server vs client capture.
+- **Segmentation** — cohorts, person vs event properties, behavioral vs static groups.
+- **Product analytics** — trends, funnels, paths, retention, dashboards, annotations, alerts.
+- **Flags and experiments** — rollouts, multivariate tests, metrics and exposure.
+- **Quality and ops** — error tracking, logs (where enabled), data warehouse and HogQL-style questions.
+- **In-product feedback** — surveys and targeting concepts.
+- **Automation** — REST API patterns; regional keys and hosts.
+- **Optional enrichment** — when the PostHog MCP server is connected, use it to search docs, inspect schema, and run queries—**never required** for this skill to apply.
 
-## Code map (this repo)
+## How to work (decision flow)
 
-| Concern | Where |
-|--------|--------|
-| Client capture, funnel helpers, session activity props | `lib/posthog.ts` |
-| PostHog init (`person_profiles`, pageview context) | `app/providers.tsx` |
-| Server-side capture | `lib/posthog-server.ts` |
-| Feature flags hook | `hooks/use-posthog-feature-flag.ts` |
-| CSP allowlists for ingest/assets | `next.config.js` |
-| Browser env | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` |
-| Full setup (dashboards, insights, cohort definitions) | `scripts/setup-posthog-insights.js` |
-| Cohort-only sync (PATCH by name) | `scripts/sync-posthog-cohorts.js` → `npm run sync:posthog-cohorts` |
-| Audit / health checks | `scripts/posthog-audit.js` |
+1. **Clarify the goal** — e.g. fix a metric, design a cohort, roll out a flag, explain empty data.
+2. **Choose the plane**
+   - **Application code** — SDK init, `capture`, `identify`, person properties, flag evaluation.
+   - **PostHog UI** — insights, cohorts, definitions, replay, errors.
+   - **API / automation** — scripts or services using personal API keys and regional base URLs.
+   - **MCP (optional)** — live `docs-search`, schema reads, `query-run` / SQL, definition CRUD **after** reading each tool’s JSON schema and confirming the server is healthy.
+3. **Prefer read-only exploration** before mutations (UI, API, or MCP).
+4. **Confirm regional consistency** — ingest host, REST API host, and MCP URL must match the project’s **EU or US** region where applicable.
 
-Run sync/audit with env in `.env.local` or `.env` (see script headers).
+Deep domain content: [references/product-domains.md](references/product-domains.md). Patterns and symptom tables: [references/patterns-and-troubleshooting.md](references/patterns-and-troubleshooting.md).
 
-## Instrumentation principles
+## Instrumentation principles (summary)
 
-1. **One naming scheme** — Prefer stable `snake_case` event names and property keys; match what you define in PostHog (actions, cohorts, insights).
-2. **Person properties for cohorts** — Anonymous and identified segmentation needs person properties to be sent and stored. This project uses `person_profiles: "always"` in `app/providers.tsx` so person-property cohorts behave as expected (contrast: `identified_only`, which skips full profiles for anonymous users).
-3. **Session vs activity path** — `session_entry_path` (and person mirror `last_session_entry_path`) reflect the **first path in that browser tab**; `activity_path` is the **current** path. Cohorts that require “first path contains X” are **much narrower** than “ever visited X”; interpret empty cohorts accordingly.
-4. **Identify merges** — When users log in, merge quiz/A/B traits via existing helpers (e.g. `getPostHogIdentifyTraitsFromClientStorage` in `lib/posthog.ts`) so person properties stay aligned with client state.
+- Use a **stable naming convention** and a small documented dictionary; align code with actions/cohorts/insights.
+- **Person properties** used in cohorts require that the SDK and project settings actually **persist** those properties for the intended users (including anonymous users if the product requires it).
+- Distinguish **first-touch / entry** context from **current** context—filters that use “first” are much stricter than “ever.”
+- **Identify** when the user becomes known; merge traits consistently per SDK docs.
+- Avoid unnecessary PII; follow PostHog privacy guidance for the deployment type.
 
-## Cohorts and definitions
+## Enriching answers with MCP
 
-- **Source of truth in git** — Cohort filter JSON lives in `scripts/setup-posthog-insights.js`. The app must emit the events/properties those filters use.
-- **Stale UI definitions** — If the script previously skipped updates, PostHog can keep old rules. Use cohort sync with PATCH enabled (default for `sync-posthog-cohorts.js`) to align remote definitions with the repo.
-- **REST vs MCP** — Pushing cohorts is implemented via the **PostHog REST API** in this repo (no MCP required). If MCP is available, you can still list/update cohorts through MCP tools **after** reading the tool schema (see [reference.md](reference.md)).
+MCP is **not** the core of this skill; it **augments** depth and accuracy when available.
 
-## EU / US region
+- Confirm the PostHog MCP integration is **healthy** in the editor; if not, use docs + UI + user context.
+- **Read the tool descriptor JSON** (or equivalent) before every tool call—parameters are not guessable.
+- Start with **`docs-search`**, **`read-data-schema`**, **`event-definitions-list`**, or read-only queries; move to create/update/delete only with explicit user intent.
+- Use **`?features=`** on the MCP URL for least privilege when configuring the server.
+- Treat MCP as privileged: review tool calls; heed [prompt-injection guidance](https://posthog.com/docs/model-context-protocol) from PostHog.
 
-- **Ingest and API host must match the project region.** Calling the US API with an EU project (or vice versa) commonly surfaces as **401** on REST calls.
-- `scripts/sync-posthog-cohorts.js` sets `POSTHOG_HOST` from `NEXT_PUBLIC_POSTHOG_HOST` when unset—keep those aligned with production.
-- MCP endpoints are region-specific: US `https://mcp.posthog.com/mcp`, EU `https://mcp-eu.posthog.com/mcp` ([PostHog MCP](https://posthog.com/docs/model-context-protocol)).
+Details: [references/mcp-as-resource.md](references/mcp-as-resource.md).
 
-## Optional: PostHog MCP (live inspection)
+## Task-oriented approaches
 
-Use MCP to **explore** the connected project (data schema, queries, docs search, flags, errors)—not as the only way to work.
+Step-by-step templates (funnels, cohorts, flags, errors, API sync): [references/agent-workflows.md](references/agent-workflows.md).
 
-1. Confirm the server is **healthy** in Cursor (if `plugin-posthog-posthog` / PostHog MCP shows an error, rely on the PostHog app and repo scripts instead of pretending tools work).
-2. **Read each tool’s JSON schema** in the MCP tools folder (or IDE tool list) before invoking; parameter names are not guessable.
-3. Prefer read-only tools first (`read-data-schema`, `event-definitions-list`, `query-run`, `docs-search`, …), then mutations when the user explicitly wants changes.
+## Quick checklists
 
-Tool categories and names are summarized in [reference.md](reference.md); the authoritative list is in the [PostHog MCP documentation](https://posthog.com/docs/model-context-protocol).
+**Cohort looks empty**
 
-## Session learnings (from prior project debugging)
+- [ ] Filter semantics match product intent (entry vs ever; person vs event).
+- [ ] Properties exist on real events/persons and keys match exactly.
+- [ ] Person/anonymous persistence settings align with cohort type.
 
-These came from real fixes in this codebase and related chats; use them when triaging “cohorts don’t work”:
+**API auth fails**
 
-- Empty or tiny cohorts often mean **filter logic is stricter than product intent** (e.g. first-tab path vs any visit), not always broken ingestion.
-- **`person_profiles: "identified_only"`** blocks the person-property behavior many cohorts assume for anonymous traffic; align init with cohort design.
-- **401 on cohort sync** — verify **personal API key** and **region host** (EU vs US), not only the key string.
-- **Purchase-based cohorts** need properties actually set at checkout (not only on a single page).
+- [ ] Personal API key valid and scoped.
+- [ ] **API host region** matches the project (EU vs US).
 
-## Workflow checklist
+**Flag not behaving**
 
-- [ ] Confirm `NEXT_PUBLIC_POSTHOG_HOST` / `POSTHOG_HOST` match the project region.
-- [ ] Confirm `person_profiles` and emitted properties match cohort definitions.
-- [ ] Cross-check event and property names in `lib/posthog.ts` (and call sites) against PostHog definitions.
-- [ ] Use `npm run sync:posthog-cohorts` when remote cohort JSON should match `setup-posthog-insights.js`.
-- [ ] If using MCP: server healthy → read tool schema → query before mutating.
+- [ ] Evaluation `distinct_id` and environment; cache; dependencies; multivariate sums to 100%.
+
+**MCP session**
+
+- [ ] Server healthy → read schema → read-only first → mutations only if requested.
 
 ## Further reading
 
-- [reference.md](reference.md) — MCP tool map, env vars, API links.
+- [reference.md](reference.md) — index of all reference files and canonical external links.
