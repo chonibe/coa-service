@@ -77,9 +77,24 @@ export function getPostHogIdentifyTraitsFromClientStorage(): Record<string, stri
   try {
     const raw = localStorage.getItem(EXPERIENCE_QUIZ_STORAGE_KEY)
     if (raw) {
-      const j = JSON.parse(raw) as { ownsLamp?: boolean; purpose?: string }
+      const j = JSON.parse(raw) as {
+        ownsLamp?: boolean
+        purpose?: string
+        skippedQuiz?: boolean
+        quizLoginBypass?: boolean
+        completedAt?: string
+      }
       if (typeof j.ownsLamp === "boolean") out.quiz_owns_lamp = j.ownsLamp
       if (j.purpose === "gift" || j.purpose === "self") out.quiz_purpose = j.purpose
+      if (j.skippedQuiz === true) {
+        out.experience_quiz_skipped_flag = true
+        out.experience_quiz_completed_flag = false
+      } else if (j.quizLoginBypass === true) {
+        /* Logged-in bypass: do not treat completedAt as full quiz completion */
+      } else if (j.completedAt) {
+        out.experience_quiz_completed_flag = true
+        out.experience_quiz_skipped_flag = false
+      }
     }
   } catch {
     /* ignore */
@@ -240,6 +255,10 @@ export function capturePurchase(props: {
   shipping?: number
   items_count?: number
 }) {
+  const ph = getPostHog()
+  if (ph) {
+    ph.setPersonProperties({ has_purchased: true })
+  }
   captureWithSessionActivity("purchase", props)
 }
 

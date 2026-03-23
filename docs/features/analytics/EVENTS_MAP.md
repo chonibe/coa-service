@@ -88,6 +88,9 @@ See `hooks/use-posthog-feature-flag.ts` for the `usePostHogFeatureFlag` and `use
 |----------|------|----------|----------------|
 | `preferred_device` | `mobile` \| `tablet` \| `desktop` | Session init | `lib/posthog.ts` → `captureSessionContext()` |
 | `experience_ab_variant` | `onboarding` \| `skip` | A/B assignment | `ExperienceClient.tsx` |
+| `quiz_owns_lamp`, `quiz_purpose` | boolean, `gift` \| `self` | Quiz finished (all steps) | `IntroQuiz.tsx` |
+| `experience_quiz_completed_flag`, `experience_quiz_skipped_flag` | boolean | Quiz completed vs “Skip for now” | `IntroQuiz.tsx`; merged on identify from `sc-experience-quiz` in `lib/posthog.ts` |
+| `has_purchased` | boolean | Thank-you `purchase` event or orders on tracking page | `lib/posthog.ts` → `capturePurchase()`; `app/track/[token]/page.tsx` |
 | `total_purchases` | number | Order tracking page | `app/track/[token]/page.tsx` |
 | `first_purchase_at` | ISO date string | Order tracking page | Same |
 

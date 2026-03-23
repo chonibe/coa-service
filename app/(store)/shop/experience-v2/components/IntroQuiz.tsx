@@ -16,8 +16,10 @@ export interface QuizAnswers {
 
 export type IntroQuizPartialAnswers = Partial<Pick<QuizAnswers, 'ownsLamp' | 'purpose'>> & { name?: string; email?: string }
 
+export type IntroQuizCompleteMeta = { skipped?: boolean }
+
 interface IntroQuizProps {
-  onComplete: (answers: QuizAnswers) => void
+  onComplete: (answers: QuizAnswers, meta?: IntroQuizCompleteMeta) => void
   /** When set, quiz is driven by URL: only this step is shown and navigation uses onNext/onBack */
   step?: 1 | 2 | 3
   /** Pre-filled values when using URL mode (e.g. from localStorage) */
@@ -176,6 +178,8 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
     })
     setUserProperty('quiz_owns_lamp', answers.ownsLamp)
     setUserProperty('quiz_purpose', answers.purpose)
+    setUserProperty('experience_quiz_completed_flag', true)
+    setUserProperty('experience_quiz_skipped_flag', false)
     onComplete(answers)
   }
 
@@ -264,7 +268,9 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
                     owns_lamp: ownsLamp ?? false,
                     purpose: purpose ?? 'self',
                   })
-                  onComplete({ ownsLamp: false, purpose: 'self' })
+                  setUserProperty('experience_quiz_skipped_flag', true)
+                  setUserProperty('experience_quiz_completed_flag', false)
+                  onComplete({ ownsLamp: false, purpose: 'self' }, { skipped: true })
                 }}
                 className="text-xs text-[#FFBA94]/50 hover:text-[#FFBA94]/70 transition-colors"
               >

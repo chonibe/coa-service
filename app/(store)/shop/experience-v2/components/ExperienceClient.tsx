@@ -215,7 +215,11 @@ export function ExperienceClient({
       try {
         localStorage.setItem(
           QUIZ_STORAGE_KEY,
-          JSON.stringify({ ...loggedInAnswers, completedAt: new Date().toISOString() })
+          JSON.stringify({
+            ...loggedInAnswers,
+            completedAt: new Date().toISOString(),
+            quizLoginBypass: true as const,
+          })
         )
       } catch {
         // ignore

@@ -118,11 +118,15 @@ export function ExperienceOnboardingClient({
   }, [step, router, searchParams])
 
   const handleComplete = useCallback(
-    async (answers: QuizAnswers) => {
+    async (answers: QuizAnswers, meta?: { skipped?: boolean }) => {
       try {
         localStorage.setItem(
           QUIZ_STORAGE_KEY,
-          JSON.stringify({ ...answers, completedAt: new Date().toISOString() })
+          JSON.stringify({
+            ...answers,
+            completedAt: new Date().toISOString(),
+            ...(meta?.skipped ? { skippedQuiz: true as const } : {}),
+          })
         )
       } catch {
         // ignore

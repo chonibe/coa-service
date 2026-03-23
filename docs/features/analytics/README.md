@@ -38,7 +38,7 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **Micro-interaction events:** `onboarding_step_viewed`, `onboarding_step_interaction`, `onboarding_step_abandoned`, `onboarding_field_focused`, `checkout_step_viewed` — granular step-level events for heatmap-level funnel analysis.
 - **Session replay tagging:** `tagSessionForReplay(tag)` from `lib/posthog.ts` fires `session_tagged` at critical drop-off points (`checkout-error`, `payment-error`) so you can filter session replays in PostHog.
 - **Feature flags:** `hooks/use-posthog-feature-flag.ts` exports `usePostHogFeatureFlag` and `usePostHogFeatureFlagEnabled` hooks. The A/B test variant is mirrored to PostHog person properties via `experience_ab_variant`.
-- **User properties:** `setUserProperty(key, value)` from [`lib/posthog.ts`](../../lib/posthog.ts) sets person properties. Properties tracked: `preferred_device`, `is_returning_user`, `last_session_entry_path` (tab’s first path this session), `experience_ab_variant`, `quiz_owns_lamp`, `quiz_purpose` (on experience quiz completion), `total_purchases`, `first_purchase_at` (order tracking page). On login, `identify()` merges quiz + A/B from storage via `getPostHogIdentifyTraitsFromClientStorage()` and the current tab’s `last_session_entry_path`.
+- **User properties:** `setUserProperty(key, value)` from [`lib/posthog.ts`](../../lib/posthog.ts) sets person properties. Properties tracked: `preferred_device`, `is_returning_user`, `last_session_entry_path` (tab’s first path this session), `experience_ab_variant`, `quiz_owns_lamp`, `quiz_purpose`, `experience_quiz_completed_flag`, `experience_quiz_skipped_flag` (experience quiz in [`IntroQuiz.tsx`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx)), `has_purchased` (checkout thank-you via `capturePurchase` and order tracking), `total_purchases`, `first_purchase_at` ([`app/track/[token]/page.tsx`](../../app/track/[token]/page.tsx)). On login, `identify()` merges quiz + A/B from storage via `getPostHogIdentifyTraitsFromClientStorage()` and the current tab’s `last_session_entry_path` (skips inferring quiz completion when storage has `quizLoginBypass` from the logged-in onboarding path).
 - **Event map:** [Events map: Shop & Experience](./EVENTS_MAP.md) lists all events and where they fire.
 - **Usage:** Use `captureFunnelEvent(name, props)` / helpers from `lib/posthog.ts`. Use `usePostHog()` from `posthog-js/react` in client components.
 
@@ -53,6 +53,16 @@ npm run sync:posthog-cohorts
 ```
 
 Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`phx_...`, scope `cohort:write`) and `POSTHOG_PROJECT_ID`. **Region:** If the project is on **EU cloud**, set `POSTHOG_HOST=https://eu.i.posthog.com` or ensure `NEXT_PUBLIC_POSTHOG_HOST` matches (the sync script copies it to `POSTHOG_HOST` when unset—using the US default with an EU key returns **401 invalid key**). To create-only (no PATCH), run with `POSTHOG_UPDATE_EXISTING_COHORTS=false npm run sync:posthog-cohorts`.
+
+**Behavioral vs person-property cohorts (API):** On some PostHog Cloud projects, cohort definitions pushed via the REST API using **behavioral** filters (`performed_event`, etc.) can show `last_error_message` like “no matching criteria” and stay at zero even though funnels show the events. Cohorts that must sync reliably from [`scripts/setup-posthog-insights.js`](../../../scripts/setup-posthog-insights.js) are defined with **person** filters (and OR groups where needed). Remaining behavioral-only cohorts in that file (e.g. abandoned checkout, promo) may need to be recreated as **HogQL / query-based** cohorts in the PostHog UI until the API accepts those shapes.
+
+**Read-only audit (cohorts + sample persons):**
+
+```bash
+npm run posthog:audit
+```
+
+Uses the same env as sync; helps verify cohort errors and counts without opening the UI.
 
 ### Insight setup script
 

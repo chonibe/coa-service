@@ -29,6 +29,7 @@
     "validate:ga4": "node scripts/validate-ga4-setup.js",
     "setup:posthog": "node scripts/setup-posthog-insights.js",
     "sync:posthog-cohorts": "node scripts/sync-posthog-cohorts.js",
+    "posthog:audit": "node scripts/posthog-audit.js",
     "setup:google-ads": "node scripts/setup-google-ads-conversions.js",
     "test:google-ads": "node scripts/test-google-ads-conversions.js",
     "supabase:redirects": "node -r dotenv/config scripts/add-supabase-redirects.js",

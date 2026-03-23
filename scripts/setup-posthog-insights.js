@@ -579,11 +579,29 @@ const PATHS = [
 ]
 
 const COHORTS = [
-  { name: 'Cohort · Completed Experience Quiz', description: 'Users who completed the quiz (not skipped)', filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_completed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Skipped Experience Quiz', description: 'Users who skipped the experience quiz', filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_skipped', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  {
+    name: 'Cohort · Completed Experience Quiz',
+    description: 'Users who finished all quiz steps (person property; avoids API behavioral cohort calc issues)',
+    filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_completed_flag', value: true, type: 'person', operator: 'exact' }] } } },
+  {
+    name: 'Cohort · Skipped Experience Quiz',
+    description: 'Users who used Skip for now (person property)',
+    filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_skipped_flag', value: true, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Completed Collector Onboarding', description: 'Users who finished the collector wizard', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_completed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · Abandoned Checkout', description: 'Users who started checkout but never purchased', filters: { properties: { type: 'AND', values: [{ key: 'begin_checkout', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }, { key: 'purchase', type: 'behavioral', value: 'performed_event', negation: true, event_type: 'events' }] } } },
-  { name: 'Cohort · Purchasers', description: 'Users who have made at least one purchase', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  {
+    name: 'Cohort · Purchasers',
+    description: 'Users who purchased (thank-you capture or order tracking sets has_purchased / total_purchases)',
+    filters: {
+      properties: {
+        type: 'OR',
+        values: [
+          { type: 'AND', values: [{ key: 'has_purchased', value: true, type: 'person', operator: 'exact' }] },
+          { type: 'AND', values: [{ key: 'total_purchases', type: 'person', operator: 'gte', value: 1 }] },
+        ],
+      },
+    },
+  },
   { name: 'Cohort · Had Checkout Error', description: 'Users who encountered a checkout error', filters: { properties: { type: 'AND', values: [{ key: 'checkout_error', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · A/B Onboarding Variant', description: 'Users assigned to the onboarding A/B variant', filters: { properties: { type: 'AND', values: [{ key: 'experience_ab_variant', value: 'onboarding', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · A/B Skip Variant', description: 'Users assigned to the skip A/B variant', filters: { properties: { type: 'AND', values: [{ key: 'experience_ab_variant', value: 'skip', type: 'person', operator: 'exact' }] } } },
@@ -597,8 +615,14 @@ const COHORTS = [
   { name: 'Cohort · Lamp Owners', description: 'Users who said they already own a lamp in the quiz (person property quiz_owns_lamp)', filters: { properties: { type: 'AND', values: [{ key: 'quiz_owns_lamp', value: true, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Claim Flow Users', description: 'Guest purchasers who visited the claim page', filters: { properties: { type: 'AND', values: [{ key: 'collector_claim_page_viewed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
   { name: 'Cohort · Collector Onboarding Skippers', description: 'Users who skipped collector onboarding', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_skipped', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Repeat Purchasers', description: 'Users who performed purchase 2+ times (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'gte', operator_value: 2 }] } } },
-  { name: 'Cohort · First-Time Purchasers', description: 'Users who performed purchase exactly once (behavioral count)', filters: { properties: { type: 'AND', values: [{ key: 'purchase', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator: 'eq', operator_value: 1 }] } } },
+  {
+    name: 'Cohort · Repeat Purchasers',
+    description: 'total_purchases ≥ 2 from order tracking (person property)',
+    filters: { properties: { type: 'AND', values: [{ key: 'total_purchases', type: 'person', operator: 'gte', value: 2 }] } } },
+  {
+    name: 'Cohort · First-Time Purchasers',
+    description: 'total_purchases = 1 from order tracking (person property)',
+    filters: { properties: { type: 'AND', values: [{ key: 'total_purchases', value: 1, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Tab started on Experience v2', description: 'First path in this browser tab included experience-v2 (person last_session_entry_path)', filters: { properties: { type: 'AND', values: [{ key: 'last_session_entry_path', value: 'experience-v2', type: 'person', operator: 'icontains' }] } } },
 ]
 

@@ -282,6 +282,7 @@ export default function TrackOrdersPage() {
       // User properties for PostHog — allows cohort analysis
       const totalPurchases = orders.length
       setUserProperty('total_purchases', totalPurchases)
+      setUserProperty('has_purchased', totalPurchases > 0)
 
       // Set first_purchase_at from earliest order date if available
       const sortedDates = orders
