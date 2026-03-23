@@ -7,6 +7,9 @@ import { ArrowUp, RotateCw } from 'lucide-react'
 
 /** Static facade (87 KB) as LCP candidate; Spline 6.7MB scene mounts via requestIdleCallback. */
 const SPLINE_FACADE_SRC = '/internal.webp'
+
+/** Once per tab session — short reel scroll nudge so users notice vertical scroll (see scroll nudge effect in this file). */
+const EXPERIENCE_REEL_SCROLL_HINT_KEY = 'sc-experience-reel-scroll-hint-v1'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -257,6 +260,105 @@ export function SplineFullScreen({
   /** While > Date.now(), ignore midpoint-based slide sync (avoids fighting smooth scrollIntoView from thumbnails). */
   const ignoreSlideSyncUntilRef = useRef(0)
   const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // One-time subtle scroll down + back on the main reel so users notice they can scroll (runs while facade or after Spline mounts).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      sessionStorage.setItem(EXPERIENCE_REEL_SCROLL_HINT_KEY, '1')
+      return
+    }
+
+    let cancelled = false
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    let timeoutIds: ReturnType<typeof setTimeout>[] = []
+    let pollAttempts = 0
+    /** ~8s max wait for layout (accordion/gallery) to produce scrollable overflow */
+    const MAX_POLL_ATTEMPTS = 58
+
+    const clearTimers = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+      timeoutIds.forEach(clearTimeout)
+      timeoutIds = []
+    }
+
+    const animateScroll = (
+      el: HTMLDivElement,
+      from: number,
+      to: number,
+      durationMs: number,
+      done: () => void
+    ) => {
+      const t0 = performance.now()
+      const step = (now: number) => {
+        if (cancelled) return
+        const u = Math.min(1, (now - t0) / durationMs)
+        const eased = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2
+        el.scrollTop = from + (to - from) * eased
+        if (u < 1) requestAnimationFrame(step)
+        else done()
+      }
+      requestAnimationFrame(step)
+    }
+
+    const runNudge = (el: HTMLDivElement) => {
+      if (cancelled || sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return
+      const maxScroll = el.scrollHeight - el.clientHeight
+      if (maxScroll < 48) return
+
+      sessionStorage.setItem(EXPERIENCE_REEL_SCROLL_HINT_KEY, '1')
+      const start = el.scrollTop
+      const delta = Math.min(88, Math.max(40, Math.floor(maxScroll * 0.14)))
+      const target = Math.min(start + delta, maxScroll)
+
+      // Avoid thumbnail slide index jumping while the reel moves
+      ignoreSlideSyncUntilRef.current = Date.now() + 1800
+      lastReportedSectionRef.current = splineSectionIndex
+      lastProgrammaticSectionRef.current = splineSectionIndex
+
+      const leadMs = splineReady ? 220 : 500
+      const t = window.setTimeout(() => {
+        if (cancelled) return
+        animateScroll(el, start, target, 480, () => {
+          if (cancelled) return
+          const t2 = window.setTimeout(() => {
+            if (cancelled) return
+            animateScroll(el, el.scrollTop, start, 420, () => {
+              lastReportedSectionRef.current = splineSectionIndex
+              lastProgrammaticSectionRef.current = splineSectionIndex
+            })
+          }, 140)
+          timeoutIds.push(t2)
+        })
+      }, leadMs)
+      timeoutIds.push(t)
+    }
+
+    const trySchedule = () => {
+      const el = scrollRef.current
+      if (!el || cancelled) return
+      const maxScroll = el.scrollHeight - el.clientHeight
+      if (maxScroll >= 48) {
+        clearTimers()
+        runNudge(el)
+        return
+      }
+      pollAttempts += 1
+      if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
+    }
+
+    intervalId = window.setInterval(trySchedule, 140)
+    trySchedule()
+
+    return () => {
+      cancelled = true
+      clearTimers()
+    }
+  }, [splineReady, sectionCount, splineSectionIndex, hasAccordion, displayedProduct?.id, galleryImages.length, editionLeadBeforeSpline])
 
   useEffect(() => {
     if (!scrollRef.current || sectionCount <= 1) return
