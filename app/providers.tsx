@@ -198,6 +198,8 @@ function PostHogIdentify() {
       is_admin: user.isAdmin,
       is_member: user.isMember,
       membership_tier: user.membershipTier,
+      shop_authenticated: true,
+      last_shop_login_at: new Date().toISOString(),
       ...fromClient,
       ...(sess.session_entry_path
         ? { last_session_entry_path: sess.session_entry_path }

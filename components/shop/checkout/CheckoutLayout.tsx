@@ -14,7 +14,7 @@ import { PAYPAL_LOGO_URL } from './PaymentButtonAssets'
 import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
-import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo, setUserProperty } from '@/lib/posthog'
 
 function getPaymentMethodLabel(method: PaymentMethodType): string {
   switch (method) {
@@ -353,6 +353,7 @@ export function CheckoutLayout({
             setPromoDiscount(discount)
             if (valid) {
               captureFunnelEvent(FunnelEvents.promo_code_applied, { code, discount_amount: discount })
+              setUserProperty('has_used_promo_code', true)
             }
             closeModals()
           }}

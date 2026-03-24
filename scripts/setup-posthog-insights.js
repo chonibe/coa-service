@@ -578,6 +578,12 @@ const PATHS = [
   },
 ]
 
+// Cohort definitions synced via REST (POST + PATCH). Prefer **person** filters — behavioral
+// `performed_event` shapes often fail or stay empty when pushed via API on EU projects.
+//
+// **UI-managed only (HogQL / lifecycle):** "Cohort · Abandoned Checkout" — e.g. performed
+// `begin_checkout` in the last N days and did not perform `purchase`. See
+// docs/features/analytics/README.md (Cohort ownership).
 const COHORTS = [
   {
     name: 'Cohort · Completed Experience Quiz',
@@ -587,11 +593,14 @@ const COHORTS = [
     name: 'Cohort · Skipped Experience Quiz',
     description: 'Users who used Skip for now (person property)',
     filters: { properties: { type: 'AND', values: [{ key: 'experience_quiz_skipped_flag', value: true, type: 'person', operator: 'exact' }] } } },
-  { name: 'Cohort · Completed Collector Onboarding', description: 'Users who finished the collector wizard', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_completed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Abandoned Checkout', description: 'Users who started checkout but never purchased', filters: { properties: { type: 'AND', values: [{ key: 'begin_checkout', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }, { key: 'purchase', type: 'behavioral', value: 'performed_event', negation: true, event_type: 'events' }] } } },
+  {
+    name: 'Cohort · Completed Collector Onboarding',
+    description: 'Users who finished the collector wizard (person flag collector_onboarding_completed_flag)',
+    filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_completed_flag', value: true, type: 'person', operator: 'exact' }] } } },
   {
     name: 'Cohort · Purchasers',
-    description: 'Users who purchased (thank-you capture or order tracking sets has_purchased / total_purchases)',
+    description:
+      'Users who purchased (thank-you, Stripe webhook $set, or order tracking sets has_purchased / total_purchases)',
     filters: {
       properties: {
         type: 'OR',
@@ -602,19 +611,40 @@ const COHORTS = [
       },
     },
   },
-  { name: 'Cohort · Had Checkout Error', description: 'Users who encountered a checkout error', filters: { properties: { type: 'AND', values: [{ key: 'checkout_error', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  {
+    name: 'Cohort · Had Checkout Error',
+    description: 'Users who encountered a checkout error (person flag has_checkout_error)',
+    filters: { properties: { type: 'AND', values: [{ key: 'has_checkout_error', value: true, type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · A/B Onboarding Variant', description: 'Users assigned to the onboarding A/B variant', filters: { properties: { type: 'AND', values: [{ key: 'experience_ab_variant', value: 'onboarding', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · A/B Skip Variant', description: 'Users assigned to the skip A/B variant', filters: { properties: { type: 'AND', values: [{ key: 'experience_ab_variant', value: 'skip', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Mobile Users', description: 'Users whose preferred device is mobile', filters: { properties: { type: 'AND', values: [{ key: 'preferred_device', value: 'mobile', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Desktop Users', description: 'Users whose preferred device is desktop', filters: { properties: { type: 'AND', values: [{ key: 'preferred_device', value: 'desktop', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Gift Purchasers', description: 'Users who chose gift in the experience quiz (person property quiz_purpose)', filters: { properties: { type: 'AND', values: [{ key: 'quiz_purpose', value: 'gift', type: 'person', operator: 'exact' }] } } },
   { name: 'Cohort · Returning Users', description: 'Repeat visitors (person property is_returning_user from session_context)', filters: { properties: { type: 'AND', values: [{ key: 'is_returning_user', value: true, type: 'person', operator: 'exact' }] } } },
-  { name: 'Cohort · Used Promo Code', description: 'Users who applied a promo code', filters: { properties: { type: 'AND', values: [{ key: 'promo_code_applied', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Redirected to Onboarding', description: 'Users who were redirected from experience to onboarding', filters: { properties: { type: 'AND', values: [{ key: 'experience_redirected_to_onboarding', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · High-Engagement (3+ Experience Sessions)', description: 'Users who started the experience 3+ times', filters: { properties: { type: 'AND', values: [{ key: 'experience_started', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events', operator_value: 3, operator: 'gte' }] } } },
+  {
+    name: 'Cohort · Used Promo Code',
+    description: 'Users who successfully applied a promo code (person flag has_used_promo_code)',
+    filters: { properties: { type: 'AND', values: [{ key: 'has_used_promo_code', value: true, type: 'person', operator: 'exact' }] } } },
+  {
+    name: 'Cohort · Redirected to Onboarding',
+    description: 'Users who opened onboarding after visiting the v2 configurator (referrer-based person flag)',
+    filters: {
+      properties: { type: 'AND', values: [{ key: 'experience_redirected_to_onboarding_flag', value: true, type: 'person', operator: 'exact' }] },
+    },
+  },
+  {
+    name: 'Cohort · High-Engagement (3+ Experience Sessions)',
+    description: 'experience_started_count ≥ 3 (incremented on each v2 configurator tab entry)',
+    filters: { properties: { type: 'AND', values: [{ key: 'experience_started_count', type: 'person', operator: 'gte', value: 3 }] } } },
   { name: 'Cohort · Lamp Owners', description: 'Users who said they already own a lamp in the quiz (person property quiz_owns_lamp)', filters: { properties: { type: 'AND', values: [{ key: 'quiz_owns_lamp', value: true, type: 'person', operator: 'exact' }] } } },
-  { name: 'Cohort · Claim Flow Users', description: 'Guest purchasers who visited the claim page', filters: { properties: { type: 'AND', values: [{ key: 'collector_claim_page_viewed', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
-  { name: 'Cohort · Collector Onboarding Skippers', description: 'Users who skipped collector onboarding', filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_skipped', type: 'behavioral', value: 'performed_event', negation: false, event_type: 'events' }] } } },
+  {
+    name: 'Cohort · Claim Flow Users',
+    description: 'Guest purchasers who visited the claim page (person flag visited_collector_claim)',
+    filters: { properties: { type: 'AND', values: [{ key: 'visited_collector_claim', value: true, type: 'person', operator: 'exact' }] } } },
+  {
+    name: 'Cohort · Collector Onboarding Skippers',
+    description: 'Users who skipped collector onboarding (person flag collector_onboarding_skipped_flag)',
+    filters: { properties: { type: 'AND', values: [{ key: 'collector_onboarding_skipped_flag', value: true, type: 'person', operator: 'exact' }] } } },
   {
     name: 'Cohort · Repeat Purchasers',
     description: 'total_purchases ≥ 2 from order tracking (person property)',

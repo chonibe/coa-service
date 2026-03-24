@@ -283,6 +283,7 @@ export default function TrackOrdersPage() {
       const totalPurchases = orders.length
       setUserProperty('total_purchases', totalPurchases)
       setUserProperty('has_purchased', totalPurchases > 0)
+      setUserProperty('visited_order_tracking', true)
 
       // Set first_purchase_at from earliest order date if available
       const sortedDates = orders

@@ -23,10 +23,16 @@ function getProjectId(): string | null {
   return match ? match[1] : null
 }
 
+/** Supports `$set` / `$set_once` for person properties on server-side capture. */
+export type PostHogServerEventProperties = Record<
+  string,
+  string | number | boolean | null | undefined | Record<string, unknown>
+>
+
 export type PostHogServerEvent = {
   event: string
   distinct_id: string
-  properties?: Record<string, string | number | boolean | null | undefined>
+  properties?: PostHogServerEventProperties
   timestamp?: string
   uuid?: string
 }
@@ -41,7 +47,7 @@ export type PostHogServerEvent = {
 export async function capturePostHogServerEvent(
   event: string,
   distinctId: string,
-  properties?: Record<string, string | number | boolean | null | undefined>
+  properties?: PostHogServerEventProperties
 ): Promise<{ success: boolean; error?: any }> {
   if (!POSTHOG_API_KEY) {
     return { success: false, error: 'POSTHOG_API_KEY not set' }

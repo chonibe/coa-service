@@ -222,6 +222,14 @@ export function captureViewItem(item: PostHogProductItem) {
 }
 
 export function captureAddToCart(item: PostHogProductItem) {
+  const ph = getPostHog()
+  if (ph) {
+    ph.setPersonProperties({ has_added_to_cart: true })
+    const list = item.item_list_name ?? ""
+    if (list === "experience-v2" || list === "experience") {
+      ph.setPersonProperties({ has_used_experience_v2_cart: true })
+    }
+  }
   captureWithSessionActivity("add_to_cart", { ...item, currency: item.currency ?? "USD" })
 }
 
@@ -276,6 +284,10 @@ export function captureAddShippingInfo(
   country?: string,
   currency = "USD"
 ) {
+  const ph = getPostHog()
+  if (ph) {
+    ph.setPersonProperties({ has_saved_shipping_address: true })
+  }
   captureWithSessionActivity("add_shipping_info", { items, value, country, currency })
 }
 
@@ -299,6 +311,11 @@ export const FunnelEvents = {
   experience_onboarding_login_clicked: "experience_onboarding_login_clicked",
   experience_redirected_to_onboarding: "experience_redirected_to_onboarding",
   experience_started: "experience_started",
+  /** V2 shell: artwork picker sheet */
+  experience_picker_opened: "experience_picker_opened",
+  experience_picker_closed: "experience_picker_closed",
+  /** V2 shell: carousel navigation */
+  experience_carousel_navigated: "experience_carousel_navigated",
   experience_filter_applied: "experience_filter_applied",
   /** Micro-interaction events: onboarding steps */
   onboarding_step_viewed: "onboarding_step_viewed",
@@ -331,3 +348,67 @@ export const FunnelEvents = {
   checkout_error: "checkout_error",
   payment_error: "payment_error",
 } as const
+
+const V2_SHELL_SESSION_KEY = "sc_ph_v2_shell_session_started"
+const EXP_STARTED_COUNT_KEY = "sc_ph_experience_started_count"
+
+/**
+ * Once per browser tab when the live v2 configurator shell mounts.
+ * Fires `experience_started` with quiz context from localStorage when present.
+ */
+export function trackExperienceV2ConfiguratorEntry(options?: {
+  initialArtistSlug?: string
+  directEntry?: boolean
+}) {
+  if (typeof window === "undefined") return
+  try {
+    if (sessionStorage.getItem(V2_SHELL_SESSION_KEY)) return
+    sessionStorage.setItem(V2_SHELL_SESSION_KEY, "1")
+  } catch {
+    return
+  }
+  let ownsLamp: boolean | undefined
+  let purpose: string | undefined
+  try {
+    const raw = localStorage.getItem(EXPERIENCE_QUIZ_STORAGE_KEY)
+    if (raw) {
+      const j = JSON.parse(raw) as { ownsLamp?: boolean; purpose?: string }
+      if (typeof j.ownsLamp === "boolean") ownsLamp = j.ownsLamp
+      if (j.purpose === "gift" || j.purpose === "self") purpose = j.purpose
+    }
+  } catch {
+    /* ignore */
+  }
+  captureFunnelEvent(FunnelEvents.experience_started, {
+    surface: "experience_v2_configurator",
+    device_type: getDeviceType(),
+    owns_lamp: ownsLamp ?? false,
+    purpose: purpose === "gift" || purpose === "self" ? purpose : "self",
+    initial_artist_slug: options?.initialArtistSlug,
+    direct_entry: options?.directEntry === true,
+  })
+  const ph = getPostHog()
+  if (!ph) return
+  let n = 1
+  try {
+    const prev = parseInt(localStorage.getItem(EXP_STARTED_COUNT_KEY) || "0", 10)
+    n = Number.isFinite(prev) ? prev + 1 : 1
+    localStorage.setItem(EXP_STARTED_COUNT_KEY, String(n))
+  } catch {
+    /* ignore */
+  }
+  ph.setPersonProperties({
+    experience_configurator_visited: true,
+    last_experience_surface: "v2_configurator",
+    experience_started_count: n,
+  })
+}
+
+/** Checkout / payment failures — sets person flag for cohorts + replays. */
+export function captureCheckoutError(properties: { error_message: string; source: string }) {
+  const ph = getPostHog()
+  if (ph) {
+    ph.setPersonProperties({ has_checkout_error: true })
+  }
+  captureFunnelEvent(FunnelEvents.checkout_error, properties)
+}

@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, SlidersHorizontal } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn } from '@/lib/utils'
-import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 
 export interface FilterState {
   artists: string[]
@@ -85,6 +85,21 @@ function applyFilterAndTrack(
 }
 
 export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0, cartOrder = [], onOpenWishlist }: FilterPanelProps) {
+  const filterPanelOpenLogged = useRef(false)
+  useEffect(() => {
+    if (!isOpen) {
+      filterPanelOpenLogged.current = false
+      return
+    }
+    if (filterPanelOpenLogged.current) return
+    filterPanelOpenLogged.current = true
+    captureFunnelEvent(FunnelEvents.experience_filter_interaction, {
+      action: 'panel_opened',
+      context: 'experience_v2',
+      device_type: getDeviceType(),
+    })
+  }, [isOpen])
+
   const allArtists = useMemo(() => {
     const map = new Map<string, number>()
     products.forEach((p) => {

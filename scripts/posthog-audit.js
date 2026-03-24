@@ -66,10 +66,25 @@ const PERSON_KEYS = [
   'last_session_entry_path',
   'quiz_purpose',
   'quiz_owns_lamp',
+  'experience_quiz_completed_flag',
+  'experience_quiz_skipped_flag',
   'is_returning_user',
   'preferred_device',
   'experience_ab_variant',
+  'has_purchased',
+  'total_purchases',
+  'has_added_to_cart',
+  'has_saved_shipping_address',
+  'visited_order_tracking',
+  'has_used_promo_code',
+  'shop_authenticated',
+  'collector_onboarding_completed_flag',
+  'collector_onboarding_skipped_flag',
+  'experience_configurator_visited',
+  'experience_started_count',
 ]
+
+const verbose = process.argv.includes('--verbose') || process.env.POSTHOG_AUDIT_VERBOSE === 'true'
 
 async function main() {
   console.log(`\nPostHog audit — project ${PROJECT_ID} @ ${HOST}\n`)
@@ -84,14 +99,36 @@ async function main() {
 
   const list = cohorts.results || []
   console.log('── Cohorts (name → id → count → calculating) ──')
+  const cohortsWithErrors = []
   for (const c of list.sort((a, b) => (a.name || '').localeCompare(b.name || ''))) {
     const err = c.errors_calculating ? ` errors=${c.errors_calculating}` : ''
-    const msg = c.last_error_message ? ` last_error=${String(c.last_error_message).slice(0, 80)}` : ''
+    const shortMsg = c.last_error_message ? ` last_error=${String(c.last_error_message).slice(0, 80)}` : ''
     console.log(
-      `  ${c.count ?? '?'}\t${c.name}\t(id=${c.id})${c.is_calculating ? ' [calculating…]' : ''}${err}${msg}`
+      `  ${c.count ?? '?'}\t${c.name}\t(id=${c.id})${c.is_calculating ? ' [calculating…]' : ''}${err}${shortMsg}`
     )
+    if (c.last_error_message || c.errors_calculating) {
+      cohortsWithErrors.push(c)
+    }
   }
   console.log(`\n  Total cohort definitions: ${list.length}\n`)
+
+  if (cohortsWithErrors.length > 0) {
+    console.log('── Cohorts with calculation errors (full last_error_message) ──')
+    for (const c of cohortsWithErrors) {
+      console.log(`  id=${c.id} name=${c.name}`)
+      if (c.last_error_message) console.log(`    ${String(c.last_error_message)}`)
+      if (c.errors_calculating) console.log(`    errors_calculating=${c.errors_calculating}`)
+      console.log('')
+    }
+  }
+
+  if (verbose) {
+    console.log('── Cohort raw filters (verbose) ──')
+    for (const c of list.slice(0, 30)) {
+      console.log(`  ${c.name} (id=${c.id}):`, JSON.stringify(c.filters || c).slice(0, 500))
+    }
+    console.log('')
+  }
 
   let persons
   try {

@@ -11,7 +11,7 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **Implementation:** Client e-commerce tracking in [`lib/google-analytics.ts`](../../lib/google-analytics.ts) mirrors key events to [`/api/meta/conversions`](../../app/api/meta/conversions/route.ts), which forwards them to Meta Graph API.
 - **Events wired:** `PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`, `Refund`, `Search`, `Lead`.
 - **Server source-of-truth events:** Stripe webhook also sends `Purchase` and `Refund` directly to Meta from [`app/api/stripe/webhook/route.ts`](../../app/api/stripe/webhook/route.ts) for stronger reliability than thank-you-page-only tracking.
-- **Lead events:** Newsletter signup ([`app/api/shop/newsletter/route.ts`](../../app/api/shop/newsletter/route.ts)) and experience quiz signup ([`app/api/experience/quiz-signup/route.ts`](../../app/api/experience/quiz-signup/route.ts)) fire `Lead` events to Meta CAPI with hashed email. The experience onboarding wizard ([`ExperienceOnboardingClient.tsx`](../../app/(store)/shop/experience/components/ExperienceOnboardingClient.tsx)) submits completion to this API so that wizard completions (name + email) send Lead events for Meta ad optimization and Custom Audiences.
+- **Lead events:** Newsletter signup ([`app/api/shop/newsletter/route.ts`](../../app/api/shop/newsletter/route.ts)) and experience quiz signup ([`app/api/experience/quiz-signup/route.ts`](../../app/api/experience/quiz-signup/route.ts)) fire `Lead` events to Meta CAPI with hashed email. The experience onboarding wizard ([`ExperienceOnboardingClient.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceOnboardingClient.tsx)) submits completion to this API so that wizard completions (name + email) send Lead events for Meta ad optimization and Custom Audiences.
 - **Dedup:** Browser Pixel and CAPI share the same `event_id` per event for deduplication in Meta Events Manager.
 - **Match keys:** `_fbp` / `_fbc` cookies are forwarded when available; server adds `client_ip_address` and `client_user_agent`; checkout events now also pass hashed email (`em`) when available.
 - **Parameter Builder Library:** Implemented Meta's Parameter Builder Library ([`lib/meta-parameter-builder.ts`](../../lib/meta-parameter-builder.ts) and [`lib/meta-parameter-builder-server.ts`](../../lib/meta-parameter-builder-server.ts)) to automatically generate and enhance fbc/fbp parameters with proper formatting and appendix fields. This improves Event Match Quality (EMQ) scores by ensuring consistent parameter coverage and quality.
@@ -33,13 +33,15 @@ The app uses **Google Analytics 4 (GA4)** for e-commerce and marketing analytics
 - **Session Context:** On init, `captureSessionContext()` fires `session_context` with `referrer`, `device_type`, `is_returning_user`, `screen_width`, `screen_height`, and `language`. It also sets person properties `preferred_device` and `is_returning_user` (so “Returning users” and device cohorts match session reality).
 - **Session → cohort activity:** Each browser tab records the first pathname in `sessionStorage` and sends **`session_entry_path`**, **`session_entry_at`**, and **`activity_path`** (current URL path) on `$pageview`, `session_context`, all funnel events, and e-commerce events ([`lib/posthog.ts`](../../lib/posthog.ts)). PostHog still assigns persons by `distinct_id`; these properties let you build **behavioral cohorts** (e.g. “performed `purchase` where `session_entry_path` contains `/shop/experience-v2`”) in the PostHog UI, and **person** cohorts on **`last_session_entry_path`** (updated each session). `ensureSessionEntryForAnalytics()` runs from the provider on each `$pageview` so the entry path is set even if PostHog’s `loaded` callback runs late.
 - **E-commerce:** All GA4 e-commerce events (`view_item`, `add_to_cart`, `view_cart`, `begin_checkout`, `add_shipping_info`, `add_payment_info`, `purchase`, `search`) are mirrored to PostHog from [`lib/google-analytics.ts`](../../lib/google-analytics.ts) / [`lib/posthog.ts`](../../lib/posthog.ts). `begin_checkout` fires **after** the checkout session is successfully created (not before). Each item includes **`item_list_name`** (stage: `home` | `products` | `artist` | `pdp` | `experience`).
+- **Server `purchase` + guest alignment:** The Stripe webhook in [`app/api/stripe/webhook/route.ts`](../../app/api/stripe/webhook/route.ts) calls [`capturePostHogServerEvent`](../../lib/posthog-server.ts) with `distinct_id` = purchaser **email** when available, event `purchase`, and `$set: { has_purchased: true }`. That closes gaps when the browser never hits thank-you or `/track/[token]`. Client and server persons merge when the same user is later **identified** in the shop with that email.
 - **Meta CAPI Integration:** Meta Conversions API events (`Purchase`, `Refund`, `Lead`, etc.) are automatically mirrored to PostHog server-side via [`lib/posthog-server.ts`](../../lib/posthog-server.ts). Meta events appear in PostHog with `source: 'meta_capi'` and include Meta-specific properties (`meta_event_name`, `meta_event_id`, `meta_fbp`, `meta_fbc`) for attribution analysis. This enables unified funnels that track the full journey from Meta ad click → conversion.
 - **Funnel events:** [`lib/posthog.ts`](../../lib/posthog.ts) defines `FunnelEvents` and `captureFunnelEvent()` for onboarding and experience. New events include step-level quiz tracking, error events wired to all error paths, claim flow events, and checkout lifecycle events.
 - **Micro-interaction events:** `onboarding_step_viewed`, `onboarding_step_interaction`, `onboarding_step_abandoned`, `onboarding_field_focused`, `checkout_step_viewed` — granular step-level events for heatmap-level funnel analysis.
 - **Session replay tagging:** `tagSessionForReplay(tag)` from `lib/posthog.ts` fires `session_tagged` at critical drop-off points (`checkout-error`, `payment-error`) so you can filter session replays in PostHog.
 - **Feature flags:** `hooks/use-posthog-feature-flag.ts` exports `usePostHogFeatureFlag` and `usePostHogFeatureFlagEnabled` hooks. The A/B test variant is mirrored to PostHog person properties via `experience_ab_variant`.
-- **User properties:** `setUserProperty(key, value)` from [`lib/posthog.ts`](../../lib/posthog.ts) sets person properties. Properties tracked: `preferred_device`, `is_returning_user`, `last_session_entry_path` (tab’s first path this session), `experience_ab_variant`, `quiz_owns_lamp`, `quiz_purpose`, `experience_quiz_completed_flag`, `experience_quiz_skipped_flag` (experience quiz in [`IntroQuiz.tsx`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx)), `has_purchased` (checkout thank-you via `capturePurchase` and order tracking), `total_purchases`, `first_purchase_at` ([`app/track/[token]/page.tsx`](../../app/track/[token]/page.tsx)). On login, `identify()` merges quiz + A/B from storage via `getPostHogIdentifyTraitsFromClientStorage()` and the current tab’s `last_session_entry_path` (skips inferring quiz completion when storage has `quizLoginBypass` from the logged-in onboarding path).
+- **User properties:** `setUserProperty(key, value)` / `setPersonProperties` from [`lib/posthog.ts`](../../lib/posthog.ts) and server `$set` from [`lib/posthog-server.ts`](../../lib/posthog-server.ts). See [EVENTS_MAP.md](./EVENTS_MAP.md) for the full table (cart, shipping, checkout errors, promo, claim, collector onboarding, shop login, experience v2 shell, order tracking). On login, `identify()` merges quiz + A/B from storage via `getPostHogIdentifyTraitsFromClientStorage()` and the current tab’s `last_session_entry_path`.
 - **Event map:** [Events map: Shop & Experience](./EVENTS_MAP.md) lists all events and where they fire.
+- **Insight templates:** [INSIGHT_TEMPLATES.md](./INSIGHT_TEMPLATES.md) — HogQL abandoned checkout pattern, experience v2 funnel steps, replay filters.
 - **Usage:** Use `captureFunnelEvent(name, props)` / helpers from `lib/posthog.ts`. Use `usePostHog()` from `posthog-js/react` in client components.
 
 ### PostHog MCP vs REST API (cohorts)
@@ -54,7 +56,16 @@ npm run sync:posthog-cohorts
 
 Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`phx_...`, scope `cohort:write`) and `POSTHOG_PROJECT_ID`. **Region:** If the project is on **EU cloud**, set `POSTHOG_HOST=https://eu.i.posthog.com` or ensure `NEXT_PUBLIC_POSTHOG_HOST` matches (the sync script copies it to `POSTHOG_HOST` when unset—using the US default with an EU key returns **401 invalid key**). To create-only (no PATCH), run with `POSTHOG_UPDATE_EXISTING_COHORTS=false npm run sync:posthog-cohorts`.
 
-**Behavioral vs person-property cohorts (API):** On some PostHog Cloud projects, cohort definitions pushed via the REST API using **behavioral** filters (`performed_event`, etc.) can show `last_error_message` like “no matching criteria” and stay at zero even though funnels show the events. Cohorts that must sync reliably from [`scripts/setup-posthog-insights.js`](../../../scripts/setup-posthog-insights.js) are defined with **person** filters (and OR groups where needed). Remaining behavioral-only cohorts in that file (e.g. abandoned checkout, promo) may need to be recreated as **HogQL / query-based** cohorts in the PostHog UI until the API accepts those shapes.
+**Behavioral vs person-property cohorts (API):** On some PostHog Cloud projects, cohort definitions pushed via the REST API using **behavioral** filters (`performed_event`, etc.) can show `last_error_message` like “no matching criteria” and stay at zero even though funnels show the events. Cohorts synced from [`scripts/setup-posthog-insights.js`](../../../scripts/setup-posthog-insights.js) therefore use **person** filters wherever possible. Time-dependent segments (e.g. abandoned checkout in a sliding window) stay **UI-managed** — see [INSIGHT_TEMPLATES.md](./INSIGHT_TEMPLATES.md).
+
+**Cohort ownership**
+
+| Cohort / segment | Synced from repo (`setup-posthog-insights.js`) | UI-managed (HogQL / lifecycle) |
+|------------------|-----------------------------------------------|--------------------------------|
+| Quiz, purchaser, promo, claim, collector flags, checkout error, redirect flag, high engagement (count), A/B, device, gift, returning, lamp, repeat/first purchase, experience v2 tab | Yes | — |
+| **Abandoned checkout** (begin without purchase in N days) | **No** (removed from sync to avoid broken API definitions) | **Yes** — build in PostHog; template in [INSIGHT_TEMPLATES.md](./INSIGHT_TEMPLATES.md) |
+
+After changing person keys or cohort filters in code, run one deploy or local sync with **`POSTHOG_UPDATE_EXISTING_COHORTS=true`** so PostHog PATCHes existing cohorts; then turn it off again.
 
 **Read-only audit (cohorts + sample persons):**
 
@@ -62,11 +73,13 @@ Loads `.env.local` / `.env` when present. Requires `POSTHOG_PERSONAL_API_KEY` (`
 npm run posthog:audit
 ```
 
+Optional verbose cohort filter dumps: `POSTHOG_AUDIT_VERBOSE=true npm run posthog:audit` or `node scripts/posthog-audit.js --verbose`.
+
 Uses the same env as sync; helps verify cohort errors and counts without opening the UI.
 
 ### Insight setup script
 
-To create all PostHog insights (10 funnels, 12 trends, 8 paths, 21 cohorts, 4 dashboards) run:
+To create all PostHog insights (10 funnels, 12 trends, 8 paths, **20** repo-synced cohorts, 4 dashboards) run:
 
 ```bash
 POSTHOG_API_KEY=phx_xxx POSTHOG_PROJECT_ID=12345 node scripts/setup-posthog-insights.js
@@ -151,7 +164,7 @@ Four dashboards are created by the setup script. Each dashboard groups related i
 | 📊 Funnel & Onboarding Analytics | 10 funnels: purchase, quiz, collector onboarding, checkout, experience→purchase, claim, redirect, error recovery, gift vs self, A/B test |
 | 📈 Conversion Optimization | 12 trends: onboarding rate, skip rate, checkout errors, payment errors, purchases, add-to-cart, collector onboarding, promo, cancellation, filter usage, device split, new vs returning |
 | 🗺️ User Journey Paths | 8 paths: landing→purchase, after quiz, after error, after skip, after collector onboarding, post-purchase, claim flow, cart drop-off |
-| 👥 Audience Cohorts | 21 cohorts: quiz completers, skippers, collector completers, checkout abandoners, purchasers, error users, A/B variants, mobile/desktop, gift buyers, returning users, promo users, redirect users, high-engagement, lamp owners, claim flow, onboarding skippers, repeat purchasers, first-time purchasers, tab started on Experience v2 |
+| 👥 Audience Cohorts | 20 repo-synced cohorts (person filters): quiz completers/skippers, collector completers/skippers, purchasers, error users, A/B variants, mobile/desktop, gift buyers, returning users, promo users, redirect users, high-engagement, lamp owners, claim flow, repeat/first-time purchasers, tab started on Experience v2. **Abandoned checkout** is UI-only (HogQL); see [INSIGHT_TEMPLATES.md](./INSIGHT_TEMPLATES.md). |
 
 All insights use **Filter out internal and test users**. Add your email or distinct_id via code (see env vars below) or in [Project Settings → Filter out internal users](https://eu.posthog.com/project/settings).
 
@@ -326,5 +339,6 @@ This ensures that when iOS 14+ users opt out of tracking, Meta will still count 
 
 ## Version
 
-- Last updated: 2026-03
+- Last updated: 2026-03-23
 - Measurement ID in use: `G-V9LJ3T3LK8`
+- Change log: Cohort sync moved to person filters (abandoned checkout UI-only); Stripe → PostHog `purchase`; audit `--verbose`; [INSIGHT_TEMPLATES.md](./INSIGHT_TEMPLATES.md); EVENTS_MAP experience-v2 alignment.

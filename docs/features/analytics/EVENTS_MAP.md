@@ -8,6 +8,12 @@ Map of GA4 and **PostHog** events by page and component so we can track user act
 
 PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **session replay**, **heatmaps**, **autocapture**, **pageleave**, **dead clicks**, and **rageclick**. Logged-in shop users are **identified** via `PostHogIdentify` (same file). E-commerce events are mirrored from GA4 to PostHog in [`lib/google-analytics.ts`](../../lib/google-analytics.ts); funnel events are in [`lib/posthog.ts`](../../lib/posthog.ts).
 
+### Experience v2 shell vs onboarding (where events fire)
+
+- **Live configurator:** `/shop/experience` and `/shop/experience-v2` load [`ExperienceV2Client`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx). That shell fires `experience_started` (once per tab), A/B resolution, affiliate/direct entry, picker/carousel events, and artwork preview tracking.
+- **Onboarding quiz:** `/shop/experience-v2/onboarding/...` uses [`ExperienceOnboardingClient`](../../app/(store)/shop/experience-v2/components/ExperienceOnboardingClient.tsx) → [`IntroQuiz`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx) for quiz funnel events and quiz person properties.
+- **Legacy:** [`ExperienceClient`](../../app/(store)/shop/experience-v2/components/ExperienceClient.tsx) under `experience-v2/components` is **not** mounted by the main experience routes today; do not assume its-only events run on production URLs unless you embed that component elsewhere.
+
 ### Funnel events (for drop-off analysis)
 
 | Event | When | Properties | Implementation |
@@ -19,22 +25,26 @@ PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **
 | `collector_onboarding_step_completed` | Collector transitions away from any step (incl. step 0) | `step`, `step_name`, `time_spent_seconds` | Same |
 | `collector_onboarding_completed` | Collector completes all steps | `total_steps` | Same |
 | `collector_onboarding_skipped` | Collector skips onboarding | | Same |
-| `experience_quiz_started` | User sees experience intro quiz | | [`app/(store)/shop/experience/components/IntroQuiz.tsx`](../../app/(store)/shop/experience/components/IntroQuiz.tsx) |
+| `experience_quiz_started` | User sees experience intro quiz | | [`IntroQuiz.tsx`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx) (onboarding route) |
 | `experience_quiz_step_completed` | User answers quiz step 1 or 2 | `step`, `answer`, `time_spent_seconds` | Same |
 | `experience_quiz_completed` | User completes step 3 (name + continue) | `owns_lamp`, `purpose`, `provided_name` | Same |
 | `experience_quiz_skipped` | User clicks "Skip for now" | `at_step` | Same |
 | `experience_onboarding_login_clicked` | User clicks "Already have an account? Log in" | `step` | Same |
-| `experience_redirected_to_onboarding` | User sent to /shop/experience/onboarding | `reason`, `ab_variant` | [`app/(store)/shop/experience/components/ExperienceClient.tsx`](../../app/(store)/shop/experience/components/ExperienceClient.tsx) |
-| `experience_ab_variant_known` | A/B variant resolved (new or from cookie) | `variant`, `is_new_assignment` | Same |
-| `experience_started` | Configurator is shown | `owns_lamp`, `purpose` | Same |
-| `experience_filter_applied` | User applies filter | artist, tag, etc. | [`app/(store)/shop/experience/components/FilterPanel.tsx`](../../app/(store)/shop/experience/components/FilterPanel.tsx) |
-| `experience_filter_interaction` | Filter panel open/close or filter change | `action`, `filter_type` | Same |
+| `experience_redirected_to_onboarding` | Legacy: user sent from old experience client to onboarding | `reason`, `ab_variant` | [`ExperienceClient.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceClient.tsx) (not on main v2 URLs unless embedded) |
+| `experience_ab_variant_known` | A/B variant resolved (new or from cookie) | `variant`, `is_new_assignment` | [`ExperienceV2Client.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) |
+| `experience_started` | Configurator or quiz context shown | v2 shell: `surface`, `device_type`, `initial_artist_slug`, `direct_entry`, quiz fields from storage | [`ExperienceV2Client.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) via `trackExperienceV2ConfiguratorEntry` in [`lib/posthog.ts`](../../lib/posthog.ts) |
+| `experience_picker_opened` | Artwork picker sheet opens | context | `ExperienceV2Client.tsx` |
+| `experience_picker_closed` | Artwork picker sheet closes | context | Same |
+| `experience_carousel_navigated` | Carousel navigation in v2 shell | direction / index (as implemented) | Same |
+| `experience_artwork_previewed` | Artwork detail opened in v2 | product fields | Same + [`ArtworkDetail`](../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) |
+| `experience_filter_applied` | User applies filter in picker | artist, tag, etc. | [`FilterPanel.tsx`](../../app/(store)/shop/experience-v2/components/FilterPanel.tsx) |
+| `experience_filter_interaction` | Filter panel opened (v2) | `action`, `filter_type`, `context` | Same |
 
 ### Micro-interaction events (granular step-level tracking)
 
 | Event | When | Properties | Implementation |
 |-------|------|------------|----------------|
-| `onboarding_step_viewed` | Any onboarding step becomes visible | `step`, `context` (`experience_quiz` \| `collector_onboarding`) | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
+| `onboarding_step_viewed` | Any onboarding step becomes visible | `step`, `context` (`experience_quiz` \| `collector_onboarding`) | [`IntroQuiz.tsx`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx), [`onboarding-wizard.tsx`](../../app/collector/components/onboarding-wizard.tsx) |
 | `onboarding_step_interaction` | User taps a choice button | `step`, `button_type`, `context` | `IntroQuiz.tsx` |
 | `onboarding_step_abandoned` | User leaves a step without completing | `step`, `context`, `time_spent_seconds` | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
 | `onboarding_field_focused` | User focuses a form input | `field_name`, `step`, `context` | `IntroQuiz.tsx`, `onboarding-wizard.tsx` |
@@ -51,7 +61,7 @@ PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **
 | `begin_checkout` | Checkout session created successfully | `items`, `value`, `currency` | `cart/page.tsx` (after API success) |
 | `add_shipping_info` | Shipping address saved | `items`, `value`, `country`, `currency` | `CheckoutLayout.tsx`, `OrderBar.tsx` |
 | `add_payment_info` | Payment method selected | `payment_type`, `items`, `value`, `currency` | `CheckoutLayout.tsx` |
-| `purchase` | Order completed | `transaction_id`, `value`, `currency`, `items` | `lib/google-analytics.ts` + PostHog |
+| `purchase` | Order completed | `transaction_id`, `value`, `currency`, `items` | Client: `lib/google-analytics.ts` + PostHog; server: Stripe webhook → [`capturePostHogServerEvent`](../../lib/posthog-server.ts) with `$set` `has_purchased` when email is known |
 | `promo_code_applied` | Valid promo code applied | `code`, `discount_amount` | `CheckoutLayout.tsx` |
 | `checkout_cancelled` | User returns from Stripe with `?cancelled=true` | `item_count`, `subtotal` | `cart/page.tsx` |
 
@@ -86,11 +96,24 @@ See `hooks/use-posthog-feature-flag.ts` for the `usePostHogFeatureFlag` and `use
 
 | Property | Type | When set | Implementation |
 |----------|------|----------|----------------|
-| `preferred_device` | `mobile` \| `tablet` \| `desktop` | Session init | `lib/posthog.ts` → `captureSessionContext()` |
-| `experience_ab_variant` | `onboarding` \| `skip` | A/B assignment | `ExperienceClient.tsx` |
-| `quiz_owns_lamp`, `quiz_purpose` | boolean, `gift` \| `self` | Quiz finished (all steps) | `IntroQuiz.tsx` |
+| `preferred_device` | `mobile` \| `tablet` \| `desktop` | Session init | [`lib/posthog.ts`](../../lib/posthog.ts) → `captureSessionContext()` |
+| `experience_ab_variant` | `onboarding` \| `skip` | A/B assignment | [`ExperienceV2Client.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) |
+| `quiz_owns_lamp`, `quiz_purpose` | boolean, `gift` \| `self` | Quiz finished (all steps) | [`IntroQuiz.tsx`](../../app/(store)/shop/experience-v2/components/IntroQuiz.tsx) |
 | `experience_quiz_completed_flag`, `experience_quiz_skipped_flag` | boolean | Quiz completed vs “Skip for now” | `IntroQuiz.tsx`; merged on identify from `sc-experience-quiz` in `lib/posthog.ts` |
-| `has_purchased` | boolean | Thank-you `purchase` event or orders on tracking page | `lib/posthog.ts` → `capturePurchase()`; `app/track/[token]/page.tsx` |
+| `experience_configurator_visited`, `last_experience_surface` | boolean, string | First v2 configurator entry this tab | `trackExperienceV2ConfiguratorEntry` in [`lib/posthog.ts`](../../lib/posthog.ts) |
+| `experience_started_count` | number | Each v2 configurator tab entry (localStorage-backed) | Same |
+| `experience_redirected_to_onboarding_flag` | boolean | Onboarding opened with referrer from v2 configurator (not `/onboarding`) | [`ExperienceOnboardingClient.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceOnboardingClient.tsx) |
+| `has_added_to_cart` | boolean | First `add_to_cart` in browser | [`lib/posthog.ts`](../../lib/posthog.ts) (`captureAddToCart`) |
+| `has_used_experience_v2_cart` | boolean | `add_to_cart` with experience list name | Same |
+| `has_saved_shipping_address` | boolean | Successful `add_shipping_info` | Same |
+| `has_checkout_error` | boolean | Checkout error captured | `captureCheckoutError` in [`lib/posthog.ts`](../../lib/posthog.ts) |
+| `has_used_promo_code` | boolean | Valid promo applied | [`CheckoutLayout.tsx`](../../components/shop/checkout/CheckoutLayout.tsx) |
+| `visited_collector_claim` | boolean | Claim page view | [`welcome-client.tsx`](../../app/collector/welcome/welcome-client.tsx) |
+| `visited_order_tracking` | boolean | Track page loaded with orders | [`app/track/[token]/page.tsx`](../../app/track/[token]/page.tsx) |
+| `collector_onboarding_completed_flag`, `collector_onboarding_skipped_flag` | boolean | Collector wizard complete / skip | [`onboarding-wizard.tsx`](../../app/collector/components/onboarding-wizard.tsx) |
+| `shop_authenticated` | boolean | Shop user identified | [`app/providers.tsx`](../../app/providers.tsx) |
+| `last_shop_login_at` | ISO string | Last shop identify with email | Same |
+| `has_purchased` | boolean | Thank-you, Stripe webhook `$set`, or tracking page | `capturePurchase` / server capture; [`app/api/stripe/webhook/route.ts`](../../app/api/stripe/webhook/route.ts); `app/track/[token]/page.tsx` |
 | `total_purchases` | number | Order tracking page | `app/track/[token]/page.tsx` |
 | `first_purchase_at` | ISO date string | Order tracking page | Same |
 
@@ -220,7 +243,7 @@ E-commerce events are connected via [`lib/analytics-ecommerce.ts`](../../lib/ana
 | **Shop product cards** (home, products, artists) | `add_to_cart` in quick-add. Optional: `view_item` on card view/click. |
 | **Shop cart** | `begin_checkout` when user clicks checkout. |
 | **Experience** | `view_item` on preview change; `add_to_cart` when adding to order; `search` on Enter; `begin_checkout` when order drawer opens; `add_payment_info` when payment method selected. |
-| **Purchase** | Tracked on `/track/[token]` when user lands with order token. |
+| **Purchase** | Client on `/track/[token]` and thank-you flows; server `purchase` + `$set` from Stripe webhook when email is known ([`lib/posthog-server.ts`](../../lib/posthog-server.ts)). |
 
 ---
 
@@ -232,3 +255,11 @@ E-commerce events are connected via [`lib/analytics-ecommerce.ts`](../../lib/ana
 - Hooks: [`hooks/use-analytics.ts`](../../hooks/use-analytics.ts) — `useAnalytics()`, `useShopifyAnalytics()`, `usePurchaseTracking()`
 
 Use this map to add any remaining events (e.g. `view_item` on product grid, quiz events) or to verify tracking in GA4.
+
+---
+
+## Document metadata
+
+- **lastUpdated:** 2026-03-23
+- **version:** 1.1.0
+- **Change log:** Experience v2 shell vs onboarding documented; funnel table paths updated; person properties expanded; server `purchase` documented.

@@ -14,7 +14,7 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackBeginCheckout } from '@/lib/google-analytics'
 import { cartItemsToProductItems } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
-import { captureFunnelEvent, FunnelEvents, captureViewCart, tagSessionForReplay } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, captureViewCart, captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
 import { Button, Slider } from '@/components/ui'
@@ -141,7 +141,7 @@ function CartContentInner() {
       const message = err.message || 'Something went wrong'
       setError(message)
       setIsCheckingOut(false)
-      captureFunnelEvent(FunnelEvents.checkout_error, { error_message: message, source: 'cart' })
+      captureCheckoutError({ error_message: message, source: 'cart' })
       tagSessionForReplay('checkout-error')
     }
   }

@@ -11,6 +11,7 @@ import { sendMetaServerEvent } from "@/lib/meta-conversions-server"
 import { enhanceFbp, enhanceFbc } from "@/lib/meta-parameter-builder-server"
 import { sendTikTokEvent } from "@/lib/tiktok-events-server"
 import { addUserToAudience } from "@/lib/meta-custom-audiences-server"
+import { capturePostHogServerEvent } from "@/lib/posthog-server"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-03-31.basil",
@@ -400,6 +401,25 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       shipping,
       customerType: existingCollector ? 'returning' : 'new',
     })
+
+    // ── PostHog: server-side purchase + $set has_purchased (distinct_id = email; merge with client via identify) ──
+    const phValue = toMajorUnits(session.amount_total)
+    const phCurrency = toUpperCurrency(session.currency)
+    const phTxnId =
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : (session.payment_intent as Stripe.PaymentIntent)?.id || session.id
+    if (purchaserEmail) {
+      capturePostHogServerEvent('purchase', purchaserEmail, {
+        value: phValue,
+        currency: phCurrency,
+        transaction_id: phTxnId,
+        source: 'stripe_webhook',
+        $set: { has_purchased: true },
+      }).catch((err) => {
+        console.warn('[stripe/webhook] PostHog purchase mirror failed (non-critical):', err)
+      })
+    }
 
     // ── TikTok Events API: Purchase event ──
     const purchaserPhone = customer?.phone || undefined

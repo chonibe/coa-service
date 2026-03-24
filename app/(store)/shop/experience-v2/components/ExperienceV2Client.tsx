@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceOrder } from '../ExperienceOrderContext'
-import { trackAddToCart } from '@/lib/google-analytics'
+import { trackAddToCart, trackEnhancedEvent, trackViewItem, isGAEnabled } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { applyFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
 import type { SpotlightData } from './ArtistSpotlightBanner'
@@ -38,6 +38,18 @@ import {
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
+import {
+  captureFunnelEvent,
+  FunnelEvents,
+  getDeviceType,
+  setUserProperty,
+  trackExperienceV2ConfiguratorEntry,
+} from '@/lib/posthog'
+import {
+  getExperienceABVariantFromCookie,
+  setExperienceABVariantCookie,
+  type ExperienceABVariant,
+} from '@/lib/experience-v2-analytics'
 
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
@@ -150,6 +162,8 @@ export function ExperienceV2Client({
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  const abAssignedRef = useRef(false)
+  const lastDetailPreviewIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -163,6 +177,56 @@ export function ExperienceV2Client({
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // PostHog: shell entry, affiliate / direct params (once per mount)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const direct = params.get('direct') === '1'
+    trackExperienceV2ConfiguratorEntry({ initialArtistSlug, directEntry: direct })
+    if (initialArtistSlug) {
+      trackEnhancedEvent('affiliate_landing', { affiliate_slug: initialArtistSlug, page: 'experience-v2' })
+    }
+    if (direct) {
+      captureFunnelEvent('experience_direct_entry', {
+        artist_slug: initialArtistSlug,
+        device_type: getDeviceType(),
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: props from server for first paint only
+  }, [])
+
+  // A/B onboarding vs skip (cookie + PostHog; same cookie as legacy ExperienceClient)
+  useEffect(() => {
+    if (abAssignedRef.current) return
+    abAssignedRef.current = true
+    const existingVariant = getExperienceABVariantFromCookie()
+    const isNewAssignment = !existingVariant
+    const variant: ExperienceABVariant = existingVariant ?? (Math.random() < 0.5 ? 'skip' : 'onboarding')
+    if (isNewAssignment) {
+      setExperienceABVariantCookie(variant)
+      if (isGAEnabled()) {
+        trackEnhancedEvent('experience_ab_assigned', { variant, test: 'experience_onboarding' })
+        try {
+          window.gtag?.('set', 'user_properties', { experience_ab_variant: variant })
+        } catch {
+          // ignore
+        }
+      }
+      fetch('/api/experience/ab-assignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant }),
+        credentials: 'include',
+      }).catch(() => {})
+    }
+    captureFunnelEvent('experience_ab_variant_known', {
+      variant,
+      is_new_assignment: isNewAssignment,
+      device_type: getDeviceType(),
+      surface: 'experience_v2_configurator',
+    })
+    setUserProperty('experience_ab_variant', variant)
   }, [])
 
   // Fetch artist spotlight: use ?artist= when present (e.g. /shop/experience-v2?artist=jack-jc-art), else default latest
@@ -567,6 +631,28 @@ export function ExperienceV2Client({
     return () => { cancelled = true }
   }, [detailProduct, lamp.id])
 
+  // PostHog: artwork detail sheet — view_item + preview (once per opened product)
+  useEffect(() => {
+    if (!detailProduct) {
+      lastDetailPreviewIdRef.current = null
+      return
+    }
+    const ready =
+      detailProduct.id === lamp.id ||
+      (detailProductFull?.id === detailProduct.id && !detailProductLoading)
+    if (!ready) return
+    if (lastDetailPreviewIdRef.current === detailProduct.id) return
+    lastDetailPreviewIdRef.current = detailProduct.id
+    const p = detailProductFull ?? detailProduct
+    const variant = p.variants?.edges?.[0]?.node
+    trackViewItem({ ...storefrontProductToItem(p, variant, 1), item_list_name: 'experience-v2' })
+    captureFunnelEvent(FunnelEvents.experience_artwork_previewed, {
+      product_id: p.id,
+      handle: p.handle,
+      device_type: getDeviceType(),
+    })
+  }, [detailProduct, detailProductFull, detailProductLoading, lamp.id])
+
   const handleLampSelect = useCallback((product: ShopifyProduct) => {
     setLampPreviewOrder((prev) => {
       const idx = prev.indexOf(product.id)
@@ -665,6 +751,12 @@ export function ExperienceV2Client({
   const handleTapCarouselItem = useCallback((index: number) => {
     const product = carouselArtworks[index]
     if (!product) return
+    captureFunnelEvent(FunnelEvents.experience_carousel_navigated, {
+      index,
+      product_id: product.id,
+      is_lamp_slot: product.id === lamp.id,
+      device_type: getDeviceType(),
+    })
     scrollToSplineRef.current = true
     setPreviewSlideIndex(0)
     setActiveCarouselIndex(index)
@@ -674,7 +766,7 @@ export function ExperienceV2Client({
     }
     // Toggle lamp preview: off-lamp → assign to a side; on-lamp → remove so that side shows base Spline mesh
     handleLampSelect(product)
-  }, [carouselArtworks, handleLampSelect, lamp.id])
+  }, [carouselArtworks, handleLampSelect, lamp])
 
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -701,6 +793,10 @@ export function ExperienceV2Client({
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
     setPickerHasBeenOpened(true)
+    captureFunnelEvent(FunnelEvents.experience_picker_opened, {
+      cart_count: cartOrder.length,
+      device_type: getDeviceType(),
+    })
     // Empty cart: browsing from “Start your collection” should show the full season, not spotlight-only filter
     if (cartOrder.length === 0 && spotlightData?.vendorName) {
       setFilters((prev) => ({
@@ -709,9 +805,14 @@ export function ExperienceV2Client({
       }))
     }
     setIsPickerOpen(true)
-  }, [cartOrder.length, spotlightData?.vendorName])
+  }, [cartOrder.length, cartOrder, spotlightData?.vendorName])
 
   const handleClosePicker = useCallback(() => {
+    captureFunnelEvent(FunnelEvents.experience_picker_closed, {
+      cart_count: cartOrder.length,
+      added_since_open: cartOrder.length > cartCountWhenPickerOpenedRef.current,
+      device_type: getDeviceType(),
+    })
     if (cartOrder.length > cartCountWhenPickerOpenedRef.current) {
       triggerPriceBump()
     }

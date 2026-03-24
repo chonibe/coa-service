@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { OnboardingWizard } from "../components/onboarding-wizard"
-import { captureFunnelEvent, FunnelEvents } from "@/lib/posthog"
+import { captureFunnelEvent, FunnelEvents, setUserProperty } from "@/lib/posthog"
 
 interface WelcomeClientProps {
   /** Email from claim token (guest purchaser) */
@@ -43,6 +43,7 @@ export function WelcomeClient({ claimEmail, claimPurchaseId, profileExists }: We
 function ClaimFlow({ claimEmail, profileExists }: { claimEmail: string; profileExists?: boolean }) {
   useEffect(() => {
     captureFunnelEvent(FunnelEvents.collector_claim_page_viewed, { profile_exists: profileExists ?? false })
+    setUserProperty("visited_collector_claim", true)
   }, [profileExists])
 
   return (

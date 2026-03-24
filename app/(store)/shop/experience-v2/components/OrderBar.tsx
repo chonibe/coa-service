@@ -9,7 +9,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
 import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/google-analytics'
-import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, tagSessionForReplay } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
 import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
@@ -350,7 +350,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong.'
       setError(message)
-      captureFunnelEvent(FunnelEvents.checkout_error, { error_message: message, source: 'order_bar_test' })
+      captureCheckoutError({ error_message: message, source: 'order_bar_test' })
       tagSessionForReplay('checkout-error')
     }
   }, [lamp])

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { captureFunnelEvent, FunnelEvents } from "@/lib/posthog"
+import { captureFunnelEvent, FunnelEvents, setUserProperty } from "@/lib/posthog"
 import { Progress } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -217,6 +217,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       }
 
       captureFunnelEvent(FunnelEvents.collector_onboarding_completed, { total_steps: steps.length })
+      setUserProperty("collector_onboarding_completed_flag", true)
+      setUserProperty("collector_onboarding_skipped_flag", false)
       onComplete()
     } catch (err: any) {
       setError(err.message || "Failed to complete onboarding")
@@ -227,6 +229,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   const handleSkip = async () => {
     setIsSubmitting(true)
     captureFunnelEvent(FunnelEvents.collector_onboarding_skipped, { at_step: currentStep + 1 })
+    setUserProperty("collector_onboarding_skipped_flag", true)
     try {
       // Mark as skipped
       await fetch("/api/collector/onboarding/skip", {

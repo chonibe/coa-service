@@ -84,6 +84,21 @@ export function ExperienceOnboardingClient({
     setPartialAnswers(loadPartialAnswers())
   }, [step])
 
+  // Person cohort: arrived on onboarding from the live v2 configurator (not direct /onboarding URL).
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    try {
+      const ref = document.referrer || ''
+      if (ref.includes('/shop/experience-v2') && !ref.includes('/onboarding')) {
+        void import('@/lib/posthog').then(({ setUserProperty }) => {
+          setUserProperty('experience_redirected_to_onboarding_flag', true)
+        })
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   // OrderBar: empty cart so cart chip works during onboarding
   useEffect(() => {
     setOrderBarProps({
