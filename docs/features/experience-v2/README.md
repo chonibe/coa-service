@@ -87,7 +87,7 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **FilterPanel** — artists, tags, price range, sort, in-stock, star rating (reused from V1)
 - Virtualized **rows grouped by artist (vendor)** — two artworks per row when an artist has a pair; **vertical artist name** in the center spine (same layout as the former “both selected” merge). Odd count: one **centered** half-width card for that artist. Row building: [`experience-artwork-rows.ts`](../../../lib/shop/experience-artwork-rows.ts)
 - Cards show: image, **artwork title** with **price on the line below** (artist name is **not** repeated in the card footer — it’s only on the center spine when two pieces share a row)
-- **No Add button** — tap card/Eye to toggle selection
+- **Unselected** cards show a **+** circle (top-right), matching spotlight placeholder tiles in [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) — tap the card to add to the bottom carousel; there is no separate “Add” row button
 - **Numbered badges** (1, 2, 3…) on selected artworks
 - Lamp position indicators (1, 2) for artworks on lamp sides
 - **Unselected** — image + footer use the same **`bg-white` / `bg-[#171515]`** as the sheet. **Selected** — **brighter lift** (`#f0f9ff` light / `#2c2828` dark) on shell, image well, and title row (no ring); [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) still uses the full-card peach **border** for **single** in-cart tiles only. **Merged same-vendor pair** (picker + strip): tinted **`#f0f9ff` / `#2c2828`** row when both selected; **no** outer border on 2-up rows; artist **spine** is text-only (no spine bg/borders). Footers: **centered** title + price; strip cards **no** border between image and meta
@@ -189,7 +189,7 @@ Persisted carts: if `lampPreviewOrder` is present in `localStorage` (including a
 | Aspect | V1 (`/shop/experience`) | V2 (`/shop/experience-v2`) |
 |--------|-------------------------|----------------------------|
 | Spline position | Split view with selector | Full viewport |
-| Artwork selection | Inline cards with Add button | Slide-up sheet (same cards, no Add) |
+| Artwork selection | Inline cards with Add button | Slide-up sheet (same cards; + badge on unselected tiles, no row Add button) |
 | Artist spotlight | Yes (above ArtworkStrip) | Yes (above grid in picker) |
 | Seasons (1/2) | Yes (tabs in bar) | Yes (tabs in picker bar) |
 | Filters | Yes (FilterPanel) | Yes (FilterPanel in picker) |
@@ -229,3 +229,4 @@ npm run dev
 - Updated: 2026-03-20 — Centralized artwork card / 2-up row background classes in [`experience-artwork-card-surfaces.ts`](../../../lib/shop/experience-artwork-card-surfaces.ts) (picker + strip).
 - Updated: 2026-03-20 — Smaller selection UI: picker numbered badge **`w-4`/`text-[9px]`**; strip lamp badge **`w-4`/`text-[9px]`**; strip footer controls **`h-5`/`w-4`**; softer **scale** pulses on wizard highlights and add check.
 - Updated: 2026-03-20 — **EditionBadge** in artwork detail action areas (desktop inline/slideout + mobile sticky bar); copy + thresholds in [`edition-stages.ts`](../../../lib/shop/edition-stages.ts).
+- Updated: 2026-03-24 — Picker [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx): **+** affordance on unselected artwork thumbnails (aligned with carousel spotlight placeholders).
