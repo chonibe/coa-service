@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
 import {
   Container,
   SectionWrapper,
@@ -12,6 +13,10 @@ import {
   StatusBadge,
   Input,
 } from '@/components/impact'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui'
+import { TrackingTimeline, type TrackingData } from '@/app/admin/warehouse/orders/components/TrackingTimeline'
+import type { ChinaDivisionOrderInfo } from '@/lib/chinadivision/client'
+import { cn } from '@/lib/utils'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { AddressModal } from '@/components/shop/checkout'
@@ -62,6 +67,149 @@ interface Order {
   trackingUrl?: string
   /** Human-readable warehouse status (e.g. "In Transit", "Out for Delivery") when available */
   warehouseStatusLabel?: string
+}
+
+type WarehouseDetailPayload = {
+  success: true
+  chinaDivisionOrder: ChinaDivisionOrderInfo | null
+  tracking: TrackingData | null
+  warehouseRow: { id: string; order_id: string; tracking_number?: string | null } | null
+}
+
+type ShipmentAccordionState =
+  | { kind: 'loading' }
+  | { kind: 'done'; data: WarehouseDetailPayload }
+  | { kind: 'error'; message: string }
+
+function OrderShipmentAccordion({ orderId }: { orderId: string }) {
+  const [open, setOpen] = useState(false)
+  const [state, setState] = useState<ShipmentAccordionState | null>(null)
+  const loadedSuccessfullyRef = useRef(false)
+
+  const load = useCallback(async () => {
+    setState({ kind: 'loading' })
+    try {
+      const res = await fetch(
+        `/api/shop/account/orders/${encodeURIComponent(orderId)}/warehouse-detail`,
+        { credentials: 'include' },
+      )
+      const data = (await res.json()) as WarehouseDetailPayload & { message?: string }
+      if (!res.ok) {
+        throw new Error((data as { message?: string }).message || 'Failed to load shipment details')
+      }
+      loadedSuccessfullyRef.current = true
+      setState({ kind: 'done', data: data as WarehouseDetailPayload })
+    } catch (e) {
+      setState({
+        kind: 'error',
+        message: e instanceof Error ? e.message : 'Failed to load shipment details',
+      })
+    }
+  }, [orderId])
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (next && !loadedSuccessfullyRef.current) {
+      void load()
+    }
+  }
+
+  const platformOrderIdForTimeline =
+    state?.kind === 'done'
+      ? state.data.chinaDivisionOrder?.sys_order_id ||
+        state.data.chinaDivisionOrder?.order_id ||
+        state.data.warehouseRow?.id ||
+        state.data.warehouseRow?.order_id ||
+        orderId
+      : orderId
+
+  const trackingNumberForTimeline =
+    state?.kind === 'done'
+      ? state.data.chinaDivisionOrder?.tracking_number ||
+        state.data.warehouseRow?.tracking_number ||
+        state.data.chinaDivisionOrder?.info?.find((p) => p.tracking_number)?.tracking_number ||
+        undefined
+      : undefined
+
+  return (
+    <Collapsible open={open} onOpenChange={handleOpenChange} className="pt-4 border-t border-[#1a1a1a]/10">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left py-2 rounded-lg hover:bg-black/[0.03] px-2 -mx-2 transition-colors">
+        <span className="text-sm font-semibold text-[#1a1a1a]">Shipment &amp; tracking</span>
+        <ChevronDown
+          className={cn('h-5 w-5 shrink-0 text-[#1a1a1a]/50 transition-transform', open && 'rotate-180')}
+          aria-hidden
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3 space-y-4">
+        {!state || state.kind === 'loading' ? (
+          <div className="space-y-2 animate-pulse py-2">
+            <div className="h-4 bg-[#f5f5f5] rounded w-3/4" />
+            <div className="h-4 bg-[#f5f5f5] rounded w-1/2" />
+            <div className="h-24 bg-[#f5f5f5] rounded-[12px]" />
+          </div>
+        ) : state.kind === 'error' ? (
+          <div className="rounded-[12px] border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-900">
+            <p>{state.message}</p>
+            <Button variant="outline" size="sm" className="mt-3" type="button" onClick={() => {
+              loadedSuccessfullyRef.current = false
+              void load()
+            }}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <>
+            {!state.data.chinaDivisionOrder && !state.data.tracking ? (
+              <p className="text-sm text-[#1a1a1a]/60 py-2">
+                No warehouse shipment data yet for this order. When your package ships, status and tracking events will
+                appear here.
+              </p>
+            ) : null}
+
+            {state.data.chinaDivisionOrder?.info && state.data.chinaDivisionOrder.info.length > 0 ? (
+              <div>
+                <p className="text-sm font-medium text-[#1a1a1a] mb-2">Packages</p>
+                <ul className="space-y-2 text-sm text-[#1a1a1a]/80">
+                  {state.data.chinaDivisionOrder.info.map((pkg, idx) => (
+                    <li
+                      key={`${pkg.sku || pkg.sku_code || idx}-${idx}`}
+                      className="flex flex-wrap gap-x-3 gap-y-1 rounded-[10px] bg-[#f5f5f5]/80 px-3 py-2"
+                    >
+                      <span className="font-medium text-[#1a1a1a]">{pkg.product_name || pkg.sku || 'Item'}</span>
+                      <span className="text-[#1a1a1a]/60">Qty {pkg.quantity}</span>
+                      {pkg.tracking_number ? (
+                        <span className="text-[#1a1a1a]/60">Tracking: {pkg.tracking_number}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {state.data.chinaDivisionOrder &&
+            (!state.data.chinaDivisionOrder.info || state.data.chinaDivisionOrder.info.length === 0) ? (
+              <p className="text-sm text-[#1a1a1a]/60">Package details will appear when the warehouse assigns SKUs.</p>
+            ) : null}
+
+            <div className="[&_.rounded-lg]:rounded-[12px]">
+              <TrackingTimeline
+                compact
+                orderId={platformOrderIdForTimeline}
+                trackingNumber={trackingNumberForTimeline}
+                carrier={state.data.chinaDivisionOrder?.carrier}
+                lastMileTracking={state.data.chinaDivisionOrder?.last_mile_tracking}
+                staticTracking={state.data.tracking}
+                onRefetch={() => {
+                  loadedSuccessfullyRef.current = false
+                  void load()
+                }}
+              />
+            </div>
+          </>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  )
 }
 
 export default function AccountPage() {
@@ -487,6 +635,8 @@ export default function AccountPage() {
                         </div>
                       ))}
                     </div>
+
+                    <OrderShipmentAccordion orderId={order.id} />
 
                     {/* Tracking Info */}
                     {order.trackingNumber && (

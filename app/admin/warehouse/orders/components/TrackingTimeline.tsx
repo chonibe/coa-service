@@ -10,14 +10,6 @@ import { Icon } from '@/components/icon'
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Alert, AlertDescription, Button } from "@/components/ui"
-interface TrackingTimelineProps {
-  orderId: string
-  trackingNumber?: string
-  compact?: boolean
-  primaryColor?: string
-  carrier?: string
-  lastMileTracking?: string
-}
 
 interface TrackingEvent {
   timestamp: string
@@ -37,7 +29,7 @@ interface TrackingEvent {
   }
 }
 
-interface TrackingData {
+export interface TrackingData {
   tracking_number?: string
   track_list?: Array<[string, string]>
   track_status?: number
@@ -70,12 +62,53 @@ interface TrackingData {
   }
 }
 
-export function TrackingTimeline({ orderId, trackingNumber, compact = false, primaryColor, carrier, lastMileTracking }: TrackingTimelineProps) {
+interface TrackingTimelineProps {
+  orderId: string
+  trackingNumber?: string
+  compact?: boolean
+  primaryColor?: string
+  carrier?: string
+  lastMileTracking?: string
+  /**
+   * When set (including `null`), skips admin `/api/tracking/stone3pl` fetch.
+   * Use server-fetched tracking from shop-account or other authenticated APIs.
+   */
+  staticTracking?: TrackingData | null
+  /** When using staticTracking, Retry calls this instead of refetching the admin API */
+  onRefetch?: () => void
+}
+
+export function TrackingTimeline({
+  orderId,
+  trackingNumber,
+  compact = false,
+  primaryColor,
+  carrier,
+  lastMileTracking,
+  staticTracking,
+  onRefetch,
+}: TrackingTimelineProps) {
   const [trackingData, setTrackingData] = useState<TrackingData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const applyStaticPayload = (payload: TrackingData | null) => {
+    if (payload === null) {
+      setTrackingData(null)
+      return
+    }
+    setTrackingData({
+      ...payload,
+      carrier: payload.carrier || carrier,
+      last_mile_tracking: payload.last_mile_tracking || lastMileTracking,
+    })
+  }
+
   const fetchTracking = async () => {
+    if (staticTracking !== undefined) {
+      if (onRefetch) onRefetch()
+      return
+    }
     if (!orderId) return
 
     try {
@@ -120,10 +153,17 @@ export function TrackingTimeline({ orderId, trackingNumber, compact = false, pri
   }
 
   useEffect(() => {
-    if (orderId) {
-      fetchTracking()
+    if (staticTracking !== undefined) {
+      setIsLoading(false)
+      setError(null)
+      applyStaticPayload(staticTracking)
+      return
     }
-  }, [orderId])
+    if (orderId) {
+      void fetchTracking()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- staticTracking identity is controlled by parent; avoid refetch loops
+  }, [orderId, trackingNumber, staticTracking])
 
   if (isLoading) {
     if (compact) {
