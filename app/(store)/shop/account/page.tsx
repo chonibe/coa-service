@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 import {
+  Badge,
   Container,
   SectionWrapper,
   Button,
@@ -196,7 +197,19 @@ function OrderShipmentAccordion({
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <StatusBadge status={orderStatus} className="shrink-0" />
                 {warehouseExtra ? (
-                  <span className="text-xs font-medium text-[#1a1a1a]/70 sm:text-sm">{warehouseExtra}</span>
+                  <>
+                    <span className="text-[#1a1a1a]/30 shrink-0 select-none" aria-hidden>
+                      ·
+                    </span>
+                    <Badge
+                      variant="outline"
+                      size="sm"
+                      rounded="full"
+                      className="shrink-0 normal-case tracking-normal font-semibold text-[#1a1a1a]"
+                    >
+                      {warehouseExtra}
+                    </Badge>
+                  </>
                 ) : null}
               </div>
             </>
@@ -246,6 +259,7 @@ function OrderShipmentAccordion({
               <TrackingTimeline
                 compact
                 compactJourneyExpandable
+                compactHideShipmentStatusLine={showStatusOnShipmentRow && warehouseExtra != null}
                 compactJourneyPreviewCount={10}
                 compactJourneyLoadMoreStep={25}
                 orderId={platformOrderIdForTimeline}

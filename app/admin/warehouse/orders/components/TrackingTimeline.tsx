@@ -9,7 +9,20 @@ import { TruckIcon, ClockIcon, CheckCircleIcon, ExclamationCircleIcon, ArrowPath
 import { Icon } from '@/components/icon'
 
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Alert, AlertDescription, Button } from "@/components/ui"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Alert,
+  AlertDescription,
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui"
 import { getCarrierTrackingPageUrl } from '@/lib/shipping/carrier-tracking-url'
 
 interface TrackingEvent {
@@ -67,8 +80,21 @@ interface TrackingTimelineProps {
   orderId: string
   trackingNumber?: string
   compact?: boolean
-  /** In compact mode, max journey events to show (default 3). Use a higher value on shop account. */
+  /** In compact mode, max journey events to show (default 3). Ignored when `compactJourneyExpandable` is true. */
   compactMaxEvents?: number
+  /**
+   * When true (e.g. My Orders), show a preview then **Load more** / **Show fewer**, with optional **Earlier updates** collapsible.
+   */
+  compactJourneyExpandable?: boolean
+  /** Rows to show before expanding (default 12). Only used with `compactJourneyExpandable`. */
+  compactJourneyPreviewCount?: number
+  /** How many extra rows each “Load more” reveals (default 20). Only used with `compactJourneyExpandable`. */
+  compactJourneyLoadMoreStep?: number
+  /**
+   * In compact mode, hide the “Shipment status: …” summary row (e.g. when the parent already shows
+   * Shipped / In Transit chips on a collapsible trigger).
+   */
+  compactHideShipmentStatusLine?: boolean
   primaryColor?: string
   carrier?: string
   lastMileTracking?: string
@@ -86,6 +112,10 @@ export function TrackingTimeline({
   trackingNumber,
   compact = false,
   compactMaxEvents = 3,
+  compactJourneyExpandable = false,
+  compactJourneyPreviewCount = 12,
+  compactJourneyLoadMoreStep = 20,
+  compactHideShipmentStatusLine = false,
   primaryColor,
   carrier,
   lastMileTracking,
@@ -95,6 +125,9 @@ export function TrackingTimeline({
   const [trackingData, setTrackingData] = useState<TrackingData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** Total journey events to show when `compactJourneyExpandable` (reset when tracking payload changes). */
+  const [journeyVisibleCount, setJourneyVisibleCount] = useState(12)
+  const [journeyOlderOpen, setJourneyOlderOpen] = useState(false)
 
   const applyStaticPayload = (payload: TrackingData | null) => {
     if (payload === null) {
@@ -107,6 +140,22 @@ export function TrackingTimeline({
       last_mile_tracking: payload.last_mile_tracking || lastMileTracking,
     })
   }
+
+  useEffect(() => {
+    if (!compactJourneyExpandable) return
+    const len = trackingData
+      ? (trackingData.parsed_events || trackingData.timeline?.events || []).length
+      : 0
+    const preview = Math.max(1, compactJourneyPreviewCount)
+    setJourneyVisibleCount(len === 0 ? 0 : Math.min(preview, len))
+    setJourneyOlderOpen(false)
+  }, [
+    compactJourneyExpandable,
+    compactJourneyPreviewCount,
+    orderId,
+    staticTracking,
+    trackingData,
+  ])
 
   const fetchTracking = async () => {
     if (staticTracking !== undefined) {
@@ -291,7 +340,32 @@ export function TrackingTimeline({
       return description
     }
 
-    const maxEvents = Math.max(1, compactMaxEvents)
+    const previewN = Math.max(1, compactJourneyPreviewCount)
+    const cappedMax = Math.max(1, compactMaxEvents)
+    const loadStep = Math.max(1, compactJourneyLoadMoreStep)
+
+    const renderCompactJourneyRow = (event: TrackingEvent, rowKey: string | number) => {
+      const locationStr = getLocationString(event)
+      const statusStr = getStatusFromDescription(event.description)
+      return (
+        <div key={rowKey} className="flex items-start gap-2 text-xs">
+          <div
+            className="w-1.5 h-1.5 rounded-full bg-current mt-1.5 flex-shrink-0"
+            style={{ color: 'var(--brand-primary-alpha-50)' }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-foreground truncate">{locationStr}</span>
+              <span className="text-muted-foreground truncate">{statusStr}</span>
+            </div>
+            {event.parsedTime?.stone3plFormat && (
+              <div className="text-muted-foreground mt-0.5 text-[11px]">{event.parsedTime.stone3plFormat}</div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
     const localTrack = trackingData.last_mile_tracking?.trim()
     const localUrl = localTrack ? getCarrierTrackingPageUrl(trackingData.carrier, localTrack) : ''
     const showLocalPanel = Boolean(localTrack || trackingData.carrier)
@@ -332,12 +406,13 @@ export function TrackingTimeline({
           </div>
         )}
 
-        {(trackingData.track_status_name || statusInfo?.name) && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Shipment status:</span>
-            <span className="font-semibold">{trackingData.track_status_name || statusInfo?.name}</span>
-          </div>
-        )}
+        {!compactHideShipmentStatusLine &&
+          (trackingData.track_status_name || statusInfo?.name) && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Shipment status:</span>
+              <span className="font-semibold">{trackingData.track_status_name || statusInfo?.name}</span>
+            </div>
+          )}
 
         {events.length > 0 && (
           <div>
@@ -345,32 +420,80 @@ export function TrackingTimeline({
               Tracking journey
             </div>
             <div className="relative space-y-2 border-t pt-2" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
-              {events.slice(0, maxEvents).map((event, index) => {
-                const locationStr = getLocationString(event)
-                const statusStr = getStatusFromDescription(event.description)
-
-                return (
-                  <div key={index} className="flex items-start gap-2 text-xs">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full bg-current mt-1.5 flex-shrink-0"
-                      style={{ color: 'var(--brand-primary-alpha-50)' }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-foreground truncate">{locationStr}</span>
-                        <span className="text-muted-foreground truncate">{statusStr}</span>
-                      </div>
-                      {event.parsedTime?.stone3plFormat && (
-                        <div className="text-muted-foreground mt-0.5 text-[11px]">{event.parsedTime.stone3plFormat}</div>
-                      )}
+              {compactJourneyExpandable ? (
+                <>
+                  {events.slice(0, Math.min(previewN, events.length)).map((event, index) =>
+                    renderCompactJourneyRow(event, `head-${index}`),
+                  )}
+                  {events.length > previewN && (
+                    <Collapsible
+                      open={journeyOlderOpen}
+                      onOpenChange={(open) => {
+                        setJourneyOlderOpen(open)
+                        if (open) {
+                          setJourneyVisibleCount((v) =>
+                            v <= previewN ? Math.min(previewN + loadStep, events.length) : v,
+                          )
+                        }
+                      }}
+                    >
+                      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-xs font-medium text-[#047AFF] hover:bg-black/[0.04]">
+                        <span>Earlier updates</span>
+                        <span className="font-normal text-muted-foreground">({events.length - previewN})</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-2 pt-1">
+                        {events
+                          .slice(previewN, Math.min(journeyVisibleCount, events.length))
+                          .map((event, index) =>
+                            renderCompactJourneyRow(event, `tail-${previewN + index}`),
+                          )}
+                        {journeyVisibleCount < events.length && (
+                          <div className="pt-1 text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto py-1 text-xs text-[#047AFF] hover:bg-transparent hover:text-[#0366d6]"
+                              onClick={() =>
+                                setJourneyVisibleCount((v) => Math.min(v + loadStep, events.length))
+                              }
+                            >
+                              Load more (
+                              {Math.min(loadStep, events.length - journeyVisibleCount)})
+                            </Button>
+                          </div>
+                        )}
+                        {journeyVisibleCount > previewN && (
+                          <div className="text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto py-1 text-xs text-muted-foreground hover:bg-transparent"
+                              onClick={() => {
+                                setJourneyVisibleCount(previewN)
+                                setJourneyOlderOpen(false)
+                              }}
+                            >
+                              Show fewer
+                            </Button>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </>
+              ) : (
+                <>
+                  {events.slice(0, cappedMax).map((event, index) =>
+                    renderCompactJourneyRow(event, index),
+                  )}
+                  {events.length > cappedMax && (
+                    <div className="text-xs text-center text-muted-foreground pt-1">
+                      +{events.length - cappedMax} more updates
                     </div>
-                  </div>
-                )
-              })}
-              {events.length > maxEvents && (
-                <div className="text-xs text-center text-muted-foreground pt-1">
-                  +{events.length - maxEvents} more updates
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
