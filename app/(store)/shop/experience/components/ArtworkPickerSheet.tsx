@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
-import { SlidersHorizontal } from 'lucide-react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -196,6 +196,15 @@ function ArtworkCardV2({
           >
             {isEarlyAccess ? 'Early access' : 'Featured Artist'}
           </span>
+        )}
+
+        {!isSelected && (
+          <div
+            className="pointer-events-none absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-sm"
+            aria-hidden
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+          </div>
         )}
 
         <AnimatePresence initial={false}>
