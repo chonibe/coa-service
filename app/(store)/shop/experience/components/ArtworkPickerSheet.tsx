@@ -200,7 +200,7 @@ function ArtworkCardV2({
 
         {!isSelected && (
           <div
-            className="pointer-events-none absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-sm"
+            className="pointer-events-none absolute top-2 right-2 z-[15] flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-md ring-1 ring-black/5"
             aria-hidden
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} />
