@@ -29,6 +29,9 @@ import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
  * Integrates with Supabase for order data.
  */
 
+/** Interactive shop experience (/shop redirects to street-collector marketing). */
+const SHOP_EXPERIENCE_HREF = '/shop/experience'
+
 interface Order {
   id: string
   shopifyOrderId: string
@@ -125,10 +128,20 @@ function OrderShipmentAccordion({ orderId }: { orderId: string }) {
 
   const trackingNumberForTimeline =
     state?.kind === 'done'
-      ? state.data.chinaDivisionOrder?.tracking_number ||
+      ? state.data.tracking?.tracking_number ||
+        state.data.chinaDivisionOrder?.tracking_number ||
         state.data.warehouseRow?.tracking_number ||
-        state.data.chinaDivisionOrder?.info?.find((p) => p.tracking_number)?.tracking_number ||
         undefined
+      : undefined
+
+  const mergedCarrier =
+    state?.kind === 'done'
+      ? state.data.tracking?.carrier || state.data.chinaDivisionOrder?.carrier
+      : undefined
+
+  const mergedLastMile =
+    state?.kind === 'done'
+      ? state.data.tracking?.last_mile_tracking || state.data.chinaDivisionOrder?.last_mile_tracking
       : undefined
 
   return (
@@ -166,38 +179,23 @@ function OrderShipmentAccordion({ orderId }: { orderId: string }) {
               </p>
             ) : null}
 
-            {state.data.chinaDivisionOrder?.info && state.data.chinaDivisionOrder.info.length > 0 ? (
-              <div>
-                <p className="text-sm font-medium text-[#1a1a1a] mb-2">Packages</p>
-                <ul className="space-y-2 text-sm text-[#1a1a1a]/80">
-                  {state.data.chinaDivisionOrder.info.map((pkg, idx) => (
-                    <li
-                      key={`${pkg.sku || pkg.sku_code || idx}-${idx}`}
-                      className="flex flex-wrap gap-x-3 gap-y-1 rounded-[10px] bg-[#f5f5f5]/80 px-3 py-2"
-                    >
-                      <span className="font-medium text-[#1a1a1a]">{pkg.product_name || pkg.sku || 'Item'}</span>
-                      <span className="text-[#1a1a1a]/60">Qty {pkg.quantity}</span>
-                      {pkg.tracking_number ? (
-                        <span className="text-[#1a1a1a]/60">Tracking: {pkg.tracking_number}</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
             {state.data.chinaDivisionOrder &&
-            (!state.data.chinaDivisionOrder.info || state.data.chinaDivisionOrder.info.length === 0) ? (
-              <p className="text-sm text-[#1a1a1a]/60">Package details will appear when the warehouse assigns SKUs.</p>
+            !state.data.tracking &&
+            (state.data.chinaDivisionOrder.track_status_name || state.data.chinaDivisionOrder.status_name) ? (
+              <p className="text-sm text-[#1a1a1a]/80 py-1">
+                <span className="font-medium text-[#1a1a1a]">Warehouse status: </span>
+                {state.data.chinaDivisionOrder.track_status_name || state.data.chinaDivisionOrder.status_name}
+              </p>
             ) : null}
 
             <div className="[&_.rounded-lg]:rounded-[12px]">
               <TrackingTimeline
                 compact
+                compactMaxEvents={50}
                 orderId={platformOrderIdForTimeline}
                 trackingNumber={trackingNumberForTimeline}
-                carrier={state.data.chinaDivisionOrder?.carrier}
-                lastMileTracking={state.data.chinaDivisionOrder?.last_mile_tracking}
+                carrier={mergedCarrier}
+                lastMileTracking={mergedLastMile}
                 staticTracking={state.data.tracking}
                 onRefetch={() => {
                   loadedSuccessfullyRef.current = false
@@ -437,7 +435,7 @@ export default function AccountPage() {
                     <Button variant="primary" size="lg" onClick={() => setAuthOpen(true)}>
                       Sign In
                     </Button>
-                    <Link href="/shop">
+                    <Link href={SHOP_EXPERIENCE_HREF}>
                       <Button variant="outline" size="lg">
                         Continue Shopping
                       </Button>
@@ -487,7 +485,7 @@ export default function AccountPage() {
                   Dev: End mock session
                 </Link>
               )}
-              <Link href="/shop">
+              <Link href={SHOP_EXPERIENCE_HREF}>
                 <Button variant="outline" size="sm">
                   Continue Shopping
                 </Button>
@@ -498,9 +496,9 @@ export default function AccountPage() {
                 onClick={async () => {
                   try {
                     await fetch('/api/collector/logout', { method: 'POST', credentials: 'include' })
-                    window.location.href = '/shop'
+                    window.location.href = SHOP_EXPERIENCE_HREF
                   } catch {
-                    window.location.href = '/shop'
+                    window.location.href = SHOP_EXPERIENCE_HREF
                   }
                 }}
               >
@@ -560,7 +558,7 @@ export default function AccountPage() {
                     <p className="text-[#1a1a1a]/60 mb-6">
                       When you make a purchase, your orders will appear here.
                     </p>
-                    <Link href="/shop">
+                    <Link href={SHOP_EXPERIENCE_HREF}>
                       <Button variant="primary">Start Shopping</Button>
                     </Link>
                   </div>
