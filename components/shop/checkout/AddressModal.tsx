@@ -379,7 +379,7 @@ export function AddressModal({
       const line2El = root.querySelector<HTMLInputElement>('#address-line2')
       const cityEl = root.querySelector<HTMLInputElement>('#address-city')
       const postalEl = root.querySelector<HTMLInputElement>('#address-postal')
-      const phoneEl = root.querySelector<HTMLInputElement>('input[type="tel"]')
+      const phoneEl = root.querySelector<HTMLInputElement>('#address-phone')
       const countrySelect = root.querySelector<HTMLSelectElement>('#address-country-native')
       if (emailEl?.value) updates.email = emailEl.value
       if (fullNameEl?.value) updates.fullName = fullNameEl.value
@@ -1219,7 +1219,9 @@ export function AddressModal({
                         )}
                         <Input
                           ref={phoneNumberRef}
-                          type="tel"
+                          id="address-phone"
+                          data-testid="address-phone"
+                          type={isMobile ? 'tel' : 'text'}
                           inputMode="tel"
                           enterKeyHint="done"
                           autoCapitalize="none"
