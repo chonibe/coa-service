@@ -364,6 +364,8 @@ export function Configurator({
   const [searchExpanded, setSearchExpanded] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
+  /** Spotlight card expanded state — vendor filter is applied only while true (not derived from filters, avoids affiliate name mismatch). */
+  const [spotlightExpanded, setSpotlightExpanded] = useState(false)
 
   const handleFiltersChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters)
@@ -409,10 +411,11 @@ export function Configurator({
     if (highlightStepRef.current === 5) setPreviewEngaged(true)
   }, [cycleSelectorState])
 
-  // Apply initial artist filter when arriving from artist link (e.g. Instagram)
+  // Apply initial artist filter when parent passes it (e.g. deep links); expand spotlight so UI matches filtered grid.
   useEffect(() => {
     if (initialFilters?.artists?.length) {
       setFilters((prev) => ({ ...prev, artists: initialFilters!.artists }))
+      setSpotlightExpanded(true)
     }
   }, [initialFilters])
 
@@ -426,10 +429,6 @@ export function Configurator({
     return applyFilters(allProducts, filters, searchQuery, cartOrder)
   }, [allProducts, filters, searchQuery, cartOrder, ratingsVersion])
 
-  const isSpotlightFilterActive = useMemo(
-    () => !!spotlightData && filters.artists.includes(spotlightData.vendorName),
-    [spotlightData, filters.artists]
-  )
   const spotlightProducts = useMemo(() => {
     if (!spotlightData?.productIds?.length) return []
     const idSet = new Set(spotlightData.productIds)
@@ -442,19 +441,10 @@ export function Configurator({
     )
   }, [allProducts, spotlightData])
 
-  const handleToggleSpotlightFilter = useCallback(() => {
-    if (!spotlightData) return
-    const isActive = filters.artists.includes(spotlightData.vendorName)
-    if (isActive) {
-      setFilters((prev) => ({ ...prev, artists: prev.artists.filter((a) => a !== spotlightData.vendorName) }))
-    } else {
-      setFilters((prev) => ({ ...prev, artists: [...prev.artists, spotlightData.vendorName] }))
-    }
-  }, [spotlightData, filters.artists])
-
   // When spotlight is expanded: filter to that artist and switch series. When collapsed: remove filter.
   const handleSpotlightSelect = useCallback((isExpanding: boolean) => {
     if (!spotlightData) return
+    setSpotlightExpanded(isExpanding)
     if (isExpanding) {
       const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
       const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
@@ -472,6 +462,13 @@ export function Configurator({
       }))
     }
   }, [spotlightData, productsSeason1, productsSeason2, activeSeason])
+
+  useEffect(() => {
+    if (!spotlightData?.vendorName) return
+    if (!filters.artists.includes(spotlightData.vendorName)) {
+      setSpotlightExpanded(false)
+    }
+  }, [spotlightData?.vendorName, filters.artists])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -1940,7 +1937,7 @@ export function Configurator({
                 spotlightProducts={spotlightProducts}
                 onSelect={handleSpotlightSelect}
                 showBadge
-                expanded={isSpotlightFilterActive}
+                expanded={spotlightExpanded}
               />
             </div>
           ) : null}

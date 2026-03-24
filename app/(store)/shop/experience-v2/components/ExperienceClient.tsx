@@ -19,7 +19,6 @@ const Configurator = dynamic(() => import('./Configurator').then((m) => ({ defau
 })
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
-import { getStoredAffiliateArtist } from '@/lib/affiliate-tracking'
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import { captureFunnelEvent, FunnelEvents, getDeviceType, setUserProperty } from '@/lib/posthog'
 import type { FilterState } from './FilterPanel'
@@ -296,20 +295,8 @@ export function ExperienceClient({
     })
   }, [directEntry, mounted, initialArtistSlug])
 
-  // Resolve artist slug to vendor name for initial filter (from URL param or stored affiliate)
-  useEffect(() => {
-    const slug = initialArtistSlug || (mounted ? getStoredAffiliateArtist() : null)
-    if (!slug || !mounted) return
-    let cancelled = false
-    fetch(`/api/shop/artists/${encodeURIComponent(slug)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.name) return
-        setInitialFilters({ artists: [data.name] })
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [initialArtistSlug, mounted])
+  // Spotlight artist comes from initialArtistSlug + Configurator fetch — do not pre-apply a separate
+  // /artists name into filters (often mismatches spotlight vendorName and leaves grid filtered while card looks collapsed).
 
   useEffect(() => {
     const handleContextMenu = (e: Event) => {

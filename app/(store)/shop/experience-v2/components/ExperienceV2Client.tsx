@@ -124,6 +124,7 @@ export function ExperienceV2Client({
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [spotlightExpanded, setSpotlightExpanded] = useState(false)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [spotlightProductsFromApi, setSpotlightProductsFromApi] = useState<ShopifyProduct[]>([])
   const [loadingMore, setLoadingMore] = useState(false)
@@ -276,6 +277,7 @@ export function ExperienceV2Client({
   const handleSpotlightSelect = useCallback(
     (isExpanding: boolean) => {
       if (!spotlightData) return
+      setSpotlightExpanded(isExpanding)
       if (isExpanding) {
         const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
         const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
@@ -295,6 +297,13 @@ export function ExperienceV2Client({
     },
     [spotlightData, productsSeason1, productsSeason2, activeSeason]
   )
+
+  useEffect(() => {
+    if (!spotlightData?.vendorName) return
+    if (!filters.artists.includes(spotlightData.vendorName)) {
+      setSpotlightExpanded(false)
+    }
+  }, [spotlightData?.vendorName, filters.artists])
 
   const handleSeasonChange = useCallback((season: SeasonTab) => {
     setActiveSeason(season)
@@ -929,6 +938,7 @@ export function ExperienceV2Client({
         onSpotlightSelect={handleSpotlightSelect}
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}
+        spotlightBannerExpanded={spotlightExpanded}
       />
       )}
 

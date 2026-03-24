@@ -289,6 +289,8 @@ interface ArtworkPickerSheetProps {
   onSpotlightSelect?: (isExpanding: boolean) => void
   productsForFilterPanel?: ShopifyProduct[]
   cartOrder?: string[]
+  /** When set, controls spotlight card open/closed UI independently of filter state (avoids mismatched names vs filters). */
+  spotlightBannerExpanded?: boolean
 }
 
 export function ArtworkPickerSheet({
@@ -313,6 +315,7 @@ export function ArtworkPickerSheet({
   onSpotlightSelect,
   productsForFilterPanel = [],
   cartOrder = [],
+  spotlightBannerExpanded,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -543,7 +546,11 @@ export function ArtworkPickerSheet({
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
                     showBadge
-                    expanded={!!filters?.artists?.includes(spotlightData.vendorName)}
+                    expanded={
+                      spotlightBannerExpanded !== undefined
+                        ? spotlightBannerExpanded
+                        : !!filters?.artists?.includes(spotlightData.vendorName)
+                    }
                   />
                 </div>
               )}
