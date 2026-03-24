@@ -6,13 +6,13 @@ The Warehouse Order Tracking feature provides comprehensive order tracking capab
 
 ### References
 - Implementation: `app/api/warehouse/orders/auto-fulfill/route.ts`
-- Shop account warehouse detail: `lib/warehouse/shop-account-order-detail.ts`, `app/api/shop/account/orders/[orderId]/warehouse-detail/route.ts`, `app/(store)/shop/account/page.tsx`
+- Shop account warehouse detail: `lib/warehouse/shop-account-order-detail.ts`, `lib/shipping/carrier-tracking-url.ts`, `app/api/shop/account/orders/[orderId]/warehouse-detail/route.ts`, `app/(store)/shop/account/page.tsx`
 - Shopify Fulfillment Helper: `lib/shopify/fulfillment.ts`
 - Notification Template: `lib/notifications/tracking-link.ts`
 - Tests: `tests/chinadivision-auto-fulfillment.md` (manual: expand **Shipment & tracking** on My Orders after login)
 - Performance tracking: `lib/monitoring/README.md`
-- Version: 1.1.2
-- Change log: My Orders per-order warehouse accordion + session-scoped detail API (2026-03-24); ChinaDivision auto-fulfillment + customer email automation (2025-12-11)
+- Version: 1.1.3
+- Change log: My Orders accordion shows journey + local carrier link only (no SKU/package list); carrier tracking URL helper (2026-03-24); per-order warehouse accordion + session-scoped detail API (2026-03-24); ChinaDivision auto-fulfillment + customer email automation (2025-12-11)
 
 ## Features
 
@@ -87,7 +87,7 @@ The **Shop Account Orders API** (`GET /api/shop/account/orders`) enriches order 
 - **Authentication**: Supabase session (same as other shop account APIs); supports dev mock user via `mock_user_email` cookie when enabled
 - **Authorization**: Loads `orders` by internal UUID; returns 404 unless `customer_email` matches the session user (no cross-customer leakage)
 - **Data**: Resolves `warehouse_orders` by `shopify_order_id` and platform order id variants; live ChinaDivision `getOrderInfo` / date-range fallback; SKU enrichment from `products`; STONE3PL tracking timeline server-side (same formatting as admin track API) returned as JSON for the client
-- **UI**: `app/(store)/shop/account/page.tsx` — lazy-loaded **Shipment & tracking** collapsible per order; uses `TrackingTimeline` with `staticTracking` so the client does not call admin-only `/api/tracking/stone3pl`
+- **UI**: `app/(store)/shop/account/page.tsx` — lazy-loaded **Shipment & tracking** collapsible per order; uses `TrackingTimeline` with `staticTracking` and `compactMaxEvents` so the client does not call admin-only `/api/tracking/stone3pl`. Customers see **tracking journey** (locations/events) and **local delivery partner** (carrier + linked last-mile tracking via `lib/shipping/carrier-tracking-url.ts`), not per-SKU warehouse line items.
 - **Helper**: `lib/warehouse/shop-account-order-detail.ts`
 
 #### Customer Endpoints

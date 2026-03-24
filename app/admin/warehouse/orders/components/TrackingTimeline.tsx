@@ -10,6 +10,7 @@ import { Icon } from '@/components/icon'
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Alert, AlertDescription, Button } from "@/components/ui"
+import { getCarrierTrackingPageUrl } from '@/lib/shipping/carrier-tracking-url'
 
 interface TrackingEvent {
   timestamp: string
@@ -66,6 +67,8 @@ interface TrackingTimelineProps {
   orderId: string
   trackingNumber?: string
   compact?: boolean
+  /** In compact mode, max journey events to show (default 3). Use a higher value on shop account. */
+  compactMaxEvents?: number
   primaryColor?: string
   carrier?: string
   lastMileTracking?: string
@@ -82,6 +85,7 @@ export function TrackingTimeline({
   orderId,
   trackingNumber,
   compact = false,
+  compactMaxEvents = 3,
   primaryColor,
   carrier,
   lastMileTracking,
@@ -258,11 +262,8 @@ export function TrackingTimeline({
 
   // Compact version for cards - STONE3PL style
   if (compact) {
-    const latestEvent = events[0]
-    
     // Extract location from latest event (format: "City State" or "Country")
     const getLocationString = (event: TrackingEvent) => {
-      // STONE3PL format: "City State" (e.g., "Needham MA")
       if (event.city && event.state) {
         return `${event.city} ${event.state}`
       }
@@ -274,8 +275,7 @@ export function TrackingTimeline({
       if (event.country) return event.country
       return 'Unknown location'
     }
-    
-    // Extract status from description
+
     const getStatusFromDescription = (description: string) => {
       const lowerDesc = description.toLowerCase()
       if (lowerDesc.includes('delivered')) return 'Delivered'
@@ -290,117 +290,97 @@ export function TrackingTimeline({
       if (lowerDesc.includes('data received') || lowerDesc.includes('information received')) return 'Parcel Data Received'
       return description
     }
-    
-    // Check if latest event is a last mile event
-    const isLatestLastMile = latestEvent && (() => {
-      const desc = latestEvent.description.toLowerCase()
-      return desc.includes('out for delivery') || 
-             desc.includes('delivered') || 
-             desc.includes('delivery') ||
-             (latestEvent.country && latestEvent.country !== 'China' && latestEvent.country !== 'CN')
-    })()
-    
+
+    const maxEvents = Math.max(1, compactMaxEvents)
+    const localTrack = trackingData.last_mile_tracking?.trim()
+    const localUrl = localTrack ? getCarrierTrackingPageUrl(trackingData.carrier, localTrack) : ''
+    const showLocalPanel = Boolean(localTrack || trackingData.carrier)
+
     return (
-      <div className="space-y-2">
-        {/* Latest Event - STONE3PL Style */}
-        {latestEvent && (
-          <div className="space-y-1.5">
-            <div className="flex items-start justify-between gap-2 text-xs">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold truncate" style={{ color: primaryColor || 'inherit' }}>
-                    {getLocationString(latestEvent)}
-                  </span>
-                  <span className="font-medium truncate">
-                    {getStatusFromDescription(latestEvent.description)}
-                  </span>
-                </div>
-                {latestEvent.parsedTime?.stone3plFormat && (
-                  <div className="text-muted-foreground mt-0.5">
-                    {latestEvent.parsedTime.stone3plFormat}
-                  </div>
-                )}
-                {/* Last Mile Courier Info for Latest Event */}
-                {isLatestLastMile && trackingData && (trackingData.carrier || trackingData.last_mile_tracking) && (
-                  <div className="mt-1.5 pt-1.5 border-t space-y-0.5" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
-                    {trackingData.carrier && (
-                      <div className="text-[10px]">
-                        <span className="text-muted-foreground">Courier: </span>
-                        <span className="font-semibold">{trackingData.carrier}</span>
-                      </div>
-                    )}
-                    {trackingData.last_mile_tracking && (
-                      <div className="text-[10px]">
-                        <span className="text-muted-foreground">Tracking: </span>
-                        <span className="font-mono">{trackingData.last_mile_tracking}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+      <div className="space-y-3">
+        {showLocalPanel && (
+          <div
+            className="rounded-lg border bg-muted/40 px-3 py-2.5 space-y-1.5"
+            style={{ borderColor: 'var(--brand-primary-alpha-20)' }}
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Local delivery partner
             </div>
+            {trackingData.carrier ? (
+              <div className="text-xs">
+                <span className="text-muted-foreground">Carrier: </span>
+                <span className="font-semibold text-foreground">{trackingData.carrier}</span>
+              </div>
+            ) : null}
+            {localTrack && localUrl ? (
+              <div className="text-xs">
+                <span className="text-muted-foreground">Tracking number: </span>
+                <a
+                  href={localUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[#047AFF] underline underline-offset-2 hover:text-[#0366d6] break-all"
+                >
+                  {localTrack}
+                </a>
+                <span className="text-muted-foreground"> (opens carrier)</span>
+              </div>
+            ) : null}
+            {!localTrack && trackingData.carrier ? (
+              <p className="text-[10px] text-muted-foreground">Local tracking number will appear when the carrier accepts the package.</p>
+            ) : null}
           </div>
         )}
-        
-        {/* Timeline Events - STONE3PL Style (up to 3 most recent) */}
+
+        {(trackingData.track_status_name || statusInfo?.name) && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Shipment status:</span>
+            <span className="font-semibold">{trackingData.track_status_name || statusInfo?.name}</span>
+          </div>
+        )}
+
         {events.length > 0 && (
-          <div className="relative pt-2 border-t" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
-            <div className="space-y-2">
-              {events.slice(0, 3).map((event, index) => {
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Tracking journey
+            </div>
+            <div className="relative space-y-2 border-t pt-2" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
+              {events.slice(0, maxEvents).map((event, index) => {
                 const locationStr = getLocationString(event)
                 const statusStr = getStatusFromDescription(event.description)
-                const desc = event.description.toLowerCase()
-                const isLastMileEvent = desc.includes('out for delivery') || 
-                                       desc.includes('delivered') || 
-                                       desc.includes('delivery') ||
-                                       (event.country && event.country !== 'China' && event.country !== 'CN')
-                
+
                 return (
                   <div key={index} className="flex items-start gap-2 text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-current mt-1.5 flex-shrink-0" style={{ color: 'var(--brand-primary-alpha-50)' }} />
+                    <div
+                      className="w-1.5 h-1.5 rounded-full bg-current mt-1.5 flex-shrink-0"
+                      style={{ color: 'var(--brand-primary-alpha-50)' }}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium truncate">{locationStr}</span>
+                        <span className="font-medium text-foreground truncate">{locationStr}</span>
                         <span className="text-muted-foreground truncate">{statusStr}</span>
                       </div>
                       {event.parsedTime?.stone3plFormat && (
-                        <div className="text-muted-foreground mt-0.5 text-xs">
-                          {event.parsedTime.stone3plFormat}
-                        </div>
-                      )}
-                      {/* Last Mile Courier Info in Compact View */}
-                      {isLastMileEvent && index === 0 && (trackingData.carrier || trackingData.last_mile_tracking) && (
-                        <div className="mt-1.5 pt-1.5 border-t space-y-0.5" style={{ borderColor: 'var(--brand-primary-alpha-20)' }}>
-                          {trackingData.carrier && (
-                            <div className="text-[10px]">
-                              <span className="text-muted-foreground">Courier: </span>
-                              <span className="font-semibold">{trackingData.carrier}</span>
-                            </div>
-                          )}
-                          {trackingData.last_mile_tracking && (
-                            <div className="text-[10px]">
-                              <span className="text-muted-foreground">Tracking: </span>
-                              <span className="font-mono">{trackingData.last_mile_tracking}</span>
-                            </div>
-                          )}
-                        </div>
+                        <div className="text-muted-foreground mt-0.5 text-[11px]">{event.parsedTime.stone3plFormat}</div>
                       )}
                     </div>
                   </div>
                 )
               })}
-              {events.length > 3 && (
+              {events.length > maxEvents && (
                 <div className="text-xs text-center text-muted-foreground pt-1">
-                  +{events.length - 3} more updates
+                  +{events.length - maxEvents} more updates
                 </div>
               )}
             </div>
           </div>
         )}
-        
-        {events.length === 0 && (
+
+        {events.length === 0 && !showLocalPanel && (
           <div className="text-xs text-center text-muted-foreground py-2">
-            <Icon size="sm"><ClockIcon className="h-4 w-4 mx-auto mb-1 opacity-50" /></Icon>
+            <Icon size="sm">
+              <ClockIcon className="h-4 w-4 mx-auto mb-1 opacity-50" />
+            </Icon>
             <p>No tracking updates yet</p>
           </div>
         )}
@@ -625,15 +605,30 @@ export function TrackingTimeline({
                                         </div>
                                       </div>
                                     )}
-                                    {trackingData.last_mile_tracking && (
-                                      <div className="flex items-start gap-1.5 text-xs">
-                                        <Icon size="xs"><TruckIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
-                                        <div className="flex-1">
-                                          <span className="font-medium text-muted-foreground">Last Mile Tracking: </span>
-                                          <span className="text-foreground font-mono">{trackingData.last_mile_tracking}</span>
+                                    {trackingData.last_mile_tracking && (() => {
+                                      const lm = trackingData.last_mile_tracking.trim()
+                                      const lmUrl = lm ? getCarrierTrackingPageUrl(trackingData.carrier, lm) : ''
+                                      return (
+                                        <div className="flex items-start gap-1.5 text-xs">
+                                          <Icon size="xs"><TruckIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" /></Icon>
+                                          <div className="flex-1">
+                                            <span className="font-medium text-muted-foreground">Last mile tracking: </span>
+                                            {lmUrl ? (
+                                              <a
+                                                href={lmUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-foreground font-mono underline underline-offset-2 hover:text-primary"
+                                              >
+                                                {lm}
+                                              </a>
+                                            ) : (
+                                              <span className="text-foreground font-mono">{lm}</span>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
+                                      )
+                                    })()}
                                   </div>
                                 )}
                               </div>
