@@ -915,8 +915,15 @@ export function ExperienceV2Client({
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
     setPickerHasBeenOpened(true)
+    // Empty cart: browsing from “Start your collection” should show the full season, not spotlight-only filter
+    if (cartOrder.length === 0 && spotlightData?.vendorName) {
+      setFilters((prev) => ({
+        ...prev,
+        artists: prev.artists.filter((a) => a !== spotlightData.vendorName),
+      }))
+    }
     setIsPickerOpen(true)
-  }, [cartOrder.length])
+  }, [cartOrder.length, spotlightData?.vendorName])
 
   const handleClosePicker = useCallback(() => {
     if (cartOrder.length > cartCountWhenPickerOpenedRef.current) {
