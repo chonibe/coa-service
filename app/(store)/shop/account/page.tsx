@@ -87,13 +87,23 @@ type ShipmentAccordionState =
   | { kind: 'done'; data: WarehouseDetailPayload }
   | { kind: 'error'; message: string }
 
+function orderStatusBadgeLabel(status: Order['status']): string {
+  if (status === 'out_for_delivery') return 'Out for Delivery'
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
 function OrderShipmentAccordion({
   orderId,
   orderNumberLabel,
+  orderStatus,
+  warehouseStatusLabel,
 }: {
   orderId: string
   /** Shown in pre-filled support email subject (e.g. Shopify order #). */
   orderNumberLabel?: string
+  /** When shipped / out for delivery, badge is shown inline on the Shipment & tracking row. */
+  orderStatus?: Order['status']
+  warehouseStatusLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<ShipmentAccordionState | null>(null)
@@ -163,10 +173,35 @@ function OrderShipmentAccordion({
       ? state.data.tracking?.last_mile_tracking || state.data.chinaDivisionOrder?.last_mile_tracking
       : undefined
 
+  const showStatusOnShipmentRow =
+    orderStatus === 'shipped' || orderStatus === 'out_for_delivery'
+  const warehouseExtra =
+    showStatusOnShipmentRow &&
+    orderStatus &&
+    warehouseStatusLabel?.trim() &&
+    warehouseStatusLabel.trim().toLowerCase() !== orderStatusBadgeLabel(orderStatus).toLowerCase()
+      ? warehouseStatusLabel.trim()
+      : null
+
   return (
     <Collapsible open={open} onOpenChange={handleOpenChange} className="pt-4 border-t border-[#1a1a1a]/10">
       <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left py-2 rounded-lg hover:bg-black/[0.03] px-2 -mx-2 transition-colors">
-        <span className="text-sm font-semibold text-[#1a1a1a]">Shipment &amp; tracking</span>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-semibold text-[#1a1a1a]">Shipment &amp; tracking</span>
+          {showStatusOnShipmentRow && orderStatus ? (
+            <>
+              <span className="text-[#1a1a1a]/30 shrink-0 select-none" aria-hidden>
+                ·
+              </span>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <StatusBadge status={orderStatus} className="shrink-0" />
+                {warehouseExtra ? (
+                  <span className="text-xs font-medium text-[#1a1a1a]/70 sm:text-sm">{warehouseExtra}</span>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </div>
         <ChevronDown
           className={cn('h-5 w-5 shrink-0 text-[#1a1a1a]/50 transition-transform', open && 'rotate-180')}
           aria-hidden
@@ -620,17 +655,13 @@ export default function AccountPage() {
                     {/* Order Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#1a1a1a]/10">
                       <div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-heading text-lg font-semibold text-[#1a1a1a]">
                             Order #{order.orderNumber}
                           </h3>
-                          <StatusBadge status={order.status} />
-                          {order.warehouseStatusLabel &&
-                            ['shipped', 'out_for_delivery'].includes(order.status) && (
-                            <span className="text-sm text-[#1a1a1a]/60">
-                              · {order.warehouseStatusLabel}
-                            </span>
-                          )}
+                          {!['shipped', 'out_for_delivery'].includes(order.status) ? (
+                            <StatusBadge status={order.status} />
+                          ) : null}
                         </div>
                         <p className="text-sm text-[#1a1a1a]/60 mt-1">
                           Placed on {formatDate(order.createdAt)}
@@ -684,7 +715,12 @@ export default function AccountPage() {
                       ))}
                     </div>
 
-                    <OrderShipmentAccordion orderId={order.id} orderNumberLabel={order.orderNumber} />
+                    <OrderShipmentAccordion
+                      orderId={order.id}
+                      orderNumberLabel={order.orderNumber}
+                      orderStatus={order.status}
+                      warehouseStatusLabel={order.warehouseStatusLabel}
+                    />
 
                     {/* Tracking Info */}
                     {order.trackingNumber && (
