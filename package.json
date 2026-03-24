@@ -2,7 +2,11 @@
   "name": "coa-service",
   "version": "0.1.0",
   "private": true,
-  "sideEffects": ["*.css", "*.scss", "*.sass"],
+  "sideEffects": [
+    "*.css",
+    "*.scss",
+    "*.sass"
+  ],
   "scripts": {
     "postinstall": "patch-package || echo 'Warning: patch-package could not apply some patches - continuing'",
     "dev": "next dev",
@@ -177,6 +181,7 @@
   "devDependencies": {
     "@graphql-tools/schema": "^10.0.23",
     "@radix-ui/react-slot": "^1.2.3",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/google.maps": "^3.58.1",

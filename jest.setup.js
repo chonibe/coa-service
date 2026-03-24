@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+import '@testing-library/jest-dom'
 // Polyfill for Web APIs used by Next.js
 import 'whatwg-fetch';
 
