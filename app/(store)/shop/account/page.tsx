@@ -32,6 +32,9 @@ import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 /** Interactive shop experience (/shop redirects to street-collector marketing). */
 const SHOP_EXPERIENCE_HREF = '/shop/experience'
 
+/** Customer support inbox (matches login/help copy). */
+const SHOP_SUPPORT_EMAIL = 'support@thestreetcollector.com'
+
 interface Order {
   id: string
   shopifyOrderId: string
@@ -84,10 +87,26 @@ type ShipmentAccordionState =
   | { kind: 'done'; data: WarehouseDetailPayload }
   | { kind: 'error'; message: string }
 
-function OrderShipmentAccordion({ orderId }: { orderId: string }) {
+function OrderShipmentAccordion({
+  orderId,
+  orderNumberLabel,
+}: {
+  orderId: string
+  /** Shown in pre-filled support email subject (e.g. Shopify order #). */
+  orderNumberLabel?: string
+}) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<ShipmentAccordionState | null>(null)
+  const [supportEmailOpen, setSupportEmailOpen] = useState(false)
   const loadedSuccessfullyRef = useRef(false)
+
+  const supportSubject = encodeURIComponent(
+    `Shipment / delivery question${orderNumberLabel ? ` (Order ${orderNumberLabel})` : ''}`,
+  )
+  const supportBody = encodeURIComponent(
+    `Please include your order number and what you need help with.\n\nOrder: ${orderNumberLabel ?? '(your order #)'}\n`,
+  )
+  const supportMailtoHref = `mailto:${SHOP_SUPPORT_EMAIL}?subject=${supportSubject}&body=${supportBody}`
 
   const load = useCallback(async () => {
     setState({ kind: 'loading' })
@@ -191,7 +210,9 @@ function OrderShipmentAccordion({ orderId }: { orderId: string }) {
             <div className="[&_.rounded-lg]:rounded-[12px]">
               <TrackingTimeline
                 compact
-                compactMaxEvents={50}
+                compactJourneyExpandable
+                compactJourneyPreviewCount={10}
+                compactJourneyLoadMoreStep={25}
                 orderId={platformOrderIdForTimeline}
                 trackingNumber={trackingNumberForTimeline}
                 carrier={mergedCarrier}
@@ -202,6 +223,35 @@ function OrderShipmentAccordion({ orderId }: { orderId: string }) {
                   void load()
                 }}
               />
+            </div>
+
+            <div className="rounded-[12px] border border-[#1a1a1a]/10 bg-[#fafafa] px-4 py-3">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                className="w-full sm:w-auto"
+                aria-expanded={supportEmailOpen}
+                onClick={() => setSupportEmailOpen((v) => !v)}
+              >
+                {supportEmailOpen ? 'Hide support contact' : 'Need help with this shipment?'}
+              </Button>
+              {supportEmailOpen ? (
+                <div className="mt-3 space-y-3 text-sm text-[#1a1a1a]/80 leading-relaxed">
+                  <p>
+                    Email is the best way to get a fast answer if anything about your parcel is uncertain or delivery is
+                    difficult—we can look up your order and coordinate with our warehouse and carriers.
+                  </p>
+                  <p className="font-medium text-[#1a1a1a]">
+                    <a
+                      href={supportMailtoHref}
+                      className="text-[#047AFF] hover:underline break-all"
+                    >
+                      {SHOP_SUPPORT_EMAIL}
+                    </a>
+                  </p>
+                </div>
+              ) : null}
             </div>
           </>
         )}
@@ -634,7 +684,7 @@ export default function AccountPage() {
                       ))}
                     </div>
 
-                    <OrderShipmentAccordion orderId={order.id} />
+                    <OrderShipmentAccordion orderId={order.id} orderNumberLabel={order.orderNumber} />
 
                     {/* Tracking Info */}
                     {order.trackingNumber && (

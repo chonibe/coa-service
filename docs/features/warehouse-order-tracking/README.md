@@ -11,8 +11,8 @@ The Warehouse Order Tracking feature provides comprehensive order tracking capab
 - Notification Template: `lib/notifications/tracking-link.ts`
 - Tests: `tests/chinadivision-auto-fulfillment.md` (manual: expand **Shipment & tracking** on My Orders after login)
 - Performance tracking: `lib/monitoring/README.md`
-- Version: 1.1.3
-- Change log: My Orders accordion shows journey + local carrier link only (no SKU/package list); carrier tracking URL helper (2026-03-24); per-order warehouse accordion + session-scoped detail API (2026-03-24); ChinaDivision auto-fulfillment + customer email automation (2025-12-11)
+- Version: 1.1.4
+- Change log: My Orders shipment accordion includes a toggle to reveal support email + copy for fast delivery help (2026-03-24); journey expandable/load-more + local carrier link (no SKU list); carrier tracking URL helper; session-scoped warehouse detail API; ChinaDivision auto-fulfillment + customer email automation (2025-12-11)
 
 ## Features
 
