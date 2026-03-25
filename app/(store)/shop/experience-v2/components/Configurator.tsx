@@ -441,10 +441,18 @@ export function Configurator({
     )
   }, [allProducts, spotlightData])
 
+  /** Must match `product.vendor` for applyFilters — API vendorName can differ from Shopify. */
+  const spotlightArtistVendorForFilter = useMemo(() => {
+    if (!spotlightData) return ''
+    const fromCatalog = spotlightProducts[0]?.vendor?.trim()
+    return fromCatalog || spotlightData.vendorName
+  }, [spotlightData, spotlightProducts])
+
   // When spotlight is expanded: filter to that artist and switch series. When collapsed: remove filter.
   const handleSpotlightSelect = useCallback((isExpanding: boolean) => {
     if (!spotlightData) return
     setSpotlightExpanded(isExpanding)
+    const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
     if (isExpanding) {
       const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
       const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
@@ -452,23 +460,27 @@ export function Configurator({
       if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
       else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
       setFilters((prev) => {
-        if (prev.artists.includes(spotlightData.vendorName)) return prev
-        return { ...prev, artists: [...prev.artists, spotlightData.vendorName] }
+        if (prev.artists.includes(vendorKey)) return prev
+        return { ...prev, artists: [...prev.artists, vendorKey] }
       })
     } else {
       setFilters((prev) => ({
         ...prev,
-        artists: prev.artists.filter((a) => a !== spotlightData.vendorName),
+        artists: prev.artists.filter(
+          (a) => a !== spotlightData.vendorName && a !== vendorKey
+        ),
       }))
     }
-  }, [spotlightData, productsSeason1, productsSeason2, activeSeason])
+  }, [spotlightData, spotlightArtistVendorForFilter, productsSeason1, productsSeason2, activeSeason])
 
   useEffect(() => {
     if (!spotlightData?.vendorName) return
-    if (!filters.artists.includes(spotlightData.vendorName)) {
-      setSpotlightExpanded(false)
-    }
-  }, [spotlightData?.vendorName, filters.artists])
+    const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
+    const inFilters =
+      filters.artists.includes(spotlightData.vendorName) ||
+      (vendorKey ? filters.artists.includes(vendorKey) : false)
+    if (!inFilters) setSpotlightExpanded(false)
+  }, [spotlightData?.vendorName, spotlightArtistVendorForFilter, filters.artists])
 
   useEffect(() => {
     if (!scrollToProductId) return
@@ -611,9 +623,10 @@ export function Configurator({
   // will see dismissed and not apply filter; middleware will clear affiliate cookies then.
   useEffect(() => {
     if (!spotlightData || !spotlightFromAffiliateRef.current) return
-    if (filters.artists.includes(spotlightData.vendorName)) return
+    const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
+    if (filters.artists.includes(spotlightData.vendorName) || filters.artists.includes(vendorKey)) return
     setAffiliateDismissedCookie()
-  }, [filters.artists, spotlightData])
+  }, [filters.artists, spotlightData, spotlightArtistVendorForFilter])
 
   // Fetch crew counts when authenticated (for taste-similar social proof)
   useEffect(() => {

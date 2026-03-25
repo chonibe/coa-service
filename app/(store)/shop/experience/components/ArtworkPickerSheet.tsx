@@ -352,6 +352,12 @@ export function ArtworkPickerSheet({
     return spotlightIdSet.has(norm) || spotlightIdSet.has(id)
   }, [spotlightIdSet])
 
+  /** Parent passes `spotlightBannerExpanded` so “filtered” UI tracks accordion, not API vs Shopify vendor strings. */
+  const spotlightAccordionExpanded =
+    spotlightBannerExpanded !== undefined
+      ? spotlightBannerExpanded
+      : !!(spotlightData && filters?.artists?.includes(spotlightData.vendorName))
+
   const activeFilterCount = useMemo(() => {
     if (!filters) return 0
     let n = 0
@@ -555,11 +561,7 @@ export function ArtworkPickerSheet({
                     spotlightProducts={spotlightProducts}
                     onSelect={onSpotlightSelect}
                     showBadge
-                    expanded={
-                      spotlightBannerExpanded !== undefined
-                        ? spotlightBannerExpanded
-                        : !!filters?.artists?.includes(spotlightData.vendorName)
-                    }
+                    expanded={spotlightAccordionExpanded}
                   />
                 </div>
               )}
@@ -683,7 +685,7 @@ export function ArtworkPickerSheet({
 
               {spotlightData &&
                 onSpotlightSelect &&
-                filters?.artists?.includes(spotlightData.vendorName) &&
+                spotlightAccordionExpanded &&
                 products.length > 0 && (
                   <div className="flex flex-col items-center pt-2 pb-1 px-2">
                     <button

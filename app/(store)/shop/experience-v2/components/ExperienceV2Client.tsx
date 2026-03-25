@@ -332,6 +332,16 @@ export function ExperienceV2Client({
     )
   }, [allProducts, spotlightData])
 
+  /** Must match `product.vendor` for applyFilters — API vendorName can differ (punctuation, etc.). */
+  const spotlightArtistVendorForFilter = useMemo(() => {
+    if (!spotlightData) return ''
+    const fromCatalog = spotlightProducts[0]?.vendor?.trim()
+    if (fromCatalog) return fromCatalog
+    const fromApi = spotlightProductsFromApi[0]?.vendor?.trim()
+    if (fromApi) return fromApi
+    return spotlightData.vendorName
+  }, [spotlightData, spotlightProducts, spotlightProductsFromApi])
+
   const spotlightFallbackImageUrl = useMemo(() => {
     const first = spotlightProductsFromApi[0] ?? spotlightProducts[0] ?? productsSeason2[0]
     if (!first) return null
@@ -342,6 +352,7 @@ export function ExperienceV2Client({
     (isExpanding: boolean) => {
       if (!spotlightData) return
       setSpotlightExpanded(isExpanding)
+      const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
       if (isExpanding) {
         const idSet = new Set(spotlightData.productIds.map((id) => id.replace(/^gid:\/\/shopify\/Product\//i, '') || id))
         const inSeason1 = productsSeason1.some((p) => idSet.has(p.id) || idSet.has(p.id.replace(/^gid:\/\/shopify\/Product\//i, '')))
@@ -349,25 +360,29 @@ export function ExperienceV2Client({
         if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
         else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
         setFilters((prev) => {
-          if (prev.artists.includes(spotlightData.vendorName)) return prev
-          return { ...prev, artists: [...prev.artists, spotlightData.vendorName] }
+          if (prev.artists.includes(vendorKey)) return prev
+          return { ...prev, artists: [...prev.artists, vendorKey] }
         })
       } else {
         setFilters((prev) => ({
           ...prev,
-          artists: prev.artists.filter((a) => a !== spotlightData.vendorName),
+          artists: prev.artists.filter(
+            (a) => a !== spotlightData.vendorName && a !== vendorKey
+          ),
         }))
       }
     },
-    [spotlightData, productsSeason1, productsSeason2, activeSeason]
+    [spotlightData, spotlightArtistVendorForFilter, productsSeason1, productsSeason2, activeSeason]
   )
 
   useEffect(() => {
     if (!spotlightData?.vendorName) return
-    if (!filters.artists.includes(spotlightData.vendorName)) {
-      setSpotlightExpanded(false)
-    }
-  }, [spotlightData?.vendorName, filters.artists])
+    const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
+    const inFilters =
+      filters.artists.includes(spotlightData.vendorName) ||
+      (vendorKey ? filters.artists.includes(vendorKey) : false)
+    if (!inFilters) setSpotlightExpanded(false)
+  }, [spotlightData?.vendorName, spotlightArtistVendorForFilter, filters.artists])
 
   const handleSeasonChange = useCallback((season: SeasonTab) => {
     setActiveSeason(season)
@@ -797,15 +812,19 @@ export function ExperienceV2Client({
       cart_count: cartOrder.length,
       device_type: getDeviceType(),
     })
-    // Empty cart: browsing from “Start your collection” should show the full season, not spotlight-only filter
-    if (cartOrder.length === 0 && spotlightData?.vendorName) {
+    // Full grid on open: spotlight artist filter applies only while the spotlight accordion is expanded
+    setSpotlightExpanded(false)
+    if (spotlightData?.vendorName) {
+      const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
       setFilters((prev) => ({
         ...prev,
-        artists: prev.artists.filter((a) => a !== spotlightData.vendorName),
+        artists: prev.artists.filter(
+          (a) => a !== spotlightData.vendorName && a !== vendorKey
+        ),
       }))
     }
     setIsPickerOpen(true)
-  }, [cartOrder.length, cartOrder, spotlightData?.vendorName])
+  }, [cartOrder.length, spotlightData?.vendorName, spotlightArtistVendorForFilter])
 
   const handleClosePicker = useCallback(() => {
     captureFunnelEvent(FunnelEvents.experience_picker_closed, {
