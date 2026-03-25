@@ -23,6 +23,30 @@ const HANDLE_ALIASES: Record<string, string[]> = {
   'jack-j.c.-art': ['jack-jc-art', 'jack-j-c-art'],
 }
 
+/** Collection portrait for artists list when profile / product pick is wrong */
+const JACK_JC_ART_LIST_IMAGE =
+  'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/Screenshot_2026-03-08_at_13.41.17.png?v=1772970106'
+
+/** Slug/handle keys → forced image URL for `/api/shop/artists` (checked before Supabase/collection fallbacks) */
+const ARTIST_LIST_IMAGE_OVERRIDES: Record<string, string> = Object.fromEntries(
+  [
+    'jack-jc-art',
+    'jack-j-c-art',
+    'jack-j.c.-art',
+    'jack-jc-art-one',
+    'jack-j-c-art-one',
+    /** Display name “Jack AC Art” → slug jack-ac-art */
+    'jack-ac-art',
+  ].map((h) => [h, JACK_JC_ART_LIST_IMAGE])
+)
+
+/** Resolve an explicit list image for a vendor collection handle (if configured). */
+export function getArtistListImageOverride(handle: string): string | undefined {
+  if (!handle) return undefined
+  const base = handle.replace(/-\d+$/, '')
+  return ARTIST_LIST_IMAGE_OVERRIDES[handle] ?? ARTIST_LIST_IMAGE_OVERRIDES[base]
+}
+
 export async function getArtistImageByHandle(handle: string): Promise<string | undefined> {
   const base = handle.replace(/-\d+$/, '')
   const aliases = HANDLE_ALIASES[base] ?? []

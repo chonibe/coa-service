@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
+import { getArtistImageByHandle, getArtistListImageOverride } from '@/lib/shopify/artist-image'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { getVendorMeta } from '@/lib/shopify/vendor-meta'
 import { getProducts } from '@/lib/shopify/storefront-client'
@@ -78,9 +78,13 @@ export async function GET(_request: NextRequest) {
       baseArtists.map(async (artist) => {
         try {
           const meta = await getVendorMeta(supabase, artist.name, null)
+          const slugForImage = meta.vendorSlug || artist.slug
+          const imageOverride =
+            getArtistListImageOverride(slugForImage) || getArtistListImageOverride(artist.slug)
           const image =
+            imageOverride ||
             meta.image ||
-            (await getArtistImageByHandle(meta.vendorSlug || artist.slug)) ||
+            (await getArtistImageByHandle(slugForImage)) ||
             (await getArtistImageByHandle(artist.slug)) ||
             artist.image
           const bio = artist.bio || meta.bio
