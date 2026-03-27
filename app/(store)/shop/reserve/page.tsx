@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -37,7 +37,7 @@ const TIERS: Array<{
   },
 ]
 
-export default function StreetReservePage() {
+function StreetReservePageContent() {
   const { isAuthenticated, loading } = useShopAuthContext()
   const params = useSearchParams()
   const subscribed = params.get('subscribed') === '1'
@@ -160,5 +160,19 @@ export default function StreetReservePage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function StreetReservePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="dark min-h-dvh bg-[#171515] text-[#FFBA94] flex items-center justify-center px-5">
+          <p className="text-sm text-[#FFBA94]/70">Loading…</p>
+        </div>
+      }
+    >
+      <StreetReservePageContent />
+    </Suspense>
   )
 }
