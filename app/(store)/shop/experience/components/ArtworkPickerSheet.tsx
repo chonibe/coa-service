@@ -332,11 +332,11 @@ function ArtworkCardV2({
               {nextSalesChipText ? (
                 <span
                   className={cn(
-                    'inline-flex max-w-full min-w-0 justify-center items-center rounded-lg px-3 py-1.5',
-                    'border border-neutral-300/95 dark:border-white/15',
-                    'bg-neutral-100/95 dark:bg-white/10',
-                    'text-xs sm:text-sm leading-snug text-neutral-800 dark:text-neutral-100',
-                    'font-semibold normal-case tracking-normal text-center tabular-nums'
+                    'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
+                    'border border-neutral-200 dark:border-white/10',
+                    'bg-neutral-50/95 dark:bg-white/5',
+                    'text-[11px] leading-tight text-neutral-700 dark:text-neutral-200',
+                    'font-medium normal-case tracking-normal text-center tabular-nums'
                   )}
                 >
                   {nextSalesChipText}
@@ -366,8 +366,8 @@ function ArtworkCardV2({
   )
 }
 
-/** Virtual row estimate; rows use measureElement (taller meta when next-step chip is present). */
-const ROW_HEIGHT_ESTIMATE = 360
+/** Virtual row estimate; rows use measureElement. */
+const ROW_HEIGHT_ESTIMATE = 348
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
