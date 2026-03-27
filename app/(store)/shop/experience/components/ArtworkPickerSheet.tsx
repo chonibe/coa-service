@@ -97,7 +97,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder: stage chip on image; footer = price + optional `N more sales · then $X` chip. */
+  /** Street Collector ladder: stage chip top of image; footer = price + optional `N more sales · then $X` chip. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -160,6 +160,16 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
+        {streetPricing ? (
+          <StreetPricingChip
+            label={streetPricing.label}
+            priceUsd={streetPricing.priceUsd}
+            subcopy={streetPricing.subcopy}
+            showPrice={false}
+            showSubcopy={false}
+            className={cn('absolute inset-x-0 top-0 z-[11] pointer-events-none px-1.5 pt-1.5')}
+          />
+        ) : null}
         {imageUrl ? (
           <>
             {!imageLoaded && (
@@ -230,16 +240,7 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {streetPricing ? (
-          <StreetPricingChip
-            label={streetPricing.label}
-            priceUsd={streetPricing.priceUsd}
-            subcopy={streetPricing.subcopy}
-            showPrice={false}
-            showSubcopy={false}
-            className={cn('absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5')}
-          />
-        ) : (
+        {!streetPricing ? (
           <EditionBadgeForProduct
             product={product}
             chipOnly
@@ -248,7 +249,7 @@ function ArtworkCardV2({
               '[&>span]:pointer-events-auto'
             )}
           />
-        )}
+        ) : null}
       </motion.div>
 
       <div

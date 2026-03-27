@@ -7,8 +7,6 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
-import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
-import { StreetLadderStripCaption } from '../../experience-v2/components/StreetLadderScarcityAddon'
 
 interface ArtworkCarouselBarProps {
   selectedArtworks: ShopifyProduct[]
@@ -30,8 +28,6 @@ interface ArtworkCarouselBarProps {
   onSwitchToCollection?: () => void
   /** Lift strip above fixed checkout sticky bar (experience cart has artworks) */
   reserveCheckoutBar?: boolean
-  /** Street ladder caption under each carousel thumb (collection + watchlist) */
-  getStreetLadderForProduct?: (product: ShopifyProduct) => StreetLadderForScarcity | null
 }
 
 export function ArtworkCarouselBar({
@@ -48,7 +44,6 @@ export function ArtworkCarouselBar({
   stripMode = 'collection',
   onSwitchToCollection,
   reserveCheckoutBar = false,
-  getStreetLadderForProduct,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -283,7 +278,6 @@ export function ArtworkCarouselBar({
           >
             <>
               {selectedArtworks.map((artwork, index) => {
-                const ladderBlock = getStreetLadderForProduct?.(artwork) ?? null
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
                 /* Eye on every tile assigned to the lamp (up to two sides). */
@@ -362,7 +356,6 @@ export function ArtworkCarouselBar({
                         )}
                       </div>
                     </button>
-                    {ladderBlock ? <StreetLadderStripCaption block={ladderBlock} /> : null}
                   </div>
                   )
               })}

@@ -42,7 +42,6 @@ import {
   productMatchesSpotlight,
   spotlightOverridesForProduct,
 } from '@/lib/shop/experience-spotlight-match'
-import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -999,17 +998,6 @@ export function ExperienceV2Client({
     [displayedProduct, lamp.id, spotlightData]
   )
 
-  const getStreetLadderForCarouselProduct = useCallback(
-    (p: ShopifyProduct) => {
-      if (p.id === lamp.id) return null
-      const k = normalizeShopifyProductId(p.id)
-      const row = k ? streetEditionByProductId[k] ?? null : null
-      const early = experienceEarlyAccessForProduct(p, lamp.id, spotlightData)
-      return buildStreetLadderForScarcity(p, row, early)
-    },
-    [lamp.id, streetEditionByProductId, spotlightData]
-  )
-
   const detailStreetEditionRow = useMemo(() => {
     if (!detailProduct || detailProduct.id === lamp.id) return null
     const k = normalizeShopifyProductId(detailProduct.id)
@@ -1123,7 +1111,6 @@ export function ExperienceV2Client({
         onTapItem={handleTapCarouselItem}
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
-        getStreetLadderForProduct={getStreetLadderForCarouselProduct}
       />
 
       {pickerHasBeenOpened && (

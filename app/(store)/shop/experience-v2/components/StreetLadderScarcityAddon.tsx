@@ -48,35 +48,3 @@ export function StreetLadderScarcityAddon({
     </div>
   )
 }
-
-/** Compact two-line caption for watchlist carousel thumbnails. */
-export function StreetLadderStripCaption({
-  block,
-  className,
-}: {
-  block: StreetLadderForScarcity
-  className?: string
-}) {
-  return (
-    <div className={cn('flex flex-col items-center gap-0.5 max-w-[6.5rem] text-center', className)}>
-      <p className="text-[9px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-[#9a8a8a] leading-tight line-clamp-2">
-        {block.stageLabel}
-      </p>
-      {block.listActive && block.listPricePrimary && block.listPricePrimary !== 'Free' ? (
-        <span className="text-[10px] font-semibold tabular-nums text-neutral-800 dark:text-neutral-100 leading-tight">
-          {block.listPricePrimary}
-        </span>
-      ) : null}
-      {block.nextStepChip ? (
-        <span
-          className={cn(
-            NEXT_CHIP_CLASS,
-            '!text-[9px] !py-px !px-1.5 leading-tight line-clamp-2 whitespace-normal'
-          )}
-        >
-          {block.nextStepChip}
-        </span>
-      ) : null}
-    </div>
-  )
-}
