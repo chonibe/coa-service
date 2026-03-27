@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, type RefObject } from 'react'
 import Image from 'next/image'
-import { Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -173,11 +173,12 @@ export function ArtworkCarouselBar({
         ]
   )
 
-  const emptyCollectionPlusButtonClass = cn(
-    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95] shadow-lg',
+  /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
+  const emptyCollectionCtaClass = cn(
+    'flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
     theme === 'light'
-      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/25 hover:bg-blue-700 hover:border-blue-700'
-      : 'border-blue-500 bg-blue-600 text-white shadow-black/35 hover:bg-blue-500 hover:border-blue-400'
+      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
+      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400'
   )
 
   return (
@@ -207,7 +208,12 @@ export function ArtworkCarouselBar({
             ref={carouselWheelHostRef}
             className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 px-3"
           >
-            <div className="flex flex-row items-end justify-center gap-2">
+            <div
+              className={cn(
+                'flex w-full min-w-0 justify-center gap-2',
+                emptyCollectionStart ? 'flex-col items-center' : 'flex-row items-end'
+              )}
+            >
               {stripMode === 'watchlist' && onSwitchToCollection && (
                 <button
                   type="button"
@@ -219,27 +225,28 @@ export function ArtworkCarouselBar({
                   <LayoutGrid className="w-5 h-5" strokeWidth={2.25} />
                 </button>
               )}
-              {stripMode === 'collection' && (
+              {stripMode === 'collection' && emptyCollectionStart && (
                 <button
                   type="button"
                   onClick={onOpenPicker}
-                  className={emptyCollectionStart ? emptyCollectionPlusButtonClass : glassAddButtonClass}
-                  aria-label={hasCarouselArtworks ? 'Add artwork to collection' : 'Start your collection'}
+                  className={emptyCollectionCtaClass}
+                >
+                  <span>Choose your first artwork</span>
+                  <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
+                </button>
+              )}
+              {stripMode === 'collection' && !emptyCollectionStart && (
+                <button
+                  type="button"
+                  onClick={onOpenPicker}
+                  className={glassAddButtonClass}
+                  aria-label="Add artwork to collection"
+                  title="Add artwork to collection"
                 >
                   <Plus className="w-5 h-5" strokeWidth={2.25} />
                 </button>
               )}
             </div>
-            {!hasCarouselArtworks && stripMode === 'collection' && (
-              <p
-                className={cn(
-                  'text-center text-sm font-semibold',
-                  theme === 'light' ? 'text-neutral-800' : 'text-[#f0e8e8]'
-                )}
-              >
-                Start your Collection
-              </p>
-            )}
             {!hasCarouselArtworks && stripMode === 'watchlist' && (
               <p
                 className={cn(

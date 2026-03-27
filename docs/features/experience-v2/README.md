@@ -107,8 +107,8 @@ Horizontal tappable carousel at the bottom of the Spline view:
 - Shows selected artworks as thumbnails (`w-24` aspect 4/5)
 - First two display on lamp (green numbered badges)
 - Tapping rotates lamp to show that artwork
-- **+** opens the picker: **always centered above** the horizontal strip — **glassmorphism** circular control (`backdrop-blur-xl`, translucent fill, light border, inset highlight + soft shadow). When the cart is **empty**, **“Start your Collection”** appears centered under that button. The strip holds **only** selected artworks and spotlight placeholders (no add tile in the row)
-- Animated with Framer Motion `AnimatePresence`
+- **Picker entry:** When the collection is **empty**, a **large centered labeled CTA** (“Choose your first artwork” + chevron) opens the sheet — high-contrast blue pill, full visible label (not an icon-only control). Once at least one artwork is selected, a compact **glass +** control (`backdrop-blur-xl`, translucent fill, light border) opens the picker above the strip. The strip holds **only** selected artworks and spotlight placeholders (no add tile in the row)
+- Bar show/hide uses CSS `transition-transform` (no Framer Motion on this overlay)
 - Theme-aware styling; **bottom gradient fade** (`bg-gradient-to-t` from the same `#F5F5F5` / `#171515` as the Spline column) lifts the strip off the 3D preview without a hard shadow
 
 **Implementation:** [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
@@ -230,3 +230,4 @@ npm run dev
 - Updated: 2026-03-20 — Smaller selection UI: picker numbered badge **`w-4`/`text-[9px]`**; strip lamp badge **`w-4`/`text-[9px]`**; strip footer controls **`h-5`/`w-4`**; softer **scale** pulses on wizard highlights and add check.
 - Updated: 2026-03-20 — **EditionBadge** in artwork detail action areas (desktop inline/slideout + mobile sticky bar); copy + thresholds in [`edition-stages.ts`](../../../lib/shop/edition-stages.ts).
 - Updated: 2026-03-24 — Picker [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx): **+** affordance on unselected artwork thumbnails (aligned with carousel spotlight placeholders).
+- Updated: 2026-03-27 — [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx): empty collection uses a **labeled primary CTA** (“Choose your first artwork” + chevron) instead of an icon-only **+** to open the picker.
