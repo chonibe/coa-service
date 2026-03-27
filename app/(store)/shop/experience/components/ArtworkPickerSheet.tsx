@@ -98,37 +98,15 @@ function formatPickerCardFooterPrice(
   return { primary: `$${reference.toFixed(2)}`, compareAt: null }
 }
 
-/** Muted “→ next list step” under the card (separate from scarcity chip). */
-function StreetNextStepHint({ bump }: { bump: StreetEditionStatesRow['nextBump'] }) {
+/** e.g. `in 3 more sales - $46` (edition end uses `closes` instead of a dollar amount). */
+function streetNextSalesChipText(bump: StreetEditionStatesRow['nextBump']): string | null {
   if (!bump) return null
-  if (bump.kind === 'price_rise') {
-    const n = bump.afterSales
-    return (
-      <p className="text-[9px] leading-snug text-neutral-400 dark:text-white/35 tabular-nums">
-        <span className="opacity-60" aria-hidden>
-          →
-        </span>{' '}
-        <span className="text-neutral-600 dark:text-white/45">${bump.nextPriceUsd}</span>
-        <span className="font-normal text-neutral-400/95 dark:text-white/28">
-          {' '}
-          · {n} more {n === 1 ? 'sale' : 'sales'}
-        </span>
-      </p>
-    )
-  }
   const n = bump.afterSales
-  return (
-    <p className="text-[9px] leading-snug text-neutral-400 dark:text-white/35">
-      <span className="opacity-60" aria-hidden>
-        →
-      </span>{' '}
-      <span className="text-neutral-600 dark:text-white/45">final copies</span>
-      <span className="font-normal text-neutral-400/95 dark:text-white/28">
-        {' '}
-        · {n} more {n === 1 ? 'sale' : 'sales'}
-      </span>
-    </p>
-  )
+  const salesWord = n === 1 ? 'sale' : 'sales'
+  if (bump.kind === 'price_rise') {
+    return `in ${n} more ${salesWord} - $${bump.nextPriceUsd}`
+  }
+  return `in ${n} more ${salesWord} - closes`
 }
 
 interface ArtworkCardV2Props {
@@ -147,7 +125,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder: stage chip on image; footer = price, scarcity chip, muted → next step. */
+  /** Street Collector ladder: stage chip on image; footer = price + optional `in N sales - $X` chip. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -174,6 +152,8 @@ function ArtworkCardV2({
   const footerPrice = formatPickerCardFooterPrice(product, streetPricing, isEarlyAccess)
   const showEarlyAccessCompare = footerPrice.compareAt !== null
   const streetListActive = !!(streetPricing && streetPricing.priceUsd != null && streetPricing.priceUsd > 0)
+  const nextSalesChipText =
+    streetListActive && streetPricing ? streetNextSalesChipText(streetPricing.nextBump) : null
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
   const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {
@@ -340,20 +320,19 @@ function ArtworkCardV2({
                   {streetPricing.label}
                 </p>
               )}
-              {streetPricing.subcopy ? (
+              {nextSalesChipText ? (
                 <span
                   className={cn(
                     'inline-flex max-w-full min-w-0 justify-center rounded-md px-2 py-0.5',
                     'border border-neutral-200/90 dark:border-white/10',
                     'bg-neutral-50/95 dark:bg-white/5',
                     'text-[9px] leading-snug text-neutral-600 dark:text-[#b0a0a0]',
-                    'font-medium normal-case tracking-normal text-center'
+                    'font-medium normal-case tracking-normal text-center tabular-nums'
                   )}
                 >
-                  {streetPricing.subcopy}
+                  {nextSalesChipText}
                 </span>
               ) : null}
-              {streetListActive ? <StreetNextStepHint bump={streetPricing.nextBump} /> : null}
             </div>
           ) : (
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
