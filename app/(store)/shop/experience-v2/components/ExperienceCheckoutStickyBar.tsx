@@ -52,28 +52,39 @@ export function ExperienceCheckoutStickyBar({
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pt-3 md:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {showLamp && (
-            <span
-              className="flex shrink-0 flex-col items-center gap-0.5"
-              title={lamp.title ?? 'Street Lamp'}
-            >
-              <ExperienceOrderLampIcon
+            <>
+              <span
+                className="flex shrink-0 flex-col items-center gap-0.5"
+                title={lamp.title ?? 'Street Lamp'}
+              >
+                <ExperienceOrderLampIcon
+                  className={cn(
+                    'h-7 w-7',
+                    theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
+                  )}
+                />
+                {lampQuantity > 1 && (
+                  <span
+                    className={cn(
+                      'text-[10px] font-semibold leading-none tabular-nums',
+                      theme === 'light' ? 'text-neutral-500' : 'text-white/60'
+                    )}
+                    aria-label={`${lampQuantity} lamps`}
+                  >
+                    ×{lampQuantity}
+                  </span>
+                )}
+              </span>
+              <span
                 className={cn(
-                  'h-7 w-7',
+                  'shrink-0 self-center text-base font-semibold leading-none',
                   theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
                 )}
-              />
-              {lampQuantity > 1 && (
-                <span
-                  className={cn(
-                    'text-[10px] font-semibold leading-none tabular-nums',
-                    theme === 'light' ? 'text-neutral-500' : 'text-white/60'
-                  )}
-                  aria-label={`${lampQuantity} lamps`}
-                >
-                  ×{lampQuantity}
-                </span>
-              )}
-            </span>
+                aria-hidden
+              >
+                +
+              </span>
+            </>
           )}
           <p
             className={cn(
