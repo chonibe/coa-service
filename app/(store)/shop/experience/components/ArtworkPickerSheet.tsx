@@ -22,8 +22,8 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
-import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -97,6 +97,16 @@ function formatPickerCardFooterPrice(
   return { primary: `$${reference.toFixed(2)}`, compareAt: null }
 }
 
+function formatStreetNextBumpLine(bump: StreetEditionStatesRow['nextBump']): string | null {
+  if (!bump) return null
+  if (bump.kind === 'price_rise') {
+    const n = bump.afterSales
+    return `Next price: $${bump.nextPriceUsd} after ${n} more ${n === 1 ? 'sale' : 'sales'}`
+  }
+  const n = bump.afterSales
+  return `No further price increases — edition ends after ${n} more ${n === 1 ? 'sale' : 'sales'}`
+}
+
 interface ArtworkCardV2Props {
   product: ShopifyProduct
   isSelected: boolean
@@ -113,8 +123,8 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder chip from Supabase sold count (replaces percent-based chip when present). */
-  streetPricing?: { label: string; priceUsd: number | null; subcopy: string } | null
+  /** Street Collector ladder from edition-states (single price + copy lives in footer, not on image). */
+  streetPricing?: StreetEditionStatesRow | null
 }
 
 function ArtworkCardV2({
@@ -139,6 +149,8 @@ function ArtworkCardV2({
   const roundRight = !flushToSpine || mergeWithLeft
   const footerPrice = formatPickerCardFooterPrice(product, streetPricing, isEarlyAccess)
   const showEarlyAccessCompare = footerPrice.compareAt !== null
+  const streetListActive = !!(streetPricing && streetPricing.priceUsd != null && streetPricing.priceUsd > 0)
+  const nextBumpLine = streetPricing ? formatStreetNextBumpLine(streetPricing.nextBump) : null
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
   const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {
@@ -243,16 +255,7 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {streetPricing ? (
-          <StreetPricingChip
-            label={streetPricing.label}
-            priceUsd={streetPricing.priceUsd}
-            subcopy={streetPricing.subcopy}
-            className={cn(
-              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5'
-            )}
-          />
-        ) : (
+        {!streetPricing ? (
           <EditionBadgeForProduct
             product={product}
             chipOnly
@@ -261,7 +264,7 @@ function ArtworkCardV2({
               '[&>span]:pointer-events-auto'
             )}
           />
-        )}
+        ) : null}
       </motion.div>
 
       <div
@@ -280,28 +283,70 @@ function ArtworkCardV2({
             'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <p className={cn(
-              'text-xs font-medium transition-colors duration-200 ease-out',
-              showEarlyAccessCompare
-                ? 'text-violet-700 dark:text-violet-300'
-                : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
-            )}>
-              {footerPrice.primary}
-            </p>
-            {showEarlyAccessCompare && footerPrice.compareAt && (
-              <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
-                {footerPrice.compareAt}
-              </span>
-            )}
-          </div>
+          {streetPricing ? (
+            <div className="w-full min-w-0 flex flex-col gap-0.5 items-center text-center px-0.5">
+              {streetListActive ? (
+                <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
+                  <span
+                    className={cn(
+                      'text-sm font-semibold tabular-nums tracking-tight',
+                      showEarlyAccessCompare
+                        ? 'text-violet-700 dark:text-violet-300'
+                        : 'text-neutral-900 dark:text-[#f0e8e8]'
+                    )}
+                  >
+                    {footerPrice.primary}
+                  </span>
+                  {showEarlyAccessCompare && footerPrice.compareAt && (
+                    <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums">
+                      {footerPrice.compareAt}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090]">
+                  {streetPricing.label}
+                </p>
+              )}
+              {streetListActive ? (
+                <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-neutral-500 dark:text-[#9a8a8a] leading-tight">
+                  {streetPricing.label}
+                </p>
+              ) : null}
+              <p className="text-[10px] leading-snug text-neutral-600 dark:text-[#b8a0a0]">
+                {streetPricing.subcopy}
+              </p>
+              {nextBumpLine && streetListActive && (
+                <p className="text-[10px] font-medium leading-snug text-amber-900/90 dark:text-amber-200/90">
+                  {nextBumpLine}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+              <p className={cn(
+                'text-xs font-medium transition-colors duration-200 ease-out',
+                showEarlyAccessCompare
+                  ? 'text-violet-700 dark:text-violet-300'
+                  : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
+              )}>
+                {footerPrice.primary}
+              </p>
+              {showEarlyAccessCompare && footerPrice.compareAt && (
+                <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
+                  {footerPrice.compareAt}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   )
 }
 
-const ROW_HEIGHT_ESTIMATE = 292
+/** Virtual row estimate; rows use measureElement for Street ladder footer (price + stage + next bump). */
+const ROW_HEIGHT_ESTIMATE = 340
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -328,7 +373,7 @@ interface ArtworkPickerSheetProps {
   /** When set, controls spotlight card open/closed UI independently of filter state (avoids mismatched names vs filters). */
   spotlightBannerExpanded?: boolean
   /** Numeric Shopify product id → Street Collector ladder copy */
-  streetEditionByProductId?: Record<string, { label: string; priceUsd: number | null; subcopy: string }>
+  streetEditionByProductId?: Record<string, StreetEditionStatesRow>
 }
 
 export function ArtworkPickerSheet({

@@ -168,3 +168,38 @@ export function getStreetPricingStageDisplay(
 
   return { stageKey, label, priceUsd, subcopy }
 }
+
+/** What happens after the current pricing band closes (more sales at current list price). */
+export type StreetNextBump =
+  | { kind: 'price_rise'; nextPriceUsd: number; salesUntilBump: number }
+  | { kind: 'edition_end'; salesUntilBump: number }
+
+/**
+ * Next list-price step, or end-of-edition after N more sales (last band).
+ * `null` when sold out or state cannot be resolved.
+ */
+export function getStreetNextPriceBump(season: 1 | 2, editionsSold: number): StreetNextBump | null {
+  const sold = Math.max(0, Math.floor(editionsSold))
+  const bands = season === 1 ? S1_BANDS : S2_BANDS
+  const cap = season === 1 ? 90 : 44
+  if (sold >= cap) return null
+
+  let idx = -1
+  for (let i = 0; i < bands.length; i++) {
+    if (sold < bands[i].capExclusive) {
+      idx = i
+      break
+    }
+  }
+  if (idx < 0) return null
+
+  const cur = bands[idx]
+  const salesUntilBump = cur.capExclusive - sold
+
+  if (idx + 1 < bands.length) {
+    const next = bands[idx + 1]
+    return { kind: 'price_rise', nextPriceUsd: next.priceUsd, salesUntilBump }
+  }
+
+  return { kind: 'edition_end', salesUntilBump }
+}

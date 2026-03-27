@@ -40,6 +40,7 @@ import {
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import {
@@ -276,7 +277,7 @@ export function ExperienceV2Client({
   )
 
   const [streetEditionByProductId, setStreetEditionByProductId] = useState<
-    Record<string, { label: string; priceUsd: number | null; subcopy: string }>
+    Record<string, StreetEditionStatesRow>
   >({})
   const [lockedArtworkPrices, setLockedArtworkPrices] = useState<Record<string, number>>({})
 
@@ -291,16 +292,15 @@ export function ExperienceV2Client({
       fetch(`/api/shop/edition-states?ids=${encodeURIComponent(unique.join(','))}`)
         .then((r) => (r.ok ? r.json() : null))
         .then(
-          (j: {
-            items?: Array<{ productId: string; label: string; priceUsd: number | null; subcopy: string }>
-          }) => {
+          (j: { items?: Array<{ productId: string } & StreetEditionStatesRow> }) => {
             if (!j?.items) return
-            const map: Record<string, { label: string; priceUsd: number | null; subcopy: string }> = {}
+            const map: Record<string, StreetEditionStatesRow> = {}
             for (const item of j.items) {
               map[item.productId] = {
                 label: item.label,
                 priceUsd: item.priceUsd,
                 subcopy: item.subcopy,
+                nextBump: item.nextBump ?? null,
               }
             }
             setStreetEditionByProductId(map)

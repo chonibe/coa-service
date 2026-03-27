@@ -10,7 +10,8 @@ export type StreetPricingChipProps = {
 }
 
 /**
- * Compact picker chip for Street Collector fixed ladder (Ground Floor / Rising / …).
+ * Compact overlay chip for Street Collector ladder (Ground Floor / Rising / …).
+ * The experience artwork picker uses a single footer block instead of this chip to avoid duplicate prices.
  */
 export function StreetPricingChip({ label, priceUsd, subcopy, className }: StreetPricingChipProps) {
   const pricePart = priceUsd != null ? ` · $${priceUsd}` : ''

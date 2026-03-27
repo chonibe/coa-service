@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
+  getStreetNextPriceBump,
   getStreetPricingStageDisplay,
   streetSeasonFromTotalEditions,
 } from '@/lib/shop/street-collector-pricing-stages'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,10 +15,7 @@ type EditionStateRow = {
   editionsSold: number
   editionTotal: number | null
   season: 1 | 2
-  label: string
-  priceUsd: number | null
-  subcopy: string
-}
+} & StreetEditionStatesRow
 
 /**
  * GET /api/shop/edition-states?ids=123,456
@@ -59,6 +58,19 @@ export async function GET(request: NextRequest) {
       const editionTotal = Number.isFinite(totalParsed) ? totalParsed : null
       const season = streetSeasonFromTotalEditions(editionTotal ?? 90)
       const display = getStreetPricingStageDisplay(season, sold)
+      const bump = getStreetNextPriceBump(season, sold)
+      let nextBump: EditionStateRow['nextBump'] = null
+      if (bump) {
+        if (bump.kind === 'price_rise') {
+          nextBump = {
+            kind: 'price_rise',
+            nextPriceUsd: bump.nextPriceUsd,
+            afterSales: bump.salesUntilBump,
+          }
+        } else {
+          nextBump = { kind: 'edition_end', afterSales: bump.salesUntilBump }
+        }
+      }
       return {
         productId,
         editionsSold: sold,
@@ -67,6 +79,7 @@ export async function GET(request: NextRequest) {
         label: display.label,
         priceUsd: display.priceUsd,
         subcopy: display.subcopy,
+        nextBump,
       }
     })
 
