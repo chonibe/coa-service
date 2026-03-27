@@ -77,6 +77,14 @@ function MergeConfetti({ active }: { active: boolean }) {
   )
 }
 
+/** Whole dollars show without `.00`; fractional amounts keep minimal decimals (e.g. `$43.2`). */
+function formatPickerUsdDisplay(usd: number): string {
+  const x = Math.round(usd * 100) / 100
+  if (!Number.isFinite(x)) return '$0'
+  const trimmed = x.toFixed(2).replace(/\.?0+$/, '')
+  return `$${trimmed}`
+}
+
 /**
  * Price under the card title — matches ladder chip when `streetPricing.priceUsd` is set (same as cart/checkout).
  * Early access: 10% off that reference (ladder or storefront), with reference struck through.
@@ -93,9 +101,9 @@ function formatPickerCardFooterPrice(
   if (reference <= 0) return { primary: 'Free', compareAt: null }
   if (isEarlyAccess) {
     const discounted = Math.round(reference * 0.9 * 100) / 100
-    return { primary: `$${discounted.toFixed(2)}`, compareAt: `$${reference.toFixed(2)}` }
+    return { primary: formatPickerUsdDisplay(discounted), compareAt: formatPickerUsdDisplay(reference) }
   }
-  return { primary: `$${reference.toFixed(2)}`, compareAt: null }
+  return { primary: formatPickerUsdDisplay(reference), compareAt: null }
 }
 
 /** Next ladder step: count first, then outcome (reads more naturally than “in N sales - $X”). */
