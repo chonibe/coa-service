@@ -1257,7 +1257,8 @@ export function AddressModal({
                           inputMode="tel"
                           enterKeyHint="done"
                           autoCapitalize="none"
-                          autoComplete={ac('tel')}
+                          /* Desktop: `shipping tel` / `billing tel` still opens Safari/Chrome Contacts UI; keep autofill only on mobile. */
+                          autoComplete={isMobile ? ac('tel') : 'off'}
                           value={form.phoneNumber}
                           onChange={(e) => {
                             handlePhoneChange(e.target.value)
