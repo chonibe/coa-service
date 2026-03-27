@@ -1,11 +1,14 @@
 'use client'
 
+import { Lamp } from 'lucide-react'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 
 export interface ExperienceCheckoutStickyBarProps {
+  lamp: ShopifyProduct
+  lampQuantity: number
   /** Artworks in the experience cart (excludes lamp). */
   selectedArtworks: ShopifyProduct[]
   /** Lamp + artworks subtotal before promo (same basis as OrderBar). */
@@ -17,6 +20,8 @@ export interface ExperienceCheckoutStickyBarProps {
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
 export function ExperienceCheckoutStickyBar({
+  lamp,
+  lampQuantity,
   selectedArtworks,
   orderSubtotal,
 }: ExperienceCheckoutStickyBarProps) {
@@ -30,6 +35,7 @@ export function ExperienceCheckoutStickyBar({
   const extra = selectedArtworks.length - 1
   const artist = (primary.vendor ?? '').trim() || 'Artist'
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
+  const showLamp = lampQuantity > 0
 
   return (
     <div
@@ -44,10 +50,38 @@ export function ExperienceCheckoutStickyBar({
       aria-label="Checkout summary"
     >
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pt-3 md:px-6">
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {showLamp && (
+            <span
+              className="flex shrink-0 flex-col items-center gap-0.5"
+              title={lamp.title ?? 'Street Lamp'}
+            >
+              <span
+                className={cn(
+                  'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
+                  theme === 'light'
+                    ? 'border-neutral-200 bg-neutral-100 text-neutral-800'
+                    : 'border-white/15 bg-white/10 text-[#f0e8e8]'
+                )}
+              >
+                <Lamp className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+              </span>
+              {lampQuantity > 1 && (
+                <span
+                  className={cn(
+                    'text-[10px] font-semibold leading-none tabular-nums',
+                    theme === 'light' ? 'text-neutral-500' : 'text-white/60'
+                  )}
+                  aria-label={`${lampQuantity} lamps`}
+                >
+                  ×{lampQuantity}
+                </span>
+              )}
+            </span>
+          )}
           <p
             className={cn(
-              'truncate text-sm font-medium leading-tight',
+              'min-w-0 flex-1 truncate text-sm font-medium leading-tight',
               theme === 'light' ? 'text-neutral-900' : 'text-white'
             )}
           >

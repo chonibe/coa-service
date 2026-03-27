@@ -1150,6 +1150,8 @@ export function ExperienceV2Client({
       )}
 
       <ExperienceCheckoutStickyBar
+        lamp={lamp}
+        lampQuantity={lampQuantity}
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
       />

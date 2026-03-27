@@ -47,7 +47,7 @@ Integrates with:
 - `ExperienceOrderContext` for header cart chip and OrderBar
 - `ArtworkDetail` drawer for artwork info
 - `OrderBar` for checkout
-- `ExperienceCheckoutStickyBar` — fixed bottom bar when ≥1 artwork is in the cart (primary line + “Checkout · $total →”), calls `openOrderBar`; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses `reserveCheckoutBar` to lift the thumbnail strip above the bar
+- `ExperienceCheckoutStickyBar` — fixed bottom bar when ≥1 artwork is in the cart (lamp icon first when `lampQuantity > 0`, then primary artwork line + “Checkout · $total →”), calls `openOrderBar`; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses `reserveCheckoutBar` to lift the thumbnail strip above the bar
 
 **Implementation:** [`components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
 
