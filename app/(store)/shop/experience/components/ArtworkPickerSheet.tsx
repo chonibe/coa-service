@@ -22,7 +22,6 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
-import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import {
@@ -97,7 +96,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder: stage chip top of image; footer = price + optional `N more sales · then $X` chip. */
+  /** Street Collector ladder data for footer price + optional `N more sales · then $X` chip (no stage chip on image). */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -160,16 +159,6 @@ function ArtworkCardV2({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
         title="Tap to select artwork"
       >
-        {streetPricing ? (
-          <StreetPricingChip
-            label={streetPricing.label}
-            priceUsd={streetPricing.priceUsd}
-            subcopy={streetPricing.subcopy}
-            showPrice={false}
-            showSubcopy={false}
-            className={cn('absolute inset-x-0 top-0 z-[11] pointer-events-none px-1.5 pt-1.5')}
-          />
-        ) : null}
         {imageUrl ? (
           <>
             {!imageLoaded && (
