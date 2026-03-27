@@ -35,11 +35,6 @@ export function StreetLadderScarcityAddon({
           ) : null}
         </div>
       ) : null}
-      {block.subcopy ? (
-        <p className="text-[11px] text-center text-neutral-600 dark:text-[#c4b4b4] leading-snug px-1">
-          {block.subcopy}
-        </p>
-      ) : null}
       {block.nextStepChip ? (
         <div className="flex justify-center px-1">
           <span className={NEXT_CHIP_CLASS}>{block.nextStepChip}</span>
