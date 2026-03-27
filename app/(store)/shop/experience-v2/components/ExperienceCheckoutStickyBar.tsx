@@ -1,9 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 
 export interface ExperienceCheckoutStickyBarProps {
   /** Artworks in the experience cart (excludes lamp). */
@@ -30,6 +32,11 @@ export function ExperienceCheckoutStickyBar({
   const extra = selectedArtworks.length - 1
   const artist = (primary.vendor ?? '').trim() || 'Artist'
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
+  const primaryImageUrl =
+    primary.featuredImage?.url || primary.images?.edges?.[0]?.node?.url
+  /** Match [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) strip tiles: 14×20, 15px radius, Shopify resize. */
+  const thumbClass =
+    'relative shrink-0 w-12 sm:w-[3.25rem] aspect-[14/20] overflow-hidden rounded-[15px] shadow-sm'
 
   return (
     <div
@@ -43,7 +50,29 @@ export function ExperienceCheckoutStickyBar({
       role="region"
       aria-label="Checkout summary"
     >
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pt-3 md:px-6">
+      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pt-3 pb-3 md:px-6">
+        <div className={cn(thumbClass, 'ring-1 ring-black/[0.08] dark:ring-white/15')}>
+          {primaryImageUrl ? (
+            <Image
+              src={getShopifyImageUrl(primaryImageUrl, 280) ?? primaryImageUrl}
+              alt={primary.title}
+              fill
+              unoptimized
+              className="object-cover"
+              sizes="(max-width:640px) 48px, 52px"
+            />
+          ) : (
+            <div
+              className={cn(
+                'flex h-full w-full items-center justify-center text-xs font-medium',
+                theme === 'light' ? 'bg-neutral-200 text-neutral-600' : 'bg-neutral-800 text-neutral-400'
+              )}
+              aria-hidden
+            >
+              {selectedArtworks.length}
+            </div>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <p
             className={cn(
