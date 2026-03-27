@@ -76,14 +76,25 @@ function MergeConfetti({ active }: { active: boolean }) {
   )
 }
 
-function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
-  const price = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  if (price <= 0) return 'Free'
+/**
+ * Price under the card title — matches ladder chip when `streetPricing.priceUsd` is set (same as cart/checkout).
+ * Early access: 10% off that reference (ladder or storefront), with reference struck through.
+ */
+function formatPickerCardFooterPrice(
+  product: ShopifyProduct,
+  streetPricing: { priceUsd: number | null } | null | undefined,
+  isEarlyAccess: boolean
+): { primary: string; compareAt: string | null } {
+  const storefront = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
+  const ladder =
+    streetPricing?.priceUsd != null && streetPricing.priceUsd > 0 ? streetPricing.priceUsd : null
+  const reference = ladder ?? storefront
+  if (reference <= 0) return { primary: 'Free', compareAt: null }
   if (isEarlyAccess) {
-    const discounted = Math.round(price * 0.9 * 100) / 100
-    return `$${discounted.toFixed(2)}`
+    const discounted = Math.round(reference * 0.9 * 100) / 100
+    return { primary: `$${discounted.toFixed(2)}`, compareAt: `$${reference.toFixed(2)}` }
   }
-  return `$${price.toFixed(2)}`
+  return { primary: `$${reference.toFixed(2)}`, compareAt: null }
 }
 
 interface ArtworkCardV2Props {
@@ -126,8 +137,8 @@ function ArtworkCardV2({
   const flushToSpine = isMergedVisual || spinePairLayout
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
-  const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
+  const footerPrice = formatPickerCardFooterPrice(product, streetPricing, isEarlyAccess)
+  const showEarlyAccessCompare = footerPrice.compareAt !== null
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
   const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {
@@ -272,15 +283,15 @@ function ArtworkCardV2({
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
               'text-xs font-medium transition-colors duration-200 ease-out',
-              showEarlyAccessPrice
+              showEarlyAccessCompare
                 ? 'text-violet-700 dark:text-violet-300'
                 : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
             )}>
-              {formatPrice(product, isEarlyAccess)}
+              {footerPrice.primary}
             </p>
-            {showEarlyAccessPrice && (
+            {showEarlyAccessCompare && footerPrice.compareAt && (
               <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
-                ${originalPrice.toFixed(2)}
+                {footerPrice.compareAt}
               </span>
             )}
           </div>
