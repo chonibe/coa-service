@@ -72,6 +72,7 @@ describe('AddressModal phone input', () => {
     const phone = screen.getByTestId('address-phone')
     expect(phone).toHaveAttribute('type', 'text')
     expect(phone).toHaveAttribute('inputMode', 'tel')
+    expect(phone).toHaveAttribute('autoComplete', 'off')
   })
 
   it('uses type tel on mobile for telephone keyboard', () => {
@@ -87,5 +88,6 @@ describe('AddressModal phone input', () => {
     )
     const phone = screen.getByTestId('address-phone')
     expect(phone).toHaveAttribute('type', 'tel')
+    expect(phone).toHaveAttribute('autoComplete', 'shipping tel')
   })
 })
