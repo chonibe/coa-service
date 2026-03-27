@@ -28,6 +28,21 @@ jest.mock('./GooglePlacesAddressInput', () => ({
 
 const mockedUseMobile = useMobile as jest.MockedFunction<typeof useMobile>
 
+function mockViewportWiderThanPhoneSheet() {
+  const mql = {
+    matches: false,
+    media: '(max-width: 639px)',
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  }
+  window.matchMedia = jest.fn().mockImplementation((query: string) =>
+    query === '(max-width: 639px)' ? mql : { ...mql, matches: false, media: query }
+  )
+}
+
 const initialWithExpandedAddress = {
   email: 'a@b.com',
   fullName: 'Jane Doe',
@@ -43,6 +58,7 @@ const initialWithExpandedAddress = {
 
 describe('AddressModal phone input', () => {
   beforeEach(() => {
+    mockViewportWiderThanPhoneSheet()
     global.fetch = jest.fn((input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input.toString()
       if (url.includes('/api/geo/country')) {
@@ -89,5 +105,23 @@ describe('AddressModal phone input', () => {
     const phone = screen.getByTestId('address-phone')
     expect(phone).toHaveAttribute('type', 'tel')
     expect(phone).toHaveAttribute('autoComplete', 'shipping tel')
+  })
+
+  it('uses inline Select for country code when viewport is sm+ even if useMobile is true (640–767px gap)', () => {
+    mockedUseMobile.mockReturnValue(true)
+    mockViewportWiderThanPhoneSheet()
+    render(
+      <AddressModal
+        open
+        onOpenChange={() => {}}
+        onSave={() => {}}
+        initialAddress={initialWithExpandedAddress}
+        addressType="shipping"
+      />
+    )
+    expect(screen.queryByText('Phone country code')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Change phone country code' })
+    ).not.toBeInTheDocument()
   })
 })

@@ -139,6 +139,8 @@ The experience checkout uses a **single-screen drawer flow** powered by Stripe C
 | `ExperienceQuizPrefill` | [`components/shop/checkout/ExperienceQuizPrefill.tsx`](../../../components/shop/checkout/ExperienceQuizPrefill.tsx) | Pre-fills checkout address with quiz name/email |
 | `AddressModal` | [`components/shop/checkout/AddressModal.tsx`](../../../components/shop/checkout/AddressModal.tsx) | Shipping address form; "Same as billing" option |
 | `PaymentMethodsModal` | [`components/shop/checkout/PaymentMethodsModal.tsx`](../../../components/shop/checkout/PaymentMethodsModal.tsx) | Payment Element + billing section |
+
+**AddressModal — phone country:** On viewports **≥640px** (Tailwind `sm:`, same breakpoint as the centered dialog), the dial code control is a **Radix Select** only; the slide-over “Phone country code” sheet is not mounted, so a second panel cannot appear beside the form. Below 640px, the button + sheet pattern is used. Phone `type` / `autoComplete` still follow [`useMobile`](../../../hooks/use-mobile.ts) (768px) for numeric keyboard and system Contacts behavior.
 | `PaymentStep` | [`components/shop/checkout/PaymentStep.tsx`](../../../components/shop/checkout/PaymentStep.tsx) | CheckoutProvider, Payment Element, error recovery |
 | `CheckoutContext` | [`lib/shop/CheckoutContext.tsx`](../../../lib/shop/CheckoutContext.tsx) | Address, billing, sameAsShipping, promo state |
 
@@ -271,5 +273,5 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 
 ## Version
 
-- Last updated: 2026-03-19
-- Version: 1.14.0
+- Last updated: 2026-03-27
+- Version: 1.14.1

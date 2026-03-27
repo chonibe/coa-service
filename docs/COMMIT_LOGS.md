@@ -1,3 +1,18 @@
+## Commit: Address modal — phone country sheet only below `sm` (640px) (2026-03-27)
+
+### Summary
+Phone dial code uses the slide-over sheet only when `matchMedia('(max-width: 639px)')` matches, aligning with the centered Add Address dialog (`sm:`+). Wider viewports always use the inline Select; the sheet is not mounted. Dialog content uses `overflow-hidden` so off-canvas sheets do not appear as a second panel.
+
+### ✅ Implementation Checklist
+
+- [x] [`components/shop/checkout/AddressModal.tsx`](../components/shop/checkout/AddressModal.tsx) — `useNarrowViewportForPhoneCountrySheet`, conditional sheet mount, dialog overflow
+- [x] [`components/shop/checkout/AddressModal.test.tsx`](../components/shop/checkout/AddressModal.test.tsx) — Breakpoint regression test
+- [x] [`docs/features/experience/README.md`](../docs/features/experience/README.md) — Document phone country UI + version
+- [x] [`docs/COMMIT_LOGS/address-modal-phone-country-sm-breakpoint-2026-03-27.md`](./COMMIT_LOGS/address-modal-phone-country-sm-breakpoint-2026-03-27.md) — Detailed log
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+---
+
 ## Commit: Street Collector — hero three-line overlay + VideoPlayer heroSubtext (2026-03-21)
 
 ### Summary
