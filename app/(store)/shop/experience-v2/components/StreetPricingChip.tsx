@@ -7,15 +7,27 @@ export type StreetPricingChipProps = {
   priceUsd: number | null
   subcopy: string
   className?: string
+  /**
+   * When false, the chip shows only stage + scarcity subcopy (no `$` in the pill).
+   * Use when list price is shown separately (e.g. picker card footer).
+   */
+  showPrice?: boolean
 }
 
 /**
  * Compact overlay chip for Street Collector ladder (Ground Floor / Rising / …).
- * The experience artwork picker uses a single footer block instead of this chip to avoid duplicate prices.
  */
-export function StreetPricingChip({ label, priceUsd, subcopy, className }: StreetPricingChipProps) {
-  const pricePart = priceUsd != null ? ` · $${priceUsd}` : ''
-  const title = `${label}${pricePart} · ${subcopy}`
+export function StreetPricingChip({
+  label,
+  priceUsd,
+  subcopy,
+  className,
+  showPrice = true,
+}: StreetPricingChipProps) {
+  const titleParts = [label]
+  if (priceUsd != null) titleParts.push(`$${priceUsd}`)
+  titleParts.push(subcopy)
+  const title = titleParts.join(' · ')
   return (
     <div className={cn('w-full flex justify-center', className)}>
       <span
@@ -30,7 +42,9 @@ export function StreetPricingChip({ label, priceUsd, subcopy, className }: Stree
         title={title}
       >
         <span className="min-w-0 truncate">{label}</span>
-        {priceUsd != null && <span className="shrink-0 whitespace-nowrap">{`· $${priceUsd}`}</span>}
+        {showPrice && priceUsd != null && (
+          <span className="shrink-0 whitespace-nowrap">{`· $${priceUsd}`}</span>
+        )}
         <span className="min-w-0 truncate opacity-90 normal-case font-medium tracking-normal">{`· ${subcopy}`}</span>
       </span>
     </div>

@@ -22,6 +22,7 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
+import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 
@@ -123,7 +124,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder from edition-states (single price + copy lives in footer, not on image). */
+  /** Street Collector ladder: chip on image (stage + subcopy), list price + next bump in footer. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -255,7 +256,15 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {!streetPricing ? (
+        {streetPricing ? (
+          <StreetPricingChip
+            label={streetPricing.label}
+            priceUsd={streetPricing.priceUsd}
+            subcopy={streetPricing.subcopy}
+            showPrice={false}
+            className={cn('absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5')}
+          />
+        ) : (
           <EditionBadgeForProduct
             product={product}
             chipOnly
@@ -264,7 +273,7 @@ function ArtworkCardV2({
               '[&>span]:pointer-events-auto'
             )}
           />
-        ) : null}
+        )}
       </motion.div>
 
       <div
@@ -284,7 +293,7 @@ function ArtworkCardV2({
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           {streetPricing ? (
-            <div className="w-full min-w-0 flex flex-col gap-0.5 items-center text-center px-0.5">
+            <div className="w-full min-w-0 flex flex-col gap-1 items-center text-center px-0.5">
               {streetListActive ? (
                 <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
                   <span
@@ -308,14 +317,6 @@ function ArtworkCardV2({
                   {streetPricing.label}
                 </p>
               )}
-              {streetListActive ? (
-                <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-neutral-500 dark:text-[#9a8a8a] leading-tight">
-                  {streetPricing.label}
-                </p>
-              ) : null}
-              <p className="text-[10px] leading-snug text-neutral-600 dark:text-[#b8a0a0]">
-                {streetPricing.subcopy}
-              </p>
               {nextBumpLine && streetListActive && (
                 <p className="text-[10px] font-medium leading-snug text-amber-900/90 dark:text-amber-200/90">
                   {nextBumpLine}
