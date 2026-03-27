@@ -12,6 +12,10 @@ export type StreetPricingChipProps = {
    * Use when list price is shown separately (e.g. picker card footer).
    */
   showPrice?: boolean
+  /**
+   * When false, omit scarcity subcopy from the pill (e.g. show it in a separate footer chip).
+   */
+  showSubcopy?: boolean
 }
 
 /**
@@ -23,10 +27,11 @@ export function StreetPricingChip({
   subcopy,
   className,
   showPrice = true,
+  showSubcopy = true,
 }: StreetPricingChipProps) {
   const titleParts = [label]
   if (priceUsd != null) titleParts.push(`$${priceUsd}`)
-  titleParts.push(subcopy)
+  if (subcopy) titleParts.push(subcopy)
   const title = titleParts.join(' · ')
   return (
     <div className={cn('w-full flex justify-center', className)}>
@@ -45,7 +50,9 @@ export function StreetPricingChip({
         {showPrice && priceUsd != null && (
           <span className="shrink-0 whitespace-nowrap">{`· $${priceUsd}`}</span>
         )}
-        <span className="min-w-0 truncate opacity-90 normal-case font-medium tracking-normal">{`· ${subcopy}`}</span>
+        {showSubcopy && subcopy ? (
+          <span className="min-w-0 truncate opacity-90 normal-case font-medium tracking-normal">{`· ${subcopy}`}</span>
+        ) : null}
       </span>
     </div>
   )
