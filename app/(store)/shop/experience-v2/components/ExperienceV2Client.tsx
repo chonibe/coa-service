@@ -41,6 +41,7 @@ import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-ma
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
+import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import {
   captureFunnelEvent,
   FunnelEvents,
@@ -310,6 +311,14 @@ export function ExperienceV2Client({
     return () => clearTimeout(t)
   }, [allProducts])
 
+  const streetLadderPrices = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const [id, row] of Object.entries(streetEditionByProductId)) {
+      if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
+    }
+    return m
+  }, [streetEditionByProductId])
+
   useEffect(() => {
     if (!isAuthenticated) {
       setLockedArtworkPrices({})
@@ -484,18 +493,21 @@ export function ExperienceV2Client({
   }
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const artworksTotal = selectedArtworks.reduce((sum, p) => {
-    const base = parseFloat(p.priceRange?.minVariantPrice?.amount ?? '0')
-    const k = normalizeShopifyProductId(p.id)
-    const locked = k ? lockedArtworkPrices[k] : undefined
-    return sum + (locked != null && locked > 0 ? locked : base)
-  }, 0)
+  const artworksTotal = selectedArtworks.reduce(
+    (sum, p) =>
+      sum +
+      experienceArtworkUnitUsd(p, {
+        lockedUsdByProductId: lockedArtworkPrices,
+        streetLadderUsdByProductId: streetLadderPrices,
+      }),
+    0
+  )
   const orderTotal = lampTotal + artworksTotal
   const orderItemCount = selectedArtworks.length + lampQuantity
 
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
-  }, [orderTotal, orderItemCount, setOrderSummary, lockedArtworkPrices])
+  }, [orderTotal, orderItemCount, setOrderSummary, lockedArtworkPrices, streetLadderPrices])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -631,6 +643,7 @@ export function ExperienceV2Client({
       lampSavings,
       pastLampPaywall: true,
       lockedArtworkPrices,
+      streetLadderPrices,
     })
   }, [
     lamp,
@@ -641,6 +654,7 @@ export function ExperienceV2Client({
     artworkCount,
     lampSavings,
     lockedArtworkPrices,
+    streetLadderPrices,
     handleLampQuantityChange,
     handleAdjustArtworkQuantity,
     setOrderBarProps,
@@ -1198,6 +1212,7 @@ export function ExperienceV2Client({
         onAdjustArtworkQuantity={handleAdjustArtworkQuantity}
         isGift={false}
         lockedArtworkPrices={lockedArtworkPrices}
+        streetLadderPrices={streetLadderPrices}
       />
     </div>
   )

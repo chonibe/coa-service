@@ -18,6 +18,10 @@ import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuiz
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { Checkbox, Label } from '@/components/ui'
+import {
+  experienceArtworkUnitUsd,
+  storefrontVariantUsd,
+} from '@/lib/shop/experience-artwork-unit-price'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -72,6 +76,8 @@ interface OrderBarProps {
   collectedProductIds?: Set<string>
   /** Locked artwork USD prices (numeric Shopify product id → dollars) from The Reserve */
   lockedArtworkPrices?: Record<string, number>
+  /** Street ladder buy-now USD per artwork (numeric product id) from edition-states */
+  streetLadderPrices?: Record<string, number>
 }
 
 export interface OrderBarRef {
@@ -81,21 +87,6 @@ export interface OrderBarRef {
 function parsePrice(product: ShopifyProduct): number {
   const amount = product.priceRange?.minVariantPrice?.amount
   return amount ? parseFloat(amount) : 0
-}
-
-function normalizeProductKey(productId: string): string {
-  return productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
-}
-
-function artworkUnitPriceUsd(
-  product: ShopifyProduct,
-  lockedMap?: Record<string, number>
-): number {
-  const base = parsePrice(product)
-  const key = normalizeProductKey(product.id)
-  const locked = lockedMap?.[key]
-  if (locked != null && locked > 0) return locked
-  return base
 }
 
 function getVariantId(product: ShopifyProduct): string {
@@ -147,6 +138,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   isGift,
   collectedProductIds,
   lockedArtworkPrices,
+  streetLadderPrices,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -166,6 +158,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     firedBeginCheckoutRef.current = false
     firedAddPaymentInfoRef.current = false
   })
+
+  const priceMaps = React.useMemo(
+    () => ({
+      lockedUsdByProductId: lockedArtworkPrices,
+      streetLadderUsdByProductId: streetLadderPrices,
+    }),
+    [lockedArtworkPrices, streetLadderPrices]
+  )
 
   const lampPrice = parsePrice(lamp)
   const artworkCount = selectedArtworks.length
@@ -187,7 +187,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
   const artworksTotal = selectedArtworks.reduce(
-    (sum, p) => sum + artworkUnitPriceUsd(p, lockedArtworkPrices),
+    (sum, p) => sum + experienceArtworkUnitUsd(p, priceMaps),
     0
   )
   const total = lampTotal + artworksTotal
@@ -210,9 +210,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       let aj = ai + 1
       while (aj < selectedArtworks.length && selectedArtworks[aj].id === p.id) aj++
       const qty = aj - ai
-      const unit = artworkUnitPriceUsd(p, lockedArtworkPrices)
+      const unit = experienceArtworkUnitUsd(p, priceMaps)
       const pAdj =
-        unit !== parsePrice(p)
+        unit !== storefrontVariantUsd(p)
           ? ({
               ...p,
               priceRange: {
@@ -231,7 +231,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     trackBeginCheckout(items, total, 'USD', {
       em: checkout.address?.email || undefined,
     })
-  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, lockedArtworkPrices])
+  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, priceMaps])
 
   const buildLineItems = useCallback(() => {
     const items: Array<{
@@ -276,14 +276,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         variantGid: art.variants?.edges?.[0]?.node?.id ?? '',
         handle: art.handle,
         title: art.title,
-        price: artworkUnitPriceUsd(art, lockedArtworkPrices),
+        price: experienceArtworkUnitUsd(art, priceMaps),
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
       })
       wi = wj
     }
     return items
-  }, [lamp, lampQuantity, lampPrices, selectedArtworks, lockedArtworkPrices])
+  }, [lamp, lampQuantity, lampPrices, selectedArtworks, priceMaps])
 
   /* Preload checkout session when cart drawer opens – payment dialog loads instantly */
   const preloadKeyRef = React.useRef<string>('')
@@ -574,7 +574,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
         {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
-          const lineSubtotal = artworkUnitPriceUsd(art, lockedArtworkPrices) * quantity
+          const lineSubtotal = experienceArtworkUnitUsd(art, priceMaps) * quantity
           return (
           <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
@@ -788,16 +788,36 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                         // E-commerce: track add_payment_info once per checkout session
                         if (!firedAddPaymentInfoRef.current && selectedArtworks.length + lampQuantity > 0) {
                           firedAddPaymentInfoRef.current = true
-                          const items = lampQuantity > 0
-                            ? [
-                                storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
-                                ...selectedArtworks.map((p) =>
-                                  storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-                                ),
-                              ]
-                            : selectedArtworks.map((p) =>
-                                storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-                              )
+                          const artworkGa: ReturnType<typeof storefrontProductToItem>[] = []
+                          let gai = 0
+                          while (gai < selectedArtworks.length) {
+                            const gp = selectedArtworks[gai]
+                            let gaj = gai + 1
+                            while (gaj < selectedArtworks.length && selectedArtworks[gaj].id === gp.id) gaj++
+                            const gqty = gaj - gai
+                            const gUnit = experienceArtworkUnitUsd(gp, priceMaps)
+                            const gpAdj =
+                              gUnit !== storefrontVariantUsd(gp)
+                                ? ({
+                                    ...gp,
+                                    priceRange: {
+                                      minVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
+                                      maxVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
+                                    },
+                                  } as ShopifyProduct)
+                                : gp
+                            artworkGa.push(
+                              storefrontProductToItem(gpAdj, gp.variants?.edges?.[0]?.node, gqty)
+                            )
+                            gai = gaj
+                          }
+                          const items =
+                            lampQuantity > 0
+                              ? [
+                                  storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
+                                  ...artworkGa,
+                                ]
+                              : artworkGa
                           trackAddPaymentInfo(displayType, items, total, 'USD', {
                             em: checkout.address?.email || undefined,
                           })
