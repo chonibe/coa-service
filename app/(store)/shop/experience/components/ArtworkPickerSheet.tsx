@@ -98,15 +98,16 @@ function formatPickerCardFooterPrice(
   return { primary: `$${reference.toFixed(2)}`, compareAt: null }
 }
 
-/** e.g. `in 3 more sales - $46` (edition end uses `closes` instead of a dollar amount). */
+/** Next ladder step: count first, then outcome (reads more naturally than “in N sales - $X”). */
 function streetNextSalesChipText(bump: StreetEditionStatesRow['nextBump']): string | null {
   if (!bump) return null
   const n = bump.afterSales
   const salesWord = n === 1 ? 'sale' : 'sales'
+  const prefix = `${n} more ${salesWord}`
   if (bump.kind === 'price_rise') {
-    return `in ${n} more ${salesWord} - $${bump.nextPriceUsd}`
+    return `${prefix} · then $${bump.nextPriceUsd}`
   }
-  return `in ${n} more ${salesWord} - closes`
+  return `${prefix} · edition ends`
 }
 
 interface ArtworkCardV2Props {
@@ -125,7 +126,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder: stage chip on image; footer = price + optional `in N sales - $X` chip. */
+  /** Street Collector ladder: stage chip on image; footer = price + optional `N more sales · then $X` chip. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
