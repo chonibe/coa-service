@@ -25,6 +25,10 @@ import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBa
 import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import {
+  formatStreetArtworkListPrice,
+  formatStreetNextSalesChipText,
+} from '@/lib/shop/experience-street-ladder-display'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -77,47 +81,6 @@ function MergeConfetti({ active }: { active: boolean }) {
   )
 }
 
-/** Whole dollars show without `.00`; fractional amounts keep minimal decimals (e.g. `$43.2`). */
-function formatPickerUsdDisplay(usd: number): string {
-  const x = Math.round(usd * 100) / 100
-  if (!Number.isFinite(x)) return '$0'
-  const trimmed = x.toFixed(2).replace(/\.?0+$/, '')
-  return `$${trimmed}`
-}
-
-/**
- * Price under the card title — matches ladder chip when `streetPricing.priceUsd` is set (same as cart/checkout).
- * Early access: 10% off that reference (ladder or storefront), with reference struck through.
- */
-function formatPickerCardFooterPrice(
-  product: ShopifyProduct,
-  streetPricing: { priceUsd: number | null } | null | undefined,
-  isEarlyAccess: boolean
-): { primary: string; compareAt: string | null } {
-  const storefront = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  const ladder =
-    streetPricing?.priceUsd != null && streetPricing.priceUsd > 0 ? streetPricing.priceUsd : null
-  const reference = ladder ?? storefront
-  if (reference <= 0) return { primary: 'Free', compareAt: null }
-  if (isEarlyAccess) {
-    const discounted = Math.round(reference * 0.9 * 100) / 100
-    return { primary: formatPickerUsdDisplay(discounted), compareAt: formatPickerUsdDisplay(reference) }
-  }
-  return { primary: formatPickerUsdDisplay(reference), compareAt: null }
-}
-
-/** Next ladder step: count first, then outcome (reads more naturally than “in N sales - $X”). */
-function streetNextSalesChipText(bump: StreetEditionStatesRow['nextBump']): string | null {
-  if (!bump) return null
-  const n = bump.afterSales
-  const salesWord = n === 1 ? 'sale' : 'sales'
-  const prefix = `${n} more ${salesWord}`
-  if (bump.kind === 'price_rise') {
-    return `${prefix} · then $${bump.nextPriceUsd}`
-  }
-  return `${prefix} · edition ends`
-}
-
 interface ArtworkCardV2Props {
   product: ShopifyProduct
   isSelected: boolean
@@ -158,11 +121,11 @@ function ArtworkCardV2({
   const flushToSpine = isMergedVisual || spinePairLayout
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
-  const footerPrice = formatPickerCardFooterPrice(product, streetPricing, isEarlyAccess)
+  const footerPrice = formatStreetArtworkListPrice(product, streetPricing, isEarlyAccess)
   const showEarlyAccessCompare = footerPrice.compareAt !== null
   const streetListActive = !!(streetPricing && streetPricing.priceUsd != null && streetPricing.priceUsd > 0)
   const nextSalesChipText =
-    streetListActive && streetPricing ? streetNextSalesChipText(streetPricing.nextBump) : null
+    streetListActive && streetPricing ? formatStreetNextSalesChipText(streetPricing.nextBump) : null
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
   const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {

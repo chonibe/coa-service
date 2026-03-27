@@ -10,6 +10,8 @@ import { ScarcityBadge } from './ScarcityBadge'
 import { EditionBadgeForProduct } from './EditionBadge'
 import { ArtworkEditionUnifiedSection } from './ArtworkEditionUnifiedSection'
 import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 
 interface ArtistData {
   name: string
@@ -52,13 +54,15 @@ interface ArtworkDetailProps {
   artistSlugOverride?: string
   /** When provided, use this spotlight data directly (includes gifUrl) — same as selector */
   spotlightDataOverride?: SpotlightData | null
+  /** Street edition-states row for ladder copy in scarcity bar */
+  streetEdition?: StreetEditionStatesRow | null
 }
 
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
 const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -143,6 +147,13 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+  const streetLadderBlock = useMemo(
+    () =>
+      !isLampOrBundleProduct
+        ? buildStreetLadderForScarcity(product, streetEdition ?? null, isEarlyAccess)
+        : null,
+    [product, streetEdition, isEarlyAccess, isLampOrBundleProduct]
+  )
   const editionArtistName = (
     artistData?.name ||
     spotlightDataOverride?.vendorName ||
@@ -392,6 +403,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               productTitle={product.title}
               unifiedSection
               className="w-full"
+              streetLadder={streetLadderBlock ?? undefined}
             />
           </div>
         )}
@@ -651,6 +663,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         productTitle={product.title}
                         unifiedSection
                         className="w-full"
+                        streetLadder={streetLadderBlock ?? undefined}
                       />
                     </div>
                   )}
@@ -1069,6 +1082,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   productTitle={product.title}
                   unifiedSection
                   className="w-full"
+                  streetLadder={streetLadderBlock ?? undefined}
                 />
               </div>
             )}

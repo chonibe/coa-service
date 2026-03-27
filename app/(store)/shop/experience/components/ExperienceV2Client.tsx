@@ -29,7 +29,12 @@ import {
   clampCarouselIndex,
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
-import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
+import {
+  experienceEarlyAccessForProduct,
+  productMatchesSpotlight,
+  spotlightOverridesForProduct,
+} from '@/lib/shop/experience-spotlight-match'
+import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -1155,6 +1160,36 @@ export function ExperienceV2Client({
     })
   }, [displayedProduct?.id, galleryImages.length, sectionCount, reelSplineSlideIndex])
 
+  const displayedStreetEditionRow = useMemo(() => {
+    if (!displayedProduct || displayedProduct.id === lamp.id) return null
+    const k = normalizeShopifyProductId(displayedProduct.id)
+    if (!k) return null
+    return streetEditionByProductId[k] ?? null
+  }, [displayedProduct, lamp.id, streetEditionByProductId])
+
+  const displayedEarlyAccess = useMemo(
+    () => experienceEarlyAccessForProduct(displayedProduct, lamp.id, spotlightData),
+    [displayedProduct, lamp.id, spotlightData]
+  )
+
+  const getStreetLadderForCarouselProduct = useCallback(
+    (p: ShopifyProduct) => {
+      if (p.id === lamp.id) return null
+      const k = normalizeShopifyProductId(p.id)
+      const row = k ? streetEditionByProductId[k] ?? null : null
+      const early = experienceEarlyAccessForProduct(p, lamp.id, spotlightData)
+      return buildStreetLadderForScarcity(p, row, early)
+    },
+    [lamp.id, streetEditionByProductId, spotlightData]
+  )
+
+  const detailStreetEditionRow = useMemo(() => {
+    if (!detailProduct || detailProduct.id === lamp.id) return null
+    const k = normalizeShopifyProductId(detailProduct.id)
+    if (!k) return null
+    return streetEditionByProductId[k] ?? null
+  }, [detailProduct, lamp.id, streetEditionByProductId])
+
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <SplineFullScreen
@@ -1249,6 +1284,8 @@ export function ExperienceV2Client({
         onSplineInView={setSplineInView}
         experienceReelRef={experienceReelRef}
         editionLeadBeforeSpline={editionLeadBeforeSpline}
+        streetEditionRow={displayedStreetEditionRow}
+        displayedProductEarlyAccess={displayedEarlyAccess}
       />
 
       <ArtworkCarouselBar
@@ -1272,6 +1309,7 @@ export function ExperienceV2Client({
         onRemoveItem={(i) => void handleCarouselBarRemove(i)}
         onOpenPicker={handleOpenPicker}
         onAddProduct={handleToggleSelect}
+        getStreetLadderForProduct={getStreetLadderForCarouselProduct}
       />
 
       {pickerHasBeenOpened && (
@@ -1379,6 +1417,14 @@ export function ExperienceV2Client({
                   },
                 ]
               : undefined
+          }
+          streetEdition={detailStreetEditionRow}
+          isEarlyAccess={experienceEarlyAccessForProduct(detailProduct, lamp.id, spotlightData)}
+          isNewDrop={
+            detailProduct.id !== lamp.id &&
+            !!spotlightData &&
+            productMatchesSpotlight(detailProduct, spotlightData) &&
+            !spotlightData.unlisted
           }
         />
       )}

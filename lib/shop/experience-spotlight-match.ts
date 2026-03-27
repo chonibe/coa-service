@@ -44,3 +44,13 @@ export function spotlightOverridesForProduct(
     spotlightDataOverride: spotlight,
   }
 }
+
+/** Early-access list pricing (10% off ladder reference) when spotlight is unlisted and this product is in it. */
+export function experienceEarlyAccessForProduct(
+  product: ProductLike | null | undefined,
+  lampProductId: string,
+  spotlight: SpotlightData | null | undefined
+): boolean {
+  if (!product || product.id === lampProductId || !spotlight?.unlisted) return false
+  return productMatchesSpotlight(product, spotlight)
+}

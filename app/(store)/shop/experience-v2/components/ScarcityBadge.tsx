@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
+import { StreetLadderScarcityAddon } from './StreetLadderScarcityAddon'
 
 function ScarcityBarPanel({
   title,
@@ -47,6 +49,8 @@ interface ScarcityBadgeProps {
   panelTitle?: string
   /** Bar + caption only — use inside {@link ArtworkEditionUnifiedSection} (no nested panel) */
   unifiedSection?: boolean
+  /** Street ladder (stage, list price, next-step chip) — shown under bar when `variant` is `bar` */
+  streetLadder?: StreetLadderForScarcity | null
 }
 
 export function ScarcityBadge({
@@ -60,6 +64,7 @@ export function ScarcityBadge({
   className,
   panelTitle,
   unifiedSection = false,
+  streetLadder = null,
 }: ScarcityBadgeProps) {
   const [fetchedQuantity, setFetchedQuantity] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -94,6 +99,7 @@ export function ScarcityBadge({
             <p className="text-center text-sm font-medium text-red-600 dark:text-red-400 mt-2.5">
               Sold out
             </p>
+            {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
           </div>
         )
       }
@@ -103,9 +109,12 @@ export function ScarcityBadge({
             title={panelTitle}
             className={className}
             footer={
-              <p className="text-center text-sm font-semibold text-red-600 dark:text-red-400 mt-4">
-                Sold out
-              </p>
+              <>
+                <p className="text-center text-sm font-semibold text-red-600 dark:text-red-400 mt-4">
+                  Sold out
+                </p>
+                {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
+              </>
             }
           >
             <div className="relative h-1.5 w-full max-w-md mx-auto">{track}</div>
@@ -152,12 +161,17 @@ export function ScarcityBadge({
             <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
               <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full animate-pulse" />
             </div>
+            {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className="mt-4" /> : null}
           </div>
         )
       }
       if (panelTitle) {
         return (
-          <ScarcityBarPanel title={panelTitle} className={className}>
+          <ScarcityBarPanel
+            title={panelTitle}
+            className={className}
+            footer={streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className="mt-4" /> : undefined}
+          >
             <div className="relative h-1.5 w-full max-w-md mx-auto">
               <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
             </div>
@@ -219,6 +233,7 @@ export function ScarcityBadge({
             {barMotion}
           </div>
           {editionCaption}
+          {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
         </div>
       )
     }
@@ -228,7 +243,12 @@ export function ScarcityBadge({
         <ScarcityBarPanel
           title={panelTitle}
           className={className}
-          footer={editionCaption}
+          footer={
+            <>
+              {editionCaption}
+              {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className={editionCaption ? undefined : 'mt-0 pt-3'} /> : null}
+            </>
+          }
         >
           <div className="relative h-8 flex items-center justify-center w-full max-w-md mx-auto">
             {barMotion}

@@ -14,6 +14,8 @@ import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
 import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 
 interface ArtistData {
   name: string
@@ -35,6 +37,10 @@ interface ArtworkAccordionsProps {
   spotlightDataOverride?: SpotlightData | null
   /** `editionOnly` / `contentOnly`: split reel with edition above Spline in SplineFullScreen */
   variant?: ArtworkAccordionsVariant
+  /** Edition-states row for Street ladder copy under scarcity bar */
+  streetEdition?: StreetEditionStatesRow | null
+  /** Unlisted spotlight + product in spotlight → early-access list pricing */
+  isEarlyAccess?: boolean
 }
 
 const artistCache = new Map<string, ArtistData | null>()
@@ -48,6 +54,8 @@ export function ArtworkAccordions({
   artistSlugOverride,
   spotlightDataOverride,
   variant = 'full',
+  streetEdition = null,
+  isEarlyAccess = false,
 }: ArtworkAccordionsProps) {
   useExperienceTheme() // ensures we're in theme context for dark: classes
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
@@ -207,6 +215,14 @@ export function ArtworkAccordions({
     return m?.value ? parseInt(m.value, 10) : null
   })()
 
+  const streetLadderBlock = useMemo(
+    () =>
+      !isLamp
+        ? buildStreetLadderForScarcity(product, streetEdition ?? null, isEarlyAccess)
+        : null,
+    [product, streetEdition, isEarlyAccess, isLamp]
+  )
+
   if (variant === 'editionOnly') {
     if (isLamp) return null
     return (
@@ -289,6 +305,7 @@ export function ArtworkAccordions({
                   productTitle={product.title ?? undefined}
                   unifiedSection
                   className="w-full"
+                  streetLadder={streetLadderBlock ?? undefined}
                 />
               </div>
             )}

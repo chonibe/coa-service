@@ -20,6 +20,7 @@ import {
 } from '@/lib/experience-image-position'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { ArtworkAccordions } from './ArtworkAccordions'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
@@ -104,6 +105,10 @@ interface SplineFullScreenProps {
   experienceReelRef?: Ref<HTMLDivElement | null>
   /** When true and an artwork (not lamp) is shown, edition status renders above the Spline in the reel */
   editionLeadBeforeSpline?: boolean
+  /** Street edition-states row for displayed artwork (scarcity ladder copy) */
+  streetEditionRow?: StreetEditionStatesRow | null
+  /** Early-access ladder pricing for displayed artwork */
+  displayedProductEarlyAccess?: boolean
 }
 
 export function SplineFullScreen({
@@ -129,6 +134,8 @@ export function SplineFullScreen({
   spotlightDataOverride,
   experienceReelRef,
   editionLeadBeforeSpline = false,
+  streetEditionRow = null,
+  displayedProductEarlyAccess = false,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -751,6 +758,8 @@ export function SplineFullScreen({
               productSpecs={productSpecs}
               artistSlugOverride={artistSlugOverride}
               spotlightDataOverride={spotlightDataOverride}
+              streetEdition={streetEditionRow}
+              isEarlyAccess={displayedProductEarlyAccess}
             />
           </div>
         )}
