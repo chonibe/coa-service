@@ -2,23 +2,18 @@ import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import type { Metadata } from 'next'
 import {
-  getProduct,
-  getSeasonCollections,
+  getExperienceLampAndSeasonCollections,
+  type ShopifyCollection,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
 import { ExperienceV2ClientLoader } from './components/ExperienceV2ClientLoader'
 
 export const dynamic = 'force-dynamic'
 
-const getCachedLamp = unstable_cache(
-  () => getProduct('street_lamp'),
-  ['experience-v2-lamp'],
-  { revalidate: 300, tags: ['experience-products'] }
-)
-
-const getCachedSeasonCollections = unstable_cache(
-  () => getSeasonCollections('season-1', '2025-edition', { first: 24 }),
-  ['experience-v2-season-collections'],
+const getCachedExperienceBundle = unstable_cache(
+  () =>
+    getExperienceLampAndSeasonCollections('street_lamp', 'season-1', '2025-edition', { first: 24 }),
+  ['experience-shopify-bundle-v1'],
   { revalidate: 300, tags: ['experience-products'] }
 )
 
@@ -33,9 +28,10 @@ function filterLamp(products: ShopifyProduct[]) {
   )
 }
 
-type SeasonResult = Awaited<ReturnType<typeof getCachedSeasonCollections>>[0]
-
-function buildProductsFromSeasons(season1Result: SeasonResult, season2Result: SeasonResult) {
+function buildProductsFromSeasons(
+  season1Result: ShopifyCollection | null,
+  season2Result: ShopifyCollection | null
+) {
   const productsSeason1 = filterLamp(
     season1Result?.products?.edges?.map((e) => e.node) ?? []
   )
@@ -61,10 +57,12 @@ export default async function ExperienceV2Page({ searchParams }: ExperienceV2Pag
   const resolved = await searchParams
   const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
 
-  const [lamp, [season1Result, season2Result]] = await Promise.all([
-    getCachedLamp().catch(() => null),
-    getCachedSeasonCollections(),
-  ])
+  const bundle = await getCachedExperienceBundle().catch(() => ({
+    lamp: null as ShopifyProduct | null,
+    season1: null as ShopifyCollection | null,
+    season2: null as ShopifyCollection | null,
+  }))
+  const { lamp, season1: season1Result, season2: season2Result } = bundle
 
   if (!lamp) {
     return (

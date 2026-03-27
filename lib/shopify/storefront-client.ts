@@ -16,8 +16,16 @@ const SHOPIFY_SHOP = process.env.SHOPIFY_SHOP || process.env.NEXT_PUBLIC_SHOPIFY
 // Storefront API token (not Admin API token which starts with shpat_)
 const STOREFRONT_TOKEN = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || ''
 const API_VERSION = '2024-01'
-// 35s default: cold start + Shopify latency often exceed 20s; set SHOPIFY_STOREFRONT_TIMEOUT_MS in Vercel if needed
+// 35s default: cold start + Shopify latency often exceed 20s; set SHOPIFY_STOREFRONT_TIMEOUT_MS in Vercel if needed.
+// Optional SHOPIFY_STOREFRONT_RETRY_DELAY_MS (default 750) pauses before the one timeout retry; set to 0 to disable.
 const STOREFRONT_TIMEOUT_MS = Number(process.env.SHOPIFY_STOREFRONT_TIMEOUT_MS || 35000)
+/** Pause before timeout retry so cold-start / connection churn can settle (0 to disable). */
+const STOREFRONT_RETRY_DELAY_MS = Number(process.env.SHOPIFY_STOREFRONT_RETRY_DELAY_MS ?? 750)
+
+function storefrontRetryDelay(): Promise<void> {
+  if (STOREFRONT_RETRY_DELAY_MS <= 0) return Promise.resolve()
+  return new Promise((r) => setTimeout(r, STOREFRONT_RETRY_DELAY_MS))
+}
 
 const STOREFRONT_URL = `https://${SHOPIFY_SHOP}/api/${API_VERSION}/graphql.json`
 
@@ -126,6 +134,7 @@ export async function storefrontQuery<T>(
       // Retry once on timeout — Vercel serverless cold starts can push the first
       // request over the limit; a second attempt usually succeeds.
       console.warn(`[Shopify] First attempt timed out after ${STOREFRONT_TIMEOUT_MS}ms — retrying once`)
+      await storefrontRetryDelay()
       try {
         response = await attemptFetch()
       } catch (retryError: any) {
@@ -977,8 +986,8 @@ export async function getSeasonCollections(
   const query = `
     ${COLLECTION_FRAGMENT}
     ${PRODUCT_LIST_FRAGMENT}
-    query GetSeasonCollections($first: Int!) {
-      season1: collection(handle: "${handle1}") {
+    query GetSeasonCollections($h1: String!, $h2: String!, $first: Int!) {
+      season1: collection(handle: $h1) {
         ...CollectionFields
         products(first: $first, sortKey: MANUAL) {
           edges {
@@ -992,7 +1001,7 @@ export async function getSeasonCollections(
           }
         }
       }
-      season2: collection(handle: "${handle2}") {
+      season2: collection(handle: $h2) {
         ...CollectionFields
         products(first: $first, sortKey: MANUAL) {
           edges {
@@ -1013,11 +1022,81 @@ export async function getSeasonCollections(
     const data = await storefrontQuery<{
       season1: ShopifyCollection | null
       season2: ShopifyCollection | null
-    }>(query, { first })
+    }>(query, { h1: handle1, h2: handle2, first })
     return [data.season1, data.season2]
   } catch (err) {
     console.error('[Shopify] getSeasonCollections failed:', err)
     return [null, null]
+  }
+}
+
+export type ExperienceLampAndSeasons = {
+  lamp: ShopifyProduct | null
+  season1: ShopifyCollection | null
+  season2: ShopifyCollection | null
+}
+
+/**
+ * One Storefront round-trip for the lamp product plus two season collections.
+ * Prefer this over parallel getProduct + getSeasonCollections on experience pages
+ * so cold starts do not open two concurrent Storefront requests that can both hit the client timeout.
+ */
+export async function getExperienceLampAndSeasonCollections(
+  lampHandle: string,
+  seasonHandle1: string,
+  seasonHandle2: string,
+  options: { first?: number } = {}
+): Promise<ExperienceLampAndSeasons> {
+  const { first = 24 } = options
+
+  const query = `
+    ${PRODUCT_FRAGMENT}
+    ${COLLECTION_FRAGMENT}
+    ${PRODUCT_LIST_FRAGMENT}
+    query GetExperienceLampAndSeasons($lamp: String!, $h1: String!, $h2: String!, $first: Int!) {
+      lampProduct: product(handle: $lamp) {
+        ...ProductFields
+      }
+      season1: collection(handle: $h1) {
+        ...CollectionFields
+        products(first: $first, sortKey: MANUAL) {
+          edges {
+            node {
+              ...ProductListFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+      season2: collection(handle: $h2) {
+        ...CollectionFields
+        products(first: $first, sortKey: MANUAL) {
+          edges {
+            node {
+              ...ProductListFields
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  const data = await storefrontQuery<{
+    lampProduct: ShopifyProduct | null
+    season1: ShopifyCollection | null
+    season2: ShopifyCollection | null
+  }>(query, { lamp: lampHandle, h1: seasonHandle1, h2: seasonHandle2, first })
+  return {
+    lamp: data.lampProduct ?? null,
+    season1: data.season1 ?? null,
+    season2: data.season2 ?? null,
   }
 }
 
