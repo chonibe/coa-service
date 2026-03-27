@@ -1,10 +1,16 @@
 'use client'
 
+import { Fragment, useMemo } from 'react'
+import Image from 'next/image'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+
+const THUMB_PX = 36
+const MAX_THUMBS = 5
 
 export interface ExperienceCheckoutStickyBarProps {
   lamp: ShopifyProduct
@@ -13,6 +19,70 @@ export interface ExperienceCheckoutStickyBarProps {
   selectedArtworks: ShopifyProduct[]
   /** Lamp + artworks subtotal before promo (same basis as OrderBar). */
   orderSubtotal: number
+}
+
+function firstImageUrl(product: ShopifyProduct): string | null {
+  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
+}
+
+type Slot = { key: string; product: ShopifyProduct; isLamp: boolean }
+
+function PlusSep({ theme }: { theme: 'light' | 'dark' }) {
+  return (
+    <span
+      className={cn(
+        'shrink-0 self-center text-base font-semibold leading-none',
+        theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
+      )}
+      aria-hidden
+    >
+      +
+    </span>
+  )
+}
+
+function StickyThumb({
+  product,
+  isLamp,
+  theme,
+}: {
+  product: ShopifyProduct
+  isLamp: boolean
+  theme: 'light' | 'dark'
+}) {
+  const raw = firstImageUrl(product)
+  const src = raw ? (getShopifyImageUrl(raw, THUMB_PX * 2) ?? raw) : null
+
+  return (
+    <div
+      className={cn(
+        'relative h-9 w-9 shrink-0 overflow-hidden rounded-md border',
+        theme === 'light' ? 'border-neutral-200 bg-neutral-100' : 'border-white/15 bg-[#201c1c]'
+      )}
+      title={product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')}
+    >
+      {src ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="object-cover"
+          sizes={`${THUMB_PX}px`}
+          unoptimized
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center">
+          {isLamp ? (
+            <ExperienceOrderLampIcon
+              className={cn('h-5 w-5', theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]')}
+            />
+          ) : (
+            <span className="text-xs text-neutral-400 dark:text-[#b89090]">—</span>
+          )}
+        </span>
+      )}
+    </div>
+  )
 }
 
 /**
@@ -29,13 +99,40 @@ export function ExperienceCheckoutStickyBar({
   const { theme } = useExperienceTheme()
 
   const visible = selectedArtworks.length >= 1
-  if (!visible) return null
-
-  const primary = selectedArtworks[selectedArtworks.length - 1]
-  const extra = selectedArtworks.length - 1
-  const artist = (primary.vendor ?? '').trim() || 'Artist'
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
-  const showLamp = lampQuantity > 0
+
+  const slots = useMemo<Slot[]>(() => {
+    const out: Slot[] = []
+    for (let i = 0; i < lampQuantity; i++) {
+      out.push({ key: `lamp-${i}`, product: lamp, isLamp: true })
+    }
+    selectedArtworks.forEach((product, i) => {
+      out.push({ key: `${product.id}-${i}`, product, isLamp: false })
+    })
+    return out
+  }, [lamp, lampQuantity, selectedArtworks])
+
+  const { visibleSlots, overflowCount } = useMemo(() => {
+    if (slots.length <= MAX_THUMBS) {
+      return { visibleSlots: slots, overflowCount: 0 }
+    }
+    const cap = MAX_THUMBS - 1
+    return {
+      visibleSlots: slots.slice(0, cap),
+      overflowCount: slots.length - cap,
+    }
+  }, [slots])
+
+  const summaryLabel = useMemo(() => {
+    const parts: string[] = []
+    if (lampQuantity > 0) {
+      parts.push(`${lampQuantity} lamp${lampQuantity > 1 ? 's' : ''}`)
+    }
+    parts.push(`${selectedArtworks.length} artwork${selectedArtworks.length !== 1 ? 's' : ''}`)
+    return `Checkout summary: ${parts.join(', ')}`
+  }, [lampQuantity, selectedArtworks.length])
+
+  if (!visible) return null
 
   return (
     <div
@@ -47,70 +144,32 @@ export function ExperienceCheckoutStickyBar({
       )}
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
       role="region"
-      aria-label="Checkout summary"
+      aria-label={summaryLabel}
     >
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pt-3 md:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          {showLamp && (
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {visibleSlots.map((slot, index) => (
+            <Fragment key={slot.key}>
+              {index > 0 && <PlusSep theme={theme} />}
+              <StickyThumb product={slot.product} isLamp={slot.isLamp} theme={theme} />
+            </Fragment>
+          ))}
+          {overflowCount > 0 && (
             <>
-              <span
-                className="flex shrink-0 flex-col items-center gap-0.5"
-                title={lamp.title ?? 'Street Lamp'}
-              >
-                <ExperienceOrderLampIcon
-                  className={cn(
-                    'h-7 w-7',
-                    theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
-                  )}
-                />
-                {lampQuantity > 1 && (
-                  <span
-                    className={cn(
-                      'text-[10px] font-semibold leading-none tabular-nums',
-                      theme === 'light' ? 'text-neutral-500' : 'text-white/60'
-                    )}
-                    aria-label={`${lampQuantity} lamps`}
-                  >
-                    ×{lampQuantity}
-                  </span>
-                )}
-              </span>
-              <span
+              <PlusSep theme={theme} />
+              <div
                 className={cn(
-                  'shrink-0 self-center text-base font-semibold leading-none',
-                  theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border text-xs font-bold tabular-nums',
+                  theme === 'light'
+                    ? 'border-neutral-200 bg-neutral-100 text-neutral-600'
+                    : 'border-white/15 bg-white/10 text-white/80'
                 )}
-                aria-hidden
+                title={`${overflowCount} more items`}
               >
-                +
-              </span>
+                +{overflowCount}
+              </div>
             </>
           )}
-          <p
-            className={cn(
-              'min-w-0 flex-1 truncate text-sm font-medium leading-tight',
-              theme === 'light' ? 'text-neutral-900' : 'text-white'
-            )}
-          >
-            <span className="font-semibold">{primary.title}</span>
-            <span className={cn('font-normal', theme === 'light' ? 'text-neutral-600' : 'text-white/70')}>
-              {' '}
-              — {artist}{' '}
-            </span>
-            <span className="text-emerald-500 dark:text-emerald-400" aria-hidden>
-              ✓
-            </span>
-            {extra > 0 && (
-              <span
-                className={cn(
-                  'ml-1.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
-                  theme === 'light' ? 'bg-neutral-100 text-neutral-600' : 'bg-white/10 text-white/80'
-                )}
-              >
-                +{extra}
-              </span>
-            )}
-          </p>
         </div>
         <button
           type="button"
