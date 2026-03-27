@@ -213,20 +213,20 @@ export function SplineFullScreen({
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
-  /** Glass pill — same language as [`ArtworkCarouselBar`](./ArtworkCarouselBar.tsx) glass + control. */
-  const backToTopGlassClass = cn(
-    'inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]',
-    'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
+  /** Compact glass control — sits left, above carousel + add row (see docked wrapper padding). */
+  const backToTopIconClass = cn(
+    'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-[0.96]',
+    'backdrop-blur-xl backdrop-saturate-150 shadow-md',
     theme === 'light'
       ? [
           'border border-white/80 bg-white/45 text-neutral-800',
-          'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
-          'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
+          'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
+          'hover:bg-white/60 hover:border-white',
         ]
       : [
           'border border-white/30 bg-white/18 text-[#f0e8e8]',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
+          'shadow-[0_6px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)]',
+          'hover:bg-white/28 hover:border-white/45',
         ]
   )
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -783,31 +783,37 @@ export function SplineFullScreen({
             )
           })}
         {hasGallery && !backToTopDocked && (
-          <div className="flex-shrink-0 flex justify-center pb-10 pt-4 px-4">
+          <div className="flex flex-shrink-0 justify-start px-4 pb-10 pt-4 md:px-6">
             <button
               type="button"
               onClick={handleGalleryBackToTop}
-              className={backToTopGlassClass}
+              className={backToTopIconClass}
+              title="Back to top of preview"
               aria-label="Back to top of preview"
             >
-              <ArrowUp className="w-4 h-4 shrink-0" strokeWidth={2.5} aria-hidden />
-              Back to top
+              <ArrowUp className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
             </button>
           </div>
         )}
       </div>
 
-      {/* Docked Back to top — only after scrolling past the Spline / thumbnail area (inline button hidden to avoid duplicate) */}
+      {/* Docked back-to-top — left, compact; lifted above carousel strip (+ add artwork row) */}
       {hasGallery && backToTopDocked && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[19] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[19] flex justify-start pl-4 pr-4 md:pl-6 md:pr-6"
+          style={{
+            paddingBottom:
+              'calc(4.75rem + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
+          }}
+        >
           <button
             type="button"
             onClick={handleGalleryBackToTop}
-            className={cn('pointer-events-auto', backToTopGlassClass)}
+            className={cn('pointer-events-auto', backToTopIconClass)}
+            title="Back to top of preview"
             aria-label="Back to top of preview"
           >
-            <ArrowUp className="w-4 h-4 shrink-0" strokeWidth={2.5} aria-hidden />
-            Back to top
+            <ArrowUp className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
           </button>
         </div>
       )}
