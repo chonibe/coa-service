@@ -46,6 +46,32 @@ function phoneCountryToCountry(dialCode: string): string {
   return PHONE_CODE_TO_COUNTRY[dialCode] ?? 'US'
 }
 
+/**
+ * Slide-over phone country list only when the dialog is in the bottom-sheet layout (Tailwind &lt; sm, 640px).
+ * From `sm:` up the dialog is centered like desktop; using the same breakpoint avoids a second panel beside the form.
+ */
+function useNarrowViewportForPhoneCountrySheet() {
+  const subscribe = React.useCallback((onStoreChange: () => void) => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return () => {}
+    }
+    const mq = window.matchMedia('(max-width: 639px)')
+    mq.addEventListener('change', onStoreChange)
+    return () => mq.removeEventListener('change', onStoreChange)
+  }, [])
+  const getSnapshot = React.useCallback(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false
+    }
+    try {
+      return window.matchMedia('(max-width: 639px)').matches
+    } catch {
+      return false
+    }
+  }, [])
+  return React.useSyncExternalStore(subscribe, getSnapshot, () => false)
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -184,6 +210,7 @@ export function AddressModal({
   const [touchedFields, setTouchedFields] = React.useState<Partial<Record<keyof CheckoutAddress, boolean>>>({})
 
   const isMobile = useMobile()
+  const narrowPhoneCountrySheet = useNarrowViewportForPhoneCountrySheet()
 
   // UI state
   const [sameAsBilling, setSameAsBilling] = React.useState(false)
@@ -253,6 +280,11 @@ export function AddressModal({
       setCountrySearch('')
     }
   }, [showCountryPicker])
+
+  // Centered dialog (sm+) uses Select; never leave the slide sheet open after resize.
+  React.useEffect(() => {
+    if (!narrowPhoneCountrySheet) setShowPhonePicker(false)
+  }, [narrowPhoneCountrySheet])
 
   // Focus highlighted field when modal opens
   React.useEffect(() => {
@@ -639,7 +671,7 @@ export function AddressModal({
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 z-[101] flex flex-col',
+            'fixed inset-x-0 bottom-0 z-[101] flex flex-col overflow-hidden relative',
             'rounded-t-2xl sm:rounded-xl',
             isDark ? 'bg-[#171515]' : 'bg-white',
             // Mobile: nearly full screen with rounded top; desktop: centered modal
@@ -1169,7 +1201,7 @@ export function AddressModal({
                         !!getFieldError('phoneNumber') && 'ring-2 ring-amber-500 border-amber-500',
                         isFieldValid('phoneNumber') && !getFieldError('phoneNumber') && (isDark ? 'border-emerald-600' : 'border-emerald-500')
                       )}>
-                        {isMobile ? (
+                        {narrowPhoneCountrySheet ? (
                           <button
                             type="button"
                             onClick={() => setShowPhonePicker(true)}
@@ -1362,67 +1394,69 @@ export function AddressModal({
             </div>
           </div>
 
-          {/* Phone picker sheet — slides in from right */}
-          <div className={cn(
-            'absolute inset-0 z-10 flex flex-col transition-transform duration-300 ease-in-out',
-            isDark ? 'bg-[#171515]' : 'bg-white',
-            showPhonePicker ? 'translate-x-0' : 'translate-x-full pointer-events-none'
-          )}>
+          {/* Phone picker sheet — narrow viewports only; sm+ uses inline Select above */}
+          {narrowPhoneCountrySheet && (
             <div className={cn(
-              'flex shrink-0 items-center gap-3 border-b px-4 py-4',
-              isDark ? 'border-white/10' : 'border-neutral-100'
+              'absolute inset-0 z-10 flex flex-col transition-transform duration-300 ease-in-out',
+              isDark ? 'bg-[#171515]' : 'bg-white',
+              showPhonePicker ? 'translate-x-0' : 'translate-x-full pointer-events-none'
             )}>
-              <button
-                type="button"
-                onClick={() => setShowPhonePicker(false)}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-full transition-colors',
-                  isDark
-                    ? 'text-[#c4a0a0] hover:bg-[#201c1c] hover:text-[#d4b8b8]'
-                    : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
-                )}
-                aria-label="Back"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-neutral-950')}>
-                Phone country code
-              </span>
+              <div className={cn(
+                'flex shrink-0 items-center gap-3 border-b px-4 py-4',
+                isDark ? 'border-white/10' : 'border-neutral-100'
+              )}>
+                <button
+                  type="button"
+                  onClick={() => setShowPhonePicker(false)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-full transition-colors',
+                    isDark
+                      ? 'text-[#c4a0a0] hover:bg-[#201c1c] hover:text-[#d4b8b8]'
+                      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+                  )}
+                  aria-label="Back"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-neutral-950')}>
+                  Phone country code
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {PHONE_DIAL_OPTIONS.map(({ dial }) => {
+                  const countryCode = PHONE_CODE_TO_COUNTRY[dial] ?? ''
+                  const countryName = countryOptions.find((c) => c.code === countryCode)?.name ?? dial
+                  const isSelected = form.phoneCountryCode === dial
+                  return (
+                    <button
+                      key={dial}
+                      type="button"
+                      onClick={() => {
+                        setForm((p) => ({ ...p, phoneCountryCode: dial }))
+                        setShowPhonePicker(false)
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-4 py-3.5 text-sm text-left transition-colors',
+                        isDark ? 'hover:bg-[#201c1c]' : 'hover:bg-neutral-50',
+                        isSelected
+                          ? isDark ? 'text-[#60A5FA] font-medium' : 'text-[#047AFF] font-medium'
+                          : isDark ? 'text-white' : 'text-neutral-900'
+                      )}
+                    >
+                      <span className="text-base w-6 text-center" aria-hidden>{flagEmoji(countryCode)}</span>
+                      <span className="flex-1">{countryName}</span>
+                      <span className={cn('tabular-nums text-xs', isDark ? 'text-[#b89090]' : 'text-neutral-500')}>
+                        {dial}
+                      </span>
+                      {isSelected && (
+                        <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]')} />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {PHONE_DIAL_OPTIONS.map(({ dial }) => {
-                const countryCode = PHONE_CODE_TO_COUNTRY[dial] ?? ''
-                const countryName = countryOptions.find((c) => c.code === countryCode)?.name ?? dial
-                const isSelected = form.phoneCountryCode === dial
-                return (
-                  <button
-                    key={dial}
-                    type="button"
-                    onClick={() => {
-                      setForm((p) => ({ ...p, phoneCountryCode: dial }))
-                      setShowPhonePicker(false)
-                    }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-4 py-3.5 text-sm text-left transition-colors',
-                      isDark ? 'hover:bg-[#201c1c]' : 'hover:bg-neutral-50',
-                      isSelected
-                        ? isDark ? 'text-[#60A5FA] font-medium' : 'text-[#047AFF] font-medium'
-                        : isDark ? 'text-white' : 'text-neutral-900'
-                    )}
-                  >
-                    <span className="text-base w-6 text-center" aria-hidden>{flagEmoji(countryCode)}</span>
-                    <span className="flex-1">{countryName}</span>
-                    <span className={cn('tabular-nums text-xs', isDark ? 'text-[#b89090]' : 'text-neutral-500')}>
-                      {dial}
-                    </span>
-                    {isSelected && (
-                      <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]')} />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
