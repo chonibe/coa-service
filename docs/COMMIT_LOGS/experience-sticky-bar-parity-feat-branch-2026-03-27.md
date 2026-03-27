@@ -7,7 +7,7 @@ Brought [`feat/granular-street-pricing-ladder`](../../) in line with production 
 ## Checklist
 
 - [x] [`app/(store)/shop/experience-v2/components/ExperienceOrderLampIcon.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceOrderLampIcon.tsx) — new shared glyph
-- [x] [`app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) — main-style sticky bar
+- [x] [`app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) — lamp + artwork strip; thumbnails use **`aspect-[14/20]`** and **`rounded-[15px]`** (same as [`ArtworkCarouselBar`](../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)), `getShopifyImageUrl` @ 280px
 - [x] [`app/(store)/shop/experience-v2/components/OrderBar.tsx`](../../app/(store)/shop/experience-v2/components/OrderBar.tsx) — use `ExperienceOrderLampIcon` instead of inline SVG
 - [x] [`app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — pass `lamp`, `lampQuantity`
 - [x] [`app/(store)/shop/experience/components/ExperienceV2Client.tsx`](../../app/(store)/shop/experience/components/ExperienceV2Client.tsx) — same props
