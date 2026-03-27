@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { LazyVideo } from '@/components/LazyVideo'
 
@@ -44,6 +45,10 @@ interface MeetTheStreetLampProps {
   pricingChips?: string[]
   cue?: string
   cueHref?: string
+  /** Primary hero CTA (e.g. Start your collection → experience) */
+  primaryCta?: { label: string; href: string }
+  /** Short trust bullets under CTA (shipping, guarantee, returns) */
+  trustMicroItems?: readonly string[]
   className?: string
 }
 
@@ -64,6 +69,8 @@ export function MeetTheStreetLamp({
   pricingChips,
   cue,
   cueHref = '/experience',
+  primaryCta,
+  trustMicroItems,
   className,
 }: MeetTheStreetLampProps) {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -132,17 +139,17 @@ export function MeetTheStreetLamp({
           )}
         >
           {taglineLines[0] ? (
-            <p className="text-base font-medium text-[#FFBA94]/90 sm:text-lg md:text-xl">
+            <p className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
               {taglineLines[0]}
             </p>
           ) : null}
           {taglineLines[1] ? (
-            <p className="text-lg font-semibold tracking-tight text-[#FFBA94] sm:text-xl md:text-2xl">
+            <p className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
               {taglineLines[1]}
             </p>
           ) : null}
           {taglineLines.slice(2).map((line) => (
-            <p key={line} className="text-base text-[#FFBA94]/85 sm:text-lg">
+            <p key={line} className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
               {line}
             </p>
           ))}
@@ -173,6 +180,34 @@ export function MeetTheStreetLamp({
         aria-label={`Pricing: ${priceText}`}
       >
         <span className={pricingGlassClass}>{priceText}</span>
+      </div>
+    ) : null
+
+  const renderCtaAndTrust = (align: 'center' | 'left') =>
+    primaryCta || (trustMicroItems && trustMicroItems.length > 0) ? (
+      <div
+        className={cn(
+          'mt-5 flex w-full flex-col gap-3 sm:mt-6',
+          align === 'center' ? 'items-center text-center' : 'items-start text-left'
+        )}
+      >
+        {primaryCta ? (
+          <Link
+            href={primaryCta.href}
+            prefetch={false}
+            className={cn(
+              'inline-flex min-h-[48px] items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors',
+              'bg-[#047AFF] hover:bg-[#0366d6] hover:opacity-95'
+            )}
+          >
+            {primaryCta.label}
+          </Link>
+        ) : null}
+        {trustMicroItems && trustMicroItems.length > 0 ? (
+          <p className="max-w-md text-xs leading-relaxed text-[#FFBA94]/75 sm:text-sm">
+            {trustMicroItems.join(' · ')}
+          </p>
+        ) : null}
       </div>
     ) : null
 
@@ -258,6 +293,7 @@ export function MeetTheStreetLamp({
             </div>
           </div>
           {renderStageBlock({ variant: 'mobile' })}
+          {renderCtaAndTrust('center')}
         </div>
 
         {/* Desktop: full-fold row — video left, copy + stages right */}
@@ -295,6 +331,7 @@ export function MeetTheStreetLamp({
             <div className="flex min-h-0 w-full flex-col items-start justify-center overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2">
               {renderTitleBlock('desktopLeft')}
               {renderPricingBelowSubtitle()}
+              {renderCtaAndTrust('left')}
             </div>
             <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">{renderStageBlock({ variant: 'desktop' })}</div>
           </div>

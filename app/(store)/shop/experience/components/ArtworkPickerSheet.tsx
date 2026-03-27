@@ -22,6 +22,8 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
+import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -100,6 +102,8 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
+  /** Street Collector ladder chip from Supabase sold count (replaces percent-based chip when present). */
+  streetPricing?: { label: string; priceUsd: number | null; subcopy: string } | null
 }
 
 function ArtworkCardV2({
@@ -114,6 +118,7 @@ function ArtworkCardV2({
   isNewDrop = false,
   isEarlyAccess = false,
   suppressSelectionRing = false,
+  streetPricing = null,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
@@ -227,14 +232,25 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        <EditionBadgeForProduct
-          product={product}
-          chipOnly
-          className={cn(
-            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
-            '[&>span]:pointer-events-auto'
-          )}
-        />
+        {streetPricing ? (
+          <StreetPricingChip
+            label={streetPricing.label}
+            priceUsd={streetPricing.priceUsd}
+            subcopy={streetPricing.subcopy}
+            className={cn(
+              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5'
+            )}
+          />
+        ) : (
+          <EditionBadgeForProduct
+            product={product}
+            chipOnly
+            className={cn(
+              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
+              '[&>span]:pointer-events-auto'
+            )}
+          />
+        )}
       </motion.div>
 
       <div
@@ -300,6 +316,8 @@ interface ArtworkPickerSheetProps {
   cartOrder?: string[]
   /** When set, controls spotlight card open/closed UI independently of filter state (avoids mismatched names vs filters). */
   spotlightBannerExpanded?: boolean
+  /** Numeric Shopify product id → Street Collector ladder copy */
+  streetEditionByProductId?: Record<string, { label: string; priceUsd: number | null; subcopy: string }>
 }
 
 export function ArtworkPickerSheet({
@@ -325,6 +343,7 @@ export function ArtworkPickerSheet({
   productsForFilterPanel = [],
   cartOrder = [],
   spotlightBannerExpanded,
+  streetEditionByProductId = {},
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -351,6 +370,15 @@ export function ArtworkPickerSheet({
     const norm = id.replace(/^gid:\/\/shopify\/Product\//i, '') || id
     return spotlightIdSet.has(norm) || spotlightIdSet.has(id)
   }, [spotlightIdSet])
+
+  const streetPricingForProduct = useCallback(
+    (productId: string) => {
+      const k = normalizeShopifyProductId(productId)
+      if (!k) return null
+      return streetEditionByProductId[k] ?? null
+    },
+    [streetEditionByProductId]
+  )
 
   /** Parent passes `spotlightBannerExpanded` so “filtered” UI tracks accordion, not API vs Shopify vendor strings. */
   const spotlightAccordionExpanded =
@@ -624,6 +652,7 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
+                                streetPricing={streetPricingForProduct(product1.id)}
                               />
                             </div>
                           )}
@@ -656,6 +685,7 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
+                                streetPricing={streetPricingForProduct(product2.id)}
                               />
                             </div>
                           )}
@@ -673,6 +703,7 @@ export function ArtworkPickerSheet({
                                 priorityLoad={virtualRow.index < 3}
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                                streetPricing={streetPricingForProduct(product1.id)}
                               />
                             </div>
                           )}

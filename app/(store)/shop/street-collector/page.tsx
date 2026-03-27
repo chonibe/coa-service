@@ -276,8 +276,7 @@ export default async function StreetCollectorPage() {
         <Link
           href={streetCollectorContent.experienceUrl}
           prefetch={false}
-          className="w-full max-w-md flex items-center justify-center min-h-[52px] text-sm font-semibold rounded-lg px-5 py-3.5 shadow-lg transition-colors hover:opacity-90"
-          style={{ backgroundColor: '#FFBA94', color: '#390000' }}
+          className="flex min-h-[52px] w-full max-w-md items-center justify-center rounded-lg bg-[#047AFF] px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#0366d6] hover:opacity-90"
         >
           {streetCollectorContent.hero.cta.text}
         </Link>
@@ -327,8 +326,51 @@ export default async function StreetCollectorPage() {
         }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
+        primaryCta={streetCollectorContent.meetTheLamp.primaryCta}
+        trustMicroItems={streetCollectorContent.meetTheLamp.trustMicroItems}
         className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
       />
+
+      {/* How collecting works — bridge to /experience */}
+      <SectionWrapper spacing="xs" background="experience" className="!py-8 sm:!py-10">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-serif text-2xl font-medium tracking-tight text-[#FFBA94] sm:text-3xl md:text-4xl">
+              {streetCollectorContent.funnelBridge.title}
+            </h2>
+            <p className="mt-2 text-sm text-[#FFBA94]/80 sm:text-base">
+              {streetCollectorContent.funnelBridge.subtitle}
+            </p>
+            <ol className="mt-6 space-y-3 text-left text-sm text-[#FFBA94]/90 sm:text-base">
+              {streetCollectorContent.funnelBridge.steps.map((step, i) => (
+                <li key={step} className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#047AFF]/20 text-xs font-bold text-[#047AFF]">
+                    {i + 1}
+                  </span>
+                  <span className="pt-0.5">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-xs text-[#FFBA94]/60 sm:text-sm">{streetCollectorContent.funnelBridge.reassurance}</p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href={streetCollectorContent.funnelBridge.cta.url}
+                prefetch={false}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#047AFF] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6]"
+              >
+                {streetCollectorContent.funnelBridge.cta.text}
+              </Link>
+              <Link
+                href="/shop/reserve"
+                prefetch={false}
+                className="text-sm font-medium text-[#FFBA94]/90 underline underline-offset-2 hover:text-[#FFBA94]"
+              >
+                The Reserve — lock a price
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </SectionWrapper>
 
       {/* Bringing art into everyday life + In Collaboration With — unified section */}
       {featuredArtists.length > 0 && (

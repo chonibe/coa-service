@@ -65,6 +65,12 @@ export const streetCollectorContent = {
       },
     ],
     cue: '',
+    primaryCta: { label: 'Start your collection', href: EXPERIENCE_URL },
+    trustMicroItems: [
+      'Free worldwide shipping',
+      '12-month guarantee',
+      '30-day returns',
+    ] as const,
   },
   /** Value props with video + poster from thestreetcollector.com multi-column section */
   valuePropsSectionTitle: 'Bringing art into everyday life.',
@@ -364,6 +370,16 @@ export const streetCollectorContent = {
           {
             question: 'Do you ship internationally?',
             answer: 'Yes, to most countries in the world!',
+          },
+          {
+            question: 'How do artwork prices change as an edition sells?',
+            answer:
+              'Editions move through fixed stages (Ground Floor through Final) as copies sell. List price only moves up the ladder — there are no flash sales on the model. What you see in the configurator reflects the same ladder we use in the database after orders sync.',
+          },
+          {
+            question: 'What is The Reserve?',
+            answer:
+              'The Reserve is an optional membership that gives you a window of time to pay at a frozen artwork price while the public ladder advances. It is not a percentage-off discount; edition assignment after checkout still uses the same pipeline as every other order.',
           },
         ],
       },

@@ -70,8 +70,7 @@ export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
       <Link
         href={href}
         prefetch={false}
-        className="inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-md px-3 sm:px-4 py-1.5 sm:py-2 shadow-md transition-colors shrink-0 hover:opacity-90"
-        style={{ backgroundColor: '#FFBA94', color: '#390000' }}
+        className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#047AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6] hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
       >
         {text}
       </Link>

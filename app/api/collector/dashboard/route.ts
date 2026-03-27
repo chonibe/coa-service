@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
       ),
     )
 
-    let seriesMap = new Map<
+    const seriesMap = new Map<
       string,
       {
         id: string
@@ -553,6 +553,37 @@ export async function GET(request: NextRequest) {
       console.error("collector dashboard banking/subscription fetch error", err)
     }
 
+    let streetReserveLocks: Array<{
+      shopify_product_id: string
+      locked_price_usd: number
+      expires_at: string
+    }> = []
+
+    if (authoritativeEmail) {
+      try {
+        const sb = supabase as any
+        const { data: lockRows, error: lockErr } = await sb
+          .from("street_reserve_locks")
+          .select("shopify_product_id, locked_price_cents, expires_at")
+          .eq("customer_email", authoritativeEmail.toLowerCase())
+          .gt("expires_at", new Date().toISOString())
+
+        if (!lockErr && Array.isArray(lockRows)) {
+          streetReserveLocks = lockRows.map((r: {
+            shopify_product_id: string
+            locked_price_cents: number
+            expires_at: string
+          }) => ({
+            shopify_product_id: r.shopify_product_id,
+            locked_price_usd: Math.round((r.locked_price_cents / 100) * 100) / 100,
+            expires_at: r.expires_at,
+          }))
+        }
+      } catch {
+        streetReserveLocks = []
+      }
+    }
+
     // Certification summary
     const certifications = allLineItems.map((li) => {
       let status: "authenticated" | "pending" | "certificate_available" | "no_nfc" = "no_nfc"
@@ -611,6 +642,7 @@ export async function GET(request: NextRequest) {
       artistStats,
       banking,
       subscriptions,
+      streetReserveLocks,
     })
   } catch (error: any) {
     console.error("collector dashboard unexpected error", error)
