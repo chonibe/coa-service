@@ -23,6 +23,7 @@ experience-v2/
     ├── ArtworkPickerSheet.tsx  # Instagram-style slide-up selector (ArtworkStrip cards)
     ├── ArtworkCarouselBar.tsx  # Bottom carousel overlay (`reserveCheckoutBar` offsets strip above sticky checkout)
     ├── ExperienceCheckoutStickyBar.tsx  # Fixed checkout CTA when cart has artworks
+    ├── ExperienceOrderLampIcon.tsx      # Lamp silhouette (same glyph as OrderBar cart line)
     ├── ArtworkDetail.tsx       # Product sheet / inline panel (scarcity, edition narrative, CTA)
     └── EditionBadge.tsx        # Gallery-style edition stage copy (see lib/shop/edition-stages.ts)
 ```
@@ -47,7 +48,7 @@ Integrates with:
 - `ExperienceOrderContext` for header cart chip and OrderBar
 - `ArtworkDetail` drawer for artwork info
 - `OrderBar` for checkout
-- `ExperienceCheckoutStickyBar` — fixed bottom bar when ≥1 artwork is in the cart (lamp icon first when `lampQuantity > 0`, then primary artwork line + “Checkout · $total →”), calls `openOrderBar`; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses `reserveCheckoutBar` to lift the thumbnail strip above the bar
+- `ExperienceCheckoutStickyBar` — fixed bottom bar when ≥1 artwork is in the cart (`ExperienceOrderLampIcon` first when `lampQuantity > 0`, then primary artwork line + “Checkout · $total →”), calls `openOrderBar`; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses `reserveCheckoutBar` to lift the thumbnail strip above the bar
 
 **Implementation:** [`components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
 

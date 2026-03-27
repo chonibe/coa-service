@@ -1,6 +1,6 @@
 'use client'
 
-import { Lamp } from 'lucide-react'
+import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { cn, formatPriceCompact } from '@/lib/utils'
@@ -56,16 +56,12 @@ export function ExperienceCheckoutStickyBar({
               className="flex shrink-0 flex-col items-center gap-0.5"
               title={lamp.title ?? 'Street Lamp'}
             >
-              <span
+              <ExperienceOrderLampIcon
                 className={cn(
-                  'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
-                  theme === 'light'
-                    ? 'border-neutral-200 bg-neutral-100 text-neutral-800'
-                    : 'border-white/15 bg-white/10 text-[#f0e8e8]'
+                  'h-7 w-7',
+                  theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
                 )}
-              >
-                <Lamp className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              </span>
+              />
               {lampQuantity > 1 && (
                 <span
                   className={cn(

@@ -17,6 +17,7 @@ import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuiz
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { Checkbox, Label } from '@/components/ui'
+import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -491,9 +492,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         {lampQuantity > 0 && (
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
-              <svg viewBox="0 0 306 400" fill="currentColor" className={cn('w-7 h-7 shrink-0', 'text-neutral-400 dark:text-[#d4b8b8]')} xmlns="http://www.w3.org/2000/svg">
-                <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
-              </svg>
+              <ExperienceOrderLampIcon className={cn('h-7 w-7', 'text-neutral-400 dark:text-[#d4b8b8]')} />
               <span className="text-sm text-neutral-900 dark:text-[#f0e8e8] truncate min-w-0">Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
             </div>
             <div className="flex items-center justify-center gap-0.5 shrink-0 justify-self-center">
