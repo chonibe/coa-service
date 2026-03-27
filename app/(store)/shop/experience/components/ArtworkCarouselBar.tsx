@@ -26,6 +26,8 @@ interface ArtworkCarouselBarProps {
   stripMode?: 'collection' | 'watchlist'
   /** When in watchlist mode, switch back to collection thumbnails */
   onSwitchToCollection?: () => void
+  /** Lift strip above fixed checkout sticky bar (experience cart has artworks) */
+  reserveCheckoutBar?: boolean
 }
 
 export function ArtworkCarouselBar({
@@ -41,6 +43,7 @@ export function ArtworkCarouselBar({
   experienceReelRef,
   stripMode = 'collection',
   onSwitchToCollection,
+  reserveCheckoutBar = false,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -185,7 +188,10 @@ export function ArtworkCarouselBar({
     <div
       className={cn(
         /* Let wheel/touch pass through padding & fade so the main reel can scroll vertically */
-        'pointer-events-none absolute bottom-0 left-0 right-0 z-50 pb-safe transition-transform duration-300 ease-out',
+        'pointer-events-none absolute left-0 right-0 z-50 pb-safe transition-[transform,bottom] duration-300 ease-out',
+        reserveCheckoutBar
+          ? 'bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
+          : 'bottom-0',
         splineInView ? 'translate-y-0' : 'translate-y-full'
       )}
     >

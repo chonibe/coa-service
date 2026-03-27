@@ -67,6 +67,11 @@ const OrderBar = dynamic(
   { ssr: false }
 )
 
+const ExperienceCheckoutStickyBar = dynamic(
+  () => import('./ExperienceCheckoutStickyBar').then((m) => ({ default: m.ExperienceCheckoutStickyBar })),
+  { ssr: false }
+)
+
 const EXPERIENCE_CART_KEY = 'sc-experience-cart-v2'
 
 function loadExperienceCart(): { cartOrder: string[]; lampQuantity: number; lampPreviewOrder: string[] } {
@@ -1027,13 +1032,14 @@ export function ExperienceV2Client({
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
-          selectedArtworks={carouselArtworks}
-          activeIndex={activeCarouselIndex}
-          lampPreviewOrder={lampPreviewOrder}
-          onTapItem={handleTapCarouselItem}
-          onRemoveItem={handleRemoveCarouselSlot}
-          onOpenPicker={handleOpenPicker}
-        />
+        selectedArtworks={carouselArtworks}
+        reserveCheckoutBar={selectedArtworks.length >= 1}
+        activeIndex={activeCarouselIndex}
+        lampPreviewOrder={lampPreviewOrder}
+        onTapItem={handleTapCarouselItem}
+        onRemoveItem={handleRemoveCarouselSlot}
+        onOpenPicker={handleOpenPicker}
+      />
 
       {pickerHasBeenOpened && (
       <ArtworkPickerSheet
@@ -1142,6 +1148,11 @@ export function ExperienceV2Client({
           }
         />
       )}
+
+      <ExperienceCheckoutStickyBar
+        selectedArtworks={selectedArtworks}
+        orderSubtotal={orderTotal}
+      />
 
       <OrderBar
         lamp={lamp}

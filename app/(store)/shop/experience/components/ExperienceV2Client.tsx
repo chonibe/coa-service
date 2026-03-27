@@ -99,6 +99,14 @@ const OrderBar = dynamic(
   { ssr: false }
 )
 
+const ExperienceCheckoutStickyBar = dynamic(
+  () =>
+    import('../../experience-v2/components/ExperienceCheckoutStickyBar').then((m) => ({
+      default: m.ExperienceCheckoutStickyBar,
+    })),
+  { ssr: false }
+)
+
 const EXPERIENCE_CART_KEY = 'sc-experience-cart-v2'
 
 function loadExperienceCart(): { cartOrder: string[]; lampQuantity: number; lampPreviewOrder: string[] } {
@@ -1203,6 +1211,7 @@ export function ExperienceV2Client({
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={activeStripProducts}
+        reserveCheckoutBar={selectedArtworks.length >= 1}
         stripMode={carouselStripMode}
         onSwitchToCollection={
           isAuthenticated
@@ -1328,6 +1337,11 @@ export function ExperienceV2Client({
           }
         />
       )}
+
+      <ExperienceCheckoutStickyBar
+        selectedArtworks={selectedArtworks}
+        orderSubtotal={orderTotal}
+      />
 
       <OrderBar
         lamp={lamp}

@@ -21,7 +21,8 @@ experience-v2/
     ├── SplineFullScreen.tsx    # Full-viewport Spline 3D wrapper (exact V1 config)
     ├── ArtworkInfoBar.tsx      # Top bar: artwork name + artist, switch between 2 lamp sides
     ├── ArtworkPickerSheet.tsx  # Instagram-style slide-up selector (ArtworkStrip cards)
-    ├── ArtworkCarouselBar.tsx  # Bottom carousel overlay
+    ├── ArtworkCarouselBar.tsx  # Bottom carousel overlay (`reserveCheckoutBar` offsets strip above sticky checkout)
+    ├── ExperienceCheckoutStickyBar.tsx  # Fixed checkout CTA when cart has artworks
     ├── ArtworkDetail.tsx       # Product sheet / inline panel (scarcity, edition narrative, CTA)
     └── EditionBadge.tsx        # Gallery-style edition stage copy (see lib/shop/edition-stages.ts)
 ```
@@ -46,6 +47,7 @@ Integrates with:
 - `ExperienceOrderContext` for header cart chip and OrderBar
 - `ArtworkDetail` drawer for artwork info
 - `OrderBar` for checkout
+- `ExperienceCheckoutStickyBar` — fixed bottom bar when ≥1 artwork is in the cart (primary line + “Checkout · $total →”), calls `openOrderBar`; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses `reserveCheckoutBar` to lift the thumbnail strip above the bar
 
 **Implementation:** [`components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
 

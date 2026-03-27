@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout.
+The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. When at least one artwork is in the cart, a sticky bottom bar shows a primary line item and a **Checkout** CTA (opens the same OrderBar drawer as the header cart); see [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx).
 
 **Implementation**: [`app/shop/experience/`](../../../app/shop/experience/)
 
