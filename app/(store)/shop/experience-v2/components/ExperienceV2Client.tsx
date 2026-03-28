@@ -39,6 +39,7 @@ import {
 } from '@/lib/shop/experience-carousel-cart'
 import {
   experienceEarlyAccessForProduct,
+  experienceVendorsLooselyEqual,
   productMatchesSpotlight,
   spotlightOverridesForProduct,
 } from '@/lib/shop/experience-spotlight-match'
@@ -393,14 +394,16 @@ export function ExperienceV2Client({
         if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
         else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
         setFilters((prev) => {
-          if (prev.artists.includes(vendorKey)) return prev
+          if (prev.artists.some((a) => experienceVendorsLooselyEqual(a, vendorKey))) return prev
           return { ...prev, artists: [...prev.artists, vendorKey] }
         })
       } else {
         setFilters((prev) => ({
           ...prev,
           artists: prev.artists.filter(
-            (a) => a !== spotlightData.vendorName && a !== vendorKey
+            (a) =>
+              !experienceVendorsLooselyEqual(a, spotlightData.vendorName) &&
+              !experienceVendorsLooselyEqual(a, vendorKey)
           ),
         }))
       }
@@ -411,9 +414,11 @@ export function ExperienceV2Client({
   useEffect(() => {
     if (!spotlightData?.vendorName) return
     const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
-    const inFilters =
-      filters.artists.includes(spotlightData.vendorName) ||
-      (vendorKey ? filters.artists.includes(vendorKey) : false)
+    const inFilters = filters.artists.some(
+      (a) =>
+        experienceVendorsLooselyEqual(a, spotlightData.vendorName) ||
+        (vendorKey ? experienceVendorsLooselyEqual(a, vendorKey) : false)
+    )
     if (!inFilters) setSpotlightExpanded(false)
   }, [spotlightData?.vendorName, spotlightArtistVendorForFilter, filters.artists])
 
@@ -867,7 +872,9 @@ export function ExperienceV2Client({
       setFilters((prev) => ({
         ...prev,
         artists: prev.artists.filter(
-          (a) => a !== spotlightData.vendorName && a !== vendorKey
+          (a) =>
+            !experienceVendorsLooselyEqual(a, spotlightData.vendorName) &&
+            !experienceVendorsLooselyEqual(a, vendorKey)
         ),
       }))
     }
