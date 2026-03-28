@@ -24,6 +24,8 @@ import {
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
+import { streetEditionRowFromStorefrontProduct } from '@/lib/shop/street-edition-from-storefront'
 import {
   formatStreetArtworkListPrice,
   formatStreetNextSalesChipText,
@@ -401,20 +403,28 @@ export function ArtworkPickerSheet({
     return spotlightIdSet.has(norm) || spotlightIdSet.has(id)
   }, [spotlightIdSet])
 
+  const seasonBandsFallback: 1 | 2 = activeSeason === 'season2' ? 2 : 1
+
   const streetPricingForProduct = useCallback(
-    (productId: string) => {
-      const k = normalizeShopifyProductId(productId)
-      if (!k) return null
-      return streetEditionByProductId[k] ?? null
+    (product: ShopifyProduct) => {
+      const k = normalizeShopifyProductId(product.id)
+      if (k) {
+        const fromApi = streetEditionByProductId[k]
+        if (fromApi) return fromApi
+      }
+      return streetEditionRowFromStorefrontProduct(product, { seasonBandsFallback })
     },
-    [streetEditionByProductId]
+    [streetEditionByProductId, seasonBandsFallback]
   )
 
   /** Parent passes `spotlightBannerExpanded` so “filtered” UI tracks accordion, not API vs Shopify vendor strings. */
   const spotlightAccordionExpanded =
     spotlightBannerExpanded !== undefined
       ? spotlightBannerExpanded
-      : !!(spotlightData && filters?.artists?.includes(spotlightData.vendorName))
+      : !!(
+          spotlightData &&
+          filters?.artists?.some((a) => experienceVendorsLooselyEqual(a, spotlightData.vendorName))
+        )
 
   const activeFilterCount = useMemo(() => {
     if (!filters) return 0
@@ -682,7 +692,7 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
-                                streetPricing={streetPricingForProduct(product1.id)}
+                                streetPricing={streetPricingForProduct(product1)}
                               />
                             </div>
                           )}
@@ -715,7 +725,7 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
-                                streetPricing={streetPricingForProduct(product2.id)}
+                                streetPricing={streetPricingForProduct(product2)}
                               />
                             </div>
                           )}
@@ -733,7 +743,7 @@ export function ArtworkPickerSheet({
                                 priorityLoad={virtualRow.index < 3}
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
-                                streetPricing={streetPricingForProduct(product1.id)}
+                                streetPricing={streetPricingForProduct(product1)}
                               />
                             </div>
                           )}
