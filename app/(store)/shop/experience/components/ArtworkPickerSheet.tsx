@@ -224,7 +224,7 @@ function ArtworkCardV2({
 
         <div
           className={cn(
-            'absolute inset-x-0 top-0 z-[9] pointer-events-none flex flex-col justify-start gap-0.5 px-1.5 pt-1',
+            'absolute inset-x-0 top-0 z-[9] pointer-events-none flex flex-col items-center justify-start gap-0.5 px-1.5 pt-1',
             '[&_.picker-title-chip]:pointer-events-auto',
             (isNewDrop || isEarlyAccess) ? 'pt-9' : 'pt-2',
             isSelected &&
@@ -235,7 +235,7 @@ function ArtworkCardV2({
           <div className="flex w-full min-w-0 justify-center">
             <div
               className={cn(
-                'picker-title-chip inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-lg px-2 py-1',
+                'picker-title-chip flex w-full max-w-full min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
                 'text-white shadow-sm shadow-black/20'
@@ -243,8 +243,9 @@ function ArtworkCardV2({
             >
               <span
                 className={cn(
-                  'min-w-0 flex-1 text-left text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
-                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                  'min-w-0 text-center text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]',
+                  isSelected ? 'max-w-full' : 'max-w-[calc(100%-1.5rem)]'
                 )}
                 title={product.title}
               >
@@ -252,7 +253,7 @@ function ArtworkCardV2({
               </span>
               {!isSelected && (
                 <Plus
-                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
+                  className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
                   strokeWidth={2.5}
                   aria-hidden
                 />

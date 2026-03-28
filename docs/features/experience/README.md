@@ -274,8 +274,8 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 ## Version
 
 - Last updated: 2026-03-28
-- Version: 1.14.8
-- **+ with title**: Picker and configurator strip show the add **+** at the **end** of the top title chip when the artwork is not selected / not in cart (same glass treatment as the title text).
+- Version: 1.14.9
+- **+ with title**: Picker and configurator strip show the add **+** at the **end** of the top title chip when the artwork is not selected / not in cart (same glass treatment as the title text). Title chip uses **centered** text and `justify-center` so short labels sit in the middle; long titles stay centered in the available width beside the icon.
 - **Title on image (top)**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) show the artwork title in a glass chip at the **top** of the image (edition chip follows below when shown); strip card footer keeps price, edition, and actions only.
 - **Glass + affordances**: Top-right “add” chips on picker cards ([`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)), spotlight placeholder tiles ([`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)), and the sticky-bar add FAB ([`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)) use the same frosted treatment as the strip `+` control (`backdrop-blur-xl`, `backdrop-saturate-150`, translucent fill, border, inset highlight).
 - **Artist spine vertical alignment**: Two-up rows in [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) and [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) use `items-stretch` on the row and `self-stretch` on the spine column so the vertical artist label stays centered on the cross-axis (middle of the paired artwork cards).

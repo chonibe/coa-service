@@ -417,20 +417,20 @@ export function ArtworkCarouselBar({
                       >
                         <div
                           className={cn(
-                            'inline-flex max-w-full min-w-0 items-start gap-1 rounded-md px-1.5 py-0.5',
+                            'flex w-full max-w-full min-w-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5',
                             'border border-white/30 dark:border-white/20',
                             'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
                             'text-white shadow-sm shadow-black/20'
                           )}
                         >
                           <span
-                            className="min-w-0 flex-1 text-left text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
+                            className="min-w-0 max-w-[calc(100%-1rem)] text-center text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
                             title={artwork.title}
                           >
                             {artwork.title}
                           </span>
                           <Plus
-                            className="h-3 w-3 shrink-0 mt-0.5 text-white opacity-95"
+                            className="h-3 w-3 shrink-0 text-white opacity-95"
                             strokeWidth={2.5}
                             aria-hidden
                           />
