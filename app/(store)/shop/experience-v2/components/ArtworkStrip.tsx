@@ -380,6 +380,27 @@ function ArtworkCard({
             />
           </button>
         )}
+        <div
+          className={cn(
+            'absolute inset-x-0 top-0 z-[8] pointer-events-none flex flex-col justify-start gap-0.5 px-1.5 pt-1',
+            (isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected ? 'pt-9' : 'pt-2',
+            showWishlistHearts ? 'pr-10' : 'pr-8'
+          )}
+        >
+          <span
+            className={cn(
+              'block max-w-full min-w-0 rounded-lg px-2 py-1 text-center',
+              'border border-white/30 dark:border-white/20',
+              'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+              'text-[10px] font-semibold leading-snug tracking-tight',
+              'text-white shadow-sm shadow-black/20',
+              'line-clamp-2 break-words [overflow-wrap:anywhere]'
+            )}
+            title={product.title}
+          >
+            {product.title}
+          </span>
+        </div>
       </motion.div>
 
       <div
@@ -399,10 +420,6 @@ function ArtworkCard({
         }}
       >
         <div className="w-full min-w-0 flex flex-col items-center text-center">
-          <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
-            isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
-          )}>{product.title}</p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
               'text-xs transition-colors duration-200 ease-out',
