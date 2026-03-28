@@ -482,15 +482,19 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           </div>
         )}
       </div>
-      {/* Right: Product info — artist, title, add button */}
+      {/* Right: Product info — title, artist, add button */}
       <div className="flex-1 min-w-0 flex flex-col pl-2 overflow-hidden">
         <div
           data-experience-artwork-scroll
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8"
         >
           <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
-            {artist && <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">{artist}</p>}
-            <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">{product.title}</h2>
+            <h2 className="text-lg font-semibold text-[#FFBA94] leading-tight">{product.title}</h2>
+            {artist && (
+              <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest mt-0.5">
+                {artist}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {price && (
                 <div className="flex items-center gap-2">
@@ -802,16 +806,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 <div className="flex-1 min-w-0 flex flex-col min-w-0 pl-2 overflow-hidden">
                   {/* Scrollable content — pb ensures bottom text isn't cut off when scrolling */}
                   <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
-                  {/* Header: artist, title, price — edition size shown in scarcity / edition blocks */}
+                  {/* Header: title, artist, price — edition size shown in scarcity / edition blocks */}
                   <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
+                    <h2 className="text-lg font-semibold text-[#FFBA94] leading-tight">
+                      {product.title}
+                    </h2>
                     {artist && (
-                      <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
+                      <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest mt-0.5">
                         {artist}
                       </p>
                     )}
-                    <h2 className="text-lg font-semibold text-[#FFBA94] mt-0.5 leading-tight">
-                      {product.title}
-                    </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {price && (
                         <div className="flex items-center gap-2">
@@ -1555,14 +1559,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               )}
               <div className="space-y-2 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center min-w-0 w-full">
+                  <h2 className="text-sm font-semibold text-[#FFBA94] tracking-tight">
+                    {product.title}
+                  </h2>
                   {artist && (
-                    <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
+                    <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mt-0.5">
                       {artist}
                     </p>
                   )}
-                  <h2 className="text-sm font-semibold text-[#FFBA94] tracking-tight mt-0.5">
-                    {product.title}
-                  </h2>
                   {isSoldOut && (
                     <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded w-fit mt-1">
                       Sold out

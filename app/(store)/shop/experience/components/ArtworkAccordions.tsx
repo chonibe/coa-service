@@ -260,20 +260,20 @@ export function ArtworkAccordions({
         )}
         <div className="p-4 sm:p-5 text-center">
           <div className="mb-4">
-            {!omitArtistLine && detailArtistName && (
-              <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
-                {detailArtistName}
-              </p>
-            )}
             {product.title && (
-              <h2
-                className={cn(
-                  'text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white',
-                  !omitArtistLine && detailArtistName ? 'mt-0.5' : 'mt-0'
-                )}
-              >
+              <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0">
                 {product.title}
               </h2>
+            )}
+            {!omitArtistLine && detailArtistName && (
+              <p
+                className={cn(
+                  'text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest',
+                  product.title ? 'mt-0.5' : 'mt-0'
+                )}
+              >
+                {detailArtistName}
+              </p>
             )}
           </div>
           {editionSize != null && editionSize > 0 && (
