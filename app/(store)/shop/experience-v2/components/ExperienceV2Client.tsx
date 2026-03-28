@@ -45,6 +45,7 @@ import {
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import {
@@ -291,28 +292,18 @@ export function ExperienceV2Client({
       .map((p) => normalizeShopifyProductId(p.id))
       .filter((x): x is string => !!x)
     if (ids.length === 0) return
+    let cancelled = false
     const t = window.setTimeout(() => {
-      const unique = Array.from(new Set(ids)).slice(0, 120)
-      fetch(`/api/shop/edition-states?ids=${encodeURIComponent(unique.join(','))}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then(
-          (j: { items?: Array<{ productId: string } & StreetEditionStatesRow> }) => {
-            if (!j?.items) return
-            const map: Record<string, StreetEditionStatesRow> = {}
-            for (const item of j.items) {
-              map[item.productId] = {
-                label: item.label,
-                priceUsd: item.priceUsd,
-                subcopy: item.subcopy,
-                nextBump: item.nextBump ?? null,
-              }
-            }
-            setStreetEditionByProductId(map)
-          }
-        )
+      void fetchStreetEditionStatesMap(ids)
+        .then((map) => {
+          if (!cancelled) setStreetEditionByProductId(map)
+        })
         .catch(() => {})
     }, 400)
-    return () => clearTimeout(t)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   }, [allProducts])
 
   const streetLadderPrices = useMemo(() => {

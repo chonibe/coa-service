@@ -6,7 +6,10 @@ import {
   getStreetPricingStageDisplay,
   streetSeasonFromTotalEditions,
 } from '@/lib/shop/street-collector-pricing-stages'
-import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import {
+  EDITION_STATES_MAX_IDS_PER_REQUEST,
+  type StreetEditionStatesRow,
+} from '@/lib/shop/street-edition-states'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
           .map((p) => parseInt(p.replace(/\D/g, ''), 10))
           .filter((n) => Number.isFinite(n) && n > 0)
       )
-    ).slice(0, 120)
+    ).slice(0, EDITION_STATES_MAX_IDS_PER_REQUEST)
 
     if (numericIds.length === 0) {
       return NextResponse.json({ items: [] as EditionStateRow[] })
