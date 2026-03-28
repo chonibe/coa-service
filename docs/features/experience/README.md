@@ -274,7 +274,8 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 ## Version
 
 - Last updated: 2026-03-28
-- Version: 1.15.0
+- Version: 1.15.1
+- **Title chip width**: Image title glass chip (and picker edition chip above it) use **80%** of the image content width (`w-4/5`), centered.
 - **+ with title**: Picker and configurator strip show the add **+** at the **end** of the title chip when the artwork is not selected / not in cart (same glass treatment as the title text). Title chip uses **centered** text and `justify-center`; long titles stay centered beside the icon.
 - **Title on image (bottom)**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) show the artwork title in a glass chip at the **bottom** of the image; picker **edition** chip (non-ladder) sits **above** the title. [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) spotlight placeholders use the same bottom-aligned title row. Strip card footer keeps price, edition, and actions only.
 - **Glass + affordances**: Top-right “add” chips on picker cards ([`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)), spotlight placeholder tiles ([`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)), and the sticky-bar add FAB ([`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)) use the same frosted treatment as the strip `+` control (`backdrop-blur-xl`, `backdrop-saturate-150`, translucent fill, border, inset highlight).

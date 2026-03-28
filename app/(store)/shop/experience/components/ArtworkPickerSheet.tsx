@@ -232,13 +232,13 @@ function ArtworkCardV2({
             <EditionBadgeForProduct
               product={product}
               chipOnly
-              className="w-full shrink-0 [&>span]:pointer-events-auto"
+              className="w-4/5 max-w-[80%] shrink-0 [&>span]:pointer-events-auto"
             />
           ) : null}
           <div className="flex w-full min-w-0 justify-center">
             <div
               className={cn(
-                'picker-title-chip flex w-full max-w-full min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1',
+                'picker-title-chip flex w-4/5 max-w-[80%] min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
                 'text-white shadow-sm shadow-black/20'

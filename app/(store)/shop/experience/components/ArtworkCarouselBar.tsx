@@ -417,7 +417,7 @@ export function ArtworkCarouselBar({
                       >
                         <div
                           className={cn(
-                            'flex w-full max-w-full min-w-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5',
+                            'flex w-4/5 max-w-[80%] min-w-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5',
                             'border border-white/30 dark:border-white/20',
                             'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
                             'text-white shadow-sm shadow-black/20'
