@@ -86,7 +86,7 @@ function ArtworkArtistDetailGallery({
           resetKey={resetKey}
           ariaLabel="Artwork and artist details"
           first={
-            <div className="px-4 sm:px-5 py-4 pl-10 sm:pl-12 pr-3 sm:pr-4">
+            <div className="px-3 sm:px-4 py-4 pl-9 sm:pl-10 pr-9 sm:pr-10">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
                   <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
@@ -97,7 +97,7 @@ function ArtworkArtistDetailGallery({
             </div>
           }
           second={
-            <div className="px-4 sm:px-5 py-3 pl-3 sm:pl-4 pr-10 sm:pr-12">
+            <div className="px-3 sm:px-4 py-3 pl-9 sm:pl-10 pr-9 sm:pr-10">
               {artistLoading ? (
                 <div className="py-10 flex justify-center">
                   <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />

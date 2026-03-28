@@ -64,49 +64,59 @@ export function HorizontalTwoSlideGallery({
         onClick={goPrev}
         disabled={index === 0}
         className={cn(
-          'absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
-          index === 0 && 'opacity-35 pointer-events-none'
+          'absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-white/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
+          index === 0 && 'pointer-events-none opacity-25'
         )}
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2} />
       </button>
       <button
         type="button"
         onClick={goNext}
         disabled={index === 1}
         className={cn(
-          'absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
-          index === 1 && 'opacity-35 pointer-events-none'
+          'absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-white/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
+          index === 1 && 'pointer-events-none opacity-25'
         )}
         aria-label="Next slide"
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
       </button>
 
-      <div className="flex justify-center gap-1.5 pb-3 pt-1" role="tablist" aria-label="Slides">
+      <div className="flex items-center justify-center gap-0.5 pb-2 pt-0.5" aria-label="Slides">
         <button
           type="button"
-          role="tab"
-          aria-selected={index === 0}
           onClick={() => goTo(0)}
-          className={cn(
-            'h-1.5 rounded-full transition-all min-w-0',
-            index === 0 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
-          )}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full touch-manipulation"
           aria-label="First slide"
-        />
+          aria-current={index === 0 ? 'true' : undefined}
+        >
+          <span
+            className={cn(
+              'block rounded-full transition-colors',
+              index === 0
+                ? 'h-[3px] w-3 bg-neutral-600 dark:bg-white/80'
+                : 'h-[3px] w-[3px] bg-neutral-300 dark:bg-white/30 hover:bg-neutral-400 dark:hover:bg-white/45'
+            )}
+          />
+        </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={index === 1}
           onClick={() => goTo(1)}
-          className={cn(
-            'h-1.5 rounded-full transition-all min-w-0',
-            index === 1 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
-          )}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full touch-manipulation"
           aria-label="Second slide"
-        />
+          aria-current={index === 1 ? 'true' : undefined}
+        >
+          <span
+            className={cn(
+              'block rounded-full transition-colors',
+              index === 1
+                ? 'h-[3px] w-3 bg-neutral-600 dark:bg-white/80'
+                : 'h-[3px] w-[3px] bg-neutral-300 dark:bg-white/30 hover:bg-neutral-400 dark:hover:bg-white/45'
+            )}
+          />
+        </button>
       </div>
     </div>
   )
