@@ -22,7 +22,6 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
-import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import {
@@ -97,7 +96,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street Collector ladder: stage chip on image (bottom); footer = list price + optional next-step chip. */
+  /** Street ladder row: footer list price + next-step chip. Image chip is always EditionBadge (consistent icons). */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -230,25 +229,14 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {streetPricing ? (
-          <StreetPricingChip
-            label={streetPricing.label}
-            priceUsd={streetPricing.priceUsd}
-            subcopy={streetPricing.subcopy}
-            showPrice={false}
-            showSubcopy={false}
-            className={cn('absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5')}
-          />
-        ) : (
-          <EditionBadgeForProduct
-            product={product}
-            chipOnly
-            className={cn(
-              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
-              '[&>span]:pointer-events-auto'
-            )}
-          />
-        )}
+        <EditionBadgeForProduct
+          product={product}
+          chipOnly
+          className={cn(
+            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
+            '[&>span]:pointer-events-auto'
+          )}
+        />
       </motion.div>
 
       <div
