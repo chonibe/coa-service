@@ -243,7 +243,7 @@ function ArtworkCardV2({
 
       <div
         className={cn(
-          'px-2 flex flex-col items-stretch justify-start text-left overflow-hidden cursor-pointer',
+          'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
           surfaces.meta,
           (mergeWithLeft || mergeWithRight) ? 'pt-1.5 pb-0.5' : 'pt-2 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
@@ -252,15 +252,15 @@ function ArtworkCardV2({
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-1 items-start">
+        <div className="w-full min-w-0 flex flex-col gap-1 items-center">
           <p className={cn(
-            'text-xs font-medium truncate max-w-full text-left transition-colors duration-200 ease-out',
+            'text-xs font-medium truncate max-w-full text-center transition-colors duration-200 ease-out',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           {streetPricing ? (
-            <div className="w-full min-w-0 flex flex-col gap-0.5 items-start text-left">
+            <div className="w-full min-w-0 flex flex-col gap-0.5 items-center text-center">
               {streetListActive ? (
-                <div className="flex w-full min-w-0 flex-wrap items-baseline justify-start gap-x-2 gap-y-0.5">
+                <div className="flex w-full min-w-0 flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
                   <span
                     className={cn(
                       'text-sm font-semibold tabular-nums tracking-tight shrink-0',
@@ -291,13 +291,13 @@ function ArtworkCardV2({
                   ) : null}
                 </div>
               ) : (
-                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090] text-left">
+                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090] text-center">
                   {streetPricing.label}
                 </p>
               )}
             </div>
           ) : (
-            <div className="flex w-full min-w-0 items-baseline justify-start gap-1.5 flex-wrap">
+            <div className="flex w-full min-w-0 items-baseline justify-center gap-1.5 flex-wrap">
               <p className={cn(
                 'text-xs font-medium transition-colors duration-200 ease-out',
                 showEarlyAccessCompare
