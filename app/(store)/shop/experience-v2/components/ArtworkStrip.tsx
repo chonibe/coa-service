@@ -382,9 +382,7 @@ function ArtworkCard({
         )}
         <div
           className={cn(
-            'absolute inset-x-0 top-0 z-[8] pointer-events-none flex flex-col items-center justify-start gap-0.5 px-1.5 pt-1',
-            (isNewDrop || isEarlyAccess) && !isSoldOut && !isCollected ? 'pt-9' : 'pt-2',
-            showWishlistHearts ? 'pr-10' : 'pr-8'
+            'absolute inset-x-0 bottom-0 z-[8] pointer-events-none flex flex-col items-center justify-end gap-0.5 px-1.5 pb-1'
           )}
         >
           <div className="flex w-full min-w-0 justify-center">

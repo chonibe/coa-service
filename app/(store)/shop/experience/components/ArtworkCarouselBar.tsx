@@ -412,7 +412,7 @@ export function ArtworkCarouselBar({
                       <div className="absolute inset-0 bg-black/20" />
                       <div
                         className={cn(
-                          'absolute inset-x-0 top-0 z-[2] pointer-events-none flex justify-center px-1 pt-1.5'
+                          'absolute inset-x-0 bottom-0 z-[2] pointer-events-none flex justify-center px-1 pb-1.5'
                         )}
                       >
                         <div

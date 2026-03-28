@@ -98,7 +98,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street ladder: price row in footer; title lives in image-top chip; edition chip below title when non-ladder. */
+  /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -224,14 +224,17 @@ function ArtworkCardV2({
 
         <div
           className={cn(
-            'absolute inset-x-0 top-0 z-[9] pointer-events-none flex flex-col items-center justify-start gap-0.5 px-1.5 pt-1',
-            '[&_.picker-title-chip]:pointer-events-auto',
-            (isNewDrop || isEarlyAccess) ? 'pt-9' : 'pt-2',
-            isSelected &&
-              selectionNumber !== null &&
-              ((isNewDrop || isEarlyAccess) ? 'pr-7' : 'pl-7')
+            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex flex-col items-center justify-end gap-0.5 px-1.5 pb-1',
+            '[&_.picker-title-chip]:pointer-events-auto'
           )}
         >
+          {!streetPricing ? (
+            <EditionBadgeForProduct
+              product={product}
+              chipOnly
+              className="w-full shrink-0 [&>span]:pointer-events-auto"
+            />
+          ) : null}
           <div className="flex w-full min-w-0 justify-center">
             <div
               className={cn(
@@ -260,13 +263,6 @@ function ArtworkCardV2({
               )}
             </div>
           </div>
-          {!streetPricing ? (
-            <EditionBadgeForProduct
-              product={product}
-              chipOnly
-              className="w-full shrink-0 [&>span]:pointer-events-auto"
-            />
-          ) : null}
         </div>
       </motion.div>
 
