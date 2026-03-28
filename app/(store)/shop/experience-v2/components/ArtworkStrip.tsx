@@ -515,8 +515,8 @@ function ArtworkCard({
   )
 }
 
-/** Fallback estimate; actual height measured via measureElement */
-const ROW_HEIGHT_ESTIMATE = 320
+/** Fallback estimate; actual height measured via measureElement (includes row bottom gap) */
+const ROW_HEIGHT_ESTIMATE = 352
 
 interface ArtworkStripProps {
   scrollRef: React.RefObject<HTMLDivElement | null>
@@ -772,7 +772,7 @@ export function ArtworkStrip({
             data-index={virtualRow.index}
             className={cn(
               'absolute top-0 left-0 w-full',
-              shouldMerge ? 'py-1 md:py-1' : 'pb-2 md:pb-3',
+              shouldMerge ? 'py-2 md:py-2.5' : 'pb-5 md:pb-6',
               virtualRow.index === 0 && showHighlightAnimation && 'z-10'
             )}
             style={{
@@ -874,7 +874,7 @@ export function ArtworkStrip({
                 )}
               </div>
             ) : (
-              <div className="relative flex justify-center pb-2 md:pb-3">
+              <div className="relative flex justify-center pb-5 md:pb-6">
                 {product1 && g1 >= 0 && (
                   <div className="w-[calc(50%-0.25rem)] md:w-[calc(50%-0.375rem)]">
                     <ArtworkCard
