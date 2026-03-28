@@ -98,7 +98,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street ladder: list price in footer; “N more · then $X” chip under price (no edition badge on ladder cards). */
+  /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -231,36 +231,51 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {!streetPricing ? (
-          <EditionBadgeForProduct
-            product={product}
-            chipOnly
-            className={cn(
-              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
-              '[&>span]:pointer-events-auto'
-            )}
-          />
-        ) : null}
+        <div
+          className={cn(
+            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex flex-col justify-end gap-0.5 px-1.5 pb-1',
+            '[&_.picker-title-chip]:pointer-events-auto'
+          )}
+        >
+          {!streetPricing ? (
+            <EditionBadgeForProduct
+              product={product}
+              chipOnly
+              className="w-full shrink-0 [&>span]:pointer-events-auto"
+            />
+          ) : null}
+          <div className="flex w-full min-w-0 justify-center">
+            <span
+              className={cn(
+                'picker-title-chip block max-w-full min-w-0 rounded-lg px-2 py-1 text-center',
+                'border border-white/30 dark:border-white/20',
+                'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                'text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
+                'text-white shadow-sm shadow-black/20',
+                'line-clamp-2 break-words [overflow-wrap:anywhere]'
+              )}
+              title={product.title}
+            >
+              {product.title}
+            </span>
+          </div>
+        </div>
       </motion.div>
 
       <div
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
           surfaces.meta,
-          (mergeWithLeft || mergeWithRight) ? 'pt-1.5 pb-0.5' : 'pt-2 pb-1',
+          (mergeWithLeft || mergeWithRight) ? 'pt-0 pb-0.5' : 'pt-0.5 pb-0.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl'
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-1 items-center">
-          <p className={cn(
-            'text-xs font-medium truncate max-w-full text-center transition-colors duration-200 ease-out',
-            isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
-          )}>{product.title}</p>
+        <div className="w-full min-w-0 flex flex-col gap-0 items-center">
           {streetPricing ? (
-            <div className="w-full min-w-0 flex flex-col gap-0.5 items-center text-center">
+            <div className="w-full min-w-0 flex flex-col gap-0 items-center text-center">
               {streetListActive ? (
                 <div className="flex w-full min-w-0 flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
                   <span
@@ -322,7 +337,7 @@ function ArtworkCardV2({
 }
 
 /** Virtual row estimate; rows use measureElement. */
-const ROW_HEIGHT_ESTIMATE = 348
+const ROW_HEIGHT_ESTIMATE = 332
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
