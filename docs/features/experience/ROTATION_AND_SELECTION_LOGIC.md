@@ -36,7 +36,7 @@ This document is the source of truth for how artwork selection, queue numbering,
   - hold on opposite side while new texture applies,
   - then rotate into selected front side,
   - then lock briefly at front before any idle behavior resumes.
-- Experience configurator disables idle drift (`idleSpinEnabled={false}`) to keep side state deterministic between selections.
+- Idle turntable drift is off whenever at least one artwork is on the lamp preview: [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) passes `idleSpinEnabled={lampPreviewCount < 1}`; [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) uses `idleSpinEnabled={lampPreviewOrder.length === 0}` so the model stays settled after the first placement.
 
 ## State Model
 

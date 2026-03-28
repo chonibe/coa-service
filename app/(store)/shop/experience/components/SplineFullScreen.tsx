@@ -76,7 +76,7 @@ interface SplineFullScreenProps {
   rotateTrigger: number
   resetTrigger?: number
   onFrontSideSettled?: (side: 'A' | 'B') => void
-  /** Count of artworks assigned to lamp preview (0–2). Idle turntable is off when both sides are filled. */
+  /** Count of artworks assigned to lamp preview (0–2). Idle turntable is off when at least one side has artwork. */
   lampPreviewCount?: number
   pickerOpen?: boolean
   className?: string
@@ -715,7 +715,7 @@ export function SplineFullScreen({
               reelScrollContainerRef={scrollRef}
               animate
               interactive
-              idleSpinEnabled={lampPreviewCount < 2}
+              idleSpinEnabled={lampPreviewCount < 1}
               className="relative w-full h-full min-h-0 min-w-0"
               swapLampSides
               flipForSide="B"

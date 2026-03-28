@@ -1248,7 +1248,7 @@ export function Configurator({
               minimal
               animate
               interactive
-              idleSpinEnabled
+              idleSpinEnabled={lampPreviewOrder.length === 0}
               className="relative w-full h-full"
               onPanelsFound={setPanelStatus}
               swapLampSides
