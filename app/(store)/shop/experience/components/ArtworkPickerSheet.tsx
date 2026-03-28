@@ -243,7 +243,7 @@ function ArtworkCardV2({
 
       <div
         className={cn(
-          'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
+          'px-2 flex flex-col items-stretch justify-start text-left overflow-hidden cursor-pointer',
           surfaces.meta,
           (mergeWithLeft || mergeWithRight) ? 'pt-1.5 pb-0.5' : 'pt-2 pb-1',
           roundLeft && roundRight && 'rounded-b-xl',
@@ -252,54 +252,52 @@ function ArtworkCardV2({
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-1 items-center">
+        <div className="w-full min-w-0 flex flex-col gap-1 items-start">
           <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
+            'text-xs font-medium truncate max-w-full text-left transition-colors duration-200 ease-out',
             isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
           )}>{product.title}</p>
           {streetPricing ? (
-            <div className="w-full min-w-0 flex flex-col gap-1 items-center text-center px-0.5">
+            <div className="w-full min-w-0 flex flex-col gap-0.5 items-start text-left">
               {streetListActive ? (
-                <>
-                  <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
-                    <span
-                      className={cn(
-                        'text-sm font-semibold tabular-nums tracking-tight',
-                        showEarlyAccessCompare
-                          ? 'text-violet-700 dark:text-violet-300'
-                          : 'text-neutral-900 dark:text-[#f0e8e8]'
-                      )}
-                    >
-                      {footerPrice.primary}
-                    </span>
-                    {showEarlyAccessCompare && footerPrice.compareAt && (
-                      <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums">
-                        {footerPrice.compareAt}
-                      </span>
+                <div className="flex w-full min-w-0 flex-wrap items-baseline justify-start gap-x-2 gap-y-0.5">
+                  <span
+                    className={cn(
+                      'text-sm font-semibold tabular-nums tracking-tight shrink-0',
+                      showEarlyAccessCompare
+                        ? 'text-violet-700 dark:text-violet-300'
+                        : 'text-neutral-900 dark:text-[#f0e8e8]'
                     )}
-                  </div>
-                  {nextSalesChipText ? (
-                    <span
-                      className={cn(
-                        'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
-                        'border border-neutral-200 dark:border-white/10',
-                        'bg-neutral-50/95 dark:bg-white/5',
-                        'text-[11px] leading-tight text-neutral-700 dark:text-neutral-200',
-                        'font-medium normal-case tracking-normal text-center tabular-nums'
-                      )}
-                    >
-                      {nextSalesChipText}
+                  >
+                    {footerPrice.primary}
+                  </span>
+                  {showEarlyAccessCompare && footerPrice.compareAt && (
+                    <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums shrink-0">
+                      {footerPrice.compareAt}
                     </span>
+                  )}
+                  {nextSalesChipText ? (
+                    <>
+                      <span
+                        className="shrink-0 text-[0.85em] leading-none text-neutral-400 dark:text-neutral-500 select-none"
+                        aria-hidden
+                      >
+                        ✦
+                      </span>
+                      <span className="min-w-0 text-[11px] font-medium tabular-nums leading-snug text-neutral-700 dark:text-neutral-200">
+                        {nextSalesChipText}
+                      </span>
+                    </>
                   ) : null}
-                </>
+                </div>
               ) : (
-                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090]">
+                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090] text-left">
                   {streetPricing.label}
                 </p>
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <div className="flex w-full min-w-0 items-baseline justify-start gap-1.5 flex-wrap">
               <p className={cn(
                 'text-xs font-medium transition-colors duration-200 ease-out',
                 showEarlyAccessCompare
