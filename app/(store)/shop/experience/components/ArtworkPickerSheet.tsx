@@ -96,10 +96,7 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /**
-   * Street ladder: list price (+ label fallback) in footer; `EditionBadgeForProduct` chip in footer;
-   * “N more · then $X” chip on image bottom when `nextBump` exists.
-   */
+  /** Street ladder: list price in footer; “N more · then $X” chip under price (no edition badge on ladder cards). */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -232,26 +229,7 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {streetPricing && nextSalesChipText ? (
-          <div
-            className={cn(
-              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex justify-center px-1.5 pb-1.5'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
-                'border border-neutral-200/90 dark:border-white/15',
-                'bg-neutral-50/95 dark:bg-black/40 backdrop-blur-sm',
-                'text-[11px] leading-tight text-neutral-800 dark:text-neutral-100',
-                'font-medium normal-case tracking-normal text-center tabular-nums',
-                'shadow-sm shadow-black/10'
-              )}
-            >
-              {nextSalesChipText}
-            </span>
-          </div>
-        ) : !streetPricing ? (
+        {!streetPricing ? (
           <EditionBadgeForProduct
             product={product}
             chipOnly
@@ -282,29 +260,43 @@ function ArtworkCardV2({
           {streetPricing ? (
             <div className="w-full min-w-0 flex flex-col gap-1 items-center text-center px-0.5">
               {streetListActive ? (
-                <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
-                  <span
-                    className={cn(
-                      'text-sm font-semibold tabular-nums tracking-tight',
-                      showEarlyAccessCompare
-                        ? 'text-violet-700 dark:text-violet-300'
-                        : 'text-neutral-900 dark:text-[#f0e8e8]'
-                    )}
-                  >
-                    {footerPrice.primary}
-                  </span>
-                  {showEarlyAccessCompare && footerPrice.compareAt && (
-                    <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums">
-                      {footerPrice.compareAt}
+                <>
+                  <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
+                    <span
+                      className={cn(
+                        'text-sm font-semibold tabular-nums tracking-tight',
+                        showEarlyAccessCompare
+                          ? 'text-violet-700 dark:text-violet-300'
+                          : 'text-neutral-900 dark:text-[#f0e8e8]'
+                      )}
+                    >
+                      {footerPrice.primary}
                     </span>
-                  )}
-                </div>
+                    {showEarlyAccessCompare && footerPrice.compareAt && (
+                      <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums">
+                        {footerPrice.compareAt}
+                      </span>
+                    )}
+                  </div>
+                  {nextSalesChipText ? (
+                    <span
+                      className={cn(
+                        'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
+                        'border border-neutral-200 dark:border-white/10',
+                        'bg-neutral-50/95 dark:bg-white/5',
+                        'text-[11px] leading-tight text-neutral-700 dark:text-neutral-200',
+                        'font-medium normal-case tracking-normal text-center tabular-nums'
+                      )}
+                    >
+                      {nextSalesChipText}
+                    </span>
+                  ) : null}
+                </>
               ) : (
                 <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090]">
                   {streetPricing.label}
                 </p>
               )}
-              <EditionBadgeForProduct product={product} chipOnly className="w-full mt-0.5" />
             </div>
           ) : (
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
