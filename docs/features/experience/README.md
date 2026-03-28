@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. When at least one artwork is in the cart, a sticky bottom bar shows a primary line item and a **Checkout** CTA (opens the same OrderBar drawer as the header cart); see [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx).
+The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. A sticky bottom bar shows **only** **“Choose your first artwork”** when the collection is empty (no checkout on that bar — use the header cart). Once art is added, the bar shows thumbnails, **Checkout** (same OrderBar as the header cart), and a **centered overlay** add control. See [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx).
 
 **Implementation**: [`app/shop/experience/`](../../../app/shop/experience/)
 
@@ -273,5 +273,6 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 
 ## Version
 
-- Last updated: 2026-03-27
-- Version: 1.14.1
+- Last updated: 2026-03-28
+- Version: 1.14.2
+- **Artwork + artist in reel**: [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx) uses shared [`HorizontalTwoSlideGallery`](../../../app/(store)/shop/experience-v2/components/HorizontalTwoSlideGallery.tsx) so the artwork card (image, title, scarcity) and artist spotlight swipe left/right when both are present. Same transform-based gallery fixes `ArtworkDetail` panels that use `overflow-x-hidden`.

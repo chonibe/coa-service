@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
 import { EditionBadgeForProduct } from './EditionBadge'
 import { ArtworkEditionUnifiedSection } from './ArtworkEditionUnifiedSection'
 import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
+import { HorizontalTwoSlideGallery } from './HorizontalTwoSlideGallery'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 
@@ -69,126 +70,47 @@ function ArtworkArtistDetailGallery({
   spotlight,
   spotlightProducts,
   className,
+  resetKey,
 }: {
   description: string
   artistLoading: boolean
   spotlight: SpotlightData | null
   spotlightProducts: ShopifyProduct[]
   className?: string
+  resetKey: string
 }) {
-  const [index, setIndex] = useState(0)
-  const scrollerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setIndex(0)
-    requestAnimationFrame(() => {
-      scrollerRef.current?.scrollTo({ left: 0, behavior: 'auto' })
-    })
-  }, [description, spotlight?.vendorSlug])
-
-  const scrollToSlide = useCallback((i: number) => {
-    const el = scrollerRef.current
-    if (!el || el.clientWidth <= 0) return
-    const clamped = Math.max(0, Math.min(1, i))
-    el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' })
-    setIndex(clamped)
-  }, [])
-
-  const goPrev = useCallback(() => scrollToSlide(index - 1), [index, scrollToSlide])
-  const goNext = useCallback(() => scrollToSlide(index + 1), [index, scrollToSlide])
-
-  const onScrollSnap = useCallback(() => {
-    const el = scrollerRef.current
-    if (!el || el.clientWidth <= 0) return
-    const i = Math.round(el.scrollLeft / el.clientWidth)
-    setIndex((prev) => (i === prev ? prev : Math.max(0, Math.min(1, i))))
-  }, [])
-
   return (
-    <div
-      className={cn('py-3 border-t border-neutral-100 dark:border-white/10', className)}
-      role="region"
-      aria-roledescription="carousel"
-      aria-label="Artwork and artist details"
-    >
+    <div className={cn('py-3 border-t border-neutral-100 dark:border-white/10', className)}>
       <div className="relative rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/40 dark:bg-[#201c1c]/35 overflow-hidden">
-        <div
-          ref={scrollerRef}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          onScroll={onScrollSnap}
-        >
-          <div className="w-full min-w-full shrink-0 snap-center snap-always px-4 sm:px-5 py-4 pl-10 sm:pl-12 pr-3 sm:pr-4 box-border">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
-                <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+        <HorizontalTwoSlideGallery
+          resetKey={resetKey}
+          ariaLabel="Artwork and artist details"
+          first={
+            <div className="px-4 sm:px-5 py-4 pl-10 sm:pl-12 pr-3 sm:pr-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
+                  <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                </div>
+                <span className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Artwork details</span>
               </div>
-              <span className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Artwork details</span>
+              <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
             </div>
-            <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
-          </div>
-          <div className="w-full min-w-full shrink-0 snap-center snap-always px-4 sm:px-5 py-3 pl-3 sm:pl-4 pr-10 sm:pr-12 box-border">
-            {artistLoading ? (
-              <div className="py-10 flex justify-center">
-                <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-              </div>
-            ) : spotlight ? (
-              <ArtistSpotlightBanner
-                spotlight={{ ...spotlight, gifUrl: undefined }}
-                spotlightProducts={spotlightProducts}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={index === 0}
-          className={cn(
-            'absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
-            index === 0 && 'opacity-35 pointer-events-none'
-          )}
-          aria-label="Previous: artwork details"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={index === 1}
-          className={cn(
-            'absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
-            index === 1 && 'opacity-35 pointer-events-none'
-          )}
-          aria-label="Next: artist details"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
-        <div className="flex justify-center gap-1.5 pb-3 pt-0.5" role="tablist" aria-label="Gallery slides">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={index === 0}
-            onClick={() => scrollToSlide(0)}
-            className={cn(
-              'h-1.5 rounded-full transition-all min-w-0',
-              index === 0 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
-            )}
-            aria-label="Artwork details slide"
-          />
-          <button
-            type="button"
-            role="tab"
-            aria-selected={index === 1}
-            onClick={() => scrollToSlide(1)}
-            className={cn(
-              'h-1.5 rounded-full transition-all min-w-0',
-              index === 1 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
-            )}
-            aria-label="Artist details slide"
-          />
-        </div>
+          }
+          second={
+            <div className="px-4 sm:px-5 py-3 pl-3 sm:pl-4 pr-10 sm:pr-12">
+              {artistLoading ? (
+                <div className="py-10 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                </div>
+              ) : spotlight ? (
+                <ArtistSpotlightBanner
+                  spotlight={{ ...spotlight, gifUrl: undefined }}
+                  spotlightProducts={spotlightProducts}
+                />
+              ) : null}
+            </div>
+          }
+        />
       </div>
     </div>
   )
@@ -602,6 +524,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 </div>
               )}
               <ArtworkArtistDetailGallery
+                resetKey={product.id}
                 description={description}
                 artistLoading={artistLoading}
                 spotlight={spotlightForBanner}
@@ -1083,6 +1006,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         </div>
                       )}
                       <ArtworkArtistDetailGallery
+                        resetKey={product.id}
                         description={description}
                         artistLoading={artistLoading}
                         spotlight={spotlightForBanner}
@@ -1479,6 +1403,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
                 )}
                 <ArtworkArtistDetailGallery
+                  resetKey={product.id}
                   description={description}
                   artistLoading={artistLoading}
                   spotlight={spotlightForBanner}

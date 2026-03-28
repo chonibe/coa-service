@@ -13,6 +13,7 @@ import {
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
 import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
+import { HorizontalTwoSlideGallery } from '../../experience-v2/components/HorizontalTwoSlideGallery'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
@@ -75,6 +76,25 @@ export function ArtworkAccordions({
   ).trim()
 
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
+
+  const productIdShort = product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id
+  const spotlightForBanner: SpotlightData | null =
+    spotlightDataOverride ??
+    spotlightData ??
+    (artistData
+      ? {
+          vendorName: artistData.name,
+          vendorSlug: artistData.slug,
+          bio: artistData.bio,
+          image: artistData.image,
+          instagram: artistData.instagram,
+          productIds: [productIdShort],
+        }
+      : null)
+  const spotlightProductsForBanner =
+    (spotlightDataOverride as SpotlightWithProducts | null)?.products ??
+    (spotlightData as SpotlightWithProducts | null)?.products ??
+    [product]
 
   const spotlightSlugsToTry = useMemo(() => {
     const base = slug.replace(/\./g, '')
@@ -223,6 +243,61 @@ export function ArtworkAccordions({
     [product, streetEdition, isEarlyAccess, isLamp]
   )
 
+  const artworkDetailsPanel =
+    !isLamp && (firstImage?.url || product.title) ? (
+      <>
+        {firstImage?.url && (
+          <div className="relative w-full aspect-[4/5] overflow-hidden">
+            <Image
+              src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
+              alt={product.title || 'Artwork'}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 92vw, 520px"
+            />
+          </div>
+        )}
+        <div className="p-4 sm:p-5 text-center">
+          <div className="mb-4">
+            {detailArtistName && (
+              <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
+                {detailArtistName}
+              </p>
+            )}
+            {product.title && (
+              <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0.5">
+                {product.title}
+              </h2>
+            )}
+          </div>
+          {editionSize != null && editionSize > 0 && (
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
+              <ScarcityBadge
+                quantityAvailable={
+                  typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+                    ? product.variants.edges[0].node.quantityAvailable
+                    : undefined
+                }
+                editionSize={editionSize}
+                availableForSale={product.availableForSale ?? true}
+                variant="bar"
+                productId={product.id}
+                productImage={firstImage?.url ?? null}
+                productTitle={product.title ?? undefined}
+                unifiedSection
+                className="w-full"
+                streetLadder={streetLadderBlock ?? undefined}
+              />
+            </div>
+          )}
+        </div>
+      </>
+    ) : null
+
+  const hasArtworkCard = artworkDetailsPanel != null
+  const showArtworkArtistSectionGallery =
+    hasArtworkCard && Boolean(artist) && (artistLoading || spotlightForBanner)
+
   if (variant === 'editionOnly') {
     if (isLamp) return null
     return (
@@ -262,82 +337,51 @@ export function ArtworkAccordions({
         </ArtworkEditionUnifiedSection>
       )}
 
-      {/* Artwork Details — image, title, scarcity (before About the Artist) */}
-      {!isLamp && (firstImage?.url || product.title) && (
+      {/* Artwork card + artist spotlight — horizontal gallery when both exist (Experience reel / Spline) */}
+      {showArtworkArtistSectionGallery && artworkDetailsPanel ? (
         <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
-          {firstImage?.url && (
-            <div className="relative w-full aspect-[4/5] overflow-hidden">
-              <Image
-                src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
-                alt={product.title || 'Artwork'}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 92vw, 520px"
-              />
+          <HorizontalTwoSlideGallery
+            resetKey={product.id}
+            ariaLabel="Artwork and artist"
+            first={artworkDetailsPanel}
+            second={
+              <div className="p-3 sm:p-4 min-h-[100px]">
+                {artistLoading ? (
+                  <div className="py-8 flex justify-center">
+                    <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                  </div>
+                ) : spotlightForBanner ? (
+                  <ArtistSpotlightBanner
+                    spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                    spotlightProducts={spotlightProductsForBanner}
+                  />
+                ) : null}
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
+          {artworkDetailsPanel && (
+            <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+              {artworkDetailsPanel}
             </div>
           )}
-          <div className="p-4 sm:p-5 text-center">
-            <div className="mb-4">
-              {detailArtistName && (
-                <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
-                  {detailArtistName}
-                </p>
-              )}
-              {product.title && (
-                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0.5">
-                  {product.title}
-                </h2>
-              )}
-            </div>
-            {editionSize != null && editionSize > 0 && (
-              <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
-                <ScarcityBadge
-                  quantityAvailable={
-                    typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                      ? product.variants.edges[0].node.quantityAvailable
-                      : undefined
-                  }
-                  editionSize={editionSize}
-                  availableForSale={product.availableForSale ?? true}
-                  variant="bar"
-                  productId={product.id}
-                  productImage={firstImage?.url ?? null}
-                  productTitle={product.title ?? undefined}
-                  unifiedSection
-                  className="w-full"
-                  streetLadder={streetLadderBlock ?? undefined}
+          {artist && !isLamp && (
+            <div>
+              {artistLoading ? (
+                <div className="py-4 flex justify-center">
+                  <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                </div>
+              ) : spotlightForBanner ? (
+                <ArtistSpotlightBanner
+                  spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                  spotlightProducts={spotlightProductsForBanner}
                 />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* About the Artist — spotlight card */}
-      {artist && !isLamp && (
-        <div>
-          {artistLoading ? (
-            <div className="py-4 flex justify-center">
-              <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+              ) : null}
             </div>
-          ) : (() => {
-            const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? {
-              vendorName: artistData.name,
-              vendorSlug: artistData.slug,
-              bio: artistData.bio,
-              image: artistData.image,
-              instagram: artistData.instagram,
-              productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id],
-            } : null)
-            const spotlightProducts = (spotlightDataOverride as SpotlightWithProducts | null)?.products ?? (spotlightData as SpotlightWithProducts | null)?.products ?? [product]
-            return spotlight ? (
-              <ArtistSpotlightBanner
-                spotlight={{ ...spotlight, gifUrl: undefined }}
-                spotlightProducts={spotlightProducts}
-              />
-            ) : null
-          })()}
-        </div>
+          )}
+        </>
       )}
 
       {/* Lamp details — image only, no Shopify description */}
