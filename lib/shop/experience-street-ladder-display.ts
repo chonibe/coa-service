@@ -32,11 +32,11 @@ export function formatStreetArtworkListPrice(
   return { primary: formatStreetListUsdDisplay(reference), compareAt: null }
 }
 
+/** Next-step chip: `N more · then $X` or `N more · edition ends` (no “sales” wording). */
 export function formatStreetNextSalesChipText(bump: StreetEditionStatesRow['nextBump']): string | null {
   if (!bump) return null
   const n = bump.afterSales
-  const salesWord = n === 1 ? 'sale' : 'sales'
-  const prefix = `${n} more ${salesWord}`
+  const prefix = `${n} more`
   if (bump.kind === 'price_rise') {
     return `${prefix} · then $${bump.nextPriceUsd}`
   }

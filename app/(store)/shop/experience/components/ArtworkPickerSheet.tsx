@@ -98,7 +98,7 @@ interface ArtworkCardV2Props {
   suppressSelectionRing?: boolean
   /**
    * Street ladder: list price (+ label fallback) in footer; `EditionBadgeForProduct` chip in footer;
-   * “N more sales · then $X” chip on image bottom when `nextBump` exists.
+   * “N more · then $X” chip on image bottom when `nextBump` exists.
    */
   streetPricing?: StreetEditionStatesRow | null
 }
