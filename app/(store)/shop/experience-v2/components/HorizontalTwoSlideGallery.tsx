@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -25,10 +25,34 @@ export function HorizontalTwoSlideGallery({
   ariaLabel = 'Details gallery',
 }: HorizontalTwoSlideGalleryProps) {
   const [index, setIndex] = useState(0)
+  const slide0Ref = useRef<HTMLDivElement>(null)
+  const slide1Ref = useRef<HTMLDivElement>(null)
+  const [slideHeights, setSlideHeights] = useState<[number, number]>([0, 0])
 
   useEffect(() => {
     setIndex(0)
   }, [resetKey])
+
+  useEffect(() => {
+    const el0 = slide0Ref.current
+    const el1 = slide1Ref.current
+    if (!el0 || !el1) return
+
+    const readH = (el: HTMLElement) => Math.max(1, Math.round(el.getBoundingClientRect().height))
+
+    const apply = () => {
+      setSlideHeights([readH(el0), readH(el1)])
+    }
+
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el0)
+    ro.observe(el1)
+    return () => ro.disconnect()
+  }, [first, second, resetKey])
+
+  const activeHeight = slideHeights[index]
+  const canAnimateHeight = slideHeights[0] > 0 && slideHeights[1] > 0
 
   const goPrev = useCallback(() => {
     setIndex((i) => Math.max(0, i - 1))
@@ -45,13 +69,34 @@ export function HorizontalTwoSlideGallery({
       aria-roledescription="carousel"
       aria-label={ariaLabel}
     >
-      <div className="overflow-hidden w-full max-w-full">
+      <div
+        className={cn(
+          'overflow-hidden w-full max-w-full',
+          canAnimateHeight && 'motion-reduce:transition-none',
+          canAnimateHeight && 'transition-[height] duration-300 ease-out'
+        )}
+        style={
+          activeHeight > 0
+            ? { height: activeHeight }
+            : { height: 'auto', minHeight: 0 }
+        }
+      >
         <div
-          className="flex w-[200%] transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform"
+          className="flex w-[200%] items-start transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform"
           style={{ transform: `translate3d(-${index * 50}%, 0, 0)` }}
         >
-          <div className="w-1/2 shrink-0 min-w-0 max-w-[50%] box-border">{first}</div>
-          <div className="w-1/2 shrink-0 min-w-0 max-w-[50%] box-border">{second}</div>
+          <div
+            ref={slide0Ref}
+            className="w-1/2 shrink-0 min-w-0 max-w-[50%] box-border self-start"
+          >
+            {first}
+          </div>
+          <div
+            ref={slide1Ref}
+            className="w-1/2 shrink-0 min-w-0 max-w-[50%] box-border self-start"
+          >
+            {second}
+          </div>
         </div>
       </div>
 
