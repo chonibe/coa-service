@@ -874,7 +874,7 @@ export function ArtworkStrip({
                 )}
               </div>
             ) : (
-              <div className="relative flex justify-center pb-5 md:pb-6">
+              <div className="relative flex justify-center">
                 {product1 && g1 >= 0 && (
                   <div className="w-[calc(50%-0.25rem)] md:w-[calc(50%-0.375rem)]">
                     <ArtworkCard
