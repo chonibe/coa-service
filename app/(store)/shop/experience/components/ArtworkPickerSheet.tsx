@@ -241,13 +241,6 @@ function ArtworkCardV2({
                 'text-white shadow-sm shadow-black/20'
               )}
             >
-              {!isSelected && (
-                <Plus
-                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              )}
               <span
                 className={cn(
                   'min-w-0 flex-1 text-left text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
@@ -257,6 +250,13 @@ function ArtworkCardV2({
               >
                 {product.title}
               </span>
+              {!isSelected && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
             </div>
           </div>
           {!streetPricing ? (

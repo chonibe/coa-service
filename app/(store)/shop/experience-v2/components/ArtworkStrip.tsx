@@ -396,13 +396,6 @@ function ArtworkCard({
                 'text-white shadow-sm shadow-black/20'
               )}
             >
-              {!isInCart && !isSoldOut && (
-                <Plus
-                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              )}
               <span
                 className={cn(
                   'min-w-0 flex-1 text-left text-[10px] font-semibold leading-snug tracking-tight',
@@ -412,6 +405,13 @@ function ArtworkCard({
               >
                 {product.title}
               </span>
+              {!isInCart && !isSoldOut && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
             </div>
           </div>
         </div>

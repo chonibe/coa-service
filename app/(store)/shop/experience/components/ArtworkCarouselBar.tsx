@@ -423,17 +423,17 @@ export function ArtworkCarouselBar({
                             'text-white shadow-sm shadow-black/20'
                           )}
                         >
-                          <Plus
-                            className="h-3 w-3 shrink-0 mt-0.5 text-white opacity-95"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
                           <span
                             className="min-w-0 flex-1 text-left text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
                             title={artwork.title}
                           >
                             {artwork.title}
                           </span>
+                          <Plus
+                            className="h-3 w-3 shrink-0 mt-0.5 text-white opacity-95"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
                         </div>
                       </div>
                     </button>
