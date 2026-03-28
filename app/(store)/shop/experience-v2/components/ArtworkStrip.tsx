@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, Heart, Info } from 'lucide-react'
+import { Check, Eye, Heart, Info, Plus } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
@@ -387,19 +387,33 @@ function ArtworkCard({
             showWishlistHearts ? 'pr-10' : 'pr-8'
           )}
         >
-          <span
-            className={cn(
-              'block max-w-full min-w-0 rounded-lg px-2 py-1 text-center',
-              'border border-white/30 dark:border-white/20',
-              'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-              'text-[10px] font-semibold leading-snug tracking-tight',
-              'text-white shadow-sm shadow-black/20',
-              'line-clamp-2 break-words [overflow-wrap:anywhere]'
-            )}
-            title={product.title}
-          >
-            {product.title}
-          </span>
+          <div className="flex w-full min-w-0 justify-center">
+            <div
+              className={cn(
+                'inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-lg px-2 py-1',
+                'border border-white/30 dark:border-white/20',
+                'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                'text-white shadow-sm shadow-black/20'
+              )}
+            >
+              {!isInCart && !isSoldOut && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
+              <span
+                className={cn(
+                  'min-w-0 flex-1 text-left text-[10px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                )}
+                title={product.title}
+              >
+                {product.title}
+              </span>
+            </div>
+          </div>
         </div>
       </motion.div>
 

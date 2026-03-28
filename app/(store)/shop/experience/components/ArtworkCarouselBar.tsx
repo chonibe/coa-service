@@ -412,20 +412,29 @@ export function ArtworkCarouselBar({
                       <div className="absolute inset-0 bg-black/20" />
                       <div
                         className={cn(
-                          'absolute top-2 right-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full',
-                          'border backdrop-blur-xl backdrop-saturate-150 shadow-lg',
-                          theme === 'light'
-                            ? [
-                                'border-white/80 bg-white/45 text-neutral-800',
-                                'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
-                              ]
-                            : [
-                                'border-white/30 bg-white/18 text-white',
-                                'shadow-[0_6px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-                              ]
+                          'absolute inset-x-0 top-0 z-[2] pointer-events-none flex justify-center px-1 pt-1.5'
                         )}
                       >
-                        <Plus className="w-4 h-4" strokeWidth={2.5} />
+                        <div
+                          className={cn(
+                            'inline-flex max-w-full min-w-0 items-start gap-1 rounded-md px-1.5 py-0.5',
+                            'border border-white/30 dark:border-white/20',
+                            'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                            'text-white shadow-sm shadow-black/20'
+                          )}
+                        >
+                          <Plus
+                            className="h-3 w-3 shrink-0 mt-0.5 text-white opacity-95"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
+                          <span
+                            className="min-w-0 flex-1 text-left text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
+                            title={artwork.title}
+                          >
+                            {artwork.title}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   </div>

@@ -116,7 +116,6 @@ function ArtworkCardV2({
   suppressSelectionRing = false,
   streetPricing = null,
 }: ArtworkCardV2Props) {
-  const { theme } = useExperienceTheme()
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
   const isMergedVisual = isSelected && (mergeWithLeft || mergeWithRight)
@@ -203,27 +202,6 @@ function ArtworkCardV2({
           </span>
         )}
 
-        {!isSelected && (
-          <div
-            className={cn(
-              'pointer-events-none absolute top-2 right-2 z-[15] flex h-7 w-7 items-center justify-center rounded-full',
-              'border backdrop-blur-xl backdrop-saturate-150 shadow-lg',
-              theme === 'light'
-                ? [
-                    'border-white/80 bg-white/45 text-neutral-800',
-                    'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
-                  ]
-                : [
-                    'border-white/30 bg-white/18 text-white',
-                    'shadow-[0_6px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-                  ]
-            )}
-            aria-hidden
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-          </div>
-        )}
-
         <AnimatePresence initial={false}>
           {isSelected && selectionNumber !== null && (
             <motion.div
@@ -249,26 +227,37 @@ function ArtworkCardV2({
             'absolute inset-x-0 top-0 z-[9] pointer-events-none flex flex-col justify-start gap-0.5 px-1.5 pt-1',
             '[&_.picker-title-chip]:pointer-events-auto',
             (isNewDrop || isEarlyAccess) ? 'pt-9' : 'pt-2',
-            !isSelected && 'pr-9',
             isSelected &&
               selectionNumber !== null &&
               ((isNewDrop || isEarlyAccess) ? 'pr-7' : 'pl-7')
           )}
         >
           <div className="flex w-full min-w-0 justify-center">
-            <span
+            <div
               className={cn(
-                'picker-title-chip block max-w-full min-w-0 rounded-lg px-2 py-1 text-center',
+                'picker-title-chip inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-                'text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
-                'text-white shadow-sm shadow-black/20',
-                'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                'text-white shadow-sm shadow-black/20'
               )}
-              title={product.title}
             >
-              {product.title}
-            </span>
+              {!isSelected && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
+              <span
+                className={cn(
+                  'min-w-0 flex-1 text-left text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                )}
+                title={product.title}
+              >
+                {product.title}
+              </span>
+            </div>
           </div>
           {!streetPricing ? (
             <EditionBadgeForProduct
