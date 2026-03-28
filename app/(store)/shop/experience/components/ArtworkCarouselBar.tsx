@@ -8,6 +8,9 @@ import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
 
+/** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
+const MAX_CAROUSEL_STRIP_THUMBS = 7
+
 interface ArtworkCarouselBarProps {
   selectedArtworks: ShopifyProduct[]
   spotlightPlaceholders?: ShopifyProduct[]
@@ -26,7 +29,7 @@ interface ArtworkCarouselBarProps {
   stripMode?: 'collection' | 'watchlist'
   /** When in watchlist mode, switch back to collection thumbnails */
   onSwitchToCollection?: () => void
-  /** Lift strip above fixed checkout sticky bar (experience cart has artworks) */
+  /** Lift strip above fixed checkout sticky bar (≥1 artwork or empty **collection** row on sticky bar) */
   reserveCheckoutBar?: boolean
 }
 
@@ -60,16 +63,6 @@ export function ArtworkCarouselBar({
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
-
-  // Desktop: center when few items; scroll to end when many so newest items visible, older scroll off left
-  useEffect(() => {
-    if (!isDesktop || !scrollRef.current || selectedArtworks.length === 0) return
-    const el = scrollRef.current
-    const scrollToEnd = () => {
-      el.scrollLeft = el.scrollWidth - el.clientWidth
-    }
-    requestAnimationFrame(scrollToEnd)
-  }, [isDesktop, selectedArtworks.length])
 
   // Desktop: drag-to-scroll for smoother sliding
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -158,6 +151,31 @@ export function ArtworkCarouselBar({
     stripMode === 'collection' && selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
+  const nSelected = selectedArtworks.length
+  const stripWindowStart =
+    nSelected <= MAX_CAROUSEL_STRIP_THUMBS
+      ? 0
+      : activeIndex >= 0
+        ? Math.min(
+            Math.max(0, activeIndex - Math.floor(MAX_CAROUSEL_STRIP_THUMBS / 2)),
+            nSelected - MAX_CAROUSEL_STRIP_THUMBS
+          )
+        : nSelected - MAX_CAROUSEL_STRIP_THUMBS
+  const stripArtworks =
+    nSelected <= MAX_CAROUSEL_STRIP_THUMBS
+      ? selectedArtworks
+      : selectedArtworks.slice(stripWindowStart, stripWindowStart + MAX_CAROUSEL_STRIP_THUMBS)
+
+  // Desktop: scroll strip to end when count or visible window changes so thumbnails stay reachable
+  useEffect(() => {
+    if (!isDesktop || !scrollRef.current || selectedArtworks.length === 0) return
+    const el = scrollRef.current
+    const scrollToEnd = () => {
+      el.scrollLeft = el.scrollWidth - el.clientWidth
+    }
+    requestAnimationFrame(scrollToEnd)
+  }, [isDesktop, selectedArtworks.length, stripWindowStart, activeIndex])
+
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
   /** Carousel thumbs stay w-24; + control scaled down */
   const glassAddButtonClass = cn(
@@ -214,13 +232,8 @@ export function ArtworkCarouselBar({
             ref={carouselWheelHostRef}
             className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 px-3"
           >
-            <div
-              className={cn(
-                'flex w-full min-w-0 justify-center gap-2',
-                emptyCollectionStart ? 'flex-col items-center' : 'flex-row items-end'
-              )}
-            >
-              {stripMode === 'watchlist' && onSwitchToCollection && (
+            {stripMode === 'watchlist' && onSwitchToCollection && (
+              <div className="flex w-full min-w-0 flex-row items-end justify-center gap-2">
                 <button
                   type="button"
                   onClick={onSwitchToCollection}
@@ -230,8 +243,10 @@ export function ArtworkCarouselBar({
                 >
                   <LayoutGrid className="w-5 h-5" strokeWidth={2.25} />
                 </button>
-              )}
-              {stripMode === 'collection' && emptyCollectionStart && (
+              </div>
+            )}
+            {stripMode === 'collection' && emptyCollectionStart && !reserveCheckoutBar && (
+              <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={onOpenPicker}
@@ -240,19 +255,8 @@ export function ArtworkCarouselBar({
                   <span>Choose your first artwork</span>
                   <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
                 </button>
-              )}
-              {stripMode === 'collection' && !emptyCollectionStart && (
-                <button
-                  type="button"
-                  onClick={onOpenPicker}
-                  className={glassAddButtonClass}
-                  aria-label="Add artwork to collection"
-                  title="Add artwork to collection"
-                >
-                  <Plus className="w-5 h-5" strokeWidth={2.25} />
-                </button>
-              )}
-            </div>
+              </div>
+            )}
             {!hasCarouselArtworks && stripMode === 'watchlist' && (
               <p
                 className={cn(
@@ -270,20 +274,21 @@ export function ArtworkCarouselBar({
             onClickCapture={handleClickCapture}
             className={cn(
               /* justify-start + snap-start: snap-center/mandatory clips first/last tiles and blocks full scroll */
-              'touch-manipulation flex w-full min-w-0 items-end justify-start gap-4 overflow-x-auto scrollbar-hide snap-x snap-proximity flex-1 pb-3',
+              'touch-manipulation flex w-full min-w-0 items-end justify-start gap-4 overflow-x-auto scrollbar-hide snap-x snap-proximity pb-3',
               'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
           >
             <>
-              {selectedArtworks.map((artwork, index) => {
+              {stripArtworks.map((artwork, i) => {
+                const index = stripWindowStart + i
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isOnLamp = lampPreviewOrder.includes(artwork.id)
                 /* Eye on every tile assigned to the lamp (up to two sides). */
                 const showViewingEye = isOnLamp
                 const isCarouselCurrent = activeIndex >= 0 && index === activeIndex
-                const isFirstItem = index === 0
+                const isFirstVisible = i === 0
 
                 return (
                   <div
@@ -340,8 +345,8 @@ export function ArtworkCarouselBar({
                             unoptimized
                             className="object-cover"
                             sizes="96px"
-                            priority={isFirstItem}
-                            loading={isFirstItem ? 'eager' : 'lazy'}
+                            priority={isFirstVisible && stripWindowStart === 0}
+                            loading={isFirstVisible && stripWindowStart === 0 ? 'eager' : 'lazy'}
                           />
                         ) : (
                           <div className={cn(
@@ -405,14 +410,47 @@ export function ArtworkCarouselBar({
                         )}
                       </div>
                       <div className="absolute inset-0 bg-black/20" />
-                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-sm">
+                      <div
+                        className={cn(
+                          'absolute top-2 right-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full',
+                          'border backdrop-blur-xl backdrop-saturate-150 shadow-lg',
+                          theme === 'light'
+                            ? [
+                                'border-white/80 bg-white/45 text-neutral-800',
+                                'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
+                              ]
+                            : [
+                                'border-white/30 bg-white/18 text-white',
+                                'shadow-[0_6px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+                              ]
+                        )}
+                      >
                         <Plus className="w-4 h-4" strokeWidth={2.5} />
                       </div>
                     </button>
                   </div>
                 )
               })}
-              {/* Spacer so last tile can scroll fully into view past snap/edge clipping */}
+              {stripMode === 'collection' && !emptyCollectionStart && !reserveCheckoutBar && (
+                <div
+                  data-carousel-item
+                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                >
+                  <div className="flex items-center justify-center gap-1.5" aria-hidden>
+                    <span className="inline-block w-3.5 h-3.5" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenPicker}
+                    className={glassAddButtonClass}
+                    aria-label="Add artwork to collection"
+                    title="Add artwork to collection"
+                  >
+                    <Plus className="w-5 h-5" strokeWidth={2.25} />
+                  </button>
+                </div>
+              )}
+              {/* Spacer so last tile (+) can scroll fully into view past snap/edge clipping */}
               <div className="shrink-0 w-3 sm:w-4" aria-hidden />
             </>
           </div>

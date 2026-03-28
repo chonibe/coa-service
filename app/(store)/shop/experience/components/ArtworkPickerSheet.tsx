@@ -116,6 +116,7 @@ function ArtworkCardV2({
   suppressSelectionRing = false,
   streetPricing = null,
 }: ArtworkCardV2Props) {
+  const { theme } = useExperienceTheme()
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
   const isMergedVisual = isSelected && (mergeWithLeft || mergeWithRight)
@@ -204,7 +205,19 @@ function ArtworkCardV2({
 
         {!isSelected && (
           <div
-            className="pointer-events-none absolute top-2 right-2 z-[15] flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-md ring-1 ring-black/5"
+            className={cn(
+              'pointer-events-none absolute top-2 right-2 z-[15] flex h-7 w-7 items-center justify-center rounded-full',
+              'border backdrop-blur-xl backdrop-saturate-150 shadow-lg',
+              theme === 'light'
+                ? [
+                    'border-white/80 bg-white/45 text-neutral-800',
+                    'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
+                  ]
+                : [
+                    'border-white/30 bg-white/18 text-white',
+                    'shadow-[0_6px_20px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+                  ]
+            )}
             aria-hidden
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} />
