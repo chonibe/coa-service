@@ -782,7 +782,7 @@ export function ArtworkStrip({
             {showArtistSpine ? (
               <div
                 className={cn(
-                  'relative flex rounded-xl overflow-hidden',
+                  'relative flex items-stretch rounded-xl overflow-hidden',
                   shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
                 )}
               >
@@ -824,7 +824,7 @@ export function ArtworkStrip({
                 )}
                 <div
                   className={cn(
-                    'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
+                    'shrink-0 z-[1] self-stretch flex flex-col items-center justify-center bg-transparent',
                     shouldMerge ? 'px-0' : 'px-1.5'
                   )}
                 >

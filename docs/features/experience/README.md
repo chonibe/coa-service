@@ -274,6 +274,7 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 ## Version
 
 - Last updated: 2026-03-28
-- Version: 1.14.3
+- Version: 1.14.4
+- **Artist spine vertical alignment**: Two-up rows in [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) and [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) use `items-stretch` on the row and `self-stretch` on the spine column so the vertical artist label stays centered on the cross-axis (middle of the paired artwork cards).
 - **Artwork picker slide-up row spacing**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) (Instagram-style selector from the sticky bar) has its **own** virtualized list, separate from [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx). Row gaps use the same pattern as the strip: `pb-12 md:pb-16` between rows (merged pairs `py-4 md:py-6`), and `ROW_HEIGHT_ESTIMATE` is aligned so the virtualizer’s first paint stays reasonable before `measureElement` runs.
 - **Artwork + artist in reel**: [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx) uses shared [`HorizontalTwoSlideGallery`](../../../app/(store)/shop/experience-v2/components/HorizontalTwoSlideGallery.tsx) so the artwork card (image, title, scarcity) and artist spotlight swipe left/right when both are present. Same transform-based gallery fixes `ArtworkDetail` panels that use `overflow-x-hidden`.
