@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
@@ -61,6 +61,138 @@ interface ArtworkDetailProps {
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
 const spotlightCache = new Map<string, SpotlightWithProducts | null>()
+
+/** Horizontal gallery for artwork description + artist spotlight when both are present. */
+function ArtworkArtistDetailGallery({
+  description,
+  artistLoading,
+  spotlight,
+  spotlightProducts,
+  className,
+}: {
+  description: string
+  artistLoading: boolean
+  spotlight: SpotlightData | null
+  spotlightProducts: ShopifyProduct[]
+  className?: string
+}) {
+  const [index, setIndex] = useState(0)
+  const scrollerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setIndex(0)
+    requestAnimationFrame(() => {
+      scrollerRef.current?.scrollTo({ left: 0, behavior: 'auto' })
+    })
+  }, [description, spotlight?.vendorSlug])
+
+  const scrollToSlide = useCallback((i: number) => {
+    const el = scrollerRef.current
+    if (!el || el.clientWidth <= 0) return
+    const clamped = Math.max(0, Math.min(1, i))
+    el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' })
+    setIndex(clamped)
+  }, [])
+
+  const goPrev = useCallback(() => scrollToSlide(index - 1), [index, scrollToSlide])
+  const goNext = useCallback(() => scrollToSlide(index + 1), [index, scrollToSlide])
+
+  const onScrollSnap = useCallback(() => {
+    const el = scrollerRef.current
+    if (!el || el.clientWidth <= 0) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    setIndex((prev) => (i === prev ? prev : Math.max(0, Math.min(1, i))))
+  }, [])
+
+  return (
+    <div
+      className={cn('py-3 border-t border-neutral-100 dark:border-white/10', className)}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Artwork and artist details"
+    >
+      <div className="relative rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/40 dark:bg-[#201c1c]/35 overflow-hidden">
+        <div
+          ref={scrollerRef}
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          onScroll={onScrollSnap}
+        >
+          <div className="w-full min-w-full shrink-0 snap-center snap-always px-4 sm:px-5 py-4 pl-10 sm:pl-12 pr-3 sm:pr-4 box-border">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
+                <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+              </div>
+              <span className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Artwork details</span>
+            </div>
+            <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
+          </div>
+          <div className="w-full min-w-full shrink-0 snap-center snap-always px-4 sm:px-5 py-3 pl-3 sm:pl-4 pr-10 sm:pr-12 box-border">
+            {artistLoading ? (
+              <div className="py-10 flex justify-center">
+                <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+              </div>
+            ) : spotlight ? (
+              <ArtistSpotlightBanner
+                spotlight={{ ...spotlight, gifUrl: undefined }}
+                spotlightProducts={spotlightProducts}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={index === 0}
+          className={cn(
+            'absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
+            index === 0 && 'opacity-35 pointer-events-none'
+          )}
+          aria-label="Previous: artwork details"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={index === 1}
+          className={cn(
+            'absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/95 dark:bg-[#2a2424]/95 border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-neutral-700 dark:text-[#e8d8d8] transition-opacity',
+            index === 1 && 'opacity-35 pointer-events-none'
+          )}
+          aria-label="Next: artist details"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <div className="flex justify-center gap-1.5 pb-3 pt-0.5" role="tablist" aria-label="Gallery slides">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={index === 0}
+            onClick={() => scrollToSlide(0)}
+            className={cn(
+              'h-1.5 rounded-full transition-all min-w-0',
+              index === 0 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
+            )}
+            aria-label="Artwork details slide"
+          />
+          <button
+            type="button"
+            role="tab"
+            aria-selected={index === 1}
+            onClick={() => scrollToSlide(1)}
+            className={cn(
+              'h-1.5 rounded-full transition-all min-w-0',
+              index === 1 ? 'w-6 bg-neutral-800 dark:bg-white' : 'w-1.5 bg-neutral-300 dark:bg-white/40 hover:bg-neutral-400 dark:hover:bg-white/55'
+            )}
+            aria-label="Artist details slide"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
@@ -162,6 +294,25 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   ).trim()
 
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
+
+  const productIdShort = product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id
+  const spotlightForBanner: SpotlightData | null =
+    spotlightDataOverride ??
+    spotlightData ??
+    (artistData
+      ? {
+          vendorName: artistData.name,
+          vendorSlug: artistData.slug,
+          bio: artistData.bio,
+          image: artistData.image,
+          instagram: artistData.instagram,
+          productIds: [productIdShort],
+        }
+      : null)
+  const spotlightProductsForBanner = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
+  const showArtworkArtistGallery = Boolean(
+    description.trim() && artist && (artistLoading || spotlightForBanner)
+  )
 
   const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
   const slug = artistSlugOverride || slugFromVendor
@@ -435,34 +586,88 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <span className="text-xs">Loading details…</span>
             </div>
           )}
-          {!isLampOrBundleProduct && (
-            <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
-              {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-              <ArtworkEditionUnifiedSection className="w-full">
-                <EditionBadgeForProduct
-                  product={product}
-                  artistName={editionArtistName}
-                  unifiedSection
-                  className="w-full"
-                />
-              </ArtworkEditionUnifiedSection>
-            </div>
-          )}
-          {artist && (
-            <div className="py-3 border-b border-neutral-100 dark:border-white/10">
-              {artistLoading ? (
-                <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
-              ) : (() => {
-                const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                return spotlight ? (
-                  <ArtistSpotlightBanner
-                    spotlight={{ ...spotlight, gifUrl: undefined }}
-                    spotlightProducts={spotlightProducts}
-                  />
-                ) : null
-              })()}
-            </div>
+          {showArtworkArtistGallery ? (
+            <>
+              {!isLampOrBundleProduct && (
+                <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
+                  {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                  <ArtworkEditionUnifiedSection className="w-full">
+                    <EditionBadgeForProduct
+                      product={product}
+                      artistName={editionArtistName}
+                      unifiedSection
+                      className="w-full"
+                    />
+                  </ArtworkEditionUnifiedSection>
+                </div>
+              )}
+              <ArtworkArtistDetailGallery
+                description={description}
+                artistLoading={artistLoading}
+                spotlight={spotlightForBanner}
+                spotlightProducts={spotlightProductsForBanner}
+              />
+            </>
+          ) : (
+            <>
+              {!isLampOrBundleProduct && (
+                <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
+                  {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                  <ArtworkEditionUnifiedSection className="w-full">
+                    <EditionBadgeForProduct
+                      product={product}
+                      artistName={editionArtistName}
+                      unifiedSection
+                      className="w-full"
+                    />
+                  </ArtworkEditionUnifiedSection>
+                </div>
+              )}
+              {description.trim() && (
+                <div className="py-3 border-b border-neutral-100 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowDescription(!showDescription)}
+                    className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
+                        <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                      </div>
+                      <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
+                        Artwork details
+                      </span>
+                    </div>
+                    <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
+                  </button>
+                  <AnimatePresence>
+                    {showDescription && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pt-1 pb-2">{description}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+              {artist && (
+                <div className="py-3 border-b border-neutral-100 dark:border-white/10">
+                  {artistLoading ? (
+                    <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                  ) : spotlightForBanner ? (
+                    <ArtistSpotlightBanner
+                      spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                      spotlightProducts={spotlightProductsForBanner}
+                    />
+                  ) : null}
+                </div>
+              )}
+            </>
           )}
         </div>
         <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-3">
@@ -862,65 +1067,88 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       <span className="text-xs">Loading details…</span>
                     </div>
                   )}
-                  {description && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
-                      <button
-                        onClick={() => { setShowDescription(!showDescription); if (!showDescription) setShowArtistBio(false) }}
-                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
-                            <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-                          </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                            Artwork details
-                          </span>
+                  {showArtworkArtistGallery ? (
+                    <>
+                      {!isLampOrBundleProduct && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
+                          {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                          <ArtworkEditionUnifiedSection className="w-full">
+                            <EditionBadgeForProduct
+                              product={product}
+                              artistName={editionArtistName}
+                              unifiedSection
+                              className="w-full"
+                            />
+                          </ArtworkEditionUnifiedSection>
                         </div>
-                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
-                      </button>
-                      <AnimatePresence>
-                        {showDescription && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
+                      )}
+                      <ArtworkArtistDetailGallery
+                        description={description}
+                        artistLoading={artistLoading}
+                        spotlight={spotlightForBanner}
+                        spotlightProducts={spotlightProductsForBanner}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {description.trim() && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                          <button
+                            type="button"
+                            onClick={() => setShowDescription(!showDescription)}
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                           >
-                            <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pt-1 pb-2">{description}</p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                  {!isLampOrBundleProduct && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
-                      {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                      <ArtworkEditionUnifiedSection className="w-full">
-                        <EditionBadgeForProduct
-                          product={product}
-                          artistName={editionArtistName}
-                          unifiedSection
-                          className="w-full"
-                        />
-                      </ArtworkEditionUnifiedSection>
-                    </div>
-                  )}
-                  {artist && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
-                      {artistLoading ? (
-                        <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
-                      ) : (() => {
-                        const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                        const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                        return spotlight ? (
-                          <ArtistSpotlightBanner
-                            spotlight={{ ...spotlight, gifUrl: undefined }}
-                            spotlightProducts={spotlightProducts}
-                          />
-                        ) : null
-                      })()}
-                    </div>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
+                                <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                              </div>
+                              <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
+                                Artwork details
+                              </span>
+                            </div>
+                            <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
+                          </button>
+                          <AnimatePresence>
+                            {showDescription && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pt-1 pb-2">{description}</p>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+                      {!isLampOrBundleProduct && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
+                          {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                          <ArtworkEditionUnifiedSection className="w-full">
+                            <EditionBadgeForProduct
+                              product={product}
+                              artistName={editionArtistName}
+                              unifiedSection
+                              className="w-full"
+                            />
+                          </ArtworkEditionUnifiedSection>
+                        </div>
+                      )}
+                      {artist && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                          {artistLoading ? (
+                            <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                          ) : spotlightForBanner ? (
+                            <ArtistSpotlightBanner
+                              spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                              spotlightProducts={spotlightProductsForBanner}
+                            />
+                          ) : null}
+                        </div>
+                      )}
+                    </>
                   )}
                   </div>
 
@@ -1235,76 +1463,95 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
-            {/* Description (expandable) — product description */}
-            {description && (
-              <div className="px-4 pb-3">
-                <button
-                  onClick={() => {
-                    setShowDescription(!showDescription)
-                    if (!showDescription) setShowArtistBio(false)
-                  }}
-                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
-                    </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-                      Artwork details
-                    </span>
+            {showArtworkArtistGallery ? (
+              <>
+                {!isLampOrBundleProduct && (
+                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
+                    {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                    <ArtworkEditionUnifiedSection className="w-full">
+                      <EditionBadgeForProduct
+                        product={product}
+                        artistName={editionArtistName}
+                        unifiedSection
+                        className="w-full"
+                      />
+                    </ArtworkEditionUnifiedSection>
                   </div>
-                  <ChevronDown className={cn(
-                    'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
-                    showDescription && 'rotate-180'
-                  )} />
-                </button>
-
-                <AnimatePresence>
-                  {showDescription && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+                )}
+                <ArtworkArtistDetailGallery
+                  description={description}
+                  artistLoading={artistLoading}
+                  spotlight={spotlightForBanner}
+                  spotlightProducts={spotlightProductsForBanner}
+                  className="px-4"
+                />
+              </>
+            ) : (
+              <>
+                {description.trim() && (
+                  <div className="px-4 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDescription(!showDescription)}
+                      className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
                     >
-                      <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pb-3">{description}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
+                          <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
+                        </div>
+                        <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                          Artwork details
+                        </span>
+                      </div>
+                      <ChevronDown className={cn(
+                        'w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] transition-transform',
+                        showDescription && 'rotate-180'
+                      )} />
+                    </button>
 
-            {!isLampOrBundleProduct && (
-              <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
-                {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                <ArtworkEditionUnifiedSection className="w-full">
-                  <EditionBadgeForProduct
-                    product={product}
-                    artistName={editionArtistName}
-                    unifiedSection
-                    className="w-full"
-                  />
-                </ArtworkEditionUnifiedSection>
-              </div>
-            )}
+                    <AnimatePresence>
+                      {showDescription && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed pb-3">{description}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
-            {/* About the Artist — spotlight card (same as selector) */}
-            {artist && (
-              <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
-                {artistLoading ? (
-                  <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
-                ) : (() => {
-                  const spotlight: SpotlightData | null = spotlightDataOverride ?? spotlightData ?? (artistData ? { vendorName: artistData.name, vendorSlug: artistData.slug, bio: artistData.bio, image: artistData.image, instagram: artistData.instagram, productIds: [product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id] } : null)
-                  const spotlightProducts = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
-                  return spotlight ? (
-                    <ArtistSpotlightBanner
-                      spotlight={{ ...spotlight, gifUrl: undefined }}
-                      spotlightProducts={spotlightProducts}
-                    />
-                  ) : null
-                })()}
-              </div>
+                {!isLampOrBundleProduct && (
+                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
+                    {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
+                    <ArtworkEditionUnifiedSection className="w-full">
+                      <EditionBadgeForProduct
+                        product={product}
+                        artistName={editionArtistName}
+                        unifiedSection
+                        className="w-full"
+                      />
+                    </ArtworkEditionUnifiedSection>
+                  </div>
+                )}
+
+                {artist && (
+                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
+                    {artistLoading ? (
+                      <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                    ) : spotlightForBanner ? (
+                      <ArtistSpotlightBanner
+                        spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                        spotlightProducts={spotlightProductsForBanner}
+                      />
+                    ) : null}
+                  </div>
+                )}
+              </>
             )}
 
           </div>
