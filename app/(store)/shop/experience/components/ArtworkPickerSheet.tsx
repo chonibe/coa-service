@@ -22,7 +22,6 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
-import { StreetPricingChip } from '../../experience-v2/components/StreetPricingChip'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import {
@@ -97,7 +96,10 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
-  /** Street ladder: stage chip on image bottom; edition badge + price in meta footer. */
+  /**
+   * Street ladder: list price (+ label fallback) in footer; `EditionBadgeForProduct` chip in footer;
+   * “N more sales · then $X” chip on image bottom when `nextBump` exists.
+   */
   streetPricing?: StreetEditionStatesRow | null
 }
 
@@ -230,16 +232,26 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        {streetPricing ? (
-          <StreetPricingChip
-            label={streetPricing.label}
-            priceUsd={streetPricing.priceUsd}
-            subcopy={streetPricing.subcopy}
-            showPrice={false}
-            showSubcopy={false}
-            className={cn('absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5')}
-          />
-        ) : (
+        {streetPricing && nextSalesChipText ? (
+          <div
+            className={cn(
+              'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex justify-center px-1.5 pb-1.5'
+            )}
+          >
+            <span
+              className={cn(
+                'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
+                'border border-neutral-200/90 dark:border-white/15',
+                'bg-neutral-50/95 dark:bg-black/40 backdrop-blur-sm',
+                'text-[11px] leading-tight text-neutral-800 dark:text-neutral-100',
+                'font-medium normal-case tracking-normal text-center tabular-nums',
+                'shadow-sm shadow-black/10'
+              )}
+            >
+              {nextSalesChipText}
+            </span>
+          </div>
+        ) : !streetPricing ? (
           <EditionBadgeForProduct
             product={product}
             chipOnly
@@ -248,7 +260,7 @@ function ArtworkCardV2({
               '[&>span]:pointer-events-auto'
             )}
           />
-        )}
+        ) : null}
       </motion.div>
 
       <div
@@ -269,11 +281,6 @@ function ArtworkCardV2({
           )}>{product.title}</p>
           {streetPricing ? (
             <div className="w-full min-w-0 flex flex-col gap-1 items-center text-center px-0.5">
-              <EditionBadgeForProduct
-                product={product}
-                chipOnly
-                className="w-full min-w-0 pointer-events-none [&>span]:pointer-events-auto"
-              />
               {streetListActive ? (
                 <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
                   <span
@@ -297,19 +304,7 @@ function ArtworkCardV2({
                   {streetPricing.label}
                 </p>
               )}
-              {nextSalesChipText ? (
-                <span
-                  className={cn(
-                    'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5',
-                    'border border-neutral-200 dark:border-white/10',
-                    'bg-neutral-50/95 dark:bg-white/5',
-                    'text-[11px] leading-tight text-neutral-700 dark:text-neutral-200',
-                    'font-medium normal-case tracking-normal text-center tabular-nums'
-                  )}
-                >
-                  {nextSalesChipText}
-                </span>
-              ) : null}
+              <EditionBadgeForProduct product={product} chipOnly className="w-full mt-0.5" />
             </div>
           ) : (
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
