@@ -336,8 +336,8 @@ function ArtworkCardV2({
   )
 }
 
-/** Virtual row estimate; rows use measureElement. */
-const ROW_HEIGHT_ESTIMATE = 332
+/** Virtual row estimate; rows use measureElement (includes row vertical gap). */
+const ROW_HEIGHT_ESTIMATE = 480
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -675,21 +675,19 @@ export function ArtworkPickerSheet({
                       key={virtualRow.key}
                       data-index={virtualRow.index}
                       ref={virtualizer.measureElement}
+                      className={cn(
+                        'absolute top-0 left-0 w-full',
+                        showArtistSpine && shouldMerge ? 'py-4 md:py-6' : 'pb-12 md:pb-16'
+                      )}
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
                       {showArtistSpine ? (
                         <div
                           className={cn(
-                            'relative flex rounded-xl overflow-hidden',
-                            shouldMerge
-                              ? cn('py-0.5 my-0.5', experienceArtistRowMergeClass)
-                              : cn('pb-1.5', experienceArtistRowDefaultClass)
+                            'relative flex items-start rounded-xl overflow-hidden',
+                            shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -746,7 +744,7 @@ export function ArtworkPickerSheet({
                           )}
                         </div>
                       ) : (
-                        <div className="relative flex justify-center pb-1.5">
+                        <div className="relative flex justify-center">
                           {product1 && (
                             <div className="w-[calc(52.5%-0.125rem)] max-w-[280px]">
                               <ArtworkCardV2
