@@ -15,6 +15,7 @@ import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBa
 import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
 import { HorizontalTwoSlideGallery } from '../../experience-v2/components/HorizontalTwoSlideGallery'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+import { cn } from '@/lib/utils'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 
@@ -243,7 +244,7 @@ export function ArtworkAccordions({
     [product, streetEdition, isEarlyAccess, isLamp]
   )
 
-  const artworkDetailsPanel =
+  const renderArtworkCardInner = (omitArtistLine: boolean) =>
     !isLamp && (firstImage?.url || product.title) ? (
       <>
         {firstImage?.url && (
@@ -259,13 +260,18 @@ export function ArtworkAccordions({
         )}
         <div className="p-4 sm:p-5 text-center">
           <div className="mb-4">
-            {detailArtistName && (
+            {!omitArtistLine && detailArtistName && (
               <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
                 {detailArtistName}
               </p>
             )}
             {product.title && (
-              <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0.5">
+              <h2
+                className={cn(
+                  'text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white',
+                  !omitArtistLine && detailArtistName ? 'mt-0.5' : 'mt-0'
+                )}
+              >
                 {product.title}
               </h2>
             )}
@@ -293,6 +299,9 @@ export function ArtworkAccordions({
         </div>
       </>
     ) : null
+
+  const artworkDetailsPanel = renderArtworkCardInner(false)
+  const artworkGalleryFirstSlide = renderArtworkCardInner(true)
 
   const hasArtworkCard = artworkDetailsPanel != null
   const showArtworkArtistSectionGallery =
@@ -338,25 +347,24 @@ export function ArtworkAccordions({
       )}
 
       {/* Artwork card + artist spotlight — horizontal gallery when both exist (Experience reel / Spline) */}
-      {showArtworkArtistSectionGallery && artworkDetailsPanel ? (
+      {showArtworkArtistSectionGallery && artworkGalleryFirstSlide ? (
         <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
           <HorizontalTwoSlideGallery
             resetKey={product.id}
             ariaLabel="Artwork and artist"
-            first={artworkDetailsPanel}
+            first={artworkGalleryFirstSlide}
             second={
-              <div className="p-3 sm:p-4 min-h-[100px]">
-                {artistLoading ? (
-                  <div className="py-8 flex justify-center">
-                    <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
-                  </div>
-                ) : spotlightForBanner ? (
-                  <ArtistSpotlightBanner
-                    spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
-                    spotlightProducts={spotlightProductsForBanner}
-                  />
-                ) : null}
-              </div>
+              artistLoading ? (
+                <div className="py-10 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                </div>
+              ) : spotlightForBanner ? (
+                <ArtistSpotlightBanner
+                  embedded
+                  spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
+                  spotlightProducts={spotlightProductsForBanner}
+                />
+              ) : null
             }
           />
         </div>

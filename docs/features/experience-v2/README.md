@@ -119,7 +119,7 @@ Horizontal tappable carousel at the bottom of the Spline view:
 
 ### ArtworkDetail + EditionBadge
 
-- **`ArtworkDetail`** — full-screen sheet, desktop slideout, or inline panel; scarcity bar, artist spotlight, add-to-order CTA. When both **Artwork details** (description) and **artist spotlight** are available, those two blocks use shared **`HorizontalTwoSlideGallery`**: chevrons and dots; CSS `translate3d` (not overflow scroll) so navigation works inside `overflow-x-hidden` parents. Edition/scarcity stays above the gallery when applicable.
+- **`ArtworkDetail`** — full-screen sheet, desktop slideout, or inline panel; scarcity bar, artist spotlight, add-to-order CTA. When both **Artwork details** (description) and **artist spotlight** are available, those two blocks use shared **`HorizontalTwoSlideGallery`**: chevrons only; CSS `translate3d` (not overflow scroll) so navigation works inside `overflow-x-hidden` parents. Edition/scarcity stays above the gallery when applicable.
 - **`EditionBadge`** — minimal “gallery label” block: stage pill, subline, and CTA copy driven by sold count vs edition size. Shown when the product has **`custom.edition_size`** and Shopify reports **`quantityAvailable`** on the first variant; **hidden** for lamp/bundle rows (`productIncludes` set). Sold count = `edition_size - quantityAvailable` (capped to edition size).
 - Stage bands match a 44-edition reference run but **scale by sold/total ratio** for other sizes; the **last two units** use the `final` band only when `totalEditions >= 3` and `sold >= total - 2` (avoids calling a 2-piece launch “final” at 0 sold).
 

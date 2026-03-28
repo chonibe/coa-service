@@ -14,7 +14,7 @@ export interface HorizontalTwoSlideGalleryProps {
 }
 
 /**
- * Two full-width panels side by side; navigate with chevrons, dots, or swipe-style intent.
+ * Two full-width panels side by side; navigate with chevrons.
  * Uses CSS transform (not overflow scroll) so it works inside parents with `overflow-x-hidden`.
  */
 export function HorizontalTwoSlideGallery({
@@ -29,10 +29,6 @@ export function HorizontalTwoSlideGallery({
   useEffect(() => {
     setIndex(0)
   }, [resetKey])
-
-  const goTo = useCallback((i: number) => {
-    setIndex(Math.max(0, Math.min(1, i)))
-  }, [])
 
   const goPrev = useCallback(() => {
     setIndex((i) => Math.max(0, i - 1))
@@ -83,41 +79,6 @@ export function HorizontalTwoSlideGallery({
       >
         <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
       </button>
-
-      <div className="flex items-center justify-center gap-0.5 pb-2 pt-0.5" aria-label="Slides">
-        <button
-          type="button"
-          onClick={() => goTo(0)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full touch-manipulation"
-          aria-label="First slide"
-          aria-current={index === 0 ? 'true' : undefined}
-        >
-          <span
-            className={cn(
-              'block rounded-full transition-colors',
-              index === 0
-                ? 'h-[3px] w-3 bg-neutral-600 dark:bg-white/80'
-                : 'h-[3px] w-[3px] bg-neutral-300 dark:bg-white/30 hover:bg-neutral-400 dark:hover:bg-white/45'
-            )}
-          />
-        </button>
-        <button
-          type="button"
-          onClick={() => goTo(1)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full touch-manipulation"
-          aria-label="Second slide"
-          aria-current={index === 1 ? 'true' : undefined}
-        >
-          <span
-            className={cn(
-              'block rounded-full transition-colors',
-              index === 1
-                ? 'h-[3px] w-3 bg-neutral-600 dark:bg-white/80'
-                : 'h-[3px] w-[3px] bg-neutral-300 dark:bg-white/30 hover:bg-neutral-400 dark:hover:bg-white/45'
-            )}
-          />
-        </button>
-      </div>
     </div>
   )
 }

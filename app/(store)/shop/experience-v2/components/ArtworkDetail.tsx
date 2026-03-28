@@ -104,6 +104,7 @@ function ArtworkArtistDetailGallery({
                 </div>
               ) : spotlight ? (
                 <ArtistSpotlightBanner
+                  embedded
                   spotlight={{ ...spotlight, gifUrl: undefined }}
                   spotlightProducts={spotlightProducts}
                 />
