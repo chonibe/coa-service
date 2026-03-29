@@ -21,6 +21,8 @@ const HANDLE_ALIASES: Record<string, string[]> = {
   'jack-j-c-art': ['jack-jc-art'],
   /** Legacy listing slug with dots in segment (before getVendorCollectionHandle on artists API) */
   'jack-j.c.-art': ['jack-jc-art', 'jack-j-c-art'],
+  /** Listing/display slug “Jack AC Art” → same collection as jack-jc-art */
+  'jack-ac-art': ['jack-jc-art', 'jack-j-c-art'],
 }
 
 /** Collection portrait for artists list when profile / product pick is wrong */
@@ -92,10 +94,12 @@ export async function getArtistImageByHandle(handle: string): Promise<string | u
     .join(' ')
   try {
     const { products } = await getProductsByVendor(vendorName, { first: 1 })
-    return products?.[0]?.featuredImage?.url
+    const fromVendor = products?.[0]?.featuredImage?.url
+    if (fromVendor) return fromVendor
   } catch {
-    return undefined
+    // continue to explicit override
   }
+  return getArtistListImageOverride(handle)
 }
 
 /**

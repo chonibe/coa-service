@@ -20,6 +20,7 @@ import {
 import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
 import { homepageContent } from '@/content/homepage'
 import { getCollection, getProduct, formatPrice, isOnSale, getDiscountPercentage, isStorefrontConfigured, getStorefrontConfigStatus } from '@/lib/shopify/storefront-client'
+import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
@@ -79,18 +80,24 @@ export default async function ShopHomePage() {
             .split('-')
             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ')
+          let imageUrl =
+            collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url
+          if (!imageUrl) {
+            imageUrl = await getArtistImageByHandle(artist?.handle ?? '')
+          }
           return {
             handle: artist?.handle ?? '',
             name,
             location: artist?.location,
-            imageUrl: collection?.image?.url || collection?.products?.edges?.[0]?.node?.featuredImage?.url,
+            imageUrl,
           }
         } catch {
           const name = (artist?.handle ?? '')
             .split('-')
             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ')
-          return { handle: artist?.handle ?? '', name, location: artist?.location }
+          const imageUrl = await getArtistImageByHandle(artist?.handle ?? '').catch(() => undefined)
+          return { handle: artist?.handle ?? '', name, location: artist?.location, imageUrl }
         }
       })
     )
