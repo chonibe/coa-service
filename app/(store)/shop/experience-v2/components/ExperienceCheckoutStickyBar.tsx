@@ -198,6 +198,7 @@ export function ExperienceCheckoutStickyBar({
                     </span>
                   ) : null}
                 </div>
+                <PlusSep theme={theme} />
                 <p
                   className={cn(
                     'min-w-0 text-sm font-semibold leading-tight',
@@ -211,8 +212,7 @@ export function ExperienceCheckoutStickyBar({
                       theme === 'light' ? 'text-neutral-600' : 'text-[#c4a8a8]'
                     )}
                   >
-                    {' '}
-                    added
+                    {selectedArtworks.length === 1 ? ' artwork added' : ' artworks added'}
                   </span>
                 </p>
               </div>
