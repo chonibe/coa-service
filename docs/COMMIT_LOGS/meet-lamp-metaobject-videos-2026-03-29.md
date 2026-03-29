@@ -11,7 +11,7 @@
 
 ## Shopify setup (summary)
 
-- Metaobject **definition** handle for `metaobjects(type: …)`: **`under-the-fold-section-gedomnm3`** (override with env `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`).
+- Metaobject **definition** handle for `metaobjects(type: …)`: **`under_the_fold_section`** (Admin URL `…/entries/under_the_fold_section/…`; override with env `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`).
 - Per entry: text field **`title`** (or alternates listed in README) matching stage title (e.g. `Set the light`); **`video`** file (video) or alternates; optional **`mobile_video`**, poster image fields.
 - Storefront API: **`unauthenticated_read_metaobjects`**.
 

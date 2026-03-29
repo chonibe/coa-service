@@ -28,7 +28,7 @@ export const streetCollectorContent = {
   logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
   /**
    * Meet the Street Lamp: default `desktopVideo` / `mobileVideo` / `poster` when a stage has no Shopify clip.
-   * Per-slide videos: Shopify metaobject definition (default type handle `under-the-fold-section-gedomnm3`, overridable via `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`) — match entries to each `stages[].title` (or entry handle slug); see `lib/shopify/under-the-fold-meet-lamp.ts`.
+   * Per-slide videos: Shopify metaobject definition (default type `under_the_fold_section`, overridable via `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`) — match entries to each `stages[].title` (or entry handle slug); see `lib/shopify/under-the-fold-meet-lamp.ts`.
    */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
@@ -377,12 +377,12 @@ export const streetCollectorContent = {
           {
             question: 'How do artwork prices change as an edition sells?',
             answer:
-              'Editions move through fixed stages (Ground Floor through Final) as copies sell. List price only moves up the ladder — there are no flash sales on the model. What you see in the configurator reflects the same ladder we use in the database after orders sync.',
+              'As more pieces from an edition find homes, the price steps up through set tiers — it only ever moves in one direction, and we don’t run surprise flash sales on this model. The price you see when you build your lamp is the price that applies: it stays in sync with how many have sold.',
           },
           {
             question: 'What is The Reserve?',
             answer:
-              'The Reserve is an optional membership that gives you a window of time to pay at a frozen artwork price while the public ladder advances. It is not a percentage-off discount; edition assignment after checkout still uses the same pipeline as every other order.',
+              'The Reserve is an optional membership that holds your artwork price steady for a window of time while the public price continues to rise as the edition sells. Think of it as time to decide at today’s price — not a coupon or a percent off. When you check out, your piece is fulfilled the same way as any other order.',
           },
         ],
       },

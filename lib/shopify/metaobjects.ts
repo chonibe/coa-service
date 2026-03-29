@@ -27,6 +27,38 @@ export interface MetaobjectField {
   reference?: MetaobjectFileReference | null
 }
 
+/** Matches direct video URLs stored in single-line / URL fields (not only file_reference). */
+const VIDEO_URL_VALUE_PATTERN = /^https?:\/\/.+\.(mp4|webm|mov)(\?|#|$)/i
+
+/**
+ * Resolve a playable/file URL from a metaobject field reference (Video, MediaImage, GenericFile).
+ */
+export function extractUrlFromMetaobjectReference(
+  ref: MetaobjectFileReference | null | undefined
+): string | null {
+  if (!ref) return null
+  if (ref.sources?.[0]?.url) return ref.sources[0].url
+  if (ref.image?.url) return ref.image.url
+  if (ref.url) return ref.url
+  return null
+}
+
+/**
+ * Video URL from a field: `Video` sources, `GenericFile`/`url` when it looks like a video file, or raw HTTPS video in `value`.
+ * Does not use `MediaImage` (those are posters / thumbnails).
+ */
+export function getVideoUrlFromMetaobjectField(
+  field: MetaobjectField | undefined
+): string | null {
+  if (!field) return null
+  const ref = field.reference
+  if (ref?.sources?.[0]?.url) return ref.sources[0].url
+  if (ref?.url && VIDEO_URL_VALUE_PATTERN.test(ref.url)) return ref.url
+  const v = field.value?.trim()
+  if (v && VIDEO_URL_VALUE_PATTERN.test(v)) return v
+  return null
+}
+
 export interface Metaobject {
   id: string
   type: string
@@ -70,6 +102,10 @@ export async function getMetaobject(
                 url
                 mimeType
               }
+            }
+            ... on GenericFile {
+              id
+              url
             }
           }
         }
@@ -179,6 +215,10 @@ export async function listMetaobjectsWithReferences(
                     mimeType
                   }
                 }
+                ... on GenericFile {
+                  id
+                  url
+                }
               }
             }
           }
@@ -230,21 +270,17 @@ export function getMetaobjectFileUrl(
   key: string
 ): string | null {
   if (!metaobject) return null
-  
-  const field = metaobject.fields.find(f => f.key === key)
-  if (!field?.reference) return null
-  
-  // Check for video sources
-  if ('sources' in field.reference && field.reference.sources && field.reference.sources.length > 0) {
-    return field.reference.sources[0].url
-  }
-  
-  // MediaImage: URL lives on image.url
-  if (field.reference.image?.url) {
-    return field.reference.image.url
-  }
 
-  return field.reference.url || null
+  const field = metaobject.fields.find((f) => f.key === key)
+  if (!field) return null
+
+  const fromRef = extractUrlFromMetaobjectReference(field.reference ?? null)
+  if (fromRef) return fromRef
+
+  const v = field.value?.trim()
+  if (v && VIDEO_URL_VALUE_PATTERN.test(v)) return v
+
+  return null
 }
 
 /**
