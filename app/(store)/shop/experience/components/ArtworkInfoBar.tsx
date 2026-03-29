@@ -200,6 +200,17 @@ export function ArtworkInfoBar({
   const title = displayedProduct.title ?? ''
   const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
 
+  /** First reel slide that shows an extra product photo (after details hero). */
+  const firstGalleryImageSlide =
+    galleryImages.length > 1 ? slideForImageThumb(1) : null
+  const lastGalleryImageSlide =
+    galleryImages.length > 1 ? slideForImageThumb(galleryImages.length - 1) : null
+  const galleryStackThumbActive =
+    firstGalleryImageSlide != null &&
+    lastGalleryImageSlide != null &&
+    currentSlide >= firstGalleryImageSlide &&
+    currentSlide <= lastGalleryImageSlide
+
   /**
    * Mobile: title over Spline when that slide is active — unless the reel has edition above Spline
    * (`editionLeadBeforeSpline`), in which case edition already surfaces artwork identity; hide duplicate.
@@ -266,7 +277,10 @@ export function ArtworkInfoBar({
                 <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-white/10')} />
               ) : (
                 <>
-                  {editionLeadBeforeSpline && editionSlide !== null && (
+                  {/* Edition reel jump — inline strip only; right-rail stack omits (edition block no longer first-class in reel) */}
+                  {thumbnailPlacement !== 'right' &&
+                    editionLeadBeforeSpline &&
+                    editionSlide !== null && (
                     <button
                       type="button"
                       onPointerDown={(e) => e.stopPropagation()}
@@ -341,37 +355,82 @@ export function ArtworkInfoBar({
                   >
                     <Info className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} />
                   </button>
-                  {galleryImages.map((img, idx) => (
-                    <button
-                      key={img.url || idx}
-                      type="button"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        onGoToSlide?.(slideForImageThumb(idx))
-                      }}
-                      title="View full image"
-                      className={cn(
-                        'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
-                      currentSlide === slideForImageThumb(idx)
-                        ? 'border-[#FFBA94]'
-                          : theme === 'light'
-                            ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
-                            : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
-                      )}
-                    >
-                      <Image
-                        src={getShopifyImageUrl(img.url, 88) ?? img.url}
-                        alt={img.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
-                        fill
-                        unoptimized
-                        className="object-cover pointer-events-none"
-                        sizes="32px"
-                        loading="eager"
-                      />
-                    </button>
-                  ))}
+                  {thumbnailPlacement === 'right' ? (
+                    firstGalleryImageSlide != null && galleryImages[1] ? (
+                      <button
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          onGoToSlide?.(firstGalleryImageSlide)
+                        }}
+                        title={
+                          galleryImages.length > 2
+                            ? `${galleryImages.length - 1} artwork photos — opens first`
+                            : 'View artwork photo'
+                        }
+                        className={cn(
+                          'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
+                          galleryStackThumbActive
+                            ? 'border-[#FFBA94]'
+                            : theme === 'light'
+                              ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
+                              : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
+                        )}
+                      >
+                        <Image
+                          src={getShopifyImageUrl(galleryImages[1].url, 88) ?? galleryImages[1].url}
+                          alt={galleryImages[1].altText ?? displayedProduct.title ?? 'Artwork photo'}
+                          fill
+                          unoptimized
+                          className="object-cover pointer-events-none"
+                          sizes="32px"
+                          loading="eager"
+                        />
+                        {galleryImages.length > 2 ? (
+                          <span
+                            className="pointer-events-none absolute bottom-0 right-0 rounded-tl-md bg-black/80 px-1 py-0.5 text-[11px] font-extrabold tabular-nums leading-none tracking-tight text-white"
+                            aria-hidden
+                          >
+                            +{galleryImages.length - 2}
+                          </span>
+                        ) : null}
+                      </button>
+                    ) : null
+                  ) : (
+                    galleryImages.map((img, idx) => (
+                      <button
+                        key={img.url || idx}
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          onGoToSlide?.(slideForImageThumb(idx))
+                        }}
+                        title="View full image"
+                        className={cn(
+                          'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
+                          currentSlide === slideForImageThumb(idx)
+                            ? 'border-[#FFBA94]'
+                            : theme === 'light'
+                              ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
+                              : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
+                        )}
+                      >
+                        <Image
+                          src={getShopifyImageUrl(img.url, 88) ?? img.url}
+                          alt={img.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
+                          fill
+                          unoptimized
+                          className="object-cover pointer-events-none"
+                          sizes="32px"
+                          loading="eager"
+                        />
+                      </button>
+                    ))
+                  )}
                 </>
               )}
             </div>
