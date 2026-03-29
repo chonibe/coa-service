@@ -11,7 +11,7 @@ interface ExperienceThemeContextValue {
   setTheme: (theme: ExperienceTheme) => void
 }
 
-const ExperienceThemeContext = createContext<ExperienceThemeContextValue | null>(null)
+export const ExperienceThemeContext = createContext<ExperienceThemeContextValue | null>(null)
 
 export function ExperienceThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ExperienceTheme>('dark')
@@ -33,7 +33,11 @@ export function ExperienceThemeProvider({ children }: { children: React.ReactNod
   }, [])
 
   if (!mounted) {
-    return <div className="dark">{children}</div>
+    return (
+      <ExperienceThemeContext.Provider value={{ theme: 'dark', setTheme: () => {} }}>
+        <div className="dark">{children}</div>
+      </ExperienceThemeContext.Provider>
+    )
   }
 
   return (

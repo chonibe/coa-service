@@ -1,14 +1,17 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode, useContext } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { StreetLadderScarcityAddon } from './StreetLadderScarcityAddon'
+import { ExperienceThemeContext } from '../ExperienceThemeContext'
 
 /**
  * Visual break + soft panel below pricing / Street ladder for watch CTA + edition copy.
+ * Uses {@link ExperienceThemeContext} when wrapped by {@link ExperienceThemeProvider} so
+ * the panel is not stuck on `bg-white/70` when Tailwind `dark:` is not an ancestor match.
  */
 export function ScarcityWatchRegion({
   children,
@@ -17,20 +20,33 @@ export function ScarcityWatchRegion({
   children: ReactNode
   className?: string
 }) {
+  const themeCtx = useContext(ExperienceThemeContext)
+  const theme = themeCtx?.theme ?? null
+  const isDark = theme === 'dark'
+
   return (
     <div className={cn('relative mt-5 w-full', className)}>
       <div
-        className="pointer-events-none mx-auto mb-4 h-px max-w-[11rem] bg-gradient-to-r from-transparent via-neutral-400/45 to-transparent dark:from-transparent dark:via-[#FFBA94]/30 dark:to-transparent"
+        className={cn(
+          'pointer-events-none mx-auto mb-4 h-px max-w-[11rem]',
+          isDark
+            ? 'bg-gradient-to-r from-transparent via-[#FFBA94]/30 to-transparent'
+            : cn(
+                'bg-gradient-to-r from-transparent via-neutral-400/45 to-transparent',
+                theme === null && 'dark:via-[#FFBA94]/30'
+              )
+        )}
         aria-hidden
       />
       <div
         className={cn(
           'mx-auto flex w-full max-w-[19.5rem] flex-col items-center rounded-2xl px-4 py-3.5',
-          'border border-neutral-200/45 bg-white/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]',
-          'backdrop-blur-md backdrop-saturate-150',
-          // Dark: solid lift from #171515 / card chrome — avoid washed glass on black
-          'dark:border-[#3d3636] dark:bg-[#1f1b1b] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)]',
-          'dark:backdrop-blur-none dark:backdrop-saturate-100'
+          isDark
+            ? 'border border-[#3d3636] bg-[#1f1b1b] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)]'
+            : 'border border-neutral-200/45 bg-white/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)] backdrop-blur-md backdrop-saturate-150',
+          // No experience provider: fall back to class-based dark (e.g. other shop layouts)
+          theme === null &&
+            'dark:border-[#3d3636] dark:bg-[#1f1b1b] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)] dark:backdrop-blur-none'
         )}
       >
         {children}
