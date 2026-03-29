@@ -31,7 +31,7 @@ const footerSections = hasUsefulFooterSections
         links: [
           { label: 'Instagram', href: 'https://instagram.com/thestreetcollector' },
           { label: 'Facebook', href: 'https://facebook.com/streetcollector' },
-          { label: 'TikTok', href: 'https://tiktok.com/@thestreetcollector' },
+          { label: 'TikTok', href: 'https://www.tiktok.com/@street_collector_' },
           { label: 'Pinterest', href: 'https://pinterest.com/thestreetcollector' },
         ],
       },
