@@ -509,7 +509,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               }
             />
             {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-              <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+              <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
                 {editionWatchWithNarrativeNode}
               </div>
             ) : null}
@@ -820,7 +820,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         }
                       />
                       {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                        <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+                        <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
                           {editionWatchWithNarrativeNode}
                         </div>
                       ) : null}
@@ -1255,7 +1255,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   }
                 />
                 {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                  <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+                  <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
                     {editionWatchWithNarrativeNode}
                   </div>
                 ) : null}

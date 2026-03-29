@@ -20,7 +20,11 @@ function StreetLadderStack({
     <>
       <StreetLadderScarcityAddon block={block} className={addonClassName} />
       {below ? (
-        <div className="mt-3 flex w-full flex-col items-stretch sm:items-center px-1">
+        <div
+          className={cn(
+            'mt-4 w-full flex flex-col items-stretch border-t border-neutral-200/90 pt-4 dark:border-white/15 sm:items-center px-1'
+          )}
+        >
           {below}
         </div>
       ) : null}

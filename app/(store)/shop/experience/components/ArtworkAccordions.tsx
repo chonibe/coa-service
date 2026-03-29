@@ -369,7 +369,7 @@ export function ArtworkAccordions({
                 }
               />
               {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                <div className="mt-4 border-t border-neutral-100 dark:border-white/10 pt-4">
+                <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
                   {editionWatchWithNarrativeNode}
                 </div>
               ) : null}
