@@ -369,7 +369,7 @@ export function ArtworkAccordions({
   const showEditionInBody = !isLamp && variant === 'full'
 
   return (
-    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 py-4 space-y-5">
+    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-2 pb-4 space-y-5">
       {/* Collection GIF — outside spotlight card, above edition / scarcity */}
       {!isLamp && spotlightGifUrl && (
         <div className="w-full">
