@@ -27,8 +27,8 @@ export const streetCollectorContent = {
   /** Logo (Street Collector branding) */
   logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
   /**
-   * Meet the Street Lamp: default `desktopVideo` / `mobileVideo` / `poster` when a stage has no Shopify clip.
-   * Per-slide videos: Shopify metaobject definition (default type `under_the_fold_section`, overridable via `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`) — match entries to each `stages[].title` (or entry handle slug); see `lib/shopify/under-the-fold-meet-lamp.ts`.
+   * Meet the Street Lamp: each `stages[]` entry can set `desktopVideo` / `mobileVideo` (Shopify CDN clips).
+   * Section-level `desktopVideo` / `mobileVideo` are fallbacks when a stage omits them.
    */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
@@ -36,10 +36,11 @@ export const streetCollectorContent = {
     taglineLines: ['Not just a lamp.', 'A living art collection.'],
     /** Single glass price line on video (joined if multiple strings) */
     pricingChips: ['Starting at $99 · Artworks from $40'],
-    /** Desktop video URL */
-    desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
-    /** Mobile video URL */
-    mobileVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
+    /** Fallback when active stage has no per-slide video */
+    desktopVideo:
+      'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
+    mobileVideo:
+      'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
     /** Poster for video (shared) */
     poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
     stages: [
@@ -47,24 +48,44 @@ export const streetCollectorContent = {
         title: 'Set the light',
         description:
           'One tap. Multiple brightness levels. Colors deepen, details surface.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
       },
       {
         title: 'Rotate anytime',
         description:
           'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
       },
       {
         title: 'Slide it in',
         description:
           'Press, click, done. No tools, no hassle — new art in seconds.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/45f9baf8563a491bbefe0a854e05346b.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/45f9baf8563a491bbefe0a854e05346b.mp4',
       },
       {
         title: 'Mount it',
         description: 'Magnetic. Wall-ready. Makes a statement.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/0473d6589a084436892c3e85f0508260.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/0473d6589a084436892c3e85f0508260.mp4',
       },
       {
         title: 'Choose your art',
         description: 'Hundreds of artists. One piece that\'s yours.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/269d7cee2d1a4685beedb2eb904e30e7.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/269d7cee2d1a4685beedb2eb904e30e7.mp4',
       },
     ],
     cue: '',

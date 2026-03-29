@@ -35,8 +35,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 | [`page.tsx`](./page.tsx) | Server component; fetches collections, renders sections |
 | [`MultiColumnVideoSection.tsx`](./MultiColumnVideoSection.tsx) | Client component; value props with autoplay videos (horizontal scroll on mobile, 3-col on desktop) |
 | [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) | Client component; testimonials with media (video/image), stars, quote, author; arrows + dots |
-| [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, video/poster URLs, testimonials with media, collection handles) |
-| [`under-the-fold-meet-lamp.ts`](../../../lib/shopify/under-the-fold-meet-lamp.ts) | Storefront: list metaobjects by definition handle (default `under_the_fold_section`, env `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`) and merge videos onto Meet the Street Lamp stages by title / handle |
+| [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, **Meet the Street Lamp** per-slide `desktopVideo` / `mobileVideo` on `meetTheLamp.stages`, testimonials, collection handles) |
 
 ---
 
@@ -46,7 +45,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Artists:** First 12 from `streetCollectorContent.featuredArtists.collections`
 - Shopify Storefront API via `getCollection()` from `lib/shopify/storefront-client.ts`
-- **Meet the Street Lamp videos:** When the Storefront API is configured, [`page.tsx`](./page.tsx) loads metaobjects with `metaobjects(type: "under_the_fold_section")` — the segment **`under_the_fold_section`** in the Admin URL (`…/content/metaobjects/entries/under_the_fold_section/…`) is the definition handle. Set **`SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`** only if your definition handle differs. **Storefront visibility:** the definition (and entries) must be available to the **Headless / Online Store** channel so the Storefront API returns them. Each entry needs a **title** field (or `heading`, `slide_title`, etc. — see [`under-the-fold-meet-lamp.ts`](../../../lib/shopify/under-the-fold-meet-lamp.ts)) matching a stage title in [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages`, plus a **video** (Shopify `Video` or `GenericFile` file reference, or a raw `.mp4` URL in a text field). Optional: **`mobile_video`**, poster image fields. Entries are also keyed by metaobject **handle** (e.g. `set-the-light`). Requires Storefront scope **`unauthenticated_read_metaobjects`**. If no entry matches a stage, that stage uses the default `meetTheLamp.desktopVideo` / `mobileVideo` from content.
+- **Meet the Street Lamp videos:** Each carousel stage uses **`desktopVideo` / `mobileVideo`** on the matching object in [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages` (Shopify CDN `.mp4` URLs). Section-level `meetTheLamp.desktopVideo` / `mobileVideo` are fallbacks. [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps the `LazyVideo` source when the active stage changes.
 
 ### Styling
 
@@ -78,5 +77,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Updated:** 2026-03-22 — Testimonials: `sectionBackdropImage` + `backdropImageSrc` on [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) to show the same wide hero image behind the carousel.
 - **Updated:** 2026-03-28 — Removed duplicate `Start your collection` from the Meet the Street Lamp hero; CTA stays on [`DesktopTopBar`](./page.tsx) and the mobile sticky bar only.
 - **Updated:** 2026-03-28 — Trust promo strip restyled to a low-contrast dark bar (not primary blue) so it reads as a quiet utility line, not a second CTA band.
-- **Updated:** 2026-03-29 — Meet the Street Lamp carousel video follows the active slide: per-slide clips from Shopify metaobjects (definition **`under_the_fold_section`**, optional env override) merged on [`page.tsx`](./page.tsx) via [`under-the-fold-meet-lamp.ts`](../../../lib/shopify/under-the-fold-meet-lamp.ts); [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps `LazyVideo` source when the stage advances.
-- **Updated:** 2026-03-29 — Metaobject fetch: default type matches Admin `…/entries/under_the_fold_section/…`; Storefront query includes **`GenericFile`**; video URLs resolved from any suitable field; dev warnings when list is empty or an entry has no video.
+- **Updated:** 2026-03-29 — Meet the Street Lamp carousel video follows the active slide via per-stage **`desktopVideo` / `mobileVideo`** in [`content/street-collector.ts`](../../../content/street-collector.ts) (static Shopify CDN links); [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps `LazyVideo` when the stage advances.

@@ -43,22 +43,6 @@ export function extractUrlFromMetaobjectReference(
   return null
 }
 
-/**
- * Video URL from a field: `Video` sources, `GenericFile`/`url` when it looks like a video file, or raw HTTPS video in `value`.
- * Does not use `MediaImage` (those are posters / thumbnails).
- */
-export function getVideoUrlFromMetaobjectField(
-  field: MetaobjectField | undefined
-): string | null {
-  if (!field) return null
-  const ref = field.reference
-  if (ref?.sources?.[0]?.url) return ref.sources[0].url
-  if (ref?.url && VIDEO_URL_VALUE_PATTERN.test(ref.url)) return ref.url
-  const v = field.value?.trim()
-  if (v && VIDEO_URL_VALUE_PATTERN.test(v)) return v
-  return null
-}
-
 export interface Metaobject {
   id: string
   type: string
@@ -175,71 +159,6 @@ export async function listMetaobjects(
     return data.metaobjects?.edges?.map(edge => edge.node) || []
   } catch (error) {
     console.error(`[Metaobjects] Failed to list metaobjects of type "${type}":`, error)
-    return []
-  }
-}
-
-/**
- * List metaobjects by type including `reference` on fields (Video / MediaImage URLs).
- * Use for definitions with file_reference fields (e.g. Meet the Lamp under-the-fold clips).
- */
-export async function listMetaobjectsWithReferences(
-  type: string,
-  first: number = 25
-): Promise<Metaobject[]> {
-  const query = `
-    query ListMetaobjectsWithRefs($type: String!, $first: Int!) {
-      metaobjects(type: $type, first: $first) {
-        edges {
-          node {
-            id
-            type
-            handle
-            fields {
-              key
-              value
-              type
-              reference {
-                ... on MediaImage {
-                  id
-                  alt
-                  image {
-                    url
-                  }
-                }
-                ... on Video {
-                  id
-                  alt
-                  sources {
-                    url
-                    mimeType
-                  }
-                }
-                ... on GenericFile {
-                  id
-                  url
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `
-
-  try {
-    const data = await storefrontQuery<{
-      metaobjects: {
-        edges: Array<{ node: Metaobject }>
-      }
-    }>(query, { type, first })
-
-    return data.metaobjects?.edges?.map((edge) => edge.node) || []
-  } catch (error) {
-    console.error(
-      `[Metaobjects] Failed to list metaobjects with references for type "${type}":`,
-      error
-    )
     return []
   }
 }

@@ -14,11 +14,6 @@ import {
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
-import {
-  fetchMeetTheLampStageVideosFromShopify,
-  mergeMeetTheLampStagesWithUnderTheFoldVideos,
-  type MeetTheLampStageVideoEntry,
-} from '@/lib/shopify/under-the-fold-meet-lamp'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { ValuePropVideoCard } from './MultiColumnVideoSection'
@@ -117,12 +112,10 @@ export default async function StreetCollectorPage() {
 
   const SEASON_2_HANDLE = '2025-edition'
 
-  let meetTheLampStages = streetCollectorContent.meetTheLamp.stages
-
   if (apiConfigured) {
     try {
-      // Fetch featured artists, season-2 collection, and Meet the Lamp per-slide videos (metaobjects) in parallel
-      const [featuredArtistsResult, season2Col, videoMap] = await Promise.all([
+      // Fetch featured artists and season-2 collection in parallel
+      const [featuredArtistsResult, season2Col] = await Promise.all([
         Promise.all(
           streetCollectorContent.featuredArtists.collections.map(async (artist) => {
             const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
@@ -177,27 +170,8 @@ export default async function StreetCollectorPage() {
           first: 100,
           sortKey: 'MANUAL',
         }).catch(() => null),
-        fetchMeetTheLampStageVideosFromShopify().catch((err): Map<
-          string,
-          MeetTheLampStageVideoEntry
-        > => {
-          console.warn(
-            '[StreetCollector] under-the-fold Meet the Lamp video map failed:',
-            err
-          )
-          return new Map()
-        }),
       ])
       featuredArtists = featuredArtistsResult
-
-      meetTheLampStages = mergeMeetTheLampStagesWithUnderTheFoldVideos(
-        streetCollectorContent.meetTheLamp.stages,
-        videoMap
-      ).map((s) => {
-        if (!s.poster?.trim()) return s
-        const proxied = getProxiedImageUrl(s.poster) || s.poster
-        return { ...s, poster: proxied }
-      })
 
       // Add 2nd edition artists from season-2 collection (vendors not already in list)
       const existingHandles = new Set(
@@ -373,7 +347,7 @@ export default async function StreetCollectorPage() {
       <MeetTheStreetLamp
         title={streetCollectorContent.meetTheLamp.title}
         taglineLines={streetCollectorContent.meetTheLamp.taglineLines}
-        stages={meetTheLampStages}
+        stages={streetCollectorContent.meetTheLamp.stages}
         desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
         mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
         poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
