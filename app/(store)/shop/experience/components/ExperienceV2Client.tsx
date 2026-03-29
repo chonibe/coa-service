@@ -1021,16 +1021,18 @@ export function ExperienceV2Client({
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()
 
-  useEffect(() => {
-    if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
-  }, [lampPreviewOrder.length, lamp])
-
-  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed).
+  // When the lamp preview is empty (no artwork on the Spline), the reel must stay on Street Lamp details —
+  // do not let the carousel strip selection (e.g. first cart artwork) override the lamp.
   const lastClickedProductId =
     activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct =
     activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex] ?? null : null
   useEffect(() => {
+    if (lampPreviewOrder.length === 0) {
+      setDisplayedProduct(lamp)
+      return
+    }
     if (!lastClickedProductId || !lastClickedProduct) return
     if (lastClickedProduct.id === lamp.id) {
       setDisplayedProduct(lamp)
@@ -1047,7 +1049,15 @@ export function ExperienceV2Client({
     } else {
       setDisplayedProduct(lastClickedProduct)
     }
-  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
+  }, [
+    lampPreviewOrder.length,
+    lamp,
+    lastClickedProductId,
+    lastClickedProduct,
+    sideAProduct,
+    sideBProduct,
+    lamp.id,
+  ])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -1278,7 +1288,10 @@ export function ExperienceV2Client({
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={activeStripProducts}
-        reserveCheckoutBar={selectedArtworks.length >= 1}
+        reserveCheckoutBar={
+          selectedArtworks.length >= 1 ||
+          (carouselStripMode === 'collection' && selectedArtworks.length === 0)
+        }
         stripMode={carouselStripMode}
         onSwitchToCollection={
           isAuthenticated
@@ -1419,6 +1432,8 @@ export function ExperienceV2Client({
         lampQuantity={lampQuantity}
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
+        stripMode={carouselStripMode}
+        onOpenPicker={handleOpenPicker}
       />
 
       <OrderBar

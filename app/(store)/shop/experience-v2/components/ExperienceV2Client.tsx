@@ -900,14 +900,15 @@ export function ExperienceV2Client({
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()
 
-  useEffect(() => {
-    if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
-  }, [lampPreviewOrder.length, lamp])
-
-  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed).
+  // When the lamp preview is empty, keep reel details on the Street Lamp (carousel strip must not override).
   const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
   useEffect(() => {
+    if (lampPreviewOrder.length === 0) {
+      setDisplayedProduct(lamp)
+      return
+    }
     if (!lastClickedProductId || !lastClickedProduct) return
     if (lastClickedProduct.id === lamp.id) {
       setDisplayedProduct(lamp)
@@ -924,7 +925,15 @@ export function ExperienceV2Client({
     } else {
       setDisplayedProduct(lastClickedProduct)
     }
-  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
+  }, [
+    lampPreviewOrder.length,
+    lamp,
+    lastClickedProductId,
+    lastClickedProduct,
+    sideAProduct,
+    sideBProduct,
+    lamp.id,
+  ])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -1103,7 +1112,7 @@ export function ExperienceV2Client({
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={carouselArtworks}
-        reserveCheckoutBar={selectedArtworks.length >= 1}
+        reserveCheckoutBar
         activeIndex={activeCarouselIndex}
         lampPreviewOrder={lampPreviewOrder}
         onTapItem={handleTapCarouselItem}
@@ -1233,6 +1242,8 @@ export function ExperienceV2Client({
         lampQuantity={lampQuantity}
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
+        stripMode="collection"
+        onOpenPicker={handleOpenPicker}
       />
 
       <OrderBar
