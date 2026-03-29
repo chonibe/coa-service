@@ -21,7 +21,8 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 4. **Featured Artists** — Horizontal artist carousel with CTA to `/shop/experience`
 5. **What Happens Next** — 3-step bridge section (choose lamp, preview/select artworks, checkout)
 6. **FAQ** — Decision-focused groups: Lamp, Artworks, Shipping
-7. **CTAs** — Sticky mobile bar and desktop top bar (`DesktopTopBar`) use `Start your collection` → `/shop/experience`. The Meet the Street Lamp hero does not repeat that button (`primaryCta` omitted on [`page.tsx`](./page.tsx)); trust microcopy under the lamp remains via `trustMicroItems`.
+7. **Top chrome** — Thin **promo strip** at the very top: dark `#0f0e0e`, subtle border, muted peach copy (`#FFBA94` ~75% opacity)—shows `meetTheLamp.trustMicroItems` joined with ` · `. On **md+**, it stacks above [`DesktopTopBar`](./DesktopTopBar.tsx) (`embedded` layout) in one fixed column. On **mobile**, the same strip is fixed under the safe area; an in-flow spacer reserves height so content does not sit under it.
+8. **CTAs** — Sticky mobile bar and desktop top bar use `Start your collection` → `/shop/experience`. The Meet the Street Lamp hero does not repeat that button or the trust line (`primaryCta` and `trustMicroItems` are not passed into [`MeetTheStreetLamp`](./MeetTheStreetLamp.tsx); copy still lives in [`content/street-collector.ts`](../../../content/street-collector.ts) for the promo bar).
 
 **Note:** The numbered 1–3 value-prop copy appears via [`ValuePropVideoCard`](./MultiColumnVideoSection.tsx) inside the featured-artists section (`leadingContent` on [`page.tsx`](./page.tsx)). A separate desktop-only image + three-column banner after the carousel was removed to avoid duplication.
 
@@ -74,3 +75,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Updated:** 2026-03-22 — Removed desktop-only duplicate value-prop banner (image + numbered columns) after the artist carousel on [`page.tsx`](./page.tsx); value props remain in `leadingContent` only.
 - **Updated:** 2026-03-22 — Testimonials: `sectionBackdropImage` + `backdropImageSrc` on [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) to show the same wide hero image behind the carousel.
 - **Updated:** 2026-03-28 — Removed duplicate `Start your collection` from the Meet the Street Lamp hero; CTA stays on [`DesktopTopBar`](./page.tsx) and the mobile sticky bar only.
+- **Updated:** 2026-03-28 — Trust promo strip restyled to a low-contrast dark bar (not primary blue) so it reads as a quiet utility line, not a second CTA band.

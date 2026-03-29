@@ -263,13 +263,42 @@ export default async function StreetCollectorPage() {
     apiError = 'Shopify Storefront API not configured.'
   }
 
+  const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
+
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
-      {/* Desktop top bar — logo, menu, CTA (always visible; no full-width video hero) */}
-      <DesktopTopBar
-        text={streetCollectorContent.hero.cta.text}
-        href={streetCollectorContent.experienceUrl}
-        logoUrl={HOME_LOGO_URL}
+      {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
+      <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
+        <div
+          className="flex w-full items-center justify-center border-b border-white/[0.08] bg-[#0f0e0e] px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
+          style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
+          role="region"
+          aria-label="Shipping, guarantee, and returns"
+        >
+          {trustPromoLine}
+        </div>
+        <DesktopTopBar
+          embedded
+          text={streetCollectorContent.hero.cta.text}
+          href={streetCollectorContent.experienceUrl}
+          logoUrl={HOME_LOGO_URL}
+        />
+      </div>
+      <div
+        className="fixed top-0 left-0 right-0 z-[122] border-b border-white/[0.08] bg-[#0f0e0e] py-1 md:hidden"
+        style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top, 0px))' }}
+        role="region"
+        aria-label="Shipping, guarantee, and returns"
+      >
+        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-[#FFBA94]/75 sm:text-[11px]">
+          {trustPromoLine}
+        </p>
+      </div>
+      {/* Reserve space under fixed mobile promo (height ≈ promo + safe area) */}
+      <div
+        className="md:hidden shrink-0"
+        style={{ height: 'calc(2.125rem + env(safe-area-inset-top, 0px))' }}
+        aria-hidden
       />
       {/* Sticky CTA - always visible on mobile, no scroll logic */}
       <div
@@ -295,8 +324,8 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      {/* Mobile: in-flow logo, then Meet the Street Lamp as primary hero (no full-width video hero on any breakpoint) */}
-      <div className="flex justify-center px-5 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-2 md:hidden">
+      {/* Mobile: in-flow logo (safe area handled by promo bar + spacer above) */}
+      <div className="flex justify-center px-5 pt-3 pb-2 md:hidden">
         <Link
           href="/"
           aria-label="Street Collector Home"
@@ -329,7 +358,6 @@ export default async function StreetCollectorPage() {
         }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
-        trustMicroItems={streetCollectorContent.meetTheLamp.trustMicroItems}
         className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
       />
 
