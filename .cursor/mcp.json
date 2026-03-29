@@ -3,6 +3,9 @@
     "google-search": {
       "command": "npx",
       "args": ["-y", "@mcp-server/google-search-mcp@latest"]
+    },
+    "pipedream": {
+      "url": "https://mcp.pipedream.net/v2"
     }
   }
 }
