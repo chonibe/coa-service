@@ -67,8 +67,7 @@ function videoSrcForPlayback(url: string): string {
 }
 
 /**
- * Meet the Street Lamp: mobile price chip overlaps top of video; desktop chip under subtitle;
- * stages auto-advance with progress bar only (no dots).
+ * Meet the Street Lamp: price chip sits below rotating stage copy + progress bar; stages advance with video/end or fallback timer.
  */
 export function MeetTheStreetLamp({
   title,
@@ -221,23 +220,14 @@ export function MeetTheStreetLamp({
     )
   }
 
-  /** Mobile: glass chip top center of video, slight upward overlap (as before) */
-  const renderPricingOnVideoMobile = () =>
+  /** Glass price chip below rotating stage title / description / progress bar */
+  const renderPricingBelowRotating = (align: 'center' | 'left') =>
     priceText ? (
       <div
-        className="pointer-events-none absolute left-1/2 top-0 z-10 flex w-full max-w-[calc(100%-1rem)] -translate-x-1/2 -translate-y-[28%] justify-center px-2 sm:max-w-[calc(100%-1.5rem)]"
-        role="status"
-        aria-label={`Pricing: ${priceText}`}
-      >
-        <span className={cn(pricingGlassClass, 'pointer-events-auto')}>{priceText}</span>
-      </div>
-    ) : null
-
-  /** Desktop: glass chip under subtitle (left-aligned with copy) */
-  const renderPricingBelowSubtitle = () =>
-    priceText ? (
-      <div
-        className="mt-4 flex w-full justify-start md:mt-10 lg:mt-12"
+        className={cn(
+          'mt-4 flex w-full sm:mt-5',
+          align === 'center' ? 'justify-center' : 'justify-start'
+        )}
         role="status"
         aria-label={`Pricing: ${priceText}`}
       >
@@ -342,7 +332,6 @@ export function MeetTheStreetLamp({
         <div className="flex flex-col md:hidden">
           <div>{renderTitleBlock('stacked')}</div>
           <div className="relative mt-5 w-full overflow-visible rounded-2xl sm:mt-6">
-            {renderPricingOnVideoMobile()}
             <div className="relative aspect-[5/4] w-full overflow-hidden rounded-2xl">
               <LazyVideo
                 key={`meet-mobile-${activeIndex}-${mobileSrc}`}
@@ -359,6 +348,7 @@ export function MeetTheStreetLamp({
             </div>
           </div>
           {renderStageBlock({ variant: 'mobile' })}
+          {renderPricingBelowRotating('center')}
           {renderCtaAndTrust('center')}
         </div>
 
@@ -400,10 +390,12 @@ export function MeetTheStreetLamp({
           >
             <div className="flex min-h-0 w-full flex-col items-start justify-center overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2">
               {renderTitleBlock('desktopLeft')}
-              {renderPricingBelowSubtitle()}
               {renderCtaAndTrust('left')}
             </div>
-            <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">{renderStageBlock({ variant: 'desktop' })}</div>
+            <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">
+              {renderStageBlock({ variant: 'desktop' })}
+              {renderPricingBelowRotating('left')}
+            </div>
           </div>
         </div>
         {cue && (
