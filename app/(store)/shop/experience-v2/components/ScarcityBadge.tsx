@@ -7,6 +7,27 @@ import { cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { StreetLadderScarcityAddon } from './StreetLadderScarcityAddon'
 
+function StreetLadderStack({
+  block,
+  addonClassName,
+  below,
+}: {
+  block: StreetLadderForScarcity
+  addonClassName?: string
+  below?: ReactNode
+}) {
+  return (
+    <>
+      <StreetLadderScarcityAddon block={block} className={addonClassName} />
+      {below ? (
+        <div className="mt-3 flex w-full flex-col items-stretch sm:items-center px-1">
+          {below}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 function ScarcityBarPanel({
   title,
   className,
@@ -51,6 +72,8 @@ interface ScarcityBadgeProps {
   unifiedSection?: boolean
   /** Street ladder (stage, list price, next-step chip) — shown under bar when `variant` is `bar` */
   streetLadder?: StreetLadderForScarcity | null
+  /** Rendered directly under the ladder block (e.g. edition watchlist CTA) */
+  belowStreetLadder?: ReactNode
 }
 
 export function ScarcityBadge({
@@ -65,6 +88,7 @@ export function ScarcityBadge({
   panelTitle,
   unifiedSection = false,
   streetLadder = null,
+  belowStreetLadder,
 }: ScarcityBadgeProps) {
   const [fetchedQuantity, setFetchedQuantity] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -99,7 +123,9 @@ export function ScarcityBadge({
             <p className="text-center text-sm font-medium text-red-600 dark:text-red-400 mt-2.5">
               Sold out
             </p>
-            {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
+            {streetLadder ? (
+              <StreetLadderStack block={streetLadder} below={belowStreetLadder} />
+            ) : null}
           </div>
         )
       }
@@ -113,7 +139,9 @@ export function ScarcityBadge({
                 <p className="text-center text-sm font-semibold text-red-600 dark:text-red-400 mt-4">
                   Sold out
                 </p>
-                {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
+                {streetLadder ? (
+                  <StreetLadderStack block={streetLadder} below={belowStreetLadder} />
+                ) : null}
               </>
             }
           >
@@ -161,7 +189,9 @@ export function ScarcityBadge({
             <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
               <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full animate-pulse" />
             </div>
-            {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className="mt-4" /> : null}
+            {streetLadder ? (
+              <StreetLadderStack block={streetLadder} addonClassName="mt-4" below={belowStreetLadder} />
+            ) : null}
           </div>
         )
       }
@@ -170,7 +200,11 @@ export function ScarcityBadge({
           <ScarcityBarPanel
             title={panelTitle}
             className={className}
-            footer={streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className="mt-4" /> : undefined}
+            footer={
+              streetLadder ? (
+                <StreetLadderStack block={streetLadder} addonClassName="mt-4" below={belowStreetLadder} />
+              ) : undefined
+            }
           >
             <div className="relative h-1.5 w-full max-w-md mx-auto">
               <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
@@ -233,7 +267,9 @@ export function ScarcityBadge({
             {barMotion}
           </div>
           {editionCaption}
-          {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} /> : null}
+          {streetLadder ? (
+            <StreetLadderStack block={streetLadder} addonClassName={editionCaption ? undefined : 'mt-0 pt-3'} below={belowStreetLadder} />
+          ) : null}
         </div>
       )
     }
@@ -246,7 +282,13 @@ export function ScarcityBadge({
           footer={
             <>
               {editionCaption}
-              {streetLadder ? <StreetLadderScarcityAddon block={streetLadder} className={editionCaption ? undefined : 'mt-0 pt-3'} /> : null}
+              {streetLadder ? (
+                <StreetLadderStack
+                  block={streetLadder}
+                  addonClassName={editionCaption ? undefined : 'mt-0 pt-3'}
+                  below={belowStreetLadder}
+                />
+              ) : null}
             </>
           }
         >

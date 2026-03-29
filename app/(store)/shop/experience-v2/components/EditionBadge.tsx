@@ -248,6 +248,7 @@ export function EditionBadgeForProduct({
   prominent,
   unifiedSection,
   chipOnly,
+  showWatchControl = true,
 }: {
   product: ShopifyProduct
   className?: string
@@ -257,6 +258,8 @@ export function EditionBadgeForProduct({
   prominent?: boolean
   unifiedSection?: boolean
   chipOnly?: boolean
+  /** When false, omit {@link EditionWatchControl} (e.g. watch is shown under Street ladder in detail) */
+  showWatchControl?: boolean
 }) {
   const total = useMemo(() => getProductEditionSize(product), [product])
   const fromStorefront = useMemo(() => getProductEditionMetrics(product), [product])
@@ -310,7 +313,7 @@ export function EditionBadgeForProduct({
       unifiedSection={unifiedSection}
       chipOnly={chipOnly}
       afterCta={
-        chipOnly ? null : (
+        chipOnly || !showWatchControl ? null : (
           <EditionWatchControl
             product={product}
             editionNumberSold={metrics.editionNumberSold}

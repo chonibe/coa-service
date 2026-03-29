@@ -13,6 +13,12 @@ import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } fro
 import { HorizontalTwoSlideGallery } from './HorizontalTwoSlideGallery'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
+import {
+  buildEditionMetrics,
+  getProductEditionMetrics,
+  getProductEditionSize,
+} from '@/lib/shop/edition-stages'
+import { EditionWatchControl } from './EditionWatchControl'
 
 interface ArtistData {
   name: string
@@ -209,12 +215,37 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
         : null,
     [product, streetEdition, isEarlyAccess, isLampOrBundleProduct]
   )
+  const editionMetricsForWatch = useMemo(() => {
+    if (isLampOrBundleProduct) return null
+    const fromStorefront = getProductEditionMetrics(product)
+    if (fromStorefront) return fromStorefront
+    const total = getProductEditionSize(product)
+    if (total != null && total >= 2 && typeof quantityAvailable === 'number') {
+      return buildEditionMetrics(total, quantityAvailable)
+    }
+    return null
+  }, [product, quantityAvailable, isLampOrBundleProduct])
   const editionArtistName = (
     artistData?.name ||
     spotlightDataOverride?.vendorName ||
     spotlightData?.vendorName ||
     artist
   ).trim()
+
+  const showWatchBelowStreetLadder =
+    streetLadderBlock != null && editionMetricsForWatch != null
+
+  const streetLadderWatchControlNode = useMemo(() => {
+    if (!showWatchBelowStreetLadder || !editionMetricsForWatch) return undefined
+    return (
+      <EditionWatchControl
+        product={product}
+        editionNumberSold={editionMetricsForWatch.editionNumberSold}
+        totalEditions={editionMetricsForWatch.totalEditions}
+        artistName={editionArtistName}
+      />
+    )
+  }, [showWatchBelowStreetLadder, editionMetricsForWatch, product, editionArtistName])
 
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
 
@@ -478,6 +509,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               unifiedSection
               className="w-full"
               streetLadder={streetLadderBlock ?? undefined}
+              belowStreetLadder={streetLadderWatchControlNode}
             />
           </div>
         )}
@@ -524,6 +556,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       artistName={editionArtistName}
                       unifiedSection
                       className="w-full"
+                      showWatchControl={!showWatchBelowStreetLadder}
                     />
                   </ArtworkEditionUnifiedSection>
                 </div>
@@ -547,6 +580,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       artistName={editionArtistName}
                       unifiedSection
                       className="w-full"
+                      showWatchControl={!showWatchBelowStreetLadder}
                     />
                   </ArtworkEditionUnifiedSection>
                 </div>
@@ -797,6 +831,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         unifiedSection
                         className="w-full"
                         streetLadder={streetLadderBlock ?? undefined}
+                        belowStreetLadder={streetLadderWatchControlNode}
                       />
                     </div>
                   )}
@@ -1006,6 +1041,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                               artistName={editionArtistName}
                               unifiedSection
                               className="w-full"
+                              showWatchControl={!showWatchBelowStreetLadder}
                             />
                           </ArtworkEditionUnifiedSection>
                         </div>
@@ -1061,6 +1097,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                               artistName={editionArtistName}
                               unifiedSection
                               className="w-full"
+                              showWatchControl={!showWatchBelowStreetLadder}
                             />
                           </ArtworkEditionUnifiedSection>
                         </div>
@@ -1240,6 +1277,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   unifiedSection
                   className="w-full"
                   streetLadder={streetLadderBlock ?? undefined}
+                  belowStreetLadder={streetLadderWatchControlNode}
                 />
               </div>
             )}
@@ -1403,6 +1441,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         artistName={editionArtistName}
                         unifiedSection
                         className="w-full"
+                        showWatchControl={!showWatchBelowStreetLadder}
                       />
                     </ArtworkEditionUnifiedSection>
                   </div>
@@ -1464,6 +1503,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         artistName={editionArtistName}
                         unifiedSection
                         className="w-full"
+                        showWatchControl={!showWatchBelowStreetLadder}
                       />
                     </ArtworkEditionUnifiedSection>
                   </div>
