@@ -32,8 +32,8 @@ export const streetCollectorContent = {
    */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
-    /** Two lines under the section title */
-    taglineLines: ['Not just a lamp.', 'A living art collection.'],
+    /** Subtitle lines under “Meet the Street Lamp” (empty = hidden). */
+    taglineLines: [],
     /** Single glass price line on video (joined if multiple strings) */
     pricingChips: ['Starting at $99 · Artworks from $40'],
     /** Fallback when active stage has no per-slide video */
