@@ -21,6 +21,12 @@ import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
+import {
+  buildEditionMetrics,
+  getProductEditionMetrics,
+  getProductEditionSize,
+} from '@/lib/shop/edition-stages'
+import { EditionWatchControl } from '../../experience-v2/components/EditionWatchControl'
 
 interface ArtistData {
   name: string
@@ -307,6 +313,37 @@ export function ArtworkAccordions({
     [product, streetEdition, isEarlyAccess, isLamp]
   )
 
+  const firstVariantQty =
+    typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
+      ? product.variants.edges[0].node.quantityAvailable
+      : undefined
+
+  const editionMetricsForWatch = useMemo(() => {
+    if (isLamp) return null
+    const fromStorefront = getProductEditionMetrics(product)
+    if (fromStorefront) return fromStorefront
+    const total = getProductEditionSize(product)
+    if (total != null && total >= 2 && typeof firstVariantQty === 'number') {
+      return buildEditionMetrics(total, firstVariantQty)
+    }
+    return null
+  }, [product, firstVariantQty, isLamp])
+
+  const showWatchBelowStreetLadder =
+    streetLadderBlock != null && editionMetricsForWatch != null
+
+  const streetLadderWatchControlNode = useMemo(() => {
+    if (!showWatchBelowStreetLadder || !editionMetricsForWatch) return undefined
+    return (
+      <EditionWatchControl
+        product={product}
+        editionNumberSold={editionMetricsForWatch.editionNumberSold}
+        totalEditions={editionMetricsForWatch.totalEditions}
+        artistName={detailArtistName}
+      />
+    )
+  }, [showWatchBelowStreetLadder, editionMetricsForWatch, product, detailArtistName])
+
   const renderArtworkCardInner = (opts?: { hideArtistLine?: boolean; artistNavigatesToSpotlight?: boolean }) =>
     !isLamp && (firstImage?.url || product.title) ? (
       <>
@@ -322,11 +359,7 @@ export function ArtworkAccordions({
           {editionSize != null && editionSize > 0 && (
             <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
               <ScarcityBadge
-                quantityAvailable={
-                  typeof product.variants?.edges?.[0]?.node?.quantityAvailable === 'number'
-                    ? product.variants.edges[0].node.quantityAvailable
-                    : undefined
-                }
+                quantityAvailable={firstVariantQty}
                 editionSize={editionSize}
                 availableForSale={product.availableForSale ?? true}
                 variant="bar"
@@ -336,6 +369,7 @@ export function ArtworkAccordions({
                 unifiedSection
                 className="w-full"
                 streetLadder={streetLadderBlock ?? undefined}
+                belowStreetLadder={streetLadderWatchControlNode}
               />
             </div>
           )}
@@ -385,6 +419,7 @@ export function ArtworkAccordions({
             artistName={detailArtistName || undefined}
             unifiedSection
             className="w-full"
+            showWatchControl={!showWatchBelowStreetLadder}
           />
         </ArtworkEditionUnifiedSection>
       )}

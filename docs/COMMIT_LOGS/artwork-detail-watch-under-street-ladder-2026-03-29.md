@@ -10,3 +10,7 @@
 ## Summary
 
 Collectors see **Watch this edition** immediately below the Ground Floor / list price / “N more · then $X” ladder block in the artwork details scarcity section, reusing the same watchlist API and auth flow as elsewhere. The edition narrative block no longer shows a second watch button when the ladder is present.
+
+## Follow-up (2026-03-29)
+
+- [x] [`app/(store)/shop/experience/components/ArtworkAccordions.tsx`](../../app/(store)/shop/experience/components/ArtworkAccordions.tsx) — Experience reel artwork-details card uses the same `belowStreetLadder` + `EditionWatchControl` pattern (the sheet [`ArtworkDetail`](../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) was wired first; the reel uses `ArtworkAccordions`, not the sheet, for that card).

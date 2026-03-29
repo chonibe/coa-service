@@ -273,8 +273,8 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 
 ## Version
 
-- Last updated: 2026-03-28
-- Version: 1.15.4
+- Last updated: 2026-03-29
+- Version: 1.15.5
 - **Spline vertical nudge**: Minimal [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx) canvas `translateY` relaxed from **-10%** to **-6%** so the lamp sits slightly lower in the experience viewport.
 - **Title chip + icon**: Picker / strip / carousel title row uses `flex-1` on the title and a trailing `Plus` so the **+ stays on the right edge** of the glass chip; title text stays centered in the remaining width.
 - **Detail header order**: In the experience reel artwork card ([`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx)) and [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (desktop + mobile), **artwork title** is shown first with **artist / vendor** on the line below.
@@ -285,3 +285,4 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 - **Artist spine vertical alignment**: Two-up rows in [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) and [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) use `items-stretch` on the row and `self-stretch` on the spine column so the vertical artist label stays centered on the cross-axis (middle of the paired artwork cards).
 - **Artwork picker slide-up row spacing**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) (Instagram-style selector from the sticky bar) has its **own** virtualized list, separate from [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx). Row gaps use the same pattern as the strip: `pb-12 md:pb-16` between rows (merged pairs `py-4 md:py-6`), and `ROW_HEIGHT_ESTIMATE` is aligned so the virtualizer’s first paint stays reasonable before `measureElement` runs.
 - **Artwork + artist in reel**: [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx) uses shared [`HorizontalTwoSlideGallery`](../../../app/(store)/shop/experience-v2/components/HorizontalTwoSlideGallery.tsx) so the artwork card (image, title, scarcity) and artist spotlight swipe left/right when both are present. Same transform-based gallery fixes `ArtworkDetail` panels that use `overflow-x-hidden`.
+- **Watch under Street ladder (reel card)**: In [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx), when the scarcity bar shows the Street ladder ([`ScarcityBadge`](../../../app/(store)/shop/experience-v2/components/ScarcityBadge.tsx) `belowStreetLadder`), **`Watch this edition`** appears under the ladder inside the artwork details card; [`EditionBadgeForProduct`](../../../app/(store)/shop/experience-v2/components/EditionBadge.tsx) omits the duplicate watch CTA in the edition block above (same pattern as [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)).
