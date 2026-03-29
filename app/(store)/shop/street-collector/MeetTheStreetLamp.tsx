@@ -8,7 +8,7 @@ import { LazyVideo } from '@/components/LazyVideo'
 export interface MeetTheLampStage {
   title: string
   description: string
-  /** Optional per-slide video from Shopify `under_the_fold_section` (matched by title). */
+  /** Optional per-slide video from Shopify under-the-fold metaobjects (matched by title). */
   desktopVideo?: string | null
   mobileVideo?: string | null
   poster?: string | null

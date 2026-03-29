@@ -145,7 +145,7 @@ export async function listMetaobjects(
 
 /**
  * List metaobjects by type including `reference` on fields (Video / MediaImage URLs).
- * Use for definitions with file_reference fields (e.g. under_the_fold_section).
+ * Use for definitions with file_reference fields (e.g. Meet the Lamp under-the-fold clips).
  */
 export async function listMetaobjectsWithReferences(
   type: string,

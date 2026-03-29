@@ -182,7 +182,7 @@ export default async function StreetCollectorPage() {
           MeetTheLampStageVideoEntry
         > => {
           console.warn(
-            '[StreetCollector] under_the_fold_section video map failed:',
+            '[StreetCollector] under-the-fold Meet the Lamp video map failed:',
             err
           )
           return new Map()

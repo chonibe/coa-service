@@ -1,8 +1,9 @@
 /**
- * Maps Shopify metaobject entries (type `under_the_fold_section`) to Meet the Street Lamp
- * carousel slides by title / handle so each stage can use its own video.
+ * Maps Shopify metaobject entries (Meet-the-Lamp “under the fold” clips) to carousel slides
+ * by title / handle so each stage can use its own video.
  *
- * Admin: Settings → Custom data → Metaobjects → under_the_fold_section
+ * The Storefront API `metaobjects(type: …)` value must match your definition handle in Shopify
+ * (e.g. `under-the-fold-section-gedomnm3`). Override with `SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE`.
  */
 
 import {
@@ -12,8 +13,10 @@ import {
   type Metaobject,
 } from './metaobjects'
 
-/** Must match the metaobject definition handle in Shopify (see store custom data). */
-export const UNDER_THE_FOLD_METAOBJECT_TYPE = 'under_the_fold_section'
+/** Definition handle used in `metaobjects(type: …)` — must match the store’s metaobject type. */
+export const UNDER_THE_FOLD_METAOBJECT_TYPE =
+  process.env.SHOPIFY_UNDER_THE_FOLD_METAOBJECT_TYPE?.trim() ||
+  'under-the-fold-section-gedomnm3'
 
 const TITLE_FIELD_KEYS = [
   'title',
