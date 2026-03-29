@@ -29,11 +29,20 @@ import {
   clampCarouselIndex,
   uniqueCartIdsInOrder,
 } from '@/lib/shop/experience-carousel-cart'
-import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
+import {
+  experienceEarlyAccessForProduct,
+  experienceVendorsLooselyEqual,
+  productMatchesSpotlight,
+  spotlightOverridesForProduct,
+} from '@/lib/shop/experience-spotlight-match'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { Heart } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
+import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
+import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 
 type WatchlistApiRow = {
   id: string
@@ -107,43 +116,6 @@ const ExperienceCheckoutStickyBar = dynamic(
   { ssr: false }
 )
 
-const EXPERIENCE_CART_KEY = 'sc-experience-cart-v2'
-
-function loadExperienceCart(): { cartOrder: string[]; lampQuantity: number; lampPreviewOrder: string[] } {
-  if (typeof window === 'undefined') {
-    return { cartOrder: [], lampQuantity: 1, lampPreviewOrder: [] }
-  }
-  try {
-    const raw = localStorage.getItem(EXPERIENCE_CART_KEY)
-    if (!raw) return { cartOrder: [], lampQuantity: 1, lampPreviewOrder: [] }
-    const p = JSON.parse(raw) as Record<string, unknown>
-    const cart = Array.isArray(p.cartOrder) ? p.cartOrder : []
-    const hasLampPreviewKey = Object.prototype.hasOwnProperty.call(p, 'lampPreviewOrder')
-    const lampPreviewOrder = (() => {
-      if (hasLampPreviewKey && Array.isArray(p.lampPreviewOrder)) {
-        return (p.lampPreviewOrder as string[]).filter((id: string) => cart.includes(id)).slice(0, 2)
-      }
-      return cart.length > 0 ? cart.slice(0, 2) : []
-    })()
-    return {
-      cartOrder: cart,
-      lampQuantity: typeof p.lampQuantity === 'number' && p.lampQuantity >= 0 ? p.lampQuantity : 1,
-      lampPreviewOrder,
-    }
-  } catch {
-    return { cartOrder: [], lampQuantity: 1, lampPreviewOrder: [] }
-  }
-}
-
-function saveExperienceCart(cartOrder: string[], lampQuantity: number, lampPreviewOrder: string[]) {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(EXPERIENCE_CART_KEY, JSON.stringify({ cartOrder, lampQuantity, lampPreviewOrder }))
-  } catch {
-    // ignore
-  }
-}
-
 function getFirstImage(product: ShopifyProduct | null | undefined): string | null {
   if (!product) return null
   return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
@@ -210,6 +182,7 @@ export function ExperienceV2Client({
   const [splineInView, setSplineInView] = useState(true)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  const scrollToSplineRef = useRef(false)
 
   const allProducts = useMemo(
     () => [...productsSeason1, ...productsSeason2],
@@ -260,6 +233,58 @@ export function ExperienceV2Client({
     window.addEventListener(EXPERIENCE_WATCHLIST_UPDATED, onUpdated)
     return () => window.removeEventListener(EXPERIENCE_WATCHLIST_UPDATED, onUpdated)
   }, [isAuthenticated, refreshWatchlist])
+
+  const [streetEditionByProductId, setStreetEditionByProductId] = useState<
+    Record<string, StreetEditionStatesRow>
+  >({})
+  const [lockedArtworkPrices, setLockedArtworkPrices] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (allProducts.length === 0) return
+    const ids = allProducts
+      .map((p) => normalizeShopifyProductId(p.id))
+      .filter((x): x is string => !!x)
+    if (ids.length === 0) return
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      void fetchStreetEditionStatesMap(ids)
+        .then((map) => {
+          if (!cancelled) setStreetEditionByProductId(map)
+        })
+        .catch(() => {})
+    }, 400)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [allProducts])
+
+  const streetLadderPrices = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const [id, row] of Object.entries(streetEditionByProductId)) {
+      if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
+    }
+    return m
+  }, [streetEditionByProductId])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLockedArtworkPrices({})
+      return
+    }
+    fetch('/api/shop/reserve/locks', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : { locks: [] }))
+      .then((j: { locks?: Array<{ shopify_product_id: string; locked_price_usd: number }> }) => {
+        const m: Record<string, number> = {}
+        for (const row of j.locks || []) {
+          if (row.shopify_product_id && row.locked_price_usd > 0) {
+            m[row.shopify_product_id] = row.locked_price_usd
+          }
+        }
+        setLockedArtworkPrices(m)
+      })
+      .catch(() => setLockedArtworkPrices({}))
+  }, [isAuthenticated])
 
   const productsForActiveSeason = useMemo(
     () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
@@ -489,14 +514,16 @@ export function ExperienceV2Client({
         if (inSeason2 && activeSeason !== 'season2') setActiveSeason('season2')
         else if (inSeason1 && !inSeason2 && activeSeason !== 'season1') setActiveSeason('season1')
         setFilters((prev) => {
-          if (prev.artists.includes(vendorKey)) return prev
+          if (prev.artists.some((a) => experienceVendorsLooselyEqual(a, vendorKey))) return prev
           return { ...prev, artists: [...prev.artists, vendorKey] }
         })
       } else {
         setFilters((prev) => ({
           ...prev,
           artists: prev.artists.filter(
-            (a) => a !== spotlightData.vendorName && a !== vendorKey
+            (a) =>
+              !experienceVendorsLooselyEqual(a, spotlightData.vendorName) &&
+              !experienceVendorsLooselyEqual(a, vendorKey)
           ),
         }))
       }
@@ -507,9 +534,11 @@ export function ExperienceV2Client({
   useEffect(() => {
     if (!spotlightData?.vendorName) return
     const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
-    const inFilters =
-      filters.artists.includes(spotlightData.vendorName) ||
-      (vendorKey ? filters.artists.includes(vendorKey) : false)
+    const inFilters = filters.artists.some(
+      (a) =>
+        experienceVendorsLooselyEqual(a, spotlightData.vendorName) ||
+        (vendorKey ? experienceVendorsLooselyEqual(a, vendorKey) : false)
+    )
     if (!inFilters) setSpotlightExpanded(false)
   }, [spotlightData?.vendorName, spotlightArtistVendorForFilter, filters.artists])
 
@@ -525,7 +554,7 @@ export function ExperienceV2Client({
     saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
   }, [cartOrder, lampQuantity, lampPreviewOrder])
 
-  // V1 logic: lampPreviewOrder[0] -> image1 (Side B), lampPreviewOrder[1] -> image2 (Side A)
+  // lampPreviewOrder[0] → image1 (Spline / Side A panel), [1] → image2 (Side B)
   const sideAProduct = resolveProductById(lampPreviewOrder[0])
   const sideBProduct = resolveProductById(lampPreviewOrder[1])
 
@@ -582,13 +611,21 @@ export function ExperienceV2Client({
   }
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const artworksTotal = selectedArtworks.reduce((sum, p) => sum + parseFloat(p.priceRange?.minVariantPrice?.amount ?? '0'), 0)
+  const artworksTotal = selectedArtworks.reduce(
+    (sum, p) =>
+      sum +
+      experienceArtworkUnitUsd(p, {
+        lockedUsdByProductId: lockedArtworkPrices,
+        streetLadderUsdByProductId: streetLadderPrices,
+      }),
+    0
+  )
   const orderTotal = lampTotal + artworksTotal
   const orderItemCount = selectedArtworks.length + lampQuantity
 
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
-  }, [orderTotal, orderItemCount, setOrderSummary])
+  }, [orderTotal, orderItemCount, setOrderSummary, lockedArtworkPrices, streetLadderPrices])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -744,6 +781,8 @@ export function ExperienceV2Client({
       artworkCount,
       lampSavings,
       pastLampPaywall: true,
+      lockedArtworkPrices,
+      streetLadderPrices,
     })
   }, [
     lamp,
@@ -753,6 +792,8 @@ export function ExperienceV2Client({
     lampTotal,
     artworkCount,
     lampSavings,
+    lockedArtworkPrices,
+    streetLadderPrices,
     handleLampQuantityChange,
     handleAdjustArtworkQuantity,
     setOrderBarProps,
@@ -835,70 +876,72 @@ export function ExperienceV2Client({
     [getSideToShowForProduct, cartOrder, activeStripProducts]
   )
 
-  const handleToggleSelect = useCallback((product: ShopifyProduct) => {
-    const isAdding = !cartOrder.includes(product.id)
-    if (isAdding) setLastAddedProductId(product.id)
-    setCartOrder((prev) => {
-      const exists = prev.includes(product.id)
-      if (exists) {
-        const filtered = prev.filter((id) => id !== product.id)
-        if (filtered.length === 0) {
-          setResetTrigger((t) => t + 1)
-          setRotateToSide(null)
-          setActiveCarouselIndex(-1)
-          setLampPreviewOrder([])
-        } else {
-          setLampPreviewOrder((prevLamp) => {
-            const next = prevLamp.filter((id) => id !== product.id)
-            if (next.length < prevLamp.length) {
-              if (next.length === 0) {
-                setRotateToSide(null)
-                setActiveCarouselIndex(-1)
+  const handleToggleSelect = useCallback(
+    (product: ShopifyProduct) => {
+      setCartOrder((prev) => {
+        const exists = prev.includes(product.id)
+        if (exists) {
+          const filtered = prev.filter((id) => id !== product.id)
+          if (filtered.length === 0) {
+            setResetTrigger((t) => t + 1)
+            setRotateToSide(null)
+            setActiveCarouselIndex(-1)
+            setLampPreviewOrder([])
+          } else {
+            setLampPreviewOrder((prevLamp) => {
+              const next = prevLamp.filter((id) => id !== product.id)
+              if (next.length < prevLamp.length) {
+                if (next.length === 0) {
+                  setRotateToSide(null)
+                  setActiveCarouselIndex(-1)
+                } else {
+                  const sideToShow = getSideToShowForProduct(next, next[0])
+                  setRotateTrigger((t) => t + 1)
+                  setRotateToSide(sideToShow)
+                  setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, next[0]))
+                }
               } else {
-                const sideToShow = getSideToShowForProduct(next, next[0])
-                setRotateTrigger((t) => t + 1)
-                setRotateToSide(sideToShow)
-                setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, next[0]))
+                setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
               }
-            } else {
-              setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
-            }
-            return next
-          })
+              return next
+            })
+          }
+          return filtered
         }
-        return filtered
-      }
-      return [...prev, product.id]
-    })
-    if (isAdding) {
-      const nextCart = [...cartOrder, product.id]
-      scrollToSplineRef.current = true
-      setPreviewSlideIndex(product.id === lamp.id ? 0 : 1)
-      setDisplayedProduct(product)
-      const variant = product.variants?.edges?.[0]?.node
-      trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
-      setLampPreviewOrder((prev) => {
-        const idx = prev.indexOf(product.id)
-        if (idx >= 0) {
-          const sideToShow = getSideToShowForProduct(prev, product.id)
+
+        const nextCart = [...prev, product.id]
+        setLastAddedProductId(product.id)
+        scrollToSplineRef.current = true
+        setPreviewSlideIndex(product.id === lamp.id ? 0 : 1)
+        setDisplayedProduct(product)
+        const variant = product.variants?.edges?.[0]?.node
+        trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
+        setLampPreviewOrder((prevLamp) => {
+          const idx = prevLamp.indexOf(product.id)
+          if (idx >= 0) {
+            const sideToShow = getSideToShowForProduct(prevLamp, product.id)
+            setRotateTrigger((t) => t + 1)
+            setRotateToSide(sideToShow)
+            setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
+            return prevLamp
+          }
+          const newOrder =
+            prevLamp.length >= 2
+              ? currentFrontSideRef.current === 'A'
+                ? [product.id, prevLamp[1]!]
+                : [prevLamp[0]!, product.id]
+              : [...prevLamp, product.id]
+          const sideToShow = getSideToShowForProduct(newOrder, product.id)
           setRotateTrigger((t) => t + 1)
           setRotateToSide(sideToShow)
           setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
-          return prev
-        }
-        const newOrder = prev.length >= 2
-          ? (currentFrontSideRef.current === 'A'
-            ? [product.id, prev[1]]
-            : [prev[0], product.id])
-          : [...prev, product.id]
-        const sideToShow = getSideToShowForProduct(newOrder, product.id)
-        setRotateTrigger((t) => t + 1)
-        setRotateToSide(sideToShow)
-        setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
-        return newOrder
+          return newOrder
+        })
+        return nextCart
       })
-    }
-  }, [cartOrder, getSideToShowForProduct])
+    },
+    [getSideToShowForProduct, lamp.id]
+  )
 
   const handleTapCarouselItem = useCallback(
     (index: number) => {
@@ -921,7 +964,6 @@ export function ExperienceV2Client({
     currentFrontSideRef.current = side
   }, [])
 
-  const scrollToSplineRef = useRef(false)
   const experienceReelRef = useRef<HTMLDivElement | null>(null)
   const handleSwitchToSide = useCallback((side: 'A' | 'B') => {
     scrollToSplineRef.current = true
@@ -953,7 +995,9 @@ export function ExperienceV2Client({
       setFilters((prev) => ({
         ...prev,
         artists: prev.artists.filter(
-          (a) => a !== spotlightData.vendorName && a !== vendorKey
+          (a) =>
+            !experienceVendorsLooselyEqual(a, spotlightData.vendorName) &&
+            !experienceVendorsLooselyEqual(a, vendorKey)
         ),
       }))
     }
@@ -975,16 +1019,18 @@ export function ExperienceV2Client({
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()
 
-  useEffect(() => {
-    if (lampPreviewOrder.length === 0) setDisplayedProduct(lamp)
-  }, [lampPreviewOrder.length, lamp])
-
-  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed)
+  // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed).
+  // When the lamp preview is empty (no artwork on the Spline), the reel must stay on Street Lamp details —
+  // do not let the carousel strip selection (e.g. first cart artwork) override the lamp.
   const lastClickedProductId =
     activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct =
     activeCarouselIndex >= 0 ? activeStripProducts[activeCarouselIndex] ?? null : null
   useEffect(() => {
+    if (lampPreviewOrder.length === 0) {
+      setDisplayedProduct(lamp)
+      return
+    }
     if (!lastClickedProductId || !lastClickedProduct) return
     if (lastClickedProduct.id === lamp.id) {
       setDisplayedProduct(lamp)
@@ -1001,7 +1047,15 @@ export function ExperienceV2Client({
     } else {
       setDisplayedProduct(lastClickedProduct)
     }
-  }, [lastClickedProductId, lastClickedProduct, sideAProduct, sideBProduct, lamp.id])
+  }, [
+    lampPreviewOrder.length,
+    lamp,
+    lastClickedProductId,
+    lastClickedProduct,
+    sideAProduct,
+    sideBProduct,
+    lamp.id,
+  ])
 
   const isDesktop = !isMobile
   useEffect(() => {
@@ -1111,6 +1165,25 @@ export function ExperienceV2Client({
     })
   }, [displayedProduct?.id, galleryImages.length, sectionCount, reelSplineSlideIndex])
 
+  const displayedStreetEditionRow = useMemo(() => {
+    if (!displayedProduct || displayedProduct.id === lamp.id) return null
+    const k = normalizeShopifyProductId(displayedProduct.id)
+    if (!k) return null
+    return streetEditionByProductId[k] ?? null
+  }, [displayedProduct, lamp.id, streetEditionByProductId])
+
+  const displayedEarlyAccess = useMemo(
+    () => experienceEarlyAccessForProduct(displayedProduct, lamp.id, spotlightData),
+    [displayedProduct, lamp.id, spotlightData]
+  )
+
+  const detailStreetEditionRow = useMemo(() => {
+    if (!detailProduct || detailProduct.id === lamp.id) return null
+    const k = normalizeShopifyProductId(detailProduct.id)
+    if (!k) return null
+    return streetEditionByProductId[k] ?? null
+  }, [detailProduct, lamp.id, streetEditionByProductId])
+
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <SplineFullScreen
@@ -1205,13 +1278,18 @@ export function ExperienceV2Client({
         onSplineInView={setSplineInView}
         experienceReelRef={experienceReelRef}
         editionLeadBeforeSpline={editionLeadBeforeSpline}
+        streetEditionRow={displayedStreetEditionRow}
+        displayedProductEarlyAccess={displayedEarlyAccess}
       />
 
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={activeStripProducts}
-        reserveCheckoutBar={selectedArtworks.length >= 1}
+        reserveCheckoutBar={
+          selectedArtworks.length >= 1 ||
+          (carouselStripMode === 'collection' && selectedArtworks.length === 0)
+        }
         stripMode={carouselStripMode}
         onSwitchToCollection={
           isAuthenticated
@@ -1254,6 +1332,7 @@ export function ExperienceV2Client({
         productsForFilterPanel={productsForActiveSeason}
         cartOrder={cartOrder}
         spotlightBannerExpanded={spotlightExpanded}
+        streetEditionByProductId={streetEditionByProductId}
       />
       )}
 
@@ -1335,6 +1414,14 @@ export function ExperienceV2Client({
                 ]
               : undefined
           }
+          streetEdition={detailStreetEditionRow}
+          isEarlyAccess={experienceEarlyAccessForProduct(detailProduct, lamp.id, spotlightData)}
+          isNewDrop={
+            detailProduct.id !== lamp.id &&
+            !!spotlightData &&
+            productMatchesSpotlight(detailProduct, spotlightData) &&
+            !spotlightData.unlisted
+          }
         />
       )}
 
@@ -1343,6 +1430,8 @@ export function ExperienceV2Client({
         lampQuantity={lampQuantity}
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
+        stripMode={carouselStripMode}
+        onOpenPicker={handleOpenPicker}
       />
 
       <OrderBar
@@ -1352,6 +1441,8 @@ export function ExperienceV2Client({
         onLampQuantityChange={handleLampQuantityChange}
         onAdjustArtworkQuantity={handleAdjustArtworkQuantity}
         isGift={false}
+        lockedArtworkPrices={lockedArtworkPrices}
+        streetLadderPrices={streetLadderPrices}
       />
     </div>
   )

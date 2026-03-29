@@ -664,13 +664,18 @@ export function ArtistCarousel({
                 )
 
                 const cardHref = artist.href ?? (showInfoSheet ? undefined : `/shop?collection=${artist.handle}`)
+                const hasDescriptionToReveal = Boolean(artist.description?.trim())
+                const canToggleDescription =
+                  showInfoSheet && hasDescriptionToReveal && !blockMobileArtistClicks
                 const cardClassName = cn(
                   'group flex-shrink-0 relative transition-[transform,opacity] duration-500 ease-out',
                   mobileAvatarStyle
                     ? 'w-[116px] sm:w-[var(--artist-carousel-card-w)]'
                     : 'w-full',
                   cardsVisible ? 'artist-card-enter' : 'opacity-0 translate-y-[50px] scale-95',
-                  blockMobileArtistClicks && 'pointer-events-none cursor-default'
+                  blockMobileArtistClicks && 'pointer-events-none cursor-default',
+                  cardHref && !blockMobileArtistClicks && 'cursor-pointer',
+                  !cardHref && 'cursor-default'
                 )
                 const cardStyle: React.CSSProperties = {
                   ...(mobileAvatarStyle ? {} : { width: `${cardWidth}px` }),
@@ -710,19 +715,18 @@ export function ArtistCarousel({
                   key={cardKey}
                   className={cardClassName}
                   style={cardStyle}
-                  {...(showInfoSheet &&
-                    !blockMobileArtistClicks && {
-                      'data-revealed': revealedCardKey === cardKey,
-                      onClick: () => setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey)),
-                      role: 'button',
-                      tabIndex: 0,
-                      onKeyDown: (e: React.KeyboardEvent) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey))
-                        }
-                      },
-                    })}
+                  {...(canToggleDescription && {
+                    'data-revealed': revealedCardKey === cardKey,
+                    onClick: () => setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey)),
+                    role: 'button',
+                    tabIndex: 0,
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setRevealedCardKey((prev) => (prev === cardKey ? null : cardKey))
+                      }
+                    },
+                  })}
                 >
                   {cardContent}
                 </div>

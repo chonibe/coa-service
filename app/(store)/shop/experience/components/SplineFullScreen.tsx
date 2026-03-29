@@ -20,6 +20,7 @@ import {
 } from '@/lib/experience-image-position'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { ArtworkAccordions } from './ArtworkAccordions'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
@@ -75,7 +76,7 @@ interface SplineFullScreenProps {
   rotateTrigger: number
   resetTrigger?: number
   onFrontSideSettled?: (side: 'A' | 'B') => void
-  /** Count of artworks assigned to lamp preview (0–2). Idle turntable is off when both sides are filled. */
+  /** Count of artworks assigned to lamp preview (0–2). Idle turntable is off when at least one side has artwork. */
   lampPreviewCount?: number
   pickerOpen?: boolean
   className?: string
@@ -104,6 +105,10 @@ interface SplineFullScreenProps {
   experienceReelRef?: Ref<HTMLDivElement | null>
   /** When true and an artwork (not lamp) is shown, edition status renders above the Spline in the reel */
   editionLeadBeforeSpline?: boolean
+  /** Street edition-states row for displayed artwork (scarcity ladder copy) */
+  streetEditionRow?: StreetEditionStatesRow | null
+  /** Early-access ladder pricing for displayed artwork */
+  displayedProductEarlyAccess?: boolean
 }
 
 export function SplineFullScreen({
@@ -129,6 +134,8 @@ export function SplineFullScreen({
   spotlightDataOverride,
   experienceReelRef,
   editionLeadBeforeSpline = false,
+  streetEditionRow = null,
+  displayedProductEarlyAccess = false,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
@@ -708,7 +715,7 @@ export function SplineFullScreen({
               reelScrollContainerRef={scrollRef}
               animate
               interactive
-              idleSpinEnabled={lampPreviewCount < 2}
+              idleSpinEnabled={lampPreviewCount < 1}
               className="relative w-full h-full min-h-0 min-w-0"
               swapLampSides
               flipForSide="B"
@@ -740,7 +747,7 @@ export function SplineFullScreen({
             ref={(r) => { sectionRefs.current[accordionContentSectionIndex] = r }}
             className={cn(
               'relative z-0 flex-shrink-0 w-full min-h-[46svh] flex flex-col items-center justify-start',
-              'mt-0 pt-5 pb-6 md:pt-6 md:pb-8'
+              'mt-0 pt-3 pb-6 md:pt-4 md:pb-8'
             )}
           >
             <ArtworkAccordions
@@ -751,6 +758,8 @@ export function SplineFullScreen({
               productSpecs={productSpecs}
               artistSlugOverride={artistSlugOverride}
               spotlightDataOverride={spotlightDataOverride}
+              streetEdition={streetEditionRow}
+              isEarlyAccess={displayedProductEarlyAccess}
             />
           </div>
         )}

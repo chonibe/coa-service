@@ -313,7 +313,6 @@ export function Configurator({
   }, [imageScale, imageOffsetX, imageOffsetY, imageScaleX, imageScaleY, imageScaleB, imageOffsetXB, imageOffsetYB, imageScaleXB, imageScaleYB])
 
   const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>([])
-  const [lampSelectionQueue, setLampSelectionQueue] = useState<string[]>([])
   const [splineResetTrigger, setSplineResetTrigger] = useState(0)
   const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
   // Facade pattern: show static image immediately as LCP candidate; mount heavy Spline runtime
@@ -1040,7 +1039,6 @@ export function Configurator({
       if (idx >= 0) {
         // Removing artwork: rotate toward the side that still has artwork.
         const newOrder = prev.filter((id) => id !== product.id)
-        setLampSelectionQueue((queuePrev) => queuePrev.filter((id) => id !== product.id))
         if (newOrder.length === 0) {
           setSplineResetTrigger((t) => t + 1)
           setRotateToSide(null)
@@ -1059,11 +1057,7 @@ export function Configurator({
           ? [product.id, prev[1]]
           : [prev[0], product.id])
         : [...prev, product.id]
-      setLampSelectionQueue((queuePrev) => {
-        if (queuePrev.includes(product.id)) return queuePrev
-        return queuePrev.length >= 2 ? [queuePrev[1], product.id] : [...queuePrev, product.id]
-      })
-      
+
       // Determine which side the new artwork is on AFTER adding it
       // newOrder[0] is sideA (becomes image1), newOrder[1] is sideB (becomes image2)
       // With swapLampSides=true: image1 goes to Side B object, image2 goes to Side A object
@@ -1117,12 +1111,25 @@ export function Configurator({
         setRotateToSide(sideToShow)
         return newOrder
       })
-      setLampSelectionQueue((queuePrev) => {
-        if (queuePrev.includes(product.id)) return queuePrev
-        return queuePrev.length >= 2 ? [queuePrev[1], product.id] : [...queuePrev, product.id]
-      })
       const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
       if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
+    } else {
+      // Removing from cart: keep Spline in sync with the strip (same IDs as lampPreviewOrder).
+      setLampPreviewOrder((prev) => {
+        const idx = prev.indexOf(product.id)
+        if (idx < 0) return prev
+        const newOrder = prev.filter((id) => id !== product.id)
+        if (newOrder.length === 0) {
+          setSplineResetTrigger((t) => t + 1)
+          setRotateToSide(null)
+        } else {
+          const remainingId = newOrder[0]
+          const sideToShow = getSideToShowForProduct(newOrder, remainingId)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+        }
+        return newOrder
+      })
     }
   }, [cartOrder, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct])
 
@@ -1248,7 +1255,7 @@ export function Configurator({
               minimal
               animate
               interactive
-              idleSpinEnabled
+              idleSpinEnabled={lampPreviewOrder.length === 0}
               className="relative w-full h-full"
               onPanelsFound={setPanelStatus}
               swapLampSides
@@ -2059,7 +2066,7 @@ export function Configurator({
                 : filteredProducts
             }
             previewIndex={previewIndex}
-            lampPreviewOrder={lampSelectionQueue}
+            lampPreviewOrder={lampPreviewOrder}
             cartOrder={cartOrder}
             lastAddedProductId={lastAddedProductId}
             scrollToProductId={scrollToProductId}

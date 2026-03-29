@@ -39,6 +39,9 @@ const ArtistCarousel = dynamic(
   { loading: () => <section className="min-h-[400px] bg-[#171515]" aria-hidden /> }
 )
 
+/** When false, hides “What happens next” steps, reassurance, and Start your collection. */
+const SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE = false
+
 // 64×64 request for 32px display (2x) to minimize file size
 const HOME_LOGO_URL =
   'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
@@ -260,13 +263,42 @@ export default async function StreetCollectorPage() {
     apiError = 'Shopify Storefront API not configured.'
   }
 
+  const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
+
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
-      {/* Desktop top bar — logo, menu, CTA (always visible; no full-width video hero) */}
-      <DesktopTopBar
-        text={streetCollectorContent.hero.cta.text}
-        href={streetCollectorContent.experienceUrl}
-        logoUrl={HOME_LOGO_URL}
+      {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
+      <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
+        <div
+          className="flex w-full items-center justify-center border-b border-white/[0.08] bg-[#0f0e0e] px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
+          style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
+          role="region"
+          aria-label="Shipping, guarantee, and returns"
+        >
+          {trustPromoLine}
+        </div>
+        <DesktopTopBar
+          embedded
+          text={streetCollectorContent.hero.cta.text}
+          href={streetCollectorContent.experienceUrl}
+          logoUrl={HOME_LOGO_URL}
+        />
+      </div>
+      <div
+        className="fixed top-0 left-0 right-0 z-[122] border-b border-white/[0.08] bg-[#0f0e0e] py-1 md:hidden"
+        style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top, 0px))' }}
+        role="region"
+        aria-label="Shipping, guarantee, and returns"
+      >
+        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-[#FFBA94]/75 sm:text-[11px]">
+          {trustPromoLine}
+        </p>
+      </div>
+      {/* Reserve space under fixed mobile promo (height ≈ promo + safe area) */}
+      <div
+        className="md:hidden shrink-0"
+        style={{ height: 'calc(2.125rem + env(safe-area-inset-top, 0px))' }}
+        aria-hidden
       />
       {/* Sticky CTA - always visible on mobile, no scroll logic */}
       <div
@@ -276,8 +308,7 @@ export default async function StreetCollectorPage() {
         <Link
           href={streetCollectorContent.experienceUrl}
           prefetch={false}
-          className="w-full max-w-md flex items-center justify-center min-h-[52px] text-sm font-semibold rounded-lg px-5 py-3.5 shadow-lg transition-colors hover:opacity-90"
-          style={{ backgroundColor: '#FFBA94', color: '#390000' }}
+          className="flex min-h-[52px] w-full max-w-md items-center justify-center rounded-lg bg-[#047AFF] px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#0366d6] hover:opacity-90"
         >
           {streetCollectorContent.hero.cta.text}
         </Link>
@@ -293,8 +324,8 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      {/* Mobile: in-flow logo, then Meet the Street Lamp as primary hero (no full-width video hero on any breakpoint) */}
-      <div className="flex justify-center px-5 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-2 md:hidden">
+      {/* Mobile: in-flow logo (safe area handled by promo bar + spacer above) */}
+      <div className="flex justify-center px-5 pt-3 pb-2 md:hidden">
         <Link
           href="/"
           aria-label="Street Collector Home"
@@ -329,6 +360,41 @@ export default async function StreetCollectorPage() {
         cueHref={streetCollectorContent.experienceUrl}
         className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
       />
+
+      {SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE && (
+        <SectionWrapper spacing="xs" background="experience" className="!py-8 sm:!py-10">
+          <Container maxWidth="default" paddingX="gutter">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-serif text-2xl font-medium tracking-tight text-[#FFBA94] sm:text-3xl md:text-4xl">
+                {streetCollectorContent.funnelBridge.title}
+              </h2>
+              <p className="mt-2 text-sm text-[#FFBA94]/80 sm:text-base">
+                {streetCollectorContent.funnelBridge.subtitle}
+              </p>
+              <ol className="mt-6 space-y-3 text-left text-sm text-[#FFBA94]/90 sm:text-base">
+                {streetCollectorContent.funnelBridge.steps.map((step, i) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#047AFF]/20 text-xs font-bold text-[#047AFF]">
+                      {i + 1}
+                    </span>
+                    <span className="pt-0.5">{step}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-4 text-xs text-[#FFBA94]/60 sm:text-sm">{streetCollectorContent.funnelBridge.reassurance}</p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  href={streetCollectorContent.funnelBridge.cta.url}
+                  prefetch={false}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#047AFF] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6]"
+                >
+                  {streetCollectorContent.funnelBridge.cta.text}
+                </Link>
+              </div>
+            </div>
+          </Container>
+        </SectionWrapper>
+      )}
 
       {/* Bringing art into everyday life + In Collaboration With — unified section */}
       {featuredArtists.length > 0 && (

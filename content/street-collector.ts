@@ -26,17 +26,22 @@ export const streetCollectorContent = {
   },
   /** Logo (Street Collector branding) */
   logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
-  /** Meet the Street Lamp: one video, stages rotate via progress bar on texts */
+  /**
+   * Meet the Street Lamp: each `stages[]` entry can set `desktopVideo` / `mobileVideo` (Shopify CDN clips).
+   * Section-level `desktopVideo` / `mobileVideo` are fallbacks when a stage omits them.
+   */
   meetTheLamp: {
-    title: 'Meet the Street Lamp',
-    /** Two lines under the section title */
+    /** Empty = first two `taglineLines` render as the section `<h2>` title. */
+    title: '',
+    /** First two lines: main title (large serif). Further lines render as supporting copy. */
     taglineLines: ['Not just a lamp.', 'A living art collection.'],
     /** Single glass price line on video (joined if multiple strings) */
     pricingChips: ['Starting at $99 · Artworks from $40'],
-    /** Desktop video URL */
-    desktopVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
-    /** Mobile video URL */
-    mobileVideo: 'https://cdn.shopify.com/videos/c/o/v/6e1629c055ea41a5b3c4f4efe9906b54.mp4',
+    /** Fallback when active stage has no per-slide video */
+    desktopVideo:
+      'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
+    mobileVideo:
+      'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
     /** Poster for video (shared) */
     poster: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
     stages: [
@@ -44,27 +49,53 @@ export const streetCollectorContent = {
         title: 'Set the light',
         description:
           'One tap. Multiple brightness levels. Colors deepen, details surface.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
       },
       {
         title: 'Rotate anytime',
         description:
           'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
       },
       {
         title: 'Slide it in',
         description:
           'Press, click, done. No tools, no hassle — new art in seconds.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/7964f935647e4978b2a6af7a4ea7f450.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/7964f935647e4978b2a6af7a4ea7f450.mp4',
       },
       {
         title: 'Mount it',
         description: 'Magnetic. Wall-ready. Makes a statement.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
       },
       {
         title: 'Choose your art',
         description: 'Hundreds of artists. One piece that\'s yours.',
+        desktopVideo:
+          'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
+        mobileVideo:
+          'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
       },
     ],
     cue: '',
+    primaryCta: { label: 'Start your collection', href: EXPERIENCE_URL },
+    trustMicroItems: [
+      'Free worldwide shipping',
+      '12-month guarantee',
+      '30-day returns',
+    ] as const,
   },
   /** Value props with video + poster from thestreetcollector.com multi-column section */
   valuePropsSectionTitle: 'Bringing art into everyday life.',
@@ -364,6 +395,11 @@ export const streetCollectorContent = {
           {
             question: 'Do you ship internationally?',
             answer: 'Yes, to most countries in the world!',
+          },
+          {
+            question: 'How do artwork prices change as an edition sells?',
+            answer:
+              'As more pieces from an edition find homes, the price steps up through set tiers — it only ever moves in one direction.',
           },
         ],
       },

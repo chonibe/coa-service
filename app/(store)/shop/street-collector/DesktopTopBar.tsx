@@ -9,12 +9,14 @@ interface DesktopTopBarProps {
   text: string
   href: string
   logoUrl: string
+  /** When true, no fixed positioning — parent provides the fixed stacking header (e.g. promo + bar). */
+  embedded?: boolean
 }
 
 /**
  * Desktop top bar with logo, menu, and CTA (md+). Always visible — no full-width hero above the fold.
  */
-export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
+export function DesktopTopBar({ text, href, logoUrl, embedded = false }: DesktopTopBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<{
     open: boolean
@@ -33,8 +35,14 @@ export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4"
-      style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
+      className={embedded
+        ? 'relative z-0 flex w-full items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4'
+        : 'fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4'}
+      style={
+        embedded
+          ? undefined
+          : { paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }
+      }
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
         <Link
@@ -70,8 +78,7 @@ export function DesktopTopBar({ text, href, logoUrl }: DesktopTopBarProps) {
       <Link
         href={href}
         prefetch={false}
-        className="inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-md px-3 sm:px-4 py-1.5 sm:py-2 shadow-md transition-colors shrink-0 hover:opacity-90"
-        style={{ backgroundColor: '#FFBA94', color: '#390000' }}
+        className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#047AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6] hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
       >
         {text}
       </Link>

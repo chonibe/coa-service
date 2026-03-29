@@ -16,6 +16,8 @@ export interface MetaobjectFileReference {
   alt?: string
   url?: string
   sources?: Array<{ url: string; mimeType: string }>
+  /** Present on `... on MediaImage` references from Storefront API */
+  image?: { url?: string }
 }
 
 export interface MetaobjectField {
@@ -23,6 +25,22 @@ export interface MetaobjectField {
   value: string
   type: string
   reference?: MetaobjectFileReference | null
+}
+
+/** Matches direct video URLs stored in single-line / URL fields (not only file_reference). */
+const VIDEO_URL_VALUE_PATTERN = /^https?:\/\/.+\.(mp4|webm|mov)(\?|#|$)/i
+
+/**
+ * Resolve a playable/file URL from a metaobject field reference (Video, MediaImage, GenericFile).
+ */
+export function extractUrlFromMetaobjectReference(
+  ref: MetaobjectFileReference | null | undefined
+): string | null {
+  if (!ref) return null
+  if (ref.sources?.[0]?.url) return ref.sources[0].url
+  if (ref.image?.url) return ref.image.url
+  if (ref.url) return ref.url
+  return null
 }
 
 export interface Metaobject {
@@ -68,6 +86,10 @@ export async function getMetaobject(
                 url
                 mimeType
               }
+            }
+            ... on GenericFile {
+              id
+              url
             }
           }
         }
@@ -167,21 +189,17 @@ export function getMetaobjectFileUrl(
   key: string
 ): string | null {
   if (!metaobject) return null
-  
-  const field = metaobject.fields.find(f => f.key === key)
-  if (!field?.reference) return null
-  
-  // Check for video sources
-  if ('sources' in field.reference && field.reference.sources && field.reference.sources.length > 0) {
-    return field.reference.sources[0].url
-  }
-  
-  // Check for image URL
-  if ('image' in field.reference && field.reference.url) {
-    return field.reference.url
-  }
-  
-  return field.reference.url || null
+
+  const field = metaobject.fields.find((f) => f.key === key)
+  if (!field) return null
+
+  const fromRef = extractUrlFromMetaobjectReference(field.reference ?? null)
+  if (fromRef) return fromRef
+
+  const v = field.value?.trim()
+  if (v && VIDEO_URL_VALUE_PATTERN.test(v)) return v
+
+  return null
 }
 
 /**

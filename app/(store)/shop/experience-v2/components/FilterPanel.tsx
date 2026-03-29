@@ -7,6 +7,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn } from '@/lib/utils'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
+import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
 
 export interface FilterState {
   artists: string[]
@@ -343,7 +344,9 @@ export function applyFilters(
   }
 
   if (filters.artists.length > 0) {
-    result = result.filter((p) => filters.artists.includes(p.vendor))
+    result = result.filter((p) =>
+      filters.artists.some((sel) => experienceVendorsLooselyEqual(sel, p.vendor))
+    )
   }
 
   if (filters.tags.length > 0) {

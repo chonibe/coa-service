@@ -21,7 +21,8 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 4. **Featured Artists** — Horizontal artist carousel with CTA to `/shop/experience`
 5. **What Happens Next** — 3-step bridge section (choose lamp, preview/select artworks, checkout)
 6. **FAQ** — Decision-focused groups: Lamp, Artworks, Shipping
-7. **CTAs** — Hero overlay, sticky mobile bar, and desktop top bar use `Start your collection` → `/shop/experience`
+7. **Top chrome** — Thin **promo strip** at the very top: dark `#0f0e0e`, subtle border, muted peach copy (`#FFBA94` ~75% opacity)—shows `meetTheLamp.trustMicroItems` joined with ` · `. On **md+**, it stacks above [`DesktopTopBar`](./DesktopTopBar.tsx) (`embedded` layout) in one fixed column. On **mobile**, the same strip is fixed under the safe area; an in-flow spacer reserves height so content does not sit under it.
+8. **CTAs** — Sticky mobile bar and desktop top bar use `Start your collection` → `/shop/experience`. The Meet the Street Lamp hero does not repeat that button or the trust line (`primaryCta` and `trustMicroItems` are not passed into [`MeetTheStreetLamp`](./MeetTheStreetLamp.tsx); copy still lives in [`content/street-collector.ts`](../../../content/street-collector.ts) for the promo bar).
 
 **Note:** The numbered 1–3 value-prop copy appears via [`ValuePropVideoCard`](./MultiColumnVideoSection.tsx) inside the featured-artists section (`leadingContent` on [`page.tsx`](./page.tsx)). A separate desktop-only image + three-column banner after the carousel was removed to avoid duplication.
 
@@ -34,7 +35,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 | [`page.tsx`](./page.tsx) | Server component; fetches collections, renders sections |
 | [`MultiColumnVideoSection.tsx`](./MultiColumnVideoSection.tsx) | Client component; value props with autoplay videos (horizontal scroll on mobile, 3-col on desktop) |
 | [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) | Client component; testimonials with media (video/image), stars, quote, author; arrows + dots |
-| [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, video/poster URLs, testimonials with media, collection handles) |
+| [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, **Meet the Street Lamp** per-slide `desktopVideo` / `mobileVideo` on `meetTheLamp.stages`, testimonials, collection handles) |
 
 ---
 
@@ -44,6 +45,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Artists:** First 12 from `streetCollectorContent.featuredArtists.collections`
 - Shopify Storefront API via `getCollection()` from `lib/shopify/storefront-client.ts`
+- **Meet the Street Lamp videos:** Each carousel stage uses **`desktopVideo` / `mobileVideo`** on the matching object in [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages` (Shopify CDN `.mp4` URLs). Section-level `meetTheLamp.desktopVideo` / `mobileVideo` are fallbacks. [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) uses **`loop={false}`** on hero clips, drives the progress bar from **`timeupdate`** (`currentTime` / `duration`), and advances the slide on **`ended`** so each clip plays once per stage. If duration is not finite, it falls back to an ~8s timer.
 
 ### Styling
 
@@ -73,3 +75,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Updated:** 2026-03-21 — Hero overlay copy + `heroSubtext` in [`content/street-collector.ts`](../../../content/street-collector.ts) / [`VideoPlayer`](../../../components/sections/VideoPlayer.tsx); Meet the Street Lamp stages; value-prop tagline removal; trust bar SVGs
 - **Updated:** 2026-03-22 — Removed desktop-only duplicate value-prop banner (image + numbered columns) after the artist carousel on [`page.tsx`](./page.tsx); value props remain in `leadingContent` only.
 - **Updated:** 2026-03-22 — Testimonials: `sectionBackdropImage` + `backdropImageSrc` on [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) to show the same wide hero image behind the carousel.
+- **Updated:** 2026-03-28 — Removed duplicate `Start your collection` from the Meet the Street Lamp hero; CTA stays on [`DesktopTopBar`](./page.tsx) and the mobile sticky bar only.
+- **Updated:** 2026-03-28 — Trust promo strip restyled to a low-contrast dark bar (not primary blue) so it reads as a quiet utility line, not a second CTA band.
+- **Updated:** 2026-03-29 — Meet the Street Lamp carousel video follows the active slide via per-stage **`desktopVideo` / `mobileVideo`** in [`content/street-collector.ts`](../../../content/street-collector.ts) (static Shopify CDN links); [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps `LazyVideo` when the stage advances.
+- **Updated:** 2026-03-29 — Meet the Street Lamp slide timing follows **each video’s duration** (no loop; advance on `ended`); [`LazyVideo`](../../../components/LazyVideo.tsx) accepts **`loop`** (default `true`).

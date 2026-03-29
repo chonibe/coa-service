@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. When at least one artwork is in the cart, a sticky bottom bar shows a primary line item and a **Checkout** CTA (opens the same OrderBar drawer as the header cart); see [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx).
+The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. A sticky bottom bar shows **only** **“Choose your first artwork”** when the collection is empty (no checkout on that bar — use the header cart). Once art is added, the bar shows thumbnails, **Checkout** (same OrderBar as the header cart), and a **centered overlay** add control. See [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx).
 
 **Implementation**: [`app/shop/experience/`](../../../app/shop/experience/)
 
@@ -62,7 +62,7 @@ The Spline preview is responsive: the model scales down as the screen becomes sm
 
 1. **Fit-within-viewport sizing**: `getContainerSize()` computes a size that fits within the container while preserving the lamp aspect ratio (4:5). On smaller screens the model scales down proportionally; on wider viewports it is letterboxed to avoid distortion.
 
-2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-10%)` (with quarter-turn rotation) so the lamp sits slightly higher in the frame.
+2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-6%)` (with quarter-turn rotation) so the lamp sits a bit lower than the previous `-10%` nudge while still clearing the top of the frame.
 
 3. **Container as single source of truth**: `getContainerSize()` uses container `getBoundingClientRect()` for renderer/camera sizing (not `canvas.clientWidth/clientHeight` which can be transitional during layout settling).
 
@@ -273,5 +273,15 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 
 ## Version
 
-- Last updated: 2026-03-27
-- Version: 1.14.1
+- Last updated: 2026-03-28
+- Version: 1.15.4
+- **Spline vertical nudge**: Minimal [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx) canvas `translateY` relaxed from **-10%** to **-6%** so the lamp sits slightly lower in the experience viewport.
+- **Title chip + icon**: Picker / strip / carousel title row uses `flex-1` on the title and a trailing `Plus` so the **+ stays on the right edge** of the glass chip; title text stays centered in the remaining width.
+- **Detail header order**: In the experience reel artwork card ([`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx)) and [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (desktop + mobile), **artwork title** is shown first with **artist / vendor** on the line below.
+- **Title chip width**: Image title glass chip (and picker edition chip above it) use **80%** of the image content width (`w-4/5`), centered.
+- **+ with title**: Picker and configurator strip show the add **+** at the **end** of the title chip when the artwork is not selected / not in cart (same glass treatment as the title text). Title chip uses **centered** text and `justify-center`; long titles stay centered beside the icon.
+- **Title on image (bottom)**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) show the artwork title in a glass chip at the **bottom** of the image; picker **edition** chip (non-ladder) sits **above** the title. [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) spotlight placeholders use the same bottom-aligned title row. Strip card footer keeps price, edition, and actions only.
+- **Glass + affordances**: Top-right “add” chips on picker cards ([`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)), spotlight placeholder tiles ([`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)), and the sticky-bar add FAB ([`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)) use the same frosted treatment as the strip `+` control (`backdrop-blur-xl`, `backdrop-saturate-150`, translucent fill, border, inset highlight).
+- **Artist spine vertical alignment**: Two-up rows in [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx) and [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) use `items-stretch` on the row and `self-stretch` on the spine column so the vertical artist label stays centered on the cross-axis (middle of the paired artwork cards).
+- **Artwork picker slide-up row spacing**: [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) (Instagram-style selector from the sticky bar) has its **own** virtualized list, separate from [`ArtworkStrip`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx). Row gaps use the same pattern as the strip: `pb-12 md:pb-16` between rows (merged pairs `py-4 md:py-6`), and `ROW_HEIGHT_ESTIMATE` is aligned so the virtualizer’s first paint stays reasonable before `measureElement` runs.
+- **Artwork + artist in reel**: [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx) uses shared [`HorizontalTwoSlideGallery`](../../../app/(store)/shop/experience-v2/components/HorizontalTwoSlideGallery.tsx) so the artwork card (image, title, scarcity) and artist spotlight swipe left/right when both are present. Same transform-based gallery fixes `ArtworkDetail` panels that use `overflow-x-hidden`.

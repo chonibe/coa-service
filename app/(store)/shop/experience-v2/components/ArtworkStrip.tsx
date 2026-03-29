@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, Heart, Info } from 'lucide-react'
+import { Check, Eye, Heart, Info, Plus } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
@@ -380,6 +380,39 @@ function ArtworkCard({
             />
           </button>
         )}
+        <div
+          className={cn(
+            'absolute inset-x-0 bottom-0 z-[8] pointer-events-none flex flex-col items-center justify-end gap-0.5 px-1.5 pb-1'
+          )}
+        >
+          <div className="flex w-full min-w-0 justify-center">
+            <div
+              className={cn(
+                'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1.5 rounded-lg px-2 py-1',
+                'border border-white/30 dark:border-white/20',
+                'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                'text-white shadow-sm shadow-black/20'
+              )}
+            >
+              <span
+                className={cn(
+                  'min-w-0 flex-1 text-center text-[10px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                )}
+                title={product.title}
+              >
+                {product.title}
+              </span>
+              {!isInCart && !isSoldOut && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       <div
@@ -399,10 +432,6 @@ function ArtworkCard({
         }}
       >
         <div className="w-full min-w-0 flex flex-col items-center text-center">
-          <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
-            isInCart ? 'text-neutral-800 dark:text-[#f0e8e8]' : 'text-neutral-800 dark:text-[#f0e8e8]'
-          )}>{product.title}</p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <p className={cn(
               'text-xs transition-colors duration-200 ease-out',
@@ -515,8 +544,8 @@ function ArtworkCard({
   )
 }
 
-/** Fallback estimate; actual height measured via measureElement */
-const ROW_HEIGHT_ESTIMATE = 320
+/** Fallback estimate; actual height measured via measureElement (includes row bottom gap) */
+const ROW_HEIGHT_ESTIMATE = 480
 
 interface ArtworkStripProps {
   scrollRef: React.RefObject<HTMLDivElement | null>
@@ -772,7 +801,7 @@ export function ArtworkStrip({
             data-index={virtualRow.index}
             className={cn(
               'absolute top-0 left-0 w-full',
-              shouldMerge ? 'py-1 md:py-1' : 'pb-2 md:pb-3',
+              shouldMerge ? 'py-4 md:py-6' : 'pb-12 md:pb-16',
               virtualRow.index === 0 && showHighlightAnimation && 'z-10'
             )}
             style={{
@@ -782,7 +811,7 @@ export function ArtworkStrip({
             {showArtistSpine ? (
               <div
                 className={cn(
-                  'relative flex rounded-xl overflow-hidden',
+                  'relative flex items-stretch rounded-xl overflow-hidden',
                   shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
                 )}
               >
@@ -824,7 +853,7 @@ export function ArtworkStrip({
                 )}
                 <div
                   className={cn(
-                    'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
+                    'shrink-0 z-[1] self-stretch flex flex-col items-center justify-center bg-transparent',
                     shouldMerge ? 'px-0' : 'px-1.5'
                   )}
                 >
@@ -874,7 +903,7 @@ export function ArtworkStrip({
                 )}
               </div>
             ) : (
-              <div className="relative flex justify-center pb-2 md:pb-3">
+              <div className="relative flex justify-center">
                 {product1 && g1 >= 0 && (
                   <div className="w-[calc(50%-0.25rem)] md:w-[calc(50%-0.375rem)]">
                     <ArtworkCard

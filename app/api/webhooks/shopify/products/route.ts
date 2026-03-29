@@ -5,6 +5,7 @@ import crypto from "crypto"
 import { createClient } from "@/lib/supabase/server"
 import { updateProductVariantsWithBarcodes } from "@/lib/shopify/product-creation"
 import { processEditionWatchlistStageChange } from "@/lib/shop/edition-watchlist-notifications"
+import { upsertShopifyProductIntoSupabaseProducts } from "@/lib/shop/upsert-shopify-product-to-supabase-products"
 
 /**
  * Shopify Product Webhook Handler
@@ -55,6 +56,15 @@ export async function POST(request: NextRequest) {
         await processEditionWatchlistStageChange(productId)
       } catch (watchErr: any) {
         console.error(`[product webhook] Edition watchlist stage notify failed for ${productId}:`, watchErr?.message)
+      }
+
+      try {
+        const syncRow = await upsertShopifyProductIntoSupabaseProducts(supabase, productId)
+        if (!syncRow.ok) {
+          console.error(`[product webhook] Supabase products upsert failed for ${productId}:`, syncRow.error)
+        }
+      } catch (syncErr: any) {
+        console.error(`[product webhook] Supabase products upsert threw for ${productId}:`, syncErr?.message)
       }
 
       // Log successful barcode processing

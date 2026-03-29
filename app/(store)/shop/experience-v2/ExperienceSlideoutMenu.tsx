@@ -117,6 +117,15 @@ export function ExperienceSlideoutMenu() {
         </div>
       </header>
 
+      {!isOnOnboarding && (
+        <div
+          className="shrink-0 border-b border-neutral-200/80 px-4 py-1 text-center text-[10px] text-neutral-500 dark:border-white/5 dark:text-[#a09090] sm:text-[11px]"
+          role="status"
+        >
+          Free Worldwide Shipping
+        </div>
+      )}
+
       {/* Steps — desktop only (hidden) */}
       {false && !isOnOnboarding && orderBarProps && (
           <div className="hidden md:flex items-center gap-2 ml-auto mr-3">

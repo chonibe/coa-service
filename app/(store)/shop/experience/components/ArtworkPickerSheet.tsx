@@ -22,6 +22,14 @@ import {
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
+import { streetEditionRowFromStorefrontProduct } from '@/lib/shop/street-edition-from-storefront'
+import {
+  formatStreetArtworkListPrice,
+  formatStreetNextSalesChipText,
+} from '@/lib/shop/experience-street-ladder-display'
 
 type SeasonTab = 'season1' | 'season2'
 
@@ -74,16 +82,6 @@ function MergeConfetti({ active }: { active: boolean }) {
   )
 }
 
-function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
-  const price = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  if (price <= 0) return 'Free'
-  if (isEarlyAccess) {
-    const discounted = Math.round(price * 0.9 * 100) / 100
-    return `$${discounted.toFixed(2)}`
-  }
-  return `$${price.toFixed(2)}`
-}
-
 interface ArtworkCardV2Props {
   product: ShopifyProduct
   isSelected: boolean
@@ -100,6 +98,8 @@ interface ArtworkCardV2Props {
   isEarlyAccess?: boolean
   /** When true, both artworks in this 2-up row are selected — hide per-card ring (row uses shared tint only). */
   suppressSelectionRing?: boolean
+  /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
+  streetPricing?: StreetEditionStatesRow | null
 }
 
 function ArtworkCardV2({
@@ -114,6 +114,7 @@ function ArtworkCardV2({
   isNewDrop = false,
   isEarlyAccess = false,
   suppressSelectionRing = false,
+  streetPricing = null,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
@@ -121,8 +122,11 @@ function ArtworkCardV2({
   const flushToSpine = isMergedVisual || spinePairLayout
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
-  const originalPrice = parseFloat(product.priceRange?.minVariantPrice?.amount ?? '0')
-  const showEarlyAccessPrice = isEarlyAccess && originalPrice > 0
+  const footerPrice = formatStreetArtworkListPrice(product, streetPricing, isEarlyAccess)
+  const showEarlyAccessCompare = footerPrice.compareAt !== null
+  const streetListActive = !!(streetPricing && streetPricing.priceUsd != null && streetPricing.priceUsd > 0)
+  const nextSalesChipText =
+    streetListActive && streetPricing ? formatStreetNextSalesChipText(streetPricing.nextBump) : null
   const surfaces = getPickerArtworkCardSurfaces(isSelected)
   const selectionChrome = getPickerCardSelectionChrome(isSelected, suppressSelectionRing)
   const handleClick = useCallback(() => {
@@ -198,15 +202,6 @@ function ArtworkCardV2({
           </span>
         )}
 
-        {!isSelected && (
-          <div
-            className="pointer-events-none absolute top-2 right-2 z-[15] flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-md ring-1 ring-black/5"
-            aria-hidden
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-          </div>
-        )}
-
         <AnimatePresence initial={false}>
           {isSelected && selectionNumber !== null && (
             <motion.div
@@ -227,54 +222,125 @@ function ArtworkCardV2({
           )}
         </AnimatePresence>
 
-        <EditionBadgeForProduct
-          product={product}
-          chipOnly
+        <div
           className={cn(
-            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none px-1.5 pb-1.5',
-            '[&>span]:pointer-events-auto'
+            'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex flex-col items-center justify-end gap-0.5 px-1.5 pb-1',
+            '[&_.picker-title-chip]:pointer-events-auto'
           )}
-        />
+        >
+          {!streetPricing ? (
+            <EditionBadgeForProduct
+              product={product}
+              chipOnly
+              className="w-4/5 max-w-[80%] shrink-0 [&>span]:pointer-events-auto"
+            />
+          ) : null}
+          <div className="flex w-full min-w-0 justify-center">
+            <div
+              className={cn(
+                'picker-title-chip flex w-4/5 max-w-[80%] min-w-0 items-center gap-1.5 rounded-lg px-2 py-1',
+                'border border-white/30 dark:border-white/20',
+                'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                'text-white shadow-sm shadow-black/20'
+              )}
+            >
+              <span
+                className={cn(
+                  'min-w-0 flex-1 text-center text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
+                )}
+                title={product.title}
+              >
+                {product.title}
+              </span>
+              {!isSelected && (
+                <Plus
+                  className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       <div
         className={cn(
           'px-2 flex flex-col items-center justify-center text-center overflow-hidden cursor-pointer',
           surfaces.meta,
-          (mergeWithLeft || mergeWithRight) ? 'pt-1.5 pb-0.5' : 'pt-2 pb-1',
+          (mergeWithLeft || mergeWithRight) ? 'pt-0 pb-0.5' : 'pt-0.5 pb-0.5',
           roundLeft && roundRight && 'rounded-b-xl',
           roundLeft && !roundRight && 'rounded-bl-xl',
           !roundLeft && roundRight && 'rounded-br-xl'
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-1 items-center">
-          <p className={cn(
-            'text-xs font-medium truncate max-w-full transition-colors duration-200 ease-out',
-            isSelected ? 'text-black dark:text-[#f0e8e8]' : 'text-black dark:text-[#f0e8e8]'
-          )}>{product.title}</p>
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <p className={cn(
-              'text-xs font-medium transition-colors duration-200 ease-out',
-              showEarlyAccessPrice
-                ? 'text-violet-700 dark:text-violet-300'
-                : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
-            )}>
-              {formatPrice(product, isEarlyAccess)}
-            </p>
-            {showEarlyAccessPrice && (
-              <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
-                ${originalPrice.toFixed(2)}
-              </span>
-            )}
-          </div>
+        <div className="w-full min-w-0 flex flex-col gap-0 items-center">
+          {streetPricing ? (
+            <div className="w-full min-w-0 flex flex-col gap-0 items-center text-center">
+              {streetListActive ? (
+                <div className="flex w-full min-w-0 flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
+                  <span
+                    className={cn(
+                      'text-sm font-semibold tabular-nums tracking-tight shrink-0',
+                      showEarlyAccessCompare
+                        ? 'text-violet-700 dark:text-violet-300'
+                        : 'text-neutral-900 dark:text-[#f0e8e8]'
+                    )}
+                  >
+                    {footerPrice.primary}
+                  </span>
+                  {showEarlyAccessCompare && footerPrice.compareAt && (
+                    <span className="text-[11px] text-neutral-400 dark:text-[#908080] line-through tabular-nums shrink-0">
+                      {footerPrice.compareAt}
+                    </span>
+                  )}
+                  {nextSalesChipText ? (
+                    <>
+                      <span
+                        className="shrink-0 text-[0.85em] leading-none text-neutral-400 dark:text-neutral-500 select-none"
+                        aria-hidden
+                      >
+                        ✦
+                      </span>
+                      <span className="min-w-0 text-[11px] font-medium tabular-nums leading-snug text-neutral-700 dark:text-neutral-200">
+                        {nextSalesChipText}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs font-semibold text-neutral-500 dark:text-[#a09090] text-center">
+                  {streetPricing.label}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex w-full min-w-0 items-baseline justify-center gap-1.5 flex-wrap">
+              <p className={cn(
+                'text-xs font-medium transition-colors duration-200 ease-out',
+                showEarlyAccessCompare
+                  ? 'text-violet-700 dark:text-violet-300'
+                  : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
+              )}>
+                {footerPrice.primary}
+              </p>
+              {showEarlyAccessCompare && footerPrice.compareAt && (
+                <span className="text-[10px] text-neutral-400 dark:text-[#a09090] line-through">
+                  {footerPrice.compareAt}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   )
 }
 
-const ROW_HEIGHT_ESTIMATE = 292
+/** Virtual row estimate; rows use measureElement (includes row vertical gap). */
+const ROW_HEIGHT_ESTIMATE = 480
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -300,6 +366,8 @@ interface ArtworkPickerSheetProps {
   cartOrder?: string[]
   /** When set, controls spotlight card open/closed UI independently of filter state (avoids mismatched names vs filters). */
   spotlightBannerExpanded?: boolean
+  /** Numeric Shopify product id → Street Collector ladder copy */
+  streetEditionByProductId?: Record<string, StreetEditionStatesRow>
 }
 
 export function ArtworkPickerSheet({
@@ -325,6 +393,7 @@ export function ArtworkPickerSheet({
   productsForFilterPanel = [],
   cartOrder = [],
   spotlightBannerExpanded,
+  streetEditionByProductId = {},
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -352,11 +421,28 @@ export function ArtworkPickerSheet({
     return spotlightIdSet.has(norm) || spotlightIdSet.has(id)
   }, [spotlightIdSet])
 
+  const seasonBandsFallback: 1 | 2 = activeSeason === 'season2' ? 2 : 1
+
+  const streetPricingForProduct = useCallback(
+    (product: ShopifyProduct) => {
+      const k = normalizeShopifyProductId(product.id)
+      if (k) {
+        const fromApi = streetEditionByProductId[k]
+        if (fromApi) return fromApi
+      }
+      return streetEditionRowFromStorefrontProduct(product, { seasonBandsFallback })
+    },
+    [streetEditionByProductId, seasonBandsFallback]
+  )
+
   /** Parent passes `spotlightBannerExpanded` so “filtered” UI tracks accordion, not API vs Shopify vendor strings. */
   const spotlightAccordionExpanded =
     spotlightBannerExpanded !== undefined
       ? spotlightBannerExpanded
-      : !!(spotlightData && filters?.artists?.includes(spotlightData.vendorName))
+      : !!(
+          spotlightData &&
+          filters?.artists?.some((a) => experienceVendorsLooselyEqual(a, spotlightData.vendorName))
+        )
 
   const activeFilterCount = useMemo(() => {
     if (!filters) return 0
@@ -592,21 +678,19 @@ export function ArtworkPickerSheet({
                       key={virtualRow.key}
                       data-index={virtualRow.index}
                       ref={virtualizer.measureElement}
+                      className={cn(
+                        'absolute top-0 left-0 w-full',
+                        showArtistSpine && shouldMerge ? 'py-4 md:py-6' : 'pb-12 md:pb-16'
+                      )}
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
                       {showArtistSpine ? (
                         <div
                           className={cn(
-                            'relative flex rounded-xl overflow-hidden',
-                            shouldMerge
-                              ? cn('py-0.5 my-0.5', experienceArtistRowMergeClass)
-                              : cn('pb-1.5', experienceArtistRowDefaultClass)
+                            'relative flex items-stretch rounded-xl overflow-hidden',
+                            shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -624,12 +708,13 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
+                                streetPricing={streetPricingForProduct(product1)}
                               />
                             </div>
                           )}
                           <div
                             className={cn(
-                              'shrink-0 z-[1] flex flex-col items-center justify-center bg-transparent',
+                              'shrink-0 z-[1] self-stretch flex flex-col items-center justify-center bg-transparent',
                               shouldMerge ? 'px-0' : 'px-0.5'
                             )}
                           >
@@ -656,12 +741,13 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
+                                streetPricing={streetPricingForProduct(product2)}
                               />
                             </div>
                           )}
                         </div>
                       ) : (
-                        <div className="relative flex justify-center pb-1.5">
+                        <div className="relative flex justify-center">
                           {product1 && (
                             <div className="w-[calc(52.5%-0.125rem)] max-w-[280px]">
                               <ArtworkCardV2
@@ -673,6 +759,7 @@ export function ArtworkPickerSheet({
                                 priorityLoad={virtualRow.index < 3}
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
+                                streetPricing={streetPricingForProduct(product1)}
                               />
                             </div>
                           )}

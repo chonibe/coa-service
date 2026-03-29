@@ -6,6 +6,7 @@ import {
   type EditionStageKey,
 } from '@/lib/shop/edition-stages'
 import { fetchAdminProductEditionState } from '@/lib/shop/admin-product-edition-state'
+import { getStreetPricingStageDisplay, streetSeasonFromTotalEditions } from '@/lib/shop/street-collector-pricing-stages'
 
 function shopProductUrl(handle: string | null | undefined): string {
   const base = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SHOP_URL || ''
@@ -88,12 +89,27 @@ export async function processEditionWatchlistStageChange(shopifyProductId: strin
     )
     const copy = getEditionStageCopy(state.stage, ctx)
 
+    const te = state.totalEditions
+    let streetLine = ''
+    let streetStageKey: string | undefined
+    let streetStagePriceUsd: number | undefined
+    if (te === 90 || te === 44) {
+      const season = streetSeasonFromTotalEditions(te)
+      const disp = getStreetPricingStageDisplay(season, state.editionSold)
+      streetStageKey = disp.stageKey
+      if (disp.priceUsd != null) {
+        streetStagePriceUsd = disp.priceUsd
+        streetLine = `${disp.label} — $${disp.priceUsd}`
+      }
+    }
+
     const productUrl = shopProductUrl(row.product_handle)
     const title = row.product_title || 'An edition you are watching'
     const html = `
       <div style="font-family: system-ui, sans-serif; max-width: 520px; margin: 0 auto;">
         <h1 style="font-size: 18px;">${copy.emailSubject}</h1>
         <p style="color: #444; line-height: 1.5;">${copy.emailBody}</p>
+        ${streetLine ? `<p style="color: #222; font-weight: 600; margin-top: 12px;">Street Collector ladder: ${streetLine}</p>` : ''}
         <p style="margin-top: 20px;"><strong>${title}</strong></p>
         <p style="margin-top: 16px;">
           <a href="${productUrl}" style="display: inline-block; padding: 12px 20px; background: #047AFF; color: #fff; text-decoration: none; border-radius: 8px;">View edition</a>
@@ -122,6 +138,9 @@ export async function processEditionWatchlistStageChange(shopifyProductId: strin
       artwork_id: shopifyProductId,
       trigger_type: 'edition_stage_change',
       stage: state.stage,
+      street_stage_key: streetStageKey,
+      street_stage_price_usd: streetStagePriceUsd,
+      street_pricing_line: streetLine || undefined,
     })
   }
 }

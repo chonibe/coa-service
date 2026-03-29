@@ -66,6 +66,8 @@ interface ArtistSpotlightBannerProps {
   showBadge?: boolean
   /** When true, show expanded view (full card with bio). When false, show collapsed (compact with thumbnails). When onSelect provided, click toggles. */
   expanded?: boolean
+  /** When true, no outer ring / nested card fill — sits flush inside a parent panel (e.g. horizontal detail gallery) */
+  embedded?: boolean
 }
 
 export function ArtistSpotlightBanner({
@@ -74,6 +76,7 @@ export function ArtistSpotlightBanner({
   onSelect,
   showBadge = false,
   expanded = true,
+  embedded = false,
 }: ArtistSpotlightBannerProps) {
   const isCollapsible = !!onSelect
   const isExpanded = isCollapsible ? expanded : true
@@ -88,11 +91,12 @@ export function ArtistSpotlightBanner({
   return (
     <div
       className={cn(
-        'relative w-full rounded-xl overflow-hidden text-center',
-        'ring-1 ring-inset',
-        spotlight.unlisted
-          ? 'ring-violet-400/35 dark:ring-violet-400/28'
-          : 'ring-[#FFBA94]/35 dark:ring-[#FFBA94]/28'
+        'relative w-full overflow-hidden text-center',
+        embedded ? 'rounded-none ring-0' : 'rounded-xl ring-1 ring-inset',
+        !embedded &&
+          (spotlight.unlisted
+            ? 'ring-violet-400/35 dark:ring-violet-400/28'
+            : 'ring-[#FFBA94]/35 dark:ring-[#FFBA94]/28')
       )}
     >
       {/* Card — collapsible when onSelect provided */}
@@ -102,9 +106,12 @@ export function ArtistSpotlightBanner({
         onClick={handleClick}
         onKeyDown={isCollapsible ? (e) => e.key === 'Enter' && handleClick() : undefined}
         className={cn(
-          'relative w-full rounded-xl text-center overflow-hidden',
-          'bg-neutral-100 dark:bg-[#201c1c]/80',
-          isCollapsible && 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#262222]/80 transition-colors'
+          'relative w-full text-center overflow-hidden',
+          embedded
+            ? 'rounded-none bg-transparent'
+            : 'rounded-xl bg-neutral-100 dark:bg-[#201c1c]/80',
+          !embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#262222]/80 transition-colors',
+          embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-white/5 transition-colors'
         )}
       >
         {isExpanded ? (

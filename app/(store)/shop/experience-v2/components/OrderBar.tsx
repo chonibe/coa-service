@@ -5,6 +5,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
 import { Package, Shield, RotateCcw, Lock, Minus, Plus } from 'lucide-react'
+import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
@@ -17,7 +18,10 @@ import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuiz
 import { AddressModal } from '@/components/shop/checkout/AddressModal'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { Checkbox, Label } from '@/components/ui'
-import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
+import {
+  experienceArtworkUnitUsd,
+  storefrontVariantUsd,
+} from '@/lib/shop/experience-artwork-unit-price'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -70,6 +74,10 @@ interface OrderBarProps {
   isGift: boolean
   /** Set of product IDs user already owns (show "Collected" badge on order items) */
   collectedProductIds?: Set<string>
+  /** Locked artwork USD prices (numeric Shopify product id → dollars) from The Reserve */
+  lockedArtworkPrices?: Record<string, number>
+  /** Street ladder buy-now USD per artwork (numeric product id) from edition-states */
+  streetLadderPrices?: Record<string, number>
 }
 
 export interface OrderBarRef {
@@ -129,6 +137,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   onSelectArtwork,
   isGift,
   collectedProductIds,
+  lockedArtworkPrices,
+  streetLadderPrices,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -149,6 +159,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     firedAddPaymentInfoRef.current = false
   })
 
+  const priceMaps = React.useMemo(
+    () => ({
+      lockedUsdByProductId: lockedArtworkPrices,
+      streetLadderUsdByProductId: streetLadderPrices,
+    }),
+    [lockedArtworkPrices, streetLadderPrices]
+  )
+
   const lampPrice = parsePrice(lamp)
   const artworkCount = selectedArtworks.length
   const artworkRuns = React.useMemo(() => groupConsecutiveArtworks(selectedArtworks), [selectedArtworks])
@@ -168,7 +186,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const artworksTotal = selectedArtworks.reduce((sum, p) => sum + parsePrice(p), 0)
+  const artworksTotal = selectedArtworks.reduce(
+    (sum, p) => sum + experienceArtworkUnitUsd(p, priceMaps),
+    0
+  )
   const total = lampTotal + artworksTotal
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
@@ -189,7 +210,18 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       let aj = ai + 1
       while (aj < selectedArtworks.length && selectedArtworks[aj].id === p.id) aj++
       const qty = aj - ai
-      artworkLineItems.push(storefrontProductToItem(p, p.variants?.edges?.[0]?.node, qty))
+      const unit = experienceArtworkUnitUsd(p, priceMaps)
+      const pAdj =
+        unit !== storefrontVariantUsd(p)
+          ? ({
+              ...p,
+              priceRange: {
+                minVariantPrice: { amount: String(unit), currencyCode: 'USD' },
+                maxVariantPrice: { amount: String(unit), currencyCode: 'USD' },
+              },
+            } as ShopifyProduct)
+          : p
+      artworkLineItems.push(storefrontProductToItem(pAdj, p.variants?.edges?.[0]?.node, qty))
       ai = aj
     }
     const items =
@@ -199,7 +231,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     trackBeginCheckout(items, total, 'USD', {
       em: checkout.address?.email || undefined,
     })
-  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total])
+  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, priceMaps])
 
   const buildLineItems = useCallback(() => {
     const items: Array<{
@@ -244,20 +276,20 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         variantGid: art.variants?.edges?.[0]?.node?.id ?? '',
         handle: art.handle,
         title: art.title,
-        price: parsePrice(art),
+        price: experienceArtworkUnitUsd(art, priceMaps),
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
       })
       wi = wj
     }
     return items
-  }, [lamp, lampQuantity, lampPrices, selectedArtworks])
+  }, [lamp, lampQuantity, lampPrices, selectedArtworks, priceMaps])
 
   /* Preload checkout session when cart drawer opens – payment dialog loads instantly */
   const preloadKeyRef = React.useRef<string>('')
   React.useEffect(() => {
     const key = JSON.stringify({
-      items: buildLineItems().map((i) => i.variantId + ':' + i.quantity),
+      items: buildLineItems().map((i) => i.variantId + ':' + i.quantity + ':' + i.price),
       address: checkout.address
         ? `${checkout.address.country}|${checkout.address.postalCode}|${checkout.address.addressLine1}`
         : '',
@@ -487,6 +519,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const lampOriginalTotal = lampQuantity * lampPrice
   const orderSummary = (
     <div className="order-summary-container space-y-3">
+      <div className="px-0.5 pt-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-[#948888]">
+          Your Street Lamp + artworks
+        </p>
+      </div>
       {/* Compact cart lines */}
       <div className="pt-2 space-y-2 max-h-[35vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
@@ -537,7 +574,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
         {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
-          const lineSubtotal = parsePrice(art) * quantity
+          const lineSubtotal = experienceArtworkUnitUsd(art, priceMaps) * quantity
           return (
           <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
@@ -751,16 +788,36 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                         // E-commerce: track add_payment_info once per checkout session
                         if (!firedAddPaymentInfoRef.current && selectedArtworks.length + lampQuantity > 0) {
                           firedAddPaymentInfoRef.current = true
-                          const items = lampQuantity > 0
-                            ? [
-                                storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
-                                ...selectedArtworks.map((p) =>
-                                  storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-                                ),
-                              ]
-                            : selectedArtworks.map((p) =>
-                                storefrontProductToItem(p, p.variants?.edges?.[0]?.node, 1)
-                              )
+                          const artworkGa: ReturnType<typeof storefrontProductToItem>[] = []
+                          let gai = 0
+                          while (gai < selectedArtworks.length) {
+                            const gp = selectedArtworks[gai]
+                            let gaj = gai + 1
+                            while (gaj < selectedArtworks.length && selectedArtworks[gaj].id === gp.id) gaj++
+                            const gqty = gaj - gai
+                            const gUnit = experienceArtworkUnitUsd(gp, priceMaps)
+                            const gpAdj =
+                              gUnit !== storefrontVariantUsd(gp)
+                                ? ({
+                                    ...gp,
+                                    priceRange: {
+                                      minVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
+                                      maxVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
+                                    },
+                                  } as ShopifyProduct)
+                                : gp
+                            artworkGa.push(
+                              storefrontProductToItem(gpAdj, gp.variants?.edges?.[0]?.node, gqty)
+                            )
+                            gai = gaj
+                          }
+                          const items =
+                            lampQuantity > 0
+                              ? [
+                                  storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
+                                  ...artworkGa,
+                                ]
+                              : artworkGa
                           trackAddPaymentInfo(displayType, items, total, 'USD', {
                             em: checkout.address?.email || undefined,
                           })

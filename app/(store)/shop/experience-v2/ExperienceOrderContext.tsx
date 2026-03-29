@@ -35,6 +35,10 @@ export interface OrderBarContextProps {
   pastLampPaywall?: boolean
   /** Set of product IDs user already owns (for "Collected" badge in order items) */
   collectedProductIds?: Set<string>
+  /** Reserve / locked USD prices keyed by numeric Shopify product id */
+  lockedArtworkPrices?: Record<string, number>
+  /** Street ladder list USD from edition-states (numeric Shopify product id → dollars) */
+  streetLadderPrices?: Record<string, number>
   /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */
   wizardHighlightStep?: number
   /** Wizard: whether highlight animation is active */

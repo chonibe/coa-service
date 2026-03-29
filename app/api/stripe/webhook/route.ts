@@ -1279,6 +1279,30 @@ async function handleInvoicePaymentFailed(supabase: any, invoice: Stripe.Invoice
  */
 async function handleSubscriptionCreated(supabase: any, subscription: Stripe.Subscription) {
   try {
+    /** Street Collector — The Reserve (Supabase shop user + tier in metadata) */
+    if (subscription.metadata?.subscription_product === 'street_reserve') {
+      const userId = subscription.metadata?.supabase_user_id
+      const reserveTier = subscription.metadata?.reserve_tier
+      if (!userId || !reserveTier) {
+        console.error('[webhook] street_reserve subscription missing supabase_user_id or reserve_tier')
+        return
+      }
+      await supabase.from('street_reserve_subscriptions').upsert(
+        {
+          user_id: userId,
+          tier: reserveTier,
+          stripe_subscription_id: subscription.id,
+          stripe_customer_id: subscription.customer as string,
+          status: subscription.status,
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
+      console.log(`[webhook] street_reserve subscription for user ${userId}, tier ${reserveTier}`)
+      return
+    }
+
     const tierId = subscription.metadata?.tier_id as MembershipTierId | undefined
     const collectorIdentifier = subscription.metadata?.collector_identifier
 
@@ -1356,6 +1380,27 @@ async function handleSubscriptionCreated(supabase: any, subscription: Stripe.Sub
  */
 async function handleSubscriptionUpdated(supabase: any, subscription: Stripe.Subscription) {
   try {
+    const { data: reserveRow } = await supabase
+      .from('street_reserve_subscriptions')
+      .select('id')
+      .eq('stripe_subscription_id', subscription.id)
+      .maybeSingle()
+
+    if (reserveRow) {
+      const reserveTier = subscription.metadata?.reserve_tier
+      await supabase
+        .from('street_reserve_subscriptions')
+        .update({
+          status: subscription.status,
+          ...(reserveTier ? { tier: reserveTier } : {}),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', reserveRow.id)
+      console.log(`[webhook] Updated street_reserve subscription ${subscription.id}`)
+      return
+    }
+
     const { data: existingSub } = await supabase
       .from('collector_credit_subscriptions')
       .select('id, tier')
@@ -1399,6 +1444,14 @@ async function handleSubscriptionUpdated(supabase: any, subscription: Stripe.Sub
  */
 async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Subscription) {
   try {
+    await supabase
+      .from('street_reserve_subscriptions')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('stripe_subscription_id', subscription.id)
+
     await supabase
       .from('collector_credit_subscriptions')
       .update({
