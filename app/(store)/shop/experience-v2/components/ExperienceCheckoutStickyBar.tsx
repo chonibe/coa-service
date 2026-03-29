@@ -185,7 +185,38 @@ export function ExperienceCheckoutStickyBar({
         ) : (
           <>
             <div className="flex items-center gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              {/* Mobile: lamp + count only — no horizontal artwork thumbs (too tight next to checkout). */}
+              <div className="flex min-w-0 flex-1 items-center gap-2 md:hidden">
+                <div className="relative shrink-0">
+                  <StickyThumb product={lamp} isLamp theme={theme} />
+                  {lampQuantity > 1 ? (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#047AFF] px-1 text-[9px] font-bold tabular-nums text-white shadow-sm ring-2 ring-white dark:ring-[#1c1919]"
+                      aria-label={`${lampQuantity} lamps`}
+                    >
+                      {lampQuantity}
+                    </span>
+                  ) : null}
+                </div>
+                <p
+                  className={cn(
+                    'min-w-0 text-sm font-semibold leading-tight',
+                    theme === 'light' ? 'text-neutral-900' : 'text-white'
+                  )}
+                >
+                  <span className="tabular-nums">{selectedArtworks.length}</span>
+                  <span
+                    className={cn(
+                      'font-medium',
+                      theme === 'light' ? 'text-neutral-600' : 'text-[#c4a8a8]'
+                    )}
+                  >
+                    {' '}
+                    added
+                  </span>
+                </p>
+              </div>
+              <div className="hidden min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide md:flex">
                 {visibleSlots.map((slot, index) => (
                   <Fragment key={slot.key}>
                     {index > 0 && <PlusSep theme={theme} />}
