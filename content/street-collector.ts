@@ -58,9 +58,9 @@ export const streetCollectorContent = {
         description:
           'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
         desktopVideo:
-          'https://cdn.shopify.com/videos/c/o/v/697920e21b954b1bac6097e4d9e5fdc9.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
         mobileVideo:
-          'https://cdn.shopify.com/videos/c/o/v/697920e21b954b1bac6097e4d9e5fdc9.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
       },
       {
         title: 'Slide it in',
@@ -75,9 +75,9 @@ export const streetCollectorContent = {
         title: 'Mount it',
         description: 'Magnetic. Wall-ready. Makes a statement.',
         desktopVideo:
-          'https://cdn.shopify.com/videos/c/o/v/0473d6589a084436892c3e85f0508260.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
         mobileVideo:
-          'https://cdn.shopify.com/videos/c/o/v/0473d6589a084436892c3e85f0508260.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
       },
       {
         title: 'Choose your art',
