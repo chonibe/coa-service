@@ -31,9 +31,10 @@ export const streetCollectorContent = {
    * Section-level `desktopVideo` / `mobileVideo` are fallbacks when a stage omits them.
    */
   meetTheLamp: {
-    title: 'Meet the Street Lamp',
-    /** Subtitle lines under “Meet the Street Lamp” (empty = hidden). */
-    taglineLines: [],
+    /** Empty = first two `taglineLines` render as the section `<h2>` title. */
+    title: '',
+    /** First two lines: main title (large serif). Further lines render as supporting copy. */
+    taglineLines: ['Not just a lamp.', 'A living art collection.'],
     /** Single glass price line on video (joined if multiple strings) */
     pricingChips: ['Starting at $99 · Artworks from $40'],
     /** Fallback when active stage has no per-slide video */
@@ -398,12 +399,7 @@ export const streetCollectorContent = {
           {
             question: 'How do artwork prices change as an edition sells?',
             answer:
-              'As more pieces from an edition find homes, the price steps up through set tiers — it only ever moves in one direction, and we don’t run surprise flash sales on this model. The price you see when you build your lamp is the price that applies: it stays in sync with how many have sold.',
-          },
-          {
-            question: 'What is The Reserve?',
-            answer:
-              'The Reserve is an optional membership that holds your artwork price steady for a window of time while the public price continues to rise as the edition sells. Think of it as time to decide at today’s price — not a coupon or a percent off. When you check out, your piece is fulfilled the same way as any other order.',
+              'As more pieces from an edition find homes, the price steps up through set tiers — it only ever moves in one direction.',
           },
         ],
       },

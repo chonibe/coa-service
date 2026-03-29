@@ -84,9 +84,9 @@ function StreetReservePageContent() {
           The Reserve
         </h1>
         <p className="text-center text-[#FFBA94]/85 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
-          A membership that gives you time to pay at a frozen artwork price while the public ladder moves.
-          Not a discount — a lock window. Edition numbers still assign through the same checkout pipeline after
-          you pay.
+          Optional membership that holds your artwork price steady for a window while the public price rises as
+          the edition sells. It&apos;s time to decide at today&apos;s price — not a coupon. After you pay, your
+          piece is fulfilled like any other order.
         </p>
 
         {subscribed && (

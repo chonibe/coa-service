@@ -39,7 +39,7 @@ const ArtistCarousel = dynamic(
   { loading: () => <section className="min-h-[400px] bg-[#171515]" aria-hidden /> }
 )
 
-/** When false, hides “What happens next” steps, reassurance, Start your collection, and The Reserve link. */
+/** When false, hides “What happens next” steps, reassurance, and Start your collection. */
 const SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE = false
 
 // 64×64 request for 32px display (2x) to minimize file size
@@ -389,13 +389,6 @@ export default async function StreetCollectorPage() {
                   className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#047AFF] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6]"
                 >
                   {streetCollectorContent.funnelBridge.cta.text}
-                </Link>
-                <Link
-                  href="/shop/reserve"
-                  prefetch={false}
-                  className="text-sm font-medium text-[#FFBA94]/90 underline underline-offset-2 hover:text-[#FFBA94]"
-                >
-                  The Reserve — lock a price
                 </Link>
               </div>
             </div>

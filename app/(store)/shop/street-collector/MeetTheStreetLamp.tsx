@@ -39,13 +39,14 @@ function splitMeetTheStreetLampTitle(title: string): { line1: string; line2: str
 }
 
 interface MeetTheStreetLampProps {
-  title: string
+  /** Section heading above taglines; omit or leave empty to hide the `<h2>`. */
+  title?: string
   taglineLines?: readonly string[]
   stages: MeetTheLampStage[]
   desktopVideo: string
   mobileVideo: string
   poster: string
-  /** Single line or parts joined with · — mobile: on video; desktop: under subtitle */
+  /** Single line or parts joined with · — shown between title and video / stage block */
   pricingChips?: string[]
   cue?: string
   cueHref?: string
@@ -67,7 +68,7 @@ function videoSrcForPlayback(url: string): string {
 }
 
 /**
- * Meet the Street Lamp: price chip sits below rotating stage copy + progress bar; stages advance with video/end or fallback timer.
+ * Meet the Street Lamp: price chip between title block and video / stage copy; stages advance with video/end or fallback timer.
  */
 export function MeetTheStreetLamp({
   title,
@@ -166,51 +167,80 @@ export function MeetTheStreetLamp({
   }, [advanceByClock, goToNext])
 
   const renderTitleBlock = (spacing: 'stacked' | 'desktopLeft') => {
-    const desktopTwoLine =
-      spacing === 'desktopLeft' ? splitMeetTheStreetLampTitle(title) : null
+    const trimmedTitle = title?.trim() ?? ''
+    const showHeading = Boolean(trimmedTitle)
+    const twoLineTitle = showHeading
+      ? splitMeetTheStreetLampTitle(trimmedTitle)
+      : null
+    const lines = taglineLines?.filter(Boolean) ?? []
+    /** When `title` is empty, first two taglines are the section title (same scale as former “Meet the Street Lamp”). */
+    const taglinesAreTitle = !showHeading && lines.length > 0
+    const titleFromTaglines = taglinesAreTitle ? lines.slice(0, 2) : []
+    const secondaryTaglines = taglinesAreTitle ? lines.slice(2) : showHeading ? lines : []
+
+    const titleHeadingClass = cn(
+      'font-serif font-medium tracking-tight text-[#FFBA94]',
+      spacing === 'stacked' &&
+        'text-center text-[1.65rem] leading-[1.15] sm:text-4xl sm:leading-tight md:text-5xl',
+      spacing === 'desktopLeft' &&
+        'text-left text-4xl leading-[1.12] md:text-5xl md:leading-[1.2] lg:text-6xl lg:leading-[1.22]'
+    )
+
+    const hasPrimaryBlock =
+      showHeading || (taglinesAreTitle && titleFromTaglines.length > 0)
+
     return (
     <div
       className={cn(
-        'space-y-2 md:space-y-3',
-        spacing === 'stacked' ? 'mb-3 sm:mb-4' : '',
-        spacing === 'desktopLeft' ? 'w-full' : ''
+        'w-full',
+        (hasPrimaryBlock || secondaryTaglines.length > 0) &&
+          cn(
+            'space-y-2 sm:space-y-2.5',
+            spacing === 'desktopLeft'
+              ? 'md:space-y-4 lg:space-y-5'
+              : 'md:space-y-3'
+          ),
+        spacing === 'stacked' ? 'mx-auto mb-1 max-w-lg sm:mb-2' : '',
+        spacing === 'desktopLeft' ? 'shrink-0' : ''
       )}
     >
-      <h2
-        className={cn(
-          'font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight',
-          spacing === 'stacked' ? 'text-center' : 'text-left'
-        )}
-      >
-        {desktopTwoLine ? (
-          <>
-            {desktopTwoLine.line1}
-            <br />
-            {desktopTwoLine.line2}
-          </>
-        ) : (
-          title
-        )}
-      </h2>
-      {taglineLines && taglineLines.length > 0 ? (
+      {showHeading ? (
+        <h2 className={titleHeadingClass}>
+          {twoLineTitle ? (
+            <>
+              {twoLineTitle.line1}
+              <br />
+              {twoLineTitle.line2}
+            </>
+          ) : (
+            trimmedTitle
+          )}
+        </h2>
+      ) : taglinesAreTitle && titleFromTaglines.length > 0 ? (
+        <h2 className={titleHeadingClass}>
+          {titleFromTaglines[0]}
+          {titleFromTaglines[1] ? (
+            <>
+              <br />
+              {titleFromTaglines[1]}
+            </>
+          ) : null}
+        </h2>
+      ) : null}
+      {secondaryTaglines.length > 0 ? (
         <div
           className={cn(
-            'flex flex-col gap-1 font-body',
-            spacing === 'stacked' ? 'text-center' : 'text-left'
+            'flex flex-col gap-1.5 font-body sm:gap-2',
+            spacing === 'stacked'
+              ? 'mx-auto max-w-md text-center'
+              : 'max-w-xl text-left md:gap-2.5 lg:gap-3'
           )}
         >
-          {taglineLines[0] ? (
-            <p className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
-              {taglineLines[0]}
-            </p>
-          ) : null}
-          {taglineLines[1] ? (
-            <p className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
-              {taglineLines[1]}
-            </p>
-          ) : null}
-          {taglineLines.slice(2).map((line) => (
-            <p key={line} className="text-base font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl">
+          {secondaryTaglines.map((line, i) => (
+            <p
+              key={`${i}-${line}`}
+              className="text-[0.95rem] font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl"
+            >
               {line}
             </p>
           ))}
@@ -220,12 +250,12 @@ export function MeetTheStreetLamp({
     )
   }
 
-  /** Glass price chip below rotating stage title / description / progress bar */
-  const renderPricingBelowRotating = (align: 'center' | 'left') =>
+  /** Glass price chip between title block and video / rotating stage */
+  const renderPricingBetweenSections = (align: 'center' | 'left') =>
     priceText ? (
       <div
         className={cn(
-          'mt-4 flex w-full sm:mt-5',
+          'mt-4 flex w-full sm:mt-5 md:mt-0',
           align === 'center' ? 'justify-center' : 'justify-start'
         )}
         role="status"
@@ -239,7 +269,7 @@ export function MeetTheStreetLamp({
     primaryCta || (trustMicroItems && trustMicroItems.length > 0) ? (
       <div
         className={cn(
-          'mt-5 flex w-full flex-col gap-3 sm:mt-6',
+          'mt-5 flex w-full flex-col gap-3 sm:mt-6 md:mt-0 md:gap-4',
           align === 'center' ? 'items-center text-center' : 'items-start text-left'
         )}
       >
@@ -263,20 +293,20 @@ export function MeetTheStreetLamp({
       </div>
     ) : null
 
-  /** Sliding copy + timer only */
+  /** Rotating stage title / description + progress (aligned with hero column) */
   const renderStageBlock = (opts: { variant: 'mobile' | 'desktop' }) => (
     <div
       className={cn(
-        'flex flex-col',
-        opts.variant === 'mobile' && 'mt-10 sm:mt-12',
-        opts.variant === 'desktop' && 'shrink-0 pt-2 md:pt-3'
+        'flex w-full flex-col',
+        opts.variant === 'mobile' && 'mt-6 sm:mt-8',
+        opts.variant === 'desktop' && 'mt-5 shrink-0 md:mt-0 lg:mt-0'
       )}
     >
       <div
         className={cn(
-          'relative flex flex-col text-center md:items-start md:text-left',
-          opts.variant === 'mobile' && 'min-h-[120px] justify-center sm:min-h-[130px]',
-          opts.variant === 'desktop' && 'min-h-0'
+          'relative flex flex-col',
+          opts.variant === 'mobile' && 'mx-auto max-w-lg text-center',
+          opts.variant === 'desktop' && 'max-w-xl text-left'
         )}
       >
         <div
@@ -285,18 +315,18 @@ export function MeetTheStreetLamp({
         >
           <h3
             className={cn(
-              'mb-2 font-semibold text-[#FFBA94]',
+              'mb-1.5 font-semibold leading-tight text-[#FFBA94] sm:mb-2',
               opts.variant === 'mobile' && 'text-xl sm:text-2xl',
-              opts.variant === 'desktop' && 'text-lg leading-snug lg:text-xl'
+              opts.variant === 'desktop' && 'text-xl leading-snug lg:text-2xl'
             )}
           >
             {stages[activeIndex]?.title}
           </h3>
           <p
             className={cn(
-              'leading-relaxed text-[#FFBA94]/80',
-              opts.variant === 'mobile' && 'mx-auto max-w-md text-base',
-              opts.variant === 'desktop' && 'max-w-md text-sm lg:max-w-lg'
+              'text-pretty leading-relaxed text-[#FFBA94]/80',
+              opts.variant === 'mobile' && 'text-[0.9375rem] sm:text-base',
+              opts.variant === 'desktop' && 'text-sm leading-relaxed lg:text-base'
             )}
           >
             {stages[activeIndex]?.description}
@@ -304,9 +334,9 @@ export function MeetTheStreetLamp({
         </div>
         <div
           className={cn(
-            'mt-5 w-full max-w-[140px] rounded-full bg-[#FFBA94]/20',
+            'mt-4 w-full max-w-[140px] rounded-full bg-[#FFBA94]/20 sm:mt-5',
             opts.variant === 'mobile' && 'mx-auto',
-            opts.variant === 'desktop' && 'max-w-xs'
+            opts.variant === 'desktop' && 'max-w-[10rem] md:mt-5 lg:mt-6'
           )}
           style={{ height: PROGRESS_BAR_HEIGHT }}
           aria-hidden
@@ -328,10 +358,11 @@ export function MeetTheStreetLamp({
       )}
     >
       <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 md:flex md:min-h-0 md:max-w-none md:flex-1 md:flex-col md:px-5 lg:px-8 xl:px-12 2xl:px-16">
-        {/* Mobile */}
+        {/* Mobile: headline → price → video → rotating copy + optional CTA */}
         <div className="flex flex-col md:hidden">
-          <div>{renderTitleBlock('stacked')}</div>
-          <div className="relative mt-5 w-full overflow-visible rounded-2xl sm:mt-6">
+          <div className="px-0.5">{renderTitleBlock('stacked')}</div>
+          {renderPricingBetweenSections('center')}
+          <div className="relative mt-4 w-full overflow-visible rounded-2xl sm:mt-5">
             <div className="relative aspect-[5/4] w-full overflow-hidden rounded-2xl">
               <LazyVideo
                 key={`meet-mobile-${activeIndex}-${mobileSrc}`}
@@ -348,7 +379,6 @@ export function MeetTheStreetLamp({
             </div>
           </div>
           {renderStageBlock({ variant: 'mobile' })}
-          {renderPricingBelowRotating('center')}
           {renderCtaAndTrust('center')}
         </div>
 
@@ -384,17 +414,15 @@ export function MeetTheStreetLamp({
           </div>
           <div
             className={cn(
-              'grid min-h-0 w-full min-w-0 max-w-lg grid-rows-[1fr_auto] md:max-w-none md:flex-[0.42] lg:flex-[0.4]',
-              'md:self-stretch'
+              'flex min-h-0 w-full min-w-0 max-w-lg flex-col md:max-w-none md:flex-[0.42] lg:flex-[0.4]',
+              'md:self-stretch md:justify-center'
             )}
           >
-            <div className="flex min-h-0 w-full flex-col items-start justify-start overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2">
+            <div className="flex min-h-0 w-full flex-col items-stretch justify-center gap-0 px-1 text-left [scrollbar-width:thin] md:gap-6 lg:gap-7 xl:gap-8 lg:px-2">
               {renderTitleBlock('desktopLeft')}
-              {renderCtaAndTrust('left')}
+              {renderPricingBetweenSections('left')}
               {renderStageBlock({ variant: 'desktop' })}
-            </div>
-            <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">
-              {renderPricingBelowRotating('left')}
+              {renderCtaAndTrust('left')}
             </div>
           </div>
         </div>
