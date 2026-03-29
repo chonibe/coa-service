@@ -893,6 +893,8 @@ export function ExperienceV2Client({
 
   const handleViewDetail = useCallback((product: ShopifyProduct) => {
     setDetailProduct(product)
+    // Reel: 0 = Spline, 1 = details accordion (ArtworkInfoBar detailSlide when editionLeadBeforeSpline is false)
+    setPreviewSlideIndex(1)
   }, [])
 
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])

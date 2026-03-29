@@ -1012,9 +1012,15 @@ export function ExperienceV2Client({
     if (isAuthenticated) void refreshWatchlist()
   }, [cartOrder.length, triggerPriceBump, isAuthenticated, refreshWatchlist])
 
-  const handleViewDetail = useCallback((product: ShopifyProduct) => {
-    setDetailProduct(product)
-  }, [])
+  const handleViewDetail = useCallback(
+    (product: ShopifyProduct) => {
+      setDetailProduct(product)
+      // Match ArtworkInfoBar `detailSlide`: lamp = 1; artworks use edition-before-Spline reel → details at 2
+      const detailSlideIndex = product.id === lamp.id ? 1 : 2
+      setPreviewSlideIndex(detailSlideIndex)
+    },
+    [lamp.id]
+  )
 
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()

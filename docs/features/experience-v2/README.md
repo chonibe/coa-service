@@ -75,7 +75,7 @@ Top bar component showing artwork name and artist for the last clicked artwork i
 - Displays artwork title and artist (vendor) in the Spline top bar
 - When 2 artworks are on the lamp: segmented control (1 | 2) to switch between them
 - Defaults to the last clicked carousel item when it's one of the two on the lamp
-- Tapping the info opens the ArtworkDetail drawer
+- Tapping the **title** (desktop header center or mobile hero) or the **info** control opens the ArtworkDetail drawer; **`handleViewDetail`** also advances the vertical reel to the **details** section so the accordion lines up with the slideout
 - **Right-rail stack** (`thumbnailPlacement="right"`, portaled to `#spline-thumbnail-slot`): Spline, Info, then **one** product-gallery thumbnail (no separate edition jump thumb — edition lives in the details scarcity card). Tap jumps to that gallery reel slide; the thumb stays highlighted while the reel is on **any** extra gallery image slide. If there are more than two images total, a small **`+N`** badge counts additional gallery slides beyond the first extra. Inline placement still shows **one thumb per** gallery image and may show the edition jump when `editionLeadBeforeSpline`.
 - Theme-aware (light/dark)
 - Rendered inside SplineFullScreen via `topBarContent` prop
@@ -259,3 +259,4 @@ npm run dev
 - Updated: 2026-03-29 — [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx): [`EditionWatchWithNarrative`](../../../app/(store)/shop/experience-v2/components/EditionWatchWithNarrative.tsx) under scarcity / Street ladder; removed duplicate **Artwork edition** section.
 - Updated: 2026-03-29 — **Experience reel** [`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx): **`editionOnly`** slot empty; no separate edition card — [`EditionWatchWithNarrative`](../../../app/(store)/shop/experience-v2/components/EditionWatchWithNarrative.tsx) in the artwork details scarcity card only.
 - Updated: 2026-03-29 — [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx): mobile row copy **`N artwork` / `N artworks`** (drop “added”).
+- Updated: 2026-03-29 — **Open detail from title**: [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) **`handleViewDetail`** sets **`previewSlideIndex`** to the reel’s **details** section (slide **1**) when opening [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (same path as header title, mobile title, info thumb, strip “details” taps).
