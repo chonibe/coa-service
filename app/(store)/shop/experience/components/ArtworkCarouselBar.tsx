@@ -144,7 +144,6 @@ export function ArtworkCarouselBar({
   }, [experienceReelRef])
 
   const hasCarouselArtworks = selectedArtworks.length > 0
-  /** Street lamp “start” step: no artworks in collection yet — blue + CTA, no carousel gradient. */
   const emptyCollectionStart = !hasCarouselArtworks && stripMode === 'collection'
 
   const showSpotlightPlaceholders =
@@ -214,18 +213,6 @@ export function ArtworkCarouselBar({
       )}
     >
       <div className="relative pt-6 pb-4 px-4 md:pt-10 md:pb-5">
-        {/* Solid fade into page bg — hidden until first artwork is in the collection */}
-        <div
-          className={cn(
-            'pointer-events-none absolute bottom-0 left-0 right-0 transition-opacity duration-300',
-            emptyCollectionStart
-              ? 'opacity-0 h-[min(280px,58vh)]'
-              : theme === 'light'
-                ? 'opacity-100 h-[min(280px,58vh)] bg-gradient-to-t from-[#F5F5F5] via-[#F5F5F5] via-42% to-transparent'
-                : 'opacity-100 h-[min(240px,52vh)] bg-gradient-to-t from-[#171515] via-[#171515]/32 to-transparent'
-          )}
-          aria-hidden
-        />
         <div className="relative z-[1] flex flex-col items-center gap-2 pointer-events-none">
           <div className="relative flex w-full flex-col gap-2">
           <div
