@@ -7,8 +7,6 @@ import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, S
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ScarcityBadge } from './ScarcityBadge'
-import { EditionBadgeForProduct } from './EditionBadge'
-import { ArtworkEditionUnifiedSection } from './ArtworkEditionUnifiedSection'
 import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
 import { HorizontalTwoSlideGallery } from './HorizontalTwoSlideGallery'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -18,7 +16,7 @@ import {
   getProductEditionMetrics,
   getProductEditionSize,
 } from '@/lib/shop/edition-stages'
-import { EditionWatchControl } from './EditionWatchControl'
+import { EditionWatchWithNarrative } from './EditionWatchWithNarrative'
 
 interface ArtistData {
   name: string
@@ -232,20 +230,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     artist
   ).trim()
 
-  const showWatchBelowStreetLadder =
-    streetLadderBlock != null && editionMetricsForWatch != null
-
-  const streetLadderWatchControlNode = useMemo(() => {
-    if (!showWatchBelowStreetLadder || !editionMetricsForWatch) return undefined
+  const editionWatchWithNarrativeNode = useMemo(() => {
+    if (!editionMetricsForWatch) return undefined
     return (
-      <EditionWatchControl
+      <EditionWatchWithNarrative
         product={product}
         editionNumberSold={editionMetricsForWatch.editionNumberSold}
         totalEditions={editionMetricsForWatch.totalEditions}
         artistName={editionArtistName}
       />
     )
-  }, [showWatchBelowStreetLadder, editionMetricsForWatch, product, editionArtistName])
+  }, [editionMetricsForWatch, product, editionArtistName])
 
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
 
@@ -509,8 +504,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               unifiedSection
               className="w-full"
               streetLadder={streetLadderBlock ?? undefined}
-              belowStreetLadder={streetLadderWatchControlNode}
+              belowStreetLadder={
+                streetLadderBlock ? editionWatchWithNarrativeNode : undefined
+              }
             />
+            {!streetLadderBlock && editionWatchWithNarrativeNode ? (
+              <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+                {editionWatchWithNarrativeNode}
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -547,20 +549,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           )}
           {showArtworkArtistGallery ? (
             <>
-              {!isLampOrBundleProduct && (
+              {!isLampOrBundleProduct && spotlightGifUrl ? (
                 <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
-                  {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                  <ArtworkEditionUnifiedSection className="w-full">
-                    <EditionBadgeForProduct
-                      product={product}
-                      artistName={editionArtistName}
-                      unifiedSection
-                      className="w-full"
-                      showWatchControl={!showWatchBelowStreetLadder}
-                    />
-                  </ArtworkEditionUnifiedSection>
+                  <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                 </div>
-              )}
+              ) : null}
               <ArtworkArtistDetailGallery
                 resetKey={product.id}
                 description={description}
@@ -571,20 +564,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             </>
           ) : (
             <>
-              {!isLampOrBundleProduct && (
+              {!isLampOrBundleProduct && spotlightGifUrl ? (
                 <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
-                  {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                  <ArtworkEditionUnifiedSection className="w-full">
-                    <EditionBadgeForProduct
-                      product={product}
-                      artistName={editionArtistName}
-                      unifiedSection
-                      className="w-full"
-                      showWatchControl={!showWatchBelowStreetLadder}
-                    />
-                  </ArtworkEditionUnifiedSection>
+                  <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                 </div>
-              )}
+              ) : null}
               {description.trim() && (
                 <div className="py-3 border-b border-neutral-100 dark:border-white/10">
                   <button
@@ -831,8 +815,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         unifiedSection
                         className="w-full"
                         streetLadder={streetLadderBlock ?? undefined}
-                        belowStreetLadder={streetLadderWatchControlNode}
+                        belowStreetLadder={
+                          streetLadderBlock ? editionWatchWithNarrativeNode : undefined
+                        }
                       />
+                      {!streetLadderBlock && editionWatchWithNarrativeNode ? (
+                        <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+                          {editionWatchWithNarrativeNode}
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>
@@ -1032,20 +1023,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                   {showArtworkArtistGallery ? (
                     <>
-                      {!isLampOrBundleProduct && (
+                      {!isLampOrBundleProduct && spotlightGifUrl ? (
                         <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
-                          {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                          <ArtworkEditionUnifiedSection className="w-full">
-                            <EditionBadgeForProduct
-                              product={product}
-                              artistName={editionArtistName}
-                              unifiedSection
-                              className="w-full"
-                              showWatchControl={!showWatchBelowStreetLadder}
-                            />
-                          </ArtworkEditionUnifiedSection>
+                          <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                         </div>
-                      )}
+                      ) : null}
                       <ArtworkArtistDetailGallery
                         resetKey={product.id}
                         description={description}
@@ -1088,20 +1070,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           </AnimatePresence>
                         </div>
                       )}
-                      {!isLampOrBundleProduct && (
+                      {!isLampOrBundleProduct && spotlightGifUrl ? (
                         <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
-                          {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                          <ArtworkEditionUnifiedSection className="w-full">
-                            <EditionBadgeForProduct
-                              product={product}
-                              artistName={editionArtistName}
-                              unifiedSection
-                              className="w-full"
-                              showWatchControl={!showWatchBelowStreetLadder}
-                            />
-                          </ArtworkEditionUnifiedSection>
+                          <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                         </div>
-                      )}
+                      ) : null}
                       {artist && (
                         <div className="py-3 border-t border-neutral-100 dark:border-white/10">
                           {artistLoading ? (
@@ -1277,8 +1250,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   unifiedSection
                   className="w-full"
                   streetLadder={streetLadderBlock ?? undefined}
-                  belowStreetLadder={streetLadderWatchControlNode}
+                  belowStreetLadder={
+                    streetLadderBlock ? editionWatchWithNarrativeNode : undefined
+                  }
                 />
+                {!streetLadderBlock && editionWatchWithNarrativeNode ? (
+                  <div className="mt-4 border-t border-neutral-200/80 dark:border-white/10 pt-4">
+                    {editionWatchWithNarrativeNode}
+                  </div>
+                ) : null}
               </div>
             )}
 
@@ -1432,20 +1412,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
             {showArtworkArtistGallery ? (
               <>
-                {!isLampOrBundleProduct && (
+                {!isLampOrBundleProduct && spotlightGifUrl ? (
                   <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
-                    {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                    <ArtworkEditionUnifiedSection className="w-full">
-                      <EditionBadgeForProduct
-                        product={product}
-                        artistName={editionArtistName}
-                        unifiedSection
-                        className="w-full"
-                        showWatchControl={!showWatchBelowStreetLadder}
-                      />
-                    </ArtworkEditionUnifiedSection>
+                    <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                   </div>
-                )}
+                ) : null}
                 <ArtworkArtistDetailGallery
                   resetKey={product.id}
                   description={description}
@@ -1494,20 +1465,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
                 )}
 
-                {!isLampOrBundleProduct && (
+                {!isLampOrBundleProduct && spotlightGifUrl ? (
                   <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
-                    {spotlightGifUrl ? <SpotlightCollectionGif gifUrl={spotlightGifUrl} /> : null}
-                    <ArtworkEditionUnifiedSection className="w-full">
-                      <EditionBadgeForProduct
-                        product={product}
-                        artistName={editionArtistName}
-                        unifiedSection
-                        className="w-full"
-                        showWatchControl={!showWatchBelowStreetLadder}
-                      />
-                    </ArtworkEditionUnifiedSection>
+                    <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                   </div>
-                )}
+                ) : null}
 
                 {artist && (
                   <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">

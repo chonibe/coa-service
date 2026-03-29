@@ -11,8 +11,7 @@ import {
   type SpotlightData,
 } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
-import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
-import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
+import { EditionWatchWithNarrative } from '../../experience-v2/components/EditionWatchWithNarrative'
 import {
   HorizontalTwoSlideGallery,
   useHorizontalTwoSlideGallery,
@@ -26,7 +25,6 @@ import {
   getProductEditionMetrics,
   getProductEditionSize,
 } from '@/lib/shop/edition-stages'
-import { EditionWatchControl } from '../../experience-v2/components/EditionWatchControl'
 
 interface ArtistData {
   name: string
@@ -329,20 +327,17 @@ export function ArtworkAccordions({
     return null
   }, [product, firstVariantQty, isLamp])
 
-  const showWatchBelowStreetLadder =
-    streetLadderBlock != null && editionMetricsForWatch != null
-
-  const streetLadderWatchControlNode = useMemo(() => {
-    if (!showWatchBelowStreetLadder || !editionMetricsForWatch) return undefined
+  const editionWatchWithNarrativeNode = useMemo(() => {
+    if (!editionMetricsForWatch) return undefined
     return (
-      <EditionWatchControl
+      <EditionWatchWithNarrative
         product={product}
         editionNumberSold={editionMetricsForWatch.editionNumberSold}
         totalEditions={editionMetricsForWatch.totalEditions}
         artistName={detailArtistName}
       />
     )
-  }, [showWatchBelowStreetLadder, editionMetricsForWatch, product, detailArtistName])
+  }, [editionMetricsForWatch, product, detailArtistName])
 
   const renderArtworkCardInner = (opts?: { hideArtistLine?: boolean; artistNavigatesToSpotlight?: boolean }) =>
     !isLamp && (firstImage?.url || product.title) ? (
@@ -369,8 +364,15 @@ export function ArtworkAccordions({
                 unifiedSection
                 className="w-full"
                 streetLadder={streetLadderBlock ?? undefined}
-                belowStreetLadder={streetLadderWatchControlNode}
+                belowStreetLadder={
+                  streetLadderBlock ? editionWatchWithNarrativeNode : undefined
+                }
               />
+              {!streetLadderBlock && editionWatchWithNarrativeNode ? (
+                <div className="mt-4 border-t border-neutral-100 dark:border-white/10 pt-4">
+                  {editionWatchWithNarrativeNode}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -385,22 +387,8 @@ export function ArtworkAccordions({
     hasArtworkCard && Boolean(artist) && (artistLoading || spotlightForBanner)
 
   if (variant === 'editionOnly') {
-    if (isLamp) return null
-    return (
-      <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-4 pb-2 md:pb-3">
-        <ArtworkEditionUnifiedSection className="w-full">
-          <EditionBadgeForProduct
-            product={product}
-            artistName={detailArtistName || undefined}
-            unifiedSection
-            className="w-full"
-          />
-        </ArtworkEditionUnifiedSection>
-      </div>
-    )
+    return null
   }
-
-  const showEditionInBody = !isLamp && variant === 'full'
 
   return (
     <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-2 pb-4 space-y-5">
@@ -409,19 +397,6 @@ export function ArtworkAccordions({
         <div className="w-full">
           <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
         </div>
-      )}
-
-      {/* Edition story + availability — before artwork card + artist spotlight (omitted when rendered above Spline) */}
-      {showEditionInBody && (
-        <ArtworkEditionUnifiedSection className="w-full">
-          <EditionBadgeForProduct
-            product={product}
-            artistName={detailArtistName || undefined}
-            unifiedSection
-            className="w-full"
-            showWatchControl={!showWatchBelowStreetLadder}
-          />
-        </ArtworkEditionUnifiedSection>
       )}
 
       {/* Artwork card + artist spotlight — horizontal gallery when both exist (Experience reel / Spline) */}

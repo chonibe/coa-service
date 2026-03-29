@@ -206,13 +206,8 @@ export function ExperienceCheckoutStickyBar({
                   )}
                 >
                   <span className="tabular-nums">{selectedArtworks.length}</span>
-                  <span
-                    className={cn(
-                      'font-medium',
-                      theme === 'light' ? 'text-neutral-600' : 'text-[#c4a8a8]'
-                    )}
-                  >
-                    {selectedArtworks.length === 1 ? ' artwork added' : ' artworks added'}
+                  <span>
+                    {selectedArtworks.length === 1 ? ' artwork' : ' artworks'}
                   </span>
                 </p>
               </div>
