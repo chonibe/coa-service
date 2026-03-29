@@ -83,9 +83,9 @@ export const streetCollectorContent = {
         title: 'Choose your art',
         description: 'Hundreds of artists. One piece that\'s yours.',
         desktopVideo:
-          'https://cdn.shopify.com/videos/c/o/v/269d7cee2d1a4685beedb2eb904e30e7.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
         mobileVideo:
-          'https://cdn.shopify.com/videos/c/o/v/269d7cee2d1a4685beedb2eb904e30e7.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
       },
     ],
     cue: '',

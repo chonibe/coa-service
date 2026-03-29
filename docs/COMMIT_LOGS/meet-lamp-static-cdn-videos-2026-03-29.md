@@ -16,4 +16,4 @@
 | Rotate anytime | `1bdeb33fb073460d9e50a64b49e10089` |
 | Slide it in | `7964f935647e4978b2a6af7a4ea7f450` (updated from `45f9baf8563a491bbefe0a854e05346b`) |
 | Mount it | `25762ae2b9754cae89e1c6590c805061` |
-| Choose your art | `269d7cee2d1a4685beedb2eb904e30e7` |
+| Choose your art | `c605e496caed4a33b8ccbe3c11689bbb` |
