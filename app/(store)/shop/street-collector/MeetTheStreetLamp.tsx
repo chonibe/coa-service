@@ -271,7 +271,7 @@ export function MeetTheStreetLamp({
   return (
     <section
       className={cn(
-        'w-full bg-[#171515] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-3.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
+        'w-full bg-[#171515] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-5.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
         className
       )}
     >
@@ -301,7 +301,7 @@ export function MeetTheStreetLamp({
           className={cn(
             'hidden md:flex md:min-h-0 md:w-full md:flex-1 md:flex-row md:items-stretch md:justify-center',
             'md:gap-6 lg:gap-8 xl:gap-10 2xl:gap-12',
-            'md:max-h-[calc(100dvh-4.25rem)] md:py-4 lg:py-5'
+            'md:max-h-[calc(100dvh-6rem)] md:py-4 lg:py-5'
           )}
         >
           <div
