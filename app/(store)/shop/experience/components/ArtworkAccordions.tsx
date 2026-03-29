@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
-import { ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap } from 'lucide-react'
+import { ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap, ChevronRight } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import {
@@ -13,7 +13,10 @@ import {
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { EditionBadgeForProduct } from '../../experience-v2/components/EditionBadge'
 import { ArtworkEditionUnifiedSection } from '../../experience-v2/components/ArtworkEditionUnifiedSection'
-import { HorizontalTwoSlideGallery } from '../../experience-v2/components/HorizontalTwoSlideGallery'
+import {
+  HorizontalTwoSlideGallery,
+  useHorizontalTwoSlideGallery,
+} from '../../experience-v2/components/HorizontalTwoSlideGallery'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -48,6 +51,66 @@ interface ArtworkAccordionsProps {
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
 const spotlightCache = new Map<string, SpotlightWithProducts | null>()
+
+function ArtworkCardHeading({
+  detailArtistName,
+  productTitle,
+  hideArtistLine,
+  artistNavigatesToSpotlight,
+}: {
+  detailArtistName: string
+  productTitle: string | null | undefined
+  hideArtistLine: boolean
+  artistNavigatesToSpotlight: boolean
+}) {
+  const gallery = useHorizontalTwoSlideGallery()
+  const canNavigate = Boolean(artistNavigatesToSpotlight && gallery)
+
+  const artistLine =
+    !hideArtistLine && detailArtistName ? (
+      canNavigate ? (
+        <button
+          type="button"
+          onClick={() => gallery!.goToSlide(1)}
+          className={cn(
+            'group inline-flex max-w-full items-center justify-center gap-1 rounded-lg px-2 py-1 -mx-2 -mt-1',
+            'text-[11px] font-medium uppercase tracking-widest',
+            'text-neutral-600 dark:text-[#c4a0a0]',
+            'hover:text-neutral-900 dark:hover:text-[#FFBA94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF]/40',
+            'transition-colors'
+          )}
+          aria-label="View artist details"
+        >
+          <span className="truncate">{detailArtistName}</span>
+          <ChevronRight
+            className="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100"
+            strokeWidth={2}
+            aria-hidden
+          />
+        </button>
+      ) : (
+        <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
+          {detailArtistName}
+        </p>
+      )
+    ) : null
+
+  return (
+    <div className="flex flex-col items-center">
+      {artistLine}
+      {productTitle ? (
+        <h2
+          className={cn(
+            'text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white',
+            artistLine ? 'mt-2' : 'mt-0'
+          )}
+        >
+          {productTitle}
+        </h2>
+      ) : null}
+    </div>
+  )
+}
 
 export function ArtworkAccordions({
   product,
@@ -244,26 +307,17 @@ export function ArtworkAccordions({
     [product, streetEdition, isEarlyAccess, isLamp]
   )
 
-  const renderArtworkCardInner = (omitArtistLine: boolean) =>
+  const renderArtworkCardInner = (opts?: { hideArtistLine?: boolean; artistNavigatesToSpotlight?: boolean }) =>
     !isLamp && (firstImage?.url || product.title) ? (
       <>
         <div className="p-4 sm:p-5 text-center">
           <div className="mb-4">
-            {product.title && (
-              <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white mt-0">
-                {product.title}
-              </h2>
-            )}
-            {!omitArtistLine && detailArtistName && (
-              <p
-                className={cn(
-                  'text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest',
-                  product.title ? 'mt-0.5' : 'mt-0'
-                )}
-              >
-                {detailArtistName}
-              </p>
-            )}
+            <ArtworkCardHeading
+              detailArtistName={detailArtistName}
+              productTitle={product.title}
+              hideArtistLine={opts?.hideArtistLine ?? false}
+              artistNavigatesToSpotlight={opts?.artistNavigatesToSpotlight ?? false}
+            />
           </div>
           {editionSize != null && editionSize > 0 && (
             <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
@@ -289,8 +343,8 @@ export function ArtworkAccordions({
       </>
     ) : null
 
-  const artworkDetailsPanel = renderArtworkCardInner(false)
-  const artworkGalleryFirstSlide = renderArtworkCardInner(true)
+  const artworkDetailsPanel = renderArtworkCardInner()
+  const artworkGalleryFirstSlide = renderArtworkCardInner({ artistNavigatesToSpotlight: true })
 
   const hasArtworkCard = artworkDetailsPanel != null
   const showArtworkArtistSectionGallery =

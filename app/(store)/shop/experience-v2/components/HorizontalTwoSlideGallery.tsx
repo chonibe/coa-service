@@ -1,8 +1,29 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+export type HorizontalTwoSlideGalleryApi = {
+  goToSlide: (index: number) => void
+  activeIndex: number
+}
+
+const HorizontalTwoSlideGalleryContext = createContext<HorizontalTwoSlideGalleryApi | null>(null)
+
+/** Call from content inside [`HorizontalTwoSlideGallery`](#) (e.g. first slide) to jump to another slide. */
+export function useHorizontalTwoSlideGallery() {
+  return useContext(HorizontalTwoSlideGalleryContext)
+}
 
 export interface HorizontalTwoSlideGalleryProps {
   first: ReactNode
@@ -62,7 +83,23 @@ export function HorizontalTwoSlideGallery({
     setIndex((i) => Math.min(1, i + 1))
   }, [])
 
+  const goToSlide = useCallback((i: number) => {
+    setIndex((prev) => {
+      const next = Math.max(0, Math.min(1, Math.floor(i)))
+      return next === prev ? prev : next
+    })
+  }, [])
+
+  const galleryApi = useMemo(
+    (): HorizontalTwoSlideGalleryApi => ({
+      goToSlide,
+      activeIndex: index,
+    }),
+    [goToSlide, index]
+  )
+
   return (
+    <HorizontalTwoSlideGalleryContext.Provider value={galleryApi}>
     <div
       className={cn('relative', className)}
       role="region"
@@ -125,5 +162,6 @@ export function HorizontalTwoSlideGallery({
         <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
       </button>
     </div>
+    </HorizontalTwoSlideGalleryContext.Provider>
   )
 }
