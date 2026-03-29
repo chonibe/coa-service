@@ -269,7 +269,7 @@ export function MeetTheStreetLamp({
       className={cn(
         'flex flex-col',
         opts.variant === 'mobile' && 'mt-10 sm:mt-12',
-        opts.variant === 'desktop' && 'mt-2 w-full shrink-0'
+        opts.variant === 'desktop' && 'shrink-0 pt-2 md:pt-3'
       )}
     >
       <div
@@ -304,9 +304,9 @@ export function MeetTheStreetLamp({
         </div>
         <div
           className={cn(
-            'w-full max-w-[140px] rounded-full bg-[#FFBA94]/20',
-            opts.variant === 'mobile' && 'mx-auto mt-5',
-            opts.variant === 'desktop' && 'mt-3 max-w-xs'
+            'mt-5 w-full max-w-[140px] rounded-full bg-[#FFBA94]/20',
+            opts.variant === 'mobile' && 'mx-auto',
+            opts.variant === 'desktop' && 'max-w-xs'
           )}
           style={{ height: PROGRESS_BAR_HEIGHT }}
           aria-hidden
@@ -384,15 +384,18 @@ export function MeetTheStreetLamp({
           </div>
           <div
             className={cn(
-              'flex min-h-0 w-full min-w-0 max-w-lg flex-col items-start justify-start overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2',
-              'md:max-w-none md:flex-[0.42] lg:flex-[0.4] md:self-stretch',
-              'md:pt-4 md:pb-4 lg:pt-5 lg:pb-5'
+              'grid min-h-0 w-full min-w-0 max-w-lg grid-rows-[1fr_auto] md:max-w-none md:flex-[0.42] lg:flex-[0.4]',
+              'md:self-stretch'
             )}
           >
-            {renderTitleBlock('desktopLeft')}
-            {renderStageBlock({ variant: 'desktop' })}
-            {renderPricingBelowRotating('left')}
-            {renderCtaAndTrust('left')}
+            <div className="flex min-h-0 w-full flex-col items-start justify-start overflow-y-auto px-1 text-left [scrollbar-width:thin] lg:px-2">
+              {renderTitleBlock('desktopLeft')}
+              {renderCtaAndTrust('left')}
+              {renderStageBlock({ variant: 'desktop' })}
+            </div>
+            <div className="min-w-0 shrink-0 px-1 pb-0 pt-2 lg:px-2">
+              {renderPricingBelowRotating('left')}
+            </div>
           </div>
         </div>
         {cue && (
