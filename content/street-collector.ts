@@ -58,9 +58,9 @@ export const streetCollectorContent = {
         description:
           'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
         desktopVideo:
-          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/697920e21b954b1bac6097e4d9e5fdc9.mp4',
         mobileVideo:
-          'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/697920e21b954b1bac6097e4d9e5fdc9.mp4',
       },
       {
         title: 'Slide it in',
