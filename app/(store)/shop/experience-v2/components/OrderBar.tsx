@@ -146,6 +146,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [paymentSectionExpanded, setPaymentSectionExpanded] = useState(false)
   const [billingModalOpen, setBillingModalOpen] = useState(false)
   const [preloadedClientSecret, setPreloadedClientSecret] = useState<string | null>(null)
+  /** True after Place order is clicked (with address). Keeps PaymentStep mounted when section collapsed. Reset when drawer closes. */
+  const [paymentStripeUnlocked, setPaymentStripeUnlocked] = useState(false)
+  const paymentStripeActive = paymentStripeUnlocked
   const [enteredCardInfo, setEnteredCardInfo] = useState<{ brand: string; last4: string } | null>(null)
   const { promoDiscount } = useExperienceOrder()
   const checkout = useCheckout()
@@ -158,6 +161,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     firedBeginCheckoutRef.current = false
     firedAddPaymentInfoRef.current = false
   })
+
+  useEffect(() => {
+    if (!drawerOpen) {
+      setPaymentStripeUnlocked(false)
+      setPreloadedClientSecret(null)
+    }
+  }, [drawerOpen])
 
   const priceMaps = React.useMemo(
     () => ({
@@ -301,6 +311,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   })
   React.useEffect(() => {
     if (!drawerOpen || itemCount === 0 || !allAvailable) return
+    // Only preload Stripe after the user opens payment (avoids Link/email verification on drawer open)
+    if (!paymentStripeActive) return
     // Don't preload until we have address with email — ensures PayPal orders get customer details
     if (!checkout.address?.email?.trim()) return
     const items = buildLineItems()
@@ -351,7 +363,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     return () => {
       cancelled = true
     }
-  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address])
+  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address, paymentStripeActive])
 
   const handleTestZeroOrder = useCallback(async () => {
     setError(null)
@@ -432,6 +444,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       setAddressModalOpen(true)
       return
     }
+    // Only mount Stripe / preload session after user commits via Place order (avoids Link verification on load or when expanding payment alone)
+    setPaymentStripeUnlocked(true)
     if (!paymentSectionExpanded) {
       setPaymentSectionExpanded(true)
       return
@@ -719,7 +733,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               <h3 className="text-lg font-semibold text-[#FFBA94] mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
-              {/* Inline expandable payment section – stays mounted when collapsed so Place Order works */}
+              {/* Stripe mounts only after Place order is clicked — avoids Link verification on drawer load */}
               {itemCount > 0 && allAvailable && (
                 <div
                   className={cn(
@@ -729,6 +743,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                   aria-hidden={!paymentSectionExpanded}
                 >
                   <div className="pt-3 space-y-4 border-t border-neutral-200 dark:border-white/10 mt-2 overflow-y-auto min-h-0 max-h-[70vh] scrollbar-prominent">
+                    {paymentStripeActive ? (
                     <PaymentStep
                       compact
                       formId="checkout-payment-form"
@@ -825,6 +840,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                       }}
                       preloadedClientSecret={preloadedClientSecret}
                     />
+                    ) : (
+                      <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] py-2">
+                        Tap <span className="font-medium text-neutral-900 dark:text-[#f0e8e8]">Place order</span> below to enter payment details.
+                      </p>
+                    )}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1" aria-hidden />
                       <button
