@@ -2,6 +2,8 @@
 
 ## Commit: fix(experience): scroll reel to details when opening ArtworkDetail from title (2026-03-29)
 
+**Ref:** `cab274faf`
+
 ### Summary
 **[`handleViewDetail`](app/(store)/shop/experience/components/ExperienceV2Client.tsx)** in both experience entry points now sets **`previewSlideIndex`** to the reel section that shows the **artwork details accordion** (same indices as [`ArtworkInfoBar`](app/(store)/shop/experience/components/ArtworkInfoBar.tsx) **`detailSlide`**: lamp **1**, non-lamp artwork with edition-before-Spline **2**). **experience-v2** client uses slide **1** for its 3-section reel. Fixes the case where tapping the **header title** or **mobile hero title** opened the information slideout while the vertical reel stayed on Spline.
 
