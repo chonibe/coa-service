@@ -247,17 +247,6 @@ export function ArtworkAccordions({
   const renderArtworkCardInner = (omitArtistLine: boolean) =>
     !isLamp && (firstImage?.url || product.title) ? (
       <>
-        {firstImage?.url && (
-          <div className="relative w-full aspect-[4/5] overflow-hidden">
-            <Image
-              src={getShopifyImageUrl(firstImage.url, 800) ?? firstImage.url}
-              alt={product.title || 'Artwork'}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 92vw, 520px"
-            />
-          </div>
-        )}
         <div className="p-4 sm:p-5 text-center">
           <div className="mb-4">
             {product.title && (
