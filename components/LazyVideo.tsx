@@ -24,6 +24,7 @@ export function LazyVideo({
   rootMargin = '200px',
   className,
   children,
+  loop = true,
   ...props
 }: LazyVideoProps) {
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -73,7 +74,7 @@ export function LazyVideo({
         preload="none"
         playsInline
         muted
-        loop
+        loop={loop}
         disablePictureInPicture
         disableRemotePlayback
         controlsList="nodownload nofullscreen noremoteplayback"

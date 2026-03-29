@@ -45,7 +45,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Artists:** First 12 from `streetCollectorContent.featuredArtists.collections`
 - Shopify Storefront API via `getCollection()` from `lib/shopify/storefront-client.ts`
-- **Meet the Street Lamp videos:** Each carousel stage uses **`desktopVideo` / `mobileVideo`** on the matching object in [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages` (Shopify CDN `.mp4` URLs). Section-level `meetTheLamp.desktopVideo` / `mobileVideo` are fallbacks. [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps the `LazyVideo` source when the active stage changes.
+- **Meet the Street Lamp videos:** Each carousel stage uses **`desktopVideo` / `mobileVideo`** on the matching object in [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages` (Shopify CDN `.mp4` URLs). Section-level `meetTheLamp.desktopVideo` / `mobileVideo` are fallbacks. [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) uses **`loop={false}`** on hero clips, drives the progress bar from **`timeupdate`** (`currentTime` / `duration`), and advances the slide on **`ended`** so each clip plays once per stage. If duration is not finite, it falls back to an ~8s timer.
 
 ### Styling
 
@@ -78,3 +78,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Updated:** 2026-03-28 — Removed duplicate `Start your collection` from the Meet the Street Lamp hero; CTA stays on [`DesktopTopBar`](./page.tsx) and the mobile sticky bar only.
 - **Updated:** 2026-03-28 — Trust promo strip restyled to a low-contrast dark bar (not primary blue) so it reads as a quiet utility line, not a second CTA band.
 - **Updated:** 2026-03-29 — Meet the Street Lamp carousel video follows the active slide via per-stage **`desktopVideo` / `mobileVideo`** in [`content/street-collector.ts`](../../../content/street-collector.ts) (static Shopify CDN links); [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps `LazyVideo` when the stage advances.
+- **Updated:** 2026-03-29 — Meet the Street Lamp slide timing follows **each video’s duration** (no loop; advance on `ended`); [`LazyVideo`](../../../components/LazyVideo.tsx) accepts **`loop`** (default `true`).

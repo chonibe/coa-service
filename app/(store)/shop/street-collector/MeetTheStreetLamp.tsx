@@ -57,7 +57,8 @@ interface MeetTheStreetLampProps {
 }
 
 const PROGRESS_BAR_HEIGHT = 4
-const STAGE_INTERVAL_MS = 4000
+/** If metadata has no finite duration, fall back to fixed slide length. */
+const FALLBACK_STAGE_MS = 8000
 
 function videoSrcForPlayback(url: string): string {
   return url.startsWith('https://cdn.shopify.com/')
@@ -85,6 +86,8 @@ export function MeetTheStreetLamp({
 }: MeetTheStreetLampProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
+  /** When true, slide advance + progress use a timer (no finite video duration). */
+  const [advanceByClock, setAdvanceByClock] = useState(false)
 
   const activeStage = stages[activeIndex] ?? stages[0]
   const resolvedDesktopUrl =
@@ -108,12 +111,49 @@ export function MeetTheStreetLamp({
 
   const goToNext = useCallback(() => {
     setProgress(0)
+    setAdvanceByClock(false)
     setActiveIndex((i) => (i + 1) % stages.length)
   }, [stages.length])
 
   useEffect(() => {
+    setProgress(0)
+    setAdvanceByClock(false)
+  }, [activeIndex, mobileSrc, desktopSrc])
+
+  const handleVideoLoadedMetadata = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const d = e.currentTarget.duration
+      if (!Number.isFinite(d) || d <= 0) {
+        setAdvanceByClock(true)
+      } else {
+        setAdvanceByClock(false)
+      }
+      setProgress(0)
+    },
+    []
+  )
+
+  const handleVideoTimeUpdate = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      if (advanceByClock) return
+      const v = e.currentTarget
+      const d = v.duration
+      if (d > 0 && Number.isFinite(d)) {
+        setProgress(Math.min(100, (v.currentTime / d) * 100))
+      }
+    },
+    [advanceByClock]
+  )
+
+  const handleVideoEnded = useCallback(() => {
+    if (advanceByClock) return
+    goToNext()
+  }, [advanceByClock, goToNext])
+
+  useEffect(() => {
+    if (!advanceByClock) return
     const tick = 100
-    const step = (100 / STAGE_INTERVAL_MS) * tick
+    const step = (100 / FALLBACK_STAGE_MS) * tick
     const id = setInterval(() => {
       setProgress((p) => {
         if (p + step >= 100) {
@@ -124,7 +164,7 @@ export function MeetTheStreetLamp({
       })
     }, tick)
     return () => clearInterval(id)
-  }, [goToNext])
+  }, [advanceByClock, goToNext])
 
   const renderTitleBlock = (spacing: 'stacked' | 'desktopLeft') => {
     const desktopTwoLine =
@@ -282,7 +322,7 @@ export function MeetTheStreetLamp({
           aria-hidden
         >
           <div
-            className="h-full rounded-full bg-[#FFBA94] transition-all duration-150 ease-linear"
+            className="h-full rounded-full bg-[#FFBA94] transition-[width] duration-75 ease-linear"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -309,6 +349,10 @@ export function MeetTheStreetLamp({
                 src={mobileSrc}
                 poster={resolvedPoster}
                 autoPlay
+                loop={false}
+                onLoadedMetadata={handleVideoLoadedMetadata}
+                onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={handleVideoEnded}
               >
                 <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
               </LazyVideo>
@@ -338,6 +382,10 @@ export function MeetTheStreetLamp({
                 src={desktopSrc}
                 poster={resolvedPoster}
                 autoPlay
+                loop={false}
+                onLoadedMetadata={handleVideoLoadedMetadata}
+                onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={handleVideoEnded}
                 className="h-full w-full min-h-[200px] rounded-2xl object-cover"
               >
                 <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
