@@ -31,6 +31,7 @@ export function EditionWatchControl({
   compact,
   chipOnly,
   className,
+  variant = 'default',
 }: {
   product: ShopifyProduct
   editionNumberSold: number
@@ -39,6 +40,8 @@ export function EditionWatchControl({
   compact?: boolean
   chipOnly?: boolean
   className?: string
+  /** `well` — pill CTA + stronger dark surface (e.g. {@link ScarcityWatchRegion}) */
+  variant?: 'default' | 'well'
 }) {
   const { isAuthenticated, loading: authLoading } = useShopAuthContext()
   const [watching, setWatching] = useState<boolean | null>(null)
@@ -206,11 +209,17 @@ export function EditionWatchControl({
         disabled={busy || authLoading}
         onClick={() => void onWatchClick()}
         className={cn(
-          'inline-flex items-center justify-center min-h-9 rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.07em]',
-          'ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#171515]',
+          'inline-flex items-center justify-center font-semibold uppercase transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#171515]',
+          variant === 'well'
+            ? 'min-h-10 rounded-full px-5 text-[11px] tracking-[0.08em] ring-1'
+            : 'min-h-9 rounded-md px-3 py-1.5 text-[10px] tracking-[0.07em] ring-1',
           'disabled:pointer-events-none disabled:opacity-50',
           !watching &&
+            variant === 'default' &&
             'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50 dark:bg-white/5 dark:text-[#f0e8e8] dark:ring-white/28 dark:hover:bg-white/10',
+          !watching &&
+            variant === 'well' &&
+            'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50/90 dark:bg-[#2c2626] dark:text-[#f4eeee] dark:ring-[#FFBA94]/28 dark:hover:bg-[#352e2e] dark:hover:ring-[#FFBA94]/40 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)]',
           watching &&
             'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]'
         )}

@@ -37,14 +37,14 @@ export function EditionWatchWithNarrative({
         editionNumberSold={editionNumberSold}
         totalEditions={totalEditions}
         artistName={artistName}
-        className="[&_button]:min-h-10 [&_button]:rounded-full [&_button]:px-5 [&_button]:text-[11px] [&_button]:tracking-[0.08em]"
+        variant="well"
       />
       {copy ? (
         <div className="mt-3 w-full max-w-[18rem] space-y-1.5 text-center">
-          <p className="text-balance text-[13px] font-normal leading-relaxed text-neutral-600 dark:text-[#c4b4b4]">
+          <p className="text-balance text-[13px] font-normal leading-relaxed text-neutral-600 dark:text-[#b8a8a8]">
             {copy.subline}
           </p>
-          <p className="text-balance text-[11px] font-medium leading-relaxed tracking-wide text-[#FFBA94]/95 dark:text-[#FFBA94]/90">
+          <p className="text-balance text-[11px] font-medium leading-relaxed tracking-wide text-[#c85a28] dark:text-[#FFBA94]">
             {copy.cta}
           </p>
         </div>

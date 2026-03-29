@@ -20,15 +20,17 @@ export function ScarcityWatchRegion({
   return (
     <div className={cn('relative mt-5 w-full', className)}>
       <div
-        className="pointer-events-none mx-auto mb-4 h-px max-w-[11rem] bg-gradient-to-r from-transparent via-neutral-400/40 to-transparent dark:via-white/[0.22]"
+        className="pointer-events-none mx-auto mb-4 h-px max-w-[11rem] bg-gradient-to-r from-transparent via-neutral-400/45 to-transparent dark:from-transparent dark:via-[#FFBA94]/30 dark:to-transparent"
         aria-hidden
       />
       <div
         className={cn(
-          'mx-auto flex w-full max-w-[19.5rem] flex-col items-center rounded-2xl',
-          'border border-neutral-200/45 bg-white/70 px-4 py-3.5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]',
+          'mx-auto flex w-full max-w-[19.5rem] flex-col items-center rounded-2xl px-4 py-3.5',
+          'border border-neutral-200/45 bg-white/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]',
           'backdrop-blur-md backdrop-saturate-150',
-          'dark:border-white/[0.09] dark:bg-white/[0.04] dark:shadow-[0_2px_24px_-8px_rgba(0,0,0,0.45)]'
+          // Dark: solid lift from #171515 / card chrome — avoid washed glass on black
+          'dark:border-[#3d3636] dark:bg-[#1f1b1b] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)]',
+          'dark:backdrop-blur-none dark:backdrop-saturate-100'
         )}
       >
         {children}
