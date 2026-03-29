@@ -31,19 +31,20 @@ export function EditionWatchWithNarrative({
   }, [editionNumberSold, totalEditions, artistName])
 
   return (
-    <div className={cn('w-full flex flex-col items-center', className)}>
+    <div className={cn('flex w-full flex-col items-center gap-0', className)}>
       <EditionWatchControl
         product={product}
         editionNumberSold={editionNumberSold}
         totalEditions={totalEditions}
         artistName={artistName}
+        className="[&_button]:min-h-10 [&_button]:rounded-full [&_button]:px-5 [&_button]:text-[11px] [&_button]:tracking-[0.08em]"
       />
       {copy ? (
-        <div className="mt-2 w-full max-w-[22rem] mx-auto space-y-1 px-1 text-center">
-          <p className="text-xs font-normal leading-snug text-neutral-600 dark:text-[#b0a0a0]">
+        <div className="mt-3 w-full max-w-[18rem] space-y-1.5 text-center">
+          <p className="text-balance text-[13px] font-normal leading-relaxed text-neutral-600 dark:text-[#c4b4b4]">
             {copy.subline}
           </p>
-          <p className="text-[11px] leading-snug text-neutral-500 dark:text-[#908080]">
+          <p className="text-balance text-[11px] font-medium leading-relaxed tracking-wide text-[#FFBA94]/95 dark:text-[#FFBA94]/90">
             {copy.cta}
           </p>
         </div>

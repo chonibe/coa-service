@@ -10,7 +10,7 @@ import {
   SpotlightCollectionGif,
   type SpotlightData,
 } from '../../experience-v2/components/ArtistSpotlightBanner'
-import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
+import { ScarcityBadge, ScarcityWatchRegion } from '../../experience-v2/components/ScarcityBadge'
 import { EditionWatchWithNarrative } from '../../experience-v2/components/EditionWatchWithNarrative'
 import {
   HorizontalTwoSlideGallery,
@@ -369,9 +369,7 @@ export function ArtworkAccordions({
                 }
               />
               {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
-                  {editionWatchWithNarrativeNode}
-                </div>
+                <ScarcityWatchRegion>{editionWatchWithNarrativeNode}</ScarcityWatchRegion>
               ) : null}
             </div>
           )}

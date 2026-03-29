@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from '
 import { Check, ChevronDown, ChevronLeft, ImageIcon, ZoomIn, ZoomOut, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
-import { ScarcityBadge } from './ScarcityBadge'
+import { ScarcityBadge, ScarcityWatchRegion } from './ScarcityBadge'
 import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
 import { HorizontalTwoSlideGallery } from './HorizontalTwoSlideGallery'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -509,9 +509,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               }
             />
             {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-              <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
-                {editionWatchWithNarrativeNode}
-              </div>
+              <ScarcityWatchRegion>{editionWatchWithNarrativeNode}</ScarcityWatchRegion>
             ) : null}
           </div>
         )}
@@ -820,9 +818,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         }
                       />
                       {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                        <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
-                          {editionWatchWithNarrativeNode}
-                        </div>
+                        <ScarcityWatchRegion>{editionWatchWithNarrativeNode}</ScarcityWatchRegion>
                       ) : null}
                     </div>
                   )}
@@ -1255,9 +1251,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   }
                 />
                 {!streetLadderBlock && editionWatchWithNarrativeNode ? (
-                  <div className="mt-4 border-t border-neutral-200/90 pt-4 dark:border-white/15">
-                    {editionWatchWithNarrativeNode}
-                  </div>
+                  <ScarcityWatchRegion>{editionWatchWithNarrativeNode}</ScarcityWatchRegion>
                 ) : null}
               </div>
             )}

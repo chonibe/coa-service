@@ -7,6 +7,36 @@ import { cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { StreetLadderScarcityAddon } from './StreetLadderScarcityAddon'
 
+/**
+ * Visual break + soft panel below pricing / Street ladder for watch CTA + edition copy.
+ */
+export function ScarcityWatchRegion({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('relative mt-5 w-full', className)}>
+      <div
+        className="pointer-events-none mx-auto mb-4 h-px max-w-[11rem] bg-gradient-to-r from-transparent via-neutral-400/40 to-transparent dark:via-white/[0.22]"
+        aria-hidden
+      />
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-[19.5rem] flex-col items-center rounded-2xl',
+          'border border-neutral-200/45 bg-white/70 px-4 py-3.5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)]',
+          'backdrop-blur-md backdrop-saturate-150',
+          'dark:border-white/[0.09] dark:bg-white/[0.04] dark:shadow-[0_2px_24px_-8px_rgba(0,0,0,0.45)]'
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function StreetLadderStack({
   block,
   addonClassName,
@@ -19,15 +49,7 @@ function StreetLadderStack({
   return (
     <>
       <StreetLadderScarcityAddon block={block} className={addonClassName} />
-      {below ? (
-        <div
-          className={cn(
-            'mt-4 w-full flex flex-col items-stretch border-t border-neutral-200/90 pt-4 dark:border-white/15 sm:items-center px-1'
-          )}
-        >
-          {below}
-        </div>
-      ) : null}
+      {below ? <ScarcityWatchRegion>{below}</ScarcityWatchRegion> : null}
     </>
   )
 }

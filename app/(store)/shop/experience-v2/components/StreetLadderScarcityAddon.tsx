@@ -16,7 +16,7 @@ export function StreetLadderScarcityAddon({
   return (
     <div
       className={cn(
-        'mt-3 pt-3 border-t border-neutral-200/80 dark:border-white/10 space-y-1.5 w-full',
+        'mt-3 w-full space-y-2 border-t border-neutral-200/55 pt-3.5 dark:border-white/[0.08]',
         className
       )}
     >
