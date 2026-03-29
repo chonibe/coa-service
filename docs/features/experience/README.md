@@ -62,7 +62,7 @@ The Spline preview is responsive: the model scales down as the screen becomes sm
 
 1. **Fit-within-viewport sizing**: `getContainerSize()` computes a size that fits within the container while preserving the lamp aspect ratio (4:5). On smaller screens the model scales down proportionally; on wider viewports it is letterboxed to avoid distortion.
 
-2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-10%)` (with quarter-turn rotation) so the lamp sits slightly higher in the frame.
+2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-6%)` (with quarter-turn rotation) so the lamp sits a bit lower than the previous `-10%` nudge while still clearing the top of the frame.
 
 3. **Container as single source of truth**: `getContainerSize()` uses container `getBoundingClientRect()` for renderer/camera sizing (not `canvas.clientWidth/clientHeight` which can be transitional during layout settling).
 
@@ -274,7 +274,8 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 ## Version
 
 - Last updated: 2026-03-28
-- Version: 1.15.3
+- Version: 1.15.4
+- **Spline vertical nudge**: Minimal [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx) canvas `translateY` relaxed from **-10%** to **-6%** so the lamp sits slightly lower in the experience viewport.
 - **Title chip + icon**: Picker / strip / carousel title row uses `flex-1` on the title and a trailing `Plus` so the **+ stays on the right edge** of the glass chip; title text stays centered in the remaining width.
 - **Detail header order**: In the experience reel artwork card ([`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx)) and [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (desktop + mobile), **artwork title** is shown first with **artist / vendor** on the line below.
 - **Title chip width**: Image title glass chip (and picker edition chip above it) use **80%** of the image content width (`w-4/5`), centered.

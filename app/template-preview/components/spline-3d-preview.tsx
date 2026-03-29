@@ -2948,7 +2948,7 @@ export function Spline3DPreview({
             backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
             pointerEvents: 'none',
             touchAction: 'none',
-            transform: `translateY(-10%) rotate(${normalizedTurns * 90}deg)`,
+            transform: `translateY(-6%) rotate(${normalizedTurns * 90}deg)`,
             transformOrigin: "50% 50%",
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
