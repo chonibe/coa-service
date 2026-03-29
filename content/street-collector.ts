@@ -26,7 +26,10 @@ export const streetCollectorContent = {
   },
   /** Logo (Street Collector branding) */
   logo: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683',
-  /** Meet the Street Lamp: one video, stages rotate via progress bar on texts */
+  /**
+   * Meet the Street Lamp: default `desktopVideo` / `mobileVideo` / `poster` when a stage has no Shopify clip.
+   * Per-slide videos: Shopify metaobject type `under_the_fold_section` — match entries to each `stages[].title` (or handle slug); see `lib/shopify/under-the-fold-meet-lamp.ts`.
+   */
   meetTheLamp: {
     title: 'Meet the Street Lamp',
     /** Two lines under the section title */

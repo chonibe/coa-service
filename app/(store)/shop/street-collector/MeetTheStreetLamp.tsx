@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { LazyVideo } from '@/components/LazyVideo'
@@ -8,6 +8,10 @@ import { LazyVideo } from '@/components/LazyVideo'
 export interface MeetTheLampStage {
   title: string
   description: string
+  /** Optional per-slide video from Shopify `under_the_fold_section` (matched by title). */
+  desktopVideo?: string | null
+  mobileVideo?: string | null
+  poster?: string | null
 }
 
 /** Single glassmorphism price chip */
@@ -55,6 +59,12 @@ interface MeetTheStreetLampProps {
 const PROGRESS_BAR_HEIGHT = 4
 const STAGE_INTERVAL_MS = 4000
 
+function videoSrcForPlayback(url: string): string {
+  return url.startsWith('https://cdn.shopify.com/')
+    ? url
+    : `/api/proxy-video?url=${encodeURIComponent(url)}`
+}
+
 /**
  * Meet the Street Lamp: mobile price chip overlaps top of video; desktop chip under subtitle;
  * stages auto-advance with progress bar only (no dots).
@@ -75,12 +85,24 @@ export function MeetTheStreetLamp({
 }: MeetTheStreetLampProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
-  const mobileSrc = mobileVideo.startsWith('https://cdn.shopify.com/')
-    ? mobileVideo
-    : `/api/proxy-video?url=${encodeURIComponent(mobileVideo)}`
-  const desktopSrc = desktopVideo.startsWith('https://cdn.shopify.com/')
-    ? desktopVideo
-    : `/api/proxy-video?url=${encodeURIComponent(desktopVideo)}`
+
+  const activeStage = stages[activeIndex] ?? stages[0]
+  const resolvedDesktopUrl =
+    activeStage?.desktopVideo?.trim() || desktopVideo
+  const resolvedMobileUrl =
+    activeStage?.mobileVideo?.trim() ||
+    activeStage?.desktopVideo?.trim() ||
+    mobileVideo
+  const resolvedPoster = activeStage?.poster?.trim() || poster
+
+  const mobileSrc = useMemo(
+    () => videoSrcForPlayback(resolvedMobileUrl),
+    [resolvedMobileUrl]
+  )
+  const desktopSrc = useMemo(
+    () => videoSrcForPlayback(resolvedDesktopUrl),
+    [resolvedDesktopUrl]
+  )
 
   const priceText = pricingLabelFromChips(pricingChips)
 
@@ -283,9 +305,9 @@ export function MeetTheStreetLamp({
             {renderPricingOnVideoMobile()}
             <div className="relative aspect-[5/4] w-full overflow-hidden rounded-2xl">
               <LazyVideo
-                key={`meet-mobile-${mobileVideo}`}
+                key={`meet-mobile-${activeIndex}-${mobileSrc}`}
                 src={mobileSrc}
-                poster={poster}
+                poster={resolvedPoster}
                 autoPlay
               >
                 <track kind="captions" src="/captions/hero-no-speech.vtt" srcLang="en" label="English" />
@@ -312,9 +334,9 @@ export function MeetTheStreetLamp({
           >
             <div className="relative h-full min-h-[200px] w-full overflow-hidden rounded-2xl">
               <LazyVideo
-                key={`meet-desktop-${desktopVideo}`}
+                key={`meet-desktop-${activeIndex}-${desktopSrc}`}
                 src={desktopSrc}
-                poster={poster}
+                poster={resolvedPoster}
                 autoPlay
                 className="h-full w-full min-h-[200px] rounded-2xl object-cover"
               >

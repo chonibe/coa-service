@@ -16,6 +16,8 @@ export interface MetaobjectFileReference {
   alt?: string
   url?: string
   sources?: Array<{ url: string; mimeType: string }>
+  /** Present on `... on MediaImage` references from Storefront API */
+  image?: { url?: string }
 }
 
 export interface MetaobjectField {
@@ -141,6 +143,67 @@ export async function listMetaobjects(
   }
 }
 
+/**
+ * List metaobjects by type including `reference` on fields (Video / MediaImage URLs).
+ * Use for definitions with file_reference fields (e.g. under_the_fold_section).
+ */
+export async function listMetaobjectsWithReferences(
+  type: string,
+  first: number = 25
+): Promise<Metaobject[]> {
+  const query = `
+    query ListMetaobjectsWithRefs($type: String!, $first: Int!) {
+      metaobjects(type: $type, first: $first) {
+        edges {
+          node {
+            id
+            type
+            handle
+            fields {
+              key
+              value
+              type
+              reference {
+                ... on MediaImage {
+                  id
+                  alt
+                  image {
+                    url
+                  }
+                }
+                ... on Video {
+                  id
+                  alt
+                  sources {
+                    url
+                    mimeType
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `
+
+  try {
+    const data = await storefrontQuery<{
+      metaobjects: {
+        edges: Array<{ node: Metaobject }>
+      }
+    }>(query, { type, first })
+
+    return data.metaobjects?.edges?.map((edge) => edge.node) || []
+  } catch (error) {
+    console.error(
+      `[Metaobjects] Failed to list metaobjects with references for type "${type}":`,
+      error
+    )
+    return []
+  }
+}
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
@@ -176,11 +239,11 @@ export function getMetaobjectFileUrl(
     return field.reference.sources[0].url
   }
   
-  // Check for image URL
-  if ('image' in field.reference && field.reference.url) {
-    return field.reference.url
+  // MediaImage: URL lives on image.url
+  if (field.reference.image?.url) {
+    return field.reference.image.url
   }
-  
+
   return field.reference.url || null
 }
 

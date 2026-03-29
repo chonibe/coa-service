@@ -36,6 +36,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 | [`MultiColumnVideoSection.tsx`](./MultiColumnVideoSection.tsx) | Client component; value props with autoplay videos (horizontal scroll on mobile, 3-col on desktop) |
 | [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) | Client component; testimonials with media (video/image), stars, quote, author; arrows + dots |
 | [`content/street-collector.ts`](../../../content/street-collector.ts) | Content config (copy, video/poster URLs, testimonials with media, collection handles) |
+| [`under-the-fold-meet-lamp.ts`](../../../lib/shopify/under-the-fold-meet-lamp.ts) | Storefront: list `under_the_fold_section` metaobjects and merge file-reference videos onto Meet the Street Lamp stages by title / handle |
 
 ---
 
@@ -45,6 +46,7 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 
 - **Artists:** First 12 from `streetCollectorContent.featuredArtists.collections`
 - Shopify Storefront API via `getCollection()` from `lib/shopify/storefront-client.ts`
+- **Meet the Street Lamp videos:** When the Storefront API is configured, [`page.tsx`](./page.tsx) loads metaobjects of type **`under_the_fold_section`** (Settings → Custom data → Metaobjects in Shopify) in parallel with artist data. Each entry should include a **title** (or `heading` / `name` / `section_title` / `subtitle`) that matches a stage title from [`content/street-collector.ts`](../../../content/street-collector.ts) `meetTheLamp.stages` (e.g. “Set the light”), and a **video** file reference (also accepted: `desktop_video`, `section_video`, `file`). Optional: **`mobile_video`** / **`video_mobile`**, and poster image fields **`poster`**, `thumbnail`, `video_poster`, `image`. Entries are also keyed by the metaobject **handle** (slug) so handles like `set-the-light` can match without a separate title field. Requires Storefront scope **`unauthenticated_read_metaobjects`**. If no entry matches a stage, that stage keeps the default `meetTheLamp.desktopVideo` / `mobileVideo` from content.
 
 ### Styling
 
@@ -76,3 +78,4 @@ All routes use the store layout (`app/(store)/layout.tsx`) which provides Footer
 - **Updated:** 2026-03-22 — Testimonials: `sectionBackdropImage` + `backdropImageSrc` on [`TestimonialCarousel.tsx`](./TestimonialCarousel.tsx) to show the same wide hero image behind the carousel.
 - **Updated:** 2026-03-28 — Removed duplicate `Start your collection` from the Meet the Street Lamp hero; CTA stays on [`DesktopTopBar`](./page.tsx) and the mobile sticky bar only.
 - **Updated:** 2026-03-28 — Trust promo strip restyled to a low-contrast dark bar (not primary blue) so it reads as a quiet utility line, not a second CTA band.
+- **Updated:** 2026-03-29 — Meet the Street Lamp carousel video follows the active slide: per-slide clips from Shopify **`under_the_fold_section`** metaobjects merged on [`page.tsx`](./page.tsx) via [`under-the-fold-meet-lamp.ts`](../../../lib/shopify/under-the-fold-meet-lamp.ts); [`MeetTheStreetLamp.tsx`](./MeetTheStreetLamp.tsx) swaps `LazyVideo` source when the stage advances.
