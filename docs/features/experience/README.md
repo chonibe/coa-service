@@ -274,7 +274,8 @@ The scarcity bar on artwork detail shows remaining inventory as a percentage of 
 ## Version
 
 - Last updated: 2026-03-28
-- Version: 1.15.2
+- Version: 1.15.3
+- **Title chip + icon**: Picker / strip / carousel title row uses `flex-1` on the title and a trailing `Plus` so the **+ stays on the right edge** of the glass chip; title text stays centered in the remaining width.
 - **Detail header order**: In the experience reel artwork card ([`ArtworkAccordions`](../../../app/(store)/shop/experience/components/ArtworkAccordions.tsx)) and [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (desktop + mobile), **artwork title** is shown first with **artist / vendor** on the line below.
 - **Title chip width**: Image title glass chip (and picker edition chip above it) use **80%** of the image content width (`w-4/5`), centered.
 - **+ with title**: Picker and configurator strip show the add **+** at the **end** of the title chip when the artwork is not selected / not in cart (same glass treatment as the title text). Title chip uses **centered** text and `justify-center`; long titles stay centered beside the icon.

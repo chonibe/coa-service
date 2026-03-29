@@ -238,7 +238,7 @@ function ArtworkCardV2({
           <div className="flex w-full min-w-0 justify-center">
             <div
               className={cn(
-                'picker-title-chip flex w-4/5 max-w-[80%] min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1',
+                'picker-title-chip flex w-4/5 max-w-[80%] min-w-0 items-center gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
                 'text-white shadow-sm shadow-black/20'
@@ -246,9 +246,8 @@ function ArtworkCardV2({
             >
               <span
                 className={cn(
-                  'min-w-0 text-center text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
-                  'line-clamp-2 break-words [overflow-wrap:anywhere]',
-                  isSelected ? 'max-w-full' : 'max-w-[calc(100%-1.5rem)]'
+                  'min-w-0 flex-1 text-center text-[10px] sm:text-[11px] font-semibold leading-snug tracking-tight',
+                  'line-clamp-2 break-words [overflow-wrap:anywhere]'
                 )}
                 title={product.title}
               >
