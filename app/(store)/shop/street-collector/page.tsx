@@ -329,7 +329,6 @@ export default async function StreetCollectorPage() {
         }
         cue={streetCollectorContent.meetTheLamp.cue}
         cueHref={streetCollectorContent.experienceUrl}
-        primaryCta={streetCollectorContent.meetTheLamp.primaryCta}
         trustMicroItems={streetCollectorContent.meetTheLamp.trustMicroItems}
         className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
       />
