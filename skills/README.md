@@ -10,6 +10,10 @@ Project agent skills for **Cursor** and packable **Claude** `.skill` bundles sha
 | `.cursor/skills/` | **Generated** — run sync after changing `skills/` |
 | `artifacts/claude-skills/*.skill` | **Generated** zips for Claude Desktop / Cowork-style install |
 
+## UI polish (ibelick/ui-skills)
+
+MIT-licensed skills vendored from [ibelick/ui-skills](https://github.com/ibelick/ui-skills): [`baseline-ui`](./baseline-ui/SKILL.md), [`fixing-accessibility`](./fixing-accessibility/SKILL.md), [`fixing-metadata`](./fixing-metadata/SKILL.md), [`fixing-motion-performance`](./fixing-motion-performance/SKILL.md). Upstream install: `npx skills add ibelick/ui-skills`.
+
 ## Commands (from repo root)
 
 ```bash
