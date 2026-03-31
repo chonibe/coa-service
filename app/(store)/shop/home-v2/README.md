@@ -8,6 +8,15 @@ This directory contains the **enhanced version** of the shop homepage with immer
 - Original: `/shop/home`
 - Enhanced: `/shop/home-v2` ← **This version**
 
+### Default route vs GSAP variant
+
+- **Marketing landing (default):** [`page.tsx`](./page.tsx) re-exports [`landing/page.tsx`](./landing/page.tsx) — CSS-module layout, hero video, FAQ, steps, etc. No GSAP on this path.
+- **GSAP comparison:** [`gsap/page.tsx`](./gsap/page.tsx) → [`gsap-impl/page.tsx`](./gsap-impl/page.tsx) for the immersive animation stack described below.
+
+### UI skills alignment (ibelick ui-skills)
+
+The **landing** implementation follows the repo skills [`skills/baseline-ui`](../../../../skills/baseline-ui/SKILL.md), [`skills/fixing-accessibility`](../../../../skills/fixing-accessibility/SKILL.md), [`skills/fixing-metadata`](../../../../skills/fixing-metadata/SKILL.md), and [`skills/fixing-motion-performance`](../../../../skills/fixing-motion-performance/SKILL.md) as **principles**, not a literal Tailwind stack: brand gradients and CSS modules are intentional. Concrete changes live in [`landing/page.tsx`](./landing/page.tsx) (metadata, OG/Twitter, canonical), [`landing.module.css`](./landing.module.css) (`100dvh`, `prefers-reduced-motion` for decorative motion), and FAQ / Steps components (`aria-controls`, tab panel wiring).
+
 ---
 
 ## What's Enhanced?
