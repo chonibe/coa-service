@@ -23,9 +23,10 @@ export function orderArtistsForExplore(artists: ShopArtist[]): ExploreArtistRow[
     const key = f.handle.toLowerCase()
     const a = bySlug.get(key)
     if (a) {
+      const location = 'location' in f ? f.location : undefined
       ordered.push({
         ...a,
-        location: f.location,
+        location,
       })
       used.add(key)
     }

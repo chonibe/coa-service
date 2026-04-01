@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
 /** Allowed origins for image proxy (product images, CDNs). */
 const ALLOWED_ORIGINS = [
   'https://thestreetcollector.com',
