@@ -26,7 +26,10 @@ const WIDE_INDEXES = new Set([0, 5, 12])
 export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
   const heroReveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
   const gridReveal = useLandingScrollReveal({
-    rootMargin: '0px 0px -12% 0px',
+    // Trigger early so the grid isn't perceived as "missing" on load.
+    // (Stagger mode hides children until visible.)
+    rootMargin: '420px 0px -18% 0px',
+    threshold: 0.01,
     mode: 'stagger',
   })
 
