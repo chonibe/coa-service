@@ -205,6 +205,11 @@ export async function middleware(request: NextRequest) {
     return redirect
   }
 
+  // /explore-artists → /shop/explore-artists (artist directory)
+  if (pathname === '/explore-artists' || pathname === '/explore-artists/') {
+    return NextResponse.redirect(new URL(`/shop/explore-artists${search}`, request.url), 308)
+  }
+
   // Supabase auth: email link expired or invalid — redirect to login with friendly error
   const authError = searchParams.get('error')
   const authErrorCode = searchParams.get('error_code')

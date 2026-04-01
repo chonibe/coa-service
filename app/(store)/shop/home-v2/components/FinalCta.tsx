@@ -1,13 +1,17 @@
 "use client"
 
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 export function FinalCta() {
   const { finalCta, urls } = homeV2LandingContent
+  const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px' })
+
   return (
-    <section className={styles.final} aria-label="Final call to action">
+    <section ref={reveal.ref} className={cn(styles.final, reveal.className)} aria-label="Final call to action">
       <div className={styles.finalBg} aria-hidden>
         {finalCta.backgroundImages.map((src, idx) => (
           // eslint-disable-next-line @next/next/no-img-element -- match source HTML behavior
@@ -37,7 +41,7 @@ export function FinalCta() {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
-          <Link href={urls.experience} className={styles.btnOutline}>
+          <Link href={urls.exploreArtists} className={styles.btnOutline}>
             {finalCta.secondaryCta}
           </Link>
         </div>

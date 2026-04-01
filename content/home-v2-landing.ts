@@ -60,6 +60,8 @@ export const homeV2LandingContent = {
   urls: {
     home: '/',
     experience: '/experience',
+    /** Public short path; middleware redirects to `/shop/explore-artists`. */
+    exploreArtists: '/explore-artists',
     /** Absolute CDN URL for Open Graph / Twitter cards (home-v2 landing metadata). */
     openGraphImageUrl:
       'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png',

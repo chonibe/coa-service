@@ -1,13 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 export function ArtistsWall() {
   const { artistsWall, urls } = homeV2LandingContent
+  const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
+
   return (
-    <section className={styles.artistsSection} aria-label="Artists wall">
+    <section ref={reveal.ref} className={cn(styles.artistsSection, reveal.className)} aria-label="Artists wall">
       <div className={styles.artistsHeader}>
         <div className={styles.eyebrow}>{artistsWall.eyebrow}</div>
         <h2 className={styles.sectionTitle} style={{ marginBottom: 12 }}>
@@ -29,7 +33,7 @@ export function ArtistsWall() {
           )
         })}
 
-        <Link href={urls.experience} className={styles.tileMore}>
+        <Link href={urls.exploreArtists} className={styles.tileMore}>
           <span className={styles.tileMoreN}>100+</span>
           <span className={styles.tileMoreL}>{artistsWall.ctaLabel}</span>
         </Link>
