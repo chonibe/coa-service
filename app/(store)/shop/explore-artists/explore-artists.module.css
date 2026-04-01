@@ -5,6 +5,245 @@
   z-index: 1;
 }
 
+/* ── CUSTOM CURSOR ── */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--peach);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transition:
+    width 0.2s,
+    height 0.2s,
+    background 0.2s;
+  mix-blend-mode: difference;
+}
+
+.cursorRing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 186, 148, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transition:
+    width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.2s;
+}
+
+/* ── LIGHTBOX ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(10, 9, 9, 0.96);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+  padding: 24px;
+}
+
+.lightboxOpen {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.lightboxInner {
+  width: min(960px, 95vw);
+  max-height: 90vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--card);
+  transform: scale(0.96);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid var(--border);
+}
+
+.lightboxOpen .lightboxInner {
+  transform: scale(1);
+}
+
+.lightboxMedia {
+  position: relative;
+  height: 100%;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.lightboxImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.9) brightness(0.8);
+}
+
+.lightboxMediaOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 50%, rgba(29, 27, 27, 0.8) 100%);
+}
+
+.lightboxContent {
+  padding: 56px 48px;
+  overflow: auto;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: none;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+
+.lightboxClose:hover {
+  border-color: var(--peach);
+  color: var(--peach);
+}
+
+.lbMeta {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 186, 148, 0.6);
+  margin-bottom: 16px;
+}
+
+.lbName {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 0.95;
+  margin: 0 0 18px;
+}
+
+.lbStory {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.lbActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.lbCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--peach);
+  color: var(--dark);
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+
+.lbCta:hover {
+  background: var(--peach2);
+}
+
+.lbCtaOutline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+
+.lbCtaOutline:hover {
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.lbRelated {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.lbRelatedTitle {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.lbRelatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.lbRelatedCard {
+  background: var(--card2);
+  overflow: hidden;
+  transition: opacity 0.2s;
+  border: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.lbRelatedCard:hover {
+  opacity: 0.85;
+}
+
+.lbRelatedCard img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.6) brightness(0.7);
+}
+
+.lbRelatedName {
+  padding: 8px;
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: 12px;
+  color: var(--white);
+}
+
 /* ── HERO ── */
 .hero {
   position: relative;
@@ -506,6 +745,15 @@
   position: relative;
 }
 
+.artistCardMediaButton {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
+
 .artistCardImg {
   width: 100%;
   height: 100%;
@@ -618,6 +866,9 @@
   transition:
     opacity 0.25s,
     transform 0.25s;
+  background: none;
+  border: 0;
+  padding: 0;
 }
 
 .artistCard:hover .cardExploreLink {
@@ -663,6 +914,211 @@
   flex-wrap: wrap;
 }
 
+/* ── WORLD MAP SECTION ── */
+.mapSection {
+  position: relative;
+  z-index: 10;
+  background: var(--darker);
+  padding: 100px 72px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.mapEyebrow {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--peach);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.mapEyebrow::before,
+.mapEyebrow::after {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: var(--peach);
+  opacity: 0.4;
+}
+
+.mapTitle {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 400;
+  font-style: italic;
+  margin-bottom: 64px;
+}
+
+.mapTitle em {
+  color: var(--peach);
+  font-style: normal;
+}
+
+.mapCanvasWrap {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto 56px;
+}
+
+.worldMapSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.mapLand {
+  fill: rgba(255, 255, 255, 0.05);
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1px;
+}
+
+.mapDot {
+  fill: var(--peach);
+  opacity: 0.9;
+}
+
+.mapStats {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  flex-wrap: wrap;
+}
+
+.mapStatN {
+  font-family: var(--font-landing-display), Impact, sans-serif;
+  font-size: 56px;
+  color: var(--peach);
+  display: block;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.mapStatL {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── COLLECTOR VOICES ── */
+.voicesSection {
+  position: relative;
+  z-index: 10;
+  padding: 100px 56px;
+  background: var(--dark);
+  border-top: 1px solid var(--border);
+}
+
+.voicesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 56px;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.voicesTitle {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: clamp(24px, 3vw, 40px);
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.voicesTitle em {
+  font-style: italic;
+  color: var(--peach);
+}
+
+.voicesRating {
+  text-align: right;
+}
+
+.voicesStars {
+  font-size: 22px;
+  color: var(--peach);
+  letter-spacing: 3px;
+}
+
+.voicesCaption {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.voicesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.voiceCard {
+  background: var(--card);
+  padding: 40px 36px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.voiceCard::before {
+  content: '“';
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: 100px;
+  color: rgba(255, 186, 148, 0.05);
+  line-height: 1;
+  position: absolute;
+  top: -16px;
+  left: 16px;
+}
+
+.voiceCard:hover {
+  border-color: rgba(255, 186, 148, 0.2);
+}
+
+.voiceText {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+  flex: 1;
+  margin: 0 0 28px;
+}
+
+.voiceText em {
+  color: var(--peach);
+  font-style: normal;
+}
+
+.voiceAuthor {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--peach);
+}
+
+.voiceLocation {
+  color: var(--muted);
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1100px) {
   .artistsGrid {
@@ -697,5 +1153,29 @@
   }
   .finalCta {
     padding: 80px 28px;
+  }
+
+  .mapSection {
+    padding: 80px 28px;
+  }
+  .mapStats {
+    gap: 40px;
+  }
+  .voicesSection {
+    padding: 80px 28px;
+  }
+  .voicesGrid {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .lightboxInner {
+    grid-template-columns: 1fr;
+  }
+  .lightboxMedia {
+    min-height: 280px;
+  }
+  .lightboxContent {
+    padding: 40px 28px;
   }
 }
