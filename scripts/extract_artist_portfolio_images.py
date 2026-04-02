@@ -229,6 +229,39 @@ def extract_instagram_scontent(html: str, limit: int = 10) -> list[str]:
     return out
 
 
+RE_IG_PROFILE_HD = re.compile(r'"profile_pic_url_hd"\s*:\s*"((?:[^"\\]|\\.)*)"')
+RE_IG_PROFILE = re.compile(r'"profile_pic_url"\s*:\s*"((?:[^"\\]|\\.)*)"')
+RE_IG_THUMB = re.compile(r'"thumbnail_src"\s*:\s*"((?:[^"\\]|\\.)*)"')
+
+
+def extract_instagram_fallback_urls(html: str, limit: int = 12) -> list[str]:
+    """When feed JSON is missing (login wall), still pick up profile / grid thumbs if embedded."""
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def take(rx: re.Pattern) -> None:
+        nonlocal out
+        for m in rx.finditer(html):
+            u = _unescape_ig_url(m.group(1))
+            if not u.startswith("http"):
+                continue
+            if "cdninstagram" not in u.lower() and "scontent" not in u.lower():
+                continue
+            if u in seen:
+                continue
+            seen.add(u)
+            out.append(u)
+            if len(out) >= limit:
+                return
+
+    take(RE_IG_PROFILE_HD)
+    if len(out) < limit:
+        take(RE_IG_PROFILE)
+    if len(out) < limit:
+        take(RE_IG_THUMB)
+    return out[:limit]
+
+
 def fetch_html(url: str, max_bytes: int = 900_000) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": UA}, method="GET")
     with urllib.request.urlopen(req, timeout=28, context=CTX) as resp:
@@ -326,6 +359,8 @@ def process_row(
 
         if is_ig:
             ig_urls.extend(extract_instagram_scontent(body))
+            if len(ig_urls) < 8:
+                ig_urls.extend(extract_instagram_fallback_urls(body))
         else:
             portfolio_pool.extend(extract_candidates(page_url, body))
 
