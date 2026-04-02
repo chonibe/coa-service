@@ -3,7 +3,7 @@
 ## Summary
 
 - **Python** (`scripts/extract_artist_portfolio_images.py`): Prefer newer path years, penalize press-aggregator hosts, unify winner selection on a canonical CDN key (strip `-WxH` / `__WxH`), dimension tie-break, Instagram fetch order preserved; **dedupe Instagram URL list** by canonical key before scoring so the same asset is not considered multiple times.
-- **TypeScript** (`lib/shop/artist-research-merge.ts`): Replace full-URL lowercase keys with **`processGalleryDedupeKey`** (host + path, same size-stripping rules) for process gallery and Instagram showcase merges; **dedupe raw CSV process slots** so columns 1–4 cannot surface the same artwork twice.
+- **TypeScript** (`lib/shop/artist-research-merge.ts`): Replace full-URL lowercase keys with **`processGalleryDedupeKey`** (host + path, same size-stripping rules) for process gallery and Instagram showcase merges; **dedupe raw CSV process slots** so columns 1–4 cannot surface the same artwork twice; **dedupe `instagramShowcaseFromRaw`** lines by the same key before the 12-item cap.
 
 ## Implementation
 

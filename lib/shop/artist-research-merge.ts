@@ -133,10 +133,17 @@ function instagramShowcaseFromRaw(raw: RawArtistResearchRow): InstagramShowcaseI
   const text = raw.instagramPostImageUrls?.trim()
   if (!text) return []
   const items: InstagramShowcaseItem[] = []
+  const seen = new Set<string>()
   for (const line of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
     if (isDirectImageUrl(line)) {
+      const k = processGalleryDedupeKey(line)
+      if (seen.has(k)) continue
+      seen.add(k)
       items.push({ url: line, kind: 'Post' })
     } else if (isInstagramPostOrReelUrl(line)) {
+      const k = processGalleryDedupeKey(line)
+      if (seen.has(k)) continue
+      seen.add(k)
       const kind = /\/reel\//i.test(line) ? 'Reel' : 'Post'
       items.push({ url: line, kind, link: line })
     }
