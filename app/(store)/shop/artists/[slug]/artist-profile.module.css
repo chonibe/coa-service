@@ -874,11 +874,18 @@
   padding: 0 72px 40px;
 }
 
+/* Match reference artist-profile.html Instagram tab typography */
+.instagramHeader .storyH2 {
+  font-size: clamp(26px, 3.5vw, 44px);
+  margin-bottom: 8px;
+}
+
 .instagramHandle {
   font-size: 11px;
   letter-spacing: 0.15em;
   color: var(--muted);
-  margin-top: 8px;
+  margin-top: 0;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -889,74 +896,41 @@
   color: rgba(255, 186, 148, 0.4);
 }
 
-/* Curated grid (custom.instagram_showcase) — reads like an IG profile grid */
-.igShowcaseBlock {
-  padding: 0 72px 32px;
-  max-width: 100%;
-}
-
-.igShowcaseLabel {
-  max-width: 420px;
-  margin: 0 auto 14px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-align: center;
-}
-
 .igShopperHint {
-  max-width: 420px;
-  margin: 0 auto 8px;
-  padding: 0 72px 8px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 72px 12px;
   font-size: 13px;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.5);
   text-align: center;
 }
 
-/* Instagram profile embed (instagram.com/{user}/embed/) */
+/* Instagram profile embed — same horizontal rhythm as .instagramGrid (2px gutters) */
 .igEmbedWrap {
-  padding: 0 72px 20px;
+  padding: 0 2px 8px;
   max-width: 100%;
 }
 
-.igEmbedLabel {
-  max-width: 420px;
-  margin: 0 auto 12px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-align: center;
-}
-
-.igEmbedPhone {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 10px 10px 12px;
-  border-radius: 28px;
-  background: linear-gradient(145deg, rgba(40, 38, 38, 0.95), rgba(28, 26, 26, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+.instagramGrid + .igEmbedWrap {
+  padding-top: 24px;
 }
 
 .igEmbedFrame {
   display: block;
   width: 100%;
-  min-height: 520px;
-  height: 580px;
-  border: none;
-  border-radius: 20px;
-  background: #0a0a0a;
+  min-height: 480px;
+  height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--card);
   overflow: hidden;
 }
 
 .igEmbedFootnote {
-  max-width: 420px;
-  margin: 18px auto 0;
+  max-width: 640px;
+  margin: 14px auto 0;
+  padding: 0 72px;
   font-size: 12px;
   line-height: 1.55;
   color: var(--muted);
@@ -973,22 +947,18 @@
   color: var(--peach2);
 }
 
+/* artist-profile.html: .instagram-grid — 6 columns, full bleed, 2px gutters */
 .instagramGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 0;
-  border-radius: 6px;
-  overflow: hidden;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  padding: 0 2px;
 }
 
 .igCell {
   aspect-ratio: 1;
   overflow: hidden;
   position: relative;
-  border-radius: 0;
 }
 
 .igCell img {
@@ -996,15 +966,15 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: saturate(0.92) brightness(0.92);
+  filter: saturate(0.75) brightness(0.8);
   transition:
-    filter 0.35s,
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    filter 0.4s,
+    transform 0.5s;
 }
 
 .igCell:hover img {
-  filter: saturate(1.05) brightness(1);
-  transform: scale(1.04);
+  filter: saturate(1.1) brightness(0.95);
+  transform: scale(1.06);
 }
 
 .igOverlay {
@@ -1306,9 +1276,8 @@
   .pressSection,
   .instagramHeader,
   .instagramCta,
-  .igEmbedWrap,
-  .igShowcaseBlock,
   .igShopperHint,
+  .igEmbedFootnote,
   .relatedHeader,
   .profileCta,
   .mutedNote {
@@ -1317,13 +1286,13 @@
   }
 
   .igEmbedFrame {
-    height: 520px;
-    min-height: 440px;
+    height: 500px;
+    min-height: 400px;
   }
 
+  /* artist-profile.html: 3 columns under ~960px */
   .instagramGrid {
-    max-width: 100%;
-    gap: 2px;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .relatedGrid {

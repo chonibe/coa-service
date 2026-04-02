@@ -484,7 +484,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <div className={styles.instagramHeader}>
               <div className={styles.storyEyebrow}>Instagram</div>
               <h2 className={styles.storyH2}>
-                The work, the walls, <em>the process.</em>
+                The work, the walls,
+                <br />
+                <em>the process.</em>
               </h2>
               {artist.instagram ? <div className={styles.instagramHandle}>{artist.instagram}</div> : null}
               {!artist.instagram ? (
@@ -494,29 +496,26 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               ) : null}
             </div>
             {profile.instagramShowcase && profile.instagramShowcase.length > 0 && artist.instagramUrl ? (
-              <div className={styles.igShowcaseBlock}>
-                <p className={styles.igShowcaseLabel}>Highlights from the feed</p>
-                <div className={styles.instagramGrid}>
-                  {profile.instagramShowcase.map((cell, i) => (
-                    <a
-                      key={i}
-                      href={artist.instagramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.igCell}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getProxiedImageUrl(cell.url)}
-                        alt={cell.kind ? `${cell.kind} on Instagram` : `Instagram post ${i + 1}`}
-                        loading="lazy"
-                      />
-                      <div className={styles.igOverlay}>
-                        <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+              <div className={styles.instagramGrid}>
+                {profile.instagramShowcase.map((cell, i) => (
+                  <a
+                    key={i}
+                    href={artist.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.igCell}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getProxiedImageUrl(cell.url)}
+                      alt={cell.kind ? `${cell.kind} on Instagram` : `Instagram post ${i + 1}`}
+                      loading="lazy"
+                    />
+                    <div className={styles.igOverlay}>
+                      <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                    </div>
+                  </a>
+                ))}
               </div>
             ) : null}
             {artist.instagram && artist.instagramUrl ? (
