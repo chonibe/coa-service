@@ -493,30 +493,38 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </p>
               ) : null}
             </div>
+            {profile.instagramShowcase && profile.instagramShowcase.length > 0 && artist.instagramUrl ? (
+              <div className={styles.igShowcaseBlock}>
+                <p className={styles.igShowcaseLabel}>Highlights from the feed</p>
+                <div className={styles.instagramGrid}>
+                  {profile.instagramShowcase.map((cell, i) => (
+                    <a
+                      key={i}
+                      href={artist.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.igCell}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getProxiedImageUrl(cell.url)}
+                        alt={cell.kind ? `${cell.kind} on Instagram` : `Instagram post ${i + 1}`}
+                        loading="lazy"
+                      />
+                      <div className={styles.igOverlay}>
+                        <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {artist.instagram && artist.instagramUrl ? (
               <InstagramProfileEmbed handle={artist.instagram} profileUrl={artist.instagramUrl} />
             ) : null}
-            {profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
-              <div className={styles.instagramGrid}>
-                {profile.instagramShowcase.map((cell, i) => (
-                  <a
-                    key={i}
-                    href={artist.instagramUrl || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.igCell}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={getProxiedImageUrl(cell.url)} alt="" loading="lazy" />
-                    <div className={styles.igOverlay}>
-                      <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            ) : artist.instagramUrl ? (
-              <p className={styles.mutedNote}>
-                Optional: add <code>custom.instagram_showcase</code> (JSON array of image URLs) on the collection to curate a grid above. URLs come from Supabase <code>instagram_url</code> or Shopify <code>custom.instagram</code>.
+            {artist.instagram && artist.instagramUrl && !(profile.instagramShowcase && profile.instagramShowcase.length > 0) ? (
+              <p className={styles.igShopperHint}>
+                Scroll the preview for recent posts and Reels. Follow on Instagram for the full feed and stories.
               </p>
             ) : null}
             {artist.instagramUrl ? (

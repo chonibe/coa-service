@@ -17,20 +17,23 @@ export function InstagramProfileEmbed({ handle, profileUrl }: Props) {
 
   return (
     <div className={styles.igEmbedWrap}>
-      <iframe
-        title={`Instagram profile @${handle}`}
-        src={embedSrc}
-        className={styles.igEmbedFrame}
-        loading="lazy"
-        allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
+      <p className={styles.igEmbedLabel}>Profile preview</p>
+      <div className={styles.igEmbedPhone}>
+        <iframe
+          title={`Instagram profile @${handle}`}
+          src={embedSrc}
+          className={styles.igEmbedFrame}
+          loading="lazy"
+          allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
       <p className={styles.igEmbedFootnote}>
-        Preview loads from Instagram. If you see a sign-in screen, open{' '}
+        Can&apos;t see the feed?{' '}
         <a href={profileUrl} target="_blank" rel="noopener noreferrer">
-          @{handle} on Instagram
+          Open @{handle} on Instagram
         </a>
-        .
+        {' '}— sometimes Instagram asks you to log in inside the preview.
       </p>
     </div>
   )

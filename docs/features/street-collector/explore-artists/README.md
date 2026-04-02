@@ -34,10 +34,18 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 - Artist lightbox: open an artist card; confirm **Works on Street Collector** loads thumbnails (from `GET /api/shop/artists/[slug]?vendor=…`) and links to `/shop/[handle]`.
 - `prefers-reduced-motion`: scroll reveal hooks show content immediately (home-v2 pattern).
 
+## Typography (shared with home-v2 + artist profile)
+
+- Stack matches reference `artist-profile.html`: **Playfair Display** (editorial), **DM Mono** (body, labels, UI), **Bebas Neue** (display numerals, prices).
+- Implementation: [`app/(store)/shop/home-v2/landing-fonts.ts`](../../../../app/(store)/shop/home-v2/landing-fonts.ts) (`next/font/google`), CSS variables `--font-landing-serif|mono|display`.
+- Tailwind (when font variables are on an ancestor): `font-landing-serif`, `font-landing-mono`, `font-landing-display` in [`tailwind.config.ts`](../../../../tailwind.config.ts).
+
 ## Change log
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.3 | 2026-04-03 | Instagram tab: 3-column highlights grid above embed, shopper hint (no metafield copy on-page), phone-style embed frame ([`ArtistProfilePageClient`](../../../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx), [`InstagramProfileEmbed`](../../../../app/(store)/shop/artists/[slug]/InstagramProfileEmbed.tsx)). Merch notes: `artist-profile-content-spec.md`. |
+| 1.1.2 | 2026-04-03 | Typography aligned with `artist-profile.html`: removed Inter from landing stack; body uses DM Mono; display roles use Bebas; Playfair weights 400/500/700. Artist slug layout injects font variables ([`app/(store)/shop/artists/[slug]/layout.tsx`](../../../../app/(store)/shop/artists/[slug]/layout.tsx)). |
 | 1.1.1 | 2026-04-02 | Artist profile **Instagram** tab ([`ArtistProfilePageClient`](../../../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx)): embedded profile preview via `instagram.com/{handle}/embed/` when `vendors.instagram_url` or collection metafield supplies a handle; CSP `frame-src` updated. Curated vendor URLs: [`supabase/migrations/20260402140000_vendor_instagram_urls_street_collector.sql`](../../../../supabase/migrations/20260402140000_vendor_instagram_urls_street_collector.sql). |
 | 1.1.0 | 2026-04-02 | Lightbox loads that artist’s storefront products (artist API + product links). House vendor **Street Collector** excluded from `getShopArtistsList()` / explore grid. |
 | 1.0.0 | 2026-03-31 | Initial explore page, shared `getShopArtistsList`, middleware short URL, home-v2 wiring. |
