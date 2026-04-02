@@ -11,6 +11,7 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
+import { InstagramProfileEmbed } from './InstagramProfileEmbed'
 
 type TabId = 'overview' | 'works' | 'exhibitions' | 'instagram'
 
@@ -492,6 +493,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </p>
               ) : null}
             </div>
+            {artist.instagram && artist.instagramUrl ? (
+              <InstagramProfileEmbed handle={artist.instagram} profileUrl={artist.instagramUrl} />
+            ) : null}
             {profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
               <div className={styles.instagramGrid}>
                 {profile.instagramShowcase.map((cell, i) => (
@@ -512,7 +516,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               </div>
             ) : artist.instagramUrl ? (
               <p className={styles.mutedNote}>
-                Optional: add <code>custom.instagram_showcase</code> (JSON array of image URLs) on the collection to mirror a grid here. Live embeds require the Instagram API; the profile link uses your metafield + Supabase data.
+                Optional: add <code>custom.instagram_showcase</code> (JSON array of image URLs) on the collection to curate a grid above. URLs come from Supabase <code>instagram_url</code> or Shopify <code>custom.instagram</code>.
               </p>
             ) : null}
             {artist.instagramUrl ? (

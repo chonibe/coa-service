@@ -38,5 +38,6 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.1 | 2026-04-02 | Artist profile **Instagram** tab ([`ArtistProfilePageClient`](../../../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx)): embedded profile preview via `instagram.com/{handle}/embed/` when `vendors.instagram_url` or collection metafield supplies a handle; CSP `frame-src` updated. Curated vendor URLs: [`supabase/migrations/20260402140000_vendor_instagram_urls_street_collector.sql`](../../../../supabase/migrations/20260402140000_vendor_instagram_urls_street_collector.sql). |
 | 1.1.0 | 2026-04-02 | Lightbox loads that artist’s storefront products (artist API + product links). House vendor **Street Collector** excluded from `getShopArtistsList()` / explore grid. |
 | 1.0.0 | 2026-03-31 | Initial explore page, shared `getShopArtistsList`, middleware short URL, home-v2 wiring. |

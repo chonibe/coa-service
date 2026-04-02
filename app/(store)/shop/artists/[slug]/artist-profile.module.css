@@ -887,6 +887,44 @@
   color: rgba(255, 186, 148, 0.4);
 }
 
+/* Instagram profile embed (instagram.com/{user}/embed/) */
+.igEmbedWrap {
+  padding: 0 72px 24px;
+  max-width: 100%;
+}
+
+.igEmbedFrame {
+  display: block;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 480px;
+  height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.igEmbedFootnote {
+  max-width: 540px;
+  margin: 16px auto 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+
+.igEmbedFootnote a {
+  color: var(--peach);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.igEmbedFootnote a:hover {
+  color: var(--peach2);
+}
+
 .instagramGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -1215,11 +1253,17 @@
   .pressSection,
   .instagramHeader,
   .instagramCta,
+  .igEmbedWrap,
   .relatedHeader,
   .profileCta,
   .mutedNote {
     padding-left: 28px;
     padding-right: 28px;
+  }
+
+  .igEmbedFrame {
+    height: 520px;
+    min-height: 420px;
   }
 
   .instagramGrid {
