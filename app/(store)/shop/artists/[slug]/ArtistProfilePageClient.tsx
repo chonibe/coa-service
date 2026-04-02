@@ -275,7 +275,10 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                     </p>
                   ))
                 ) : (
-                  <p className={styles.storyBody}>Story coming soon.</p>
+                  <p className={styles.storyBody}>
+                    We&apos;re still building this profile. For now, open <strong>Works</strong> to see editions,
+                    pricing, and what&apos;s left in the run.
+                  </p>
                 )}
                 {profile.pullquote ? <blockquote className={styles.storyPullquote}>&ldquo;{profile.pullquote}&rdquo;</blockquote> : null}
                 {profile.impactCallout ? (
@@ -322,8 +325,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   </div>
                 ) : (
                   <p className={styles.storyBody}>
-                    Process imagery can be added via the Shopify collection metafield <code>custom.process_gallery</code> (JSON array). See{' '}
-                    <strong>docs/features/street-collector/artist-profile-content-spec.md</strong> in the repo for the full content map.
+                    Studio shots, walls-in-progress, and detail photos land here when we publish them. Until then,
+                    use <strong>Works</strong> to see the pieces you can collect.
                   </p>
                 )}
                 {profile.exclusiveCallout ? (
@@ -357,7 +360,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </h2>
               </div>
               <p style={{ fontSize: 11, color: 'var(--muted)', maxWidth: 260, lineHeight: 1.7, textAlign: 'right' }}>
-                All editions are limited. Sold-out editions do not return.
+                Every run is capped. When an edition sells out here, it doesn&apos;t come back.
                 {earlyAccessCoupon ? ` Early access: ${earlyAccessCoupon}` : null}
               </p>
             </div>
@@ -438,7 +441,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 )
               })}
             </div>
-            {filteredProducts.length === 0 ? <p className={styles.mutedNote}>No works match this filter.</p> : null}
+            {filteredProducts.length === 0 ? (
+              <p className={styles.mutedNote}>Nothing matches this filter—try All Works or another season.</p>
+            ) : null}
           </div>
         </div>
 
@@ -466,7 +471,10 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   </div>
                 ))
               ) : (
-                <p className={styles.storyBody}>Exhibition history can be added via <code>custom.exhibitions</code> on the artist collection (JSON).</p>
+                <p className={styles.storyBody}>
+                  We don&apos;t list shows and walls on this profile yet. Verified history appears here when
+                  it&apos;s published—newest year first.
+                </p>
               )}
             </div>
           </div>
@@ -483,7 +491,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                     <p className={styles.pressQuote}>&ldquo;{card.quote}&rdquo;</p>
                     {card.url ? (
                       <a href={card.url} target="_blank" rel="noopener noreferrer" className={styles.pressLink}>
-                        Read feature
+                        Read the piece
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
@@ -493,7 +501,10 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 ))}
               </div>
             ) : (
-              <p className={styles.storyBody}>Press clips can be added via <code>custom.press</code> (JSON).</p>
+              <p className={styles.storyBody}>
+                Verified quotes and links from press will show here once they&apos;re added. Check the artist&apos;s
+                site or search their name if you want to read coverage today.
+              </p>
             )}
           </div>
         </div>
@@ -510,7 +521,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               {artist.instagram ? <div className={styles.instagramHandle}>{artist.instagram}</div> : null}
               {!artist.instagram ? (
                 <p className={styles.storyBody} style={{ marginTop: 12 }}>
-                  Set <code>custom.instagram</code> on the artist&apos;s Shopify collection (handle or URL), or add <code>instagram_url</code> on the vendor in Supabase.
+                  We don&apos;t have a linked Instagram handle on file for this artist yet. Their editions are still
+                  under <strong>Works</strong> if you want to collect.
                 </p>
               ) : null}
             </div>
@@ -574,7 +586,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   ))}
                 </div>
                 <p className={styles.igNativeEmptyCopy}>
-                  Recent work, process, and drops show up on Instagram first—open the profile to see the full feed.
+                  New walls and studio shots usually hit their feed before they land here. Open Instagram for the
+                  live thread; keep <strong>Works</strong> open if you&apos;re here to collect.
                 </p>
                 <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -604,9 +617,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
         <section className={styles.relatedSection} aria-label="Related artists">
           <div className={styles.relatedHeader}>
             <div>
-              <div className={styles.storyEyebrow}>If you connect with {artist.name.split(' ')[0]}</div>
+              <div className={styles.storyEyebrow}>Also on Street Collector</div>
               <h2 className={styles.storyH2}>
-                You might also love <em>these artists.</em>
+                More artists <em>to explore.</em>
               </h2>
             </div>
             <Link href="/shop/explore-artists" className={styles.navBack}>

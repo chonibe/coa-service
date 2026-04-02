@@ -8,7 +8,7 @@ import { ExploreArtistsClient } from './components/ExploreArtistsClient'
 
 const TITLE = 'Explore the artists | Street Collector'
 const DESCRIPTION =
-  'Browse independent street artists behind Street Collector prints. Find a creator you love, open their profile, and build your lamp collection.'
+  'Meet the independent artists behind Street Collector editions. Open a profile for story and works, then build your lamp with pieces you choose.'
 
 const siteUrl =
   process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.thestreetcollector.com'

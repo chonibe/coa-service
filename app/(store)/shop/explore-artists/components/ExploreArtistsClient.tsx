@@ -191,8 +191,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               <br />a <em>street.</em>
             </h1>
             <p className={exploreStyles.heroDesc}>
-              100+ independent artists from 40+ countries. Every artwork in our collection began on a wall, in
-              an alley, in a city that didn&apos;t ask permission. This is where you meet them.
+              {artists.length}+ independent artists across 40+ countries. Each name here ties to real street or
+              studio practice—not a stock library. Open a profile for the story and every edition we carry.
             </p>
             <div className={exploreStyles.heroStats}>
               <div className={exploreStyles.stat}>
@@ -236,13 +236,13 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               in cities that don&apos;t ask permission.”
             </p>
             <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyBody)} style={{ ['--stagger' as string]: 2 }}>
-              Every artist in our collection is independently sourced.
+              Every artist in this directory is independently sourced.
               <br />
-              Every edition is exclusive to Street Collector.
+              Editions you see here are the runs we carry—built with the artist, not repackaged stock.
               <br />
-              When you buy a print, <strong>30% goes directly to the artist.</strong>
+              When you buy a print, <strong>30% goes to the artist.</strong>
               <br />
-              No middlemen. No galleries. No gatekeepers.
+              Fewer hands in the middle. More of the price reaches the person who made the work.
             </p>
           </div>
         </section>
@@ -267,7 +267,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             className={cn(exploreStyles.filterBtn, filter === 'withBio' && exploreStyles.filterBtnActive)}
             onClick={() => setFilter('withBio')}
           >
-            With Bio <span className="sr-only">({withBioCount})</span>
+            With a story <span className="sr-only">({withBioCount})</span>
           </button>
         </div>
 
@@ -302,18 +302,18 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 <div className={exploreStyles.featuredMeta}>{spotlightMeta || 'Street Collector · Limited editions'}</div>
                 <h3 className={exploreStyles.featuredName}>{spotlight.name}</h3>
                 <p className={exploreStyles.featuredHook}>
-                  “Start here. Read the bio. Then follow the thread into the rest of the collection.”
+                  Full profile: long-form story, history when we have it, and every edition in the shop—in one place.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 <blockquote className={exploreStyles.featuredPullquote}>
-                  “When you collect, you fund the person behind the wall.”
+                  “Collecting here sends meaningful revenue to the person behind the wall—not just a SKU.”
                 </blockquote>
                 <button
                   type="button"
                   className={exploreStyles.btnFeatured}
                   onClick={() => setLightboxSlug(spotlight.slug)}
                 >
-                  View Full Profile
+                  Open full profile
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -333,12 +333,16 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 behind the prints.
               </h2>
             </div>
-            <p className={exploreStyles.artistsHeaderNote}>Each card opens the artist profile. Click any artist to go deeper.</p>
+            <p className={exploreStyles.artistsHeaderNote}>
+              Tap a card for a quick preview, or open the full profile for story, press, and works.
+            </p>
           </div>
 
           <div className={exploreStyles.artistsGrid} id="artists-grid">
             {filtered.map((artist, idx) => {
-              const hook = artist.bio ? `“${shortBio(artist.bio, 72)}”` : '“Click to explore the full profile.”'
+              const hook = artist.bio
+                ? `“${shortBio(artist.bio, 72)}”`
+                : 'Open the profile for their story and editions.'
               return (
                 <article
                   key={artist.slug}
@@ -546,8 +550,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   ★★★★★
                 </div>
                 <p className={exploreStyles.voiceText}>
-                  “I bought the print because the story wrecked me. The art is incredible too — but it was the
-                  words that got me.”
+                  “I bought the print because the story wrecked me. The image earned its wall—the story is what
+                  convinced me.”
                 </p>
               </div>
               <div>
@@ -568,7 +572,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             Now <em>collect their work.</em>
           </h2>
           <p className={exploreStyles.finalSub}>
-            Every piece is limited. Every edition has a number. The ones that sell out don&apos;t come back.
+            Runs are finite. Each edition is numbered. When a run sells out here, it doesn&apos;t return.
           </p>
           <div className={exploreStyles.finalBtns}>
             <Link href={experienceUrl} className={landingStyles.btnPrimary} style={{ marginBottom: 0 }}>
@@ -621,7 +625,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
               <div className={exploreStyles.lbActions}>
                 <Link href={`/shop/artists/${lightboxArtist.slug}`} className={exploreStyles.lbCta}>
-                  View full profile
+                  Open full profile
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -632,7 +636,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               </div>
 
               <div className={exploreStyles.lbArtworks}>
-                <div className={exploreStyles.lbArtworksTitle}>Works on Street Collector</div>
+                <div className={exploreStyles.lbArtworksTitle}>Editions on Street Collector</div>
                 {lightboxProductsLoading ? (
                   <p className={exploreStyles.lbArtworksHint} aria-live="polite">
                     Loading editions…
@@ -640,11 +644,13 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 ) : null}
                 {lightboxProductsError ? (
                   <p className={exploreStyles.lbArtworksHint} role="alert">
-                    Could not load artworks. Try the full profile link.
+                    We couldn&apos;t load editions in this preview. Use Open full profile for the complete list.
                   </p>
                 ) : null}
                 {!lightboxProductsLoading && !lightboxProductsError && lightboxProducts.length === 0 ? (
-                  <p className={exploreStyles.lbArtworksHint}>No storefront editions matched this artist.</p>
+                  <p className={exploreStyles.lbArtworksHint}>
+                    No shop editions are linked to this artist in preview yet—the full profile may list more.
+                  </p>
                 ) : null}
                 {lightboxProducts.length > 0 ? (
                   <ul className={exploreStyles.lbArtworksGrid}>

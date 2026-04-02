@@ -12,9 +12,11 @@
 | Profile fetch & merge | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts), [`lib/shop/artist-research-merge.ts`](../../../lib/shop/artist-research-merge.ts) |
 | Explore / list cards | [`lib/shop/artists-list.ts`](../../../lib/shop/artists-list.ts) (short bio where shown) |
 
+**Shop UI copy (empty states, headings, CTAs—not artist-supplied bios):** [`ArtistProfilePageClient.tsx`](../../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx), [`ExploreArtistsClient.tsx`](../../../app/(store)/shop/explore-artists/components/ExploreArtistsClient.tsx), metadata in [`explore-artists/page.tsx`](../../../app/(store)/shop/explore-artists/page.tsx). Align edits with §1–§3 when you change on-page strings.
+
 **Testing / QA:** No automated copy tests. Use the checklist in **§7** for self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
 
-**Version:** 1.0.0 · **Last updated:** 2026-04-21
+**Version:** 1.1.0 · **Last updated:** 2026-04-21
 
 ---
 
@@ -168,4 +170,5 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.0 | 2026-04-21 | Linked shop UI files where fixed copy (empty states, explore) lives. |
 | 1.0.0 | 2026-04-21 | Initial playbook: conversion frame + agent checklist; links to brief & spec. |
