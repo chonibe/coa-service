@@ -1,4 +1,9 @@
 import { getCollectionInstagram } from '@/lib/shopify/artist-image'
+import {
+  mergeResearchBio,
+  mergeResearchIntoProfile,
+  researchInstagramHandle,
+} from '@/lib/shop/artist-research-merge'
 import { getCollection, type ShopifyCollection, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 
 export type ProcessGalleryItem = { url: string; label?: string }
@@ -114,11 +119,18 @@ export async function buildArtistProfileResponse(input: {
     }
   }
 
-  const profile = artistProfileRichFromCollection(col)
+  let profile = artistProfileRichFromCollection(col)
+  profile = mergeResearchIntoProfile(profile, input.slug)
   const stats = computeArtistProductStats(input.products)
   const colInsta = col?.metafield?.value?.trim()
 
   let ig = mergeInstagramHandle(input.vendorInstagramHandle, colInsta)
+  if (!ig.handle) {
+    const fromResearch = researchInstagramHandle(input.slug)
+    if (fromResearch) {
+      ig = mergeInstagramHandle(fromResearch, undefined)
+    }
+  }
   if (!ig.handle) {
     const fallback = await getCollectionInstagram(input.slug)
     if (fallback) {
@@ -126,10 +138,12 @@ export async function buildArtistProfileResponse(input: {
     }
   }
 
+  const bio = mergeResearchBio(input.slug, input.bio)
+
   return {
     name: input.name,
     slug: input.slug,
-    bio: input.bio,
+    bio,
     image: input.image,
     instagram: ig.handle,
     instagramUrl: ig.url,

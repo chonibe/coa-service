@@ -45,10 +45,14 @@ function seasonFromTags(tags: string[]): string | undefined {
 
 function bioParagraphs(bio: string | undefined): string[] {
   if (!bio?.trim()) return []
-  const plain = bio.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-  return plain.split(/\n\n+/).length > 1
-    ? plain.split(/\n\n+/).map((p) => p.trim()).filter(Boolean)
-    : plain.split(/(?<=[.!?])\s+/).reduce((acc: string[], part) => {
+  const noTags = bio.replace(/<[^>]*>/g, ' ')
+  const blocks = noTags
+    .split(/\n\n+/)
+    .map((b) => b.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+  if (blocks.length > 1) return blocks
+  const plain = noTags.replace(/\s+/g, ' ').trim()
+  return plain.split(/(?<=[.!?])\s+/).reduce((acc: string[], part) => {
         const cur = acc.length ? acc[acc.length - 1] + ' ' + part : part
         if (cur.length > 220 && acc.length) {
           acc.push(part)
