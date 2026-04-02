@@ -273,8 +273,8 @@ Resolved **Follow** link: `https://www.instagram.com/{handle}/`.
 
 | Env | Purpose |
 |-----|--------|
-| `INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` | Instagram **user** id of *your* connected professional account (used as the API “caller”). |
-| `INSTAGRAM_ACCESS_TOKEN` | Long-lived user access token with Business Discovery access. |
+| `INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` **or** `INSTAGRAM_BUSINESS_ID` | Instagram **user** id of *your* connected professional account (API “caller”). Same value is often already set as `INSTAGRAM_BUSINESS_ID` on Vercel. |
+| `INSTAGRAM_ACCESS_TOKEN` **or** `INSTAGRAM_MANUAL_ACCESS_TOKEN` | Long-lived user access token with Business Discovery access. |
 
 Images are served via `/api/proxy-image` for `*.cdninstagram.com` / `*.fbcdn.net` so the browser loads them from your domain.
 

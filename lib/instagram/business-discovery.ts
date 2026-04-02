@@ -40,19 +40,35 @@ function mediaToShowcaseItem(m: GraphMediaNode): InstagramShowcaseItem | null {
   return { url, kind, link }
 }
 
+function discoveryIgUserId(): string | undefined {
+  return (
+    process.env.INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID?.trim() ||
+    process.env.INSTAGRAM_BUSINESS_ID?.trim() ||
+    undefined
+  )
+}
+
+function discoveryAccessToken(): string | undefined {
+  return (
+    process.env.INSTAGRAM_ACCESS_TOKEN?.trim() ||
+    process.env.INSTAGRAM_MANUAL_ACCESS_TOKEN?.trim() ||
+    undefined
+  )
+}
+
 /**
  * Fetches recent public media for a **professional** (Business/Creator) Instagram account
  * via [Business Discovery](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery).
  *
- * Requires:
- * - `INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` — Instagram user id of **your** connected professional account (the token owner).
- * - `INSTAGRAM_ACCESS_TOKEN` — Long-lived user access token with permissions for Business Discovery (see Meta docs).
+ * Env (first match wins per line — aligns with existing Vercel names):
+ * - **Caller IG user id:** `INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` or `INSTAGRAM_BUSINESS_ID`
+ * - **Token:** `INSTAGRAM_ACCESS_TOKEN` or `INSTAGRAM_MANUAL_ACCESS_TOKEN`
  *
  * Does not work for personal accounts or without Meta app setup. Returns [] if env is missing or the API errors.
  */
 export async function fetchInstagramBusinessDiscoveryMedia(targetUsername: string, limit = 12): Promise<InstagramShowcaseItem[]> {
-  const igUserId = process.env.INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID?.trim()
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN?.trim()
+  const igUserId = discoveryIgUserId()
+  const token = discoveryAccessToken()
   const user = sanitizeIgUsername(targetUsername)
   if (!igUserId || !token || !user) return []
 
