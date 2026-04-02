@@ -6,12 +6,15 @@
 
 **After you’re done:** Hand the filled worksheet to whoever enters content in the store. They map fields using the separate technical doc [`artist-profile-content-spec.md`](./artist-profile-content-spec.md).
 
-**Version:** 1.0.0 · **Last updated:** 2026-04-02
+**Copywriting standard (bios, hooks, quotes, list blurbs):** [`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md) — use this for voice, conversion framing, banned phrases, and **AI agent** instructions. This brief stays the practical worksheet; the playbook is the canonical voice + QA gate.
+
+**Version:** 1.1.0 · **Last updated:** 2026-04-21
 
 ---
 
 ## Voice & quality
 
+- **Follow the playbook** — [`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md) has the full rules, examples, and mandatory agent checklist.
 - **Human and specific.** Prefer concrete places, years, scenes, and quotes over adjectives like “passionate,” “unique,” or “world-renowned.”
 - **Facts over hype.** If you’re not sure, flag it—don’t invent exhibitions, quotes, or charity claims.
 - **Sources.** Plan on at least: artist interview (or written Q&A), CV or resume, their own site or gallery bio, reputable press, and their Instagram. Use Wikipedia only as a lead; verify anything you take from it.
@@ -174,3 +177,12 @@ Rename or duplicate this section into Google Docs / Notion / a new `.md` file wh
 ## Handoff
 
 When the worksheet is complete and signed off, send it to **digital / Shopify ops** with the artist name and slug. They will enter it using the field mapping in [`artist-profile-content-spec.md`](./artist-profile-content-spec.md).
+
+---
+
+## Changelog
+
+| Version | Date | Notes |
+|---------|------|--------|
+| 1.1.0 | 2026-04-21 | Linked canonical copywriting playbook + agent instructions. |
+| 1.0.0 | 2026-04-02 | Initial writer brief. |

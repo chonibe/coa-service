@@ -1,6 +1,6 @@
 # Artist profile — content map & Shopify metafields
 
-**Purpose:** Map approved artist copy to **Shopify collection metafields**, Supabase, and products. **Content creators:** use the writer-only brief instead—[`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (checklist + worksheet, no engineering detail).
+**Purpose:** Map approved artist copy to **Shopify collection metafields**, Supabase, and products. **Content creators:** use the writer-only brief—[`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (checklist + worksheet, no engineering detail). **Voice, conversion framing, and AI-agent rules:** [`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md).
 
 **Implementation (engineering):**
 
@@ -13,13 +13,13 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.3.0 · **Last updated:** 2026-04-02
+**Version:** 1.4.0 · **Last updated:** 2026-04-21
 
 ---
 
 ## Research: what content to gather for each artist
 
-This is the **editorial** checklist. For every artist, research and produce the items below. Quality bar: facts verified where possible, voice aligned with Street Collector (human, specific, not generic adjectives).
+This is the **editorial** checklist. For every artist, research and produce the items below. Quality bar: facts verified where possible, voice aligned with Street Collector—see **[`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md)** for full voice rules, examples, and the mandatory **AI agent** checklist.
 
 **Deepening history (exhibitions, press, CV):** start from the artist’s **About / Bio / CV / Press** pages when they exist. See **[`artist-research-about-pages.md`](./artist-research-about-pages.md)** for source order, checklists, and how those facts map to [`artist-research-sheet.csv`](./artist-research-sheet.csv) columns (**About Page URL (primary)**, **Additional History & CV (text)**, **Exhibitions**, **Press**).
 

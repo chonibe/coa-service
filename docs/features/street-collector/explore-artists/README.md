@@ -19,6 +19,7 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 
 ## Data sources
 
+- **Card bios & profile copy (voice + AI rules):** [`artist-profile-copywriting-playbook.md`](../artist-profile-copywriting-playbook.md) — canonical standard for hooks, long bios, and short list blurbs.
 - **Catalog / images / counts**: `getShopArtistsList()` (Shopify products + Supabase vendors + vendor meta), same payload as `GET /api/shop/artists`.
 - **Featured order + city line on cards**: `streetCollectorContent.featuredArtists.collections` (handles + optional `location`). Not parsed from markdown at runtime.
 - **Long-form enriched export (reference)**: [`docs/features/street-collector/artists.md`](../artists.md) — keep in sync with seed + export scripts when validating bios and metadata.
