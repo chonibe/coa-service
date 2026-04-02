@@ -573,6 +573,84 @@ INTERNAL_SENTENCE_RES: tuple[re.Pattern[str], ...] = tuple(
         r"^.{0,200}\bblog posts identify\b",
         r"^The on-site CV enumerates\b",
         r"^.{0,120}\bTheir (?:official )?CV (?:lists|enumerates|counts)\b",
+        # Domain-led “site says” sentences (facts belong in narrative, not URLs as subject).
+        r"^[a-z0-9][a-z0-9.-]*\.(?:com|co\.uk|nl|org|io|net|fr|de|art|studio|blog)(?:/[\w./@#%-]*)?\s+"
+        r"(?:states?|says?|presents?|uses?|lists?|notes?|summarizes?|cites?|traces?)\b",
+        r"^Beyond magazine and Behance mention\b",
+        r"VisionTrack representation is referenced\b",
+        r"^Representation spans\b.*\bper the info page\b",
+        r"good for location-specific storytelling",
+        r"note content sensitivity for family marketing",
+        r"verify each credit on Japanese-language press",
+        r"^The site lists\b",
+        r"^Client grids list\b",
+        r"^Product copy on partner shops describes\b",
+        r"^Web research \(verify\):",
+    )
+)
+
+# Strip press/CV recap tails from hero hooks (details belong in Press / site lists).
+HERO_RESEARCH_TAIL_RES: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(p, re.I)
+    for p in (
+        r"\s*;\s*Colossal\s*\(\d{4}\)[^;]*$",
+        r"\s*;\s*Behance document[^;]*$",
+        r"\s*;\s*Behance positions[^;]*$",
+        r"\s*;\s*Moscow press covered[^;]*$",
+        r"\s*;\s*Coca-Cola, McLaren F1, YouTube in later profiles\.?$",
+        r"\s*;\s*Haaretz\s*\(\d{4}\) reports[^;]*$",
+        r"\s*;\s*Murales Buenos Aires\s*\(\d{4}\)[^;]*$",
+        r"\s*;\s*VenUS Urban Art lists[^;]*$",
+        r"\s*;\s*Varsi Lab bio cites[^;]*$",
+        r"\s*;\s*Book a Street Artist cites[^;]*$",
+        r"\s*;\s*Wikipedia and Global Muralism cite[^;]*$",
+        r"\s*;\s*Dutch Wikipedia cites[^;]*$",
+        r"\s*;\s*Dallas Observer detailed[^;]*$",
+        r"\s*;\s*Marché des Créateurs bio cites[^;]*$",
+        r"\s*;\s*True Grit promos show[^;]*$",
+        r"\s*;\s*Street Art Cities lists[^;]*$",
+        r"\s*;\s*LinkedIn cites[^;]*$",
+        r"\s*;\s*Dror Hadadi blog documents[^;]*$",
+        r"\s*;\s*UrbanPresents traces[^;]*$",
+        r"\s*;\s*Creapills and A Day Magazine covered[^;]*$",
+        r"\s*;\s*People of Print and GoodMood Prints spotlights\.?$",
+        r"\s*;\s*clients listed on\s+\S+\s+include[^;]*$",
+        r"\s*;\s*yonil\.com lists[^;]*$",
+        r"\s*;\s*erezoo\.com cites[^;]*$",
+        r"\s*;\s*site lists Google[^;]*$",
+        r"\s*;\s*press logos include Adobe[^;]*$",
+        r"\s*;\s*Lisbon street-art blog and Liège-area profiles describe[^;]*$",
+        r"\s*;\s*Timeout Asia\s*\(\d{4}\) interview[^;]*$",
+        r"\s*;\s*mameko-maeda\.com states[^;]*$",
+        r"\s*;\s*Medium\s*\(\d{4}\) profile describes[^;]*$",
+        r"\s*;\s*frederiquematti\.com lists[^;]*$",
+        r"\s*;\s*matthewgagnonart\.com cites[^;]*$",
+        r"\s*;\s*riklee\.net/about lists[^;]*$",
+        r"\s*;\s*woottoart\.com About cites[^;]*$",
+        r"\s*;\s*yippiehey\.com/about names[^;]*$",
+        r"\s*;\s*keyatama\.com/bio cites[^;]*$",
+        r"\s*;\s*animalitoland\.com bio cites[^;]*$",
+        r"\s*;\s*Handsome Frank bio[^;]*$",
+        r"\s*;\s*STRAAT Museum collection text[^;]*$",
+        r"\s*;\s*Collateral\s*\(EN\) profiles[^;]*$",
+        r"\s*;\s*World Illustration Awards lists[^;]*$",
+        r"\s*;\s*Northwest Walls 2024 artist page[^;]*$",
+        r"\s*;\s*StickerApp interview details[^;]*$",
+        r"\s*;\s*Linktree aggregates shop links[^;]*$",
+        r"\s*;\s*limited verified press in search pass\.?$",
+        r"\s*;\s*sammesnow\.com cites[^;]*$",
+        r"\s*;\s*sanchosancho\.com traces[^;]*$",
+        r"\s*;\s*hueandeye\.org notes[^;]*$",
+        r"\s*;\s*alinmor\.com lists[^;]*$",
+        r"\s*;\s*ezrabaderman\.com states[^;]*$",
+        r"\s*;\s*henmacabi\.com hosts[^;]*$",
+        r"\s*;\s*Artinrug and his imprint cite[^;]*$",
+        r"\s*;\s*awards listed on notimefortv\.biz\.?$",
+        r"\.\s*Official CV lists.*$",
+        r"\.\s*CV spans.*$",
+        r"\s+per\s+elfassiart\.com",
+        r"\s+per It.s Nice That\s*\(\d{4}\)\s*;.*$",
+        r"press profiles describe[^;]*;\s*",
     )
 )
 
@@ -685,6 +763,13 @@ def refine_hero(hero: str, slug: str) -> str:
         h,
         flags=re.I,
     ).strip()
+    for _ in range(12):
+        prev = h
+        for rx in HERO_RESEARCH_TAIL_RES:
+            h = rx.sub("", h).strip()
+        if h == prev:
+            break
+    h = re.sub(r"\s{2,}", " ", h).strip().rstrip(";").strip()
     return h
 
 
