@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { getInstagramEmbedSrc } from '@/lib/shop/instagram-embed'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
 import { useCart } from '@/lib/shop/CartContext'
@@ -122,7 +123,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   }, [artist.products, workFilter])
 
   const exhibitionsByYear = React.useMemo(() => {
-    const rows = profile.exhibitions ?? []
+    const rows = (profile.exhibitions ?? []).filter((r) => Number.isFinite(r.year))
     const map = new Map<number, typeof rows>()
     for (const row of rows) {
       const y = row.year
@@ -296,13 +297,28 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 <div className={styles.processLabel}>Process</div>
                 {profile.processGallery && profile.processGallery.length > 0 ? (
                   <div className={styles.processGrid}>
-                    {profile.processGallery.slice(0, 4).map((item, i) => (
-                      <div key={i} className={styles.processImg}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={getProxiedImageUrl(item.url)} alt={item.label || `Process ${i + 1}`} loading="lazy" />
-                        {item.label ? <div className={styles.processImgLabel}>{item.label}</div> : null}
-                      </div>
-                    ))}
+                    {profile.processGallery.slice(0, 4).map((item, i) => {
+                      const igEmbed = getInstagramEmbedSrc(item.url)
+                      return (
+                        <div key={`${item.url}-${i}`} className={styles.processImg}>
+                          {igEmbed ? (
+                            <div className={styles.processIgFrame}>
+                              <iframe
+                                src={igEmbed}
+                                title={item.label || `Instagram process ${i + 1}`}
+                                loading="lazy"
+                                allow="encrypted-media; picture-in-picture"
+                                referrerPolicy="strict-origin-when-cross-origin"
+                              />
+                            </div>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getProxiedImageUrl(item.url)} alt={item.label || `Process ${i + 1}`} loading="lazy" />
+                          )}
+                          {item.label ? <div className={styles.processImgLabel}>{item.label}</div> : null}
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className={styles.storyBody}>
@@ -428,7 +444,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
 
         <div className={cn(styles.tabPanel, tab === 'exhibitions' && styles.tabPanelActive)} role="tabpanel" hidden={tab !== 'exhibitions'}>
           <div className={styles.exhibitionsSection}>
-            <div className={styles.exhibitionsInner}>
+            <div className={cn(styles.exhibitionsInner, styles.exhibitionsTimeline)}>
               <div className={styles.storyEyebrow}>Exhibition History</div>
               <h2 className={styles.storyH2}>
                 Shows, walls, <em>and features.</em>
@@ -440,11 +456,11 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                     {rows.map((row, i) => (
                       <div key={i} className={styles.exRow}>
                         <div className={styles.exType}>{row.type}</div>
-                        <div>
+                        <div className={styles.exInfo}>
                           <div className={styles.exTitle}>{row.title}</div>
-                          <div className={styles.exVenue}>{row.venue}</div>
+                          {row.venue?.trim() ? <div className={styles.exVenue}>{row.venue}</div> : null}
                         </div>
-                        <div className={styles.exCity}>{row.city}</div>
+                        <div className={styles.exCity}>{row.city?.trim() || ''}</div>
                       </div>
                     ))}
                   </div>
@@ -502,6 +518,32 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               <div className={styles.instagramGrid}>
                 {profile.instagramShowcase.map((cell, i) => {
                   const tileHref = (cell.link?.trim() || artist.instagramUrl || '').trim() || '#'
+                  const igEmbed = getInstagramEmbedSrc(cell.url)
+                  if (igEmbed) {
+                    return (
+                      <div key={`${cell.url}-${i}`} className={styles.igCell}>
+                        <div className={styles.igEmbedFrame}>
+                          <iframe
+                            src={igEmbed}
+                            title={cell.kind ? `${cell.kind} on Instagram` : `Instagram ${i + 1}`}
+                            loading="lazy"
+                            allow="encrypted-media; picture-in-picture"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                          />
+                        </div>
+                        <a
+                          href={tileHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.igCellTap}
+                          aria-label={cell.kind ? `Open ${cell.kind} on Instagram` : 'Open on Instagram'}
+                        />
+                        <div className={styles.igOverlay} aria-hidden>
+                          <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
                     <a
                       key={`${cell.url}-${i}`}

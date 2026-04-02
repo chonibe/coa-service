@@ -450,6 +450,25 @@
   position: relative;
 }
 
+.processIgFrame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--card2);
+}
+
+.processIgFrame iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 520px;
+  border: 0;
+  transform: translate(-50%, -50%) scale(0.48);
+  transform-origin: center center;
+  pointer-events: none;
+}
+
 .processImg img {
   width: 100%;
   height: 100%;
@@ -718,6 +737,34 @@
   padding: 0 72px 48px;
 }
 
+/* Vertical rail + year labels (demo-style “timeline” hierarchy) */
+.exhibitionsTimeline {
+  position: relative;
+  padding-left: 28px;
+}
+
+.exhibitionsTimeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 186, 148, 0.28) 12%,
+    rgba(255, 186, 148, 0.22) 50%,
+    rgba(255, 186, 148, 0.12) 88%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.exInfo {
+  min-width: 0;
+}
+
 .yearGroup {
   margin-bottom: 48px;
 }
@@ -943,6 +990,32 @@
   position: relative;
 }
 
+.igEmbedFrame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--card2);
+  pointer-events: none;
+}
+
+.igEmbedFrame iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 520px;
+  border: 0;
+  transform: translate(-50%, -50%) scale(0.42);
+  transform-origin: center center;
+}
+
+/* Full-cell tap target over embed (iframe is non-interactive) */
+.igCellTap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
 .igCell img {
   width: 100%;
   height: 100%;
@@ -962,6 +1035,8 @@
 .igOverlay {
   position: absolute;
   inset: 0;
+  z-index: 3;
+  pointer-events: none;
   background: rgba(23, 21, 21, 0);
   transition:
     background 0.3s,

@@ -5,6 +5,7 @@ import type {
   PressCard,
   ProcessGalleryItem,
 } from '@/lib/shop/artist-profile-api'
+import { isInstagramPostOrReelUrl } from '@/lib/shop/instagram-embed'
 import researchData from '@/content/artist-research-data.json'
 
 export type RawArtistResearchRow = Record<string, string>
@@ -29,19 +30,55 @@ export function isDirectImageUrl(url: string): boolean {
   )
 }
 
+const EXH_TYPE_WORD = /^(solo|group|mural|residency|commission|duo|two-person)$/i
+
+function capitalizeWord(w: string): string {
+  if (!w) return w
+  return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+}
+
+function normalizeExhibitionType(raw: string): string {
+  const t = raw.toLowerCase().replace(/-/g, ' ').trim()
+  if (t === 'two person' || t === 'duo') return 'Group'
+  return capitalizeWord(t)
+}
+
+/** Turn CSV / research lines into demo-style type, title, venue, city when commas allow. */
+function parseExhibitionRest(rest: string): Pick<ExhibitionRow, 'type' | 'title' | 'venue' | 'city'> {
+  const full = rest.trim()
+  const noParen = full.replace(/\s*\([^)]*\)\s*$/g, '').trim()
+  const commas = noParen.split(',').map((x) => x.trim()).filter(Boolean)
+
+  if (commas.length >= 4 && EXH_TYPE_WORD.test(commas[0])) {
+    const type = normalizeExhibitionType(commas[0])
+    const title = commas[1]
+    if (commas.length === 4) {
+      return { type, title, venue: commas[2], city: commas[3] }
+    }
+    const city = commas.slice(-2).join(', ')
+    const venue = commas.slice(2, -2).join(', ')
+    return { type, title, venue, city }
+  }
+
+  if (commas.length === 3) {
+    return { type: 'Exhibition', title: commas[0], venue: commas[1], city: commas[2] }
+  }
+  if (commas.length === 2) {
+    return { type: 'Exhibition', title: commas[0], venue: '', city: commas[1] }
+  }
+
+  return { type: 'Exhibition', title: noParen, venue: '', city: '' }
+}
+
 function parseExhibitions(text: string): ExhibitionRow[] {
   const rows: ExhibitionRow[] = []
   for (const line of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
     const m = line.match(/^(\d{4})\s*[—–-]\s*(.+)$/)
-    if (m) {
-      rows.push({
-        year: Number.parseInt(m[1], 10),
-        type: 'Exhibition',
-        title: m[2].trim(),
-        venue: '',
-        city: '',
-      })
-    }
+    if (!m) continue
+    const year = Number.parseInt(m[1], 10)
+    if (!Number.isFinite(year)) continue
+    const parsed = parseExhibitionRest(m[2])
+    rows.push({ year, ...parsed })
   }
   return rows
 }
@@ -81,7 +118,8 @@ function processGalleryFromRaw(raw: RawArtistResearchRow): ProcessGalleryItem[] 
   ]
   for (const [url, label] of pairs) {
     const u = url?.trim()
-    if (u && isDirectImageUrl(u)) {
+    if (!u) continue
+    if (isDirectImageUrl(u) || isInstagramPostOrReelUrl(u)) {
       items.push({ url: u, label: label?.trim() || undefined })
     }
   }
@@ -95,14 +133,95 @@ function instagramShowcaseFromRaw(raw: RawArtistResearchRow): InstagramShowcaseI
   for (const line of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
     if (isDirectImageUrl(line)) {
       items.push({ url: line, kind: 'Post' })
+    } else if (isInstagramPostOrReelUrl(line)) {
+      const kind = /\/reel\//i.test(line) ? 'Reel' : 'Post'
+      items.push({ url: line, kind, link: line })
     }
   }
   return items.slice(0, 12)
 }
 
+function exhibitionKey(r: ExhibitionRow): string {
+  return `${r.year}:${(r.title || '').trim().toLowerCase().slice(0, 160)}`
+}
+
+function mergeExhibitionRows(shopify: ExhibitionRow[] | undefined, research: ExhibitionRow[]): ExhibitionRow[] | undefined {
+  const fromShop = (shopify ?? []).filter(
+    (r) => r && Number.isFinite(r.year) && `${r.title || ''}${r.venue || ''}${r.city || ''}`.trim().length > 0
+  )
+  const keys = new Set(fromShop.map(exhibitionKey))
+  const out = [...fromShop]
+  for (const r of research) {
+    if (!Number.isFinite(r.year)) continue
+    const k = exhibitionKey(r)
+    if (!keys.has(k)) {
+      out.push(r)
+      keys.add(k)
+    }
+  }
+  return out.length > 0 ? out : undefined
+}
+
+function pressKey(c: PressCard): string {
+  return `${(c.outlet || '').trim().toLowerCase()}:${(c.quote || '').trim().toLowerCase().slice(0, 120)}`
+}
+
+function mergePressCards(shopify: PressCard[] | undefined, research: PressCard[]): PressCard[] | undefined {
+  const fromShop = (shopify ?? []).filter((c) => c && (c.outlet?.trim() || c.quote?.trim()))
+  const keys = new Set(fromShop.map(pressKey))
+  const out = [...fromShop]
+  for (const c of research) {
+    const k = pressKey(c)
+    if (!keys.has(k)) {
+      out.push(c)
+      keys.add(k)
+    }
+  }
+  return out.length > 0 ? out : undefined
+}
+
+function galleryUrlKey(url: string): string {
+  return url.trim().toLowerCase()
+}
+
+function mergeProcessGalleries(
+  shopify: ProcessGalleryItem[] | undefined,
+  research: ProcessGalleryItem[]
+): ProcessGalleryItem[] | undefined {
+  const fromShop = (shopify ?? []).filter((x) => x?.url?.trim())
+  const keys = new Set(fromShop.map((x) => galleryUrlKey(x.url)))
+  const out = [...fromShop]
+  for (const r of research) {
+    const k = galleryUrlKey(r.url)
+    if (!keys.has(k)) {
+      out.push(r)
+      keys.add(k)
+    }
+  }
+  return out.length > 0 ? out : undefined
+}
+
+function mergeInstagramShowcaseItems(
+  shopify: InstagramShowcaseItem[] | undefined,
+  research: InstagramShowcaseItem[]
+): InstagramShowcaseItem[] | undefined {
+  const fromShop = (shopify ?? []).filter((x) => x?.url?.trim())
+  const keys = new Set(fromShop.map((x) => galleryUrlKey(x.url)))
+  const out = [...fromShop]
+  for (const r of research) {
+    const k = galleryUrlKey(r.url)
+    if (!keys.has(k)) {
+      out.push(r)
+      keys.add(k)
+    }
+  }
+  return out.length > 0 ? out.slice(0, 12) : undefined
+}
+
 /**
- * Fills empty Shopify metafield-backed profile fields from CSV research.
- * Arrays (process, exhibitions, press, showcase) only apply when Shopify sent none.
+ * Fills Shopify metafield-backed profile fields from CSV research.
+ * Scalar fields still prefer Shopify when set. List fields merge research in with deduping so
+ * partial Shopify data does not hide research (exhibitions, press, process, Instagram showcase).
  */
 export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: string): ArtistProfileRich {
   const raw = lookupArtistResearch(slug)
@@ -118,21 +237,10 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
     alias: shopify.alias?.trim() || undefined,
     storyHook: shopify.storyHook?.trim() || raw.heroHook?.trim() || undefined,
     pullquote: shopify.pullquote?.trim() || raw.pullQuote?.trim() || undefined,
-    processGallery:
-      shopify.processGallery && shopify.processGallery.length > 0
-        ? shopify.processGallery
-        : processGallery.length > 0
-          ? processGallery
-          : undefined,
-    exhibitions:
-      shopify.exhibitions && shopify.exhibitions.length > 0 ? shopify.exhibitions : exParsed.length > 0 ? exParsed : undefined,
-    press: shopify.press && shopify.press.length > 0 ? shopify.press : pressParsed.length > 0 ? pressParsed : undefined,
-    instagramShowcase:
-      shopify.instagramShowcase && shopify.instagramShowcase.length > 0
-        ? shopify.instagramShowcase
-        : instagramShowcase.length > 0
-          ? instagramShowcase
-          : undefined,
+    processGallery: mergeProcessGalleries(shopify.processGallery, processGallery),
+    exhibitions: mergeExhibitionRows(shopify.exhibitions, exParsed),
+    press: mergePressCards(shopify.press, pressParsed),
+    instagramShowcase: mergeInstagramShowcaseItems(shopify.instagramShowcase, instagramShowcase),
     activeSince: shopify.activeSince?.trim() || raw.activeSince?.trim() || undefined,
     impactCallout: shopify.impactCallout?.trim() || raw.impactCallout?.trim() || undefined,
     exclusiveCallout: shopify.exclusiveCallout?.trim() || raw.exclusiveCallout?.trim() || undefined,
