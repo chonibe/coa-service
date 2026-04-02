@@ -14,9 +14,9 @@
 
 **Shop UI copy (empty states, headings, CTAs—not artist-supplied bios):** [`ArtistProfilePageClient.tsx`](../../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx), [`ExploreArtistsClient.tsx`](../../../app/(store)/shop/explore-artists/components/ExploreArtistsClient.tsx), metadata in [`explore-artists/page.tsx`](../../../app/(store)/shop/explore-artists/page.tsx). Align edits with §1–§3 when you change on-page strings.
 
-**Testing / QA:** No automated copy tests. Use the checklist in **§7** for self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
+**Testing / QA:** Merge behavior (collection description + research body) is covered by [`lib/shop/artist-research-merge.test.ts`](../../../lib/shop/artist-research-merge.test.ts). Use the checklist in **§7** for copy self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
 
-**Version:** 1.4.0 · **Last updated:** 2026-04-02
+**Version:** 1.4.1 · **Last updated:** 2026-04-02
 
 ---
 
@@ -94,6 +94,8 @@ Suggested arc (flex order when facts demand it):
 
 **Formatting:** Plain text; separate paragraphs with a blank line (`\n\n`). No HTML in source fields unless the pipeline explicitly allows it.
 
+**Shopify collection description:** The artist **collection** `description` / `descriptionHtml` in Shopify is a first-class source. When you draft or refine `storyFullText` in research JSON, **read that collection copy** (facts, phrasing, partnership lines) and align or extend it in Street Collector’s editorial voice—avoid contradicting approved storefront wording without an explicit update to the collection. At runtime, [`mergeShopifyCollectionBioWithResearch`](../../../lib/shop/artist-research-merge.ts) **merges** collection text with `storyFullText` (plus `additionalHistoryText` when present): if one block is clearly redundant with the other, the longer curated block wins; if they differ, the profile shows **collection first**, then the research body, separated by a blank paragraph.
+
 ### 3.3 Pull quote
 
 - One line that can sit **large** on the page.
@@ -169,11 +171,12 @@ Minimum source mix when researching (aligns with [`artist-profile-content-creato
 When you **draft, expand, or merge** artist bios or profile fields for Street Collector, follow this order:
 
 1. **Read** this playbook and the worksheet section of [`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (or the template in [`artist-profile-content-spec.md`](./artist-profile-content-spec.md)).  
-2. **Confirm** you have (or the user provided) source notes: interview, CV, official bio, or press links. If missing, produce only **outline + questions**, not invented facts.  
-3. **Write** using §3 field rules, §2 banned list, **§2.1 editorial vs research voice**, and **§2.2 Street Collector as authority** (our words first; outlets mostly in Press).  
+2. **Confirm** you have (or the user provided) source notes: interview, CV, official bio, press links, and **the Shopify artist collection description** when it exists. If missing, produce only **outline + questions**, not invented facts.  
+3. **Write** using §3 field rules (including **§3.2 collection + research merge**), §2 banned list, **§2.1 editorial vs research voice**, and **§2.2 Street Collector as authority** (our words first; outlets mostly in Press).  
 4. **Self-check** before output:  
    - [ ] Hook is 120–180 characters and fails the “name swap” test for uniqueness.  
    - [ ] Story is 3–6 paragraphs, plain text, `\n\n` between paragraphs.  
+   - [ ] Story is consistent with the **Shopify collection description** where one exists (or collection is updated to match—see §3.2).  
    - [ ] Story reads like a magazine feature, not research notes (“profiles identify…”, “search snippets…”).  
    - [ ] Story states facts in Street Collector’s voice; no citation stack—named outlets at most once or twice for credibility, details in Press.  
    - [ ] No banned hype words unless inside a quote.  
@@ -190,6 +193,7 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.4.1 | 2026-04-02 | §3.2: Shopify collection description as source + runtime merge with `storyFullText` (`mergeShopifyCollectionBioWithResearch`). |
 | 1.4.0 | 2026-04-02 | §2.2 authority voice: our words first; outlets sparingly / in Press. |
 | 1.3.0 | 2026-04-02 | §2.1 editorial vs research voice; agent checklist updated. |
 | 1.2.0 | 2026-04-21 | Product truth: Street Lamp vs wall for collectors; wall/street for artist practice. |

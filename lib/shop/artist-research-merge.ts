@@ -247,14 +247,54 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
   }
 }
 
+/** Collapse whitespace and strip HTML-ish noise for deduping collection vs research bios. */
+function normalizeBioForDedup(s: string): string {
+  const noTags = s.replace(/<[^>]*>/g, ' ')
+  return noTags.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+/**
+ * When both Shopify collection description and research body exist, prefer one block if they
+ * duplicate; otherwise stack collection first (storefront voice) then curated research.
+ */
+export function mergeShopifyCollectionBioWithResearch(
+  collectionBio: string | undefined,
+  researchStory: string | undefined,
+  additionalHistory: string | undefined
+): string | undefined {
+  const collection = collectionBio?.trim() || ''
+  const story = researchStory?.trim() || ''
+  const history = additionalHistory?.trim() || ''
+  let researchBlock = ''
+  if (story && history) researchBlock = `${story}\n\n${history}`
+  else researchBlock = story || history
+
+  if (!collection) return researchBlock || undefined
+  if (!researchBlock) return collection || undefined
+
+  const cN = normalizeBioForDedup(collection)
+  const rN = normalizeBioForDedup(researchBlock)
+  // Same words after normalization (e.g. Shopify HTML vs plain JSON): prefer curated research body.
+  if (cN === rN) return researchBlock
+  if (rN.includes(cN)) return researchBlock
+  if (cN.includes(rN)) return collection.length >= researchBlock.length ? collection : researchBlock
+
+  const prefixLen = Math.min(120, cN.length)
+  if (prefixLen >= 40 && cN.slice(0, prefixLen).length > 0) {
+    const prefix = cN.slice(0, prefixLen)
+    if (rN.includes(prefix)) return researchBlock
+  }
+
+  return `${collection}\n\n${researchBlock}`
+}
+
 export function mergeResearchBio(slug: string, existingBio: string | undefined): string | undefined {
-  if (existingBio?.trim()) return existingBio.trim()
   const raw = lookupArtistResearch(slug)
-  if (!raw) return undefined
-  const story = raw.storyFullText?.trim()
-  const history = raw.additionalHistoryText?.trim()
-  if (story && history) return `${story}\n\n${history}`
-  return story || history || undefined
+  return mergeShopifyCollectionBioWithResearch(
+    existingBio,
+    raw?.storyFullText,
+    raw?.additionalHistoryText
+  )
 }
 
 export function researchInstagramHandle(slug: string): string | undefined {

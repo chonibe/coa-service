@@ -7,6 +7,8 @@ Refine Story (Full Text) and Hero Hook in artist research for public shop displa
 - Applies slug-specific canonical story seeds, then runs the same pipeline on every slug.
 - Rewrites research/agent voice into confident editorial copy, then **Street Collector authority voice** (our words; outlets sparingly, details in Press).
 
+**Shopify collection descriptions:** This script does not call Shopify. Human editors (or a separate export) should open each artist collection’s **description** and use it as a source when aligning `storyFullText`—the shop merges collection copy with research in `lib/shop/artist-research-merge.ts` (`mergeShopifyCollectionBioWithResearch`).
+
 Updates:
   - content/artist-research-data.json
   - docs/features/street-collector/artist-research-sheet.csv (Hero Hook + Story columns)
