@@ -342,6 +342,18 @@ export interface ShopifyCollection {
   unlistedMetafield?: { value?: string } | null
   /** Collection metafield custom.product_handles — comma-separated product handles for unlisted products (Storefront omits unlisted from collection.products) */
   productHandlesMetafield?: { value?: string } | null
+  /** Rich artist profile metafields (namespace `custom`) — see docs/features/street-collector/artist-profile-content-spec.md */
+  artistLocationMetafield?: { value?: string } | null
+  artistAliasMetafield?: { value?: string } | null
+  storyHookMetafield?: { value?: string } | null
+  pullquoteMetafield?: { value?: string } | null
+  processGalleryMetafield?: { value?: string } | null
+  exhibitionsMetafield?: { value?: string } | null
+  pressMetafield?: { value?: string } | null
+  instagramShowcaseMetafield?: { value?: string } | null
+  activeSinceMetafield?: { value?: string } | null
+  impactCalloutMetafield?: { value?: string } | null
+  exclusiveCalloutMetafield?: { value?: string } | null
   products: {
     edges: Array<{ node: ShopifyProduct }>
     pageInfo: {
@@ -533,6 +545,27 @@ const PRODUCT_CARD_FRAGMENT = `
       width
       height
     }
+    variants(first: 25) {
+      edges {
+        node {
+          id
+          title
+          availableForSale
+          quantityAvailable
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+    metafields(identifiers: [{namespace: "custom", key: "edition_size"}]) {
+      namespace
+      key
+      value
+    }
+    tags
+    productType
   }
 `
 
@@ -625,6 +658,39 @@ const COLLECTION_FRAGMENT = `
       value
     }
     productHandlesMetafield: metafield(namespace: "custom", key: "product_handles") {
+      value
+    }
+    artistLocationMetafield: metafield(namespace: "custom", key: "artist_location") {
+      value
+    }
+    artistAliasMetafield: metafield(namespace: "custom", key: "artist_alias") {
+      value
+    }
+    storyHookMetafield: metafield(namespace: "custom", key: "story_hook") {
+      value
+    }
+    pullquoteMetafield: metafield(namespace: "custom", key: "pullquote") {
+      value
+    }
+    processGalleryMetafield: metafield(namespace: "custom", key: "process_gallery") {
+      value
+    }
+    exhibitionsMetafield: metafield(namespace: "custom", key: "exhibitions") {
+      value
+    }
+    pressMetafield: metafield(namespace: "custom", key: "press") {
+      value
+    }
+    instagramShowcaseMetafield: metafield(namespace: "custom", key: "instagram_showcase") {
+      value
+    }
+    activeSinceMetafield: metafield(namespace: "custom", key: "active_since") {
+      value
+    }
+    impactCalloutMetafield: metafield(namespace: "custom", key: "impact_callout") {
+      value
+    }
+    exclusiveCalloutMetafield: metafield(namespace: "custom", key: "exclusive_callout") {
       value
     }
   }

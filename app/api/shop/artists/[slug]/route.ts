@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
-import { getCollectionInstagram } from '@/lib/shopify/artist-image'
+import { buildArtistProfileResponse } from '@/lib/shop/artist-profile-api'
 import { getCollection, getCollectionById, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { hasPage, getPage } from '@/content/shopify-content'
 
@@ -167,19 +167,27 @@ export async function GET(
 
     if (collection?.products?.edges?.length) {
       const products = collection.products.edges.map((edge) => edge.node)
-      let instagram = vendorInstagram
-      if (!instagram && pairedCollectionHandle) {
-        instagram = await getCollectionInstagram(pairedCollectionHandle)
-      }
       const bio = vendorBio || (collectionDesc || undefined) || getBioFromShopifyPage(slug)
-      const artist = {
-        name: vendorName || collection.title,
+      const artist = await buildArtistProfileResponse({
         slug,
+        name: vendorName || collection.title,
         bio: bio || undefined,
-        image: collection.image?.url,
-        instagram: instagram || undefined,
+        image: collection.image?.url ?? undefined,
         products,
-      }
+        collection,
+        vendorInstagramHandle: vendorInstagram,
+        collectionHandlesToTry: [
+          ...new Set(
+            [
+              pairedCollectionHandle,
+              slug,
+              slug.replace(/-\d+$/, ''),
+              slugAsShopifyHandle,
+              vendorName ? getVendorCollectionHandle(vendorName) : null,
+            ].filter(Boolean) as string[]
+          ),
+        ],
+      })
       return NextResponse.json(artist)
     }
 
@@ -206,20 +214,22 @@ export async function GET(
       ]
       for (const h of [...new Set(fallbackHandles)].filter(Boolean)) {
         try {
-          const col = await getCollection(h, { first: 1 })
+          const col = await getCollection(h, { first: 50, sortKey: 'CREATED', reverse: true })
           if (col?.title) {
             const name = vendorName || col.title || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
             const products = col.products?.edges?.map((e) => e.node) ?? []
             const colBio = col.description?.trim() || (col.descriptionHtml ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '')
             const bio = vendorBio || colBio || getBioFromShopifyPage(slug)
-            const artist = {
-              name,
+            const artist = await buildArtistProfileResponse({
               slug,
+              name,
               bio: bio || undefined,
-              image: col.image?.url,
-              instagram: vendorInstagram || (await getCollectionInstagram(h)) || undefined,
+              image: col.image?.url ?? undefined,
               products,
-            }
+              collection: col,
+              vendorInstagramHandle: vendorInstagram,
+              collectionHandlesToTry: [...new Set(fallbackHandles)].filter(Boolean) as string[],
+            })
             return NextResponse.json(artist)
           }
         } catch {
@@ -251,20 +261,28 @@ export async function GET(
       }
     }
 
-    let instagram = vendorInstagram
-    if (!instagram) {
-      const handle = vendorName ? getVendorCollectionHandle(vendorName) : slug
-      instagram = await getCollectionInstagram(handle)
-    }
     const bio = vendorBio || collectionDesc || vendorProducts[0]?.description || getBioFromShopifyPage(slug)
-    const artist = {
-      name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
+    const artist = await buildArtistProfileResponse({
       slug,
+      name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
       bio: bio || undefined,
       image: vendorProducts[0]?.featuredImage?.url,
-      instagram: instagram || undefined,
       products: vendorProducts,
-    }
+      collection: null,
+      vendorInstagramHandle: vendorInstagram,
+      collectionHandlesToTry: [
+        ...new Set(
+          [
+            pairedCollectionHandle,
+            slug,
+            slug.replace(/-\d+$/, ''),
+            slugAsShopifyHandle,
+            vendorName ? getVendorCollectionHandle(vendorName) : null,
+            `${slug.replace(/-\d+$/, '')}-one`,
+          ].filter(Boolean) as string[]
+        ),
+      ],
+    })
     return NextResponse.json(artist)
   } catch (error) {
     console.error('[Artist API] Error for slug', slug, ':', error)
