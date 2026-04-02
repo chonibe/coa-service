@@ -29,6 +29,7 @@ import ssl
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -99,6 +100,99 @@ GOOD_HINT = re.compile(
     r"images\.unsplash|behance\.net/project_modules|format=webp|w_\d{3,}|/large/|/original/)",
     re.I,
 )
+
+
+def _current_year() -> int:
+    return datetime.now(timezone.utc).year
+
+
+# Domains that often host older article hero images (still useful, but rank below artist site + IG).
+PRESS_AGGREGATE_HINTS = (
+    "lm-magazine",
+    "hyperallergic",
+    "designboom",
+    "itsnicethat",
+    "creapills",
+    "adaymag",
+    "juxtapoz",
+    "widewalls",
+    "creativeboom",
+    "theaoi.com",
+    "worldillustrationawards",
+    "tagesspiegel",
+    "frieze.com",
+)
+
+
+def is_press_aggregate_host(page_url: str) -> bool:
+    try:
+        h = urlparse(page_url).netloc.lower()
+        if h.startswith("www."):
+            h = h[4:]
+    except Exception:
+        return False
+    return any(s in h for s in PRESS_AGGREGATE_HINTS)
+
+
+def strip_wordpress_dimension_suffix(path: str) -> str:
+    """jerome-masi3-722x1024.jpg -> jerome-masi3.jpg (same artwork, different size)."""
+    return re.sub(r"-\d+x\d+(?=\.[a-z0-9]{2,5}$)", "", path, flags=re.I)
+
+
+def image_dedupe_key(url: str) -> str:
+    """Stable key so WxH variants and query-only diffs collapse to one slot."""
+    try:
+        p = urlparse(url.strip())
+    except Exception:
+        return url.strip().lower()
+    host = (p.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    path = (p.path or "").lower()
+    path = strip_wordpress_dimension_suffix(path)
+    path = re.sub(r"__\d+x\d+", "", path, flags=re.I)
+    return f"{host}{path}"
+
+
+def max_year_in_path(url: str) -> int | None:
+    years: list[int] = []
+    for y in re.findall(r"/(20\d{2})/", url.lower()):
+        yi = int(y)
+        if 1990 <= yi <= _current_year() + 1:
+            years.append(yi)
+    return max(years) if years else None
+
+
+def recency_boost(url: str) -> int:
+    """Prefer /uploads/YYYY/… and path years that look current."""
+    y = max_year_in_path(url)
+    if y is None:
+        return 0
+    cy = _current_year()
+    if y >= cy:
+        return 30
+    if y >= cy - 1:
+        return 26
+    if y >= cy - 2:
+        return 20
+    if y >= cy - 3:
+        return 12
+    if y >= cy - 4:
+        return 4
+    if y <= cy - 6:
+        return -22
+    return -10
+
+
+def dimension_area_hint(url: str) -> int:
+    m = re.search(r"-(\d+)x(\d+)(?=\.[a-z0-9]{2,5}(?:\?|$))", url, re.I)
+    if m:
+        return int(m.group(1)) * int(m.group(2))
+    m2 = re.search(r"[?&]w=(\d+)", url, re.I)
+    if m2:
+        w = int(m2.group(1))
+        return w * w
+    return 0
 
 
 def artist_name_boost(url: str, artist_name: str) -> int:
@@ -296,6 +390,9 @@ def collect_fetch_urls(row: dict[str, str], *, ig_only: bool = False) -> list[st
     about = (row.get("About Page URL (primary)") or "").strip()
     if about:
         push(about)
+    # Instagram before generic press / third-party pages so grid pulls fresher work when HTML allows.
+    if ig:
+        push(ig)
 
     for u in iter_urls(row.get("Sources (Links)") or ""):
         if not host_ok(u):
@@ -303,9 +400,6 @@ def collect_fetch_urls(row: dict[str, str], *, ig_only: bool = False) -> list[st
         push(u)
         if len(ordered) >= 6:
             break
-
-    if ig:
-        push(ig)
 
     return ordered
 
@@ -357,35 +451,53 @@ def process_row(
             time.sleep(0.45)
             continue
 
+        press_penalty = 20 if (not is_ig and is_press_aggregate_host(page_url)) else 0
+
         if is_ig:
             ig_urls.extend(extract_instagram_scontent(body))
             if len(ig_urls) < 8:
                 ig_urls.extend(extract_instagram_fallback_urls(body))
         else:
-            portfolio_pool.extend(extract_candidates(page_url, body))
+            for u, sc, fm in extract_candidates(page_url, body):
+                portfolio_pool.append((u, sc - press_penalty, fm))
 
         time.sleep(0.55)
 
-    # Dedupe portfolio URLs preserving best score (+ name match boost)
-    best: dict[str, int] = {}
-    for u, sc, _fm in portfolio_pool:
-        sc2 = sc + artist_name_boost(u, artist_name)
-        if u not in best or sc2 > best[u]:
-            best[u] = sc2
-    ranked = sorted(best.keys(), key=lambda u: -best[u])
-
-    fill_slots: list[str] = []
-    seen_slot: set[str] = set()
-    for u in ranked:
-        if u not in seen_slot:
-            seen_slot.add(u)
-            fill_slots.append(u)
+    # One row per CDN asset so order_boost matches visible grid order.
+    ig_seen_pre: set[str] = set()
+    ig_ordered: list[str] = []
     for u in ig_urls:
-        if u not in seen_slot:
-            seen_slot.add(u)
-            fill_slots.append(u)
-        if len(fill_slots) >= 8:
-            break
+        ik = image_dedupe_key(u)
+        if ik in ig_seen_pre:
+            continue
+        ig_seen_pre.add(ik)
+        ig_ordered.append(u)
+    ig_urls = ig_ordered
+
+    # Dedupe by image_dedupe_key; keep highest-scoring URL (recency, name, size tie-break).
+    winners: dict[str, tuple[int, str]] = {}
+
+    def consider(u: str, base_score: int) -> None:
+        sc = base_score + artist_name_boost(u, artist_name) + recency_boost(u)
+        k = image_dedupe_key(u)
+        prev = winners.get(k)
+        if prev is None:
+            winners[k] = (sc, u)
+            return
+        ps, pu = prev
+        if sc > ps or (sc == ps and dimension_area_hint(u) > dimension_area_hint(pu)):
+            winners[k] = (sc, u)
+
+    for u, sc, _fm in portfolio_pool:
+        consider(u, sc)
+
+    # Earlier IG hits in HTML are treated as more current than later (best-effort).
+    for idx, u in enumerate(ig_urls):
+        order_boost = max(0, 24 - idx * 5)
+        consider(u, 42 + order_boost)
+
+    ranked_pairs = sorted(winners.values(), key=lambda t: (-t[0], -dimension_area_hint(t[1])))
+    fill_slots = [u for _sc, u in ranked_pairs[:8]]
 
     if dry_run:
         name = row.get("Artist Name") or ""
@@ -406,13 +518,15 @@ def process_row(
                 changed = True
 
     if need_ig and ig_urls:
-        # Dedupe ig while keeping order
+        # Dedupe by canonical key (same CDN asset, different query/size).
         seen_i: set[str] = set()
         uniq: list[str] = []
         for u in ig_urls:
-            if u not in seen_i:
-                seen_i.add(u)
-                uniq.append(u)
+            k = image_dedupe_key(u)
+            if k in seen_i:
+                continue
+            seen_i.add(k)
+            uniq.append(u)
         uniq = uniq[:12]
         line = "\n".join(uniq)
         if force or not (row.get(ig_col) or "").strip():

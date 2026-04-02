@@ -110,6 +110,7 @@ function parsePress(text: string): PressCard[] {
 
 function processGalleryFromRaw(raw: RawArtistResearchRow): ProcessGalleryItem[] {
   const items: ProcessGalleryItem[] = []
+  const seen = new Set<string>()
   const pairs: [string, string][] = [
     [raw.processImage1Url, raw.processImage1Label],
     [raw.processImage2Url, raw.processImage2Label],
@@ -119,9 +120,11 @@ function processGalleryFromRaw(raw: RawArtistResearchRow): ProcessGalleryItem[] 
   for (const [url, label] of pairs) {
     const u = url?.trim()
     if (!u) continue
-    if (isDirectImageUrl(u) || isInstagramPostOrReelUrl(u)) {
-      items.push({ url: u, label: label?.trim() || undefined })
-    }
+    if (!(isDirectImageUrl(u) || isInstagramPostOrReelUrl(u))) continue
+    const k = processGalleryDedupeKey(u)
+    if (seen.has(k)) continue
+    seen.add(k)
+    items.push({ url: u, label: label?.trim() || undefined })
   }
   return items
 }
@@ -180,8 +183,20 @@ function mergePressCards(shopify: PressCard[] | undefined, research: PressCard[]
   return out.length > 0 ? out : undefined
 }
 
-function galleryUrlKey(url: string): string {
-  return url.trim().toLowerCase()
+/** Collapse same artwork at different WxH or query variants (aligns with extract_artist_portfolio_images.py). */
+function processGalleryDedupeKey(url: string): string {
+  const raw = url.trim()
+  try {
+    const u = new URL(raw)
+    let host = u.hostname.toLowerCase()
+    if (host.startsWith('www.')) host = host.slice(4)
+    let path = u.pathname.toLowerCase()
+    path = path.replace(/-\d+x\d+(?=\.[a-z0-9]{2,5}$)/i, '')
+    path = path.replace(/__\d+x\d+/gi, '')
+    return `${host}${path}`
+  } catch {
+    return raw.toLowerCase()
+  }
 }
 
 function mergeProcessGalleries(
@@ -189,10 +204,10 @@ function mergeProcessGalleries(
   research: ProcessGalleryItem[]
 ): ProcessGalleryItem[] | undefined {
   const fromShop = (shopify ?? []).filter((x) => x?.url?.trim())
-  const keys = new Set(fromShop.map((x) => galleryUrlKey(x.url)))
+  const keys = new Set(fromShop.map((x) => processGalleryDedupeKey(x.url)))
   const out = [...fromShop]
   for (const r of research) {
-    const k = galleryUrlKey(r.url)
+    const k = processGalleryDedupeKey(r.url)
     if (!keys.has(k)) {
       out.push(r)
       keys.add(k)
@@ -206,10 +221,10 @@ function mergeInstagramShowcaseItems(
   research: InstagramShowcaseItem[]
 ): InstagramShowcaseItem[] | undefined {
   const fromShop = (shopify ?? []).filter((x) => x?.url?.trim())
-  const keys = new Set(fromShop.map((x) => galleryUrlKey(x.url)))
+  const keys = new Set(fromShop.map((x) => processGalleryDedupeKey(x.url)))
   const out = [...fromShop]
   for (const r of research) {
-    const k = galleryUrlKey(r.url)
+    const k = processGalleryDedupeKey(r.url)
     if (!keys.has(k)) {
       out.push(r)
       keys.add(k)
