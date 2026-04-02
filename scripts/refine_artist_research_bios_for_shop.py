@@ -874,8 +874,36 @@ def sync_csv(data: dict[str, dict[str, str]]) -> None:
     print(f"Synced {len(rows)} CSV rows -> {CSV_PATH}")
 
 
+def sanitize_additional_history_only(data: dict[str, dict[str, str]]) -> int:
+    n_changed = 0
+    for slug in sorted(data.keys()):
+        row = data[slug]
+        hist_raw = (row.get("additionalHistoryText") or "").strip()
+        new_hist = strip_unusable_additional_history(hist_raw)
+        if new_hist != hist_raw:
+            row["additionalHistoryText"] = new_hist
+            n_changed += 1
+    return n_changed
+
+
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Refine artist research bios for shop display.")
+    ap.add_argument(
+        "--sanitize-history-only",
+        action="store_true",
+        help="Only strip unusable additionalHistoryText blobs; do not run story/hero refiners.",
+    )
+    args = ap.parse_args()
     data = load_json()
+    if args.sanitize_history_only:
+        n_changed = sanitize_additional_history_only(data)
+        save_json(data)
+        print(f"Wrote {JSON_PATH} ({len(data)} slugs, {n_changed} additionalHistoryText rows sanitized)")
+        sync_csv(data)
+        return
+
     n_changed = 0
     for slug in sorted(data.keys()):
         ch, new_row = refine_entry(slug, data[slug])

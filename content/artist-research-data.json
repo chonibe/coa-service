@@ -279,7 +279,7 @@
     "sourcesLinks": "https://www.yonil.com/about\nhttps://www.yonil.com/\nhttps://www.behance.net/YONIL\nhttps://bravermangallery.com/artists/jonathan-lax-yonil/\nhttps://www.instagram.com/yonil/\nhttps://thestreetcollector.com/collections/yonil",
     "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\n\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\nAuto image extract: portfolio/IG HTML (verify URLs display)."
   },
-  "troy-browne-1": {
+  "troy-browne": {
     "artistName": "Troy Browne",
     "location": "Nottingham, United Kingdom",
     "activeSince": "Freelance motion/illustration from Dec 2018 (LinkedIn); NTU Multimedia BSc 2007–2010",
@@ -307,7 +307,7 @@
     "sourcesLinks": "https://www.troybrowne.com/\nhttps://www.linkedin.com/in/troybrowne1\nhttps://www.thedifferentfolk.com/artists/troy-browne\nhttps://www.instagram.com/troybrowne/\nhttps://thestreetcollector.com/collections/troy-browne-1",
     "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\n\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\nAuto image extract: portfolio/IG HTML (verify URLs display)."
   },
-  "troy-browne": {
+  "troy-browne-1": {
     "artistName": "Troy Browne",
     "location": "Nottingham, United Kingdom",
     "activeSince": "Freelance motion/illustration from Dec 2018 (LinkedIn); NTU Multimedia BSc 2007–2010",
@@ -730,7 +730,7 @@
   "marylou-faure": {
     "artistName": "Marylou Faure",
     "location": "London, United Kingdom",
-    "activeSince": "2012",
+    "activeSince": "Freelance illustration ~2015–2016 per It’s Nice That (2016)",
     "heroHook": "French illustrator Marylou Faure (@maryloufaure): Penninghen-trained, London-based; eyeless figures, saturated color—poster-bold, joy-first character work.",
     "storyFullText": "Marylou Faure left ESAG Penninghen in Paris for London in 2012—agency desks first, then her own freelance lane. Her women often go without drawn eyes on purpose: confident curves, cheeky poses, compositions that read like a grin in ink. Flat, saturated color and poster-sharp shapes carry a feminist-leaning, joy-first take on character—closer to loud print than polite portraiture.\n\nSolos have stacked from London through Paris, Dublin, Beijing, and Sofia; festival stages and brand decks get the same blunt silhouettes and saturated fields—the work stays graphic when the brief turns corporate.",
     "aboutPageUrl": "https://www.maryloufaure.com/pages/about",
