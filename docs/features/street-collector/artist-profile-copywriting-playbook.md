@@ -16,7 +16,7 @@
 
 **Testing / QA:** No automated copy tests. Use the checklist in **§7** for self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
 
-**Version:** 1.2.0 · **Last updated:** 2026-04-21
+**Version:** 1.4.0 · **Last updated:** 2026-04-02
 
 ---
 
@@ -52,6 +52,22 @@
 passionate, unique, world-renowned, visionary, iconic, amazing, incredible, pushing boundaries, speaks to, journey (as cliché), hustle culture, “storyteller” without a story, “vibrant” with no visual fact.
 
 **Prefer:** named places, dates, mediums, collaborators, commissioners, and short verbs (paints, cuts, pastes, builds, returns to).
+
+### 2.1 Editorial voice vs research-room voice
+
+Artist bios on the shop should read like **short magazine features**—confident third person and concrete scenes—**not** like research notes or agent logs.
+
+**Avoid:** “profiles identify…”, “search snippets reference…”, “the same page lists…”, “third-party features summarize…”, “taken together, sources emphasize…”, “indexed…”, “for spreadsheet hygiene…”, “verify before…”, “retail pages have listed…”. Those belong in internal docs or `notes`, not in `storyFullText`.
+
+### 2.2 Street Collector speaks as the authority
+
+**Street Collector owns the voice** in `storyFullText` and the hero hook: write as if we are introducing an artist we stand behind, in **our** words.
+
+- **Do not** chain attributions (“*X* reports… *Y* adds… his site states…”). That reads like a literature review.
+- **Do** state facts directly (“Born in Carmiel, 1990…”, “Shenkar-trained…”, “Murals run from Florentin to HaSolelim”).
+- **Quotes and named outlets** are optional seasoning for credibility or SEO—**at most** once or twice in the bio, usually as a short clause, not every paragraph. Full URLs, dates, and outlet lists belong in **Press** / **Exhibitions**, not repeated in the overview.
+
+**Test:** If every paragraph names a different publication, cut most of them and keep the story.
 
 ---
 
@@ -154,10 +170,12 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 1. **Read** this playbook and the worksheet section of [`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (or the template in [`artist-profile-content-spec.md`](./artist-profile-content-spec.md)).  
 2. **Confirm** you have (or the user provided) source notes: interview, CV, official bio, or press links. If missing, produce only **outline + questions**, not invented facts.  
-3. **Write** using §3 field rules and §2 banned list.  
+3. **Write** using §3 field rules, §2 banned list, **§2.1 editorial vs research voice**, and **§2.2 Street Collector as authority** (our words first; outlets mostly in Press).  
 4. **Self-check** before output:  
    - [ ] Hook is 120–180 characters and fails the “name swap” test for uniqueness.  
    - [ ] Story is 3–6 paragraphs, plain text, `\n\n` between paragraphs.  
+   - [ ] Story reads like a magazine feature, not research notes (“profiles identify…”, “search snippets…”).  
+   - [ ] Story states facts in Street Collector’s voice; no citation stack—named outlets at most once or twice for credibility, details in Press.  
    - [ ] No banned hype words unless inside a quote.  
    - [ ] Exhibitions/press lines are factual; no guessed years or venues.  
    - [ ] Callouts omitted or flagged if unverified.  
@@ -172,6 +190,8 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.4.0 | 2026-04-02 | §2.2 authority voice: our words first; outlets sparingly / in Press. |
+| 1.3.0 | 2026-04-02 | §2.1 editorial vs research voice; agent checklist updated. |
 | 1.2.0 | 2026-04-21 | Product truth: Street Lamp vs wall for collectors; wall/street for artist practice. |
 | 1.1.0 | 2026-04-21 | Linked shop UI files where fixed copy (empty states, explore) lives. |
 | 1.0.0 | 2026-04-21 | Initial playbook: conversion frame + agent checklist; links to brief & spec. |
