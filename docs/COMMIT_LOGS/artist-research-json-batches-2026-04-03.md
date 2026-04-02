@@ -18,3 +18,7 @@
 
 - `exclusiveCallout` left empty (no verified Street Collector exclusives cited from sources).
 - `instagramPostImageUrls` only populated where `instagram.com/p/...` permalinks were taken from search results; most artists left blank for rights review.
+
+## Deployment
+
+- Vercel production deploy completed after these commits; alias: https://app.thestreetcollector.com (inspect URL in Vercel dashboard if needed).
