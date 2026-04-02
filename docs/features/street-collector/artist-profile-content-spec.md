@@ -13,7 +13,7 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.4.0 · **Last updated:** 2026-04-21
+**Version:** 1.4.1 · **Last updated:** 2026-04-02
 
 ---
 
@@ -51,6 +51,8 @@ This is the **editorial** checklist. For every artist, research and produce the 
 | What to produce | What to research / answer | Notes for writers |
 |-----------------|---------------------------|-------------------|
 | **Up to 4 images** | Studio, wall in progress, detail, proof, street context—whatever matches the story | Each needs **rights**: artist-approved or SC-owned; record caption (place/year) for **label** |
+
+**Automated assist (engineering):** [`scripts/extract_artist_portfolio_images.py`](../../../scripts/extract_artist_portfolio_images.py) fetches **About Page URL**, allowed **Sources (Links)** hosts, and (when needed) the public **Instagram** profile HTML. It scores `og:image`, `<img>` / lazy-src candidates (CDN paths, Behance modules, etc.), prefers URLs that contain the artist’s name, and writes empty **Process Image 1–4** and **Instagram Images (URLs)** cells in [`artist-research-sheet.csv`](./artist-research-sheet.csv). Rebuild the shop payload with `npm run research:json`. Instagram’s HTML often omits `display_url` (login wall)—then paste **direct image URLs** or permalinks manually, or use [`scripts/apply_artist_enrichment_json_to_csv.py`](../../../scripts/apply_artist_enrichment_json_to_csv.py) with `processImageUrls` / `instagramPostImageUrls` in a `docs/dev/artist-web-enrichment-*.json` patch.
 
 ### D. Exhibition & mural history
 
