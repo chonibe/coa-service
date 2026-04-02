@@ -4,6 +4,13 @@ import { getVendorMeta } from '@/lib/shopify/vendor-meta'
 import { getProducts } from '@/lib/shopify/storefront-client'
 import { createClient } from '@/lib/supabase/server'
 
+/** Shopify vendor names excluded from public artist listings (internal / house vendor). */
+const HIDDEN_SHOP_VENDOR_NAMES = new Set(['street collector'])
+
+function isHiddenShopVendor(name: string): boolean {
+  return HIDDEN_SHOP_VENDOR_NAMES.has(name.trim().toLowerCase())
+}
+
 /**
  * Single artist row for shop listing + explore page (same shape as GET /api/shop/artists).
  */
@@ -97,6 +104,7 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
   })
 
   const baseArtists = Array.from(vendorMap.entries())
+    .filter(([name]) => !isHiddenShopVendor(name))
     .map(([name, data]) => {
       const profile = profileLookup.get(name.toLowerCase())
       return {

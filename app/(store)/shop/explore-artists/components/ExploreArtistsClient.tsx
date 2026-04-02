@@ -23,6 +23,14 @@ type Props = {
 
 type FilterKey = 'all' | 'featured' | 'withBio'
 
+/** Subset of Shopify product fields returned by GET /api/shop/artists/[slug] */
+type ArtistApiProduct = {
+  id: string
+  handle: string
+  title: string
+  featuredImage?: { url?: string; altText?: string | null } | null
+}
+
 function useIsFinePointer() {
   const [fine, setFine] = React.useState(false)
   React.useEffect(() => {
@@ -108,6 +116,39 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
   const [lightboxSlug, setLightboxSlug] = React.useState<string | null>(null)
   const lightboxArtist = lightboxSlug ? artists.find((a) => a.slug === lightboxSlug) : undefined
+  const [lightboxProducts, setLightboxProducts] = React.useState<ArtistApiProduct[]>([])
+  const [lightboxProductsLoading, setLightboxProductsLoading] = React.useState(false)
+  const [lightboxProductsError, setLightboxProductsError] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!lightboxSlug || !lightboxArtist) {
+      setLightboxProducts([])
+      setLightboxProductsLoading(false)
+      setLightboxProductsError(false)
+      return
+    }
+    const ac = new AbortController()
+    setLightboxProducts([])
+    setLightboxProductsLoading(true)
+    setLightboxProductsError(false)
+    const url = `/api/shop/artists/${encodeURIComponent(lightboxSlug)}?vendor=${encodeURIComponent(lightboxArtist.name)}`
+    fetch(url, { signal: ac.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error('Artist fetch failed')
+        return r.json() as Promise<{ products?: ArtistApiProduct[] }>
+      })
+      .then((data) => setLightboxProducts(Array.isArray(data.products) ? data.products : []))
+      .catch((e: unknown) => {
+        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
+        if (name === 'AbortError') return
+        setLightboxProductsError(true)
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setLightboxProductsLoading(false)
+      })
+    return () => ac.abort()
+  }, [lightboxSlug, lightboxArtist?.name])
+
   const related = React.useMemo(() => {
     if (!lightboxArtist) return []
     const pool = artists.filter((a) => a.slug !== lightboxArtist.slug)
@@ -588,6 +629,45 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 <Link href={experienceUrl} className={exploreStyles.lbCtaOutline}>
                   Start collecting
                 </Link>
+              </div>
+
+              <div className={exploreStyles.lbArtworks}>
+                <div className={exploreStyles.lbArtworksTitle}>Works on Street Collector</div>
+                {lightboxProductsLoading ? (
+                  <p className={exploreStyles.lbArtworksHint} aria-live="polite">
+                    Loading editions…
+                  </p>
+                ) : null}
+                {lightboxProductsError ? (
+                  <p className={exploreStyles.lbArtworksHint} role="alert">
+                    Could not load artworks. Try the full profile link.
+                  </p>
+                ) : null}
+                {!lightboxProductsLoading && !lightboxProductsError && lightboxProducts.length === 0 ? (
+                  <p className={exploreStyles.lbArtworksHint}>No storefront editions matched this artist.</p>
+                ) : null}
+                {lightboxProducts.length > 0 ? (
+                  <ul className={exploreStyles.lbArtworksGrid}>
+                    {lightboxProducts.slice(0, 12).map((p) => (
+                      <li key={p.id}>
+                        <Link href={`/shop/${p.handle}`} className={exploreStyles.lbArtworkCard}>
+                          {p.featuredImage?.url ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
+                            <img
+                              src={getProxiedImageUrl(p.featuredImage.url)}
+                              alt={p.featuredImage.altText?.trim() || p.title}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className={exploreStyles.lbArtworkPlaceholder} aria-hidden />
+                          )}
+                          <span className={exploreStyles.lbArtworkTitle}>{p.title}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
 
               {related.length ? (

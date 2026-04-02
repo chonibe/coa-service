@@ -31,10 +31,12 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 ## Testing
 
 - Manual: open `/explore-artists` (redirects to `/shop/explore-artists`), confirm grid, profile links (`/shop/artists/[slug]`), sticky CTA to `/experience`, home-v2 “View all artists” and final CTA “Explore the artists”.
+- Artist lightbox: open an artist card; confirm **Works on Street Collector** loads thumbnails (from `GET /api/shop/artists/[slug]?vendor=…`) and links to `/shop/[handle]`.
 - `prefers-reduced-motion`: scroll reveal hooks show content immediately (home-v2 pattern).
 
 ## Change log
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.0 | 2026-04-02 | Lightbox loads that artist’s storefront products (artist API + product links). House vendor **Street Collector** excluded from `getShopArtistsList()` / explore grid. |
 | 1.0.0 | 2026-03-31 | Initial explore page, shared `getShopArtistsList`, middleware short URL, home-v2 wiring. |
