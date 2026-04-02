@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Sparkles } from 'lucide-react'
+import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
@@ -14,7 +14,6 @@ import { openTawkChat } from '@/lib/tawk'
 
 const MENU_ITEMS = [
   { label: 'Buy Gift Card', href: '/shop/gift-cards', icon: Gift },
-  { label: 'The Reserve', href: '/shop/reserve', icon: Sparkles },
   { label: 'Promo Codes', icon: TicketPercent, openPromoModal: true },
   { label: 'My Orders', href: '/shop/account', icon: Clock },
   { label: 'Help Center', href: '/shop/faq', icon: HelpCircle },
