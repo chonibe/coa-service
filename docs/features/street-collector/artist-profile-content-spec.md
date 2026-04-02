@@ -13,13 +13,15 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.2.0 · **Last updated:** 2026-04-02
+**Version:** 1.3.0 · **Last updated:** 2026-04-02
 
 ---
 
 ## Research: what content to gather for each artist
 
 This is the **editorial** checklist. For every artist, research and produce the items below. Quality bar: facts verified where possible, voice aligned with Street Collector (human, specific, not generic adjectives).
+
+**Deepening history (exhibitions, press, CV):** start from the artist’s **About / Bio / CV / Press** pages when they exist. See **[`artist-research-about-pages.md`](./artist-research-about-pages.md)** for source order, checklists, and how those facts map to [`artist-research-sheet.csv`](./artist-research-sheet.csv) columns (**About Page URL (primary)**, **Additional History & CV (text)**, **Exhibitions**, **Press**).
 
 ### A. Identity & positioning (hero + eyebrow)
 
@@ -36,11 +38,13 @@ This is the **editorial** checklist. For every artist, research and produce the 
 | What to produce | What to research / answer | Notes for writers |
 |-----------------|---------------------------|-------------------|
 | **Core bio / story** (3–6 short paragraphs) | Geography, formative years, how they found walls/street/studio, relationship to the city or community, why print or edition matters to them, any pivot that defines their voice | Plain text; no HTML; short paragraphs; avoid clichés (“passionate,” “unique”)—use concrete scenes and facts |
+| **Additional history / CV notes** (optional column) | Education, representation, studio timeline, awards, residencies, and any CV bullets not yet written as dated exhibition lines—often pasted from the **About** page then edited | Feeds **Additional History & CV (text)** in the research sheet; merged into the shop **bio** after **Story** when Shopify/Supabase bio is empty. Prefer moving **dated shows** into **Exhibitions (Text List)** instead of duplicating here. |
+| **About page URL** (optional column) | Canonical About/Bio URL you used first | **About Page URL (primary)** — traceability for the next researcher |
 | **Pull quote** | One line from them (interview) or a paraphrase so strong it can stand alone in large type | Must be emotionally specific; attribute mentally even if UI doesn’t show attribution |
 | **Impact / give-back card** (optional) | Do they fund workshops, community print runs, youth programs, local causes? Percentage or program name if verified | One tight block; if unknown, omit |
 | **Exclusivity card** (optional) | What’s true only on Street Collector for this artist—no gallery reprint, first time in print, format tied to lamp, etc. | Factual only; legal/comms should approve claims |
 
-**Research sources to plan for:** artist interview, existing bio on site or gallery PDF, CV, reputable press, their Instagram captions, Wikipedia only as a lead (verify).
+**Research sources to plan for:** artist **About / Bio / CV / Press** pages on their own site (see [`artist-research-about-pages.md`](./artist-research-about-pages.md)), gallery representation pages, interview transcripts, reputable press, their Instagram captions, Wikipedia only as a lead (verify).
 
 ### C. Process imagery (Overview — right column)
 
@@ -97,10 +101,12 @@ Duplicate this block into a doc or Notion page **per artist**. Fill before enter
 - **Hero hook (one line, ~120–180 chars):** 
 
 ### Story
+- **Primary About / Bio URL (for traceability):** 
 - **Paragraph 1 (origin / place):** 
 - **Paragraph 2 (practice / medium / walls):** 
 - **Paragraph 3 (voice / what the work does):** 
 - **Paragraph 4 (Street Collector / why this collaboration):** 
+- **Additional history & CV (education, representation, awards, non-show milestones — optional):** 
 - **Pull quote:** 
 - **Impact callout (optional):** 
 - **Exclusive callout (optional):** 

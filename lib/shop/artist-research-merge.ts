@@ -250,7 +250,11 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
 export function mergeResearchBio(slug: string, existingBio: string | undefined): string | undefined {
   if (existingBio?.trim()) return existingBio.trim()
   const raw = lookupArtistResearch(slug)
-  return raw?.storyFullText?.trim() || undefined
+  if (!raw) return undefined
+  const story = raw.storyFullText?.trim()
+  const history = raw.additionalHistoryText?.trim()
+  if (story && history) return `${story}\n\n${history}`
+  return story || history || undefined
 }
 
 export function researchInstagramHandle(slug: string): string | undefined {
