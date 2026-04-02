@@ -1,8 +1,8 @@
 # Artist profile — content map & Shopify metafields
 
-**Purpose:** Define what each artist profile page shows, where data comes from, and how to author it (including JSON metafields). Use this as the single checklist when building or auditing artist content.
+**Purpose:** (1) Tell researchers and writers **exactly what to find and draft for each artist**. (2) Map that content to Shopify/Supabase for implementation. Use the research sections when you’re building bios from interviews, CVs, press, and the web.
 
-**Implementation (read first):**
+**Implementation (engineering):**
 
 | Area | Path |
 |------|------|
@@ -13,7 +13,127 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.0.0 · **Last updated:** 2026-04-02
+**Version:** 1.1.0 · **Last updated:** 2026-04-02
+
+---
+
+## Research: what content to gather for each artist
+
+This is the **editorial** checklist. For every artist, research and produce the items below. Quality bar: facts verified where possible, voice aligned with Street Collector (human, specific, not generic adjectives).
+
+### A. Identity & positioning (hero + eyebrow)
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Public name** | How they sign work and appear on Shopify; spelling and accents | Must match vendor/collection title |
+| **Legal or alternate name** (optional) | Real name if different from moniker; how they introduce themselves in interviews | Feeds **alias** line under hero name |
+| **City / region line** | Where they live or where the work is rooted (not vague “international”) | One line, e.g. “Lisbon, Portugal” or “Brooklyn, New York” |
+| **Active since** | First serious public work: year they started exhibiting, mural practice, or first known documented piece—not birthday unless that’s the story | Short: year or range, e.g. `2012` or `2008–present` |
+| **One-line hook** (hero italic) | The single sentence a collector should feel: origin story, stance, or tension—not a mission statement | ~120–180 characters; sounds like a quote or tight line; will sit under the name |
+
+### B. Long-form story (Overview — main column)
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Core bio / story** (3–6 short paragraphs) | Geography, formative years, how they found walls/street/studio, relationship to the city or community, why print or edition matters to them, any pivot that defines their voice | Plain text; no HTML; short paragraphs; avoid clichés (“passionate,” “unique”)—use concrete scenes and facts |
+| **Pull quote** | One line from them (interview) or a paraphrase so strong it can stand alone in large type | Must be emotionally specific; attribute mentally even if UI doesn’t show attribution |
+| **Impact / give-back card** (optional) | Do they fund workshops, community print runs, youth programs, local causes? Percentage or program name if verified | One tight block; if unknown, omit |
+| **Exclusivity card** (optional) | What’s true only on Street Collector for this artist—no gallery reprint, first time in print, format tied to lamp, etc. | Factual only; legal/comms should approve claims |
+
+**Research sources to plan for:** artist interview, existing bio on site or gallery PDF, CV, reputable press, their Instagram captions, Wikipedia only as a lead (verify).
+
+### C. Process imagery (Overview — right column)
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Up to 4 images** | Studio, wall in progress, detail, proof, street context—whatever matches the story | Each needs **rights**: artist-approved or SC-owned; record caption (place/year) for **label** |
+
+### D. Exhibition & mural history
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Chronological list** | Year, type (solo / group / mural / fair / residency), **title** of show or project, **venue** or commissioner, **city + country** | Use CV first; fill gaps with artist confirmation; don’t invent |
+
+### E. Press & features
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Per item:** outlet name, year, **short verbatim or licensed quote**, link to article if public | Google News, outlet archives, artist’s press page | Quote must be exact or clearly paraphrased with permission; **url** optional but preferred |
+
+### F. Social (Instagram)
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Handle** | Official account only; confirm with artist | One handle → drives Follow link |
+| **Showcase grid** (optional) | 6–12 strong stills: process, walls, details—**URLs to images you’re allowed to use** (export from IG with permission or use SC campaign shots) | Not a substitute for the live feed; optional decoration for the tab |
+
+### G. Works / catalogue (coordination with merch)
+
+| What to produce | What to research / answer | Notes for writers |
+|-----------------|---------------------------|-------------------|
+| **Edition line per product** | Edition size, numbering language consistent across the catalogue | Short label, e.g. “Ed. 12 / 50” |
+| **Season or series** | How you group drops for filters | Product **tags**: e.g. `Season 1`, `Season 2` |
+
+### H. Not in this doc (handled elsewhere)
+
+- **Product photography, pricing, inventory** — Shopify merchandising.
+- **Related artists** — automated from shop; editorial can suggest “pairings” later if you add a metafield.
+
+---
+
+## Copy-paste template: one artist (research worksheet)
+
+Duplicate this block into a doc or Notion page **per artist**. Fill before entering Shopify.
+
+```markdown
+## Artist: [moniker / vendor name]
+**Slug / collection handle:** 
+**Researcher / date:**
+
+### Identity
+- **Location line:** 
+- **Alias (real name or subtitle):** 
+- **Active since (year or range):** 
+- **Hero hook (one line, ~120–180 chars):** 
+
+### Story
+- **Paragraph 1 (origin / place):** 
+- **Paragraph 2 (practice / medium / walls):** 
+- **Paragraph 3 (voice / what the work does):** 
+- **Paragraph 4 (Street Collector / why this collaboration):** 
+- **Pull quote:** 
+- **Impact callout (optional):** 
+- **Exclusive callout (optional):** 
+
+### Process images (max 4)
+1. URL: … | Label: …
+2. URL: … | Label: …
+3. URL: … | Label: …
+4. URL: … | Label: …
+
+### Exhibitions & murals (newest first)
+| Year | Type | Title | Venue | City |
+|------|------|-------|-------|------|
+|      |      |       |       |      |
+
+### Press
+| Outlet | Year | Quote | URL |
+|--------|------|-------|-----|
+|        |      |       |     |
+
+### Instagram
+- **Handle:** 
+- **Showcase image URLs (optional):** 
+
+### Catalogue notes
+- **Season tags to use on products:** 
+- **Edition copy notes per handle:** (list product handles if needed)
+
+### Sources & verification
+- Interview date / notes: 
+- CV / PDF path: 
+- Links checked: 
+```
 
 ---
 
@@ -189,4 +309,5 @@ Create metafields on the **Collection** resource, namespace `custom`:
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.0 | 2026-04-02 | Added per-artist **research deliverables** and a **copy-paste worksheet** for content production. |
 | 1.0.0 | 2026-04-02 | Initial spec aligned with `artist-profile.html` layout and collection metafields. |
