@@ -4,7 +4,8 @@ import { getCollection, type ShopifyCollection, type ShopifyProduct } from '@/li
 export type ProcessGalleryItem = { url: string; label?: string }
 export type ExhibitionRow = { year: number; type: string; title: string; venue: string; city: string }
 export type PressCard = { outlet: string; year?: string; quote: string; url?: string }
-export type InstagramShowcaseItem = { url: string; kind?: string }
+/** `url` = image src; optional `link` = click target (e.g. post permalink). Falls back to profile URL. */
+export type InstagramShowcaseItem = { url: string; kind?: string; link?: string }
 
 export type ArtistProfileRich = {
   location?: string

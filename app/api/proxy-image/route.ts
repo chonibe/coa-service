@@ -15,6 +15,8 @@ const ALLOWED_HOSTNAME_SUFFIXES = [
   '.shopify.com',
   '.myshopify.com',
   '.supabase.co',
+  '.cdninstagram.com',
+  '.fbcdn.net',
 ]
 
 function isAllowedUrl(url: string): boolean {

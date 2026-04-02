@@ -896,55 +896,37 @@
   color: rgba(255, 186, 148, 0.4);
 }
 
-.igShopperHint {
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 0 72px 12px;
-  font-size: 13px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-}
-
-/* Instagram profile embed — same horizontal rhythm as .instagramGrid (2px gutters) */
-.igEmbedWrap {
+/* Native empty state (profile linked, no showcase images yet) */
+.igNativeEmpty {
   padding: 0 2px 8px;
-  max-width: 100%;
-}
-
-.instagramGrid + .igEmbedWrap {
-  padding-top: 24px;
-}
-
-.igEmbedFrame {
-  display: block;
-  width: 100%;
-  min-height: 480px;
-  height: 560px;
-  border: 1px solid var(--border);
-  border-radius: 0;
-  background: var(--card);
-  overflow: hidden;
-}
-
-.igEmbedFootnote {
-  max-width: 640px;
-  margin: 14px auto 0;
-  padding: 0 72px;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
 }
 
-.igEmbedFootnote a {
-  color: var(--peach);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.igNativeEmptySilhouette {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  width: 100%;
+  padding: 0 2px 28px;
+  box-sizing: border-box;
 }
 
-.igEmbedFootnote a:hover {
-  color: var(--peach2);
+.igNativeEmptyCell {
+  aspect-ratio: 1;
+  background: linear-gradient(142deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 186, 148, 0.07) 48%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid var(--border);
+}
+
+.igNativeEmptyCopy {
+  max-width: 400px;
+  margin: 0 0 24px;
+  padding: 0 72px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
 }
 
 /* artist-profile.html: .instagram-grid — 6 columns, full bleed, 2px gutters */
@@ -1276,8 +1258,7 @@
   .pressSection,
   .instagramHeader,
   .instagramCta,
-  .igShopperHint,
-  .igEmbedFootnote,
+  .igNativeEmptyCopy,
   .relatedHeader,
   .profileCta,
   .mutedNote {
@@ -1285,13 +1266,9 @@
     padding-right: 28px;
   }
 
-  .igEmbedFrame {
-    height: 500px;
-    min-height: 400px;
-  }
-
   /* artist-profile.html: 3 columns under ~960px */
-  .instagramGrid {
+  .instagramGrid,
+  .igNativeEmptySilhouette {
     grid-template-columns: repeat(3, 1fr);
   }
 

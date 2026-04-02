@@ -4,6 +4,7 @@ import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { buildArtistProfileResponse } from '@/lib/shop/artist-profile-api'
 import { getCollection, getCollectionById, getProductsByVendor, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { hasPage, getPage } from '@/content/shopify-content'
+import { mergeInstagramDiscoveryIfNeeded } from '@/lib/instagram/business-discovery'
 
 function parseInstagramHandle(value: string): string {
   const trimmed = value.trim()
@@ -188,7 +189,7 @@ export async function GET(
           ),
         ],
       })
-      return NextResponse.json(artist)
+      return NextResponse.json(await mergeInstagramDiscoveryIfNeeded(artist))
     }
 
     // Fallback: fetch by vendor name when no collection found
@@ -230,7 +231,7 @@ export async function GET(
               vendorInstagramHandle: vendorInstagram,
               collectionHandlesToTry: [...new Set(fallbackHandles)].filter(Boolean) as string[],
             })
-            return NextResponse.json(artist)
+            return NextResponse.json(await mergeInstagramDiscoveryIfNeeded(artist))
           }
         } catch {
           continue
@@ -283,7 +284,7 @@ export async function GET(
         ),
       ],
     })
-    return NextResponse.json(artist)
+    return NextResponse.json(await mergeInstagramDiscoveryIfNeeded(artist))
   } catch (error) {
     console.error('[Artist API] Error for slug', slug, ':', error)
     return NextResponse.json(

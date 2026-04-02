@@ -11,7 +11,6 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
-import { InstagramProfileEmbed } from './InstagramProfileEmbed'
 
 type TabId = 'overview' | 'works' | 'exhibitions' | 'instagram'
 
@@ -495,38 +494,53 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </p>
               ) : null}
             </div>
-            {profile.instagramShowcase && profile.instagramShowcase.length > 0 && artist.instagramUrl ? (
+            {profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
               <div className={styles.instagramGrid}>
-                {profile.instagramShowcase.map((cell, i) => (
-                  <a
-                    key={i}
-                    href={artist.instagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.igCell}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getProxiedImageUrl(cell.url)}
-                      alt={cell.kind ? `${cell.kind} on Instagram` : `Instagram post ${i + 1}`}
-                      loading="lazy"
-                    />
-                    <div className={styles.igOverlay}>
-                      <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                    </div>
-                  </a>
-                ))}
+                {profile.instagramShowcase.map((cell, i) => {
+                  const tileHref = (cell.link?.trim() || artist.instagramUrl || '').trim() || '#'
+                  return (
+                    <a
+                      key={`${cell.url}-${i}`}
+                      href={tileHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.igCell}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getProxiedImageUrl(cell.url)}
+                        alt={cell.kind ? `${cell.kind} on Instagram` : `Photo ${i + 1}`}
+                        loading="lazy"
+                      />
+                      <div className={styles.igOverlay}>
+                        <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
             ) : null}
-            {artist.instagram && artist.instagramUrl ? (
-              <InstagramProfileEmbed handle={artist.instagram} profileUrl={artist.instagramUrl} />
+            {artist.instagramUrl && !(profile.instagramShowcase && profile.instagramShowcase.length > 0) ? (
+              <div className={styles.igNativeEmpty}>
+                <div className={styles.igNativeEmptySilhouette} aria-hidden>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className={styles.igNativeEmptyCell} />
+                  ))}
+                </div>
+                <p className={styles.igNativeEmptyCopy}>
+                  Recent work, process, and drops show up on Instagram first—open the profile to see the full feed.
+                </p>
+                <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                    <rect x="2" y="2" width="20" height="20" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                  </svg>
+                  {artist.instagram ? `View @${artist.instagram} on Instagram` : 'View on Instagram'}
+                </a>
+              </div>
             ) : null}
-            {artist.instagram && artist.instagramUrl && !(profile.instagramShowcase && profile.instagramShowcase.length > 0) ? (
-              <p className={styles.igShopperHint}>
-                Scroll the preview for recent posts and Reels. Follow on Instagram for the full feed and stories.
-              </p>
-            ) : null}
-            {artist.instagramUrl ? (
+            {artist.instagramUrl && profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
               <div className={styles.instagramCta}>
                 <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -534,7 +548,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                     <circle cx="12" cy="12" r="4" />
                     <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
                   </svg>
-                  Follow @{artist.instagram}
+                  {artist.instagram ? `Follow @${artist.instagram}` : 'Follow on Instagram'}
                 </a>
               </div>
             ) : null}

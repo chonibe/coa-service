@@ -254,16 +254,31 @@ Rows are grouped by `year` descending in the UI.
 
 Resolved **Follow** link: `https://www.instagram.com/{handle}/`.
 
-**Optional grid (no Graph API required):** `custom.instagram_showcase` on the **collection**:
+### Grid content (what shoppers see)
+
+**A — Manual (always wins if set):** `custom.instagram_showcase` on the **collection** — JSON array of tiles you control (Shopify CDN or any public image URL).
 
 ```json
 [
   { "url": "https://cdn.shopify.com/.../image.jpg", "kind": "Post" },
-  { "url": "https://...", "kind": "Reel" }
+  { "url": "https://cdn.shopify.com/.../thumb.jpg", "kind": "Reel", "link": "https://www.instagram.com/reel/ABC/" }
 ]
 ```
 
-`kind` is cosmetic overlay text only. For a live IG embed grid you would need Instagram’s APIs or a third-party widget; this spec stays within Shopify + Supabase.
+- **`url`** (required): Image address for the tile.
+- **`kind`**: Optional overlay label (`Post`, `Reel`, etc.).
+- **`link`**: Optional per-tile URL; if omitted, the tile uses the resolved profile URL (`instagram.com/{handle}/`).
+
+**B — Automatic (only if A is empty):** [Instagram Business Discovery](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-discovery) on the server. When **both** env vars below are set, `GET /api/shop/artists/[slug]` fetches up to 12 recent media items for the resolved **professional** (Business or Creator) handle and fills the same grid. **Personal accounts are not supported.** You need a Meta app, a long-lived token with the permissions Meta documents for Business Discovery, and your **own** connected Instagram user id as the token owner.
+
+| Env | Purpose |
+|-----|--------|
+| `INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` | Instagram **user** id of *your* connected professional account (used as the API “caller”). |
+| `INSTAGRAM_ACCESS_TOKEN` | Long-lived user access token with Business Discovery access. |
+
+Images are served via `/api/proxy-image` for `*.cdninstagram.com` / `*.fbcdn.net` so the browser loads them from your domain.
+
+If neither A nor B yields tiles, the tab shows the native empty state + **View on Instagram** CTA.
 
 ---
 
