@@ -1,6 +1,6 @@
 # Artist profile — content map & Shopify metafields
 
-**Purpose:** (1) Tell researchers and writers **exactly what to find and draft for each artist**. (2) Map that content to Shopify/Supabase for implementation. Use the research sections when you’re building bios from interviews, CVs, press, and the web.
+**Purpose:** Map approved artist copy to **Shopify collection metafields**, Supabase, and products. **Content creators:** use the writer-only brief instead—[`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (checklist + worksheet, no engineering detail).
 
 **Implementation (engineering):**
 
@@ -13,7 +13,7 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.1.0 · **Last updated:** 2026-04-02
+**Version:** 1.2.0 · **Last updated:** 2026-04-02
 
 ---
 
@@ -309,5 +309,6 @@ Create metafields on the **Collection** resource, namespace `custom`:
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.2.0 | 2026-04-02 | Linked standalone **[`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md)** for writers; this file remains implementer-focused. |
 | 1.1.0 | 2026-04-02 | Added per-artist **research deliverables** and a **copy-paste worksheet** for content production. |
 | 1.0.0 | 2026-04-02 | Initial spec aligned with `artist-profile.html` layout and collection metafields. |
