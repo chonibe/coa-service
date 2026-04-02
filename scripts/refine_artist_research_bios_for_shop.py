@@ -523,6 +523,7 @@ DROP_PARA_PREFIXES = (
     "no single long-form biography url was confirmed",
     "instagram handle @elfassi is used in the street collector",
     "third-party profiles (colossal, rubin museum mentions in commerce copy) should be double-checked",
+    "auto-extracted from primary",
 )
 
 PAREN_VERIFY = re.compile(r"\s*\([^)]*(?:verify|confirm at|confirm on|verify current)[^)]*\)", re.I)
@@ -586,6 +587,9 @@ INTERNAL_SENTENCE_RES: tuple[re.Pattern[str], ...] = tuple(
         r"^Client grids list\b",
         r"^Product copy on partner shops describes\b",
         r"^Web research \(verify\):",
+        r"Skip to content",
+        r"Item added to your cart",
+        r"Check out Continue shopping",
     )
 )
 
@@ -773,6 +777,20 @@ def refine_hero(hero: str, slug: str) -> str:
     return h
 
 
+def strip_unusable_additional_history(text: str) -> str:
+    """Clear additionalHistoryText that is raw HTML scrape or internal web-research notes (must not ship in merged bio)."""
+    t = (text or "").strip()
+    if not t:
+        return ""
+    if re.search(
+        r"Auto-extracted from primary source page|Web research \(verify\):|Skip to content|Item added to your cart",
+        t,
+        re.I,
+    ):
+        return ""
+    return t
+
+
 def refine_entry(slug: str, row: dict[str, str]) -> tuple[bool, dict[str, str]]:
     changed = False
     out = dict(row)
@@ -780,6 +798,12 @@ def refine_entry(slug: str, row: dict[str, str]) -> tuple[bool, dict[str, str]]:
     new_s = refine_story_body(story_source)
     if new_s != (out.get("storyFullText") or "").strip():
         out["storyFullText"] = new_s
+        changed = True
+
+    hist_raw = (out.get("additionalHistoryText") or "").strip()
+    new_hist = strip_unusable_additional_history(hist_raw)
+    if new_hist != hist_raw:
+        out["additionalHistoryText"] = new_hist
         changed = True
 
     if slug in HERO_OVERRIDES:
