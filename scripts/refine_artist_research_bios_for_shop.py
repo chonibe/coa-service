@@ -15,7 +15,9 @@ Updates:
   - content/artist-research-data.json
   - docs/features/street-collector/artist-research-sheet.csv (Hero Hook + Story columns)
 
-Run from repo root: python3 scripts/refine_artist_research_bios_for_shop.py
+Run from repo root:
+  python3 scripts/merge_blog_style_artist_bios.py   # apply editorial hero + story from scripts/editorial_shop_bios_data*.py
+  python3 scripts/refine_artist_research_bios_for_shop.py   # sanitize activeSince, strip internal tails, sync CSV
 """
 from __future__ import annotations
 
@@ -40,88 +42,11 @@ def vendor_handle(name: str) -> str:
     return s.strip("-")
 
 
-# Full story replacements (slug -> new story)
-STORY_OVERRIDES: dict[str, str] = {
-    "aviv-shamir": (
-        "Tel Aviv illustrator Aviv Shamir (@avivos_91) keeps process and finished work on the main feed—"
-        "the clearest public record of the practice today.\n\n"
-        "Portfolio domains and interviews will surface here as they attach to the profile."
-    ),
-    "refiloe-mnisi": (
-        "Refiloe Mnisi (@urfavsweatpants) leads with fashion-leaning illustration and character design out of Johannesburg.\n\n"
-        "Instagram is the live archive for now; portfolio domains attach to the artist record as they go on file."
-    ),
-    "beto-val": (
-        "Ecuadorian artist Beto Val builds surreal digital collage from vintage scientific illustration—"
-        "the essays on elbetoval.com unpack how those pieces are built.\n\n"
-        "The same work circulates in design and museum contexts; the running list lives under Press.\n\n"
-        "Threads at @elbetoval carries day-to-day studio rhythm."
-    ),
-    "hen-macabi": (
-        "Hen Macabi is the graphic hand behind major Israeli music visuals, including artwork for Netta Barzilai’s Bassa Sababa when that single went global.\n\n"
-        "henmacabi.com archives years of album and poster commissions across the country’s pop and club scenes.\n\n"
-        "Typography-led compositions read cleanly on a Street Lamp edition, where type carries the piece."
-    ),
-    "igal-talianski": (
-        "Igal Talianski works from Haifa in collage and recycled materials, signing the public record as @iigalskii.\n\n"
-        "Layered textures and graphic collage read well on a Street Lamp, where small details reward a closer look."
-    ),
-    "max-diamond": (
-        "Max Diamond shares poster and illustration work on Instagram as @maxdiamond52, including pop-culture pieces fans recognize at a glance.\n\n"
-        "Bold graphic posters stay readable on a Street Lamp—strong silhouettes and contrast carry at edition scale."
-    ),
-    "maalavidaa": (
-        "Behind Maalavidaa, Alycia Rainaud fuses graphic design, digital art, and emotional-health themes—"
-        "a 2018 master’s thesis on psychology in design still steers the palette.\n\n"
-        "Neon, meditation-informed abstraction is the through-line; outside features picked up the same story and sit under Press.\n\n"
-        "Saturated color fields and emotional narratives stay vivid on a Street Lamp—abstraction still reads at a glance."
-    ),
-    "psoman": (
-        "Psoman is a Liège-born muralist who studied graphic design and advanced fabrication in Europe before committing to walls full-time.\n\n"
-        "A 2024 Taiwan school residency put creature surrealism and environmental politics in front of a new public.\n\n"
-        "Festival miles and wall photos keep stacking—coverage is catalogued in Press."
-    ),
-    "cubi-boumclap": (
-        "Cubi Boumclap is the Agen-based illustrator, comic artist, and “indoor street” talent behind Behance and cubicube.fr—"
-        "a practice that treats comics, UI, and urban graphics as one lane.\n\n"
-        "His Behance bio opens with disarming hustle: open for graphics, comics, and digital commissions across French studios and publishers.\n\n"
-        "Southwestern French press tied him to La Streetarterie—the collective pushing urban graphic culture where illustration kisses the street.\n\n"
-        "Prints and merch move through Gumroad, Society6, and linked shops—hybrid output that refuses a single white-cube label."
-    ),
-    "unapaulogetic": (
-        "Paul Rozenboim publishes as Unapaulogetic (@unapaulogetic_): a Colombia-born, Tel Aviv–based designer threading motion, illustration, typography, and installation.\n\n"
-        "On paulrozenboim.com, “Capturing Chaos” chases a double pendulum through Cinema 4D—physics translated into sculptural stills and video.\n\n"
-        "“Bring Your Imagination to Life” marks a LaCulture Typographics Exhibition chapter, binding gallery typography to motion craft.\n\n"
-        "Limited editions such as “Hole” compress that restless line energy into objects meant to live in a room, not only on a timeline."
-    ),
-    "thales-towers": (
-        "Thales Towers, from Tel Aviv, paints the graphic tower-headed figures his own site jokes he prefers to “real” faces—humor wrapped around prints, objects, and walls.\n\n"
-        "The work reads street-born with an advertising past: building-headed characters built to surprise pedestrians from Florentin to HaSolelim.\n\n"
-        "Animated versions travel far on GIPHY, carrying the same bold silhouettes beyond static paint."
-    ),
-    "s-a-r-g-o-n": (
-        "@oky.sargon is graphic work in motion on Instagram—frames ship as they are finished.\n\n"
-        "We mirror what the account publishes; other “Sargon” handles in the press are different operators unless linked here later."
-    ),
-}
+# Slug-level story/hero overrides. When empty, canonical copy is merged from
+# scripts/merge_blog_style_artist_bios.py into content/artist-research-data.json.
+STORY_OVERRIDES: dict[str, str] = {}
 
-HERO_OVERRIDES: dict[str, str] = {
-    "aviv-shamir": "Tel Aviv illustrator Aviv Shamir (@avivos_91): Instagram as live studio diary, portfolio links to follow.",
-    "refiloe-mnisi": "Johannesburg illustrator Refiloe Mnisi (@urfavsweatpants): character-led fashion energy, Instagram-first.",
-    "beto-val": (
-        "Ecuadorian collage artist Beto Val (@elbetoval): surreal pieces from vintage scientific illustration; "
-        "elbetoval.com essays trace how practice accelerated in the pandemic years."
-    ),
-    "max-diamond": (
-        "Illustrator Max Diamond (@maxdiamond52): poster work on Instagram; Linktree rounds out public profiles."
-    ),
-    "my-sunbeam": (
-        "London illustrator My Sunbeam (@mysunbeam): playful characters and retro textures in People of Print and GoodMood Prints spotlights."
-    ),
-    "s-a-r-g-o-n": (
-        "Graphic work in progress at @oky.sargon—story still unfolding in public on Instagram."
-    ),
-}
+HERO_OVERRIDES: dict[str, str] = {}
 
 # Exact paragraph replacements (substring in story)
 PARA_SNIPPET_FIXES: list[tuple[str, str]] = [
@@ -370,6 +295,26 @@ EDITORIAL_SNIPPETS: list[tuple[str, str]] = [
         "Hiroyasu Tsuri—TWOONE—was born in Yokohama and paints museum-scale murals collected by the National Gallery of Australia, Straat Museum, and MUCA Munich.",
     ),
     (
+        "Dawal is the Paris-associated painter and street artist building surreal narratives straight on the wall—often into cracked plaster, turning damage into micro-compositions.\n\nThe work treats city surfaces as imagination prompts; photo trails and indexes round out the map.\n\nInstagram lives at @_dawal; a pinned post nods to a Paris solo threaded with childhood motifs.",
+        "Dawal is a Paris-area painter and muralist who builds surreal scenes straight on the wall—often painting into cracked plaster so the damage becomes part of the picture.\n\nCity texture, light, and odd corners steer each composition.\n\nFind him on Instagram at @_dawal, including a Paris solo threaded with childhood motifs.",
+    ),
+    (
+        "Carsten Gueth works as Die Doing—Artinrug traces Stuttgart architecture training, long agency years on cultural campaigns, then independent image-making.\n\nnotimefortv.biz lists Red Dot / ADC nods plus clients like Apple, Salomon, and Penguin Random House, alongside solo and festival stops across Germany and beyond.",
+        "Carsten Gueth works as Die Doing, with Stuttgart architecture training and long agency years on cultural campaigns before independent image-making.\n\nRed Dot and ADC recognition sit alongside clients including Apple, Salomon, and Penguin Random House, plus solo shows and festival stops across Germany and beyond.",
+    ),
+    (
+        "Behind Maalavidaa, Alycia Rainaud fuses graphic design, digital art, and emotional-health themes—a 2018 master’s thesis on psychology in design still steers the palette.\n\nNeon, meditation-informed abstraction is the through-line; outside features picked up the same story and sit under Press.\n\nSaturated color fields and emotional narratives stay vivid on a Street Lamp—abstraction still reads at a glance.",
+        "Behind Maalavidaa, Alycia Rainaud fuses graphic design, digital art, and emotional-health themes—a 2018 master’s thesis on psychology in design still steers the palette.\n\nNeon, meditation-informed abstraction is the through-line.\n\nSaturated color fields and emotional narratives stay vivid on a Street Lamp—abstraction still reads at a glance.",
+    ),
+    (
+        "Psoman is a Liège-born muralist who studied graphic design and advanced fabrication in Europe before committing to walls full-time.\n\nA 2024 Taiwan school residency put creature surrealism and environmental politics in front of a new public.\n\nFestival miles and wall photos keep stacking—coverage is catalogued in Press.",
+        "Psoman is a Liège-born muralist who studied graphic design and advanced fabrication in Europe before committing to walls full-time.\n\nA 2024 Taiwan school residency put creature surrealism and environmental politics in front of a new public.\n\nFestivals and new walls keep extending the reel from Belgium outward.",
+    ),
+    (
+        "Cokorda Martin is a Balinese illustrator threading temple heritage through electric color and global brand work—family art lineage folded into pop-bright surfaces.\n\nTimeout Asia and Ana-tomy unpacked that fusion in depth; URLs sit under Press.\n\nLinktree gathers representation through Debut Art plus shops and socials.",
+        "Cokorda Martin is a Balinese illustrator threading temple heritage through electric color and global brand work—family art lineage folded into pop-bright surfaces.\n\nTimeout Asia and Ana-tomy have unpacked that fusion in long form.\n\nRepresentation runs through Debut Art; shops and socials stay linked from his profiles.",
+    ),
+    (
         "laurafridman.art/about states she is French, studied economics at Yale, danced professionally with Israel Ballet, and now paints full-time.\n\nThe same page lists solo and group shows including Kuli Alma, Tel Aviv (2022) and international cities such as Barcelona and Lisbon.\n\nHer figurative style exaggerates hands and necks while keeping faces realistic—hands and necks carry the story even when faces stay quiet, a balance that reads cleanly on a Street Lamp",
         "Laura Fridman is French—Yale economics, a professional chapter with Israel Ballet, then full-time painting.\n\nSolos and groups run from Kuli Alma (Tel Aviv, 2022) through Barcelona and Lisbon.\n\nFigurative bodies stretch gesture through hands and necks while faces stay photographic; the tension reads cleanly on a Street Lamp.",
     ),
@@ -455,7 +400,7 @@ AUTHORITY_SNIPPETS: list[tuple[str, str]] = [
     ),
     (
         "Timeout’s 2026 feature interviews Cokorda Martin about Balinese heritage, color, and global brand work.\n\nAna-tomy’s journal post Celebrating Individuality summarizes his family art lineage and fusion of traditional motifs with pop palettes.\n\nlinktr.ee/cokordamartin points to representation (Debut Art) and shops.",
-        "Cokorda Martin is a Balinese illustrator threading temple heritage through electric color and global brand work—family art lineage folded into pop-bright surfaces.\n\nTimeout Asia and Ana-tomy unpacked that fusion in depth; URLs sit under Press.\n\nLinktree gathers representation through Debut Art plus shops and socials.",
+        "Cokorda Martin is a Balinese illustrator threading temple heritage through electric color and global brand work—family art lineage folded into pop-bright surfaces.\n\nTimeout Asia and Ana-tomy have unpacked that fusion in long form.\n\nRepresentation runs through Debut Art; shops and socials stay linked from his profiles.",
     ),
     (
         "Jérôme Masi is a freelance art director and illustrator based in Annecy, France, represented by Creasenso. In a 2022 LM magazine interview he traced his path from École Emile-Cohl in Lyon into video games, then founding a graphic studio in Lyon in 2006, moving through a collective and motion design before committing full-time to illustration.\n\nCommercial work stays largely digital for clients he names in interview—such as Orange, Tissot, and British Airways—while personal pieces often return to acrylic on canvas in a dedicated studio area, moving between desk and easel.",
@@ -527,6 +472,16 @@ DROP_PARA_PREFIXES = (
 )
 
 PAREN_VERIFY = re.compile(r"\s*\([^)]*(?:verify|confirm at|confirm on|verify current)[^)]*\)", re.I)
+
+# activeSince: strip source-chase parentheticals (readers should not see “per LM”, “LinkedIn”, etc.).
+ACTIVE_SINCE_PAREN = re.compile(
+    r"\s*\([^)]*(?:\bper\b|\bverify\b|\bconfirm\b|LinkedIn|Wikipedia|Behance lists|"
+    r"Dror Hadadi|Artinrug|UrbanPresents|Murales Buenos Aires|It’s Nice That|It\.s Nice That|"
+    r"official one-page|bio consulted|conference bio|The Street Lamp|artist blurb|"
+    r"Street Art Cities bio|Timeout interview|Ana-tomy|maalavidaa\.com|sammesnow\.com|"
+    r"elbetoval\.com|kakachazz\.com|animalitoland\.com|Varsi|Wood’d|related pages|cited on)[^)]*\)",
+    re.I,
+)
 
 # Drop whole sentences that are ops / research-room voice (matched anywhere in sentence).
 INTERNAL_SENTENCE_RES: tuple[re.Pattern[str], ...] = tuple(
@@ -673,6 +628,36 @@ def strip_internal_parentheticals(text: str) -> str:
     return text
 
 
+def refine_active_since(text: str) -> str:
+    """Reader-facing line under the hero—no citations, spreadsheets, or ‘verify’ language."""
+    t = (text or "").strip()
+    if not t:
+        return t
+    low = t.lower()
+    if any(
+        x in low
+        for x in (
+            "not dated on the official",
+            "no authoritative biography",
+            "no single long-form biography",
+            "sparse verifiable biography",
+        )
+    ):
+        return ""
+    prev = None
+    while prev != t:
+        prev = t
+        t = ACTIVE_SINCE_PAREN.sub("", t)
+        t = PAREN_VERIFY.sub("", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    t = re.sub(r"\s*;\s*;+", ";", t)
+    t = re.sub(r"(?:^|\s)per\s+[a-z0-9.-]+\.[a-z]{2,}[^;]*", "", t, flags=re.I)
+    t = re.sub(r"\s*;\s*$", "", t).strip()
+    t = re.sub(r"\s*cited on related pages\.?", "", t, flags=re.I).strip()
+    t = re.sub(r"\s*;\s*$", "", t).strip()
+    return t
+
+
 def drop_paragraphs(paras: list[str]) -> list[str]:
     out: list[str] = []
     for p in paras:
@@ -816,6 +801,11 @@ def refine_entry(slug: str, row: dict[str, str]) -> tuple[bool, dict[str, str]]:
         if new_h != (out.get("heroHook") or "").strip():
             out["heroHook"] = new_h
             changed = True
+
+    new_act = refine_active_since(out.get("activeSince") or "")
+    if new_act != (out.get("activeSince") or "").strip():
+        out["activeSince"] = new_act
+        changed = True
 
     if changed:
         note = out.get("notes") or ""
