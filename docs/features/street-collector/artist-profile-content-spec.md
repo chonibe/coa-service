@@ -13,7 +13,7 @@
 | Payload helpers | [`lib/shop/artist-profile-api.ts`](../../../lib/shop/artist-profile-api.ts) |
 | Collection GraphQL fields | [`lib/shopify/storefront-client.ts`](../../../lib/shopify/storefront-client.ts) — `CollectionFields` fragment |
 
-**Version:** 1.4.1 · **Last updated:** 2026-04-02
+**Version:** 1.5.0 · **Last updated:** 2026-04-02
 
 ---
 
@@ -37,7 +37,7 @@ This is the **editorial** checklist. For every artist, research and produce the 
 
 | What to produce | What to research / answer | Notes for writers |
 |-----------------|---------------------------|-------------------|
-| **Core bio / story** (3–6 short paragraphs) | Geography, formative years, how they found walls/street/studio, relationship to the city or community, why print or edition matters to them, any pivot that defines their voice | Plain text; no HTML; short paragraphs; avoid clichés (“passionate,” “unique”)—use concrete scenes and facts |
+| **Core bio / story** (3–6 short paragraphs) | Geography, formative years, **history with art**, walls/street/studio **process**, relationship to place or community, why print or edition matters, pivots that define their voice | Plain text; no HTML; **story + verbatim artist quotes** from interviews when available—**no** citing CVs, magazines, or portfolio pages in the body (playbook §2.2–2.3); outlet credits go in **Press** / **Exhibitions** |
 | **Additional history / CV notes** (optional column) | Education, representation, studio timeline, awards, residencies, and any CV bullets not yet written as dated exhibition lines—often pasted from the **About** page then edited | Feeds **Additional History & CV (text)** in the research sheet; merged into the shop **bio** after **Story** when Shopify/Supabase bio is empty. Prefer moving **dated shows** into **Exhibitions (Text List)** instead of duplicating here. |
 | **About page URL** (optional column) | Canonical About/Bio URL you used first | **About Page URL (primary)** — traceability for the next researcher |
 | **Pull quote** | One line from them (interview) or a paraphrase so strong it can stand alone in large type | Must be emotionally specific; attribute mentally even if UI doesn’t show attribution |
@@ -332,6 +332,7 @@ Create metafields on the **Collection** resource, namespace `custom`:
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.5.0 | 2026-04-02 | §B core bio: narrative + artist quotes; CV/press citations only in Press/Exhibitions (see playbook §2.2–2.3). |
 | 1.2.0 | 2026-04-02 | Linked standalone **[`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md)** for writers; this file remains implementer-focused. |
 | 1.1.0 | 2026-04-02 | Added per-artist **research deliverables** and a **copy-paste worksheet** for content production. |
 | 1.0.0 | 2026-04-02 | Initial spec aligned with `artist-profile.html` layout and collection metafields. |

@@ -7,6 +7,8 @@ Refine Story (Full Text) and Hero Hook in artist research for public shop displa
 - Applies slug-specific canonical story seeds, then runs the same pipeline on every slug.
 - Rewrites research/agent voice into confident editorial copy, then **Street Collector authority voice** (our words; outlets sparingly, details in Press).
 
+**Overview bio intent (align with playbook §2.2–2.3, §5):** Tell the artist’s **story**—work, history with art, **process**. Use **verbatim quotes from the artist** when present (interviews, Q&A). Do **not** cite CVs, magazines, blogs, or portfolio pages as sources in running prose; absorb facts into narration and leave credits to Press/Exhibitions.
+
 **Shopify collection descriptions:** This script does not call Shopify. Human editors (or a separate export) should open each artist collection’s **description** and use it as a source when aligning `storyFullText`—the shop merges collection copy with research in `lib/shop/artist-research-merge.ts` (`mergeShopifyCollectionBioWithResearch`).
 
 Updates:
@@ -566,6 +568,11 @@ INTERNAL_SENTENCE_RES: tuple[re.Pattern[str], ...] = tuple(
         r"Search results heavily feature Sargon Khnu",
         r"verify product catalog on the live domain",
         r"Treat client lists strictly from primary",
+        r"^.{0,220}\bis described across portfolio platforms\b",
+        r"^.{0,200}\bInterview-based profiles identify\b",
+        r"^.{0,200}\bblog posts identify\b",
+        r"^The on-site CV enumerates\b",
+        r"^.{0,120}\bTheir (?:official )?CV (?:lists|enumerates|counts)\b",
     )
 )
 

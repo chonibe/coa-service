@@ -8,7 +8,7 @@
 
 **Copywriting standard (bios, hooks, quotes, list blurbs):** [`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md) — use this for voice, conversion framing, banned phrases, and **AI agent** instructions. This brief stays the practical worksheet; the playbook is the canonical voice + QA gate.
 
-**Version:** 1.1.0 · **Last updated:** 2026-04-21
+**Version:** 1.2.0 · **Last updated:** 2026-04-02
 
 ---
 
@@ -17,7 +17,7 @@
 - **Follow the playbook** — [`artist-profile-copywriting-playbook.md`](./artist-profile-copywriting-playbook.md) has the full rules, examples, and mandatory agent checklist.
 - **Human and specific.** Prefer concrete places, years, scenes, and quotes over adjectives like “passionate,” “unique,” or “world-renowned.”
 - **Facts over hype.** If you’re not sure, flag it—don’t invent exhibitions, quotes, or charity claims.
-- **Sources.** Plan on at least: artist interview (or written Q&A), CV or resume, their own site or gallery bio, reputable press, and their Instagram. Use Wikipedia only as a lead; verify anything you take from it.
+- **Sources.** Plan on at least: artist interview (or written Q&A), CV or resume, their own site or gallery bio, reputable press, and their Instagram. Use Wikipedia only as a lead; verify anything you take from it. **In the long-form story,** turn interviews into **narrative + short verbatim quotes** from the artist; use CV and press only to **check facts**—do **not** cite magazines, blogs, or “their site lists…” in the bio body (that material belongs in **Press** and **Exhibitions** rows).
 
 ---
 
@@ -47,7 +47,7 @@
 
 | Deliverable | What to cover | How to write it |
 |-------------|---------------|-----------------|
-| **Body** (about **3–6 short paragraphs**) | Where they’re from, how they started, street/studio practice, relationship to place or community, why editions or prints matter to them, why this collaboration with Street Collector fits | Plain text, short paragraphs, no HTML |
+| **Body** (about **3–6 short paragraphs**) | Where they’re from, how they started, **history with art**, street/studio **process**, relationship to place or community, why editions or prints matter to them, why this collaboration with Street Collector fits | Plain text, short paragraphs, no HTML; **storytelling**, not a list of who covered them—use **their words in quotes** when you have interview/Q&A text; save outlet names for the **Press** section |
 | **Pull quote** | One killer line—ideally something they said, or a line you’d be proud to put on a poster | Emotionally specific; large type on the page |
 | **Impact card** (optional) | Workshops, youth programs, % to a cause, community print project—**only if verified** | One short block; skip if unknown |
 | **Exclusive card** (optional) | What’s genuinely special about this work **on Street Collector** (first print, format, no reprint elsewhere)—**only if approved by the team** | Factual; no promises legal hasn’t cleared |
@@ -184,5 +184,6 @@ When the worksheet is complete and signed off, send it to **digital / Shopify op
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.2.0 | 2026-04-02 | Long-form story: narrative + artist quotes; CV/press for facts only—no bibliography in bio (see playbook §2.2–2.3). |
 | 1.1.0 | 2026-04-21 | Linked canonical copywriting playbook + agent instructions. |
 | 1.0.0 | 2026-04-02 | Initial writer brief. |

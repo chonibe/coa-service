@@ -16,7 +16,7 @@
 
 **Testing / QA:** Merge behavior (collection description + research body) is covered by [`lib/shop/artist-research-merge.test.ts`](../../../lib/shop/artist-research-merge.test.ts). Use the checklist in **§7** for copy self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
 
-**Version:** 1.4.1 · **Last updated:** 2026-04-02
+**Version:** 1.5.0 · **Last updated:** 2026-04-02
 
 ---
 
@@ -61,13 +61,20 @@ Artist bios on the shop should read like **short magazine features**—confident
 
 ### 2.2 Street Collector speaks as the authority
 
-**Street Collector owns the voice** in `storyFullText` and the hero hook: write as if we are introducing an artist we stand behind, in **our** words.
+**Street Collector owns the narrative** in `storyFullText` and the hero hook: write as if we are introducing an artist we stand behind, in **our** words—**story first**, not a bibliography.
 
-- **Do not** chain attributions (“*X* reports… *Y* adds… his site states…”). That reads like a literature review.
-- **Do** state facts directly (“Born in Carmiel, 1990…”, “Shenkar-trained…”, “Murals run from Florentin to HaSolelim”).
-- **Quotes and named outlets** are optional seasoning for credibility or SEO—**at most** once or twice in the bio, usually as a short clause, not every paragraph. Full URLs, dates, and outlet lists belong in **Press** / **Exhibitions**, not repeated in the overview.
+- **Do not** chain attributions (“*X* reports… *Y* adds… his site states…”, “According to *Magazine*…”, “Their CV lists…”). That reads like a literature review or a press recap.
+- **Do not** cite CVs, portfolio pages, magazines, blogs, or galleries **as sources** in the overview. You may use those materials **only behind the scenes** to check facts; the public bio should **not** read like a list of who wrote about whom.
+- **Do** state facts directly in plain authorial voice (“Born in Carmiel, 1990…”, “Shenkar-trained…”, “Murals run from Florentin to HaSolelim”).
+- **Do** use **verbatim quotes from the artist** when you have them (interview, podcast, long-form Q&A, or cleared caption)—inside quotation marks, trimmed to the sharpest lines. That is the main place **first person** belongs.
 
-**Test:** If every paragraph names a different publication, cut most of them and keep the story.
+**Test:** If the bio name-checks outlets or reads like a CV pasted into sentences, rewrite into scenes, practice, and history—then add **Press** / **Exhibitions** rows for credits.
+
+### 2.3 What the overview bio is for
+
+The long-form story should answer: **who is this maker**, **how they got here** (history with art, place, turning points), **how they work** (process, materials, scale), and **what the work tends to do** (subjects, stance)—always grounded in verified facts.
+
+It should **not** summarize the press ecosystem or reproduce CV bullets. **Outlet names, links, and feature dates** belong in the **Press** module only; **shows and murals** belong in **Exhibitions**.
 
 ---
 
@@ -83,6 +90,8 @@ Artist bios on the shop should read like **short magazine features**—confident
 **Stronger:** “Started on walls slated for demolition—now the city’s on her canvases.”
 
 ### 3.2 Long-form story (Overview bio, 3–6 short paragraphs)
+
+**Intent:** A readable **feature-style story** about the person and the work—plus **short quotes from the artist** when you have interview (or equivalent) text. Not a survey of websites or magazines.
 
 Suggested arc (flex order when facts demand it):
 
@@ -137,11 +146,13 @@ When the UI shows a **truncated** bio:
 
 ## 5. Sources & verification (trust = conversion)
 
+**Research vs public copy:** Interviews, CVs, press, and official sites are for **fact-checking and quotes**. The **`storyFullText` field is not** where you cite those sources—write **story + artist quotes**; park credits in **Press** and **Exhibitions**.
+
 Minimum source mix when researching (aligns with [`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md)):
 
-1. Artist interview, Q&A, or long caption thread (verified).  
-2. CV / resume / official bio page.  
-3. Reputable press or gallery text.  
+1. **Artist interview, Q&A, or long caption thread (verified)** — primary fuel for **voice** and **pull quotes** in the overview.  
+2. CV / resume / official bio page — **facts and dates only**; do not echo CV structure or “site lists…” in the bio.  
+3. Reputable press or gallery text — **fact checking** and **Press rows**; do not recap outlets in the overview.  
 4. Instagram as **behavioral** context, not as a citation for controversial claims.
 
 **Wikipedia:** lead only; verify every fact you keep.
@@ -160,6 +171,13 @@ Minimum source mix when researching (aligns with [`artist-profile-content-creato
 ❌ “Since childhood, they have been passionate about creativity.”  
 ✅ “First pieces went up in 2009 on the industrial edge of Lisbon, where the walls outlasted the factories.”
 
+**No outlet stack in the overview**  
+❌ “Colossal (2023) profiles his chaotic color worlds; Behance documents commercial tags beside personal experiments.”  
+✅ “He builds chaotic color worlds on one track and client-ready flat icons on another—research stacks first, then vector lock-in.”
+
+**Artist voice (when you have interview text)**  
+✅ They described the workflow as: “Rough everything on the iPad first—I don’t commit the vectors until the mess tells me where to go.”
+
 **Pull quote**  
 ❌ “Art is my life.”  
 ✅ “If the wall’s coming down next week, I still finish the face.”
@@ -172,13 +190,14 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 1. **Read** this playbook and the worksheet section of [`artist-profile-content-creator-brief.md`](./artist-profile-content-creator-brief.md) (or the template in [`artist-profile-content-spec.md`](./artist-profile-content-spec.md)).  
 2. **Confirm** you have (or the user provided) source notes: interview, CV, official bio, press links, and **the Shopify artist collection description** when it exists. If missing, produce only **outline + questions**, not invented facts.  
-3. **Write** using §3 field rules (including **§3.2 collection + research merge**), §2 banned list, **§2.1 editorial vs research voice**, and **§2.2 Street Collector as authority** (our words first; outlets mostly in Press).  
+3. **Write** using §3 field rules (including **§3.2 collection + research merge**), §2 banned list, **§2.1 editorial vs research voice**, **§2.2 authority without bibliography**, and **§2.3** (story, history, process—**§5** for what stays in Press/CV research only).  
 4. **Self-check** before output:  
    - [ ] Hook is 120–180 characters and fails the “name swap” test for uniqueness.  
    - [ ] Story is 3–6 paragraphs, plain text, `\n\n` between paragraphs.  
    - [ ] Story is consistent with the **Shopify collection description** where one exists (or collection is updated to match—see §3.2).  
    - [ ] Story reads like a magazine feature, not research notes (“profiles identify…”, “search snippets…”).  
-   - [ ] Story states facts in Street Collector’s voice; no citation stack—named outlets at most once or twice for credibility, details in Press.  
+   - [ ] Story is **narrative**: work, history with art, process—**no** citing CVs, magazines, blogs, or “according to [outlet]” in the overview; credits live in **Press** / **Exhibitions**.  
+   - [ ] Any **first person** in the story is a **verbatim artist quote** from an interview (or equivalent verified source), in quotation marks—not invented.  
    - [ ] No banned hype words unless inside a quote.  
    - [ ] Exhibitions/press lines are factual; no guessed years or venues.  
    - [ ] Callouts omitted or flagged if unverified.  
@@ -193,6 +212,7 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.5.0 | 2026-04-02 | §2.2–2.3 & §5: bios = story + artist quotes; no CV/magazine citations in overview; Press/Exhibitions for credits. Agent checklist updated. |
 | 1.4.1 | 2026-04-02 | §3.2: Shopify collection description as source + runtime merge with `storyFullText` (`mergeShopifyCollectionBioWithResearch`). |
 | 1.4.0 | 2026-04-02 | §2.2 authority voice: our words first; outlets sparingly / in Press. |
 | 1.3.0 | 2026-04-02 | §2.1 editorial vs research voice; agent checklist updated. |
