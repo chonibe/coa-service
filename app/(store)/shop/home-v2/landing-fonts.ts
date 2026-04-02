@@ -1,18 +1,15 @@
-import { Bebas_Neue, DM_Mono, Inter, Playfair_Display } from 'next/font/google'
+import { Bebas_Neue, DM_Mono, Playfair_Display } from 'next/font/google'
 
-/** Base UI — matches Google Fonts link: Inter 300/400/500 */
-export const landingSans = Inter({
-  subsets: ['latin'],
-  variable: '--font-landing-sans',
-  display: 'swap',
-  weight: ['300', '400', '500'],
-})
-
-/** Headlines & editorial — Playfair + italics (matches `ital,wght@0,400;0,500;1,400;1,500`) */
+/**
+ * Street Collector dark pages — matches
+ * `artist-profile.html` / landing-page.html Google Fonts:
+ * Playfair Display (400/500/700 + italic), DM Mono (300/400/500), Bebas Neue.
+ */
 export const landingSerif = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-landing-serif',
   display: 'swap',
+  weight: ['400', '500', '700'],
   style: ['normal', 'italic'],
 })
 
@@ -32,9 +29,8 @@ export const landingMono = DM_Mono({
   display: 'swap',
 })
 
-/** Apply on the landing root wrapper (with `styles.page`) so CSS can use `var(--font-landing-*)`. */
+/** Apply on the page root wrapper so CSS can use `var(--font-landing-*)`. */
 export const landingFontVariables = [
-  landingSans.variable,
   landingSerif.variable,
   landingDisplay.variable,
   landingMono.variable,

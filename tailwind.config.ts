@@ -31,6 +31,10 @@ const config: Config = {
         serif: ["var(--font-fraunces)", "serif"],
         heading: ["var(--font-fraunces)", "serif"],
         body: ["var(--font-barlow)", "system-ui", "sans-serif"],
+        /** Dark Street Collector pages — set when ancestor has `landingFontVariables` from `home-v2/landing-fonts.ts` */
+        "landing-serif": ["var(--font-landing-serif)", "Georgia", "serif"],
+        "landing-mono": ["var(--font-landing-mono)", "Courier New", "monospace"],
+        "landing-display": ["var(--font-landing-display)", "Impact", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

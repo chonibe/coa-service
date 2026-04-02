@@ -15,7 +15,8 @@
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   position: relative;
-  font-family: var(--font-landing-sans), system-ui, sans-serif;
+  /* artist-profile.html body: DM Mono 300 */
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
   font-weight: 300;
 }
 
