@@ -16,13 +16,15 @@
 
 **Testing / QA:** No automated copy tests. Use the checklist in **§7** for self-review; humans should spot-check the live profile (`/shop/artists/[slug]`) and explore cards after publish.
 
-**Version:** 1.1.0 · **Last updated:** 2026-04-21
+**Version:** 1.2.0 · **Last updated:** 2026-04-21
 
 ---
 
 ## 1. Page job (conversion frame)
 
 **Primary action we want:** a visitor moves from *curious* to *ready to collect*—opening the Works tab, viewing editions, or starting the lamp / checkout flow.
+
+**Product truth:** Editions are experienced on the **Street Lamp** (illuminated display), not as framed “wall art.” Keep **wall / street** language for *where artists paint* (murals, alleys, practice); aim **lamp / Street Lamp** at *where collectors live with the work*.
 
 **Reader mindset:** they are buying **limited art tied to a real practice**, not a generic print shop. Copy should reduce doubt (“Who is this?”, “Is this real?”, “Why here?”) and increase desire (“I get what they do”, “This fits my wall / story”).
 
@@ -170,5 +172,6 @@ When you **draft, expand, or merge** artist bios or profile fields for Street Co
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.2.0 | 2026-04-21 | Product truth: Street Lamp vs wall for collectors; wall/street for artist practice. |
 | 1.1.0 | 2026-04-21 | Linked shop UI files where fixed copy (empty states, explore) lives. |
 | 1.0.0 | 2026-04-21 | Initial playbook: conversion frame + agent checklist; links to brief & spec. |

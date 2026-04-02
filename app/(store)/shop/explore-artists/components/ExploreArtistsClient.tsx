@@ -306,7 +306,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 <blockquote className={exploreStyles.featuredPullquote}>
-                  “Collecting here sends meaningful revenue to the person behind the wall—not just a SKU.”
+                  “Collecting here sends meaningful revenue to the artist behind the piece—not just a SKU.”
                 </blockquote>
                 <button
                   type="button"
@@ -419,7 +419,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
           <h2 className={cn(landingStyles.landingStagger, exploreStyles.mapTitle)} style={{ ['--stagger' as string]: 1 }}>
             Art that crossed an ocean
             <br />
-            to reach <em>your wall.</em>
+            to land <em>in your Street Lamp.</em>
           </h2>
           <div className={cn(landingStyles.landingStagger, exploreStyles.mapCanvasWrap)} style={{ ['--stagger' as string]: 2 }}>
             <svg
@@ -498,9 +498,9 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 Collector Voices
               </div>
               <h2 className={cn(landingStyles.landingStagger, exploreStyles.voicesTitle)} style={{ ['--stagger' as string]: 1 }}>
-                The story is
+                The story lives
                 <br />
-                <em>on the wall.</em>
+                <em>in your Street Lamp.</em>
               </h2>
             </div>
             <div className={cn(landingStyles.landingStagger, exploreStyles.voicesRating)} style={{ ['--stagger' as string]: 2 }}>
@@ -534,8 +534,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   ★★★★★
                 </div>
                 <p className={exploreStyles.voiceText}>
-                  “Knowing it was painted by someone in <em>another city</em> makes it feel different on my wall.
-                  There’s a person behind this — and that changes everything.”
+                  “Knowing it was painted by someone in <em>another city</em> makes it feel different on my Street
+                  Lamp. There’s a person behind this — and that changes everything.”
                 </p>
               </div>
               <div>
@@ -550,8 +550,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   ★★★★★
                 </div>
                 <p className={exploreStyles.voiceText}>
-                  “I bought the print because the story wrecked me. The image earned its wall—the story is what
-                  convinced me.”
+                  “I bought the print because the story wrecked me. The image earned its place on my Street Lamp—the
+                  story is what convinced me.”
                 </p>
               </div>
               <div>

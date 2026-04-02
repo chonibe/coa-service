@@ -276,8 +276,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   ))
                 ) : (
                   <p className={styles.storyBody}>
-                    We&apos;re still building this profile. For now, open <strong>Works</strong> to see editions,
-                    pricing, and what&apos;s left in the run.
+                    We&apos;re still building this profile. For now, open <strong>Works</strong> for pricing, what&apos;s
+                    left in each run, and pieces you can add to your Street Lamp.
                   </p>
                 )}
                 {profile.pullquote ? <blockquote className={styles.storyPullquote}>&ldquo;{profile.pullquote}&rdquo;</blockquote> : null}
@@ -325,8 +325,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   </div>
                 ) : (
                   <p className={styles.storyBody}>
-                    Studio shots, walls-in-progress, and detail photos land here when we publish them. Until then,
-                    use <strong>Works</strong> to see the pieces you can collect.
+                    Studio shots, street work in progress, and detail photos land here when we publish them. Until
+                    then, use <strong>Works</strong> to see pieces you can add to your Street Lamp.
                   </p>
                 )}
                 {profile.exclusiveCallout ? (
@@ -452,7 +452,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <div className={cn(styles.exhibitionsInner, styles.exhibitionsTimeline)}>
               <div className={styles.storyEyebrow}>Exhibition History</div>
               <h2 className={styles.storyH2}>
-                Shows, walls, <em>and features.</em>
+                Shows, murals, <em>and milestones.</em>
               </h2>
               {exhibitionsByYear.length ? (
                 exhibitionsByYear.map(([year, rows]) => (
@@ -472,8 +472,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 ))
               ) : (
                 <p className={styles.storyBody}>
-                  We don&apos;t list shows and walls on this profile yet. Verified history appears here when
-                  it&apos;s published—newest year first.
+                  We don&apos;t list shows and public projects on this profile yet. Verified history appears here
+                  when it&apos;s published—newest year first.
                 </p>
               )}
             </div>
@@ -514,7 +514,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <div className={styles.instagramHeader}>
               <div className={styles.storyEyebrow}>Instagram</div>
               <h2 className={styles.storyH2}>
-                The work, the walls,
+                The work, the street,
                 <br />
                 <em>the process.</em>
               </h2>
@@ -586,8 +586,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   ))}
                 </div>
                 <p className={styles.igNativeEmptyCopy}>
-                  New walls and studio shots usually hit their feed before they land here. Open Instagram for the
-                  live thread; keep <strong>Works</strong> open if you&apos;re here to collect.
+                  New pieces and studio posts usually hit their feed before they land here. Open Instagram for the
+                  live thread; use <strong>Works</strong> when you&apos;re ready to add art to your Street Lamp.
                 </p>
                 <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -665,7 +665,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <em>Now collect their work.</em>
           </h2>
           <p className={styles.ctaSub}>
-            {stats.remainingCount} pieces remaining across {stats.editionCount} editions. When they&apos;re gone, they don&apos;t come back.
+            {stats.remainingCount} pieces left across {stats.editionCount} editions—once a run sells out here, it
+            doesn&apos;t return. Add what you want to your Street Lamp while stock lasts.
           </p>
           <div className={styles.ctaBtns}>
             <Link href="/experience" className={styles.btnPrimary}>
