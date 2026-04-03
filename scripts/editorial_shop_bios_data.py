@@ -3,426 +3,238 @@ from __future__ import annotations
 
 SHOP_BIOS_PART1: dict[str, dict[str, str]] = {
     "agus-rucula": {
-        "heroHook": "Agus Rucula paints big walls where the human body becomes a meeting point—Argentina roots, Italian walls today.",
-        "storyFullText": (
-            "Agus Rucula is an urban painter and teacher who uses scale, gesture, and the figure to open conversations in public space.\n\n"
-            "Her murals borrow from dance and photography as much as from spray and brush—communities often step into the work as participants, not just viewers.\n\n"
-            "The through-line is empathy at mural size: bodies that feel present, readable, and rooted in the street they occupy."
-        ),
+        "heroHook": "Agus Rucula paints the human figure at mural scale and treats it as a meeting point \u2014 between community and artist, between dance and paint, between the people who made the\u2026 (@agus.rucula)",
+        "storyFullText": "Agus Rucula paints the human figure at mural scale and treats it as a meeting point \u2014 between community and artist, between dance and paint, between the people who made the wall and the people walking past it. Her practice draws as much from photography and choreography as from urban art tradition. Communities often participate directly. The result is empathy at the size of architecture.",
         "activeSince": "Murals since 2012",
     },
     "ajax-blyth-piper": {
-        "heroHook": "Ajax Piper turns Hastings walls into story panels—characters, color, and British street-art rhythm.",
-        "storyFullText": (
-            "Ajax Blyth Piper works as a muralist on England’s south coast, where seaside light and town texture shape each wall.\n\n"
-            "His pieces read like narrative snapshots—figures you might know, palettes tuned to the neighborhood.\n\n"
-            "Collectors meet him where large-scale painting still means painting for the people who walk past every day."
-        ),
+        "heroHook": "Ajax Blyth Piper graduated from University of the Arts London and has been working as a muralist on England's south coast since 2018. (@ajaxpiper)",
+        "storyFullText": "Ajax Blyth Piper graduated from University of the Arts London and has been working as a muralist on England's south coast since 2018. His pieces read like narrative snapshots \u2014 figures you might know, palettes tuned to the neighborhood they live in. He also designs typefaces, and the same attention to letterform runs through the mural work.",
         "activeSince": "",
     },
     "alice-bureau": {
-        "heroHook": "Alice Hoffmann is Bureau Alice—Zurich precision, editorial instinct, packaging and murals in one hand.",
-        "storyFullText": (
-            "Alice Hoffmann spent years leading creative inside European agencies before Bureau Alice became the umbrella for her own illustration.\n\n"
-            "Her line is clean enough for global brands yet stubbornly hand-drawn—vector finishes that still feel like someone sat with a pencil first.\n\n"
-            "Editorial, packaging, and the occasional wall share the same disciplined curiosity: how little line can carry how much story."
-        ),
+        "heroHook": "Alice Hoffmann spent two decades in agency creative leadership before Bureau Alice became her primary output. (@bureau_alice)",
+        "storyFullText": "Alice Hoffmann spent two decades in agency creative leadership before Bureau Alice became her primary output. The transition shows in the confidence \u2014 a line clean enough for global brand systems (Meta, Spotify, Swiss Post stamps) that still feels hand-made at its core. Editorial, packaging, and the occasional wall all come from the same place: a question about how little line can carry how much story.",
         "activeSince": "",
     },
     "alin-mor": {
-        "heroHook": "Alin Mor paints from Haifa—archetypes, femininity, and spiritual color on walls and in galleries.",
-        "storyFullText": (
-            "Alin Mor is a Haifa-based painter who treats large surfaces like altars for pattern, symbol, and female presence.\n\n"
-            "Bezalel training meets street scale: murals for cities, commissions for brands, gallery chapters that slow the eye down.\n\n"
-            "The work asks who gets to occupy public space—and answers with saturated, symbolic figures you can’t scroll past."
-        ),
+        "heroHook": "Alin Mor graduated Bezalel in visual communications and built a practice around femininity, archetype, and spiritual symbolism at mural scale. (@alinmor)",
+        "storyFullText": "Alin Mor graduated Bezalel in visual communications and built a practice around femininity, archetype, and spiritual symbolism at mural scale. The work asks, without quite saying it, who gets to occupy public space. It answers with saturated, symbolic figures that are hard to walk past without stopping.",
         "activeSince": "",
     },
     "animalitoland": {
-        "heroHook": "Animalitoland is Graciela Gonçalves Da Silva—creature-filled murals born in Buenos Aires, at home in Los Angeles.",
-        "storyFullText": (
-            "Graciela Gonçalves Da Silva works as Animalitoland, a name that sounds like a theme park and paints like one—odd animals, comic timing, painterly skin.\n\n"
-            "Graphic-design school in Buenos Aires gave her structure; murals since 2011 gave her scale; life on the road gave her a cast of characters that travel.\n\n"
-            "Her acrylic worlds feel like graphic novels pressed into architecture—sweet, strange, and a little feral."
-        ),
+        "heroHook": "Graciela Gon\u00e7alves Da Silva works as Animalitoland \u2014 a name that sounds like a theme park and paints like one. (@animalitoland)",
+        "storyFullText": "Graciela Gon\u00e7alves Da Silva works as Animalitoland \u2014 a name that sounds like a theme park and paints like one. She studied design at the University of Buenos Aires, started painting murals in 2011, and has been working nomadically since 2014, living across Buenos Aires, Madrid, Vancouver, and now Los Angeles. The acrylic worlds read like graphic novels pressed into architecture \u2014 precise characters, genuine strangeness, a cast that travels well.",
         "activeSince": "",
     },
     "antonia-lev": {
-        "heroHook": "Antonia Lev moves between Paris streets and the drawing table—illustration, murals, and motion-minded experiments.",
-        "storyFullText": (
-            "Antonia Lev is an illustrator who never fully left the wall. Her practice folds street painting, editorial image-making, and restless digital tests into one lane.\n\n"
-            "The look is graphic and narrative: figures and scenes that hold up at mural scale and still intrigue on a page.\n\n"
-            "She has painted through lockdowns and festival summers alike—always chasing the same question: how much story fits on the surface in front of her."
-        ),
+        "heroHook": "Antonia Lev has been working as an illustrator and street artist since at least 2011. (@antonialev)",
+        "storyFullText": "Antonia Lev has been working as an illustrator and street artist since at least 2011. Her practice moves between wall painting, editorial image-making, and digital work without settling firmly in any of them. The images are graphic and narrative \u2014 figures and scenes that hold mural scale and still reward a close look. She painted through lockdowns and festival summers alike, always asking how much story fits on the surface in front of her.",
         "activeSince": "Professional practice since 2011",
     },
     "antonia-lev-1": {
-        "heroHook": "Antonia Lev moves between Paris streets and the drawing table—illustration, murals, and motion-minded experiments.",
-        "storyFullText": (
-            "Antonia Lev is an illustrator who never fully left the wall. Her practice folds street painting, editorial image-making, and restless digital tests into one lane.\n\n"
-            "The look is graphic and narrative: figures and scenes that hold up at mural scale and still intrigue on a page.\n\n"
-            "She has painted through lockdowns and festival summers alike—always chasing the same question: how much story fits on the surface in front of her."
-        ),
+        "heroHook": "Antonia Lev has been working as an illustrator and street artist since at least 2011. (@antonialev)",
+        "storyFullText": "Antonia Lev has been working as an illustrator and street artist since at least 2011. Her practice moves between wall painting, editorial image-making, and digital work without settling firmly in any of them. The images are graphic and narrative \u2014 figures and scenes that hold mural scale and still reward a close look. She painted through lockdowns and festival summers alike, always asking how much story fits on the surface in front of her.",
         "activeSince": "Professional practice since 2011",
     },
     "aviv-shamir": {
-        "heroHook": "Aviv Shamir draws Tel Aviv in quick, honest strokes—Instagram is the open studio.",
-        "storyFullText": (
-            "Aviv Shamir is a Tel Aviv illustrator who lets process breathe in public. Sketches, finishes, and experiments share the same feed.\n\n"
-            "That transparency matters: you see hand, hesitation, and payoff in one scroll.\n\n"
-            "The work stays rooted in daily life—faces, humor, and city texture—without polishing away the human slip."
-        ),
+        "heroHook": "Aviv Shamir is a Tel Aviv illustrator who keeps the process visible. (@avivos_91)",
+        "storyFullText": "Aviv Shamir is a Tel Aviv illustrator who keeps the process visible. Sketches, finished pieces, and mid-thought experiments share the same feed \u2014 faces, humor, and the texture of daily city life. The transparency is part of the appeal: you see the hand, the hesitation, and the result in one scroll.",
         "activeSince": "",
     },
     "beto-val": {
-        "heroHook": "Beto Val collages Ecuador’s surreal from old science plates—nature redrawn as dream.",
-        "storyFullText": (
-            "Beto Val builds digital collages from vintage scientific illustration, letting birds, bones, and botanical plates drift into new ecosystems.\n\n"
-            "The pandemic years pushed the practice from personal series into galleries and museums; the essay-like patience in his writing matches the layering in the files.\n\n"
-            "Every piece feels like a cabinet of wonders tipped sideways—familiar species, impossible arrangements."
-        ),
+        "heroHook": "Beto Valencia makes digital collages from vintage scientific illustration \u2014 birds, bones, botanical plates \u2014 and arranges them into ecosystems where nothing quite follows the\u2026 (@elbetoval)",
+        "storyFullText": "Beto Valencia makes digital collages from vintage scientific illustration \u2014 birds, bones, botanical plates \u2014 and arranges them into ecosystems where nothing quite follows the original logic. The pandemic years turned a personal practice into something with gallery presence, museum listings, and a steady print shop. Every piece feels like a cabinet of curiosities tipped sideways.",
         "activeSince": "",
     },
     "carsten-gueth": {
-        "heroHook": "Carsten Gueth is Die Doing—Stuttgart-bred graphic muscle for culture, books, and the street.",
-        "storyFullText": (
-            "Carsten Gueth publishes as Die Doing, a shorthand for image-making that still carries architecture school’s discipline.\n\n"
-            "Years inside agencies on cultural campaigns taught him speed and storytelling; independence let him chase stranger briefs—books, brands, walls, festivals.\n\n"
-            "The work is bold, slightly absurd, and always built to read from across the room."
-        ),
+        "heroHook": "Carsten Gueth studied architecture and urban planning in Stuttgart before spending fifteen years in graphic design for cultural institutions \u2014 museums, festivals, publishers. (@die_doing)",
+        "storyFullText": "Carsten Gueth studied architecture and urban planning in Stuttgart before spending fifteen years in graphic design for cultural institutions \u2014 museums, festivals, publishers. His independent practice publishes as Die Doing. The work is bold, occasionally absurd, and built to read from across a room. Recent recognition from ADC, Red Dot, and Palau de la M\u00fasica Catalana suggests the pivot was the right call.",
         "activeSince": "",
     },
     "chubby-nida": {
-        "heroHook": "Chubby Nida draws Bangkok-soft characters with a satirical edge—cute until you read the caption.",
-        "storyFullText": (
-            "Chubby Nida is a Bangkok illustrator whose round, gentle figures smuggle in social bite.\n\n"
-            "Editorial and personal pieces share the same DNA: approachable shapes, colors you want to keep, ideas that land after the smile.\n\n"
-            "She is part of a generation redefining what “cute” can argue for in public space."
-        ),
+        "heroHook": "Chubby Nida is a Bangkok illustrator whose round, gentle figures carry social commentary without announcing it. (@chubbynida)",
+        "storyFullText": "Chubby Nida is a Bangkok illustrator whose round, gentle figures carry social commentary without announcing it. Editorial and personal pieces share the same approach: approachable shapes, colors you want to keep, ideas that land after the smile. She is part of a generation redefining what \"cute\" can argue for in public.",
         "activeSince": "",
     },
     "cokorda-martin": {
-        "heroHook": "Cokorda Martin brings Balinese temple color into global brand worlds—heritage as living graphic.",
-        "storyFullText": (
-            "Cokorda Martin is a Balinese illustrator who grew up inside a family of makers and now translates ritual pattern into electric pop surfaces.\n\n"
-            "Traditional motifs do not stay in the past—they ride motorcycles, wrap album art, and hold their own next to neon type.\n\n"
-            "His is a story of island craft meeting international briefs without losing the incense in the line."
-        ),
+        "heroHook": "Cokorda Martin grew up in Klungkung inside a family of makers. (@treasurecult.work)",
+        "storyFullText": "Cokorda Martin grew up in Klungkung inside a family of makers. Traditional Balinese motifs \u2014 ritual pattern, temple color, mythic reference \u2014 are his raw material, but he doesn't treat them as historical objects. They show up in album art, brand collaborations with Caf\u00e9 Kitsun\u00e9 and Uniqlo, and editorial work for international clients. Island craft meeting global briefs, without losing anything in the translation.",
         "activeSince": "",
     },
     "crackthetoy": {
-        "heroHook": "Crackthetoy builds illustrated worlds from Indonesia—characters with toy-box charm and street smarts.",
-        "storyFullText": (
-            "Crack—Crackthetoy—is an Indonesia-based illustrator whose characters feel collectible and slightly mischievous.\n\n"
-            "The work lives between product fantasy and mural scale: bold outlines, candy color, narratives you can read in one glance.\n\n"
-            "Fans follow for the same reason kids hoard figures—each piece promises another chapter."
-        ),
+        "heroHook": "Crack works as Crackthetoy \u2014 a graffiti artist, toy designer, and digital illustrator based in Indonesia. (@crackthetoy)",
+        "storyFullText": "Crack works as Crackthetoy \u2014 a graffiti artist, toy designer, and digital illustrator based in Indonesia. The characters are collectible and slightly mischievous, living between product fantasy and mural scale. Bold outlines, candy color, stories you read in one glance.",
         "activeSince": "",
     },
     "cubi-boumclap": {
-        "heroHook": "Cubi Boumclap is Agen’s indoor-street voice—comics, UI, and wall graphics in one breath.",
-        "storyFullText": (
-            "Cubi Boumclap works from southwestern France as an illustrator, comic artist, and designer who treats the screen and the alley as cousins.\n\n"
-            "His line is fast, funny, and frank about commerce—open for studios, publishers, and anyone who needs graphics with street timing.\n\n"
-            "La Streetarterie and allied collectives shaped his early years; today the work still smells like ink, spray, and late deadlines."
-        ),
+        "heroHook": "Cubi Boumclap works from southwestern France as an illustrator, comic artist, and designer who treats the screen and the alley as close cousins. (cubi_boumclap)",
+        "storyFullText": "Cubi Boumclap works from southwestern France as an illustrator, comic artist, and designer who treats the screen and the alley as close cousins. The line is fast, direct, and honest about commerce \u2014 open for studios, publishers, and anyone who needs graphics with street timing. His early years were shaped by the La Streetarterie collective; the work still carries that energy.",
         "activeSince": "",
     },
     "dawal": {
-        "heroHook": "Dawal paints pocket dreams on wounded walls—Paris surrealism you almost step on.",
-        "storyFullText": (
-            "Dawal is a painter who lets the city’s cracks choose the composition. Surreal mini-scenes settle into broken plaster like they were always meant to live there.\n\n"
-            "Light, texture, and the odd geometry of urban decay steer each image; the story is rarely louder than the surface.\n\n"
-            "Childhood motifs drift through recent solos—memory and city skin pressed together."
-        ),
+        "heroHook": "Dawal started painting the streets of Paris around 18. (@_dawal)",
+        "storyFullText": "Dawal started painting the streets of Paris around 18. His thing is working with what the city already gives him \u2014 peeling plaster, cracked walls, odd shapes in aging surfaces \u2014 and placing miniature surreal scenes inside them. Images that stop you mid-pavement. He runs an open studio in the 18th arrondissement and has had solo shows at Galerie Artistik Rezo, where the same instinct moves from wall to canvas without losing its intimacy.",
         "activeSince": "",
     },
     "dima-korma": {
-        "heroHook": "Dima Korma wraps Berlin architecture in abstract rhythm—texture, typography, and color fields at mural scale.",
-        "storyFullText": (
-            "Dima Korma is a Berlin muralist who thinks in layers: paste, paint, type fragments, and the shadow the building already had.\n\n"
-            "Abstract does not mean empty—each wall suggests music, motion, or weather you can almost hear.\n\n"
-            "Corporate towers and public courts alike get the same restless generosity."
-        ),
+        "heroHook": "Dima Korma is a Berlin-based muralist, originally from Israel, who studied visual communication at Shenkar. (@dimakorma)",
+        "storyFullText": "Dima Korma is a Berlin-based muralist, originally from Israel, who studied visual communication at Shenkar. His walls layer paste, paint, and type fragments over the existing character of a building. Abstract, but not empty \u2014 each surface feels like it's describing a climate the space was already hinting at.",
         "activeSince": "",
     },
     "eden-kalif": {
-        "heroHook": "Eden Kalif draws with a tattooer’s steadiness—spare lines, big feeling, Tel Aviv roots.",
-        "storyFullText": (
-            "Eden Kalif is an illustrator and tattoo artist whose line does the heavy lifting. Faces, hands, and symbols arrive with almost nothing extra.\n\n"
-            "Bezalel training meets the road: he travels with drawing and needle work as twin engines.\n\n"
-            "Collectors respond to the same clarity—every mark earns its place."
-        ),
+        "heroHook": "Eden Kalif is an illustrator and tattoo artist who graduated Bezalel and kept both practices going in parallel. (_e_d_e_n_)",
+        "storyFullText": "Eden Kalif is an illustrator and tattoo artist who graduated Bezalel and kept both practices going in parallel. His line does the heavy lifting \u2014 faces, hands, and symbols with almost nothing extra. Clean, precise, and consistent whether the surface is paper, skin, or a print run.",
         "activeSince": "",
     },
     "elfassi": {
-        "heroHook": "Elfassi stitches Shenkar drawing into thread, wall, and screen—one hand, many surfaces.",
-        "storyFullText": (
-            "Elfassi is an Israeli illustrator who graduated Shenkar in visual communication and refused to pick a single output.\n\n"
-            "Embroidery, mural paint, digital line, and music posters share one stubborn graphic voice.\n\n"
-            "The pleasure is tactile: thread that echoes brushwork, walls that echo sketchbooks."
-        ),
+        "heroHook": "Elfassi graduated Shenkar in visual communication and never picked just one surface. (@elfassi)",
+        "storyFullText": "Elfassi graduated Shenkar in visual communication and never picked just one surface. Embroidery, mural paint, digital line, and music posters all come from the same hand and the same graphic sensibility. The materials change; the voice stays consistent.",
         "activeSince": "",
     },
     "emelio-cerezo": {
-        "heroHook": "Emilio Cerezo traded tags for his full name—and Spanish walls gained a painter who still thinks like a writer.",
-        "storyFullText": (
-            "Emilio Cerezo grew up in Murcia’s light, studied in Granada, and spent early years inside graffiti aliases before 2012, when the given name took the wall.\n\n"
-            "Fine-art training slowed him down in the right ways: figure, landscape, and mural scale now share one painterly conscience.\n\n"
-            "New pieces keep appearing from hometown lots to distant cities—each wall another sentence in the same novel."
-        ),
+        "heroHook": "Emilio Cerezo grew up in Murcia, studied fine arts in Granada, and ran under graffiti aliases until 2012 when he started putting his own name on walls. (@emiliocerezo)",
+        "storyFullText": "Emilio Cerezo grew up in Murcia, studied fine arts in Granada, and ran under graffiti aliases until 2012 when he started putting his own name on walls. The academic training paid off in specific ways \u2014 figure, landscape, and mural scale now share a painterly attention to mood over representation. He wants people to experience his murals the way they experience landscape or music: not as a message, but as an atmosphere. He still tattoos between murals, which probably explains the line quality.",
         "activeSince": "",
     },
     "erezoo": {
-        "heroHook": "Erezoo is Haifa’s triple threat—illustration, design, and graffiti in one signature.",
-        "storyFullText": (
-            "Erez Sameach works as Erezoo from Haifa, where the studio feels like a family workshop stretched across concrete.\n\n"
-            "Born in Carmiel, trained at Vizcoa, he helped build the SIRA collective alongside relatives who paint the same streets.\n\n"
-            "His images are loud, graphic, and rooted in coastal city life—posters, walls, and brand worlds that still smell like sea air."
-        ),
+        "heroHook": "Erez Sameach works as Erezoo from Haifa, where illustration, graphic design, and graffiti are treated as the same practice rather than three separate disciplines. (@erezoo)",
+        "storyFullText": "Erez Sameach works as Erezoo from Haifa, where illustration, graphic design, and graffiti are treated as the same practice rather than three separate disciplines. Born in Carmiel, trained at Wizo, he helped build the SIRA collective alongside relatives who paint the same streets. The output is loud, coastal, and rooted in the city's cultural calendar.",
         "activeSince": "",
     },
     "ezra-baderman": {
-        "heroHook": "Ezra Baderman collages three cities into one practice—Paris birth, London youth, Lisbon studio.",
-        "storyFullText": (
-            "Ezra Baderman is a British-Israeli artist living in Lisbon, carrying John Cass and Bezalel training like a passport full of stamps.\n\n"
-            "Collage, painting, UV light, and salvaged street posters stack into work that argues for peace without preaching.\n\n"
-            "The street is both material and message—fragments of propaganda become tender rearrangements."
-        ),
+        "heroHook": "Ezra Baderman was born in Paris, grew up in London, trained at John Cass and Bezalel, and now works in Lisbon. (@ezrabaderman)",
+        "storyFullText": "Ezra Baderman was born in Paris, grew up in London, trained at John Cass and Bezalel, and now works in Lisbon. His practice \u2014 collage, painting, UV work, salvaged street posters from Tel Aviv walls \u2014 is shaped by all of that movement. Fragments of political imagery get rearranged into something quieter and stranger. The street is both material and argument.",
         "activeSince": "",
     },
     "facio": {
-        "heroHook": "Tomás Facio paints Merlo and Buenos Aires with graphic clarity—murals that feel like posters you can walk into.",
-        "storyFullText": (
-            "Tomás Facio signs murals across Argentina with a designer’s eye for silhouette and a muralist’s appetite for scale.\n\n"
-            "Figures, typography, and local symbols interlock; color does the shouting, drawing does the pacing.\n\n"
-            "His walls read from a block away and reward the few steps closer—street art that still loves graphic design class."
-        ),
+        "heroHook": "Tom\u00e1s Facio was born in 1990 in Merlo, studied at the National University of Arts in Buenos Aires from 2013, and paints walls across Argentina and beyond. (@tomas_facio)",
+        "storyFullText": "Tom\u00e1s Facio was born in 1990 in Merlo, studied at the National University of Arts in Buenos Aires from 2013, and paints walls across Argentina and beyond. Figures, typography, and local symbols interlock in murals that read from a block away and hold up closer. A designer's attention to silhouette, a muralist's appetite for scale.",
         "activeSince": "",
     },
     "frederique-mati": {
-        "heroHook": "Frederique Mati illustrates Amsterdam with soft geometry and editorial cool.",
-        "storyFullText": (
-            "Frederique Mati is a Dutch illustrator who balances friendly shapes with fashion-forward restraint.\n\n"
-            "Editorial, branding, and personal prints share a palette you want to wear—muted until it isn’t.\n\n"
-            "Her characters live in the same city she does: bikes, rainlight, and calm confidence."
-        ),
+        "heroHook": "Frederique Matti is a Dutch illustrator and art director who has been freelancing for over ten years. (@frederique.png)",
+        "storyFullText": "Frederique Matti is a Dutch illustrator and art director who has been freelancing for over ten years. Editorial, branding, and personal prints share a restrained palette that knows exactly when to open up. Her characters live in the same city she does \u2014 bikes, rainlight, calm confidence. She has worked with Google, Uber, Spotify, and GitHub, and held a solo painting show at The Hoxton Amsterdam in 2023.",
         "activeSince": "",
     },
     "geometric-bang": {
-        "heroHook": "Geometric Bang is Mattia Botta—Lodi-born, Florence-based—where graffiti letters learned to sit still for illustration.",
-        "storyFullText": (
-            "Mattia Botta works as Geometric Bang, a name that promises angles and delivers warmth. He moved from spray toward walls that behave like giant prints.\n\n"
-            "Pencil, spray, canvas, and skin (tattoo needles) now share one graphic alphabet.\n\n"
-            "European festivals and Asian walls fill his calendar—always the same crisp color blocking, always a human pulse underneath."
-        ),
+        "heroHook": "Mattia Botta has been working as Geometric Bang since the late 1990s, starting in graffiti and moving steadily toward a practice that now spans murals, illustration\u2026 (@geometricbang)",
+        "storyFullText": "Mattia Botta has been working as Geometric Bang since the late 1990s, starting in graffiti and moving steadily toward a practice that now spans murals, illustration, tattooing, and canvas. Born in Lodi, based in Florence, he works with pencil, spray, and ink across a graphic vocabulary built on bold color blocks with human warmth underneath. European festivals and Asian walls share space on his calendar.",
         "activeSince": "",
     },
     "hedof": {
-        "heroHook": "Hedof is Rick Berkelmans—Breda candy color, screen-print soul, illustration with a pulse.",
-        "storyFullText": (
-            "Rick Berkelmans runs Hedof as a one-person studio where drawing and printmaking refuse to separate.\n\n"
-            "Hand ink scans into layered digital color, then often returns to pigment on paper—limited runs with party energy.\n\n"
-            "The work is playful without being naive: animals, pattern, and pop culture wink at you from across the room."
-        ),
+        "heroHook": "Rick Berkelmans runs Hedof as a one-person studio where drawing and printmaking stay close. (@hedof)",
+        "storyFullText": "Rick Berkelmans runs Hedof as a one-person studio where drawing and printmaking stay close. Ink gets scanned, layered digitally, and sometimes returned to paper in limited runs. Animals, pattern, and pop culture wink at you from work made for Nike, IKEA, The New York Times, and Google. The work is genuinely warm and graphically sharp at the same time, which is harder than it looks.",
         "activeSince": "",
     },
     "hen-macabi": {
-        "heroHook": "Hen Macabi is the graphic voice behind Israel’s loudest pop moments—posters and covers you already danced to.",
-        "storyFullText": (
-            "Hen Macabi is an Israeli illustrator and art director whose typography-forward pieces soundtracked a generation of radio hits.\n\n"
-            "From Netta’s global breakout to club nights across the country, his covers treat type like percussion.\n\n"
-            "Collectors get the same bold composition scaled for the wall—music memory made visible."
-        ),
+        "heroHook": "Hen Macabi is an Israeli illustrator and art director whose typography-first work has shaped some of the country's most recognizable pop moments. (@henmacabi)",
+        "storyFullText": "Hen Macabi is an Israeli illustrator and art director whose typography-first work has shaped some of the country's most recognizable pop moments. His cover for Netta Barzilai's \"Bassa Sababa\" \u2014 released in the lead-up to her Eurovision win \u2014 is the most visible example. He trained at Shenkar. The AlefAlefAlef project, a graphic tribute to 70 years of Israeli cinema done in VHS-cover logic, shows what he does with more room.",
         "activeSince": "",
     },
     "iain-macarthur": {
-        "heroHook": "Iain Macarthur draws London into hypnotic pattern—portraits that bloom into ornament.",
-        "storyFullText": (
-            "Iain Macarthur is a London illustrator whose faces dissolve into filigree: wildlife, geometry, and surreal detail in one breath.\n\n"
-            "Music packaging, apparel, and gallery work share the same marathon patience—hours inside a single sleeve.\n\n"
-            "The reward is density you can get lost in; the discipline is knowing when to stop the line."
-        ),
+        "heroHook": "Iain Macarthur is a London illustrator who builds portraits out of filigree \u2014 faces that dissolve into wildlife, geometry, and surreal detail. (@iain.macarthur)",
+        "storyFullText": "Iain Macarthur is a London illustrator who builds portraits out of filigree \u2014 faces that dissolve into wildlife, geometry, and surreal detail. He grew up in Swindon, studied at Swindon College, and has been freelancing from London since 2009. Music packaging, apparel, and gallery work share the same marathon patience. The reward is density you can actually get lost in.",
         "activeSince": "",
     },
     "igal-talianski": {
-        "heroHook": "Igal Talianski builds Haifa collages from scraps—graphic texture with a recycler’s eye.",
-        "storyFullText": (
-            "Igal Talianski works from Haifa in collage and mixed media, stacking paper, print, and found color until the surface hums.\n\n"
-            "Climbing brands and editorial clients love the same tactile honesty—work that feels assembled, not airbrushed.\n\n"
-            "On the wall or in the frame, the invitation is the same: step closer and notice what was saved."
-        ),
+        "heroHook": "Igal Talianski works in collage and mixed media from Haifa, stacking paper, print, and found color into surfaces that feel assembled and intentional at the same time. (@iigalskii)",
+        "storyFullText": "Igal Talianski works in collage and mixed media from Haifa, stacking paper, print, and found color into surfaces that feel assembled and intentional at the same time. Climbing brands and editorial clients respond to the tactile honesty of it. On a wall or in a frame, the invitation is always the same: step closer and notice what was kept.",
         "activeSince": "",
     },
     "igor-mikutski": {
-        "heroHook": "Igor Mikutski paints with the feed as sketchbook—oils, figures, and daily studio honesty.",
-        "storyFullText": (
-            "Igor Mikutski is a painter who lets social video carry process the way older generations used sketchbooks.\n\n"
-            "Brush miles, color tests, and half-finished canvases prove the hand is real.\n\n"
-            "Collectors meet an artist comfortable showing work mid-thought—finished pieces still carry that pulse."
-        ),
+        "heroHook": "Igor Mikutski is a painter who treats social media video the way older generations used sketchbooks \u2014 brush tests, half-finished canvases, process posted as it happens. (@igor.mikutski)",
+        "storyFullText": "Igor Mikutski is a painter who treats social media video the way older generations used sketchbooks \u2014 brush tests, half-finished canvases, process posted as it happens. The work is large-scale, figurative, and acrylic-on-paper. The finished pieces carry the pulse of being made in public.",
         "activeSince": "",
     },
     "jake-ac-art": {
-        "heroHook": "Jack AC Art pairs verse with image—cards, prints, and the small joy of a good line.",
-        "storyFullText": (
-            "Jack AC Art builds a storefront universe where illustration meets greeting-card wit.\n\n"
-            "The tone is intimate: phrases you’d send a friend, pictures you’d hang in a kitchen.\n\n"
-            "It is popular art in the best sense—made to be held, mailed, and kept."
-        ),
+        "heroHook": "Jack AC Art builds a small universe where illustration meets greeting-card wit. (@jack_ac_art)",
+        "storyFullText": "Jack AC Art builds a small universe where illustration meets greeting-card wit. The tone is intimate \u2014 phrases you'd send a friend, pictures you'd hang in a kitchen. Made to be held, mailed, and kept.",
         "activeSince": "",
     },
     "jennypo-art": {
-        "heroHook": "Jenny Pokryvailo moves between needle and nib—tattoo discipline, illustration freedom.",
-        "storyFullText": (
-            "Jenny Pokryvailo is a tattooist and illustrator whose line never forgets skin.\n\n"
-            "Whether the surface is body or paper, the drawing stays decisive—ornament, narrative, and negative space in balance.\n\n"
-            "Fans follow for the same reason clients book: every curve earns its ink."
-        ),
+        "heroHook": "Jenny Pokryvailo is a tattooist and illustrator whose line never forgets skin. (@jennypoart)",
+        "storyFullText": "Jenny Pokryvailo is a tattooist and illustrator whose line never forgets skin. Whether the surface is body or paper, the drawing stays decisive \u2014 ornament, narrative, and negative space in careful balance. Fans follow for the same reason clients book: every mark earns its place.",
         "activeSince": "",
     },
     "jerome-masi": {
-        "heroHook": "Jérôme Masi paints Annecy calm—flat color, quiet childhoods, global commissions from a mountain town.",
-        "storyFullText": (
-            "Jérôme Masi is an art director and illustrator in Annecy, represented by Creasenso, with a path that ran through games, Lyon studios, and motion before illustration took the wheel.\n\n"
-            "Commercial work stays digital for airlines, watches, and telecoms; personal paintings return to acrylic and easel silence.\n\n"
-            "He calls his taste sober and minimal—images that leave room for the viewer’s own memory to pour in."
-        ),
+        "heroHook": "J\u00e9r\u00f4me Masi studied at Emile-Cohl in Lyon, worked through game studios and motion design, and eventually landed in Annecy as a full-time illustrator. (@jerome.masi)",
+        "storyFullText": "J\u00e9r\u00f4me Masi studied at Emile-Cohl in Lyon, worked through game studios and motion design, and eventually landed in Annecy as a full-time illustrator. His commercial work goes to airlines, watch brands, and telecoms; his personal paintings go on canvas with acrylic and quiet. The palette stays deliberately sober. He talks about wanting to leave room in each image for the viewer to bring their own memory to it, which sounds modest until you actually spend time with one.",
         "activeSince": "",
     },
     "kaka-chazz": {
-        "heroHook": "Kaká Chazz paints Minas Gerais life at mural scale—classical training, street speed.",
-        "storyFullText": (
-            "Cassiano Henrique Cândido, Kaká Chazz, taught himself from a southern Brazilian town and has painted walls since 2008.\n\n"
-            "Murals translate everyday Minas scenes—work, faith, family—into monuments neighbors recognize.\n\n"
-            "The style bridges classical figure drawing and graffiti muscle: grand, grounded, and unmistakably his."
-        ),
+        "heroHook": "Cassiano Henrique C\u00e2ndido, known as Kak\u00e1 Chazz, has been painting walls since 2008 in and around Tr\u00eas Pontas in southern Brazil. (@kaka.chazz)",
+        "storyFullText": "Cassiano Henrique C\u00e2ndido, known as Kak\u00e1 Chazz, has been painting walls since 2008 in and around Tr\u00eas Pontas in southern Brazil. His murals translate everyday Minas scenes \u2014 work, faith, family \u2014 into something monumental that neighbors actually recognize. The style bridges classical figure drawing and graffiti scale without forcing them to pretend they're the same thing.",
         "activeSince": "",
     },
     "keya-tama": {
-        "heroHook": "Keya Tama carries Cape Town ancestry into New York minimalism—icons pared to their pulse.",
-        "storyFullText": (
-            "Keya Tama was born in Cape Town and now works from New York, braiding ancestral symbols with graphic calm.\n\n"
-            "Mural festivals and museum collaborations stretch from Africa to Europe—each wall a meditation on lineage made contemporary.\n\n"
-            "The work asks how much you can remove and still say everything."
-        ),
+        "heroHook": "Keya Tama was born in Cape Town in 1997 and now works from New York. (@keyatama)",
+        "storyFullText": "Keya Tama was born in Cape Town in 1997 and now works from New York. Her practice braids ancestral symbolism with graphic minimalism \u2014 each piece asking how much you can strip away and still say something complete. She has shown with Hashimoto Contemporary in New York and Subliminal Projects in Los Angeles, painted murals at festivals and institutions across Africa and Europe, and collaborated with the Royal Delft Museum on ceramic work.",
         "activeSince": "",
     },
     "kymo-one": {
-        "heroHook": "Kymo One paints Ghent with classical ghosts and spray-fire color.",
-        "storyFullText": (
-            "Kymo One is a Belgian muralist trained in graphic illustration who never abandoned spray paint’s heat.\n\n"
-            "Chains, smoke, roses, and industrial romance repeat like verses—romantic, slightly dangerous, always legible from the sidewalk.\n\n"
-            "European walls carry his signature mix of old-master drama and graffiti velocity."
-        ),
+        "heroHook": "Kymo One is a Belgian muralist trained in graphic illustration who never gave up spray paint. (kymo_one)",
+        "storyFullText": "Kymo One is a Belgian muralist trained in graphic illustration who never gave up spray paint. Chains, roses, smoke, and industrial romanticism repeat across European walls \u2014 old-master drama at graffiti velocity. Readable from the sidewalk and worth getting closer to.",
         "activeSince": "",
     },
     "laura-fridman": {
-        "heroHook": "Laura Fridman left ballet for paint—Yale logic, Tel Aviv light, bodies that stretch past the frame.",
-        "storyFullText": (
-            "Laura Fridman is French, studied economics at Yale, danced with Israel Ballet, then traded the stage for canvas.\n\n"
-            "Her figurative painting exaggerates hands and necks while faces stay photographic—tension you feel in the shoulders.\n\n"
-            "Shows from Tel Aviv to Barcelona prove the same thesis: movement never left; it just moved into pigment."
-        ),
+        "heroHook": "Laura Fridman is French, studied economics at Yale, danced with the Israel Ballet, and then started painting. (@laura_fridman_art)",
+        "storyFullText": "Laura Fridman is French, studied economics at Yale, danced with the Israel Ballet, and then started painting. Her figurative work exaggerates hands and necks while keeping faces photographic \u2014 a tension that feels physical, like the body is working through something. She has shown in Tel Aviv, Paris, and Barcelona.",
         "activeSince": "",
     },
     "levi-jacobs": {
-        "heroHook": "Levi Jacobs illustrates Rotterdam with cinematic crop and editorial nerve.",
-        "storyFullText": (
-            "Levi Jacobs is a Rotterdam illustrator who treats every commission like a film still—light, cast, and prop chosen on purpose.\n\n"
-            "Editorial and advertising clients come for the storytelling; fans come for the mood.\n\n"
-            "His world is slightly noir, slightly surreal, always human."
-        ),
+        "heroHook": "Levi Jacobs is a Rotterdam illustrator who treats every commission like a film still \u2014 light, cast, and prop chosen deliberately. (@levijacobss)",
+        "storyFullText": "Levi Jacobs is a Rotterdam illustrator who treats every commission like a film still \u2014 light, cast, and prop chosen deliberately. He studied illustration at St. Joost and has been freelancing since 2010. The work is slightly noir, slightly surreal, and consistently human.",
         "activeSince": "",
     },
     "linda-baritski": {
-        "heroHook": "Linda Baritski is SEASONOFVICTORY—London illustration with Warner Bros. muscle and freelance freedom.",
-        "storyFullText": (
-            "Linda Baritski spent years art-directing inside major studios before SEASONOFVICTORY became her public name.\n\n"
-            "Murals, packaging, editorial, and brand systems now share one bold, pop-literate hand—Google to LEGO to the wall around the corner.\n\n"
-            "The through-line is confidence: color that commits, characters that swagger, drawing that knows its audience."
-        ),
+        "heroHook": "Linda Baritski spent years inside major studios before SEASONOFVICTORY became her public name. (@seasonofvictory)",
+        "storyFullText": "Linda Baritski spent years inside major studios before SEASONOFVICTORY became her public name. The independent practice landed quickly \u2014 a Kiehl's global campaign across 48 locations in 2022\u201323 was an early sign. The work is color-committed and character-forward, shaped by a background in art direction that knows exactly how to make things land, whether on packaging or a wall.",
         "activeSince": "",
     },
     "lobster-robin": {
-        "heroHook": "Lobster Robin shells Belgian walls in high-contrast character—street tales with a cartoon heart.",
-        "storyFullText": (
-            "Lobster Robin is a Belgian muralist whose creatures feel like graphic novels escaped onto brick.\n\n"
-            "Festivals across Europe host the same saturated outlines and narrative freeze-frames.\n\n"
-            "The work invites kids and critics alike—sweet surface, sharp timing underneath."
-        ),
+        "heroHook": "Lobster Robin is a Belgian painter and street artist with a background in illustration and animation. (@lobster_robin)",
+        "storyFullText": "Lobster Robin is a Belgian painter and street artist with a background in illustration and animation. The characters feel like graphic novels escaped onto brick \u2014 saturated outlines, narrative freeze-frames, enough warmth on the surface to bring in a wide audience and enough timing underneath to hold them.",
         "activeSince": "",
     },
     "loreta-isac": {
-        "heroHook": "Loreta Isac animates Bucharest dreams—illustration, motion, and the phrase ‘once upon a dreamer.’",
-        "storyFullText": (
-            "Loreta Isac is a Bucharest illustrator and animator who still begins her story as a dreamer rooted in Iași before the capital.\n\n"
-            "Apple-sized clients sit beside journal pieces—frozen moments from travel, love, and weather you cannot name.\n\n"
-            "Her worlds are figurative and tender; motion is simply another way to let the drawing breathe."
-        ),
+        "heroHook": "Loreta Isac grew up in Ia\u0219i, studied art there, and moved to Bucharest. (@loreta_isac)",
+        "storyFullText": "Loreta Isac grew up in Ia\u0219i, studied art there, and moved to Bucharest. She describes herself as \"once upon a dreamer,\" which captures the tone of the work exactly. Her illustrations and animations move between editorial commissions for the New York Times and Washington Post and quieter personal pieces \u2014 frozen moments, unnamed feelings, figures caught mid-thought. She uses motion as just another way to let the drawing breathe.",
         "activeSince": "",
     },
     "maalavidaa": {
-        "heroHook": "Maalavidaa is Alycia Rainaud—Montreal digital fields colored by design school and psychology.",
-        "storyFullText": (
-            "Alycia Rainaud builds Maalavidaa as a studio where mental health conversation meets saturated abstraction.\n\n"
-            "A 2018 thesis on psychology in design still steers the palette—neon gradients that feel like breath exercises turned visual.\n\n"
-            "The work is emotional without being literal: color does the talking, rhythm does the healing."
-        ),
+        "heroHook": "Alycia Rainaud built Maalavidaa around a 2018 thesis on the role of psychology in design. (@maalavidaa)",
+        "storyFullText": "Alycia Rainaud built Maalavidaa around a 2018 thesis on the role of psychology in design. The neon gradients and saturated abstraction aren't decorative \u2014 they're the argument: color as a tool for emotional regulation, rhythm as something you can actually feel. The work doesn't tell you how to feel. It gives you something to feel with.",
         "activeSince": "",
     },
     "mameko-maeda": {
-        "heroHook": "Mameko Maeda draws Tokyo softness—characters with manga DNA and editorial polish.",
-        "storyFullText": (
-            "Mameko Maeda is a Tokyo illustrator whose figures carry gentle humor and precise ink.\n\n"
-            "Editorial and personal projects share the same affection for youth culture, fashion, and quiet punchlines.\n\n"
-            "Collectors meet an artist who can make cute feel smart—and smart feel approachable."
-        ),
+        "heroHook": "Mameko Maeda is a Tokyo illustrator born in 1993 who turned professional in 2020. (@mameko_maeda)",
+        "storyFullText": "Mameko Maeda is a Tokyo illustrator born in 1993 who turned professional in 2020. Her figures carry gentle humor and precise ink \u2014 editorial and personal projects sharing an affection for youth culture, fashion, and quiet punchlines. She makes cute feel smart and smart feel approachable.",
         "activeSince": "",
     },
     "marc-david-spengler": {
-        "heroHook": "Marc David Spengler brings Stuttgart academy rigor to Hermès-level illustration—analog and digital in one handshake.",
-        "storyFullText": (
-            "Marc David Spengler graduated communication design from Stuttgart’s state academy in 2022 and immediately spoke the language of global luxury and media.\n\n"
-            "Hermès, Google, Warby Parker, The New York Times, and Vans count among clients; the method shifts between hand media and screen without losing texture.\n\n"
-            "The work is confident, graphic, and built for readers who notice craft."
-        ),
+        "heroHook": "Marc David Spengler graduated communication design from Stuttgart's state academy in 2022 and immediately started working with clients who care about craft: Herm\u00e8s, The New\u2026 (@_marcdavid_)",
+        "storyFullText": "Marc David Spengler graduated communication design from Stuttgart's state academy in 2022 and immediately started working with clients who care about craft: Herm\u00e8s, The New Yorker, Google, Vans, The Atlantic. The work moves between hand media and screen without losing its texture \u2014 ink that still feels considered even when the final file is digital. He is represented in North America and China.",
         "activeSince": "",
     },
     "marylou-faure": {
-        "heroHook": "Marylou Faure is Paris-to-London joy—eyeless heroines, saturated color, poster-scale confidence.",
-        "storyFullText": (
-            "Marylou Faure crossed from Penninghen in Paris into London’s creative industry and never dropped the mischief.\n\n"
-            "Her women stare without eyes yet feel unmistakably seen—cheeky, empowered, drawn with graphic poster bones.\n\n"
-            "Solos and talks circle the globe; commercial rosters include racing teams and streaming giants without diluting the voice."
-        ),
+        "heroHook": "Marylou Faure studied art direction in Paris and moved to London in 2012. (@maryloufaure)",
+        "storyFullText": "Marylou Faure studied art direction in Paris and moved to London in 2012. She built a practice around figures who stare back without eyes yet feel completely present. The work is deliberately cheeky \u2014 saturated color, poster-graphic bones, characters who own their space. She has made solo shows and brand campaigns for McLaren F1 and Kiehl's without softening either end.",
         "activeSince": "",
     },
     "mathew-gagnon": {
-        "heroHook": "Matthew Gagnon paints Montreal myth—murals and studio pieces with folklore voltage.",
-        "storyFullText": (
-            "Matthew Gagnon is a Montreal artist who treats walls and panels like stages for symbolic narrative.\n\n"
-            "Figures, animals, and pattern stack into scenes that feel borrowed from dreams and recovered memory.\n\n"
-            "The palette is bold, the drawing disciplined—street scale and gallery scale share one storyteller."
-        ),
+        "heroHook": "Matthew Gagnon is a Montreal artist who uses walls and panels as stages for symbolic narrative. (@mattjgag)",
+        "storyFullText": "Matthew Gagnon is a Montreal artist who uses walls and panels as stages for symbolic narrative. Figures, animals, and pattern stack into scenes that feel borrowed from dreams and collective memory. The palette is bold, the drawing disciplined \u2014 the same storyteller working at street scale and gallery scale.",
         "activeSince": "",
     },
     "max-diamond": {
-        "heroHook": "Max Diamond prints pop culture obsessions—posters that hit like album covers.",
-        "storyFullText": (
-            "Max Diamond is an illustrator who understands fandom from the inside. His posters celebrate the characters and moments people already love.\n\n"
-            "Silhouette, contrast, and a single bold idea carry each piece—graphic work meant to read across a room.\n\n"
-            "Collectors get the same immediacy scaled for intimate walls."
-        ),
+        "heroHook": "Max Diamond makes posters that understand fandom from the inside. (@maxdiamond52)",
+        "storyFullText": "Max Diamond makes posters that understand fandom from the inside. Each one leads with a single clean idea \u2014 the visual logic of an album cover applied to characters and moments people already carry in their heads. Meant to read across a room and reward a closer look.",
         "activeSince": "",
     },
     "moritz-adam-schmitt": {
-        "heroHook": "Moritz Adam Schmitt vectorized Cologne—flat color, street appetite, Adobe-era breakout.",
-        "storyFullText": (
-            "Moritz Adam Schmitt is a Cologne illustrator who earned attention the hard way: a year of daily icons, a MAX stage, then freelance life while the internet watched.\n\n"
-            "Research stacks into iPad roughs, then tight vector finishes—pop palettes, icon clarity, attitude borrowed from street posters.\n\n"
-            "The result is illustration that behaves like product design: bold, legible, impossible to mistake for anyone else."
-        ),
+        "heroHook": "Moritz Adam Schmitt spent a year posting one icon a day to Instagram. (@moritz.adam.schmitt)",
+        "storyFullText": "Moritz Adam Schmitt spent a year posting one icon a day to Instagram. That discipline turned into an invitation to Adobe MAX, then into a freelance career with clients like Adobe, Microsoft, Xbox, Porsche, and Samsung. His process starts with iPad sketches and ends in tight vector work \u2014 bold outlines, flat color, the attitude of a good street poster without any of the mess.",
         "activeSince": "",
     },
 }
