@@ -1,0 +1,22 @@
+{
+  "batch": 2,
+  "date": "2026-04-03",
+  "afterBatch": 1,
+  "artists": [
+    "Wotto",
+    "Yippie Hey",
+    "saturn_png",
+    "Chubby Nida",
+    "Crackthetoy",
+    "Frederique Mati",
+    "Kaka Chazz",
+    "Lobster Robin",
+    "Mathew Gagnon",
+    "Max Diamond",
+    "NASCA Uno",
+    "Ollie Smither"
+  ],
+  "quantitative": {
+    "artistsPatched": 12
+  }
+}

@@ -139,7 +139,7 @@
     "sourcesLinks": "https://www.instagram.com/_dawal/\r\nhttps://creapills.com/dawal-street-art-paris-fresques-miniatures-20251121\r\nhttps://www.adaymag.com/2026/03/19/artist-dawal-painted-cracks-and-peeling-walls-of-cities-paris.html\r\nhttps://www.street-artwork.com/en/artist-profile/459/dawal\r\nhttps://thestreetcollector.com/collections/dawal",
     "notes": "Instagram handle is @_dawal (not @dawal).\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
   },
-  "antonia-lev": {
+  "antonia-lev-1": {
     "artistName": "Antonia Lev",
     "location": "Paris, France",
     "activeSince": "Behance lists professional start 4 Nov 2011 (verify on live profile)",
@@ -167,7 +167,7 @@
     "sourcesLinks": "https://www.behance.net/antonialev\r\nhttps://www.instagram.com/antonialev/\r\nhttps://thecity.m24.ru/articles/2047\r\nhttps://thestreetcollector.com/collections/antonia-lev-1",
     "notes": "Traveling location appears in internal Shopify export; Paris is used here based on Behance/snippet alignment—confirm on official bio.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
   },
-  "antonia-lev-1": {
+  "antonia-lev": {
     "artistName": "Antonia Lev",
     "location": "Paris, France",
     "activeSince": "Behance lists professional start 4 Nov 2011 (verify on live profile)",
@@ -678,7 +678,7 @@
     "heroHook": "Max Diamond makes posters that understand fandom from the inside. (@maxdiamond52)",
     "storyFullText": "Max Diamond makes posters that understand fandom from the inside. Each one leads with a single clean idea — the visual logic of an album cover applied to characters and moments people already carry in their heads. Meant to read across a room and reward a closer look.",
     "aboutPageUrl": "https://linktr.ee/MaxDiamond",
-    "additionalHistoryText": "Web research (verify): Poster artist and designer active as @maxdiamond52 (Instagram) and MaxDiamond on Foundation; work includes Severance (Apple TV) fan/poster pieces and retro sci-fi album-style art per public posts and profiles. Commercial credits require separate verification; treat Instagram/Foundation as primary public sources.",
+    "additionalHistoryText": "Web research (verify): Poster artist and designer active as @maxdiamond52 (Instagram) and MaxDiamond on Foundation; work includes Severance (Apple TV) fan/poster pieces and retro sci-fi album-style art per public posts and profiles. Commercial credits require separate verification; treat Instagram/Foundation as primary public sources.\n\nWeb research (2026-04-03): Strong social and marketplace presence (@maxdiamond52, Foundation, Linktree); no dated solo/group exhibition surfaced in indexed search—add exhibitions when confirmed.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -697,7 +697,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://linktr.ee/MaxDiamond\r\nhttps://www.instagram.com/maxdiamond52/\r\nhttps://thestreetcollector.com/collections/max-diamond",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "ezra-baderman": {
     "artistName": "Ezra Baderman",
@@ -1518,7 +1518,7 @@
     "heroHook": "Hermann works as saturn_png, pairing hard-edge abstraction with something that echoes ancient ceramic and Greek pottery. (@saturn_png)",
     "storyFullText": "Hermann works as saturn_png, pairing hard-edge abstraction with something that echoes ancient ceramic and Greek pottery. Procreate grain and analog discipline come together in illustrations that feel carved as much as drawn. The work asks how digital art can feel archaeological.",
     "aboutPageUrl": "https://marche-des-createurs.fr/saturn-illustration/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\n🗞️ Revue de presse 📈 Statistique 🗺️ Notre carte interactive 📩 Contact Saturn – Illustration il y a 4 ans Acrylique , Aquarelle , Illustration , Infographie , Peinture , Sérigraphie , Street Art Saturn – Illustration Je m’appelle Hermann, Je suis illustrateur et animateur 2D freelance. Après une licence en technique infographique animation 2D, je me suis lancé en freelance.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\n🗞️ Revue de presse 📈 Statistique 🗺️ Notre carte interactive 📩 Contact Saturn – Illustration il y a 4 ans Acrylique , Aquarelle , Illustration , Infographie , Peinture , Sérigraphie , Street Art Saturn – Illustration Je m’appelle Hermann, Je suis illustrateur et animateur 2D freelance. Après une licence en technique infographique animation 2D, je me suis lancé en freelance.\n\nPublic shop/domain cited as saturnsuperstore.fr on Marché des Créateurs; confirm live URL before merch copy.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1531,13 +1531,13 @@
     "processImage4Url": "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-12.jpg?resize=1000%2C1000&ssl=1",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "",
-    "pressText": "",
+    "pressText": "Konbini — 2023 — Studio visit / creative process (Hermann @saturn_png; partner feature) — https://www.konbini.com/partenaires/saturn_png-nous-parle-de-son-processus-de-creation/\nMarché des Créateurs — — Directory profile: Hermann, illustrator & 2D animator (Belfort area; Greece-inspired ceramics motif) — https://marche-des-createurs.fr/saturn-illustration/",
     "instagramHandle": "@saturn_png",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://marche-des-createurs.fr/saturn-illustration/\r\nhttps://www.instagram.com/saturn_png/\r\nhttps://thestreetcollector.com/collections/saturn-png",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "levi-jacobs": {
     "artistName": "Levi Jacobs",
@@ -1742,7 +1742,7 @@
     "heroHook": "Cassiano Henrique Cândido, known as Kaká Chazz, has been painting walls since 2008 in and around Três Pontas in southern Brazil. (@kaka.chazz)",
     "storyFullText": "Cassiano Henrique Cândido, known as Kaká Chazz, has been painting walls since 2008 in and around Três Pontas in southern Brazil. His murals translate everyday Minas scenes — work, faith, family — into something monumental that neighbors actually recognize. The style bridges classical figure drawing and graffiti scale without forcing them to pretend they're the same thing.",
     "aboutPageUrl": "https://kakachazz.com.br/biografia/",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "Itatiaia feature already in Press; add G1/Equipe Positiva for 2025 Milton mural verification chain.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1754,14 +1754,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://kakachazz.com.br/wp-content/uploads/2024/11/jpeg-optimizer_Tribos-urbanas_-scaled.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
-    "pressText": "Rádio Itatiaia — — Feature on urban murals — https://www.itatiaia.com.br/porlucasmachado/kaka-chazz-o-artista-mineiro-que-transforma-o-cotidiano-em-arte-urbana",
+    "exhibitionsText": "2025 — Large-scale public mural (72 m²) honoring Milton Nascimento, Três Pontas, Minas Gerais, Brazil — https://g1.globo.com/mg/sul-de-minas/noticia/2025/04/01/milton-nascimento-e-homenageado-em-mural-de-72-m-em-tres-pontas.ghtml",
+    "pressText": "Rádio Itatiaia — — Feature on urban murals — https://www.itatiaia.com.br/porlucasmachado/kaka-chazz-o-artista-mineiro-que-transforma-o-cotidiano-em-arte-urbana\n\nG1 Globo — 2025 — Milton Nascimento mural (Três Pontas) — https://g1.globo.com/mg/sul-de-minas/noticia/2025/04/01/milton-nascimento-e-homenageado-em-mural-de-72-m-em-tres-pontas.ghtml\nEquipe Positiva — — Milton Nascimento mural feature — https://equipepositiva.com/kaka-chazz-e-o-poder-da-arte-urbana-um-mural-que-celebra-milton-nascimento-em-tres-pontas/",
     "instagramHandle": "@kaka.chazz",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://kakachazz.com.br/biografia/\r\nhttps://kakachazz.com.br/\r\nhttps://www.itatiaia.com.br/porlucasmachado/kaka-chazz-o-artista-mineiro-que-transforma-o-cotidiano-em-arte-urbana\r\nhttps://www.instagram.com/kaka.chazz/\r\nhttps://thestreetcollector.com/collections/kaka-chazz",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "chubby-nida": {
     "artistName": "Chubby Nida",
@@ -1770,7 +1770,7 @@
     "heroHook": "Chubby Nida is a Bangkok illustrator whose round, gentle figures carry social commentary without announcing it. (@chubbynida)",
     "storyFullText": "Chubby Nida is a Bangkok illustrator whose round, gentle figures carry social commentary without announcing it. Editorial and personal pieces share the same approach: approachable shapes, colors you want to keep, ideas that land after the smile. She is part of a generation redefining what \"cute\" can argue for in public.",
     "aboutPageUrl": "https://www.chubbynida.studio/",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "Press column already lists Collater.al and WIA; Bangkok Illustration Fair artist URL returned a bot-check page when fetched 2026-04-03—verify fair year/role manually if needed.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1782,14 +1782,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://static.wixstatic.com/media/e28de2_66121ffe8aa342889bdeb358613af4cd~mv2.png/v1/fill/w_275,h_150,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_66121ffe8aa342889bdeb358613af4cd~mv2.png",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
+    "exhibitionsText": "2024 — World Illustration Awards featured entry context: Wilderness Whispers (Beat Hotel Bangkok commission; digital painting) — https://worldillustrationawards.com/projects/chubbynida-wilderness-whispers/",
     "pressText": "Collateral — — English feature — https://www.collater.al/en/chubby-nida-animation-illustration-art/\r\nWorld Illustration Awards — — Project listing — https://worldillustrationawards.com/projects/chubbynida-wilderness-whispers/",
     "instagramHandle": "@chubbynida",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.chubbynida.studio/\r\nhttps://www.collater.al/en/chubby-nida-animation-illustration-art/\r\nhttps://worldillustrationawards.com/projects/chubbynida-wilderness-whispers/\r\nhttps://www.instagram.com/chubbynida/\r\nhttps://thestreetcollector.com/collections/chubby-nida",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "lobster-robin": {
     "artistName": "Lobster Robin",
@@ -1810,14 +1810,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://stickerapp.com/media/500x500/91083cfe8a/studio-lobster-robin-blog-portrait.jpg/m/1200x0/filters:quality(60), /media/500x500/91083cfe8a/studio-lobster-robin-blog-portrait.jpg/m/1800x0/filters:quality(60) 1.5x, /media/500x500/91083cfe8a/studio-lobster-robin-blog-portrait.jpg/m/2400x0/filters:quality(60) 2x",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
+    "exhibitionsText": "2024 — Northwest Walls festival participation (mural program), Belgium — https://www.northwestwalls.be/history/2024/lobster-robin",
     "pressText": "StickerApp — — Artist interview — https://stickerapp.com/blog/artist-interview/lobster-robin\r\nNorthwestwalls — — See source article — https://www.northwestwalls.be/history/2024/lobster-robin",
     "instagramHandle": "@lobster_robin",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.northwestwalls.be/history/2024/lobster-robin\r\nhttps://streetartcities.com/artists/lobster-robin\r\nhttps://stickerapp.com/blog/artist-interview/lobster-robin\r\nhttps://www.instagram.com/lobster_robin/\r\nhttps://thestreetcollector.com/collections/lobster-robin",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "crackthetoy": {
     "artistName": "Crackthetoy",
@@ -1826,7 +1826,7 @@
     "heroHook": "Crack works as Crackthetoy — a graffiti artist, toy designer, and digital illustrator based in Indonesia. (@crackthetoy)",
     "storyFullText": "Crack works as Crackthetoy — a graffiti artist, toy designer, and digital illustrator based in Indonesia. The characters are collectible and slightly mischievous, living between product fantasy and mural scale. Bold outlines, candy color, stories you read in one glance.",
     "aboutPageUrl": "https://linktr.ee/crackthetoy",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\ncrackthetoy | Twitter, Instagram, Facebook | Linktree @crackthetoy Crack is a graffiti artist, toy designer and digital artist based in Indonesia. Padracks x Crackthetoy Padracks x Crackthetoy Beli Padracks ARTIST SERIES | CRACK THE TOY | Ukuran panjang 18 cm | Busa bantalan untuk frontrack dan backrack | barpad | padset Terbaru Harga Murah di Shopee.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\ncrackthetoy | Twitter, Instagram, Facebook | Linktree @crackthetoy Crack is a graffiti artist, toy designer and digital artist based in Indonesia. Padracks x Crackthetoy Padracks x Crackthetoy Beli Padracks ARTIST SERIES | CRACK THE TOY | Ukuran panjang 18 cm | Busa bantalan untuk frontrack dan backrack | barpad | padset Terbaru Harga Murah di Shopee.\n\nIndexed sources describe Indonesia-based graffiti/toy-adjacent digital practice; verify collaborations and legal name before long-form bio claims.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1839,13 +1839,13 @@
     "processImage4Url": "https://ugc.production.linktr.ee/2tflQEXJT2CE2APeLr9H_1EFA3803-7C03-4CEB-8337-0858E036129C.png?io=true&size=thumbnail-stack_v1_0",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "",
-    "pressText": "",
+    "pressText": "The Toy Chronicle — — Abell Octovan × Crack The Toys × Museum of Toys — The CHAMP resin release — https://www.thetoychronicle.com/news/abell-octovan-x-crack-the-toys-x-museum-of-toys-presents-the-champ/\nBehance — — Pussy Vultures gallery project — https://www.behance.net/gallery/84920023/Pussy-Vultures\nExchange.art — — Artist profile — https://exchange.art/crackthetoy",
     "instagramHandle": "@crackthetoy",
     "instagramPostImageUrls": "https://www.instagram.com/crackthetoy/p/DGIU00kyqLN/\r\nhttps://www.instagram.com/crackthetoy/p/DI-YjcISRVV/",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://linktr.ee/crackthetoy\r\nhttps://www.instagram.com/crackthetoy/\r\nhttps://thestreetcollector.com/collections/crackthetoy",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "mameko-maeda": {
     "artistName": "Mameko Maeda",
@@ -1882,7 +1882,7 @@
     "heroHook": "Frederique Matti is a Dutch illustrator and art director who has been freelancing for over ten years. (@frederique.png)",
     "storyFullText": "Frederique Matti is a Dutch illustrator and art director who has been freelancing for over ten years. Editorial, branding, and personal prints share a restrained palette that knows exactly when to open up. Her characters live in the same city she does — bikes, rainlight, calm confidence. She has worked with Google, Uber, Spotify, and GitHub, and held a solo painting show at The Hoxton Amsterdam in 2023.",
     "aboutPageUrl": "http://www.frederiquematti.com/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nCLIENTS INCLUDE Google, Uber, Spotify, Erewhon, Github, Bacardi, Dropbox, Womens Health Magazine, Deliveroo, Parabol, Nemo Science museum, and more SELECTED WORK Window installation + exposition at The Hoxton Amsterdam (2023) Logo & identity Gevel Brewery Personal work Illustrartion branding & editorial series Aircall Serving suggestion, a ceramic collaboration Handpainted Tivoli Speaker (2024) ABOUT Hi! I’m Frederique Matti, I’ve been a freelance art director, illustrator & digital designer for 10 years.\r\n\r\nWeb research (verify): Frederique Matti (site spelling), Amsterdam-based art director, illustrator, painter ~10+ years freelance. Prior tech-industry design; shift toward oil painting ~2020. Clients cited include Google, Uber, Spotify, GitHub, Dropbox, and others (verify). Group shows London/Glasgow; solo in Amsterdam per portfolio interviews.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nCLIENTS INCLUDE Google, Uber, Spotify, Erewhon, Github, Bacardi, Dropbox, Womens Health Magazine, Deliveroo, Parabol, Nemo Science museum, and more SELECTED WORK Window installation + exposition at The Hoxton Amsterdam (2023) Logo & identity Gevel Brewery Personal work Illustrartion branding & editorial series Aircall Serving suggestion, a ceramic collaboration Handpainted Tivoli Speaker (2024) ABOUT Hi! I’m Frederique Matti, I’ve been a freelance art director, illustrator & digital designer for 10 years.\r\n\r\nWeb research (verify): Frederique Matti (site spelling), Amsterdam-based art director, illustrator, painter ~10+ years freelance. Prior tech-industry design; shift toward oil painting ~2020. Clients cited include Google, Uber, Spotify, GitHub, Dropbox, and others (verify). Group shows London/Glasgow; solo in Amsterdam per portfolio interviews.\n\nCreativeMornings talk page mentions exhibiting in Amsterdam, London, and Glasgow (undated); reconcile with existing 2023 Hoxton solo line on primary site.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1895,13 +1895,13 @@
     "processImage4Url": "",
     "processImage4Label": "",
     "exhibitionsText": "2023 — Solo painting show, The Hoxton, Amsterdam, Netherlands (verify on primary invite or press)",
-    "pressText": "Medium — — Creatives Series interview — https://medium.com/the-creatives-series/illustrator-frederique-matti-on-overcoming-perfectionism-as-a-designer-718f97adfdef\r\nSpaces / Lovers Magazine — — Interview — https://spaces.is/loversmagazine/interviews/frederique-matti",
+    "pressText": "Medium — — Creatives Series interview — https://medium.com/the-creatives-series/illustrator-frederique-matti-on-overcoming-perfectionism-as-a-designer-718f97adfdef\r\nSpaces / Lovers Magazine — — Interview — https://spaces.is/loversmagazine/interviews/frederique-matti\n\nCreativeMornings Amsterdam — — Talk: Frederique Matti — https://creativemornings.com/talks/frederique-matti\nChantal Valerie (Substack) — — Five questions for Frederique Matti — https://chantalvalerie.substack.com/p/5-questions-for-frederique-matti",
     "instagramHandle": "@frederique.png",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "http://www.frederiquematti.com/\r\nhttps://frederiquematti.com/Digital\r\nhttps://www.instagram.com/frederique.png/\r\nhttps://thestreetcollector.com/collections/frederique-mati",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "phil-huelz": {
     "artistName": "Phil Huelz",
@@ -1938,7 +1938,7 @@
     "heroHook": "Ollie Smither is a UK illustrator based in Devon who works in fine line. (@os.illustration)",
     "storyFullText": "Ollie Smither is a UK illustrator based in Devon who works in fine line. Forests, figures, and small impossible details accumulate in drawings you discover gradually. The mood is contemplative and slightly uncanny — work for people who like to lean in.",
     "aboutPageUrl": "https://www.osillustration.com/",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "Press already lists Quarto book page; studio Devon, UK and campervan travel on osillustration.com—align product copy with live preorder dates.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1950,14 +1950,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://cloud.firebrandtech.com/api/v2/image/111/9781577158493/InteriorImage2",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
+    "exhibitionsText": "2026 — Monograph Wanderlust Ink (Epic Ink / Quarto Group; US Apr 21 / UK May 7 per publisher) — https://quarto.com/books/9781577158493/wanderlust-ink",
     "pressText": "The Quarto Group — 2026 — Book listing — https://quarto.com/books/9781577158493/wanderlust-ink",
     "instagramHandle": "@os.illustration",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.osillustration.com/\r\nhttps://quarto.com/books/9781577158493/wanderlust-ink\r\nhttps://linktr.ee/Os.illustration\r\nhttps://www.instagram.com/os.illustration/\r\nhttps://thestreetcollector.com/collections/ollie-smither",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "nasca-uno": {
     "artistName": "NASCA Uno",
@@ -1966,7 +1966,7 @@
     "heroHook": "Nasca Uno paints Berlin walls with the patience of a draftsman and the nerve of a graffiti writer. (@nasca_one)",
     "storyFullText": "Nasca Uno paints Berlin walls with the patience of a draftsman and the nerve of a graffiti writer. Myth, anatomy, and urban lore stack into murals that have found their way into museum collections, including the STRAAT Museum in Amsterdam. Each piece reads like a chapter — figures from a century you can't quite place.",
     "aboutPageUrl": "https://www.nasca1.com/about-1",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "STRAAT collection URL returned HTTP 404 when fetched 2026-04-03; open straatmuseum.com collection search for “Nasca” if link moves.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1978,14 +1978,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://artsmania.ca/wp-content/uploads/2020/02/nasca-and-mother.jpg?w=326&h=471",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
+    "exhibitionsText": "2019 — Festival mural wall (SEAT / Lollapalooza Berlin), Berlin, Germany — https://artsmania.ca/2020/02/17/interview-with-nasca-uno/\n2019 — Mural Gutes gedeiht im Dreck, Urban Art Hall, Berlin, Germany — https://artsmania.ca/2020/02/17/interview-with-nasca-uno/\n2017 — STRAAT Museum commission (collection context; spray and latex on polyester—per museum database) — https://straatmuseum.com/en/collection-database/nasca-uno",
     "pressText": "Artsmania — 2020 — Interview — https://artsmania.ca/2020/02/17/interview-with-nasca-uno/\r\nSTRAAT Museum — — Collection database entry — https://straatmuseum.com/en/collection-database/nasca-uno",
     "instagramHandle": "@nasca_one",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.nasca1.com/about-1\r\nhttps://artsmania.ca/2020/02/17/interview-with-nasca-uno/\r\nhttps://straatmuseum.com/en/collection-database/nasca-uno\r\nhttp://www.woostercollective.com/post/nasca-uno\r\nhttps://www.instagram.com/nasca_one/\r\nhttps://thestreetcollector.com/collections/nasca-uno",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "animalitoland": {
     "artistName": "Animalitoland",
@@ -2078,7 +2078,7 @@
     "heroHook": "Matthew Gagnon is a Montreal artist who uses walls and panels as stages for symbolic narrative. (@mattjgag)",
     "storyFullText": "Matthew Gagnon is a Montreal artist who uses walls and panels as stages for symbolic narrative. Figures, animals, and pattern stack into scenes that feel borrowed from dreams and collective memory. The palette is bold, the drawing disciplined — the same storyteller working at street scale and gallery scale.",
     "aboutPageUrl": "https://www.matthewgagnonart.com/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nMatthew Gagnon Skip to Content Open Menu Close Menu Matthew Gagnon Gallery Shop Depanneur Project Subscribe Workshops Commissions 0 0 Matthew Gagnon Gallery Shop Depanneur Project Subscribe Workshops Commissions 0 0 Open Menu Close Menu Gallery Shop Depanneur Project Subscribe Workshops Commissions Matthew is an artist and illustrator from Montreal, Canada.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nMatthew Gagnon Skip to Content Open Menu Close Menu Matthew Gagnon Gallery Shop Depanneur Project Subscribe Workshops Commissions 0 0 Matthew Gagnon Gallery Shop Depanneur Project Subscribe Workshops Commissions 0 0 Open Menu Close Menu Gallery Shop Depanneur Project Subscribe Workshops Commissions Matthew is an artist and illustrator from Montreal, Canada.\n\nDo not conflate with Los Angeles sculptor Matt Gagnon (Winston Wächter)—this row is the Montreal illustrator per matthewgagnonart.com.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -2090,14 +2090,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://images.squarespace-cdn.com/content/v1/64de62b9e992e56bb883005e/1692382565569-M7S1LLJMPTK8ELQ3BXUE/IMG_20230117_092444_419.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
+    "exhibitionsText": "2023 — Elaine Fleck Gallery, Toronto, Canada — https://www.matthewgagnonart.com/\n2023 — Achetez de l'Art, Bordeaux, France — https://www.matthewgagnonart.com/",
     "pressText": "",
     "instagramHandle": "@mattjgag",
     "instagramPostImageUrls": "https://www.instagram.com/mattjgag/p/DEpvpNsO9HL/",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.matthewgagnonart.com/\r\nhttps://www.matthewgagnonart.com/contact\r\nhttps://www.instagram.com/mattjgag/\r\nhttps://thestreetcollector.com/collections/mathew-gagnon",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "rik-lee": {
     "artistName": "Rik Lee",
@@ -2162,7 +2162,7 @@
     "heroHook": "Craig Watkins is Wotto — a British illustrator based in Orange County who has been freelancing since graduating with a BA in Illustration and Design in 2000. (@wotto76)",
     "storyFullText": "Craig Watkins is Wotto — a British illustrator based in Orange County who has been freelancing since graduating with a BA in Illustration and Design in 2000. The practice has covered toys, apparel, advertising, and personal character universes in the years since. UK wit, California color, pop surrealism for people who read the label.",
     "aboutPageUrl": "https://wottoart.com/about/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nWotto Artist About Page listing information and client list Menu Work Stores Blog About Contact Follow © Copyright 2026 Wotto. I am Craig Watkins, a freelance illustrator specializing in character design and unique branding. ‘wotto’ was coined by an artist friend and stuck as a way to brand my work. I graduated with a BA in Illustration & Design in 2000 and have been freelancing ever since. 06 FEB 2025 – RUST-O Uncapped Product Launch/Artist introduction, Secret Walls, L.A, CA. 17-19 MAY 2024 – Adobe Illustrator Summit – New York. 23 FEB 2024 – Posca Artist Evening Event hosted by Secret Walls, L.A, CA. 20 MAY 2015 – Imperial College London Festival, T-shirt Launch, London, UK 27 JUN 2015 – Moment Watches Interview and watch release, Seoul Watch Exhibition.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nWotto Artist About Page listing information and client list Menu Work Stores Blog About Contact Follow © Copyright 2026 Wotto. I am Craig Watkins, a freelance illustrator specializing in character design and unique branding. ‘wotto’ was coined by an artist friend and stuck as a way to brand my work. I graduated with a BA in Illustration & Design in 2000 and have been freelancing ever since. 06 FEB 2025 – RUST-O Uncapped Product Launch/Artist introduction, Secret Walls, L.A, CA. 17-19 MAY 2024 – Adobe Illustrator Summit – New York. 23 FEB 2024 – Posca Artist Evening Event hosted by Secret Walls, L.A, CA. 20 MAY 2015 – Imperial College London Festival, T-shirt Launch, London, UK 27 JUN 2015 – Moment Watches Interview and watch release, Seoul Watch Exhibition.\n\nLegal name Craig Watkins; character illustration and consumer-product clients listed on wottoart.com/about (verify live Events & Shows block for dates).",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -2174,14 +2174,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://wottoart.com/wp-content/themes/wotto/images/social-threads.png",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
-    "pressText": "",
+    "exhibitionsText": "2025 — Adobe MAX Conference, Los Angeles, CA, USA — https://wottoart.com/about/\n2025 — Threadless 25th anniversary celebration (interview event), Orange County, CA — https://wottoart.com/about/\n2024 — DesignerCon × Secret Walls live art battle, Las Vegas, NV — https://wottoart.com/about/\n2024 — Adobe Illustrator Summit, New York, NY — https://wottoart.com/about/\n2024 — ComplexCon Known Gallery Ampersand show, Las Vegas, NV — https://wottoart.com/about/",
+    "pressText": "Threadless Blog — 2024 — From 2007 to Now: Wotto on Threadless origins and artistic evolution — https://blog.threadless.com/from-2007-to-now-wotto-on-his-threadless-origins-and-artistic-evolution/\nI Love Your Tshirt — — Craig Watkins (Wotto): T-shirt designer and illustrator interview — http://iloveyourtshirt.com/new,Craig-Watkins-T-Shirt-Designer-Graphic-Designer-Illustrator-Interview",
     "instagramHandle": "@wotto76",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://wottoart.com/about/\r\nhttps://wottoart.com/\r\nhttps://linktr.ee/wotto76\r\nhttps://www.instagram.com/wotto76/\r\nhttps://thestreetcollector.com/collections/wotto",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "yippie-hey": {
     "artistName": "Yippie Hey",
@@ -2190,7 +2190,7 @@
     "heroHook": "YIPPIEHEY is a Hamburg illustration and animation studio founded by Jacob Eisinger. (@yippiehey)",
     "storyFullText": "YIPPIEHEY is a Hamburg illustration and animation studio founded by Jacob Eisinger. The client list is wide — Adidas, Samsung, McDonald's, Adobe, Deutsche Bahn, UNICEF — and so are the editorial credits: Wired, The New York Times, Der Spiegel. Friendly character design without being saccharine.",
     "aboutPageUrl": "https://yippiehey.com/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nabout – YIPPIEHEY portfolio info instagram COLLECTION TWITTER twitter learn shop portfolio info instagram COLLECTION TWITTER twitter learn shop YIPPIEHEY is the illustration and animation studio founded by jacob eisinger. Selected Clients adidas, porsche digital, samsung, mercedes, mc donalds, db deutsche bahn, fujitsu siemens, unicef, eis.de, adobe, rewe, o2, toyota, dpd, dekra, dr oetker, ocean spray, cool aid, falken tires, university of calgary, national theater of scotland, emi, dali Editorial wired, washington post magazine, shortlist, der spiegel, new york times magazine, timeout, modus, die zeit, brand eins, official offf festival book, good type vol.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nabout – YIPPIEHEY portfolio info instagram COLLECTION TWITTER twitter learn shop portfolio info instagram COLLECTION TWITTER twitter learn shop YIPPIEHEY is the illustration and animation studio founded by jacob eisinger. Selected Clients adidas, porsche digital, samsung, mercedes, mc donalds, db deutsche bahn, fujitsu siemens, unicef, eis.de, adobe, rewe, o2, toyota, dpd, dekra, dr oetker, ocean spray, cool aid, falken tires, university of calgary, national theater of scotland, emi, dali Editorial wired, washington post magazine, shortlist, der spiegel, new york times magazine, timeout, modus, die zeit, brand eins, official offf festival book, good type vol.\n\nStudio of Jacob Eisinger (Hamburg). Representation and client list on yippiehey.com/info; verify exhibition spellings against live site.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -2202,14 +2202,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://yippiehey.com/wp-content/uploads/2025/07/PICTURE-4.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
-    "pressText": "",
+    "exhibitionsText": "2025 — Solo: Sammelsurium, Kultur & Gut / Kugu, Hamburg, Germany — https://yippiehey.com/info\n2025 — Group: Millerntor Gallery, Hamburg, Germany — https://yippiehey.com/info\n2025 — Group: FOMO, Q Creative Quarter, Hamburg, Germany — https://yippiehey.com/info\n2024 — Group: print's not that, Kultur & Gut, Hamburg, Germany — https://yippiehey.com/info\n2023 — Sotheby's Natively Digital: Circle of Life (group auction & exhibition) — https://yippiehey.com/info",
+    "pressText": "Rausgegangen — 2025 — Event: YIPPIEHEY Sammelsurium, Hamburg — https://rausgegangen.de/events/yippiehey-sammelsurium-0/\nIt's Nice That — 2015 — Creative typography feature — https://www.itsnicethat.com/articles/yippiehey-jsr\nPictoplasma Conference — 2021 — Speaker listing — https://conference.pictoplasma.com/2021/yippiehey/",
     "instagramHandle": "@yippiehey",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://yippiehey.com/about\r\nhttp://www.yippiehey.com/\r\nhttps://yippiehey.com/info\r\nhttps://www.instagram.com/yippiehey/\r\nhttps://thestreetcollector.com/collections/yippie-hey",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch2-thin.json (verify facts)."
   },
   "keya-tama": {
     "artistName": "Keya Tama",
