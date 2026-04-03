@@ -17,4 +17,4 @@ Wotto, Yippie Hey, saturn_png, Chubby Nida, Crackthetoy, Frederique Mati, Kaka C
 
 ## Deployment
 
-- Run `vercel --prod --yes` after push; note URL in this section after deploy.
+- **Production:** `vercel --prod --yes` completed; alias **https://app.thestreetcollector.com** (deployment `street-collector-c5qtkt764-chonibes-projects.vercel.app`).
