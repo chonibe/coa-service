@@ -19,3 +19,8 @@ Jake Ac art, Aviv Shamir, Igor Mikutski, Jennypo Art, Refiloe Mnisi, S A R G O N
 
 - Remaining ~72 artists: continue thin-first batch 2+ using the same JSON + apply workflow.
 - [`scripts/extract_artist_portfolio_images.py`](../../scripts/extract_artist_portfolio_images.py) returned **0 updates** for this batch (IG/login limits); rely on site CDNs or manual permalinks where needed.
+
+## Deployment
+
+- **Production:** `vercel --prod --yes` completed; alias **https://app.thestreetcollector.com** (deployment `street-collector-ea82ionzy-chonibes-projects.vercel.app`).
+- **Note:** First CLI run hit `EPIPE` mid-build; redeploy succeeded on retry.
