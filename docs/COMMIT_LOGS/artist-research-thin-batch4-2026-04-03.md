@@ -13,4 +13,4 @@ Fourth thin-first pass: **12 artists**—exhibitions and/or press from primary p
 
 ## Deployment
 
-- **Production:** run `vercel --prod --yes` after push to `main`; confirm alias **https://app.thestreetcollector.com**.
+- **Production:** `vercel --prod --yes` completed; alias **https://app.thestreetcollector.com** (deployment `street-collector-113pbwdd2-chonibes-projects.vercel.app`, inspect `DjsVdVYDhNMScG715codiiwUHQxF` on Vercel dashboard).
