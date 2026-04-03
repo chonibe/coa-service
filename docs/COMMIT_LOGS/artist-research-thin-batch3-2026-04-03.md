@@ -13,4 +13,4 @@ Third thin-first pass: **12 artists** with exhibitions and/or press from primary
 
 ## Deployment
 
-- **Production:** `vercel --prod --yes` after push; update this line with deployment URL when complete.
+- **Production:** `vercel --prod --yes` completed; alias **https://app.thestreetcollector.com** (deployment `street-collector-grw8mlz8o-chonibes-projects.vercel.app`).
