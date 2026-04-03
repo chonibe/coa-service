@@ -1,0 +1,20 @@
+{
+  "batch": 4,
+  "date": "2026-04-03",
+  "excludedPriorBatches": 36,
+  "artists": [
+    "Hen Macabi",
+    "Linda Baritski",
+    "Maalavidaa",
+    "Mameko Maeda",
+    "My Sunbeam",
+    "Or Bar El",
+    "Ori Toor",
+    "Raki",
+    "Yoaz",
+    "Cokorda Martin",
+    "Eden Kalif",
+    "Jerome Masi"
+  ],
+  "quantitative": { "artistsPatched": 12 }
+}
