@@ -1,0 +1,28 @@
+{
+  "batch": 1,
+  "date": "2026-04-03",
+  "ordering": "thin-first (see rankedThinScores)",
+  "rankedThinScores": [
+    { "artist": "Jake Ac art", "score": 10 },
+    { "artist": "Aviv Shamir", "score": 9 },
+    { "artist": "Igor Mikutski", "score": 9 },
+    { "artist": "Jennypo Art", "score": 7 },
+    { "artist": "Refiloe Mnisi", "score": 7 },
+    { "artist": "S A R G O N", "score": 7 },
+    { "artist": "Levi Jacobs", "score": 6 },
+    { "artist": "Odsk", "score": 6 },
+    { "artist": "Rik Lee", "score": 6 },
+    { "artist": "Thomas Stary", "score": 6 },
+    { "artist": "Woizo", "score": 6 },
+    { "artist": "Vivaladybug", "score": 5 }
+  ],
+  "quantitative": {
+    "artistsPatched": 12,
+    "pressLinesAddedApprox": 18,
+    "exhibitionLinesAddedApprox": 22,
+    "aboutUrlUpdates": 3,
+    "portfolioImageExtractRuns": 12,
+    "portfolioImageExtractUpdates": 0,
+    "refiloePressCorrection": "removed_misattributed_visi_roundup"
+  }
+}
