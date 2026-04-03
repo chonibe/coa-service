@@ -418,6 +418,14 @@ AUTHORITY_SNIPPETS: list[tuple[str, str]] = [
         "Marché des Créateurs (Luxembourg) introduces Saturn / saturn_png—Hermann—a French illustrator and animator pairing abstract geometry with nods to ancient Greek ceramics.\n\nTrue Grit Texture Supply’s Instagram promos catch him pushing Procreate grain through hard-edge geometry.\n\nsaturnsuperstore.fr rounds out the shopfront; Pinterest mirrors the same graphic universe.",
         "Saturn / saturn_png is Hermann—a French illustrator and animator pairing abstract geometry with nods to ancient Greek ceramics, introduced through Luxembourg’s Marché des Créateurs circuit.\n\nTrue Grit Texture Supply promos show Procreate grain hammered through hard-edge geometry.\n\nsaturnsuperstore.fr anchors the shopfront; Pinterest mirrors the same graphic universe.",
     ),
+    (
+        "Apple-sized clients sit beside journal pieces—frozen moments from travel, love, and weather you cannot name.",
+        "Commercial commissions sit beside journal pieces—frozen moments from travel, love, and weather you cannot name.",
+    ),
+    (
+        "Research stacks into iPad roughs, then tight vector finishes—pop palettes, icon clarity, attitude borrowed from street posters.",
+        "Sketches stack into iPad roughs, then tight vector finishes—pop palettes, icon clarity, attitude borrowed from street posters.",
+    ),
 ]
 
 
@@ -451,6 +459,9 @@ LAST_PARA_TRIG = re.compile(
 )
 
 DROP_PARA_PREFIXES = (
+    # Press/CV recap — belongs in Press module, not overview (playbook §2.2).
+    "recent recognition includes discussion in",
+    "recent projects on the calendar span",
     "the street collector artist-research",
     "third-party aggregator thisispublic",
     "internal csv ties",
@@ -668,6 +679,19 @@ def drop_paragraphs(paras: list[str]) -> list[str]:
     return out
 
 
+def dedupe_consecutive_paragraphs(paras: list[str]) -> list[str]:
+    """Remove adjacent duplicate paragraphs (e.g. repeated template lines)."""
+    out: list[str] = []
+    for p in paras:
+        t = p.strip()
+        if not t:
+            continue
+        if out and out[-1].strip() == t:
+            continue
+        out.append(t)
+    return out
+
+
 def strip_trailing_internal_paragraphs(paras: list[str]) -> list[str]:
     while paras:
         last = paras[-1]
@@ -706,6 +730,7 @@ def refine_story_body(text: str) -> str:
         text = text.replace(old, new)
     text = apply_authority_voice(apply_editorial_snippets(text))
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+    paras = dedupe_consecutive_paragraphs(paras)
     paras = drop_paragraphs(paras)
     paras = [strip_internal_parentheticals(clean_sentences_in_paragraph(p)) for p in paras]
     paras = [p for p in paras if p.strip()]
