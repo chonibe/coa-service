@@ -1,0 +1,20 @@
+{
+  "batch": 3,
+  "date": "2026-04-03",
+  "excludedPriorBatches": 24,
+  "artists": [
+    "Paola Delfin",
+    "Phil Huelz",
+    "Tania Yakunova",
+    "Tyler Shelton",
+    "Wuper Kec",
+    "Agus Rucula",
+    "Ajax Blyth Piper",
+    "Alice Bureau",
+    "Animalitoland",
+    "Beto Val",
+    "Dima Korma",
+    "Facio"
+  ],
+  "quantitative": { "artistsPatched": 12 }
+}
