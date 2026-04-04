@@ -127,6 +127,16 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/shop/artists",
+        destination: "/shop/explore-artists",
+        permanent: true,
+      },
+      {
+        source: "/shop/artists",
+        destination: "/shop/explore-artists",
+        permanent: true,
+      },
+      {
         source: "/favicon.ico",
         destination: `/api/proxy-image?url=${encodeURIComponent(faviconCdnUrl)}`,
         permanent: false,

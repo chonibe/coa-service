@@ -26,11 +26,15 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackViewItem, trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { ProductCreditsCallout } from '@/components/shop/ProductCreditsCallout'
+import { buildProductFaqPairs } from '@/lib/seo/product-faqs'
+import { buildProductImageAlt } from '@/lib/seo/product-image-alt'
+import { buildProductAnswerFirst } from '@/lib/seo/product-meta'
 import {
   ProductGallery,
   ProductAccordion,
   streetLampAccordionItems,
   artworkAccordionItems,
+  type AccordionItem,
   StickyBuyBar,
   ProductSeriesInfo,
   EditionInfo,
@@ -307,8 +311,20 @@ export default function ProductPage() {
   // Determine if this is the Street Lamp product
   const isStreetLamp = params?.handle === 'street_lamp'
   
-  // Get appropriate accordion items
-  const accordionItems = isStreetLamp ? streetLampAccordionItems : artworkAccordionItems
+  const seoFaqAccordionItems: AccordionItem[] = buildProductFaqPairs(product).map((f, i) => ({
+    id: `seo-faq-${i}`,
+    title: f.question,
+    content: (
+      <p className="text-[#1a1a1a]/80 text-sm leading-relaxed max-w-prose">
+        {f.answer}
+      </p>
+    ),
+    defaultOpen: i === 0,
+  }))
+
+  const accordionItems = isStreetLamp
+    ? [...seoFaqAccordionItems, ...streetLampAccordionItems]
+    : [...seoFaqAccordionItems, ...artworkAccordionItems]
 
   return (
     <main className="min-h-screen bg-white">
@@ -335,7 +351,7 @@ export default function ProductPage() {
               images={images.map((img, idx) => ({
                 id: `img-${idx}`,
                 src: img.url,
-                alt: img.altText || `${product.title} - Image ${idx + 1}`,
+                alt: buildProductImageAlt(product.title, product.vendor, img.altText),
               }))}
               productTitle={product.title}
             />
@@ -357,6 +373,9 @@ export default function ProductPage() {
               <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
                 {product.title}
               </h1>
+              <p className="text-sm text-[#1a1a1a]/75 leading-relaxed max-w-prose">
+                {buildProductAnswerFirst(product)}
+              </p>
 
               {/* Series Info */}
               {seriesInfo && (

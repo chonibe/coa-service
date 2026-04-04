@@ -418,6 +418,21 @@
   margin: 32px 0;
 }
 
+.storyPullquoteBody {
+  margin: 0;
+}
+
+.storyPullquoteCite {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  font-style: normal;
+  font-family: system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  opacity: 0.95;
+}
+
 .processLabel {
   font-size: 9px;
   letter-spacing: 0.22em;
@@ -1363,4 +1378,63 @@
     grid-column: 1 / -1;
     padding-left: 80px;
   }
+}
+
+/* SEO / GEO: answer-first lead + visible FAQ (matches JSON-LD) */
+.heroLead {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 36em;
+  margin: 16px 0 0;
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+}
+
+.heroKeywords {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--peach2);
+  margin: 10px 0 0;
+  max-width: 36em;
+}
+
+.faqSection {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 56px 72px 72px;
+  border-top: 1px solid var(--border);
+}
+
+.faqH2 {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-size: 22px;
+  margin: 0 0 24px;
+  font-weight: 500;
+}
+
+.faqList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.faqItem {
+  margin: 0;
+}
+
+.faqQ {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+  color: var(--white);
+}
+
+.faqA {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
 }

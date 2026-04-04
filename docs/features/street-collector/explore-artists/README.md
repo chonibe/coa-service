@@ -26,8 +26,9 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 
 ## SEO
 
-- Metadata in `page.tsx`: title/description, Open Graph, Twitter, `alternates.canonical: '/explore-artists'`.
-- `metadataBase` uses `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_SITE_URL` when set.
+- Full shop SEO index: [`../SEO-shop.md`](../SEO-shop.md).
+- Metadata in `page.tsx`: directory-oriented title/description, Open Graph, Twitter, `alternates.canonical: '/explore-artists'`, `metadataBase` via [`lib/seo/site-url.ts`](../../../../lib/seo/site-url.ts).
+- Breadcrumb JSON-LD: [`components/seo/ExploreArtistsJsonLd.tsx`](../../../../components/seo/ExploreArtistsJsonLd.tsx).
 
 ## Testing
 

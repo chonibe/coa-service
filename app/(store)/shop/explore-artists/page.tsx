@@ -2,28 +2,27 @@ import { Metadata } from 'next'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
 import { getShopArtistsList } from '@/lib/shop/artists-list'
 import { orderArtistsForExplore } from '@/lib/shop/explore-artists-order'
+import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { landingFontVariables } from '../home-v2/landing-fonts'
 import landingStyles from '../home-v2/landing.module.css'
 import { ExploreArtistsClient } from './components/ExploreArtistsClient'
+import { ExploreArtistsJsonLd } from '@/components/seo/ExploreArtistsJsonLd'
 
-const TITLE = 'Explore the artists | Street Collector'
+const TITLE = 'Artist directory — street art & limited edition prints | Street Collector'
 const DESCRIPTION =
-  'Meet the independent artists behind Street Collector editions. Open a profile for story and works, then build your lamp with pieces you choose.'
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.thestreetcollector.com'
+  'Browse every Street Collector artist in one place: independent street art and urban art voices, limited edition prints, and profiles linking to each collection. Find your next piece for the lamp or wall.'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: getCanonicalSiteOrigin(),
   title: TITLE,
   description: DESCRIPTION,
   alternates: {
-    canonical: '/explore-artists',
+    canonical: '/shop/explore-artists',
   },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    url: '/explore-artists',
+    url: '/shop/explore-artists',
     siteName: 'Street Collector',
     type: 'website',
     images: [
@@ -49,6 +48,7 @@ export default async function ExploreArtistsPage() {
 
   return (
     <div className={`${landingFontVariables} ${landingStyles.page}`}>
+      <ExploreArtistsJsonLd />
       <ExploreArtistsClient artists={artists} experienceUrl={homeV2LandingContent.urls.experience} />
     </div>
   )

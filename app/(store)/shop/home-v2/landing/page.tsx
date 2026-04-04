@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
 import { landingFontVariables } from '../landing-fonts'
 import styles from '../landing.module.css'
@@ -19,13 +20,8 @@ const LANDING_TITLE =
 const LANDING_DESCRIPTION =
   'A premium backlit lamp with interchangeable street art prints from artists worldwide. Collect. Swap. Own something truly original.'
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://app.thestreetcollector.com'
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: getCanonicalSiteOrigin(),
   title: LANDING_TITLE,
   description: LANDING_DESCRIPTION,
   alternates: {

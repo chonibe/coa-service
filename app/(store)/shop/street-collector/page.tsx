@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
+import { StreetCollectorBrandJsonLd } from '@/components/seo/StreetCollectorBrandJsonLd'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
@@ -47,9 +49,19 @@ const HOME_LOGO_URL =
   'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
 
 export const metadata: Metadata = {
-  title: 'Street Collector - Revolutionizing The Urban Art World',
+  metadataBase: getCanonicalSiteOrigin(),
+  title: 'What is Street Collector? | Backlit lamp & limited edition street art prints',
   description:
-    'Discover your city\'s vibrant art scene, connect with your favourite artists, ignite your creativity, and claim exclusive masterpieces in an exciting new way.',
+    'Street Collector pairs a premium illuminated display with swappable limited-edition street art prints from independent artists. Editioned works, Certificate of Authenticity, worldwide shipping.',
+  alternates: { canonical: '/shop/street-collector' },
+  openGraph: {
+    title: 'Street Collector — illuminated art & limited edition prints',
+    description:
+      'Collect limited edition street art prints and display them in a backlit Street Collector lamp. Small runs, COA, ships worldwide.',
+    url: '/shop/street-collector',
+    siteName: 'Street Collector',
+    type: 'website',
+  },
 }
 
 // Allow revalidation so bfcache can work; page uses Shopify API so short revalidate
@@ -267,6 +279,7 @@ export default async function StreetCollectorPage() {
 
   return (
     <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
+      <StreetCollectorBrandJsonLd />
       {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
       <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
         <div

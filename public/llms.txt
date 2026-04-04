@@ -1,0 +1,21 @@
+# Street Collector — URLs for AI / LLM indexing
+# Canonical site: https://www.thestreetcollector.com
+# Update this list as major hubs and pillars ship.
+
+## Brand & shop hubs
+https://www.thestreetcollector.com/
+https://www.thestreetcollector.com/shop/home-v2
+https://www.thestreetcollector.com/shop/street-collector
+https://www.thestreetcollector.com/shop/products
+https://www.thestreetcollector.com/shop/explore-artists
+https://www.thestreetcollector.com/shop/faq
+https://www.thestreetcollector.com/shop/contact
+
+## Policies
+https://www.thestreetcollector.com/policies/terms-of-service
+https://www.thestreetcollector.com/policies/privacy-policy
+https://www.thestreetcollector.com/policies/shipping-policy
+https://www.thestreetcollector.com/policies/refund-policy
+
+## Dynamic sections (full lists in sitemap.xml)
+https://www.thestreetcollector.com/sitemap.xml

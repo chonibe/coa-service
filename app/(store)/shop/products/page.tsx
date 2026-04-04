@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
+import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -22,8 +23,11 @@ import { ProductCardItem } from '../components/ProductCardItem'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
-  title: 'Shop All Products | Street Collector',
-  description: 'Browse our collection of limited edition artworks for the Street Lamp.',
+  metadataBase: getCanonicalSiteOrigin(),
+  title: 'Street art prints & limited editions | Shop | Street Collector',
+  description:
+    'Buy limited edition street art prints and urban art for the Street Collector lamp. Certificate of Authenticity, small runs, worldwide shipping. Browse artworks by independent artists.',
+  alternates: { canonical: '/shop/products' },
 }
 
 // Force dynamic rendering to avoid build-time API calls
@@ -76,7 +80,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   let collectionDescription: string | null = null
   let collections: { handle: string; title: string }[] = []
   let apiError: string | null = null
-  let activeSeries: { id: string; name: string; thumbnail_url: string | null; total_artworks: number }[] = []
+  const activeSeries: { id: string; name: string; thumbnail_url: string | null; total_artworks: number }[] = []
 
   try {
     if (collectionHandle) {

@@ -8,6 +8,9 @@ import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { getInstagramEmbedSrc } from '@/lib/shop/instagram-embed'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
+import { buildArtistAnswerFirstLead } from '@/lib/seo/artist-meta'
+import { buildArtistFaqPairs } from '@/lib/seo/artist-faqs'
+import { parsePullQuote } from '@/lib/shop/parse-pull-quote'
 import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
@@ -217,6 +220,10 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
           <div className={styles.heroContentCol}>
             {eyebrow ? <div className={styles.heroEyebrow}>{eyebrow}</div> : null}
             <h1 className={styles.heroName}>{artist.name}</h1>
+            <p className={styles.heroLead}>{buildArtistAnswerFirstLead(artist)}</p>
+            <p className={styles.heroKeywords}>
+              Limited edition street art prints with Certificate of Authenticity.
+            </p>
             {profile.alias ? <div className={styles.heroAlias}>{profile.alias}</div> : null}
             {profile.storyHook ? <p className={styles.heroHook}>&ldquo;{profile.storyHook}&rdquo;</p> : null}
             <div className={styles.heroMeta}>
@@ -280,7 +287,18 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                     left in each run, and pieces you can add to your Street Lamp.
                   </p>
                 )}
-                {profile.pullquote ? <blockquote className={styles.storyPullquote}>&ldquo;{profile.pullquote}&rdquo;</blockquote> : null}
+                {profile.pullquote ? (() => {
+                  const parsed = parsePullQuote(profile.pullquote)
+                  if (!parsed) return null
+                  return (
+                    <blockquote className={styles.storyPullquote}>
+                      <p className={styles.storyPullquoteBody}>&ldquo;{parsed.quote}&rdquo;</p>
+                      {parsed.attribution ? (
+                        <cite className={styles.storyPullquoteCite}>{parsed.attribution}</cite>
+                      ) : null}
+                    </blockquote>
+                  )
+                })() : null}
                 {profile.impactCallout ? (
                   <div className={styles.bioCard}>
                     <div className={styles.bioCardIcon} aria-hidden>
@@ -345,6 +363,19 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 ) : null}
               </div>
             </div>
+            <section className={styles.faqSection} aria-labelledby="artist-faq-heading">
+              <h2 id="artist-faq-heading" className={styles.faqH2}>
+                Common questions
+              </h2>
+              <dl className={styles.faqList}>
+                {buildArtistFaqPairs(artist).map((f) => (
+                  <div key={f.question} className={styles.faqItem}>
+                    <dt className={styles.faqQ}>{f.question}</dt>
+                    <dd className={styles.faqA}>{f.answer}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           </div>
         </div>
 
