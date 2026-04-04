@@ -20,4 +20,4 @@
 
 ## Deployment
 
-- **Production:** `vercel --prod --yes` after push to `main`; confirm **https://app.thestreetcollector.com**.
+- **Production:** `vercel --prod --yes` completed; alias **https://app.thestreetcollector.com** (deployment `street-collector-9u1sfm9i3-chonibes-projects.vercel.app`, inspect `97HRa1iADUmRqhTtgf9wVEDB17XQ` on Vercel dashboard).
