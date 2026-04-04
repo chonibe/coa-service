@@ -89,6 +89,8 @@ interface OrderTrackListItem {
   track_status_name: string
   error_code: number
   error_msg: string
+  /** Last-mile / STONE3PL number when the track-list API returns it */
+  last_mile_tracking?: string
 }
 
 interface ChinaDivisionOrderTrackListResponse {

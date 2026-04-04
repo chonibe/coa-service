@@ -106,6 +106,7 @@ npm run dev
 - [Template Preview](/app/template-preview/README.md) - Artist template preview landing page
 - [MCP Servers](/docs/mcp/README.md) - Model Context Protocol servers for Cursor agents
 - [ChinaDivision Auto-Fulfillment](/docs/features/chinadivision-auto-fulfillment/README.md)
+- [Warehouse daily Slack summary](/docs/features/warehouse-daily-slack/README.md) — cron digest of open orders, Approving SKU gap vs inventory, core SKU counts
 - [Polaris Migration Guide](/docs/features/polaris-migration/MIGRATION_GUIDE.md) - ✅ **COMPLETED** Migration from Shadcn UI to Polaris Web Components
 - [Design System](/docs/DESIGN_SYSTEM.md) - Polaris-based design system documentation
 - [UI Components Cleanup](/components/ui/CLEANUP_SUMMARY.md) - Details on removed and retained components

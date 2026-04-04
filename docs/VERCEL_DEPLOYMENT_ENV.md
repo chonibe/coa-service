@@ -77,6 +77,28 @@ CHINADIVISION_API_KEY=your_chinadivision_api_key
 - Copy your API key
 - Your API key: `5f91972f8d59ec8039cecfec3adcead5`
 
+### Slack — warehouse daily summary cron (optional)
+
+Used by `GET /api/cron/warehouse-daily-slack` (Vercel Cron in `vercel.json`). Create an [Incoming Webhook](https://api.slack.com/messaging/webhooks) for the target channel.
+
+```
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+```
+
+Optional lookback window for ChinaDivision `orders-info` (default **`90`**, max `365`):
+
+```
+WAREHOUSE_SLACK_SUMMARY_DAYS=90
+```
+
+Optional cap on how many **open** orders are listed and how many get `order-track-list` calls (default `50`, max `100`):
+
+```
+WAREHOUSE_SLACK_OPEN_ORDER_LIMIT=50
+```
+
+Feature doc: [`docs/features/warehouse-daily-slack/README.md`](./features/warehouse-daily-slack/README.md).
+
 ### Resend Email Service (Required for Email Notifications)
 ```
 RESEND_API_KEY=re_your_resend_api_key
