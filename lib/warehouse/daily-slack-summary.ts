@@ -7,6 +7,10 @@ const WAREHOUSE_CANCELED = 23
 const WAREHOUSE_APPROVING = 0
 const DEFAULT_OPEN_ORDER_CAP = 50
 const MAX_MESSAGE_CHARS = 3500
+/** Shown at end of digest; inferred time from tracking “delivered” events when possible. */
+const DELIVERED_SECTION_MAX = 5
+/** Max delivered rows (newest by `date_added`) to call `order-track-list` for before sorting by delivery time. */
+const DELIVERED_TRACK_CANDIDATE_CAP = 50
 
 export function getWarehouseSlackOpenOrderLimit(): number {
   const raw = process.env.WAREHOUSE_SLACK_OPEN_ORDER_LIMIT
@@ -209,7 +213,7 @@ function slackSafeOneLine(s: string, maxLen = 100): string {
 }
 
 /**
- * Order-info (CD “local”) vs order-track-list row (STONE3PL / track API) main + last-mile numbers.
+ * Single main + optional last-mile line: prefer `order-track-list` fields, else order-info (no duplicate when both match).
  */
 export function formatTrackingNumbersForSlack(
   order: ChinaDivisionOrderInfo,
@@ -220,20 +224,14 @@ export function formatTrackingNumbersForSlack(
   const stM = (trRow?.tracking_number || '').trim()
   const stL = (trRow?.last_mile_tracking || '').trim()
 
-  const localBits: string[] = []
-  if (cdM) localBits.push(`main \`${slackSafeOneLine(cdM, 80)}\``)
-  if (cdL && cdL !== cdM) localBits.push(`LM \`${slackSafeOneLine(cdL, 80)}\``)
-  const localSeg = localBits.length ? localBits.join(' · ') : '—'
+  const main = stM || cdM
+  const lmRaw = (stL || cdL).trim()
+  const lm = lmRaw && lmRaw !== main ? lmRaw : ''
 
-  let stoneSeg = '—'
-  if (trRow) {
-    const sb: string[] = []
-    if (stM) sb.push(`main \`${slackSafeOneLine(stM, 80)}\``)
-    if (stL && stL !== stM) sb.push(`LM \`${slackSafeOneLine(stL, 80)}\``)
-    stoneSeg = sb.length ? sb.join(' · ') : '—'
-  }
-
-  return `Local: ${localSeg} | STONE3PL: ${stoneSeg}`
+  const bits: string[] = []
+  if (main) bits.push(`main \`${slackSafeOneLine(main, 80)}\``)
+  if (lm) bits.push(`LM \`${slackSafeOneLine(lm, 80)}\``)
+  return bits.length ? bits.join(' · ') : '—'
 }
 
 function toStoneTrackingPayload(row: OrderTrackListItem): STONE3PLTrackingInfo {
@@ -306,6 +304,72 @@ function setTrackRow(map: Map<string, OrderTrackListItem>, row: OrderTrackListIt
   }
 }
 
+function lookupTrackRow(map: Map<string, OrderTrackListItem>, orderId: string): OrderTrackListItem | undefined {
+  const oid = orderId.trim()
+  if (!oid) return undefined
+  const noHash = oid.replace(/^#/, '')
+  return map.get(oid) || map.get(`#${noHash}`) || map.get(noHash)
+}
+
+/**
+ * Sort key + Slack label for “when delivered”: newest tracking event whose description mentions delivered,
+ * else newest event if status is Delivered, else `date_added`.
+ */
+export function resolveDeliveredWhenForSlack(
+  stone3pl: STONE3PLClient,
+  trRow: OrderTrackListItem | undefined,
+  order: ChinaDivisionOrderInfo
+): { atMs: number; whenLabel: string } {
+  const fallbackMs = new Date(order.date_added || 0).getTime()
+  const listed = order.date_added?.trim()
+  const fallbackLabel = listed ? `listed ${listed}` : '—'
+
+  if (!trRow) {
+    return {
+      atMs: Number.isFinite(fallbackMs) ? fallbackMs : 0,
+      whenLabel: fallbackLabel,
+    }
+  }
+
+  try {
+    const tl = stone3pl.getTrackingTimeline(toStoneTrackingPayload(trRow))
+    let bestEvent: (typeof tl.events)[0] | null = null
+    let bestT = -1
+    for (const e of tl.events) {
+      if (/\bdelivered\b/i.test(e.description)) {
+        const t = new Date(e.timestamp).getTime()
+        if (Number.isFinite(t) && t > bestT) {
+          bestT = t
+          bestEvent = e
+        }
+      }
+    }
+    if (bestEvent) {
+      const label =
+        bestEvent.parsedTime?.full?.trim() ||
+        bestEvent.timestamp?.trim() ||
+        fallbackLabel
+      return { atMs: bestT, whenLabel: label }
+    }
+    if (tl.currentStatus.isDelivered && tl.events.length > 0) {
+      const e = tl.events[0]
+      const t = new Date(e.timestamp).getTime()
+      const label = e.parsedTime?.full?.trim() || e.timestamp?.trim() || fallbackLabel
+      return {
+        atMs: Number.isFinite(t) ? t : fallbackMs,
+        whenLabel: label,
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+
+  return {
+    atMs: Number.isFinite(fallbackMs) ? fallbackMs : 0,
+    whenLabel: fallbackLabel,
+  }
+}
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = []
   for (let i = 0; i < arr.length; i += size) {
@@ -324,6 +388,8 @@ export type WarehouseDailySummaryMeta = {
   openRowsShown: number
   openRowsOmitted: number
   approvingOrderCount: number
+  deliveredInWindowCount: number
+  deliveredSectionShown: number
   slackCharCount: number
 }
 
@@ -359,11 +425,21 @@ export async function buildWarehouseDailySlackSummary(options: {
   const approvingOrders = allOrders.filter((o) => o.status === WAREHOUSE_APPROVING)
   const approvingUnique = dedupeOrdersByPlatformId(approvingOrders)
 
-  // Only fetch tracking for the capped set (avoids timeouts when hundreds are open).
-  const orderIdsForTrack = openForSummary.map((o) => (o.order_id || '').trim()).filter(Boolean)
+  const deliveredAll = dedupeOrdersByPlatformId(
+    allOrders.filter((o) => o.status !== WAREHOUSE_CANCELED && isLikelyDelivered(o))
+  )
+  const deliveredSortedByAdded = [...deliveredAll].sort((a, b) => {
+    const ta = new Date(a.date_added || 0).getTime()
+    const tb = new Date(b.date_added || 0).getTime()
+    return tb - ta
+  })
+  const deliveredCandidates = deliveredSortedByAdded.slice(0, DELIVERED_TRACK_CANDIDATE_CAP)
+
+  const openIds = openForSummary.map((o) => (o.order_id || '').trim()).filter(Boolean)
+  const deliveredIds = deliveredCandidates.map((o) => (o.order_id || '').trim()).filter(Boolean)
+  const orderIdsForTrack = [...new Set([...openIds, ...deliveredIds])]
 
   const trackByOrderId = new Map<string, OrderTrackListItem>()
-
   for (const batch of chunk(orderIdsForTrack, 40)) {
     const csv = batch.join(',')
     try {
@@ -376,6 +452,18 @@ export async function buildWarehouseDailySlackSummary(options: {
     }
   }
 
+  const deliveredScored = deliveredCandidates.map((o) => {
+    const oid = (o.order_id || '').trim()
+    const trRow = lookupTrackRow(trackByOrderId, oid)
+    const { atMs, whenLabel } = resolveDeliveredWhenForSlack(options.stone3pl, trRow, o)
+    return { order: o, atMs, whenLabel }
+  })
+  deliveredScored.sort((a, b) => {
+    if (b.atMs !== a.atMs) return b.atMs - a.atMs
+    return (a.order.order_id || '').localeCompare(b.order.order_id || '')
+  })
+  const topDelivered = deliveredScored.slice(0, DELIVERED_SECTION_MAX)
+
   const demand = aggregateApprovingDemand(allOrders)
   const availability = buildAvailabilityBySkuLower(inventoryRows)
   const shortageLines = computeApprovingShortages(demand, availability)
@@ -385,7 +473,7 @@ export async function buildWarehouseDailySlackSummary(options: {
   lines.push(`*Warehouse daily summary* (${start} – ${end} UTC, last ${days} days)`)
   lines.push('')
   lines.push(
-    `*1) Open orders (not canceled, not delivered)* — ${openList.length} total; *showing ${openForSummary.length}* (newest first; cap ${openOrderCap}; tracking API only for these)`
+    `*1) Open orders (not canceled, not delivered)* — ${openList.length} total; *showing ${openForSummary.length}* (newest first; cap ${openOrderCap}; \`order-track-list\` batch includes these ids + up to ${DELIVERED_TRACK_CANDIDATE_CAP} newest delivered-by-\`date_added\` for section 4)`
   )
 
   const toShow = openForSummary
@@ -403,11 +491,7 @@ export async function buildWarehouseDailySlackSummary(options: {
     const wh = o.status_name ?? String(o.status ?? '?')
     const tr = o.track_status_name ?? String(o.track_status ?? '—')
     let lastLoc = '—'
-    const oidNoHash = oid.replace(/^#/, '')
-    const trRow =
-      trackByOrderId.get(oid) ||
-      trackByOrderId.get(`#${oidNoHash}`) ||
-      trackByOrderId.get(oidNoHash)
+    const trRow = lookupTrackRow(trackByOrderId, oid)
     if (trRow) {
       try {
         lastLoc = formatLastTrackingSummary(options.stone3pl, trRow, o)
@@ -461,6 +545,23 @@ export async function buildWarehouseDailySlackSummary(options: {
   lines.push(`• StreetLamp001: *${lamps.streetlamp001}*`)
   lines.push(`• Streetlamp002: *${lamps.streetlamp002}*`)
 
+  lines.push('')
+  lines.push(
+    `*4) Last ${DELIVERED_SECTION_MAX} delivered* (${deliveredAll.length} in window; “when” = latest scan mentioning *delivered* when present, else Delivered status newest event, else \`date_added\`)`
+  )
+  if (topDelivered.length === 0) {
+    lines.push('_No delivered orders in this date range._')
+  } else {
+    for (const { order: o, whenLabel } of topDelivered) {
+      const oid = (o.order_id || '').trim() || '(no id)'
+      const recipientRaw = formatOrderRecipientName(o)
+      const recipient = slackSafeOneLine(recipientRaw)
+      const recipientPart = recipient === '—' ? '—' : `*${recipient}*`
+      const when = slackSafeOneLine(whenLabel, 140)
+      lines.push(`• \`${slackSafeOneLine(oid, 36)}\` · ${recipientPart} · _${when}_`)
+    }
+  }
+
   let text = lines.join('\n')
   if (text.length > MAX_MESSAGE_CHARS) {
     text = text.slice(0, MAX_MESSAGE_CHARS - 40) + '\n…_(truncated for Slack length)_'
@@ -476,6 +577,8 @@ export async function buildWarehouseDailySlackSummary(options: {
     openRowsShown: toShow.length,
     openRowsOmitted: omitted,
     approvingOrderCount: approvingUnique.length,
+    deliveredInWindowCount: deliveredAll.length,
+    deliveredSectionShown: topDelivered.length,
     slackCharCount: text.length,
   }
 
