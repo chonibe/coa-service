@@ -47,13 +47,13 @@
     "processImage4Url": "https://blog.adobe.com/de/publish/2017/12/07/media_15a0996028e2172ccba94761a88ca61dff710073d.png?width=750&format=webply&optimize=medium",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2016 — Adobe MAX participant, San Diego, USA (industry event; verify role)\r\n2016 — BA graduation showcase context, Rheinische Fachhochschule Köln, Cologne, Germany (verify)",
-    "pressText": "Adobe Blog (DE) — 2017 — “Adobe Stock New Face: Illustrator Moritz Adam Schmitt” — https://blog.adobe.com/de/publish/2017/12/07/new-face-illustrator-moritz-adam-schmitt\r\nCollater — — Moritz Adam Schmitt is the perfect example of how the path to success is rarely a straight line. An illustrator and artist from Cologne, Moritz began drawing at a young age, but his journey towards a  — https://www.collater.al/en/moritz-adam-schmitt-digital-illustration-painting/\r\nFacethis — — Ready for the first merch drop of the summer? Moritz Adam Schmitt collabed with Herlina (12) on a beachy illustration, just for the summer. — https://facethis.org/blogs/blog/moritz-adam-schmitt-combatting-ai-art-with-authenticity\r\nStabilo — — Artist STABILO Colorful Creativity Moritz Adam Schmitt Hi, I'm Moritz, an artist and illustrator from Cologne. My journey to becoming an illustrator wasn't a straight path, but it led me to my dream j — https://www.stabilo.com/com/cmcc-colorful-creativity-moritz\r\nLinktr — — Moritz Adam Schmitt Artist & Illustrator Interview FaceThis x MAS FeatureCo. x Moritz Adam Schmitt Interview Photography View on mobile — https://linktr.ee/MoritzAdamSchmitt\r\nStickerapp — — Discover the creative genius behind the stunning designs! Dive into our exclusive interview with Moritz Adam Schmitt , where artistry meets inspiration. Explore his captivating journey and unique appr — https://stickerapp.com/blog/artist-interview/moritz-adam-schmitt\r\nArtfacts — — The artist Moritz Adam Schmitt is ranked among the Top 1,000,000 on ArtFacts. Find out more... — https://artfacts.net/artist/moritz-adam-schmitt\r\nCreativegaga — — Moritz Adam Schmitt , a German illustrator breaks through his creative block with a very fascinating approach. He closes his eyes and scribbles random lines. Then he looks for interesting shapes throu — https://www.creativegaga.com/design/from-scribbles-to-breathtaking-illustrations\r\n\r\nAdobe Blog (DE) — 2017 — Adobe Stock New Face feature — https://blog.adobe.com/de/publish/2017/12/07/new-face-illustrator-moritz-adam-schmitt\r\nWeAreFeature — — Agency artist listing — https://www.wearefeature.co/artists/moritz-adam-schmitt",
+    "pressText": "Adobe Blog (DE) — 2017 — “Adobe Stock New Face: Illustrator Moritz Adam Schmitt” — https://blog.adobe.com/de/publish/2017/12/07/new-face-illustrator-moritz-adam-schmitt\r\nCollater — — Moritz Adam Schmitt is the perfect example of how the path to success is rarely a straight line. An illustrator and artist from Cologne, Moritz began drawing at a young age, but his journey towards a  — https://www.collater.al/en/moritz-adam-schmitt-digital-illustration-painting/\r\nFacethis — — Ready for the first merch drop of the summer? Moritz Adam Schmitt collabed with Herlina (12) on a beachy illustration, just for the summer. — https://facethis.org/blogs/blog/moritz-adam-schmitt-combatting-ai-art-with-authenticity\r\nStabilo — — Artist STABILO Colorful Creativity Moritz Adam Schmitt Hi, I'm Moritz, an artist and illustrator from Cologne. My journey to becoming an illustrator wasn't a straight path, but it led me to my dream j — https://www.stabilo.com/com/cmcc-colorful-creativity-moritz\r\nLinktr — — Moritz Adam Schmitt Artist & Illustrator Interview FaceThis x MAS FeatureCo. x Moritz Adam Schmitt Interview Photography View on mobile — https://linktr.ee/MoritzAdamSchmitt\r\nStickerapp — — Discover the creative genius behind the stunning designs! Dive into our exclusive interview with Moritz Adam Schmitt , where artistry meets inspiration. Explore his captivating journey and unique appr — https://stickerapp.com/blog/artist-interview/moritz-adam-schmitt\r\nArtfacts — — The artist Moritz Adam Schmitt is ranked among the Top 1,000,000 on ArtFacts. Find out more... — https://artfacts.net/artist/moritz-adam-schmitt\r\nCreativegaga — — Moritz Adam Schmitt , a German illustrator breaks through his creative block with a very fascinating approach. He closes his eyes and scribbles random lines. Then he looks for interesting shapes throu — https://www.creativegaga.com/design/from-scribbles-to-breathtaking-illustrations\r\n\r\nAdobe Blog (DE) — 2017 — Adobe Stock New Face feature — https://blog.adobe.com/de/publish/2017/12/07/new-face-illustrator-moritz-adam-schmitt\r\nWeAreFeature — — Agency artist listing — https://www.wearefeature.co/artists/moritz-adam-schmitt\n\nWe Are Feature Co — — Representation / artist bio — https://www.wearefeature.co/artists/moritz-adam-schmitt",
     "instagramHandle": "@moritz.adam.schmitt",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://blog.adobe.com/de/publish/2017/12/07/new-face-illustrator-moritz-adam-schmitt\r\nhttps://www.behance.net/MoAdam\r\nhttps://www.instagram.com/moritz.adam.schmitt/\r\nhttps://www.linkedin.com/in/moritz-adam-schmitt-62a559129\r\nhttps://thestreetcollector.com/collections/moritz-adam-schmitt\r\nNote: Adobe article links an older Instagram handle (m.a.s_design); current Street Collector / user list uses @moritz.adam.schmitt — verify same operator.",
-    "notes": "Process/IG image URLs: add only from @moritz.adam.schmitt post permalinks. FeatureCo artist page returned HTTP 500 when fetched—retry later for additional press line.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nWeb DDG enrichment 2026-04-02 — verify lines before marketing.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Process/IG image URLs: add only from @moritz.adam.schmitt post permalinks. FeatureCo artist page returned HTTP 500 when fetched—retry later for additional press line.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nWeb DDG enrichment 2026-04-02 — verify lines before marketing.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "loreta-isac": {
     "artistName": "Loreta Isac",
@@ -62,7 +62,7 @@
     "heroHook": "Loreta Isac grew up in Iași, studied art there, and moved to Bucharest. (@loreta_isac)",
     "storyFullText": "Loreta Isac grew up in Iași, studied art there, and moved to Bucharest. She describes herself as \"once upon a dreamer,\" which captures the tone of the work exactly. Her illustrations and animations move between editorial commissions for the New York Times and Washington Post and quieter personal pieces — frozen moments, unnamed feelings, figures caught mid-thought. She uses motion as just another way to let the drawing breathe.",
     "aboutPageUrl": "https://www.behance.net/loretaisac",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nLoreta Isac - Illustrator & animator in Bucharest, Romania :: Behance Sign In Explore Jobs Resources Hire Download on the App Store Get it on Google Play More Behance Careers at Behance About Behance Adobe Portfolio Blog English Čeština Dansk Deutsch Español Français Italiano Nederlands Norsk Polski Português Pусский Suomi Svenska Türkçe 日本語 한국어 中文(简体) 中文(繁體) TOU Privacy Community Help Cookie preferences Do not sell or share my personal information Adobe, Inc.\r\n\r\nWeb research (verify): Bucharest-based illustrator and animator; represented by Agent Pekka. Resume page lists solo shows in Bucharest (2011–2016) and group shows including Romanian Design Week (2013–2018), Timișoara, Wrocław, Beijing, Amsterdam (see exhibitions list). Clients named on rep page include Apple, Sam Smith, Bon Appétit, The Washington Post, The New York Times (verify current roster).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nLoreta Isac - Illustrator & animator in Bucharest, Romania :: Behance Sign In Explore Jobs Resources Hire Download on the App Store Get it on Google Play More Behance Careers at Behance About Behance Adobe Portfolio Blog English Čeština Dansk Deutsch Español Français Italiano Nederlands Norsk Polski Português Pусский Suomi Svenska Türkçe 日本語 한국어 中文(简体) 中文(繁體) TOU Privacy Community Help Cookie preferences Do not sell or share my personal information Adobe, Inc.\r\n\r\nWeb research (verify): Bucharest-based illustrator and animator; represented by Agent Pekka. Resume page lists solo shows in Bucharest (2011–2016) and group shows including Romanian Design Week (2013–2018), Timișoara, Wrocław, Beijing, Amsterdam (see exhibitions list). Clients named on rep page include Apple, Sam Smith, Bon Appétit, The Washington Post, The New York Times (verify current roster).\n\nBatch 5: Agent Pekka representation and Bucharest-focused web interviews already saturate Press—add dated gallery wins only from primary invites.",
     "pullQuote": "\"It is like collecting frozen moments, a reality that you have to feel in order to understand.\" — Loreta Isac (via The re:art, 2020)",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -81,7 +81,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://loretaisac.com/\r\nhttps://thereart.ro/loreta-isac-works\r\nhttps://www.behance.net/loretaisac\r\nhttps://www.instagram.com/loreta_isac/\r\nhttps://thestreetcollector.com/collections/loreta-isac",
-    "notes": "Client list (Apple, NYT, etc.) appears on Behance; re-confirm on loretaisac.com or Agent Pekka before marketing claims. IG image URLs not auto-filled.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nWeb DDG enrichment 2026-04-02 — verify lines before marketing.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Client list (Apple, NYT, etc.) appears on Behance; re-confirm on loretaisac.com or Agent Pekka before marketing claims. IG image URLs not auto-filled.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nWeb DDG enrichment 2026-04-02 — verify lines before marketing.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "marc-david-spengler": {
     "artistName": "Marc David Spengler",
@@ -103,13 +103,13 @@
     "processImage4Url": "https://cdn.myportfolio.com/2f8f07c5-cfd4-4a23-a97a-113d1bb79fc6/6416827d-adb6-4461-a520-5432e1055ed6_rwc_0x0x1972x210x4096.png?h=e34df755b10dd197bf988894620f353f",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2022 — Diploma, communication design, Staatliche Akademie der Bildenden Künste Stuttgart, Stuttgart, Germany (verify show title)\r\n2015 — Freelance studio practice begins, Stuttgart area, Germany (per LinkedIn; not a gallery show)",
-    "pressText": "LinkedIn — — Professional profile (verify claims) — https://www.linkedin.com/in/marc-david-spengler-1202a3255\r\nBehance — — Project portfolio — https://www.behance.net/marcspengler",
+    "pressText": "LinkedIn — — Professional profile (verify claims) — https://www.linkedin.com/in/marc-david-spengler-1202a3255\r\nBehance — — Project portfolio — https://www.behance.net/marcspengler\n\nMarc David Studio — — Portfolio / about — https://marcdavid.studio/",
     "instagramHandle": "@_marcdavid_",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://marcdavid.studio/about\r\nhttps://marcdavid.studio/\r\nhttps://www.behance.net/marcspengler\r\nhttps://www.linkedin.com/in/marc-david-spengler-1202a3255\r\nhttps://thestreetcollector.com/collections/marc-david-spengler",
-    "notes": "Hero hook clients taken from marcdavid.studio/about client list as published.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Hero hook clients taken from marcdavid.studio/about client list as published.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "dawal": {
     "artistName": "Dawal",
@@ -118,7 +118,7 @@
     "heroHook": "Dawal started painting the streets of Paris around 18. (@_dawal)",
     "storyFullText": "Dawal started painting the streets of Paris around 18. His thing is working with what the city already gives him — peeling plaster, cracked walls, odd shapes in aging surfaces — and placing miniature surreal scenes inside them. Images that stop you mid-pavement. He runs an open studio in the 18th arrondissement and has had solo shows at Galerie Artistik Rezo, where the same instinct moves from wall to canvas without losing its intimacy.",
     "aboutPageUrl": "https://creapills.com/dawal-street-art-paris-fresques-miniatures-20251121",
-    "additionalHistoryText": "Web research (verify): Self-taught French street artist based in Paris; born 1994. Began painting in streets around 18–19, influenced by hip-hop, moving from lettering toward character-driven work (Posca interview). Open studio at Shakirail, Paris 18e, since Oct 2023. Practice includes murals, canvas, drawing, sculpture; transforms wall imperfections into miniature dreamlike scenes (Creapills and other press).",
+    "additionalHistoryText": "Web research (verify): Self-taught French street artist based in Paris; born 1994. Began painting in streets around 18–19, influenced by hip-hop, moving from lettering toward character-driven work (Posca interview). Open studio at Shakirail, Paris 18e, since Oct 2023. Practice includes murals, canvas, drawing, sculpture; transforms wall imperfections into miniature dreamlike scenes (Creapills and other press).\n\nBatch 5: Confirm opening dates for Rêve Lucide (2026) on Galerie Artistik Rezo channels before publishing seasonal shop copy.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -137,35 +137,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.instagram.com/_dawal/\r\nhttps://creapills.com/dawal-street-art-paris-fresques-miniatures-20251121\r\nhttps://www.adaymag.com/2026/03/19/artist-dawal-painted-cracks-and-peeling-walls-of-cities-paris.html\r\nhttps://www.street-artwork.com/en/artist-profile/459/dawal\r\nhttps://thestreetcollector.com/collections/dawal",
-    "notes": "Instagram handle is @_dawal (not @dawal).\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
-  },
-  "antonia-lev-1": {
-    "artistName": "Antonia Lev",
-    "location": "Paris, France",
-    "activeSince": "Behance lists professional start 4 Nov 2011 (verify on live profile)",
-    "heroHook": "Antonia Lev has been working as an illustrator and street artist since at least 2011. (@antonialev)",
-    "storyFullText": "Antonia Lev has been working as an illustrator and street artist since at least 2011. Her practice moves between wall painting, editorial image-making, and digital work without settling firmly in any of them. The images are graphic and narrative — figures and scenes that hold mural scale and still reward a close look. She painted through lockdowns and festival summers alike, always asking how much story fits on the surface in front of her.",
-    "aboutPageUrl": "https://www.behance.net/antonialev",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAntonia Lev - Illustrator, Street artist, visual artist in Paris, France :: Behance Sign In Explore Jobs Resources Hire Download on the App Store Get it on Google Play More Behance Careers at Behance About Behance Adobe Portfolio Blog English Čeština Dansk Deutsch Español Français Italiano Nederlands Norsk Polski Português Pусский Suomi Svenska Türkçe 日本語 한국어 中文(简体) 中文(繁體) TOU Privacy Community Help Cookie preferences Do not sell or share my personal information Adobe, Inc. Navigate to adobe.com Add a Banner Image Optimal dimensions 3200 x 410px Antonia Lev Available for Freelance & Fulltime Illustrator, Street artist, visual artist <a class=\"ProfileDetails-anchor-r9C BeButton-button-ieX BeButton-none-YPX BeButton-normal-zuv BeButton-link-Eex ProfileDetails-anchor-r9C\" href=\"\r\n\r\nWeb research (verify): Paris-based illustrator and street artist; Behance since 2011; themes include lovers and plants; tools include Procreate and spray paint. Festival/mural projects include MESTO 2020 (Nizhny Novgorod) and 2025 work for MURAL CITY / suburban Paris (Street Art Cities marker—verify titles).",
-    "pullQuote": "",
-    "impactCallout": "",
-    "exclusiveCallout": "",
-    "processImage1Url": "https://thecity.m24.ru/b/d/SYketSiveYE8JvTObLLBFlFNEhluPXn9kZxNbycGshjv55OD3HWFWh2pL8EsPwl5DpSHzm95vRzNbdeHauL5EWcJ5w9e=SpQ_e1O4pjbMdFzlM03VBg.jpg",
-    "processImage1Label": "Portfolio",
-    "processImage2Url": "https://pps.services.adobe.com/api/profile/C3427D44535FDD700A490D4D@AdobeID/image/b6f4c11c-d15d-4b53-a3a2-b5af88655127/276",
-    "processImage2Label": "Portfolio",
-    "processImage3Url": "https://mir-s3-cdn-cf.behance.net/projects/404/34e3e2131429463.Y3JvcCwyMzAyLDE4MDEsNSww.jpg",
-    "processImage3Label": "Portfolio",
-    "processImage4Url": "https://mir-s3-cdn-cf.behance.net/projects/404/08b194215761119.Y3JvcCw1OTA2LDQ2MTksMCwxOTA.jpg",
-    "processImage4Label": "Portfolio",
-    "exhibitionsText": "2025 — Mural, The Dance of Blooming, MURAL CITY / Paris region, France (verify)\r\n2020 — Mural, MESTO festival (Jungle Book theme), Nizhny Novgorod, Russia",
-    "pressText": "The City (Москва 24) — 2020 — Street artists in isolation roundup — https://thecity.m24.ru/articles/2047\r\n\r\nStreet Art Cities — 2025 — The Dance of Blooming marker — https://streetartcities.com/markers/7b948c84-0b73-4d25-b049-9e2951f527ce\r\nBehance — 2020 — MESTO Jungle Book mural project — https://www.behance.net/gallery/111225031/MESTO-2020-Jungle-book-mural",
-    "instagramHandle": "@antonialev",
-    "instagramPostImageUrls": "",
-    "seasonDropLabels": "",
-    "editionCopy": "",
-    "sourcesLinks": "https://www.behance.net/antonialev\r\nhttps://www.instagram.com/antonialev/\r\nhttps://thecity.m24.ru/articles/2047\r\nhttps://thestreetcollector.com/collections/antonia-lev-1",
-    "notes": "Traveling location appears in internal Shopify export; Paris is used here based on Behance/snippet alignment—confirm on official bio.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram handle is @_dawal (not @dawal).\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "antonia-lev": {
     "artistName": "Antonia Lev",
@@ -187,13 +159,41 @@
     "processImage4Url": "https://mir-s3-cdn-cf.behance.net/projects/404/08b194215761119.Y3JvcCw1OTA2LDQ2MTksMCwxOTA.jpg",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2025 — Mural, The Dance of Blooming, MURAL CITY / Paris region, France (verify)\r\n2020 — Mural, MESTO festival (Jungle Book theme), Nizhny Novgorod, Russia",
-    "pressText": "The City (Москва 24) — 2020 — Street artists in isolation roundup — https://thecity.m24.ru/articles/2047\r\n\r\nStreet Art Cities — 2025 — The Dance of Blooming marker — https://streetartcities.com/markers/7b948c84-0b73-4d25-b049-9e2951f527ce\r\nBehance — 2020 — MESTO Jungle Book mural project — https://www.behance.net/gallery/111225031/MESTO-2020-Jungle-book-mural",
+    "pressText": "The City (Москва 24) — 2020 — Street artists in isolation roundup — https://thecity.m24.ru/articles/2047\r\n\r\nStreet Art Cities — 2025 — The Dance of Blooming marker — https://streetartcities.com/markers/7b948c84-0b73-4d25-b049-9e2951f527ce\r\nBehance — 2020 — MESTO Jungle Book mural project — https://www.behance.net/gallery/111225031/MESTO-2020-Jungle-book-mural\n\nKEIM — 2025 — Mural City “Beauty of Nature” program context (mineral facade paints) — https://www.keim.com/company/blog/mural-city-2025/",
     "instagramHandle": "@antonialev",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.behance.net/antonialev\r\nhttps://www.instagram.com/antonialev/\r\nhttps://thecity.m24.ru/articles/2047\r\nhttps://thestreetcollector.com/collections/antonia-lev-1",
-    "notes": "Traveling location appears in internal Shopify export; Paris is used here based on Behance/snippet alignment—confirm on official bio.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Traveling location appears in internal Shopify export; Paris is used here based on Behance/snippet alignment—confirm on official bio.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
+  },
+  "antonia-lev-1": {
+    "artistName": "Antonia Lev",
+    "location": "Paris, France",
+    "activeSince": "Behance lists professional start 4 Nov 2011 (verify on live profile)",
+    "heroHook": "Antonia Lev has been working as an illustrator and street artist since at least 2011. (@antonialev)",
+    "storyFullText": "Antonia Lev has been working as an illustrator and street artist since at least 2011. Her practice moves between wall painting, editorial image-making, and digital work without settling firmly in any of them. The images are graphic and narrative — figures and scenes that hold mural scale and still reward a close look. She painted through lockdowns and festival summers alike, always asking how much story fits on the surface in front of her.",
+    "aboutPageUrl": "https://www.behance.net/antonialev",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAntonia Lev - Illustrator, Street artist, visual artist in Paris, France :: Behance Sign In Explore Jobs Resources Hire Download on the App Store Get it on Google Play More Behance Careers at Behance About Behance Adobe Portfolio Blog English Čeština Dansk Deutsch Español Français Italiano Nederlands Norsk Polski Português Pусский Suomi Svenska Türkçe 日本語 한국어 中文(简体) 中文(繁體) TOU Privacy Community Help Cookie preferences Do not sell or share my personal information Adobe, Inc. Navigate to adobe.com Add a Banner Image Optimal dimensions 3200 x 410px Antonia Lev Available for Freelance & Fulltime Illustrator, Street artist, visual artist <a class=\"ProfileDetails-anchor-r9C BeButton-button-ieX BeButton-none-YPX BeButton-normal-zuv BeButton-link-Eex ProfileDetails-anchor-r9C\" href=\"\r\n\r\nWeb research (verify): Paris-based illustrator and street artist; Behance since 2011; themes include lovers and plants; tools include Procreate and spray paint. Festival/mural projects include MESTO 2020 (Nizhny Novgorod) and 2025 work for MURAL CITY / suburban Paris (Street Art Cities marker—verify titles).",
+    "pullQuote": "",
+    "impactCallout": "",
+    "exclusiveCallout": "",
+    "processImage1Url": "https://thecity.m24.ru/b/d/SYketSiveYE8JvTObLLBFlFNEhluPXn9kZxNbycGshjv55OD3HWFWh2pL8EsPwl5DpSHzm95vRzNbdeHauL5EWcJ5w9e=SpQ_e1O4pjbMdFzlM03VBg.jpg",
+    "processImage1Label": "Portfolio",
+    "processImage2Url": "https://pps.services.adobe.com/api/profile/C3427D44535FDD700A490D4D@AdobeID/image/b6f4c11c-d15d-4b53-a3a2-b5af88655127/276",
+    "processImage2Label": "Portfolio",
+    "processImage3Url": "https://mir-s3-cdn-cf.behance.net/projects/404/34e3e2131429463.Y3JvcCwyMzAyLDE4MDEsNSww.jpg",
+    "processImage3Label": "Portfolio",
+    "processImage4Url": "https://mir-s3-cdn-cf.behance.net/projects/404/08b194215761119.Y3JvcCw1OTA2LDQ2MTksMCwxOTA.jpg",
+    "processImage4Label": "Portfolio",
+    "exhibitionsText": "2025 — Mural, The Dance of Blooming, MURAL CITY / Paris region, France (verify)\r\n2020 — Mural, MESTO festival (Jungle Book theme), Nizhny Novgorod, Russia",
+    "pressText": "The City (Москва 24) — 2020 — Street artists in isolation roundup — https://thecity.m24.ru/articles/2047\r\n\r\nStreet Art Cities — 2025 — The Dance of Blooming marker — https://streetartcities.com/markers/7b948c84-0b73-4d25-b049-9e2951f527ce\r\nBehance — 2020 — MESTO Jungle Book mural project — https://www.behance.net/gallery/111225031/MESTO-2020-Jungle-book-mural\n\nKEIM — 2025 — Mural City “Beauty of Nature” program context (mineral facade paints) — https://www.keim.com/company/blog/mural-city-2025/",
+    "instagramHandle": "@antonialev",
+    "instagramPostImageUrls": "",
+    "seasonDropLabels": "",
+    "editionCopy": "",
+    "sourcesLinks": "https://www.behance.net/antonialev\r\nhttps://www.instagram.com/antonialev/\r\nhttps://thecity.m24.ru/articles/2047\r\nhttps://thestreetcollector.com/collections/antonia-lev-1",
+    "notes": "Traveling location appears in internal Shopify export; Paris is used here based on Behance/snippet alignment—confirm on official bio.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "hedof": {
     "artistName": "Hedof",
@@ -214,14 +214,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://inkygoodness.com/wp-content/uploads/2016/07/hedof_OASG-website_2015_RGB_1120.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "2021 — Group exhibition context, Shanghai, China (per dutchculture.nl; verify title/venue)\r\n2019 — Group exhibition context, Seoul, South Korea (per dutchculture.nl; verify title/venue)",
-    "pressText": "Inkygoodness — — Feature on Hedof studio — https://inkygoodness.com/features/focus-breda-based-one-man-creative-studio-hedof/\r\n\r\ndutchculture.nl — — Organisation / activity summary — https://dutchculture.nl/en/organisation/hedof\r\nPictoplasma — 2022 — Conference speaker listing — https://conference.pictoplasma.com/2022/hedof/",
+    "exhibitionsText": "2021 — Group exhibition context, Shanghai, China (per dutchculture.nl; verify title/venue)\r\n2019 — Group exhibition context, Seoul, South Korea (per dutchculture.nl; verify title/venue)\n\n2021 — OPENFILE Contemporary Art Festival, Graphic & Illustration discipline, Shanghai, China — https://dutchculture.nl/en/organisation/hedof",
+    "pressText": "Inkygoodness — — Feature on Hedof studio — https://inkygoodness.com/features/focus-breda-based-one-man-creative-studio-hedof/\r\n\r\ndutchculture.nl — — Organisation / activity summary — https://dutchculture.nl/en/organisation/hedof\r\nPictoplasma — 2022 — Conference speaker listing — https://conference.pictoplasma.com/2022/hedof/\n\nDutchCulture — — Organisation profile (international projects 2017–2025) — https://dutchculture.nl/en/organisation/hedof",
     "instagramHandle": "@hedof",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.hedof.com/about\r\nhttps://www.hedof.com/\r\nhttps://inkygoodness.com/features/focus-breda-based-one-man-creative-studio-hedof/\r\nhttps://www.behance.net/Hedof\r\nhttps://www.instagram.com/hedof/\r\nhttps://thestreetcollector.com/collections/hedof",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "taloosh": {
     "artistName": "Taloosh",
@@ -230,7 +230,7 @@
     "heroHook": "Taloosh Studio works from Haifa on promo art, illustration, and creative campaigns. (@taloosh.studio)",
     "storyFullText": "Taloosh Studio works from Haifa on promo art, illustration, and creative campaigns. The reel moves fast — music, culture, commercial briefs treated like short films. Coastal confidence is built into everything they make.",
     "aboutPageUrl": "https://www.taloosh.com/",
-    "additionalHistoryText": "Web research (verify): Taloosh Studio, Haifa, Israel—creative studio working on branding, promos, murals, and exhibition-related projects. Regional documentation references exhibition tour activity at Beit Hankin Gallery (May 2023) and multiple branding clients (Hamamat Tarbut 2023, Hamsin Magazine 2022, etc.—verify on taloosh.com pages).",
+    "additionalHistoryText": "Web research (verify): Taloosh Studio, Haifa, Israel—creative studio working on branding, promos, murals, and exhibition-related projects. Regional documentation references exhibition tour activity at Beit Hankin Gallery (May 2023) and multiple branding clients (Hamamat Tarbut 2023, Hamsin Magazine 2022, etc.—verify on taloosh.com pages).\n\nBatch 5: Prior line cited Beit Hankin without a dated show title; aligned to documented True Time season and venue site.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -242,14 +242,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://static.wixstatic.com/media/63c6a9_950408652ca5481a9f989134f731c2d5~mv2.png/v1/fill/w_20,h_20,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/63c6a9_950408652ca5481a9f989134f731c2d5~mv2.png",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "2023 — Exhibition tour / gallery programming, Beit Hankin Gallery, Israel (verify city; source: regional doc summary)",
+    "exhibitionsText": "2023 — Exhibition tour / gallery programming, Beit Hankin Gallery, Israel (verify city; source: regional doc summary)\n\n2023 — True Time (group programming), Beit Hankin Gallery, Kfar Yehoshua, Israel — exhibition tour film by Taloosh Studio — https://www.beithankin.org/exhibitions",
     "pressText": "Hareletzion — — Short documentary / studio mention — https://www.hareletzion.com/copy-of-short-doco",
     "instagramHandle": "@taloosh.studio",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.taloosh.com/\r\nhttps://www.instagram.com/taloosh.studio/\r\nhttps://www.hareletzion.com/copy-of-short-doco\r\nhttps://thestreetcollector.com/collections/taloosh",
-    "notes": "Link individual artist name to studio site/IG; avoid inventing a solo biography beyond cited pages.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Link individual artist name to studio site/IG; avoid inventing a solo biography beyond cited pages.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "yonil": {
     "artistName": "Yonil",
@@ -258,7 +258,7 @@
     "heroHook": "Jonathan Lax has been working as YONIL from Tel Aviv long enough to land in illustration annuals like IdN and Illustration Now!. (@yonil)",
     "storyFullText": "Jonathan Lax has been working as YONIL from Tel Aviv long enough to land in illustration annuals like IdN and Illustration Now!. The work comes from gig-poster culture — typographically bold, music-adjacent, loud enough to read from the back of a room. Commercial work and personal pieces share the same slightly anxious humor. Graphic, but never cold.",
     "aboutPageUrl": "https://www.yonil.com/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAbout - YONIL WORKS ART POSTERS Shop About Contact Share WORKS ART POSTERS Shop About Contact Share YONIL is a Tel aviv based artist.\r\n\r\nWeb research (verify): Jonathan Lax, professionally YONIL, Tel Aviv-based artist/illustrator/designer, born 1982. Work spans posters, prints, personal art, music-industry commissions; publications cited include IdN and Illustration Now! (yonil.com/about). Behance presence with large follower count; Braverman Gallery lists 2010 group show participation.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAbout - YONIL WORKS ART POSTERS Shop About Contact Share WORKS ART POSTERS Shop About Contact Share YONIL is a Tel aviv based artist.\r\n\r\nWeb research (verify): Jonathan Lax, professionally YONIL, Tel Aviv-based artist/illustrator/designer, born 1982. Work spans posters, prints, personal art, music-industry commissions; publications cited include IdN and Illustration Now! (yonil.com/about). Behance presence with large follower count; Braverman Gallery lists 2010 group show participation.\n\nJonathan Lax publishes as YONIL; Braverman Gallery Cnaan (2010) remains the indexed primary exhibition citation.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -277,7 +277,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.yonil.com/about\r\nhttps://www.yonil.com/\r\nhttps://www.behance.net/YONIL\r\nhttps://bravermangallery.com/artists/jonathan-lax-yonil/\r\nhttps://www.instagram.com/yonil/\r\nhttps://thestreetcollector.com/collections/yonil",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "troy-browne-1": {
     "artistName": "Troy Browne",
@@ -286,7 +286,7 @@
     "heroHook": "Troy Browne spent years in motion design studios before going independent in 2018. (@troybrowne)",
     "storyFullText": "Troy Browne spent years in motion design studios before going independent in 2018. The studio background left him with technique and restlessness — collage sensibility, hand-drawn frame logic, digital finishing that still feels assembled rather than generated. His print shop work makes clear he cares about the object as much as the timeline.",
     "aboutPageUrl": "https://www.troybrowne.com/",
-    "additionalHistoryText": "Web research (verify): Nottingham-based UK artist; collage, motion design, dynamic composition. BSc Multimedia, Nottingham Trent University, 2007–2010. Freelance via Troy Browne Motion Design since Dec 2018. Signed with The Different Folk (Oct 2022). Clients cited include Sony Music, Vimeo, Universal Music, ITV, BBC, Crocs, Dropbox, and others (Different Folk / event pages—verify).",
+    "additionalHistoryText": "Web research (verify): Nottingham-based UK artist; collage, motion design, dynamic composition. BSc Multimedia, Nottingham Trent University, 2007–2010. Freelance via Troy Browne Motion Design since Dec 2018. Signed with The Different Folk (Oct 2022). Clients cited include Sony Music, Vimeo, Universal Music, ITV, BBC, Crocs, Dropbox, and others (Different Folk / event pages—verify).\n\nBatch 5: Confetti Industry Week speaker credits should be cross-checked on troybrowne.com news before reuse in campaigns.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -305,7 +305,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.troybrowne.com/\r\nhttps://www.linkedin.com/in/troybrowne1\r\nhttps://www.thedifferentfolk.com/artists/troy-browne\r\nhttps://www.instagram.com/troybrowne/\r\nhttps://thestreetcollector.com/collections/troy-browne-1",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "troy-browne": {
     "artistName": "Troy Browne",
@@ -314,7 +314,7 @@
     "heroHook": "Troy Browne spent years in motion design studios before going independent in 2018. (@troybrowne)",
     "storyFullText": "Troy Browne spent years in motion design studios before going independent in 2018. The studio background left him with technique and restlessness — collage sensibility, hand-drawn frame logic, digital finishing that still feels assembled rather than generated. His print shop work makes clear he cares about the object as much as the timeline.",
     "aboutPageUrl": "https://www.troybrowne.com/",
-    "additionalHistoryText": "Web research (verify): Nottingham-based UK artist; collage, motion design, dynamic composition. BSc Multimedia, Nottingham Trent University, 2007–2010. Freelance via Troy Browne Motion Design since Dec 2018. Signed with The Different Folk (Oct 2022). Clients cited include Sony Music, Vimeo, Universal Music, ITV, BBC, Crocs, Dropbox, and others (Different Folk / event pages—verify).",
+    "additionalHistoryText": "Web research (verify): Nottingham-based UK artist; collage, motion design, dynamic composition. BSc Multimedia, Nottingham Trent University, 2007–2010. Freelance via Troy Browne Motion Design since Dec 2018. Signed with The Different Folk (Oct 2022). Clients cited include Sony Music, Vimeo, Universal Music, ITV, BBC, Crocs, Dropbox, and others (Different Folk / event pages—verify).\n\nBatch 5: Confetti Industry Week speaker credits should be cross-checked on troybrowne.com news before reuse in campaigns.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -333,7 +333,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.troybrowne.com/\r\nhttps://www.linkedin.com/in/troybrowne1\r\nhttps://www.thedifferentfolk.com/artists/troy-browne\r\nhttps://www.instagram.com/troybrowne/\r\nhttps://thestreetcollector.com/collections/troy-browne-1",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "elfassi": {
     "artistName": "Elfassi",
@@ -342,7 +342,7 @@
     "heroHook": "Elfassi graduated Shenkar in visual communication and never picked just one surface. (@elfassi)",
     "storyFullText": "Elfassi graduated Shenkar in visual communication and never picked just one surface. Embroidery, mural paint, digital line, and music posters all come from the same hand and the same graphic sensibility. The materials change; the voice stays consistent.",
     "aboutPageUrl": "https://www.elfassiart.com/about/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAbout - Elfassi Art Skip to content Shop Projects Walls Original Contact About Shop Projects Walls Original Contact About CART : 0 About ELFASSI Elfassi, an artist from Israel, has been designing and creating art for brands and individuals using various techniques. With a BA in visual communication, specializing in illustration from the Shenkar College in Ramat-Gan, Israel, Elfassi is mostly known for her unique old-school style, hand and digital drawings, embroidery art, and mural works.\r\n\r\nWeb research (verify): Israeli illustrator/designer; BA Visual Communication (illustration), Shenkar College, Ramat Gan. Practice includes hand and digital drawing, embroidery, murals; clients named on site include hospitality and footwear brands (verify current list). Public project pages reference mural work (e.g., Talpiot area, 2023 per aggregator thisispublic—confirm).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nAbout - Elfassi Art Skip to content Shop Projects Walls Original Contact About Shop Projects Walls Original Contact About CART : 0 About ELFASSI Elfassi, an artist from Israel, has been designing and creating art for brands and individuals using various techniques. With a BA in visual communication, specializing in illustration from the Shenkar College in Ramat-Gan, Israel, Elfassi is mostly known for her unique old-school style, hand and digital drawings, embroidery art, and mural works.\r\n\r\nWeb research (verify): Israeli illustrator/designer; BA Visual Communication (illustration), Shenkar College, Ramat Gan. Practice includes hand and digital drawing, embroidery, murals; clients named on site include hospitality and footwear brands (verify current list). Public project pages reference mural work (e.g., Talpiot area, 2023 per aggregator thisispublic—confirm).\n\nBatch 5: Talpiot mural line traces to thisispublic documentation—photograph captions beat third-party dates if they conflict.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -361,7 +361,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.elfassiart.com/about/\r\nhttps://www.elfassiart.com/\r\nhttps://www.thisispublic.net/artist-page-elfassi\r\nhttps://www.instagram.com/elfassi/\r\nhttps://thestreetcollector.com/collections/elfassi",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "emelio-cerezo": {
     "artistName": "Emelio Cerezo",
@@ -370,7 +370,7 @@
     "heroHook": "Emilio Cerezo grew up in Murcia, studied fine arts in Granada, and ran under graffiti aliases until 2012 when he started putting his own name on walls. (@emiliocerezo)",
     "storyFullText": "Emilio Cerezo grew up in Murcia, studied fine arts in Granada, and ran under graffiti aliases until 2012 when he started putting his own name on walls. The academic training paid off in specific ways — figure, landscape, and mural scale now share a painterly attention to mood over representation. He wants people to experience his murals the way they experience landscape or music: not as a message, but as an atmosphere. He still tattoos between murals, which probably explains the line quality.",
     "aboutPageUrl": "https://www.urbanpresents.net/en/2023/05/emilio-cerezo-in-spain-from-style-and-characters-to-painting/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nWhen Emilio turned 18 years old, he moved to Granada to study fine arts at the University of Granada from 2004 until 2009 and did a postgrad in drawing at the same place from 2009 to 2010. At the same time he learned about classical painting at the University, and it made him grow as a painter. Looking back now, he can see some connections between his current works and some content he studied long time ago. His images always look a bit broken and distorted, because his interest is about the ambiance and the evoked feelings of a painting, and not about the exact and detailed representation of a reality. And the artist adds, not less important, is how some of his full coloured murals looked after a few months or years, how they lost almost all the brightness and saturation of the colours because of the strong sun in Spain. Depending on what the spot is asking for, according to the artist. The Spanish artist would like the spectators to see his work as a landscape, or a music composition, because it is not about meanings or direct messages of paintings. Wall paintings should talk with the spot, be in harmony with it or make a big contrast, we have to connect the elements and this is always enriching.“ For creating studio works, the artist defines himself as an irregular worker, with periods of tattooing and periods of painting.\r\n\r\nWeb research (verify): Emilio Cerezo, born 1986 Totana (Murcia), based Barcelona. Graffiti/street aliases 2001–2012; working under full name from 2012. Fine arts University of Granada 2004–2009; postgraduate drawing 2009–2010. Practice spans painting, murals, tattooing (UrbanPresents / KIFP summaries).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nWhen Emilio turned 18 years old, he moved to Granada to study fine arts at the University of Granada from 2004 until 2009 and did a postgrad in drawing at the same place from 2009 to 2010. At the same time he learned about classical painting at the University, and it made him grow as a painter. Looking back now, he can see some connections between his current works and some content he studied long time ago. His images always look a bit broken and distorted, because his interest is about the ambiance and the evoked feelings of a painting, and not about the exact and detailed representation of a reality. And the artist adds, not less important, is how some of his full coloured murals looked after a few months or years, how they lost almost all the brightness and saturation of the colours because of the strong sun in Spain. Depending on what the spot is asking for, according to the artist. The Spanish artist would like the spectators to see his work as a landscape, or a music composition, because it is not about meanings or direct messages of paintings. Wall paintings should talk with the spot, be in harmony with it or make a big contrast, we have to connect the elements and this is always enriching.“ For creating studio works, the artist defines himself as an irregular worker, with periods of tattooing and periods of painting.\r\n\r\nWeb research (verify): Emilio Cerezo, born 1986 Totana (Murcia), based Barcelona. Graffiti/street aliases 2001–2012; working under full name from 2012. Fine arts University of Granada 2004–2009; postgraduate drawing 2009–2010. Practice spans painting, murals, tattooing (UrbanPresents / KIFP summaries).\n\nBatch 5: UrbanPresents/Katia Hermann essay URLs already exhaust English long-form press for this period—add Spanish primary interviews separately if needed.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -389,7 +389,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.urbanpresents.net/en/2023/05/emilio-cerezo-in-spain-from-style-and-characters-to-painting/\r\nhttps://streetartcities.com/artists/emilio-cerezo\r\nhttps://www.instagram.com/emiliocerezo/\r\nhttps://thestreetcollector.com/collections/emelio-cerezo",
-    "notes": "Spelling: Emilio in primary sources; storefront uses Emelio Cerezo.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Spelling: Emilio in primary sources; storefront uses Emelio Cerezo.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5b-final-thin.json (verify facts)."
   },
   "igal-talianski": {
     "artistName": "Igal Talianski",
@@ -411,13 +411,13 @@
     "processImage4Url": "https://www.flashed.com/wp-content/uploads/2024/05/IgalCollage2-scaled.webp",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2022 — Group, Illustration Edition 2022 (LaCulture), Tel Aviv area, Israel (200 illustrators; verify venue copy)\r\n2019 — Group, Re-purposing: Old books take on a new life, Edmond de Rothschild Center, Tel Aviv, Israel (curated Galit Gaon)",
-    "pressText": "EDR Center — 2019 — Re-purposing exhibition page — https://edrcenter.com/en/exhibitions/re-purposing-old-books-take-on-a-new-life/\r\nLaCulture TLV — 2022 — Illustration Edition 2022 — https://laculturetlv.com/exhibition/illustration-edition-2022/",
+    "pressText": "EDR Center — 2019 — Re-purposing exhibition page — https://edrcenter.com/en/exhibitions/re-purposing-old-books-take-on-a-new-life/\r\nLaCulture TLV — 2022 — Illustration Edition 2022 — https://laculturetlv.com/exhibition/illustration-edition-2022/\n\nLaCulture TLV — — Organisation / exhibitions — https://laculturetlv.com/",
     "instagramHandle": "@iigalskii",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://flashed.com/shop/product/igal-talianski\r\nhttps://mezach.shop/products/city-layers-haifa-edition-6-iigalskii\r\nhttps://www.instagram.com/iigalskii/\r\nhttps://thestreetcollector.com/collections/igal-talianski",
-    "notes": "Biography thin; mostly from commerce pages—replace with interview when available.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Biography thin; mostly from commerce pages—replace with interview when available.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "carsten-gueth": {
     "artistName": "Carsten Gueth",
@@ -426,7 +426,7 @@
     "heroHook": "Carsten Gueth studied architecture and urban planning in Stuttgart before spending fifteen years in graphic design for cultural institutions — museums, festivals, publishers. (@die_doing)",
     "storyFullText": "Carsten Gueth studied architecture and urban planning in Stuttgart before spending fifteen years in graphic design for cultural institutions — museums, festivals, publishers. His independent practice publishes as Die Doing. The work is bold, occasionally absurd, and built to read from across a room. Recent recognition from ADC, Red Dot, and Palau de la Música Catalana suggests the pivot was the right call.",
     "aboutPageUrl": "https://artinrug.com/artist/die-doing-carsten-gueth/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nHome Art Pieces Artists About us Contact Us Home /Artists/Die Doing (Carsten Gueth) 0 Share ArtWork + 0 Home /Artists/Die Doing (Carsten Gueth) Home Art Pieces Artists About us Contact Us Login/signup Die Doing (Carsten Gueth) Germany Die Doing (Carsten Gueth) studied architecture and urban planning in Stuttgart. He was already more concerned with artistic and graphic positions on architecture in the broadest sense during his studies. Immediately after graduation, he switched completely to the graphic design field and has been working permanently and freelance for various design agencies for the last 15 years, creating campaigns mostly for cultural institutions such as museums.\r\n\r\nWeb research (verify): Visual artist based in Stuttgart, Germany; architecture/urban planning training; long career in graphic design for cultural institutions and agencies. Recent awards cited in profiles include Creative Länd Award 2024, ICMA 2024 Gold, ADC 2025, Red Dot 2025 (verify on primary sources). Also publishes as / collaborates under music-adjacent project context (notimefortv.biz / Die Doing—confirm naming).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nHome Art Pieces Artists About us Contact Us Home /Artists/Die Doing (Carsten Gueth) 0 Share ArtWork + 0 Home /Artists/Die Doing (Carsten Gueth) Home Art Pieces Artists About us Contact Us Login/signup Die Doing (Carsten Gueth) Germany Die Doing (Carsten Gueth) studied architecture and urban planning in Stuttgart. He was already more concerned with artistic and graphic positions on architecture in the broadest sense during his studies. Immediately after graduation, he switched completely to the graphic design field and has been working permanently and freelance for various design agencies for the last 15 years, creating campaigns mostly for cultural institutions such as museums.\r\n\r\nWeb research (verify): Visual artist based in Stuttgart, Germany; architecture/urban planning training; long career in graphic design for cultural institutions and agencies. Recent awards cited in profiles include Creative Länd Award 2024, ICMA 2024 Gold, ADC 2025, Red Dot 2025 (verify on primary sources). Also publishes as / collaborates under music-adjacent project context (notimefortv.biz / Die Doing—confirm naming).\n\nBatch 5: Palau de la Música Catalana solo context already in Press; keep rug-shop and venue URLs synchronized for identical work titles.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -445,7 +445,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://artinrug.com/artist/die-doing-carsten-gueth/\r\nhttps://notimefortv.biz/\r\nhttps://www.instagram.com/die_doing/\r\nhttps://thestreetcollector.com/collections/carsten-gueth",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "or-bar-el": {
     "artistName": "Or Bar El",
@@ -566,7 +566,7 @@
     "heroHook": "Erez Sameach works as Erezoo from Haifa, where illustration, graphic design, and graffiti are treated as the same practice rather than three separate disciplines. (@erezoo)",
     "storyFullText": "Erez Sameach works as Erezoo from Haifa, where illustration, graphic design, and graffiti are treated as the same practice rather than three separate disciplines. Born in Carmiel, trained at Wizo, he helped build the SIRA collective alongside relatives who paint the same streets. The output is loud, coastal, and rooted in the city's cultural calendar.",
     "aboutPageUrl": "https://www.erezoo.com/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nBASED IN HAIFA ISRAEL ​ ILLUSTRATION GRAPHIC DESIGN & GRAFFITI ARE MY THREE MAIN WAYS OF EXPRESSION Branding of cultural and social subjects and events, such as art, music, festivals and parties, is my specialty.\r\n\r\nWeb research (verify): Erez Sameach (Erezoo), Haifa-based illustrator, graphic designer, and street artist; from Carmiel; Visual Communication graduate, Wizo Haifa. Co-founded SIRA collaborative space. Social art projects (Pop Up Museum, Street Crafting, BONA!, etc.—see erezoo.com). Brother Ziv Ink (street artist); practices permission-forward street work per interview summaries.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nBASED IN HAIFA ISRAEL ​ ILLUSTRATION GRAPHIC DESIGN & GRAFFITI ARE MY THREE MAIN WAYS OF EXPRESSION Branding of cultural and social subjects and events, such as art, music, festivals and parties, is my specialty.\r\n\r\nWeb research (verify): Erez Sameach (Erezoo), Haifa-based illustrator, graphic designer, and street artist; from Carmiel; Visual Communication graduate, Wizo Haifa. Co-founded SIRA collaborative space. Social art projects (Pop Up Museum, Street Crafting, BONA!, etc.—see erezoo.com). Brother Ziv Ink (street artist); practices permission-forward street work per interview summaries.\n\nBatch 5: Negev Museum group street-art mention comes via Dror Hadadi—verify official museum calendar wording before hard publishing.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -585,7 +585,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.erezoo.com/about\r\nhttps://www.erezoo.com/\r\nhttps://drorhadadi.com/erezoo-%D7%90%D7%99%D7%95%D7%A8-%D7%A8%D7%97%D7%95%D7%91/\r\nhttps://www.instagram.com/erezoo/\r\nhttps://thestreetcollector.com/collections/erezoo",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch2.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "maalavidaa": {
     "artistName": "Maalavidaa",
@@ -634,14 +634,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://img.ltn.com.tw/Upload/news/600/2025/02/19/4956705_3_1.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "",
-    "pressText": "Liberty Times / 自由時報 — 2024 — Taiwan school mural coverage — https://news.ltn.com.tw/news/life/breakingnews/4956705\r\nLisbonstreetarttours — — See source article — https://lisbonstreetarttours.wordpress.com/2019/01/30/psoman/\r\n\r\nSTRAAT Museum — — Collection database: Fallin’ Apart — https://straatmuseum.com/en/collection-database/pso-man-fallin-apart\r\nArtsy — — Artist page — https://www.artsy.net/artist/psoman\r\nLisbon Street Art Tours — 2019 — Artist note — https://lisbonstreetarttours.wordpress.com/2019/01/30/psoman/\r\nParcours Street Art Brussels — — Artist page — https://parcoursstreetart.brussels/artistes/pso-man/",
+    "exhibitionsText": "2026 — Group: Entre Art urbain et Art contemporain (with Noir Artist, Jaune), Château de Waroux, Ans/Liège, Belgium — 3 Apr–17 May 2026 — https://visitezliege.be/fr/offre/entre-art-urbain-et-art-contemporaine-noir-artist-jaune-psoman-a-trois-univers-une-rencontre-exc",
+    "pressText": "Liberty Times / 自由時報 — 2024 — Taiwan school mural coverage — https://news.ltn.com.tw/news/life/breakingnews/4956705\r\nLisbonstreetarttours — — See source article — https://lisbonstreetarttours.wordpress.com/2019/01/30/psoman/\r\n\r\nSTRAAT Museum — — Collection database: Fallin’ Apart — https://straatmuseum.com/en/collection-database/pso-man-fallin-apart\r\nArtsy — — Artist page — https://www.artsy.net/artist/psoman\r\nLisbon Street Art Tours — 2019 — Artist note — https://lisbonstreetarttours.wordpress.com/2019/01/30/psoman/\r\nParcours Street Art Brussels — — Artist page — https://parcoursstreetart.brussels/artistes/pso-man/\n\nStreet Art Cities — — Artist profile — https://streetartcities.com/artists/psoman\nPsoMan — — Official about / shop bio — https://www.psoman.co/about",
     "instagramHandle": "@psoman_ptk",
     "instagramPostImageUrls": "https://www.instagram.com/psoman_ptk/p/CqP4EaSy9Jx/\r\nhttps://www.instagram.com/psoman_ptk/p/CdxoRxiv_Gu/",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://lisbonstreetarttours.wordpress.com/2019/01/30/psoman/\r\nhttps://news.ltn.com.tw/news/life/breakingnews/4956705\r\nhttps://psoman.co/\r\nhttps://www.instagram.com/psoman_ptk/\r\nhttps://thestreetcollector.com/collections/psoman",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "agus-rucula": {
     "artistName": "Agus Rucula",
@@ -706,7 +706,7 @@
     "heroHook": "Ezra Baderman was born in Paris, grew up in London, trained at John Cass and Bezalel, and now works in Lisbon. (@ezrabaderman)",
     "storyFullText": "Ezra Baderman was born in Paris, grew up in London, trained at John Cass and Bezalel, and now works in Lisbon. His practice — collage, painting, UV work, salvaged street posters from Tel Aviv walls — is shaped by all of that movement. Fragments of political imagery get rearranged into something quieter and stranger. The street is both material and argument.",
     "aboutPageUrl": "https://ezrabaderman.com/about/",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nE Z R A • B A D E R M A N | About Work About Contact Shop EU US Shop EU Shop US Work About Contact Shop EU US Shop EU Shop US Login Login EU US Ezra Baderman is a British-Israeli multi-disciplinary artist. He currently lives in Lisbon with his wife Talia, and their children, Akiva and Elisheva.\r\n\r\nWeb research (verify): British-Israeli multidisciplinary artist; born Paris, raised London; based Lisbon (per about copy—verify). Education: John Cass Art School foundation; Bezalel fine art and visual communications. Practice: collage, painting, installation, street-poster salvage in Tel Aviv, mixed media (see site).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nE Z R A • B A D E R M A N | About Work About Contact Shop EU US Shop EU Shop US Work About Contact Shop EU US Shop EU Shop US Login Login EU US Ezra Baderman is a British-Israeli multi-disciplinary artist. He currently lives in Lisbon with his wife Talia, and their children, Akiva and Elisheva.\r\n\r\nWeb research (verify): British-Israeli multidisciplinary artist; born Paris, raised London; based Lisbon (per about copy—verify). Education: John Cass Art School foundation; Bezalel fine art and visual communications. Practice: collage, painting, installation, street-poster salvage in Tel Aviv, mixed media (see site).\n\nBatch 5: Salon Bagdad solo (2020) is well documented via Secret Tel Aviv; keep curator credit (Ellada Ilana Matatov) aligned with invite PDF if available.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -725,7 +725,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://ezrabaderman.com/about/\r\nhttps://ezrabaderman.com/work/\r\nhttps://www.saatchiart.com/ebaderman\r\nhttps://www.instagram.com/ezrabaderman/\r\nhttps://thestreetcollector.com/collections/ezra-baderman",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "marylou-faure": {
     "artistName": "Marylou Faure",
@@ -747,13 +747,13 @@
     "processImage4Url": "https://maryloufaure.com/cdn/shop/files/personal-work_450x.png?v=1763467061",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2024 — Solo, It's All About Me, E03, Beijing, China\r\n2024 — Solo, Come Join Me, L44, Sofia, Bulgaria\r\n2022 — Solo, Skinny Dipping, Cuemars, London, UK\r\n2021 — Solo, Blossom, Woodbury House x Nicce, London, UK\r\n2020 — Solo, À La Piscine, The Book Club, London, UK\r\n2020 — Solo, Daisies, Hen's Teeth, Dublin, Ireland\r\n2019 — Solo, Nobody's Baby, The Print Space, London, UK\r\n2019 — Solo, Nobody's Baby, Slow Gallerie, Paris, France",
-    "pressText": "It’s Nice That — 2016 — Profile — http://www.itsnicethat.com/articles/mary-lou-faure-illustration-080216\r\nDesign Week — 2020 — Interview — https://www.designweek.co.uk/issues/14-20-september-2020/marylou-faure-profile/\r\n\r\nDesign Week UK — 2020 — Profile / interview — https://www.designweek.co.uk/issues/14-20-september-2020/marylou-faure-profile/\r\nOutline Editions — — Print editions — https://www.outline-editions.co.uk/collections/marylou-faure",
+    "pressText": "It’s Nice That — 2016 — Profile — http://www.itsnicethat.com/articles/mary-lou-faure-illustration-080216\r\nDesign Week — 2020 — Interview — https://www.designweek.co.uk/issues/14-20-september-2020/marylou-faure-profile/\r\n\r\nDesign Week UK — 2020 — Profile / interview — https://www.designweek.co.uk/issues/14-20-september-2020/marylou-faure-profile/\r\nOutline Editions — — Print editions — https://www.outline-editions.co.uk/collections/marylou-faure\n\nThe Street Lamp — — Licensed print collection — https://www.thestreetlamp.com/collections/marylou-faure",
     "instagramHandle": "@maryloufaure",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.maryloufaure.com/pages/about\r\nhttp://www.maryloufaure.com/\r\nhttp://www.itsnicethat.com/articles/mary-lou-faure-illustration-080216\r\nhttps://www.instagram.com/maryloufaure/\r\nhttps://thestreetcollector.com/collections/marylou-faure",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "dima-korma": {
     "artistName": "Dima Korma",
@@ -803,13 +803,13 @@
     "processImage4Url": "https://i0.wp.com/sammesnow.com/wp-content/uploads/2023/05/Samme-Snow-Illustrator-Artist-Client-Kings-Cross.png?fit=200%2C150&ssl=1",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2025 — Workshop residency, Secret 7\" Colouring Experience, NOW Gallery, Greenwich Peninsula, London, UK (May–Jun; verify)",
-    "pressText": "New Exhibitions — 2025 — Secret 7\" listing — https://www.newexhibitions.com/e/66613\r\nVisit Greenwich — 2025 — Event listing — https://www.visitgreenwich.org.uk/whats-on/secret-7-colouring-experience-with-samme-snow-p2360311",
+    "pressText": "New Exhibitions — 2025 — Secret 7\" listing — https://www.newexhibitions.com/e/66613\r\nVisit Greenwich — 2025 — Event listing — https://www.visitgreenwich.org.uk/whats-on/secret-7-colouring-experience-with-samme-snow-p2360311\n\nSamme Snow — — Official site / about — https://sammesnow.com/about/",
     "instagramHandle": "@snowhandsworld",
     "instagramPostImageUrls": "https://www.instagram.com/snowhandsworld/p/DCi_135IayH/",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://sammesnow.com/about/\r\nhttps://sammesnow.com/\r\nhttps://www.instagram.com/snowhandsworld/\r\nhttps://thestreetcollector.com/collections/samme-snow",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch3.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "sancho": {
     "artistName": "Sancho",
@@ -831,13 +831,13 @@
     "processImage4Url": "https://images.squarespace-cdn.com/content/v1/63924f2ba60a0d1bfb4f9923/23ff3e0c-c5f9-41e4-a0a8-be87fcd82882/IMG_3194.jpg",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2023 — Recognition, Saatchi Art Best of June (online/feature)\r\n2022 — Group, Boomer Gallery, London, UK\r\n2022 — Award context, The Heartbeat of Macao, Macao (jury award; verify category)\r\n2022 — Grant, Fine Acts x University of California (verify)",
-    "pressText": "Street Art Cities — — Artist profile — https://streetartcities.com/artists/sancho",
+    "pressText": "Street Art Cities — — Artist profile — https://streetartcities.com/artists/sancho\n\nSaatchi Art — 2023 — Example listing (Yes Please, mixed media) — https://www.saatchiart.com/art/Mixed-Media-Yes-Please/2186829/10272953/view",
     "instagramHandle": "@bysancho",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://sanchosancho.com/about\r\nhttps://sanchosancho.com/\r\nhttps://wallbaby.com/gb/artists/sancho\r\nhttps://www.instagram.com/bysancho/\r\nhttps://thestreetcollector.com/collections/sancho",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch4.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch4.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "alice-bureau": {
     "artistName": "Alice Bureau",
@@ -887,13 +887,13 @@
     "processImage4Url": "https://static.wixstatic.com/media/11062b_7268d2bd4cf9497b997234c7cb71f24b~mv2.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_7268d2bd4cf9497b997234c7cb71f24b~mv2.png",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2022 — Group, Culture of Solidarity, Terder.fm, Tel Aviv, Israel\r\n2021 — Group, The Pink Period, Israeli Illustration Week, Jaffa Museum, Jaffa, Israel\r\n2019 — Group, Women, Israeli Illustration Week, Teder, Tel Aviv, Israel\r\n2019 — Workshop show, The Blue Period, Israeli Illustration Week, Tel Aviv, Israel\r\n2018 — Group, One Dot Will Never Rule, RVCA Workshop, Tel Aviv, Israel\r\n2017 — Solo, Jungle, Haifa, Israel\r\n2017 — Group, Israeli Illustration Week, Abraham Hostel, Israel\r\n2017 — Group, The Other Walls, Shaar 3 Gallery, Haifa, Israel",
-    "pressText": "Elephant — — Artist archives — https://elephant.art/artist/alin-mor/\r\nStreet Art Cities — — Artist profile — https://streetartcities.com/artists/alin-mor",
+    "pressText": "Elephant — — Artist archives — https://elephant.art/artist/alin-mor/\r\nStreet Art Cities — — Artist profile — https://streetartcities.com/artists/alin-mor\n\nBehance — — Portfolio — https://www.behance.net/alinmor",
     "instagramHandle": "@alinmor",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.alinmor.com/about\r\nhttps://www.alinmor.com/\r\nhttps://www.linkedin.com/in/alin-mor-2bb330158\r\nhttps://www.instagram.com/alinmor/\r\nhttps://thestreetcollector.com/collections/alin-mor",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch4.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch4.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "beto-val": {
     "artistName": "Beto Val",
@@ -1055,13 +1055,13 @@
     "processImage4Url": "https://www.organiconcrete.com/wp-content/uploads/2014/09/geometricbang-picame-645x161.png",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2024 — Wall projects documented, Rome, Genoa, and Tokyo, Japan (verify solo vs festival context)\r\n2006 — Ongoing international group exhibitions, multiple countries (per Italian gallery bios—replace with dated lines when CV is available)",
-    "pressText": "Wood’d — — Design story — https://www.woodd.it/blog/en/signs/geometric-bang-woodd-design-stories/\r\nBOOOOOOOM — 2013 — Interview — https://www.booooooom.com/2013/01/09/geometric-bang/\r\nOrganiconcrete — — See source article — http://www.organiconcrete.com/2014/09/15/a-colpi-di-matita-mattia-botta-aka-geometricbang/\r\n\r\nArtribune — — Artist biography page — https://www.artribune.com/artista-mostre-biografia/geometric-bang/\r\nWood'd — — Design stories feature — https://www.woodd.it/blog/it/signs/geometric-bang-woodd-design-stories/",
+    "pressText": "Wood’d — — Design story — https://www.woodd.it/blog/en/signs/geometric-bang-woodd-design-stories/\r\nBOOOOOOOM — 2013 — Interview — https://www.booooooom.com/2013/01/09/geometric-bang/\r\nOrganiconcrete — — See source article — http://www.organiconcrete.com/2014/09/15/a-colpi-di-matita-mattia-botta-aka-geometricbang/\r\n\r\nArtribune — — Artist biography page — https://www.artribune.com/artista-mostre-biografia/geometric-bang/\r\nWood'd — — Design stories feature — https://www.woodd.it/blog/it/signs/geometric-bang-woodd-design-stories/\n\nGalleria Varsi — — Artist collection index — https://www.galleriavarsi.it/collections/geometricbang",
     "instagramHandle": "@geometricbang",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.galleriavarsi.it/collections/geometricbang\r\nhttps://www.woodd.it/blog/en/signs/geometric-bang-woodd-design-stories/\r\nhttp://www.organiconcrete.com/2014/09/15/a-colpi-di-matita-mattia-botta-aka-geometricbang/\r\nhttps://www.instagram.com/geometricbang/\r\nhttps://thestreetcollector.com/collections/geometric-bang",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "laura-fridman": {
     "artistName": "Laura Fridman",
@@ -1070,7 +1070,7 @@
     "heroHook": "Laura Fridman is French, studied economics at Yale, danced with the Israel Ballet, and then started painting. (@laura_fridman_art)",
     "storyFullText": "Laura Fridman is French, studied economics at Yale, danced with the Israel Ballet, and then started painting. Her figurative work exaggerates hands and necks while keeping faces photographic — a tension that feels physical, like the body is working through something. She has shown in Tel Aviv, Paris, and Barcelona.",
     "aboutPageUrl": "https://www.laurafridman.art/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\n--> About | Laura Fridman Art top of page LAURA FRIDMAN HOME WORKS ABOUT CONTACT Laura Fridman is a French artist whose unconventional path—from studying economics at Yale University to dancing with the Israel Ballet—profoundly shaped her artistic vision.\r\n\r\nWeb research (verify): French artist based Tel Aviv; Yale economics background; former professional ballet (Israel Ballet). Figurative painting with dance-informed bodies; residencies Berlin and Lisbon cited on site; fairs Art3f Monaco/Zurich (verify years).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\n--> About | Laura Fridman Art top of page LAURA FRIDMAN HOME WORKS ABOUT CONTACT Laura Fridman is a French artist whose unconventional path—from studying economics at Yale University to dancing with the Israel Ballet—profoundly shaped her artistic vision.\r\n\r\nWeb research (verify): French artist based Tel Aviv; Yale economics background; former professional ballet (Israel Ballet). Figurative painting with dance-informed bodies; residencies Berlin and Lisbon cited on site; fairs Art3f Monaco/Zurich (verify years).\n\nBatch 5: Paris/Tel Aviv solo years are on laurafridman.art—mirror French/Hebrew press titles when expanding Press.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -1089,7 +1089,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.laurafridman.art/about\r\nhttps://www.laurafridman.art/\r\nhttps://www.instagram.com/laura_fridman_art/\r\nhttps://thestreetcollector.com/collections/laura-fridman",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "cubi-boumclap": {
     "artistName": "Cubi Boumclap",
@@ -1110,14 +1110,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://pps.services.adobe.com/api/profile/4E287D44536166570A490D4D@AdobeID/image/0c344e44-731a-4a2c-868e-a5a1181cf6b0/276",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "No single consolidated exhibition CV found in the sources consulted; regional press references collective urban-art context (La Streetarterie).",
-    "pressText": "Le Petit Journal (Lot-et-Garonne): article featuring Cubi Boumclap and La Streetarterie (2022).\r\nLepetitjournal — — See source article — https://www.lepetitjournal.net/47-lot-et-garonne/2022/02/20/faut-quca-bouge/",
+    "exhibitionsText": "2016 — Group: indoor street art (collectives Le Club / Projet Street Art incl. Cubi), Pub Echo printshop, Villeneuve-sur-Lot, France — https://www.ladepeche.fr/article/2016/06/15/2365640-le-street-art-s-expose-en-interieur.html\n2023 — Mural with Ulysse, Campus Numérique, Agen, France — https://quidam-hebdo.com/2023/05/30/agen-cubi-et-ulysse-refont-une-beaute-au-campus-numerique/",
+    "pressText": "Le Petit Journal (Lot-et-Garonne): article featuring Cubi Boumclap and La Streetarterie (2022).\r\nLepetitjournal — — See source article — https://www.lepetitjournal.net/47-lot-et-garonne/2022/02/20/faut-quca-bouge/\n\nLa Streetarterie — — Collective roster (Cubi) — http://streetarterie.fr/le-collectif/",
     "instagramHandle": "cubi_boumclap",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.behance.net/cubi?locale=en_US\r\nhttps://www.lepetitjournal.net/47-lot-et-garonne/2022/02/20/faut-quca-bouge/\r\nhttps://cubiboumclap.gumroad.com/",
-    "notes": "Instagram @cubi_boumclap assumed from your list; Behance does not list Instagram in the fetched profile block. Antibes sometimes appears in third-party retail blurbs—Agen is what Behance encodes as location.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram @cubi_boumclap assumed from your list; Behance does not list Instagram in the fetched profile block. Antibes sometimes appears in third-party retail blurbs—Agen is what Behance encodes as location.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "studio-giftig": {
     "artistName": "Studio Giftig",
@@ -1139,13 +1139,13 @@
     "processImage4Url": "https://studiogiftig.nl/wp-content/uploads/2025/10/564881528_18512275150064313_3801205399455182042_n.jpg",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "Official CV at studiogiftig.nl/cv lists selected murals, festivals, and awards internationally (Europe and beyond).",
-    "pressText": "Amsterdam Street Art and Inside Information quotes are embedded on studiogiftig.nl/about; Amsterdam Street Art also tags coverage of the duo.",
+    "pressText": "Amsterdam Street Art and Inside Information quotes are embedded on studiogiftig.nl/about; Amsterdam Street Art also tags coverage of the duo.\n\nAmsterdam Street Art — — “Floating between Freedom” mural interview — https://www.amsterdamstreetart.com/studio-giftig-floating-between-freedom/",
     "instagramHandle": "studiogiftig",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://studiogiftig.nl/about/\r\nhttps://studiogiftig.nl/cv/\r\nhttps://www.studiogiftig.nl/",
-    "notes": "All biographical dates and the \"toxic storeroom\" naming story are verbatim themes from the official bilingual About page.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "All biographical dates and the \"toxic storeroom\" naming story are verbatim themes from the official bilingual About page.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "unapaulogetic": {
     "artistName": "Unapaulogetic",
@@ -1167,13 +1167,13 @@
     "processImage4Url": "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/136737b8-6769-4993-8b0d-3ae1bbc95cf2_rw_1200.jpg?h=dfce6290207594945afe4cfce5e3b29c",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "LaCulture Typographics Exhibition referenced on paulrozenboim.com project page (\"Bring your Imagination to Life\").",
-    "pressText": "Primary sources: paulrozenboim.com project pages; The Street Lamp artist/product copy for \"Hole.\"",
+    "pressText": "Primary sources: paulrozenboim.com project pages; The Street Lamp artist/product copy for \"Hole.\"\n\nBehance — — Paul Rozenboim portfolio — http://www.behance.net/paulrozenboim\nThe Street Lamp — — Hole edition product — https://www.thestreetlamp.com/products/hole",
     "instagramHandle": "unapaulogetic_",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://paulrozenboim.com/capturing-chaos\r\nhttps://paulrozenboim.com/bring-your-imagination-to-life\r\nhttps://www.thestreetlamp.com/products/hole",
-    "notes": "Instagram handle confirmed on paulrozenboim.com (\"Follow Me @unapaulogetic_\"). Biographical \"Colombia-born\" appears on The Street Lamp; cross-check for future edits.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram handle confirmed on paulrozenboim.com (\"Follow Me @unapaulogetic_\"). Biographical \"Colombia-born\" appears on The Street Lamp; cross-check for future edits.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "thales-towers": {
     "artistName": "Thales Towers",
@@ -1182,7 +1182,7 @@
     "heroHook": "Thales Towers says on his own site that he doesn't know how to paint faces, so he paints towers on them instead. (thalestowers)",
     "storyFullText": "Thales Towers says on his own site that he doesn't know how to paint faces, so he paints towers on them instead. His Tel Aviv street pieces feature tower-headed characters landing punchlines for pedestrians. Animated GIFs spread the same cast worldwide on GIPHY. The humor is consistent and the drawing backs it up.",
     "aboutPageUrl": "https://www.thalestowers.com/",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "Moniker Thales Towers = Sharon Raphael; building-headed figure series described from advertising background in Hadadi interview.",
     "pullQuote": "Thales is an attractive young old man from Tel-Aviv who doesn't know how to paint faces... he digs painting towers on walls and on other stuff — Thales (thalestowers.com homepage copy)",
     "impactCallout": "Widely surfaced GIF presence on GIPHY under the ThalesTowers brand (view counts listed on GIPHY).",
     "exclusiveCallout": "Shop inventory and originals should be verified on thalestowers.com product pages, which show frequent out-of-stock states in snapshots.",
@@ -1194,14 +1194,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://media3.giphy.com/media/j0beUWWjBtzgOdvCDI/giphy.gif",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "No formal exhibition list found in the sources consulted; emphasis is on street pieces and online shop.",
-    "pressText": "Dror Hadadi blog feature (English) profiling Thales Towers and mural locations in Tel Aviv.",
+    "exhibitionsText": "2018 — Street art exhibition, Kikar Atrim (Plaza of Sites), Tel Aviv, Israel (per Dror Hadadi; organizer Shahaf Rodberg cited in profile) — https://drorhadadi.com/en/thales-towers/",
+    "pressText": "Dror Hadadi blog feature (English) profiling Thales Towers and mural locations in Tel Aviv.\n\nDror Hadadi — — English profile (Sharon Raphael / Thales Towers) — https://drorhadadi.com/en/thales-towers/\nThe Street Lamp — — Print collection — https://www.thestreetlamp.com/collections/thales-towers",
     "instagramHandle": "thalestowers",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.thalestowers.com/\r\nhttps://drorhadadi.com/en/thales-towers/\r\nhttps://giphy.com/Thalestowers",
-    "notes": "Hero tone follows the artist’s own humorous site voice; mural geography comes from drorhadadi.com, not municipal registries.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Hero tone follows the artist’s own humorous site voice; mural geography comes from drorhadadi.com, not municipal registries.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "nia-shtai": {
     "artistName": "Nia Shtai",
@@ -1223,13 +1223,13 @@
     "processImage4Url": "https://cdn.dribbble.com/userupload/29374152/file/original-287e62a5028b5924eed46917016c860e.jpg?format=webp&resize=400x300&vertical=center",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "No exhibition CV located in sources consulted beyond shop/brand storytelling.",
-    "pressText": "Dressed by Danielle blog: featured brand interview (2023) covering background and upcycling practice.\r\nDressed-By-Danielle — — See source article — https://dressed-by-danielle.com/blogs/blog/our-first-featured-brand-by-nia-shtai",
+    "pressText": "Dressed by Danielle blog: featured brand interview (2023) covering background and upcycling practice.\r\nDressed-By-Danielle — — See source article — https://dressed-by-danielle.com/blogs/blog/our-first-featured-brand-by-nia-shtai\n\nThe Street Lamp — — Israeli street artists feature — https://www.thestreetlamp.com/blogs/art/israeli-street-artists-a-look-at-some-of-the-countrys-talents\nDribbble — — Portfolio — https://dribbble.com/NiaShtai",
     "instagramHandle": "nia.shtai.art",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.behance.net/niashtai\r\nhttps://dribbble.com/NiaShtai\r\nhttps://dressed-by-danielle.com/blogs/blog/our-first-featured-brand-by-nia-shtai",
-    "notes": "Search surfaced Instagram reel URLs (/reel/...) not /p/; omitted here per your /p/-only rule. Confirm Evgenia Batrushtay spelling with the artist.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Search surfaced Instagram reel URLs (/reel/...) not /p/; omitted here per your /p/-only rule. Confirm Evgenia Batrushtay spelling with the artist.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "nurit-gross": {
     "artistName": "Nurit Gross",
@@ -1251,13 +1251,13 @@
     "processImage4Url": "https://societyillustrators.org/wp-content/uploads/2025/11/SI-Round-Logo-2025-NYC-white_225x225.png",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2020–2023 group exhibitions in Tel Aviv and Jerusalem detailed on nuritgross.com/about (Outline, laculturetlv, illustration week, etc.).",
-    "pressText": "Society of Illustrators Annual 65 online feature for illustrated book work; client list includes Israel Hayom and multiple magazines on her about page.",
+    "pressText": "Society of Illustrators Annual 65 online feature for illustrated book work; client list includes Israel Hayom and multiple magazines on her about page.\n\nThe Street Lamp — — Print collection — https://www.thestreetlamp.com/collections/nurit-gross\nBehance — — Portfolio — https://www.behance.net/nurit917",
     "instagramHandle": "nurit_gross",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://nuritgross.com/about\r\nhttps://societyillustrators.org/illustrators-65/hagada/",
-    "notes": "Instagram handle @nurit_gross appears in Society of Illustrators metadata; matches your list.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram handle @nurit_gross appears in Society of Illustrators metadata; matches your list.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "moshe-gilboa": {
     "artistName": "Moshe Gilboa",
@@ -1266,7 +1266,7 @@
     "heroHook": "Moshe Gilboa is an Israeli artist and designer whose practice doesn't file neatly. (moshegilboa)",
     "storyFullText": "Moshe Gilboa is an Israeli artist and designer whose practice doesn't file neatly. Animation, UI, indie games, and illustrated essays share the same humor — work that winks while it teaches. He documents shipped projects in long-form on Medium, which tells you something about how seriously he takes the process of making.",
     "aboutPageUrl": "https://medium.com/@moshegilboa/exploding-sheep-making-of-part-i-b45ef5aaa93a",
-    "additionalHistoryText": "",
+    "additionalHistoryText": "Practice centers on game illustration/art direction (Exploding Sheep with Amit Netanel + Yotam Wilson); not the same as unrelated “Gilboa” fine-art namesakes in generic search.",
     "pullQuote": "",
     "impactCallout": "Long-form public documentation of shipped indie game projects on Medium with process art breakdowns.",
     "exclusiveCallout": "Verify any fine-art editions against the artist or publisher; most indexed material is digital/game/interactive.",
@@ -1278,14 +1278,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhWJXUVBnXOHlQrLYWiZpNOJ4LdACKL6F05BxIoMkLJjB7ZOmlZLZjAWQ5HDHjzUWBkiiB_RHnqIcIPvIsNTLUEiuuONKd25ADx3X-OLpnz1pPaSTn-CDcnjffKpq9CoiA9jxpWYtTy3L7X/s1600/13.21.11+SexElephent-01.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "No exhibition CV found in consulted sources.",
-    "pressText": "Self-published process writing on Medium; not independent journalism.",
+    "exhibitionsText": "",
+    "pressText": "Self-published process writing on Medium; not independent journalism.\n\nbabagilboa (Wix) — — Exploding Sheep / project hub — https://babagilboa.wixsite.com/moshe/explodingsheep\nitch.io — — Exploding Sheep (credits / release context) — https://abbabon.itch.io/exploding-sheep",
     "instagramHandle": "moshegilboa",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.linkedin.com/in/moshe-gilboa-07834b34\r\nhttps://medium.com/@moshegilboa/exploding-sheep-making-of-part-i-b45ef5aaa93a\r\nhttp://moshegilboa.blogspot.com/",
-    "notes": "Instagram @moshegilboa supplied by you; LinkedIn fetched did not surface IG URL in the snippet. Games’ availability may have changed since Medium posts.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram @moshegilboa supplied by you; LinkedIn fetched did not surface IG URL in the snippet. Games’ availability may have changed since Medium posts.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "eden-kalif": {
     "artistName": "Eden Kalif",
@@ -1322,7 +1322,7 @@
     "heroHook": "Tiffany Chin studied illustration at OCAD University in Toronto and graduated in 2022 with a medal and a stack of award wins — Society of Illustrators, Applied Arts… (twkchin)",
     "storyFullText": "Tiffany Chin studied illustration at OCAD University in Toronto and graduated in 2022 with a medal and a stack of award wins — Society of Illustrators, Applied Arts, Communication Arts, Creative Quarterly. The work is inspired by 1960s and 70s poster culture and carries that era's typographic confidence into contemporary illustration. She has been shortlisted or recognized every year since graduation.",
     "aboutPageUrl": "https://www.twkchin.com/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nTiffany Chin is a Toronto based illustrator who creates all things strange. 20, Merit (2023) Society of Illustrators, Illustrators 65 (2022) Creative Quarterly, CQ70, Winner: Professional (2022) OCAD University, 401 Richmond Illustration Studio (2022) OCAD University, Illustration Medal, Runner-up (2022) Society of Illustrators, Student Scholarship (2022) Applied Arts, Student Award (2022) 3x3, International Illustration Show no. 19, Merit (2022) Creative Quarterly, CQ68, Runner-up (2022) Communication Arts, Illustration, Shortlist (2022) Society of Illustrators, Nancy Lee Rhodes Roberts Scholarship Award (2021) Applied Arts, Student Award (2021) Creative Quarterly, CQ64, Runner-up (2021) OCAD University, Dr.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nTiffany Chin is a Toronto based illustrator who creates all things strange. 20, Merit (2023) Society of Illustrators, Illustrators 65 (2022) Creative Quarterly, CQ70, Winner: Professional (2022) OCAD University, 401 Richmond Illustration Studio (2022) OCAD University, Illustration Medal, Runner-up (2022) Society of Illustrators, Student Scholarship (2022) Applied Arts, Student Award (2022) 3x3, International Illustration Show no. 19, Merit (2022) Creative Quarterly, CQ68, Runner-up (2022) Communication Arts, Illustration, Shortlist (2022) Society of Illustrators, Nancy Lee Rhodes Roberts Scholarship Award (2021) Applied Arts, Student Award (2021) Creative Quarterly, CQ64, Runner-up (2021) OCAD University, Dr.\n\nBatch 5: CBC/Applied Arts citations already anchor Press; re-check Society of Illustrators annual years against official PDFs yearly.",
     "pullQuote": "Inspired by posters and music from the 1960s and 70s, Tiffany strives to step beyond the boundaries of convention to create visually jarring imagery. — TWKCHIN (twkchin.com/about)",
     "impactCallout": "Repeated wins in Applied Arts / Communication Arts / Society shows within three years of graduation.",
     "exclusiveCallout": "Music-poster commissions may be editioned by bands/festivals—verify rights before calling pieces exclusive.",
@@ -1341,7 +1341,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.twkchin.com/about\r\nhttps://www.linkedin.com/in/tiffany-chin-774a461bb\r\nhttps://www.ocaduillustration.com/illustrators/tiffany-chin/",
-    "notes": "Awards/years on twkchin.com update frequently; re-fetch before citing \"current\" tallies.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Awards/years on twkchin.com update frequently; re-fetch before citing \"current\" tallies.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "tiago-hesp": {
     "artistName": "Tiago Hesp",
@@ -1363,13 +1363,13 @@
     "processImage4Url": "https://images.squarespace-cdn.com/content/v1/653c22d3dff711234fbd9313/3a12cd45-9e6b-470e-8402-9424bc6bbc5f/Untitled-1.jpg",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "Solo: \"É FOGO POSTO\" Porto 2025; \"Quase um Quarto\" Mafra 2024; \"Pedra e Pau\" Lisbon 2023; plus earlier Lisbon/Almada/Setúbal shows. Collectives: Underdogs, Apaixonarte groupings, Abstrakt series, etc. (tiagohesp.com/profile).",
-    "pressText": "Mistaker Maker artist page summarizes practice in English; agenda cultural sites list Portuguese exhibitions.",
+    "pressText": "Mistaker Maker artist page summarizes practice in English; agenda cultural sites list Portuguese exhibitions.\n\nMistaker Maker — — Artist page (festivals / bio) — https://mistakermaker.org/tiago_hesp",
     "instagramHandle": "tiagohesp",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.tiagohesp.com/profile\r\nhttps://mistakermaker.org/tiago_hesp\r\nhttps://streetartcities.com/markers/17331",
-    "notes": "Portuguese diacritics and venue names should be copied exactly from the official CV when localizing.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Portuguese diacritics and venue names should be copied exactly from the official CV when localizing.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "yoaz": {
     "artistName": "Yoaz",
@@ -1419,13 +1419,13 @@
     "processImage4Url": "",
     "processImage4Label": "",
     "exhibitionsText": "Solo: Backwoods Gallery sequences (e.g., RAW MARK MAKING 2020, THE BLUE PERIOD 2023, PHYSICAL ACTION AS THINKING FORM 2025), European gallery stops, Japanese embassy show Brussels 2019, etc. Groups: Space Invaders NGA 2010, Straat museum opening 2020, MUCA portrait survey 2018 (hiroyasutsuri.com/about CV).",
-    "pressText": "Japan Foundation Sydney has hosted artist-talk programming under his legal name / TWOONE (event pages).",
+    "pressText": "Japan Foundation Sydney has hosted artist-talk programming under his legal name / TWOONE (event pages).\n\nBackwoods Gallery — 2020 — Raw Mark Making — https://www.backwoods.gallery/2020-hiroyasu-tsuri\nBackwoods Gallery — 2023 — Blue Period — https://www.backwoods.gallery/2023-hiroyasu-tsuri\nBackwoods Gallery — — Artist index — https://www.backwoods.gallery/hiroyasu-tsuri",
     "instagramHandle": "t_w_o_o_n_e",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://hiroyasutsuri.com/about\r\nhttps://www.backwoods.gallery/\r\nhttps://sydney.jpf.go.jp/events/artist-talk-with-hiroyasu-tsuri-twoone/",
-    "notes": "Instagram /p/ URLs are copied from the official CV page’s linked documentation for specific murals. Some institution names in the long CV may carry typos (e.g., \"Amsteldam\")—mirror source or correct editorially.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Instagram /p/ URLs are copied from the official CV page’s linked documentation for specific murals. Some institution names in the long CV may carry typos (e.g., \"Amsteldam\")—mirror source or correct editorially.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "s-a-r-g-o-n": {
     "artistName": "S A R G O N",
@@ -1462,7 +1462,7 @@
     "heroHook": "Kymo One is a Belgian muralist trained in graphic illustration who never gave up spray paint. (kymo_one)",
     "storyFullText": "Kymo One is a Belgian muralist trained in graphic illustration who never gave up spray paint. Chains, roses, smoke, and industrial romanticism repeat across European walls — old-master drama at graffiti velocity. Readable from the sidewalk and worth getting closer to.",
     "aboutPageUrl": "https://www.behance.net/kymo",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nNavigate to adobe.com KYMO ONE Available for Freelance Muralist and Visual Designer Briefcase <pa",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nNavigate to adobe.com KYMO ONE Available for Freelance Muralist and Visual Designer Briefcase <pa\n\nMunicipal street-art page confirms Sorry, Not Sorry participation; pin exact edition/year via kymoone.be or festival archive before legal fields.",
     "pullQuote": "",
     "impactCallout": "High-visibility civic walls including Brussels Airport-adjacent labor tribute (2020) per Dutch Wikipedia entry.",
     "exclusiveCallout": "Union-commissioned murals are public; distinguish from studio originals sold privately.",
@@ -1474,14 +1474,14 @@
     "processImage3Label": "Portfolio",
     "processImage4Url": "https://www.kymoone.be/wp-content/uploads/2024/11/holes-delft-Website-cover.jpg",
     "processImage4Label": "Portfolio",
-    "exhibitionsText": "Encyclopedia entry focuses on murals rather than white-cube shows; verify exhibitions via kymoone.be if needed.",
-    "pressText": "Dutch Wikipedia article \"Kymo One\" (community-authored; corroborate dates with primary photos/captions).",
+    "exhibitionsText": "Sorry, Not Sorry festival (public mural program, Ghent, Belgium) — listing on Cultuur Gent street-art map — https://cultuur.stad.gent/en/street-art/kymo-one-0",
+    "pressText": "Dutch Wikipedia article \"Kymo One\" (community-authored; corroborate dates with primary photos/captions).\n\nkymoone.be — — Official site / studio — https://www.kymoone.be/",
     "instagramHandle": "kymo_one",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://nl.wikipedia.org/wiki/Kymo_One\r\nhttps://www.behance.net/kymo\r\nhttps://streetartcities.com/artists/kymo-one\r\nhttp://kymoone.be/",
-    "notes": "A search result showed instagram.com/gigi_dettori/p/... crediting @kymo_one; excluded from processImage fields because it is not on the artist’s account.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "A search result showed instagram.com/gigi_dettori/p/... crediting @kymo_one; excluded from processImage fields because it is not on the artist’s account.\r\nEnrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "tyler-shelton": {
     "artistName": "Tyler Shelton",
@@ -2022,7 +2022,7 @@
     "heroHook": "Thibaud Hérem is a French illustrator known for hand-drawn architectural work in pencil and Indian ink. (@thibaudherem)",
     "storyFullText": "Thibaud Hérem is a French illustrator known for hand-drawn architectural work in pencil and Indian ink. The buildings feel walked, not photographed — facades rendered with an obsessive patience that turns a structure into a portrait. He has worked for Hermès, Netflix (Our Beloved Summer), and Four Seasons, published books with Nobrow and Laurence King, and held a solo show in Seoul.",
     "aboutPageUrl": "https://thibaudherem.com/pages/about",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nThibaud Herem Thibaud Herem Selected 0 Home Catalog Contact --> SHOP PROJECT ABOUT Photo by Mok Jungwook Thibaud Herem is a French illustrator, working worldwide, he is known for his distinct signature style, working with pencil and Indian inks, he specialises in creating architectural drawings with an incredible level of hand drawn detail.\r\n\r\nWeb research (verify): French illustrator; architectural drawing in pencil and ink; lived/worked London, NYC, Tokyo, Seoul. Clients include Hermès, Four Seasons, Nike, Samsung, Hyundai; Netflix Our Beloved Summer artwork (2021). Books with Nobrow, Cicada, Laurence King. Handsome Frank rep; WWF Korea/Asia noted on about page (verify).",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nThibaud Herem Thibaud Herem Selected 0 Home Catalog Contact --> SHOP PROJECT ABOUT Photo by Mok Jungwook Thibaud Herem is a French illustrator, working worldwide, he is known for his distinct signature style, working with pencil and Indian inks, he specialises in creating architectural drawings with an incredible level of hand drawn detail.\r\n\r\nWeb research (verify): French illustrator; architectural drawing in pencil and ink; lived/worked London, NYC, Tokyo, Seoul. Clients include Hermès, Four Seasons, Nike, Samsung, Hyundai; Netflix Our Beloved Summer artwork (2021). Books with Nobrow, Cicada, Laurence King. Handsome Frank rep; WWF Korea/Asia noted on about page (verify).\n\nBatch 5: Jardin Fantôme (Seoul, 2022) is the strongest dated solo anchor; Handsome Frank rep bio should stay in sync with thibaudherem.com.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -2041,7 +2041,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://thibaudherem.com/pages/about\r\nhttps://thibaudherem.com/\r\nhttps://toffygreen.com/en/thibaud-herem-feature/\r\nhttp://handsomefrank.com/illustrators/thibaud-herem\r\nhttps://www.instagram.com/thibaudherem/\r\nhttps://thestreetcollector.com/collections/thibaud-herem",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "jennypo-art": {
     "artistName": "Jennypo Art",
@@ -2218,7 +2218,7 @@
     "heroHook": "Keya Tama was born in Cape Town in 1997 and now works from New York. (@keyatama)",
     "storyFullText": "Keya Tama was born in Cape Town in 1997 and now works from New York. Her practice braids ancestral symbolism with graphic minimalism — each piece asking how much you can strip away and still say something complete. She has shown with Hashimoto Contemporary in New York and Subliminal Projects in Los Angeles, painted murals at festivals and institutions across Africa and Europe, and collaborated with the Royal Delft Museum on ceramic work.",
     "aboutPageUrl": "https://www.keyatama.com/bio",
-    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nBIO — ＫＥＹＡ ＴＡＭＡ MURALS PAINTINGS ILLUSTRATION DIGITAL ILLUSTRATION TEXTILES COMMERCIAL WORK shop FEATURES BIO CONTACT Menu ＫＥＹＡ ＴＡＭＡ MURALS PAINTINGS ILLUSTRATION DIGITAL ILLUSTRATION TEXTILES COMMERCIAL WORK shop FEATURES BIO CONTACT K E Y A T A M A Keya Tama is a South African artist based in New York City.\r\n\r\nWeb research (verify): South African–born artist, NYC-based (ages/places per interviews). Parents Faith XLVII and Tyler B. Murphy; early mural travel; assisted Shepard Fairey in LA. Mediums include mural, canvas, ceramics, tapestry (keyatama.com). Hashimoto Contemporary CV PDF lists shows—prefer that document for exact dates.",
+    "additionalHistoryText": "Auto-extracted from primary source page (verify before publishing):\r\n\r\nBIO — ＫＥＹＡ ＴＡＭＡ MURALS PAINTINGS ILLUSTRATION DIGITAL ILLUSTRATION TEXTILES COMMERCIAL WORK shop FEATURES BIO CONTACT Menu ＫＥＹＡ ＴＡＭＡ MURALS PAINTINGS ILLUSTRATION DIGITAL ILLUSTRATION TEXTILES COMMERCIAL WORK shop FEATURES BIO CONTACT K E Y A T A M A Keya Tama is a South African artist based in New York City.\r\n\r\nWeb research (verify): South African–born artist, NYC-based (ages/places per interviews). Parents Faith XLVII and Tyler B. Murphy; early mural travel; assisted Shepard Fairey in LA. Mediums include mural, canvas, ceramics, tapestry (keyatama.com). Hashimoto Contemporary CV PDF lists shows—prefer that document for exact dates.\n\nBatch 5: Tampa EDITION / Creative Loafing / That’s So Tampa coverage already in Press; use Hashimoto CV PDF for chronological solo list.",
     "pullQuote": "",
     "impactCallout": "",
     "exclusiveCallout": "",
@@ -2237,7 +2237,7 @@
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.keyatama.com/bio\r\nhttp://www.keyatama.com/\r\nhttps://sdvoyager.com/interview/meet-keya-tama/\r\nhttps://museum.royaldelft.com/keya-tama/\r\nhttps://www.instagram.com/keyatama/\r\nhttps://thestreetcollector.com/collections/keya-tama",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5b-final-thin.json (verify facts)."
   },
   "facio": {
     "artistName": "Facio",
@@ -2371,13 +2371,13 @@
     "processImage4Url": "https://images.squarespace-cdn.com/content/v1/58755db6d482e9546ae16a51/1774569932330-XZBEIZUPRBNX7PUG57O4/iain+m+5+of+spades+finished.jpg?format=original",
     "processImage4Label": "Portfolio",
     "exhibitionsText": "2008 — Degree show, illustration/graphic design, Swindon College, Swindon, UK",
-    "pressText": "Directory of Illustration — — Listing — https://www.directoryofillustration.com/artist.aspx?AID=10894\r\n\r\nFormal Elements — — Interview — https://spaces.is/loversmagazine/interviews/iain-macarthur\r\nBehance — — Portfolio — http://www.behance.net/iainmac",
+    "pressText": "Directory of Illustration — — Listing — https://www.directoryofillustration.com/artist.aspx?AID=10894\r\n\r\nFormal Elements — — Interview — https://spaces.is/loversmagazine/interviews/iain-macarthur\r\nBehance — — Portfolio — http://www.behance.net/iainmac\n\nLovers Magazine — — Interview — https://spaces.is/loversmagazine/interviews/iain-macarthur\nArtwort / JSR — 2022 — Illustrated interview (part 2) — https://www.artwort.com/2022/04/26/speciali/disegnini/jsr-iain-macarthur/2/",
     "instagramHandle": "@iain.macarthur",
     "instagramPostImageUrls": "",
     "seasonDropLabels": "",
     "editionCopy": "",
     "sourcesLinks": "https://www.iainmacarthur.com/\r\nhttps://linkedin.com/in/iain-macarthur-1a93a627\r\nhttps://www.directoryofillustration.com/artist.aspx?AID=10894\r\nhttps://www.behance.net/iainmac\r\nhttps://www.instagram.com/iain.macarthur/\r\nhttps://thestreetcollector.com/collections/iain-macarthur",
-    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]"
+    "notes": "Enrichment pass 2026-04-02: About URL / fetch-based history; verify auto-extracted lines.\r\nManual web enrichment applied from artist-web-enrichment-2026-04-02-batch6.json (verify facts).\r\nAuto image extract: portfolio/IG HTML (verify URLs display).\r\n\r\n[Bio refined for shop display 2026-04-21: internal research lines removed or rewritten; Street Lamp product copy aligned.]\r\n\r\n[Shop bio applied from docs/features/street-collector/artist-bios-rewritten.md via scripts/apply_artist_bios_rewritten_md.py.]\nManual web enrichment applied from artist-web-enrichment-2026-04-03-batch5-final-thin.json (verify facts)."
   },
   "igor-mikutski": {
     "artistName": "Igor Mikutski",
