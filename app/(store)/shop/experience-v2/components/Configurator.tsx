@@ -90,6 +90,9 @@ import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
+import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
+import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import {
   loadImagePosition,
   saveImagePosition as persistImagePosition,
@@ -165,6 +168,14 @@ export function Configurator({
 }: ConfiguratorProps) {
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
+  const {
+    setOrderSummary,
+    setOrderBarProps,
+    orderBarRef,
+    openOrderBar,
+    setDiscountCelebrationAmount,
+    triggerPriceBump,
+  } = useExperienceOrder()
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
   const [collectedProductIds, setCollectedProductIds] = useState<Set<string>>(new Set())
@@ -285,6 +296,58 @@ export function Configurator({
     }
     return out
   }, [allProducts])
+
+  const [streetEditionByProductId, setStreetEditionByProductId] = useState<
+    Record<string, StreetEditionStatesRow>
+  >({})
+  const [lockedArtworkPrices, setLockedArtworkPrices] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (allProducts.length === 0) return
+    const ids = allProducts
+      .map((p) => normalizeShopifyProductId(p.id))
+      .filter((x): x is string => !!x)
+    if (ids.length === 0) return
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      void fetchStreetEditionStatesMap(ids)
+        .then((map) => {
+          if (!cancelled) setStreetEditionByProductId(map)
+        })
+        .catch(() => {})
+    }, 400)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [allProducts])
+
+  const streetLadderPrices = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const [id, row] of Object.entries(streetEditionByProductId)) {
+      if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
+    }
+    return m
+  }, [streetEditionByProductId])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLockedArtworkPrices({})
+      return
+    }
+    fetch('/api/shop/reserve/locks', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : { locks: [] }))
+      .then((j: { locks?: Array<{ shopify_product_id: string; locked_price_usd: number }> }) => {
+        const m: Record<string, number> = {}
+        for (const row of j.locks || []) {
+          if (row.shopify_product_id && row.locked_price_usd > 0) {
+            m[row.shopify_product_id] = row.locked_price_usd
+          }
+        }
+        setLockedArtworkPrices(m)
+      })
+      .catch(() => setLockedArtworkPrices({}))
+  }, [isAuthenticated])
 
   const [previewIndex, setPreviewIndex] = useState(0)
   const [imageScale, setImageScale] = useState(DEFAULT_SIDE_POSITION.scale)
@@ -683,7 +746,15 @@ export function Configurator({
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
   const discountBarLabel = 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
   const firstLampDiscountPercent = lampQuantity > 0 ? Math.min(Math.min(artworkCount, ARTWORKS_PER_FREE_LAMP) * DISCOUNT_PER_ARTWORK, 100) : 0
-  const artworksTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(p.priceRange?.minVariantPrice?.amount ?? '0'), 0)
+  const artworksTotal = selectedProducts.reduce(
+    (sum, p) =>
+      sum +
+      experienceArtworkUnitUsd(p, {
+        lockedUsdByProductId: lockedArtworkPrices,
+        streetLadderUsdByProductId: streetLadderPrices,
+      }),
+    0
+  )
   const orderTotal = lampTotal + artworksTotal
   const orderItemCount = selectedProducts.length + lampQuantity
 
@@ -884,7 +955,6 @@ export function Configurator({
     triedSteps,
   ])
 
-  const { setOrderSummary, setOrderBarProps, orderBarRef, openOrderBar, setDiscountCelebrationAmount } = useExperienceOrder()
   const { theme, setTheme } = useExperienceTheme()
   const [arCameraOn, setArCameraOn] = useState(false)
   const { videoRef, status: cameraStatus, error: cameraError, requestAccess, stopStream, isSupported: isCameraSupported } = useCameraFeed()
@@ -938,7 +1008,7 @@ export function Configurator({
 
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
-  }, [orderTotal, orderItemCount, setOrderSummary])
+  }, [orderTotal, orderItemCount, setOrderSummary, lockedArtworkPrices, streetLadderPrices])
 
   // Provide OrderBar props to shared OrderBar (rendered in ExperienceClient)
   useEffect(() => {
@@ -966,6 +1036,8 @@ export function Configurator({
       collectedProductIds,
       wizardHighlightStep: highlightStep,
       wizardHighlightActive: showHighlightAnimation,
+      lockedArtworkPrices,
+      streetLadderPrices,
     })
   }, [
     lamp,
@@ -988,6 +1060,8 @@ export function Configurator({
     collectedProductIds,
     highlightStep,
     showHighlightAnimation,
+    lockedArtworkPrices,
+    streetLadderPrices,
     setOrderBarProps,
   ])
 
