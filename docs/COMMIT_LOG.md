@@ -2,7 +2,7 @@
 
 ## Commit: feat(experience): strip mini lamp uses same Spline3DPreview as main reel (2026-04-06)
 
-**Ref:** _(set after commit)_
+**Ref:** `1b1fbddac`
 
 ### Summary
 The collection-strip mini lamp thumb mounts **[`CarouselStripLampSpline`](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)** — same **`Spline3DPreview`** scene, panel UUIDs, `swapLampSides` / flip / **`loadImagePosition`** / idle-spin rules as **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)**. Second WebGL instance; staggered **`requestIdleCallback`** (~5.5s). Both **ExperienceV2Client** entry points pass **`miniSplineLampPreview`**. **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** keeps embed + CSS turntable fallback when the prop is omitted.
