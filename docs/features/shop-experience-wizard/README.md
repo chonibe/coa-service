@@ -91,15 +91,15 @@ Visitors arriving from artist Instagram pages can use pre-filtered links:
 
 ### URL metadata and social previews
 
-When the URL includes an artist (e.g. `?artist=jack-jc-art` or `?vendor=...`), the page metadata is generated dynamically so that shared links show the correct preview:
+When the URL includes an artist (e.g. `?artist=jack-jc-art` or `?vendor=...`), the page metadata is generated dynamically so that shared links show the correct preview (no internal “Experience V2” title):
 
-- **Title**: "Early access — Artist Name | Street Collector" for unlisted/early-access artists, or "Artist Spotlight — Artist Name | Street Collector" otherwise
-- **Description**: Artist bio (trimmed) or a short line such as "Early access to artworks by Artist Name. Customize your Street Lamp with their art."
-- **Image**: The artist's profile/collection image (from [artist-spotlight API](../../../app/api/shop/artist-spotlight/route.ts))
+- **Title**: Same SEO pattern as artist shop pages (`buildArtistTitle` / `buildArtistOgTitle` in [`lib/seo/artist-meta.ts`](../../../lib/seo/artist-meta.ts)), or **Early access — …** when `unlisted=1` is present (`buildExperienceArtistTitles`).
+- **Description**: [`buildArtistDescription`](../../../lib/seo/artist-meta.ts) when the profile resolves; otherwise a short Street Lamp line using the slug.
+- **Image**: Artist profile image when [`getCachedArtistProfile`](../../../lib/shop/cached-shop-data.ts) returns one.
 
-This applies to Open Graph (Facebook, WhatsApp, iMessage, etc.) and Twitter Card previews. Implemented via `generateMetadata` in [`app/shop/experience/page.tsx`](../../../app/shop/experience/page.tsx), which calls the artist-spotlight API server-side to resolve the artist and image.
+This applies to Open Graph and Twitter Card previews on both [`app/(store)/shop/experience/page.tsx`](../../../app/(store)/shop/experience/page.tsx) and [`app/(store)/shop/experience-v2/page.tsx`](../../../app/(store)/shop/experience-v2/page.tsx) via [`lib/seo/experience-metadata.ts`](../../../lib/seo/experience-metadata.ts).
 
 ## Version
 
-- Last updated: 2026-03-08
-- Version: 1.3.0
+- Last updated: 2026-04-06
+- Version: 1.4.0

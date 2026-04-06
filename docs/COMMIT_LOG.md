@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: fix(seo): experience pages use artist metadata, not “Experience V2” (2026-04-06)
+
+**Ref:** _(see `git log -1 --oneline` — message contains `fix(seo): experience pages use artist metadata`)_
+
+### Summary
+**`/shop/experience`** and **`/shop/experience-v2`** used static **`Experience V2 | Street Collector`** titles, so shared and early-access links showed internal naming instead of the artist. Both routes now use **`generateMetadata`** and **[`buildShopExperienceMetadata`](lib/seo/experience-metadata.ts)** with **`getCachedArtistProfile`** plus **[`buildExperienceArtistTitles`](lib/seo/artist-meta.ts)** (early access when **`unlisted=1`**). Generic visits without **`?artist=`** use **Street Lamp builder | Street Collector**. Shop experience wizard doc updated.
+
+### Implementation Checklist
+
+- [x] [lib/seo/artist-meta.ts](lib/seo/artist-meta.ts) — `buildExperienceArtistTitles`
+- [x] [lib/seo/experience-metadata.ts](lib/seo/experience-metadata.ts) — shared metadata builder
+- [x] [app/(store)/shop/experience/page.tsx](app/(store)/shop/experience/page.tsx)
+- [x] [app/(store)/shop/experience-v2/page.tsx](app/(store)/shop/experience-v2/page.tsx)
+- [x] [docs/features/shop-experience-wizard/README.md](docs/features/shop-experience-wizard/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(admin): early access URLs show full token in multiline fields (2026-04-06)
 
 **Ref:** _(set with `git log -1 --oneline` after merge; message contains `fix(admin): show full early access token`)_
