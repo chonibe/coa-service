@@ -20,9 +20,9 @@ const loadSpline3DPreview = () =>
 const Spline3DPreview = dynamic(loadSpline3DPreview, {
   ssr: false,
   loading: () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-neutral-900">
+    <div className="absolute inset-0 flex items-center justify-center bg-transparent">
       <div
-        className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-white/90"
+        className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-400/50 border-t-neutral-700 dark:border-white/25 dark:border-t-white/90"
         aria-hidden
       />
     </div>
@@ -109,8 +109,8 @@ export function CarouselStripLampSpline({
 
   const errorFallback = useMemo(
     () => (
-      <div className="relative h-full w-full">
-        <Image src={facadeSrc} alt="" fill className="object-cover" sizes="56px" unoptimized />
+      <div className="relative h-full w-full bg-transparent">
+        <Image src={facadeSrc} alt="" fill className="object-contain" sizes="80px" unoptimized />
       </div>
     ),
     [facadeSrc]
@@ -118,8 +118,8 @@ export function CarouselStripLampSpline({
 
   if (!splineReady) {
     return (
-      <div className={cn('relative h-full w-full', className)}>
-        <Image src={facadeSrc} alt="" fill className="object-cover" sizes="56px" unoptimized />
+      <div className={cn('relative h-full w-full bg-transparent', className)}>
+        <Image src={facadeSrc} alt="" fill className="object-contain" sizes="80px" unoptimized />
       </div>
     )
   }
@@ -139,6 +139,7 @@ export function CarouselStripLampSpline({
           animate
           interactive={false}
           idleSpinEnabled={idleSpinEnabled}
+          cameraFeedMode
           className="relative h-full w-full min-h-0 min-w-0"
           swapLampSides
           flipForSide="B"

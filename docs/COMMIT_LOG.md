@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: feat(experience): carousel mini Spline — strip centering, transparent canvas, larger tile, + add (2026-04-06)
+
+**Ref:** _(set after commit)_
+
+### Summary
+**[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)**: horizontal strip uses **`items-center`**; mini lamp thumb **`w-16` / `sm:w-[4.5rem]`**, **transparent** inner wrapper; **glass +** after the lamp (collection + **`onOpenPicker`**) opens the artwork picker; embed/fallback turntable sizing nudged. **[`CarouselStripLampSpline`](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)**: **`cameraFeedMode`** on [`Spline3DPreview`](app/template-preview/components/spline-3d-preview.tsx) for **transparent WebGL clear**; loading spinner + facade use **transparent / object-contain**.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience/components/CarouselStripLampSpline.tsx](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): hide sticky cart thumbnails while carousel is in view (2026-04-06)
 
 **Ref:** `e4ed0d122`
