@@ -48,7 +48,7 @@ function BundlePortraitThumb({
           alt=""
           fill
           unoptimized
-          className="object-cover"
+          className={cn('object-cover', onPress && 'pointer-events-none')}
           sizes="(max-width: 640px) 56px, 96px"
           priority={priority}
           loading={priority ? 'eager' : 'lazy'}
@@ -126,8 +126,9 @@ export function FeaturedArtistBundleSection({
 }: FeaturedArtistBundleSectionProps) {
   const disabled = offer.disabled === true
   const lampAddable = !disabled && Boolean(onThumbnailAddLamp) && lamp.availableForSale !== false
+  /** Match lamp: allow when availability unknown (some bundle payloads omit the flag). */
   const printAddable = (p: ShopifyProduct) =>
-    !disabled && Boolean(onThumbnailAddArtwork) && p.availableForSale
+    !disabled && Boolean(onThumbnailAddArtwork) && p.availableForSale !== false
 
   return (
     <section

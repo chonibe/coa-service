@@ -1143,7 +1143,7 @@ export function ExperienceV2Client({
 
   const handleFeaturedBundleThumbAddArtwork = useCallback(
     (product: ShopifyProduct) => {
-      if (!product.availableForSale) return
+      if (product.availableForSale === false) return
       setCartOrder((prev) => {
         if (prev.includes(product.id)) return prev
         const nextCart = [...prev, product.id]
