@@ -241,7 +241,7 @@ export function SplineFullScreen({
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
-  /** Compact glass control — docked top-left (`fixed` + z above experience carousel strip). */
+  /** Compact glass control — docked below app chrome (`fixed` top-left; clears header + shipping strip in [`ExperienceSlideoutMenu`](../../experience-v2/ExperienceSlideoutMenu.tsx)). */
   const backToTopIconClass = cn(
     'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-[0.96]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-md',
@@ -842,13 +842,14 @@ export function SplineFullScreen({
         )}
       </div>
 
-      {/* Docked back-to-top — top-left; fixed + z above sibling carousel overlay (z-50) */}
+      {/* Docked back-to-top — left edge, below experience header + shipping strip; fixed z above carousel (z-50) */}
       {hasGallery && backToTopDocked && (
         <div
-          className="pointer-events-none fixed left-4 z-[55] md:left-6"
-          style={{
-            top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-          }}
+          className={cn(
+            'pointer-events-none fixed left-4 z-[55] md:left-6',
+            /* h-14 (3.5rem) / sm:h-16 (4rem) + ~1.75rem shipping row + 0.5rem gap — matches ExperienceSlideoutMenu */
+            'top-[calc(env(safe-area-inset-top,0px)+3.5rem+1.75rem+0.5rem)] sm:top-[calc(env(safe-area-inset-top,0px)+4rem+1.75rem+0.5rem)]'
+          )}
         >
           <button
             type="button"
