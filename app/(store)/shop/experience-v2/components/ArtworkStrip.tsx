@@ -17,12 +17,52 @@ import {
   getStripCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
 import { EditionBadgeForProduct } from './EditionBadge'
+import {
+  experienceArtworkUnitUsd,
+  normalizeExperienceProductKey,
+} from '@/lib/shop/experience-artwork-unit-price'
+import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
 
 const MERGE_CONFETTI_COUNT = 16
 const MERGE_CONFETTI_COLORS = ['#047AFF', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
+
+/** Match OrderBar: featured bundle unit → reserve lock → street ladder → Shopify min variant. */
+function stripArtworkUnitUsd(
+  product: ShopifyProduct,
+  lockedArtworkPrices: Record<string, number> | undefined,
+  streetLadderPrices: Record<string, number> | undefined,
+  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined
+): number {
+  const k = normalizeExperienceProductKey(product.id)
+  const bundleUnit = featuredBundleCheckout?.artworkUnitUsdByNumericId[k]
+  if (bundleUnit != null && bundleUnit > 0) return bundleUnit
+  return experienceArtworkUnitUsd(product, {
+    lockedUsdByProductId: lockedArtworkPrices,
+    streetLadderUsdByProductId: streetLadderPrices,
+  })
+}
+
+function formatStripPrice(
+  product: ShopifyProduct,
+  isEarlyAccess: boolean,
+  lockedArtworkPrices: Record<string, number> | undefined,
+  streetLadderPrices: Record<string, number> | undefined,
+  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined
+): { main: string; compareAt: string | null } {
+  const base = stripArtworkUnitUsd(product, lockedArtworkPrices, streetLadderPrices, featuredBundleCheckout)
+  if (!(base > 0)) return { main: '', compareAt: null }
+  if (isEarlyAccess) {
+    const discounted = Math.round(base * 0.9 * 100) / 100
+    return {
+      main: `$${formatPriceCompact(discounted)}`,
+      compareAt: `$${formatPriceCompact(base)}`,
+    }
+  }
+  return { main: `$${formatPriceCompact(base)}`, compareAt: null }
+}
 
 const CONFETTI_DELAY_MS = 320
 
@@ -177,6 +217,10 @@ interface ArtworkCardProps {
   isMobile?: boolean
   /** Both artworks in 2-up row in cart — no per-card ring (shared row tint). */
   suppressSelectionRing?: boolean
+  /** Align card price with OrderBar / checkout (ladder, locks, bundle). */
+  lockedArtworkPrices?: Record<string, number>
+  streetLadderPrices?: Record<string, number>
+  featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
 
 function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
@@ -214,11 +258,21 @@ function ArtworkCard({
   tapNudgeDelay = 0,
   isMobile = false,
   suppressSelectionRing = false,
+  lockedArtworkPrices,
+  streetLadderPrices,
+  featuredBundleCheckout,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
   const isLampSelection = lampPosition === 1 || lampPosition === 2
   const inWishlist = isInWishlist(product.id)
+  const { main: stripPriceMain, compareAt: stripPriceCompareAt } = formatStripPrice(
+    product,
+    isEarlyAccess,
+    lockedArtworkPrices,
+    streetLadderPrices,
+    featuredBundleCheckout
+  )
 
   const handleWishlistToggle = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -228,7 +282,16 @@ function ArtworkCard({
         removeItem(product.id)
       } else {
         const variantId = product.variants?.edges?.[0]?.node?.id ?? ''
-        const price = parseFloat(product.priceRange?.minVariantPrice?.amount || '0')
+        const unitUsd = stripArtworkUnitUsd(
+          product,
+          lockedArtworkPrices,
+          streetLadderPrices,
+          featuredBundleCheckout
+        )
+        const price =
+          unitUsd > 0
+            ? unitUsd
+            : parseFloat(product.priceRange?.minVariantPrice?.amount || '0')
         addItem({
           productId: product.id,
           variantId,
@@ -240,7 +303,7 @@ function ArtworkCard({
         })
       }
     },
-    [product, inWishlist, addItem, removeItem]
+    [product, inWishlist, addItem, removeItem, lockedArtworkPrices, streetLadderPrices, featuredBundleCheckout]
   )
 
   const handleLampSelect = useCallback(() => {
@@ -437,13 +500,13 @@ function ArtworkCard({
               'text-xs transition-colors duration-200 ease-out',
               isInCart ? 'text-neutral-600 dark:text-[#d4b8b8]' : 'text-neutral-500 dark:text-[#c4a0a0]',
               isEarlyAccess && 'text-violet-600 dark:text-violet-400 font-semibold'
-            )}>{formatPrice(product, isEarlyAccess)}</p>
-            {isEarlyAccess && product.priceRange?.minVariantPrice?.amount && (
+            )}>{stripPriceMain}</p>
+            {isEarlyAccess && stripPriceCompareAt && (
               <p className={cn(
                 'text-[10px] line-through',
                 isInCart ? 'text-neutral-500 dark:text-[#c4a0a0]' : 'text-neutral-400 dark:text-[#a09090]'
               )}>
-                ${formatPriceCompact(parseFloat(product.priceRange.minVariantPrice.amount))}
+                {stripPriceCompareAt}
               </p>
             )}
           </div>
@@ -582,17 +645,10 @@ interface ArtworkStripProps {
   spotlightUnlisted?: boolean
   /** When true, show Information button in card bottom bar (mobile) */
   isMobile?: boolean
-}
-
-function formatPrice(product: ShopifyProduct, isEarlyAccess = false): string {
-  const amount = product.priceRange?.minVariantPrice?.amount
-  if (!amount) return ''
-  const originalPrice = parseFloat(amount)
-  if (isEarlyAccess) {
-    const discountedPrice = Math.round(originalPrice * 0.9 * 100) / 100
-    return `$${formatPriceCompact(discountedPrice)}`
-  }
-  return `$${formatPriceCompact(originalPrice)}`
+  /** Same maps as OrderBar so selector prices match cart / Stripe lines */
+  lockedArtworkPrices?: Record<string, number>
+  streetLadderPrices?: Record<string, number>
+  featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
 
 const SENTINEL_HEIGHT = 80
@@ -648,6 +704,9 @@ export function ArtworkStrip({
   newDropProductIds,
   spotlightUnlisted = false,
   isMobile = false,
+  lockedArtworkPrices,
+  streetLadderPrices,
+  featuredBundleCheckout,
 }: ArtworkStripProps) {
   // Tap-nudge: pick 4 random card indices, animate them one by one until user taps any card
   const [nudgeDone, setNudgeDone] = useState(false)
@@ -848,6 +907,9 @@ export function ArtworkStrip({
                       tapNudgeDelay={nudgeIndices.indexOf(g1) * 1.2}
                       isMobile={isMobile}
                       suppressSelectionRing={shouldMerge}
+                      lockedArtworkPrices={lockedArtworkPrices}
+                      streetLadderPrices={streetLadderPrices}
+                      featuredBundleCheckout={featuredBundleCheckout}
                     />
                   </div>
                 )}
@@ -898,6 +960,9 @@ export function ArtworkStrip({
                       tapNudgeDelay={nudgeIndices.indexOf(g2) * 1.2}
                       isMobile={isMobile}
                       suppressSelectionRing={shouldMerge}
+                      lockedArtworkPrices={lockedArtworkPrices}
+                      streetLadderPrices={streetLadderPrices}
+                      featuredBundleCheckout={featuredBundleCheckout}
                     />
                   </div>
                 )}
@@ -933,6 +998,9 @@ export function ArtworkStrip({
                       showTapNudge={!nudgeDone && nudgeIndices.includes(g1)}
                       tapNudgeDelay={nudgeIndices.indexOf(g1) * 1.2}
                       isMobile={isMobile}
+                      lockedArtworkPrices={lockedArtworkPrices}
+                      streetLadderPrices={streetLadderPrices}
+                      featuredBundleCheckout={featuredBundleCheckout}
                     />
                   </div>
                 )}

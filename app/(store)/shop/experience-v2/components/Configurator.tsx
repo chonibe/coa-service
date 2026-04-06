@@ -364,58 +364,6 @@ export function Configurator({
     return out
   }, [allProducts])
 
-  const [streetEditionByProductId, setStreetEditionByProductId] = useState<
-    Record<string, StreetEditionStatesRow>
-  >({})
-  const [lockedArtworkPrices, setLockedArtworkPrices] = useState<Record<string, number>>({})
-
-  useEffect(() => {
-    if (allProducts.length === 0) return
-    const ids = allProducts
-      .map((p) => normalizeShopifyProductId(p.id))
-      .filter((x): x is string => !!x)
-    if (ids.length === 0) return
-    let cancelled = false
-    const t = window.setTimeout(() => {
-      void fetchStreetEditionStatesMap(ids)
-        .then((map) => {
-          if (!cancelled) setStreetEditionByProductId(map)
-        })
-        .catch(() => {})
-    }, 400)
-    return () => {
-      cancelled = true
-      clearTimeout(t)
-    }
-  }, [allProducts])
-
-  const streetLadderPrices = useMemo(() => {
-    const m: Record<string, number> = {}
-    for (const [id, row] of Object.entries(streetEditionByProductId)) {
-      if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
-    }
-    return m
-  }, [streetEditionByProductId])
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setLockedArtworkPrices({})
-      return
-    }
-    fetch('/api/shop/reserve/locks', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { locks: [] }))
-      .then((j: { locks?: Array<{ shopify_product_id: string; locked_price_usd: number }> }) => {
-        const m: Record<string, number> = {}
-        for (const row of j.locks || []) {
-          if (row.shopify_product_id && row.locked_price_usd > 0) {
-            m[row.shopify_product_id] = row.locked_price_usd
-          }
-        }
-        setLockedArtworkPrices(m)
-      })
-      .catch(() => setLockedArtworkPrices({}))
-  }, [isAuthenticated])
-
   const [previewIndex, setPreviewIndex] = useState(0)
   const [imageScale, setImageScale] = useState(DEFAULT_SIDE_POSITION.scale)
   const [imageOffsetX, setImageOffsetX] = useState(DEFAULT_SIDE_POSITION.offsetX)
@@ -2352,6 +2300,9 @@ export function Configurator({
             onLoadMore={() => loadMoreForSeason(activeSeason)}
             isLoadingMore={loadingMore}
             isMobile={isMobile}
+            lockedArtworkPrices={lockedArtworkPrices}
+            streetLadderPrices={streetLadderPrices}
+            featuredBundleCheckout={featuredArtistBundleActive ? featuredBundleCheckoutPayload : null}
           />
             </div>
             {/* Tap-to-deblur overlay — sibling of blur div, anchors to the outer relative wrapper */}

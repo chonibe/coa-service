@@ -628,7 +628,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
         {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
-          const lineSubtotal = experienceArtworkUnitUsd(art, priceMaps) * quantity
+          const lineSubtotal = artworkUnitUsd(art) * quantity
           return (
           <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
