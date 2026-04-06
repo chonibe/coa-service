@@ -12,26 +12,23 @@ import {
 /**
  * Artist Spotlight API
  *
- * Returns the "artist spotlight" for the experience: default is Jack J.C. Art (if the
- * collection resolves), then the newest eligible artist in Season 2 (2025-edition),
- * then the newest Shopify product — skipping vendors in `DEFAULT_SPOTLIGHT_SKIP_VENDORS`
- * and any vendor with `vendors.artist_spotlight_enabled = false` (admin Vendors UI).
- * `?artist=` affiliate links ignore those flags. Used for the experience banner, filters,
- * "New Drop" badge, and artist info card.
+ * Returns the "artist spotlight" for the experience: default is the newest **eligible**
+ * artist in Season 2 (2025-edition), then the newest eligible Shopify product, then
+ * Supabase series — then **Jack J.C. Art** only as a fallback when those paths do not
+ * resolve. Vendors with `vendors.artist_spotlight_enabled = false` are skipped (admin).
+ * `?artist=` affiliate links ignore the spotlight-enabled flag. Used for the experience
+ * banner, filters, "New Drop" badge, and artist info card.
  */
 
 const SEASON_2_HANDLE = '2025-edition'
-
-/** Vendors excluded from *automatic* default spotlight (Season 2 / Shopify newest). `?artist=` still works. */
-const DEFAULT_SPOTLIGHT_SKIP_VENDORS = new Set(['saturn_png'])
 
 function normalizeVendorForSpotlight(name: string | null | undefined): string {
   return (name ?? '').trim().toLowerCase().replace(/\s+/g, '_')
 }
 
+/** Season 2 / Shopify automatic picks skip rows with no vendor only. */
 function shouldSkipDefaultSpotlightVendor(vendor: string | null | undefined): boolean {
-  const key = normalizeVendorForSpotlight(vendor)
-  return !key || DEFAULT_SPOTLIGHT_SKIP_VENDORS.has(key)
+  return !normalizeVendorForSpotlight(vendor)
 }
 
 export async function GET(request: Request) {
@@ -60,7 +57,16 @@ export async function GET(request: Request) {
       }
     }
 
-    // Default: Jack J.C. Art spotlight first, then latest artist (Season 2, Shopify, Supabase)
+    // Default: newest in Season 2, then Shopify, then Supabase — Jack J.C. Art last (fallback only)
+    const season2Result = await trySeason2LatestSpotlight(supabase)
+    if (season2Result && !season2Result.unlisted) return NextResponse.json(season2Result)
+
+    const shopifyResult = await tryShopifySpotlight(supabase)
+    if (shopifyResult && !shopifyResult.unlisted) return NextResponse.json(shopifyResult)
+
+    const supabaseResult = await trySupabaseSpotlight(supabase)
+    if (supabaseResult && !supabaseResult.unlisted) return NextResponse.json(supabaseResult)
+
     const jackJcArtHandles = ['jack-jc-art', 'jack-j-c-art', 'jack-jc-art-one', 'jack-j-c-art-one']
     for (const h of jackJcArtHandles) {
       const jackResult = await tryCollectionSpotlight(supabase, h, {
@@ -69,17 +75,6 @@ export async function GET(request: Request) {
       })
       if (jackResult && !jackResult.unlisted) return NextResponse.json(jackResult)
     }
-
-    const season2Result = await trySeason2LatestSpotlight(supabase)
-    if (season2Result && !season2Result.unlisted) return NextResponse.json(season2Result)
-
-    // 1. Try Shopify: most recently created/activated product (Storefront returns published only); skip if unlisted
-    const shopifyResult = await tryShopifySpotlight(supabase)
-    if (shopifyResult && !shopifyResult.unlisted) return NextResponse.json(shopifyResult)
-
-    // 2. Fallback: Supabase artwork_series_members (most recently added to series); skip if unlisted
-    const supabaseResult = await trySupabaseSpotlight(supabase)
-    if (supabaseResult && !supabaseResult.unlisted) return NextResponse.json(supabaseResult)
 
     return NextResponse.json(null)
   } catch (error) {

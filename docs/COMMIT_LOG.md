@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(shop): artist spotlight — Season 2 before Jack J.C. Art fallback (2026-04-06)
+
+**Ref:** _(see `git log -1 --oneline`)_
+
+### Summary
+
+[`app/api/shop/artist-spotlight/route.ts`](app/api/shop/artist-spotlight/route.ts) no longer tries **Jack J.C. Art** before Season 2. Default order is **2025-edition (Season 2) → newest Shopify → Supabase → Jack collections** (last). Removed the **`saturn_png`** hard skip so the newest Season 2 vendor can spotlight. Admin **`artist_spotlight_enabled`** still applies. Docs: [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md), [`docs/COMMIT_LOGS/experience-spotlight-order-jack-fallback-2026-04-06.md`](docs/COMMIT_LOGS/experience-spotlight-order-jack-fallback-2026-04-06.md).
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-spotlight/route.ts](app/api/shop/artist-spotlight/route.ts)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOGS/experience-spotlight-order-jack-fallback-2026-04-06.md](docs/COMMIT_LOGS/experience-spotlight-order-jack-fallback-2026-04-06.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): carousel mini Spline tile — turntable spin, no hover (2026-04-06)
 
 **Ref:** _(see `git log -1 --oneline`)_
