@@ -2,7 +2,7 @@
 
 ## Commit: feat(shop): admin tiered standard shipping free over $70 / $10 below (2026-04-06)
 
-**Ref:** `c20d5a74d`
+**Ref:** `014cf0d52`
 
 ### Summary
 New boolean **`shippingFreeOver70`** in **`system_settings.shop_discount_flags`** (admin **Shop discounts**). When enabled, Stripe Checkout standard shipping is **$10** under **$70** merchandise subtotal and **free** at or above $70; express stays **$15**. When disabled, behavior matches legacy (**free** standard + express). Shared builder [`lib/shop/stripe-checkout-shipping.ts`](lib/shop/stripe-checkout-shipping.ts) wires [`app/api/checkout/stripe/route.ts`](app/api/checkout/stripe/route.ts) and [`app/api/checkout/create/route.ts`](app/api/checkout/create/route.ts). Public [`GET /api/shop/shipping-promo`](app/api/shop/shipping-promo/route.ts) and [`lib/shop/CartContext.tsx`](lib/shop/CartContext.tsx) align the product page and [`components/shop/navigation/NavCart.tsx`](components/shop/navigation/NavCart.tsx).
