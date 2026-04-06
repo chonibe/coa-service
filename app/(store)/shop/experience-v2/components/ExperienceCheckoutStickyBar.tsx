@@ -197,48 +197,8 @@ export function ExperienceCheckoutStickyBar({
                   <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
                 </button>
               ) : null}
-              {/* Thumbnails hug the checkout button (right); extra space stays left of this block. */}
-              <div className="flex min-w-0 flex-1 justify-end md:hidden">
-                <div className="flex min-w-0 max-w-full items-center justify-end gap-1.5">
-                  <div className="relative shrink-0">
-                    <StickyThumb product={lamp} isLamp theme={theme} />
-                    {lampQuantity > 1 ? (
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#047AFF] px-1 text-[9px] font-bold tabular-nums text-white shadow-sm ring-2 ring-white dark:ring-[#1c1919]"
-                        aria-label={`${lampQuantity} lamps`}
-                      >
-                        {lampQuantity}
-                      </span>
-                    ) : null}
-                  </div>
-                  {selectedArtworks.length >= 1 ? (
-                    <>
-                      {selectedArtworks.slice(0, 2).map((p) => (
-                        <Fragment key={p.id}>
-                          <PlusSep theme={theme} />
-                          <StickyThumb product={p} isLamp={false} theme={theme} />
-                        </Fragment>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      <PlusSep theme={theme} />
-                      <p
-                        className={cn(
-                          'min-w-0 shrink text-sm font-semibold leading-tight',
-                          theme === 'light' ? 'text-neutral-900' : 'text-white'
-                        )}
-                      >
-                        <span className="tabular-nums">{selectedArtworks.length}</span>
-                        <span>
-                          {selectedArtworks.length === 1 ? ' artwork' : ' artworks'}
-                        </span>
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="hidden min-w-0 flex-1 justify-end md:flex">
+              {/* Thumbnails hug the checkout button (right). Same slots on all breakpoints — lamp tiles only when lampQuantity > 0. */}
+              <div className="flex min-w-0 flex-1 justify-end">
                 <div className="flex max-w-full min-w-0 items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
                   {visibleSlots.map((slot, index) => (
                     <Fragment key={slot.key}>
