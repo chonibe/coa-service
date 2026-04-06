@@ -2,7 +2,7 @@
 
 ## Commit: fix(shop): product video embed matches home VideoPlayer load pattern (2026-04-06)
 
-**Ref:** `15b52aa61`
+**Ref:** `07a6fbca2`
 
 ### Summary
 **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** progressive (non-HLS) native video now mirrors **[`VideoPlayer`](components/sections/VideoPlayer.tsx)**: **`preload="none"`**, **250ms deferred `src`** so the poster paints first, and **`<source type="…">`** from new helpers **[`shopifyMimeTypeForPlaybackUrl`](lib/shop/product-carousel-slides.ts)** / [`shopifyProgressiveVideoMimeTypeFromUrl`](lib/shop/product-carousel-slides.ts). **Tests:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts). **Docs:** [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md).
