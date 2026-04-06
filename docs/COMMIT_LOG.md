@@ -2,7 +2,7 @@
 
 ## Commit: feat(experience): hide sticky cart thumbnails while carousel is in view (2026-04-06)
 
-**Ref:** `1b2744b33`
+**Ref:** `e4ed0d122`
 
 ### Summary
 **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** adds **`suppressCartThumbnails`**: when **`splineInView`** (Spline + bottom [`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) visible), the **thumbnail strip** is omitted so the sticky bar does not duplicate the carousel; **add-artwork FAB** and **Checkout · $** remain. Both **[`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)** entry points pass **`suppressCartThumbnails={splineInView}`**.
