@@ -1,5 +1,33 @@
 # Commit Log
 
+## Commit: feat(experience-v2): priority journey next-action pulse and shine on CTAs (2026-04-06)
+
+**Ref:** `06d4e5ee6`
+
+### Summary
+Introduces **`resolveExperienceNextAction`** so one funnel step at a time gets **`animate-experience-artwork-cta-pulse`** plus **`.experience-journey-cta-shine`**. **`ExperienceOrderContext`** gains **`pickerEngaged`** / **`orderDrawerOpen`** so the sticky bar and resolver stay consistent with the artwork picker and checkout drawer. **OrderBar** syncs drawer state and highlights address, payment, Done, and Place order rows as appropriate.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-journey-next-action.ts](lib/shop/experience-journey-next-action.ts) — resolver + `EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS`
+- [x] [lib/shop/experience-journey-next-action.test.ts](lib/shop/experience-journey-next-action.test.ts)
+- [x] [app/(store)/shop/experience-v2/ExperienceOrderContext.tsx](app/(store)/shop/experience-v2/ExperienceOrderContext.tsx) — `pickerEngaged`, `orderDrawerOpen`
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkDetail.tsx](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/LampGridCard.tsx](app/(store)/shop/experience-v2/components/LampGridCard.tsx)
+- [x] [app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx](app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx)
+- [x] [app/(store)/shop/experience-v2/components/OrderBar.tsx](app/(store)/shop/experience-v2/components/OrderBar.tsx)
+- [x] [app/globals.css](app/globals.css) — shine keyframes + utility
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): featured bundle under Spline — resolve spotlight pair + always show card (2026-04-06)
 
 **Ref:** `c0b7bfe40`
