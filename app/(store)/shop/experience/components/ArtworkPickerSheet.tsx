@@ -656,6 +656,7 @@ export function ArtworkPickerSheet({
                     onSelect={onSpotlightSelect}
                     showBadge
                     expanded={spotlightAccordionExpanded}
+                    featuredBundleOffer={featuredBundleOffer ?? undefined}
                   />
                 </div>
               )}

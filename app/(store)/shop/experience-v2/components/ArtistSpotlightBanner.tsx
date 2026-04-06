@@ -3,7 +3,8 @@
 import Image from 'next/image'
 import { Instagram, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
+import type { FeaturedBundleFilterOffer } from './FilterPanel'
 
 export interface SpotlightData {
   vendorName: string
@@ -68,6 +69,8 @@ interface ArtistSpotlightBannerProps {
   expanded?: boolean
   /** When true, no outer ring / nested card fill — sits flush inside a parent panel (e.g. horizontal detail gallery) */
   embedded?: boolean
+  /** Lamp + 2 spotlight prints bundle CTA (selector + inline experience banner) */
+  featuredBundleOffer?: FeaturedBundleFilterOffer | null
 }
 
 export function ArtistSpotlightBanner({
@@ -77,6 +80,7 @@ export function ArtistSpotlightBanner({
   showBadge = false,
   expanded = true,
   embedded = false,
+  featuredBundleOffer,
 }: ArtistSpotlightBannerProps) {
   const isCollapsible = !!onSelect
   const isExpanded = isCollapsible ? expanded : true
@@ -202,6 +206,50 @@ export function ArtistSpotlightBanner({
                 )}
               </div>
             )}
+            {featuredBundleOffer ? (
+              <div
+                className={cn(
+                  'mt-4 w-full max-w-sm rounded-xl border p-3 text-left',
+                  spotlight.unlisted
+                    ? 'border-violet-400/35 bg-violet-950/20'
+                    : 'border-amber-200/80 bg-amber-50/90 dark:border-[#FFBA94]/35 dark:bg-[#2a2420]/90'
+                )}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                role="presentation"
+              >
+                <p
+                  className={cn(
+                    'mb-2 text-xs font-semibold uppercase tracking-wider',
+                    spotlight.unlisted ? 'text-violet-200' : 'text-amber-900 dark:text-[#FFBA94]'
+                  )}
+                >
+                  Featured artist bundle
+                </p>
+                <button
+                  type="button"
+                  disabled={featuredBundleOffer.disabled}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    featuredBundleOffer.onApply()
+                  }}
+                  className={cn(
+                    'w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors',
+                    featuredBundleOffer.disabled
+                      ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
+                      : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                  )}
+                >
+                  Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
+                </button>
+                <p className="mt-2 text-xs text-neutral-600 dark:text-[#c4a0a0] leading-snug">
+                  <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
+                    ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
+                  </span>{' '}
+                  <span className="text-neutral-500 dark:text-[#b89090]">regular</span> for lamp + 2 prints
+                </p>
+              </div>
+            ) : null}
           </div>
         ) : (
           /* Collapsed: compact row with artist image, name, artwork thumbnails */
@@ -274,6 +322,38 @@ export function ArtistSpotlightBanner({
             <ChevronDown className="w-4 h-4 shrink-0 text-neutral-500 dark:text-[#c4a0a0]" aria-hidden />
           </div>
         )}
+        {featuredBundleOffer && !isExpanded ? (
+          <div
+            className={cn(
+              'border-t px-3 py-3',
+              spotlight.unlisted ? 'border-violet-500/25' : 'border-neutral-200 dark:border-white/10'
+            )}
+            onClick={(e) => e.stopPropagation()}
+            role="presentation"
+          >
+            <button
+              type="button"
+              disabled={featuredBundleOffer.disabled}
+              onClick={(e) => {
+                e.stopPropagation()
+                featuredBundleOffer.onApply()
+              }}
+              className={cn(
+                'w-full rounded-lg px-3 py-2 text-center text-xs font-semibold transition-colors sm:text-sm',
+                featuredBundleOffer.disabled
+                  ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
+                  : spotlight.unlisted
+                    ? 'bg-violet-600 text-white hover:bg-violet-500'
+                    : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+              )}
+            >
+              Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
+            </button>
+            <p className="mt-1.5 text-center text-[10px] text-neutral-500 dark:text-[#b89090] sm:text-xs">
+              <span className="line-through tabular-nums">${formatPriceCompact(featuredBundleOffer.compareAtUsd)}</span> regular
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   )

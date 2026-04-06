@@ -1,5 +1,25 @@
 # Commit Log
 
+## Commit: feat(shop): featured bundle CTA on experience sticky bar + spotlight banner (2026-04-06)
+
+**Ref:** `0fabc6fa7`
+
+### Summary
+The **$159 featured artist bundle** CTA is no longer only in the filter slideout. It appears on **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** (main experience: above “Choose your first artwork” when the cart is empty, or above the checkout row when the bundle is not yet active) and inside **[`ArtistSpotlightBanner`](app/(store)/shop/experience-v2/components/ArtistSpotlightBanner.tsx)** in the selector / Configurator (collapsed footer + expanded card). **[`ArtworkPickerSheet`](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)** passes `featuredBundleOffer` into the banner.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/ArtistSpotlightBanner.tsx](app/(store)/shop/experience-v2/components/ArtistSpotlightBanner.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): spotlight `products` for default bundle CTA + disabled when OOS (2026-04-06)
 
 **Ref:** `a086d6657`

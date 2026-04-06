@@ -1587,6 +1587,7 @@ export function ExperienceV2Client({
         stripMode={carouselStripMode}
         onOpenPicker={handleOpenPicker}
         featuredBundleVendorName={featuredArtistBundleActive ? spotlightData?.vendorName : undefined}
+        featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
       />
 
       <OrderBar

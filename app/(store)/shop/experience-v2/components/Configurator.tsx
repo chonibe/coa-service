@@ -2165,6 +2165,7 @@ export function Configurator({
                 onSelect={handleSpotlightSelect}
                 showBadge
                 expanded={spotlightExpanded}
+                featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
               />
             </div>
           ) : null}
