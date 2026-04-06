@@ -2,7 +2,7 @@
 
 ## Commit: fix(experience): disable Spline lamp cursor/touch orbit globally (2026-04-06)
 
-**Ref:** `TBD`
+**Ref:** `6268d429b`
 
 ### Summary
 The 3D lamp no longer tracks the pointer for yaw/pitch. **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** always passes **`interactive={false}`** to **`Spline3DPreview`**; **[`Configurator`](app/(store)/shop/experience-v2/components/Configurator.tsx)** no longer enables **`interactive`**. **`collectionArtworkCount`** still controls **idle turntable** vs **`lampPreviewCount`** rules only. Docs updated in **[`docs/features/experience/README.md`](docs/features/experience/README.md)** and **[`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md)**.
