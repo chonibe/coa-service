@@ -1,5 +1,27 @@
 # Commit Log
 
+## Commit: fix(experience): full artist filter list via paginated collection-vendors API (2026-04-06)
+
+**Ref:** `038459b1f`
+
+### Summary
+Experience SSR loads only **24 products per season**; the filter could show **24/25** artists when one vendor’s works were not on the first page. **[`GET /api/shop/experience/collection-vendors`](app/api/shop/experience/collection-vendors/route.ts)** paginates **season-1** + **2025-edition** with minimal Storefront fields, merges vendor counts, and sorts like **`FilterPanel`**. **[`useExperienceArtistCatalog`](lib/shop/use-experience-artist-catalog.ts)** + **`artistCatalog`** / **`artistCatalogForFilters`** wire this into the picker and Configurator.
+
+### Implementation Checklist
+
+- [x] [lib/shopify/storefront-client.ts](lib/shopify/storefront-client.ts)
+- [x] [app/api/shop/experience/collection-vendors/route.ts](app/api/shop/experience/collection-vendors/route.ts)
+- [x] [lib/shop/use-experience-artist-catalog.ts](lib/shop/use-experience-artist-catalog.ts)
+- [x] [app/(store)/shop/experience-v2/components/FilterPanel.tsx](app/(store)/shop/experience-v2/components/FilterPanel.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(shop): featured bundle CTA on experience sticky bar + spotlight banner (2026-04-06)
 
 **Ref:** `28f473476`
