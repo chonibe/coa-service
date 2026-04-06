@@ -66,7 +66,7 @@ The Spline preview is responsive: the model scales down as the screen becomes sm
 
 1. **Fit-within-viewport sizing**: `getContainerSize()` computes a size that fits within the container while preserving the lamp aspect ratio (4:5). On smaller screens the model scales down proportionally; on wider viewports it is letterboxed to avoid distortion.
 
-2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-6%)` (with quarter-turn rotation) so the lamp sits a bit lower than the previous `-10%` nudge while still clearing the top of the frame.
+2. **Centered canvas + vertical nudge**: The container uses `flex items-center justify-center` so the canvas is centered when letterboxing occurs. The canvas uses `max-width: 100%` and `max-height: 100%` to stay within bounds. Minimal mode applies `translateY(-3%)` (with quarter-turn rotation) to vertically frame the lamp (was `-6%`, previously `-10%`).
 
 3. **Container as single source of truth**: `getContainerSize()` uses container `getBoundingClientRect()` for renderer/camera sizing (not `canvas.clientWidth/clientHeight` which can be transitional during layout settling).
 

@@ -77,7 +77,7 @@ Wrapper around `Spline3DPreview` using **exact same configuration** as Experienc
 - Loads image position from localStorage via `loadImagePosition()`
 - Theme-aware (light/dark mode toggle)
 - Rotate/quarter-turn controls
-- Shared minimal canvas framing: `translateY(-6%)` with quarter-turn rotation in [`spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) (see [Experience README](../experience/README.md#spline-viewport-sizing-2026-03-19))
+- Shared minimal canvas framing: `translateY(-3%)` with quarter-turn rotation in [`spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) (see [Experience README](../experience/README.md#spline-viewport-sizing-2026-03-19))
 
 **Implementation:** [`components/SplineFullScreen.tsx`](../../../app/(store)/shop/experience-v2/components/SplineFullScreen.tsx)
 
