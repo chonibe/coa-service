@@ -132,8 +132,8 @@ function StickyThumb({
 }
 
 /**
- * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (add-artwork FAB + cart thumbnails unless `suppressCartThumbnails`) and a **full-width checkout button below**.
- * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays on the top row above checkout.
+ * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (cart thumbnails unless `suppressCartThumbnails`, **add-artwork + on the right**) and a **full-width checkout button below**.
+ * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays **right-aligned** on the top row above checkout.
  * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable — not in the carousel strip.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
@@ -273,18 +273,12 @@ export function ExperienceCheckoutStickyBar({
             )}
           >
             {onOpenPicker || !suppressCartThumbnails ? (
-              <div className="flex w-full min-w-0 items-center gap-3">
-                {onOpenPicker ? (
-                  <button
-                    type="button"
-                    onClick={onOpenPicker}
-                    className={cn(openPickerFabClass, 'relative z-[3] shrink-0')}
-                    aria-label="Add artwork to collection"
-                    title="Add artwork"
-                  >
-                    <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
-                  </button>
-                ) : null}
+              <div
+                className={cn(
+                  'flex w-full min-w-0 items-center gap-3',
+                  suppressCartThumbnails && onOpenPicker ? 'justify-end' : ''
+                )}
+              >
                 {!suppressCartThumbnails ? (
                   <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
                     <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
@@ -317,8 +311,17 @@ export function ExperienceCheckoutStickyBar({
                       )}
                     </div>
                   </div>
-                ) : onOpenPicker ? (
-                  <div className="min-w-0 flex-1" aria-hidden />
+                ) : null}
+                {onOpenPicker ? (
+                  <button
+                    type="button"
+                    onClick={onOpenPicker}
+                    className={cn(openPickerFabClass, 'relative z-[3] shrink-0')}
+                    aria-label="Add artwork to collection"
+                    title="Add artwork"
+                  >
+                    <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                  </button>
                 ) : null}
               </div>
             ) : null}
