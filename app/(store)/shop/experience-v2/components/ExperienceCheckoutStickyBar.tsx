@@ -9,8 +9,6 @@ import { useExperienceTheme } from '../ExperienceThemeContext'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import type { FeaturedBundleFilterOffer } from './FilterPanel'
-
 /** Portrait tiles match [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) strip (14×20, 15px radius). */
 const THUMB_WIDTH_PX = 36
 const IMAGE_REQUEST_PX = 280
@@ -29,8 +27,6 @@ export interface ExperienceCheckoutStickyBarProps {
   stripMode?: 'collection' | 'watchlist'
   /** When set, show “Featured artist bundle” label with this artist name */
   featuredBundleVendorName?: string
-  /** When set and not disabled, show bundle CTA on the main experience (above choose-artwork or checkout row) */
-  featuredBundleOffer?: FeaturedBundleFilterOffer | null
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -100,6 +96,7 @@ function StickyThumb({
 
 /**
  * Sticky bottom bar: **empty collection** shows “Choose your first artwork”; **≥1 artwork** shows thumbnails, checkout, and optional centered add FAB.
+ * Featured bundle promo (lamp + two prints) lives in [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) when the collection strip is empty.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
 export function ExperienceCheckoutStickyBar({
@@ -110,7 +107,6 @@ export function ExperienceCheckoutStickyBar({
   onOpenPicker,
   stripMode = 'collection',
   featuredBundleVendorName,
-  featuredBundleOffer,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -167,8 +163,6 @@ export function ExperienceCheckoutStickyBar({
 
   if (!visible) return null
 
-  const showBundlePromo = !!(featuredBundleOffer && !featuredBundleOffer.disabled)
-
   return (
     <div
       className={cn(
@@ -182,82 +176,18 @@ export function ExperienceCheckoutStickyBar({
       <div className="mx-auto max-w-2xl px-4 py-3 md:px-6">
         {showEmptyCollectionCta ? (
           onOpenPicker ? (
-            <div className="flex w-full flex-col gap-2">
-              {showBundlePromo && featuredBundleOffer ? (
-                <div
-                  className={cn(
-                    'w-full rounded-2xl border px-4 py-3 shadow-md',
-                    theme === 'light'
-                      ? 'border-amber-200/90 bg-amber-50/95'
-                      : 'border-[#FFBA94]/40 bg-[#2a2420]/95'
-                  )}
-                >
-                  <p
-                    className={cn(
-                      'mb-2 text-center text-[10px] font-semibold uppercase tracking-wide',
-                      theme === 'light' ? 'text-amber-900' : 'text-[#FFBA94]'
-                    )}
-                  >
-                    Featured artist bundle
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => featuredBundleOffer.onApply()}
-                    className={cn(
-                      'w-full rounded-xl px-3 py-2.5 text-center text-sm font-semibold transition-colors active:scale-[0.99]',
-                      theme === 'light'
-                        ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                        : 'bg-[#FFBA94] text-[#171515] hover:bg-[#ffc8a8]'
-                    )}
-                  >
-                    Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
-                  </button>
-                  <p className="mt-2 text-center text-xs text-neutral-600 dark:text-[#c4a0a0]">
-                    <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
-                      ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
-                    </span>{' '}
-                    regular
-                  </p>
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={onOpenPicker}
-                className={cn(chooseFirstArtworkClass, 'w-full')}
-                aria-label="Choose your first artwork"
-              >
-                <span className="min-w-0 truncate">Choose your first artwork</span>
-                <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onOpenPicker}
+              className={cn(chooseFirstArtworkClass, 'w-full')}
+              aria-label="Choose your first artwork"
+            >
+              <span className="min-w-0 truncate">Choose your first artwork</span>
+              <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
+            </button>
           ) : null
         ) : (
           <>
-            {showBundlePromo && featuredBundleOffer ? (
-              <div
-                className={cn(
-                  'mb-2 w-full rounded-xl border px-3 py-2.5',
-                  theme === 'light' ? 'border-amber-200/90 bg-amber-50/90' : 'border-[#FFBA94]/35 bg-[#2a2420]/90'
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => featuredBundleOffer.onApply()}
-                  className={cn(
-                    'w-full rounded-lg px-2 py-2 text-center text-xs font-semibold transition-colors sm:text-sm',
-                    theme === 'light'
-                      ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                      : 'bg-[#FFBA94] text-[#171515] hover:bg-[#ffc8a8]'
-                  )}
-                >
-                  Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
-                </button>
-                <p className="mt-1.5 text-center text-[10px] text-neutral-600 dark:text-[#b89090] sm:text-xs">
-                  <span className="line-through tabular-nums">${formatPriceCompact(featuredBundleOffer.compareAtUsd)}</span>{' '}
-                  regular · lamp + 2 prints
-                </p>
-              </div>
-            ) : null}
             {featuredBundleVendorName ? (
               <p
                 className={cn(

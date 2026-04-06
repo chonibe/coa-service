@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: feat(experience): featured bundle inline in carousel above choose-artwork sticky (2026-04-06)
+
+**Ref:** `bec6aa7aa`
+
+### Summary
+The **$159 featured artist bundle** is no longer promoted twice on the main experience. A **single centered card** in **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** shows **Street Lamp + two spotlight prints** (same **`w-24` / `aspect-[14/20]` / `rounded-[15px]`** as the strip), **`+` separators**, pricing, and one tap to **`onApply`**. It appears only when the **collection strip is empty**, **`reserveCheckoutBar`** is true, and the offer is enabled. **Spotlight placeholder tiles** in the strip are suppressed while this card shows. **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** keeps **“Choose your first artwork”** (and checkout when items exist) but **drops duplicate bundle promos**; **`featuredBundleVendorName`** when the bundle is active is unchanged.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): full artist filter list via paginated collection-vendors API (2026-04-06)
 
 **Ref:** `038459b1f`

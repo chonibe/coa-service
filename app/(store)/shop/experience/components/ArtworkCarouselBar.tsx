@@ -6,10 +6,72 @@ import { ChevronRight, Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
-import { cn } from '@/lib/utils'
+import { ExperienceOrderLampIcon } from '../../experience-v2/components/ExperienceOrderLampIcon'
+import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
+import { cn, formatPriceCompact } from '@/lib/utils'
 
 /** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
 const MAX_CAROUSEL_STRIP_THUMBS = 7
+
+function BundleInlinePlusSep({ theme }: { theme: 'light' | 'dark' }) {
+  return (
+    <span
+      className={cn(
+        'shrink-0 self-end pb-3 text-lg font-semibold leading-none',
+        theme === 'light' ? 'text-neutral-500' : 'text-[#d4b8b8]'
+      )}
+      aria-hidden
+    >
+      +
+    </span>
+  )
+}
+
+function BundleInlinePortraitThumb({
+  product,
+  theme,
+  isLamp,
+  priority,
+}: {
+  product: ShopifyProduct
+  theme: 'light' | 'dark'
+  isLamp?: boolean
+  priority?: boolean
+}) {
+  const imageUrl = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url
+  const label = (product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')).trim()
+  return (
+    <div
+      className="relative w-24 shrink-0 aspect-[14/20] overflow-hidden rounded-[15px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15"
+      title={label}
+    >
+      {imageUrl ? (
+        <Image
+          src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
+          alt={label}
+          fill
+          unoptimized
+          className="object-cover"
+          sizes="96px"
+          priority={priority}
+          loading={priority ? 'eager' : 'lazy'}
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-800">
+          {isLamp ? (
+            <ExperienceOrderLampIcon
+              className={cn('h-10 w-10', theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]')}
+            />
+          ) : (
+            <span className={cn('text-xs', theme === 'light' ? 'text-neutral-600' : 'text-neutral-400')}>
+              —
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  )
+}
 
 interface ArtworkCarouselBarProps {
   selectedArtworks: ShopifyProduct[]
@@ -31,6 +93,11 @@ interface ArtworkCarouselBarProps {
   onSwitchToCollection?: () => void
   /** Lift strip above fixed checkout sticky bar (≥1 artwork or empty **collection** row on sticky bar) */
   reserveCheckoutBar?: boolean
+  /** Featured bundle: shown inline above the thumb strip when collection is empty and sticky reserves the bar */
+  featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  bundlePreviewLamp?: ShopifyProduct | null
+  /** Exactly two spotlight prints; paired with `bundlePreviewLamp` for the inline bundle row */
+  bundlePreviewArtworks?: ShopifyProduct[] | null
 }
 
 export function ArtworkCarouselBar({
@@ -47,6 +114,9 @@ export function ArtworkCarouselBar({
   stripMode = 'collection',
   onSwitchToCollection,
   reserveCheckoutBar = false,
+  featuredBundleOffer = null,
+  bundlePreviewLamp = null,
+  bundlePreviewArtworks = null,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -146,8 +216,21 @@ export function ArtworkCarouselBar({
   const hasCarouselArtworks = selectedArtworks.length > 0
   const emptyCollectionStart = !hasCarouselArtworks && stripMode === 'collection'
 
+  const showFeaturedBundleInline =
+    emptyCollectionStart &&
+    reserveCheckoutBar &&
+    stripMode === 'collection' &&
+    featuredBundleOffer != null &&
+    !featuredBundleOffer.disabled &&
+    bundlePreviewLamp != null &&
+    Array.isArray(bundlePreviewArtworks) &&
+    bundlePreviewArtworks.length === 2
+
   const showSpotlightPlaceholders =
-    stripMode === 'collection' && selectedArtworks.length === 0 && spotlightPlaceholders.length > 0
+    stripMode === 'collection' &&
+    selectedArtworks.length === 0 &&
+    spotlightPlaceholders.length > 0 &&
+    !showFeaturedBundleInline
   const placeholderItems = showSpotlightPlaceholders ? spotlightPlaceholders.slice(0, 2) : []
 
   const nSelected = selectedArtworks.length
@@ -254,6 +337,56 @@ export function ArtworkCarouselBar({
                 No editions on your watchlist yet — switch back to your collection to browse, or tap Watch on an artwork.
               </p>
             )}
+            {showFeaturedBundleInline && featuredBundleOffer && bundlePreviewLamp && bundlePreviewArtworks ? (
+              <div className="mb-1 flex w-full flex-col items-center gap-3 px-1">
+                <button
+                  type="button"
+                  onClick={() => featuredBundleOffer.onApply()}
+                  className={cn(
+                    'w-full max-w-md rounded-2xl border px-4 py-4 text-left shadow-lg transition-all duration-200 active:scale-[0.99]',
+                    theme === 'light'
+                      ? 'border-amber-200/90 bg-amber-50/90 shadow-amber-200/20'
+                      : 'border-[#FFBA94]/40 bg-[#2a2420]/95 shadow-black/40'
+                  )}
+                >
+                  <p
+                    className={cn(
+                      'mb-3 text-center text-[10px] font-semibold uppercase tracking-wide',
+                      theme === 'light' ? 'text-amber-900' : 'text-[#FFBA94]'
+                    )}
+                  >
+                    Featured artist bundle
+                  </p>
+                  <div className="flex w-full min-w-0 items-end justify-center gap-2 sm:gap-3">
+                    <BundleInlinePortraitThumb
+                      product={bundlePreviewLamp}
+                      theme={theme}
+                      isLamp
+                      priority
+                    />
+                    <BundleInlinePlusSep theme={theme} />
+                    <BundleInlinePortraitThumb product={bundlePreviewArtworks[0]!} theme={theme} priority />
+                    <BundleInlinePlusSep theme={theme} />
+                    <BundleInlinePortraitThumb product={bundlePreviewArtworks[1]!} theme={theme} priority />
+                  </div>
+                  <p
+                    className={cn(
+                      'mt-3 text-center text-sm font-semibold',
+                      theme === 'light' ? 'text-neutral-900' : 'text-white'
+                    )}
+                  >
+                    Get {featuredBundleOffer.vendorName} bundle — $
+                    {formatPriceCompact(featuredBundleOffer.bundleUsd)}
+                  </p>
+                  <p className="mt-1 text-center text-xs text-neutral-600 dark:text-[#c4a0a0]">
+                    <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
+                      ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
+                    </span>{' '}
+                    regular · lamp + 2 prints
+                  </p>
+                </button>
+              </div>
+            ) : null}
           <div
             ref={scrollRef}
             data-experience-carousel-strip
