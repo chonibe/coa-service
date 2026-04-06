@@ -50,6 +50,11 @@ interface ArtworkCarouselBarProps {
   onAddLampFromCarouselStrip?: () => void
   /** Lamp in cart: trash removes lamp from order */
   onRemoveLampFromCarouselStrip?: () => void
+  /**
+   * Mobile (`max-md`): strip sits in normal flow under the header (with volume bar above when present),
+   * above the Spline reel. Desktop keeps the bottom overlay strip.
+   */
+  dockCarouselTopOnMobile?: boolean
 }
 
 export function ArtworkCarouselBar({
@@ -72,6 +77,7 @@ export function ArtworkCarouselBar({
   lampQuantity = 0,
   onAddLampFromCarouselStrip,
   onRemoveLampFromCarouselStrip,
+  dockCarouselTopOnMobile = false,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -265,18 +271,39 @@ export function ArtworkCarouselBar({
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
+  const checkoutBarLift = 'bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
+
   return (
     <div
       className={cn(
-        /* Let wheel/touch pass through padding & fade so the main reel can scroll vertically */
-        'pointer-events-none absolute left-0 right-0 z-50 pb-safe transition-[transform,bottom] duration-300 ease-out',
-        reserveCheckoutBar
-          ? 'bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
-          : 'bottom-0',
-        splineInView ? 'translate-y-0' : 'translate-y-full'
+        'pointer-events-none z-50 w-full transition-[transform,opacity] duration-300 ease-out',
+        dockCarouselTopOnMobile
+          ? cn(
+              'max-md:relative max-md:shrink-0',
+              splineInView
+                ? 'max-md:translate-y-0 max-md:opacity-100'
+                : 'max-md:pointer-events-none max-md:h-0 max-md:min-h-0 max-md:overflow-hidden max-md:opacity-0 max-md:pb-0 max-md:pt-0',
+              'md:absolute md:inset-x-0 md:bottom-0 md:pb-safe',
+              reserveCheckoutBar
+                ? 'md:bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
+                : 'md:bottom-0',
+              splineInView ? 'md:translate-y-0' : 'md:translate-y-full'
+            )
+          : cn(
+              'absolute inset-x-0 pb-safe',
+              reserveCheckoutBar ? checkoutBarLift : 'bottom-0',
+              splineInView ? 'translate-y-0' : 'translate-y-full'
+            )
       )}
     >
-      <div className="relative pt-6 pb-4 px-4 md:pt-10 md:pb-5">
+      <div
+        className={cn(
+          'relative px-4',
+          dockCarouselTopOnMobile
+            ? 'max-md:pt-2 max-md:pb-1 md:pt-10 md:pb-5'
+            : 'pt-6 pb-4 md:pt-10 md:pb-5'
+        )}
+      >
         <div className="relative z-[1] flex flex-col items-center gap-2 pointer-events-none">
           <div className="relative flex w-full flex-col gap-2">
           <div

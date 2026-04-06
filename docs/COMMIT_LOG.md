@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: feat(experience): mobile carousel above Spline reel under header (2026-04-06)
+
+**Ref:** `71bed8158`
+
+### Summary
+On **`max-md`**, the **artwork collection strip** ([`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)) uses **`dockCarouselTopOnMobile`**: **normal flow** at the **top of the experience content** (after the volume-discount row when shown in v2), with the **main [`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx) reel** **`flex-1`** below. **`md` and up** unchanged: Spline **absolute** full region, strip **absolute** bottom with **`reserveCheckoutBar`** lift. Both [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) entry points pass the prop and wrap reel + strip in a **`max-md:flex-col`** **`order`** layout.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/features/experience/README.md](docs/features/experience/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): mini Spline transparent — clear WebGL color buffer 1 (2026-04-06)
 
 **Ref:** `5253f8cac`

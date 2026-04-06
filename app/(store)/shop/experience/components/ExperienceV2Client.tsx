@@ -1386,7 +1386,12 @@ export function ExperienceV2Client({
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
+      <div className="relative min-h-0 w-full flex-1 max-md:flex max-md:flex-col md:block md:h-full">
       <SplineFullScreen
+        className={cn(
+          'max-md:order-3 max-md:relative max-md:flex-1 max-md:min-h-0 max-md:h-auto max-md:w-full',
+          'md:order-none md:absolute md:inset-0 md:h-full',
+        )}
         image1={image1}
         image2={image2}
         spotlightFallbackImageUrl={spotlightFallbackImageUrl}
@@ -1486,7 +1491,9 @@ export function ExperienceV2Client({
         bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
 
+      <div className="max-md:order-2 w-full shrink-0 md:contents">
       <ArtworkCarouselBar
+        dockCarouselTopOnMobile
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={activeStripProducts}
@@ -1526,6 +1533,9 @@ export function ExperienceV2Client({
           onFrontSideSettled: handleFrontSideSettled,
         }}
       />
+      </div>
+
+      </div>
 
       {pickerHasBeenOpened && (
       <ArtworkPickerSheet
