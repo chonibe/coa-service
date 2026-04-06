@@ -381,10 +381,10 @@ export function ArtworkCarouselBar({
                     >
                       {miniSplineLampPreview ? (
                         <CarouselStripLampSpline
-                          image1={miniSplineLampPreview.image1}
-                          image2={miniSplineLampPreview.image2}
-                          lampPreviewCount={miniSplineLampPreview.lampPreviewCount}
-                          collectionArtworkCount={miniSplineLampPreview.collectionArtworkCount}
+                          image1={null}
+                          image2={null}
+                          lampPreviewCount={0}
+                          collectionArtworkCount={0}
                           resetTrigger={miniSplineLampPreview.resetTrigger}
                           rotateToSide={miniSplineLampPreview.rotateToSide}
                           rotateTrigger={miniSplineLampPreview.rotateTrigger}
