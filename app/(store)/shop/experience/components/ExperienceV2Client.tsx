@@ -1388,9 +1388,7 @@ export function ExperienceV2Client({
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
       <SplineFullScreen
-        className={cn(
-          'order-3 relative min-h-0 h-auto w-full flex-1',
-        )}
+        className={cn('min-h-0 w-full flex-1')}
         image1={image1}
         image2={image2}
         spotlightFallbackImageUrl={spotlightFallbackImageUrl}
@@ -1490,7 +1488,8 @@ export function ExperienceV2Client({
         bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
 
-      <div className="order-2 w-full shrink-0 bg-transparent text-transparent">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[50] w-full">
+        <div className="w-full shrink-0 bg-transparent text-transparent">
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
@@ -1531,6 +1530,7 @@ export function ExperienceV2Client({
           onFrontSideSettled: handleFrontSideSettled,
         }}
       />
+        </div>
       </div>
 
       </div>

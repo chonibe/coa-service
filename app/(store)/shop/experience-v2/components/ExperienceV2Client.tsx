@@ -1272,9 +1272,7 @@ export function ExperienceV2Client({
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
       <SplineFullScreen
-        className={cn(
-          'order-3 relative min-h-0 h-auto w-full flex-1',
-        )}
+        className={cn('min-h-0 w-full flex-1')}
         image1={image1}
         image2={image2}
         spotlightFallbackImageUrl={spotlightFallbackImageUrl}
@@ -1374,71 +1372,73 @@ export function ExperienceV2Client({
         bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
 
-      {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && volumeDiscountBarLabel && (
-        <div
-          className={cn(
-            'order-1 relative z-[55] w-full shrink-0 px-4 py-2.5 border-b',
-            theme === 'light'
-              ? 'border-emerald-200/80 bg-emerald-50/95'
-              : 'border-emerald-500/30 bg-emerald-950/45'
-          )}
-        >
-          <div className="mx-auto max-w-lg">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span
-                className={cn(
-                  'flex items-center gap-1.5 text-[11px] font-medium min-w-0',
-                  theme === 'light' ? 'text-emerald-900' : 'text-emerald-100/95'
-                )}
-              >
-                <TicketPercent
-                  className={cn('w-3.5 h-3.5 shrink-0', theme === 'light' ? 'text-emerald-700' : 'text-emerald-400')}
-                  aria-hidden
-                />
-                <span className="leading-snug">{volumeDiscountBarLabel}</span>
-              </span>
-              {lampSavings > 0 && (
+      {/* Float above the reel (no flex reservation) so transparent strip shows the 3D viewport behind it */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[50] flex w-full flex-col">
+        {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && volumeDiscountBarLabel && (
+          <div
+            className={cn(
+              'pointer-events-auto relative z-[55] w-full shrink-0 px-4 py-2.5 border-b',
+              theme === 'light'
+                ? 'border-emerald-200/80 bg-emerald-50/95'
+                : 'border-emerald-500/30 bg-emerald-950/45'
+            )}
+          >
+            <div className="mx-auto max-w-lg">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span
                   className={cn(
-                    'text-[11px] font-semibold tabular-nums shrink-0',
-                    theme === 'light' ? 'text-emerald-800' : 'text-emerald-200'
+                    'flex items-center gap-1.5 text-[11px] font-medium min-w-0',
+                    theme === 'light' ? 'text-emerald-900' : 'text-emerald-100/95'
                   )}
                 >
-                  -${formatPriceCompact(lampSavings)}
-                </span>
-              )}
-            </div>
-            <div
-              className={cn(
-                'relative h-1.5 rounded-full overflow-hidden flex',
-                theme === 'light' ? 'bg-emerald-200/80' : 'bg-neutral-800/90'
-              )}
-            >
-              {Array.from({ length: lampQuantity }).map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'flex-1 min-w-0 h-full overflow-hidden relative border-l first:border-l-0',
-                    theme === 'light' ? 'border-emerald-300/60' : 'border-neutral-700/80'
-                  )}
-                >
-                  <motion.div
-                    className={cn(
-                      'absolute inset-y-0 left-0 bg-gradient-to-r',
-                      theme === 'light' ? 'from-emerald-600 to-teal-500' : 'from-emerald-500 to-teal-400'
-                    )}
-                    initial={false}
-                    animate={{ width: `${lampProgress[i] ?? 0}%` }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  <TicketPercent
+                    className={cn('w-3.5 h-3.5 shrink-0', theme === 'light' ? 'text-emerald-700' : 'text-emerald-400')}
+                    aria-hidden
                   />
-                </div>
-              ))}
+                  <span className="leading-snug">{volumeDiscountBarLabel}</span>
+                </span>
+                {lampSavings > 0 && (
+                  <span
+                    className={cn(
+                      'text-[11px] font-semibold tabular-nums shrink-0',
+                      theme === 'light' ? 'text-emerald-800' : 'text-emerald-200'
+                    )}
+                  >
+                    -${formatPriceCompact(lampSavings)}
+                  </span>
+                )}
+              </div>
+              <div
+                className={cn(
+                  'relative h-1.5 rounded-full overflow-hidden flex',
+                  theme === 'light' ? 'bg-emerald-200/80' : 'bg-neutral-800/90'
+                )}
+              >
+                {Array.from({ length: lampQuantity }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'flex-1 min-w-0 h-full overflow-hidden relative border-l first:border-l-0',
+                      theme === 'light' ? 'border-emerald-300/60' : 'border-neutral-700/80'
+                    )}
+                  >
+                    <motion.div
+                      className={cn(
+                        'absolute inset-y-0 left-0 bg-gradient-to-r',
+                        theme === 'light' ? 'from-emerald-600 to-teal-500' : 'from-emerald-500 to-teal-400'
+                      )}
+                      initial={false}
+                      animate={{ width: `${lampProgress[i] ?? 0}%` }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="order-2 w-full shrink-0 bg-transparent text-transparent">
+        <div className="w-full shrink-0 bg-transparent text-transparent">
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
@@ -1465,6 +1465,7 @@ export function ExperienceV2Client({
           onFrontSideSettled: handleFrontSideSettled,
         }}
       />
+        </div>
       </div>
 
       </div>
