@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: fix(shop): spotlight `products` for default bundle CTA + disabled when OOS (2026-04-06)
+
+**Ref:** `a086d6657`
+
+### Summary
+Default **`/api/shop/artist-spotlight`** paths **`trySeason2LatestSpotlight`** and **`tryShopifySpotlight`** returned **`productIds`** without **`products`**, so the experience clients often could not **`getSpotlightPairProducts`** until those SKUs appeared on the first loaded collection page — the **Featured artist bundle** block in **Filters** never rendered. Both paths now attach **`products`** (same pattern as collection spotlight). **Filter CTA** remains visible when prints are out of stock but the button is **disabled** (`!availableForSale`).
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-spotlight/route.ts](app/api/shop/artist-spotlight/route.ts)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(shop): featured artist bundle $159 — experience checkout + filters (2026-04-06)
 
 **Ref:** `efb2c5967`
