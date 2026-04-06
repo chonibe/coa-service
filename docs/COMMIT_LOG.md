@@ -1,5 +1,24 @@
 # Commit Log
 
+## Commit: feat(experience): strip mini lamp uses same Spline3DPreview as main reel (2026-04-06)
+
+**Ref:** _(set after commit)_
+
+### Summary
+The collection-strip mini lamp thumb mounts **[`CarouselStripLampSpline`](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)** — same **`Spline3DPreview`** scene, panel UUIDs, `swapLampSides` / flip / **`loadImagePosition`** / idle-spin rules as **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)**. Second WebGL instance; staggered **`requestIdleCallback`** (~5.5s). Both **ExperienceV2Client** entry points pass **`miniSplineLampPreview`**. **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** keeps embed + CSS turntable fallback when the prop is omitted.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/CarouselStripLampSpline.tsx](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [lib/shop/experience-carousel-mini-spline.ts](lib/shop/experience-carousel-mini-spline.ts)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): artist spotlight — Season 2 before Jack J.C. Art fallback (2026-04-06)
 
 **Ref:** _(see `git log -1 --oneline`)_

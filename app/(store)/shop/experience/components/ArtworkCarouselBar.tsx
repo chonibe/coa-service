@@ -17,6 +17,8 @@ import {
   readMiniSplineCarouselVisible,
   writeMiniSplineCarouselVisible,
 } from '@/lib/shop/experience-carousel-mini-spline'
+import type { CarouselStripLampSplineProps } from './CarouselStripLampSpline'
+import { CarouselStripLampSpline } from './CarouselStripLampSpline'
 
 /** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
 const MAX_CAROUSEL_STRIP_THUMBS = 7
@@ -43,6 +45,8 @@ interface ArtworkCarouselBarProps {
   reserveCheckoutBar?: boolean
   /** Scroll reel to Spline + sync preview slide (collection strip mini lamp / Spline tile) */
   onJumpToSpline?: () => void
+  /** Same `Spline3DPreview` as the main lamp reel; when set with `onJumpToSpline`, used instead of embed/facade. */
+  miniSplineLampPreview?: Omit<CarouselStripLampSplineProps, 'className'> | null
 }
 
 export function ArtworkCarouselBar({
@@ -60,6 +64,7 @@ export function ArtworkCarouselBar({
   onSwitchToCollection,
   reserveCheckoutBar = false,
   onJumpToSpline,
+  miniSplineLampPreview = null,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -355,32 +360,48 @@ export function ArtworkCarouselBar({
                     >
                       <div
                         className={cn(
-                          'absolute inset-0 flex items-center justify-center overflow-hidden',
+                          'absolute inset-0 overflow-hidden',
                           theme === 'light' ? 'bg-neutral-100' : 'bg-black'
                         )}
                       >
-                        <div className="experience-carousel-mini-turntable flex h-[155%] w-[155%] shrink-0 items-center justify-center">
-                          {miniSplineEmbedUrl ? (
-                            <iframe
-                              title="Lamp 3D preview"
-                              src={miniSplineEmbedUrl}
-                              className="pointer-events-none h-[220px] w-[220px] max-w-none shrink-0 border-0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="relative h-[3.25rem] w-[3.25rem] shrink-0">
-                              <Image
-                                src="/internal.webp"
-                                alt=""
-                                fill
-                                className="object-contain"
-                                sizes="56px"
-                                unoptimized
-                              />
+                        {miniSplineLampPreview ? (
+                          <CarouselStripLampSpline
+                            image1={miniSplineLampPreview.image1}
+                            image2={miniSplineLampPreview.image2}
+                            lampPreviewCount={miniSplineLampPreview.lampPreviewCount}
+                            collectionArtworkCount={miniSplineLampPreview.collectionArtworkCount}
+                            resetTrigger={miniSplineLampPreview.resetTrigger}
+                            rotateToSide={miniSplineLampPreview.rotateToSide}
+                            rotateTrigger={miniSplineLampPreview.rotateTrigger}
+                            onFrontSideSettled={miniSplineLampPreview.onFrontSideSettled}
+                            className="h-full min-h-[4.5rem] w-full"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <div className="experience-carousel-mini-turntable flex h-[155%] w-[155%] shrink-0 items-center justify-center">
+                              {miniSplineEmbedUrl ? (
+                                <iframe
+                                  title="Lamp 3D preview"
+                                  src={miniSplineEmbedUrl}
+                                  className="pointer-events-none h-[220px] w-[220px] max-w-none shrink-0 border-0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="relative h-[3.25rem] w-[3.25rem] shrink-0">
+                                  <Image
+                                    src="/internal.webp"
+                                    alt=""
+                                    fill
+                                    className="object-contain"
+                                    sizes="56px"
+                                    unoptimized
+                                  />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </button>
                   </div>

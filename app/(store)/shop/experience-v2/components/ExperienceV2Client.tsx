@@ -1445,6 +1445,16 @@ export function ExperienceV2Client({
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
         onJumpToSpline={handleJumpToSpline}
+        miniSplineLampPreview={{
+          image1,
+          image2,
+          lampPreviewCount: lampPreviewOrder.length,
+          collectionArtworkCount: selectedArtworks.length,
+          resetTrigger,
+          rotateToSide,
+          rotateTrigger,
+          onFrontSideSettled: handleFrontSideSettled,
+        }}
       />
 
       {pickerHasBeenOpened && (
