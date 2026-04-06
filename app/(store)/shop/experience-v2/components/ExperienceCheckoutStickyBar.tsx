@@ -31,6 +31,11 @@ export interface ExperienceCheckoutStickyBarProps {
   onViewLampDetail?: (product: ShopifyProduct) => void
   /** When `collection` and there are no artworks yet, the bar shows the primary CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
+  /**
+   * When the bottom artwork carousel is on-screen (same scroll region as Spline), hide the thumbnail strip —
+   * it duplicates the carousel. Keep add-artwork FAB + checkout. When false (user scrolled past), show full summary.
+   */
+  suppressCartThumbnails?: boolean
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -127,7 +132,8 @@ function StickyThumb({
 }
 
 /**
- * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows thumbnails, checkout, and optional centered add FAB.
+ * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows thumbnails (unless `suppressCartThumbnails`), checkout, and optional add FAB.
+ * When `suppressCartThumbnails` (carousel strip visible under Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB + checkout remain.
  * Featured bundle promo (lamp + two prints) lives in [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) when the collection strip is empty.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
@@ -139,6 +145,7 @@ export function ExperienceCheckoutStickyBar({
   onOpenPicker,
   onViewLampDetail,
   stripMode = 'collection',
+  suppressCartThumbnails = false,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -269,38 +276,44 @@ export function ExperienceCheckoutStickyBar({
                   <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
                 </button>
               ) : null}
-              {/* Thumbnails hug the checkout button (right). Same slots on all breakpoints — lamp tiles only when lampQuantity > 0. */}
-              <div className="flex min-w-0 flex-1 justify-end">
-                <div className="flex max-w-full min-w-0 items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
-                  {visibleSlots.map((slot, index) => (
-                    <Fragment key={slot.key}>
-                      {index > 0 && <PlusSep theme={theme} />}
-                      <StickyThumb
-                        product={slot.product}
-                        isLamp={slot.isLamp}
-                        theme={theme}
-                        onDetailPress={
-                          slot.isLamp && onViewLampDetail ? () => onViewLampDetail(slot.product) : undefined
-                        }
-                      />
-                    </Fragment>
-                  ))}
-                  {overflowCount > 0 && (
-                    <>
-                      <PlusSep theme={theme} />
-                      <div
-                        className={cn(
-                          'flex w-9 aspect-[14/20] shrink-0 items-center justify-center rounded-[15px] text-xs font-bold tabular-nums sm:w-10',
-                          theme === 'light' ? 'text-neutral-600' : 'text-white/80'
-                        )}
-                        title={`${overflowCount} more items`}
-                      >
-                        +{overflowCount}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+              {!suppressCartThumbnails ? (
+                <>
+                  {/* Thumbnails hug the checkout button (right). Same slots on all breakpoints — lamp tiles only when lampQuantity > 0. */}
+                  <div className="flex min-w-0 flex-1 justify-end">
+                    <div className="flex max-w-full min-w-0 items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
+                      {visibleSlots.map((slot, index) => (
+                        <Fragment key={slot.key}>
+                          {index > 0 && <PlusSep theme={theme} />}
+                          <StickyThumb
+                            product={slot.product}
+                            isLamp={slot.isLamp}
+                            theme={theme}
+                            onDetailPress={
+                              slot.isLamp && onViewLampDetail ? () => onViewLampDetail(slot.product) : undefined
+                            }
+                          />
+                        </Fragment>
+                      ))}
+                      {overflowCount > 0 && (
+                        <>
+                          <PlusSep theme={theme} />
+                          <div
+                            className={cn(
+                              'flex w-9 aspect-[14/20] shrink-0 items-center justify-center rounded-[15px] text-xs font-bold tabular-nums sm:w-10',
+                              theme === 'light' ? 'text-neutral-600' : 'text-white/80'
+                            )}
+                            title={`${overflowCount} more items`}
+                          >
+                            +{overflowCount}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="min-w-0 flex-1" aria-hidden />
+              )}
               <button
                 type="button"
                 onClick={openOrderBar}

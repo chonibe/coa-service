@@ -1662,6 +1662,7 @@ export function ExperienceV2Client({
         orderSubtotal={orderTotal}
         stripMode={carouselStripMode}
         onOpenPicker={handleOpenPicker}
+        suppressCartThumbnails={splineInView}
       />
 
       <OrderBar

@@ -1602,6 +1602,7 @@ export function ExperienceV2Client({
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
+        suppressCartThumbnails={splineInView}
       />
 
       <OrderBar

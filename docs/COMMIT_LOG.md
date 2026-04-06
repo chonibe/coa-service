@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: feat(experience): hide sticky cart thumbnails while carousel is in view (2026-04-06)
+
+**Ref:** `1b2744b33`
+
+### Summary
+**[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** adds **`suppressCartThumbnails`**: when **`splineInView`** (Spline + bottom [`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) visible), the **thumbnail strip** is omitted so the sticky bar does not duplicate the carousel; **add-artwork FAB** and **Checkout · $** remain. Both **[`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)** entry points pass **`suppressCartThumbnails={splineInView}`**.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): strip mini lamp shows base mesh only — no artwork textures (2026-04-06)
 
 **Ref:** `aee1dc3af`
