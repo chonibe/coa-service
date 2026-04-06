@@ -1581,6 +1581,7 @@ export function ExperienceV2Client({
         orderSubtotal={orderTotal}
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
+        onViewLampDetail={() => setDetailProduct(lamp)}
       />
 
       <OrderBar
@@ -1589,6 +1590,7 @@ export function ExperienceV2Client({
         lampQuantity={lampQuantity}
         onLampQuantityChange={handleLampQuantityChange}
         onAdjustArtworkQuantity={handleAdjustArtworkQuantity}
+        onViewLampDetail={setDetailProduct}
         isGift={false}
         lockedArtworkPrices={lockedArtworkPrices}
         streetLadderPrices={streetLadderPrices}

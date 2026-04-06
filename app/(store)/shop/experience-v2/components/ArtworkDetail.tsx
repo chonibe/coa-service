@@ -749,7 +749,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          'fixed inset-0 z-[80] pointer-events-none',
+          /* Above OrderBar checkout drawer (z-[90–92]) so detail can open from cart */
+          'fixed inset-0 z-[95] pointer-events-none',
           isSlideout ? 'flex justify-start items-center' : 'flex items-end'
         )}
       >

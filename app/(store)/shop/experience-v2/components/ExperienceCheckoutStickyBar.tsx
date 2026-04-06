@@ -27,6 +27,8 @@ export interface ExperienceCheckoutStickyBarProps {
   orderSubtotal: number
   /** Opens the artwork picker; **empty collection** row uses it for “Create your own bundle”; **≥1 artwork** uses centered FAB. */
   onOpenPicker?: () => void
+  /** Lamp thumbnail / icon opens product detail (slide-up sheet on mobile). */
+  onViewLampDetail?: (product: ShopifyProduct) => void
   /** When `collection` and there are no artworks yet, the bar shows the primary CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
 }
@@ -55,10 +57,13 @@ function StickyThumb({
   product,
   isLamp,
   theme,
+  onDetailPress,
 }: {
   product: ShopifyProduct
   isLamp: boolean
   theme: 'light' | 'dark'
+  /** When set (lamp slots only), opens product detail sheet. */
+  onDetailPress?: () => void
 }) {
   const raw = firstImageUrl(product)
   const src = raw ? (getShopifyImageUrl(raw, IMAGE_REQUEST_PX) ?? raw) : null
@@ -70,12 +75,12 @@ function StickyThumb({
     'w-9 aspect-[14/20] sm:w-10'
   )
 
-  return (
-    <div className={frame} title={label}>
+  const inner = (
+    <>
       {src ? (
         <Image
           src={src}
-          alt={label}
+          alt=""
           fill
           className="object-cover"
           sizes={`(max-width:640px) ${THUMB_WIDTH_PX}px, 40px`}
@@ -92,6 +97,31 @@ function StickyThumb({
           )}
         </span>
       )}
+    </>
+  )
+
+  if (onDetailPress) {
+    return (
+      <button
+        type="button"
+        onClick={onDetailPress}
+        title={label}
+        aria-label={`${label}, view product details`}
+        className={cn(
+          frame,
+          'm-0 cursor-pointer border-0 bg-transparent p-0 text-left',
+          'ring-offset-2 transition-opacity hover:opacity-90',
+          'focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#047AFF] dark:focus-visible:ring-[#60A5FA]'
+        )}
+      >
+        {inner}
+      </button>
+    )
+  }
+
+  return (
+    <div className={frame} title={label}>
+      {inner}
     </div>
   )
 }
@@ -107,6 +137,7 @@ export function ExperienceCheckoutStickyBar({
   selectedArtworks,
   orderSubtotal,
   onOpenPicker,
+  onViewLampDetail,
   stripMode = 'collection',
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
@@ -244,7 +275,14 @@ export function ExperienceCheckoutStickyBar({
                   {visibleSlots.map((slot, index) => (
                     <Fragment key={slot.key}>
                       {index > 0 && <PlusSep theme={theme} />}
-                      <StickyThumb product={slot.product} isLamp={slot.isLamp} theme={theme} />
+                      <StickyThumb
+                        product={slot.product}
+                        isLamp={slot.isLamp}
+                        theme={theme}
+                        onDetailPress={
+                          slot.isLamp && onViewLampDetail ? () => onViewLampDetail(slot.product) : undefined
+                        }
+                      />
                     </Fragment>
                   ))}
                   {overflowCount > 0 && (
