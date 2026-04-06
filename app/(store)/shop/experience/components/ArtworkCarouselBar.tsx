@@ -297,7 +297,7 @@ export function ArtworkCarouselBar({
           <div className="relative flex w-full flex-col gap-2 bg-transparent">
           <div
             ref={carouselWheelHostRef}
-            className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 bg-transparent px-3"
+            className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 bg-transparent px-3 text-transparent"
           >
             {stripMode === 'watchlist' && onSwitchToCollection && (
               <div className="flex w-full min-w-0 flex-row items-end justify-center gap-2">
@@ -341,7 +341,7 @@ export function ArtworkCarouselBar({
             onClickCapture={handleClickCapture}
             className={cn(
               /* justify-start + snap-start: snap-center/mandatory clips first/last tiles and blocks full scroll */
-              'touch-manipulation flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent scrollbar-hide snap-x snap-proximity pb-3',
+              'touch-manipulation flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent text-transparent scrollbar-hide snap-x snap-proximity pb-3',
               'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
