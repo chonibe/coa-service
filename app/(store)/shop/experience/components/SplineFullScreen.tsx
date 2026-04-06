@@ -21,9 +21,15 @@ import {
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+import {
+  type ExperienceReelGalleryItem,
+  reelGalleryItemKey,
+} from '@/lib/shop/experience-reel-gallery'
 import { ArtworkAccordions } from './ArtworkAccordions'
 import { FeaturedArtistBundleSection } from './FeaturedArtistBundleSection'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
+import { ArtistCollectionVideoEmbed } from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
   if (ref == null) return
@@ -88,8 +94,8 @@ interface SplineFullScreenProps {
   className?: string
   /** Optional content to render in the top bar (e.g. artwork info). May be a function receiving { onRotate, isDesktop }. */
   topBarContent?: React.ReactNode | ((inject: { onRotate: () => void; isDesktop: boolean }) => React.ReactNode)
-  /** Gallery images — when set, Spline becomes slide 0 and images are slides 1,2,3... */
-  galleryImages?: { url: string; altText?: string | null }[]
+  /** Gallery reel items (hero at [0] in details; `slice(1)` scrolls: images + optional Shopify video first after hero). */
+  galleryImages?: ExperienceReelGalleryItem[]
   /** Displayed product for accordion sections (What's included, Specs, Description, About Artist) — shown before gallery */
   displayedProduct?: ShopifyProduct | null
   /** When displayedProduct is the lamp, pass these for accordion */
@@ -800,29 +806,65 @@ export function SplineFullScreen({
           </div>
         )}
 
-        {/* Gallery: one scroll section per image after the first */}
+        {/* Gallery: one scroll section per item after the hero (index 0) — video first when present, then photos */}
         {galleryImages.length > 1 &&
-          galleryImages.slice(1).map((img, idx) => {
+          galleryImages.slice(1).map((item, idx) => {
             const sectionIndex = galleryBaseSectionIndex + idx
+            const embedTitle =
+              item.kind !== 'image'
+                ? item.altText?.trim() ||
+                  (displayedProduct?.title ? `${displayedProduct.title} — video` : 'Product video')
+                : ''
             return (
               <div
-                key={img.url || idx}
+                key={reelGalleryItemKey(item, idx)}
                 ref={(r) => {
                   sectionRefs.current[sectionIndex] = r
                 }}
                 className="flex-shrink-0 w-full flex flex-col items-center py-4"
               >
                 <div className="w-full flex items-center justify-center py-3 px-4">
-                  <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
-                    <Image
-                      src={getShopifyImageUrl(img.url, 1200) ?? img.url}
-                      alt={img.altText ?? `Gallery ${idx + 2}`}
-                      fill
-                      className="object-cover"
-                      sizes="100vw"
-                      priority={idx === 0}
-                    />
-                  </div>
+                  {item.kind === 'image' ? (
+                    <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto aspect-[4/5] overflow-hidden rounded-xl">
+                      <Image
+                        src={getShopifyImageUrl(item.url, 1200) ?? item.url}
+                        alt={item.altText ?? `Gallery ${idx + 2}`}
+                        fill
+                        className="object-cover"
+                        sizes="100vw"
+                        priority={idx === 0}
+                      />
+                    </div>
+                  ) : item.kind === 'externalVideo' ? (
+                    <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(92vw,720px)] mx-auto">
+                      <ArtistCollectionVideoEmbed
+                        url={item.embedUrl}
+                        title={embedTitle}
+                        className="shadow-none ring-0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(92vw,720px)] mx-auto">
+                      {(() => {
+                        const playback = shopifyVideoPlaybackUrl(item.sources)
+                        if (!playback) {
+                          return (
+                            <p
+                              className={cn(
+                                'rounded-xl px-4 py-8 text-center text-sm',
+                                theme === 'light' ? 'bg-neutral-200 text-neutral-600' : 'bg-white/10 text-white/70'
+                              )}
+                            >
+                              Video unavailable for this product.
+                            </p>
+                          )
+                        }
+                        return (
+                          <ArtistCollectionVideoEmbed url={playback} title={embedTitle} className="shadow-none ring-0" />
+                        )
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
             )

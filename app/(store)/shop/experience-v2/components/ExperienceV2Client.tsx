@@ -176,7 +176,9 @@ export function ExperienceV2Client({
   const [detailProductLoading, setDetailProductLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
-  const [galleryImages, setGalleryImages] = useState<{ url: string; altText?: string | null }[]>([])
+  const [galleryImages, setGalleryImages] = useState<
+    import('@/lib/shop/experience-reel-gallery').ExperienceReelGalleryItem[]
+  >([])
   const [displayedProduct, setDisplayedProduct] = useState<ShopifyProduct | null>(null)
   const [displayedIndex, setDisplayedIndex] = useState(0)
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
@@ -1085,10 +1087,13 @@ export function ExperienceV2Client({
     setPreviewSlideIndex(0)
   }, [])
 
-  const handleGalleryImagesChange = useCallback((images: { url: string; altText?: string | null }[]) => {
-    setGalleryImages(images)
-    setPreviewSlideIndex(0)
-  }, [])
+  const handleGalleryImagesChange = useCallback(
+    (images: import('@/lib/shop/experience-reel-gallery').ExperienceReelGalleryItem[]) => {
+      setGalleryImages(images)
+      setPreviewSlideIndex(0)
+    },
+    []
+  )
 
   const handleGoToSlide = useCallback((index: number) => {
     setPreviewSlideIndex(index)

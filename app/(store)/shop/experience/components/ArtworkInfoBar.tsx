@@ -3,55 +3,17 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Award, Box, Info, RotateCw } from 'lucide-react'
+import { Award, Box, Info, Play, RotateCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+import {
+  buildExperienceReelGalleryItems,
+  type ExperienceReelGalleryItem,
+  reelGalleryItemKey,
+} from '@/lib/shop/experience-reel-gallery'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { cn } from '@/lib/utils'
-
-function getFirstImageUrl(product: ShopifyProduct | null | undefined): string | null {
-  if (!product) return null
-  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
-}
-
-/** Normalize URL for dedup — same image can have different ?v= or size params */
-function urlKey(url: string): string {
-  try {
-    const u = new URL(url)
-    return u.pathname
-  } catch {
-    return url
-  }
-}
-
-function getOrderedImages(product: ShopifyProduct | null | undefined): { url: string; altText?: string | null }[] {
-  if (!product) return []
-  const fromImages = product.images?.edges?.map((e) => e.node).filter(Boolean) ?? []
-  const fromMedia =
-    product.media?.edges
-      ?.map((e) => (e.node as { mediaContentType?: string; image?: { url: string; altText?: string | null } }))
-      .filter((n) => n?.mediaContentType === 'IMAGE' && n?.image?.url)
-      .map((n) => n!.image!) ?? []
-  const fallback = product.featuredImage ? [product.featuredImage] : []
-  const combined = [...fromImages, ...fromMedia]
-  const source = combined.length > 0 ? combined : fallback
-  const seen = new Set<string>()
-  const unique: { url: string; altText?: string | null }[] = []
-  for (const n of source) {
-    const url = n?.url
-    if (!url) continue
-    const key = urlKey(url)
-    if (seen.has(key)) continue
-    seen.add(key)
-    unique.push({ url, altText: n?.altText ?? null })
-  }
-  if (unique.length <= 1) return unique
-  const firstUrl = getFirstImageUrl(product)
-  const firstNode = unique.find((n) => n.url === firstUrl) ?? unique[0]
-  const rest = unique.filter((n) => n !== firstNode && n.url !== firstUrl)
-  return [firstNode, ...rest]
-}
 
 interface ArtworkInfoBarProps {
   /** Product on lamp Side A (image1) */
@@ -63,7 +25,7 @@ interface ArtworkInfoBarProps {
   /** Product ID of the last clicked artwork in the carousel */
   lastClickedProductId: string | null
   /** Called when gallery images change — parent passes to Spline carousel */
-  onGalleryImagesChange?: (images: { url: string; altText?: string | null }[]) => void
+  onGalleryImagesChange?: (images: ExperienceReelGalleryItem[]) => void
   /** Called when user taps a thumbnail — 0 = Spline, 1+ = image index */
   onGoToSlide?: (slideIndex: number) => void
   /** Current slide index — for highlighting active thumbnail */
@@ -175,13 +137,9 @@ export function ArtworkInfoBar({
     onDisplayedProductChange?.(productForImages ?? displayedProduct ?? null)
   }, [displayedProduct, productForImages, onDisplayedProductChange, suppressReelSync])
 
-  const orderedImages = useMemo(
-    () => getOrderedImages(productForImages),
-    [productForImages, productForImages?.images?.edges?.length, productForImages?.media?.edges?.length]
-  )
   const galleryImages = useMemo(
-    () => orderedImages,
-    [orderedImages]
+    () => buildExperienceReelGalleryItems(productForImages),
+    [productForImages]
   )
 
   useEffect(() => {
@@ -398,9 +356,11 @@ export function ArtworkInfoBar({
                           onGoToSlide?.(firstGalleryImageSlide)
                         }}
                         title={
-                          galleryImages.length > 2
-                            ? `${galleryImages.length - 1} artwork photos — opens first`
-                            : 'View artwork photo'
+                          galleryImages[1].kind === 'video' || galleryImages[1].kind === 'externalVideo'
+                            ? 'Product video'
+                            : galleryImages.length > 2
+                              ? `${galleryImages.length - 1} artwork photos — opens first`
+                              : 'View artwork photo'
                         }
                         className={cn(
                           'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
@@ -411,15 +371,51 @@ export function ArtworkInfoBar({
                               : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
                         )}
                       >
-                        <Image
-                          src={getShopifyImageUrl(galleryImages[1].url, 88) ?? galleryImages[1].url}
-                          alt={galleryImages[1].altText ?? displayedProduct.title ?? 'Artwork photo'}
-                          fill
-                          unoptimized
-                          className="object-cover pointer-events-none"
-                          sizes="32px"
-                          loading="eager"
-                        />
+                        {(() => {
+                          const g1 = galleryImages[1]
+                          const poster =
+                            g1.kind === 'image'
+                              ? g1.url
+                              : g1.posterUrl ?? null
+                          const isVid = g1.kind === 'video' || g1.kind === 'externalVideo'
+                          return (
+                            <>
+                              {poster ? (
+                                <Image
+                                  src={getShopifyImageUrl(poster, 88) ?? poster}
+                                  alt={g1.altText ?? displayedProduct.title ?? 'Gallery'}
+                                  fill
+                                  unoptimized
+                                  className="object-cover pointer-events-none"
+                                  sizes="32px"
+                                  loading="eager"
+                                />
+                              ) : (
+                                <div
+                                  className={cn(
+                                    'absolute inset-0 flex items-center justify-center',
+                                    theme === 'light' ? 'bg-neutral-300' : 'bg-white/15'
+                                  )}
+                                  aria-hidden
+                                >
+                                  <Play className="h-4 w-4 text-white drop-shadow" strokeWidth={2} />
+                                </div>
+                              )}
+                              {isVid && poster ? (
+                                <span
+                                  className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25"
+                                  aria-hidden
+                                >
+                                  <Play
+                                    className="h-3.5 w-3.5 text-white drop-shadow"
+                                    strokeWidth={2.5}
+                                    fill="currentColor"
+                                  />
+                                </span>
+                              ) : null}
+                            </>
+                          )
+                        })()}
                         {galleryImages.length > 2 ? (
                           <span
                             className="pointer-events-none absolute bottom-0 right-0 rounded-tl-md bg-black/80 px-1 py-0.5 text-[11px] font-extrabold tabular-nums leading-none tracking-tight text-white"
@@ -431,37 +427,62 @@ export function ArtworkInfoBar({
                       </button>
                     ) : null
                   ) : (
-                    galleryImages.map((img, idx) => (
-                      <button
-                        key={img.url || idx}
-                        type="button"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          onGoToSlide?.(slideForImageThumb(idx))
-                        }}
-                        title="View full image"
-                        className={cn(
-                          'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
-                          currentSlide === slideForImageThumb(idx)
-                            ? 'border-[#FFBA94]'
-                            : theme === 'light'
-                              ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
-                              : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
-                        )}
-                      >
-                        <Image
-                          src={getShopifyImageUrl(img.url, 88) ?? img.url}
-                          alt={img.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
-                          fill
-                          unoptimized
-                          className="object-cover pointer-events-none"
-                          sizes="32px"
-                          loading="eager"
-                        />
-                      </button>
-                    ))
+                    galleryImages.map((item, idx) => {
+                      const thumbSrc =
+                        item.kind === 'image' ? item.url : item.posterUrl ?? null
+                      const isVideo = item.kind === 'video' || item.kind === 'externalVideo'
+                      return (
+                        <button
+                          key={reelGalleryItemKey(item, idx)}
+                          type="button"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            onGoToSlide?.(slideForImageThumb(idx))
+                          }}
+                          title={isVideo ? 'Product video' : 'View full image'}
+                          className={cn(
+                            'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
+                            currentSlide === slideForImageThumb(idx)
+                              ? 'border-[#FFBA94]'
+                              : theme === 'light'
+                                ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
+                                : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
+                          )}
+                        >
+                          {thumbSrc ? (
+                            <Image
+                              src={getShopifyImageUrl(thumbSrc, 88) ?? thumbSrc}
+                              alt={item.altText ?? displayedProduct.title ?? `Artwork ${idx + 1}`}
+                              fill
+                              unoptimized
+                              className="object-cover pointer-events-none"
+                              sizes="32px"
+                              loading="eager"
+                            />
+                          ) : (
+                            <div
+                              className={cn(
+                                'absolute inset-0 flex items-center justify-center',
+                                theme === 'light' ? 'bg-neutral-300' : 'bg-white/15'
+                              )}
+                              aria-hidden
+                            >
+                              <Play className="h-4 w-4 text-white drop-shadow" strokeWidth={2} />
+                            </div>
+                          )}
+                          {isVideo && thumbSrc ? (
+                            <span
+                              className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25"
+                              aria-hidden
+                            >
+                              <Play className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={2.5} fill="currentColor" />
+                            </span>
+                          ) : null}
+                        </button>
+                      )
+                    })
                   )}
                 </>
               )}
