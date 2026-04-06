@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { guardAdminRequest } from '@/lib/auth-guards'
 import { createClient } from '@/lib/supabase/server'
 import { resolveShopifyCollectionFromPastedInput } from '@/lib/shopify/resolve-pasted-collection'
+import {
+  ensureVendorRowForShopifyArtist,
+  resolveVendorForCollectionLink,
+} from '@/lib/shop/admin-resolve-vendor-for-collection-link'
 
 /**
  * POST /api/admin/vendor-collections/link-collection
@@ -9,7 +13,7 @@ import { resolveShopifyCollectionFromPastedInput } from '@/lib/shopify/resolve-p
  * Link a Shopify collection (Admin URL, storefront /collections/… URL, or numeric id) to a vendor
  * so experience pages and spotlight use the correct handle, image, and description.
  *
- * Body: { vendorName: string, collectionUrl: string, previewOnly?: boolean }
+ * Body: { vendorName: string, collectionUrl: string, previewOnly?: boolean, artistSlug?: string, createVendorIfMissing?: boolean }
  */
 
 function textFromHtml(html: string | null): string {
@@ -28,6 +32,8 @@ export async function POST(request: NextRequest) {
     const vendorName = (body?.vendorName as string | undefined)?.trim()
     const collectionUrl = (body?.collectionUrl as string | undefined)?.trim()
     const previewOnly = Boolean(body?.previewOnly)
+    const artistSlug = (body?.artistSlug as string | undefined)?.trim() || null
+    const createVendorIfMissing = body?.createVendorIfMissing !== false
 
     if (!vendorName) {
       return NextResponse.json({ error: 'vendorName is required' }, { status: 400 })
@@ -60,25 +66,22 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createClient()
-    let { data: vendor, error: vErr } = await supabase
-      .from('vendors')
-      .select('id, vendor_name')
-      .eq('vendor_name', vendorName)
-      .maybeSingle()
 
-    if (!vendor && !vErr) {
-      const second = await supabase
-        .from('vendors')
-        .select('id, vendor_name')
-        .ilike('vendor_name', vendorName)
-        .maybeSingle()
-      vendor = second.data
-      vErr = second.error
+    let vendor = await resolveVendorForCollectionLink(supabase, {
+      vendorName,
+      artistSlug,
+      collectionHandle: col.handle,
+    })
+
+    if (!vendor && createVendorIfMissing) {
+      vendor = await ensureVendorRowForShopifyArtist(supabase, vendorName)
     }
 
-    if (vErr || !vendor) {
+    if (!vendor) {
       return NextResponse.json(
-        { error: `No vendor found matching name "${vendorName}".` },
+        {
+          error: `Could not resolve or create a vendor for "${vendorName}". Add them under Vendors first, or set createVendorIfMissing: true (default).`,
+        },
         { status: 404 },
       )
     }

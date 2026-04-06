@@ -188,6 +188,7 @@ export default function ExperienceLinksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vendorName: artist.name,
+          artistSlug: artist.slug,
           collectionUrl: url,
           previewOnly,
         }),

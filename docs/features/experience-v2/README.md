@@ -20,6 +20,8 @@ The public `?artist=` parameter must match the **Shopify collection handle**. Ad
 
 `GET /api/shop/artists` uses the paired handle as `slug` when present (see [`lib/shop/artists-list.ts`](../../../lib/shop/artists-list.ts)) so copied experience links stay aligned with the collection.
 
+Vendor resolution for save (see [`lib/shop/admin-resolve-vendor-for-collection-link.ts`](../../../lib/shop/admin-resolve-vendor-for-collection-link.ts)): match `vendors.vendor_name`, existing `vendor_collections` by handle, slugified name vs `artistSlug` / collection handle, then **create** a minimal `vendors` row (`status: active`) if still missing (default). Set `createVendorIfMissing: false` in the POST body to only link when a vendor already exists.
+
 **Tests:** [`lib/shopify/parse-shopify-collection-url.test.ts`](../../../lib/shopify/parse-shopify-collection-url.test.ts) (`npx jest lib/shopify/parse-shopify-collection-url.test.ts`).
 
 ## Architecture

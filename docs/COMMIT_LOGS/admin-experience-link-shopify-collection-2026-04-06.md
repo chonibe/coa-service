@@ -20,3 +20,11 @@ Admins can paste a Shopify Admin collection URL (or storefront `/collections/han
 ## Deployment
 
 After merge: `vercel --prod --yes` (per project rules).
+
+---
+
+## Follow-up: 2026-04-06 — vendor not found (e.g. Saturn Png)
+
+- [x] [lib/shop/admin-resolve-vendor-for-collection-link.ts](../../lib/shop/admin-resolve-vendor-for-collection-link.ts) — Resolve by name, `vendor_collections` handle, slugified `vendor_name`; optional auto-create `vendors` row
+- [x] [app/api/admin/vendor-collections/link-collection/route.ts](../../app/api/admin/vendor-collections/link-collection/route.ts) — `artistSlug`, `createVendorIfMissing` (default true)
+- [x] [app/admin/vendors/experience-links/page.tsx](../../app/admin/vendors/experience-links/page.tsx) — Sends `artistSlug` with each link request
