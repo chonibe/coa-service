@@ -75,6 +75,7 @@ function ArtworkArtistDetailGallery({
   spotlightProducts,
   className,
   resetKey,
+  detailsLabel = 'Artwork details',
 }: {
   description: string
   artistLoading: boolean
@@ -82,6 +83,8 @@ function ArtworkArtistDetailGallery({
   spotlightProducts: ShopifyProduct[]
   className?: string
   resetKey: string
+  /** "Product details" for lamp/base SKUs; default for prints. */
+  detailsLabel?: string
 }) {
   return (
     <div className={cn('py-3 border-t border-neutral-100 dark:border-white/10', className)}>
@@ -95,7 +98,7 @@ function ArtworkArtistDetailGallery({
                 <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
                   <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                 </div>
-                <span className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Artwork details</span>
+                <span className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">{detailsLabel}</span>
               </div>
               <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
             </div>
@@ -151,7 +154,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     setImageZoom(1)
     setHasUserInteracted(false)
     setIsOpen(true)
-  }, [product.id])
+    if (productIncludes && productIncludes.length > 0) {
+      setArtistData(null)
+      setSpotlightData(null)
+      setArtistLoading(false)
+    }
+  }, [product.id, productIncludes])
 
   useEffect(() => {
     setImageZoom(1)
@@ -206,6 +214,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+  const productDetailsLabel = isLampOrBundleProduct ? 'Product details' : 'Artwork details'
   const streetLadderBlock = useMemo(
     () =>
       !isLampOrBundleProduct
@@ -229,6 +238,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     spotlightData?.vendorName ||
     artist
   ).trim()
+  /** Hide brand/vendor line in headers for lamp & bundle base products (not artist prints). */
+  const detailHeaderArtistLine = isLampOrBundleProduct ? '' : editionArtistName
 
   const editionWatchWithNarrativeNode = useMemo(() => {
     if (!editionMetricsForWatch) return undefined
@@ -245,22 +256,26 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
 
   const productIdShort = product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id
-  const spotlightForBanner: SpotlightData | null =
-    spotlightDataOverride ??
-    spotlightData ??
-    (artistData
-      ? {
-          vendorName: artistData.name,
-          vendorSlug: artistData.slug,
-          bio: artistData.bio,
-          image: artistData.image,
-          instagram: artistData.instagram,
-          productIds: [productIdShort],
-        }
-      : null)
+  const spotlightForBanner: SpotlightData | null = isLampOrBundleProduct
+    ? null
+    : spotlightDataOverride ??
+      spotlightData ??
+      (artistData
+        ? {
+            vendorName: artistData.name,
+            vendorSlug: artistData.slug,
+            bio: artistData.bio,
+            image: artistData.image,
+            instagram: artistData.instagram,
+            productIds: [productIdShort],
+          }
+        : null)
   const spotlightProductsForBanner = spotlightDataOverride?.products ?? spotlightData?.products ?? [product]
   const showArtworkArtistGallery = Boolean(
-    description.trim() && artist && (artistLoading || spotlightForBanner)
+    !isLampOrBundleProduct &&
+      description.trim() &&
+      artist &&
+      (artistLoading || spotlightForBanner)
   )
 
   const slugFromVendor = artist.toLowerCase().replace(/\s+/g, '-')
@@ -276,6 +291,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   }, [slug])
 
   useEffect(() => {
+    if (isLampOrBundleProduct) return
     if (!artist && !artistSlugOverride) return
 
     if (artistCache.has(slug)) {
@@ -379,7 +395,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       })
 
     return () => { cancelled = true }
-  }, [artist, slug, artistSlugOverride, spotlightSlugsToTry])
+  }, [isLampOrBundleProduct, artist, slug, artistSlugOverride, spotlightSlugsToTry])
 
   const goToIndex = useCallback((i: number) => {
     setHasUserInteracted(true)
@@ -521,12 +537,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8"
         >
           <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
-            {editionArtistName ? (
+            {detailHeaderArtistLine ? (
               <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
-                {editionArtistName}
+                {detailHeaderArtistLine}
               </p>
             ) : null}
-            <h2 className={cn('text-lg font-semibold text-[#FFBA94] leading-tight', editionArtistName && 'mt-1')}>{product.title}</h2>
+            <h2 className={cn('text-lg font-semibold text-[#FFBA94] leading-tight', detailHeaderArtistLine && 'mt-1')}>{product.title}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {price && (
                 <div className="flex items-center gap-2">
@@ -558,6 +574,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 artistLoading={artistLoading}
                 spotlight={spotlightForBanner}
                 spotlightProducts={spotlightProductsForBanner}
+                detailsLabel={productDetailsLabel}
               />
             </>
           ) : (
@@ -579,7 +596,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                       </div>
                       <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                        Artwork details
+                        {productDetailsLabel}
                       </span>
                     </div>
                     <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
@@ -599,7 +616,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </AnimatePresence>
                 </div>
               )}
-              {artist && (
+              {!isLampOrBundleProduct && artist && (
                 <div className="py-3 border-b border-neutral-100 dark:border-white/10">
                   {artistLoading ? (
                     <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
@@ -830,12 +847,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
                   {/* Header: title, artist, price — edition size shown in scarcity / edition blocks */}
                   <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
-                    {editionArtistName ? (
+                    {detailHeaderArtistLine ? (
                       <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
-                        {editionArtistName}
+                        {detailHeaderArtistLine}
                       </p>
                     ) : null}
-                    <h2 className={cn('text-lg font-semibold text-[#FFBA94] leading-tight', editionArtistName && 'mt-1')}>
+                    <h2 className={cn('text-lg font-semibold text-[#FFBA94] leading-tight', detailHeaderArtistLine && 'mt-1')}>
                       {product.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -1030,6 +1047,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         artistLoading={artistLoading}
                         spotlight={spotlightForBanner}
                         spotlightProducts={spotlightProductsForBanner}
+                        detailsLabel={productDetailsLabel}
                       />
                     </>
                   ) : (
@@ -1046,7 +1064,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                 <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                               </div>
                               <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                                Artwork details
+                                {productDetailsLabel}
                               </span>
                             </div>
                             <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showDescription && 'rotate-180')} />
@@ -1071,7 +1089,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                         </div>
                       ) : null}
-                      {artist && (
+                      {!isLampOrBundleProduct && artist && (
                         <div className="py-3 border-t border-neutral-100 dark:border-white/10">
                           {artistLoading ? (
                             <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
@@ -1418,6 +1436,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   spotlight={spotlightForBanner}
                   spotlightProducts={spotlightProductsForBanner}
                   className="px-4"
+                  detailsLabel={productDetailsLabel}
                 />
               </>
             ) : (
@@ -1434,7 +1453,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
                         </div>
                         <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-                          Artwork details
+                          {productDetailsLabel}
                         </span>
                       </div>
                       <ChevronDown className={cn(
@@ -1465,7 +1484,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
                 ) : null}
 
-                {artist && (
+                {!isLampOrBundleProduct && artist && (
                   <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
                     {artistLoading ? (
                       <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
@@ -1555,12 +1574,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               )}
               <div className="space-y-2 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center min-w-0 w-full">
-                  {editionArtistName ? (
+                  {detailHeaderArtistLine ? (
                     <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
-                      {editionArtistName}
+                      {detailHeaderArtistLine}
                     </p>
                   ) : null}
-                  <h2 className={cn('text-sm font-semibold text-[#FFBA94] tracking-tight', editionArtistName && 'mt-0.5')}>
+                  <h2 className={cn('text-sm font-semibold text-[#FFBA94] tracking-tight', detailHeaderArtistLine && 'mt-0.5')}>
                     {product.title}
                   </h2>
                   {isSoldOut && (
