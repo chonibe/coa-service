@@ -1166,6 +1166,96 @@ export async function getExperienceLampAndSeasonCollections(
   }
 }
 
+function isExperienceLampProductHandle(handle: string | null | undefined): boolean {
+  if (!handle) return false
+  return handle === 'street_lamp' || handle.startsWith('street-lamp')
+}
+
+/** Sort vendor rows like experience FilterPanel: artists with ≥2 works first, then A–Z. */
+export function sortExperienceVendorCatalogEntries(entries: Iterable<[string, number]>): [string, number][] {
+  return Array.from(entries).sort((a, b) => {
+    const aPairs = a[1] >= 2 ? 1 : 0
+    const bPairs = b[1] >= 2 ? 1 : 0
+    if (bPairs !== aPairs) return bPairs - aPairs
+    return a[0].localeCompare(b[0])
+  })
+}
+
+/**
+ * Paginate an experience season collection and count products per vendor (minimal Storefront fields).
+ * Excludes street_lamp products, matching experience page `filterLamp` behavior.
+ */
+export async function getCollectionVendorCountsForExperience(collectionHandle: string): Promise<Map<string, number>> {
+  const map = new Map<string, number>()
+  const pageSize = 250
+  let after: string | null = null
+  let hasNextPage = true
+
+  const query = `
+    query CollectionVendorsPage($handle: String!, $first: Int!, $after: String) {
+      collection(handle: $handle) {
+        products(first: $first, after: $after, sortKey: MANUAL) {
+          edges {
+            node {
+              vendor
+              handle
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `
+
+  type VendorPageData = {
+    collection: {
+      products: {
+        edges: { node: { vendor: string | null; handle: string } }[]
+        pageInfo: { hasNextPage: boolean; endCursor: string | null }
+      } | null
+    } | null
+  }
+
+  while (hasNextPage) {
+    const data = await storefrontQuery<VendorPageData>(query, {
+      handle: collectionHandle,
+      first: pageSize,
+      after: after ?? undefined,
+    })
+    const edges = data.collection?.products?.edges ?? []
+    for (const { node } of edges) {
+      if (isExperienceLampProductHandle(node.handle)) continue
+      const v = node.vendor?.trim()
+      if (!v) continue
+      map.set(v, (map.get(v) || 0) + 1)
+    }
+    const pi = data.collection?.products?.pageInfo
+    hasNextPage = Boolean(pi?.hasNextPage)
+    after = pi?.endCursor ?? null
+    if (!hasNextPage) break
+  }
+
+  return map
+}
+
+/** Full vendor catalog for both experience seasons (merged counts, sorted for filter UI). */
+export async function getExperienceSeasonsVendorCatalogMerged(
+  seasonHandle1: string,
+  seasonHandle2: string
+): Promise<[string, number][]> {
+  const [m1, m2] = await Promise.all([
+    getCollectionVendorCountsForExperience(seasonHandle1),
+    getCollectionVendorCountsForExperience(seasonHandle2),
+  ])
+  const merged = new Map<string, number>()
+  for (const [v, c] of m1) merged.set(v, (merged.get(v) || 0) + c)
+  for (const [v, c] of m2) merged.set(v, (merged.get(v) || 0) + c)
+  return sortExperienceVendorCatalogEntries(merged)
+}
+
 /**
  * Get multiple collections
  */

@@ -49,6 +49,7 @@ import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-ev
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
+import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
 import {
   FEATURED_ARTIST_BUNDLE_USD,
   computeFeaturedBundleCheckoutPrices,
@@ -205,6 +206,7 @@ export function ExperienceV2Client({
   )
 
   const { isAuthenticated, loading: shopAuthLoading } = useShopAuthContext()
+  const artistCatalogForFilters = useExperienceArtistCatalog()
   const [watchlistRows, setWatchlistRows] = useState<WatchlistApiRow[]>([])
   const [carouselStripMode, setCarouselStripMode] = useState<'collection' | 'watchlist'>('collection')
 
@@ -1487,6 +1489,7 @@ export function ExperienceV2Client({
         spotlightBannerExpanded={spotlightExpanded}
         streetEditionByProductId={streetEditionByProductId}
         featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
+        artistCatalogForFilters={artistCatalogForFilters}
       />
       )}
 

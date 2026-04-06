@@ -54,6 +54,7 @@ import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
+import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
 import {
   FEATURED_ARTIST_BUNDLE_USD,
   computeFeaturedBundleCheckoutPrices,
@@ -121,6 +122,7 @@ export function ExperienceV2Client({
   const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } =
     useExperienceOrder()
   const { isAuthenticated } = useShopAuthContext()
+  const artistCatalogForFilters = useExperienceArtistCatalog()
 
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
@@ -1290,6 +1292,7 @@ export function ExperienceV2Client({
         spotlightBannerExpanded={spotlightExpanded}
         streetEditionByProductId={streetEditionByProductId}
         featuredBundleOffer={featuredBundleFilterOffer}
+        artistCatalogForFilters={artistCatalogForFilters}
       />
       )}
 

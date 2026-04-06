@@ -97,6 +97,7 @@ import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
@@ -182,6 +183,7 @@ export function Configurator({
 }: ConfiguratorProps) {
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
+  const artistCatalogForFilters = useExperienceArtistCatalog()
   const {
     setOrderSummary,
     setOrderBarProps,
@@ -2525,6 +2527,7 @@ export function Configurator({
         onClose={() => setFilterOpen(false)}
         cartOrder={cartOrder}
         featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
+        artistCatalog={artistCatalogForFilters}
       />
 
       {/* Artwork / lamp detail drawer — overlay only on mobile; desktop uses inline panel in left area */}

@@ -375,6 +375,8 @@ interface ArtworkPickerSheetProps {
   streetEditionByProductId?: Record<string, StreetEditionStatesRow>
   /** Featured artist bundle CTA in filters (legacy /experience picker) */
   featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  /** Full vendor list from collection-vendors API (all pages); overrides artist derivation from products */
+  artistCatalogForFilters?: [string, number][] | null
 }
 
 export function ArtworkPickerSheet({
@@ -402,6 +404,7 @@ export function ArtworkPickerSheet({
   spotlightBannerExpanded,
   streetEditionByProductId = {},
   featuredBundleOffer,
+  artistCatalogForFilters = null,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -887,6 +890,7 @@ export function ArtworkPickerSheet({
                 onClose={onFilterClose}
                 cartOrder={cartOrder}
                 featuredBundleOffer={featuredBundleOffer ?? undefined}
+                artistCatalog={artistCatalogForFilters}
               />
             )}
             </motion.div>

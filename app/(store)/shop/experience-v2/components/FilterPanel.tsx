@@ -61,6 +61,11 @@ interface FilterPanelProps {
   onOpenWishlist?: () => void
   /** Featured artist bundle (lamp + 2 spotlight prints) — shown above Artist list when set */
   featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  /**
+   * Full-season vendor catalog from `/api/shop/experience/collection-vendors` (paginated server-side).
+   * When set, artist checklist uses this instead of deriving from `products` (avoids missing artists when only the first product page is loaded).
+   */
+  artistCatalog?: [string, number][] | null
 }
 
 const PRICE_PRESETS: Array<{ label: string; range: [number, number] }> = [
@@ -106,6 +111,7 @@ export function FilterPanel({
   cartOrder = [],
   onOpenWishlist,
   featuredBundleOffer,
+  artistCatalog = null,
 }: FilterPanelProps) {
   const filterPanelOpenLogged = useRef(false)
   useEffect(() => {
@@ -123,6 +129,9 @@ export function FilterPanel({
   }, [isOpen])
 
   const allArtists = useMemo(() => {
+    if (artistCatalog && artistCatalog.length > 0) {
+      return artistCatalog
+    }
     const map = new Map<string, number>()
     products.forEach((p) => {
       if (p.vendor) map.set(p.vendor, (map.get(p.vendor) || 0) + 1)
@@ -134,7 +143,7 @@ export function FilterPanel({
         if (bPairs !== aPairs) return bPairs - aPairs
         return a[0].localeCompare(b[0])
       })
-  }, [products])
+  }, [artistCatalog, products])
 
   const allTags = useMemo(() => {
     const map = new Map<string, number>()
