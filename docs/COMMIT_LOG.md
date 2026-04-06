@@ -2,7 +2,7 @@
 
 ## Commit: feat(shop): featured artist bundle $159 — experience checkout + filters (2026-04-06)
 
-**Ref:** `24e8c0bd2`
+**Ref:** `efb2c5967`
 
 ### Summary
 **Featured artist bundle** defaults empty carts to the first two **artist spotlight** prints (one-time seed), shows **$159** subtotal and **Stripe** line totals when `lampQuantity === 1` and cart matches spotlight pair (allocated across lamp + 2 SKUs via [`lib/shop/experience-featured-bundle.ts`](lib/shop/experience-featured-bundle.ts)). **FilterPanel** CTA with compare-at regular total; **ExperienceCheckoutStickyBar** bundle label; **OrderBar** / context `featuredBundleCheckout` overrides. Parity on **legacy** `/shop/experience` [`ExperienceV2Client`](app/(store)/shop/experience/components/ExperienceV2Client.tsx) + [`ArtworkPickerSheet`](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx); onboarding **Configurator** wired.
