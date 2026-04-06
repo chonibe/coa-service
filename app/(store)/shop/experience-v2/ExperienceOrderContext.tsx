@@ -40,6 +40,8 @@ export interface OrderBarContextProps {
   lockedArtworkPrices?: Record<string, number>
   /** Street ladder list USD from edition-states (numeric Shopify product id → dollars) */
   streetLadderPrices?: Record<string, number>
+  /** Season tab for Storefront ladder fallback when API has no row (matches picker). */
+  streetPricingSeasonFallback?: 1 | 2
   /** When set, OrderBar / Stripe line items use these USD amounts (featured artist bundle). */
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
   /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */

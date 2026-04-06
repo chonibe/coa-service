@@ -808,13 +808,16 @@ export function Configurator({
   const discountBarLabel = LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED
     ? 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
     : undefined
+  const artworkPriceMaps = useMemo(
+    () => ({
+      lockedUsdByProductId: lockedArtworkPrices,
+      streetLadderUsdByProductId: streetLadderPrices,
+      seasonBandsFallback: activeSeason === 'season2' ? 2 : 1,
+    }),
+    [lockedArtworkPrices, streetLadderPrices, activeSeason]
+  )
   const artworksTotal = selectedProducts.reduce(
-    (sum, p) =>
-      sum +
-      experienceArtworkUnitUsd(p, {
-        lockedUsdByProductId: lockedArtworkPrices,
-        streetLadderUsdByProductId: streetLadderPrices,
-      }),
+    (sum, p) => sum + experienceArtworkUnitUsd(p, artworkPriceMaps),
     0
   )
   const subtotalNatural = lampTotal + artworksTotal
@@ -826,17 +829,13 @@ export function Configurator({
     return computeFeaturedBundleCheckoutPrices({
       lampNaturalLines: lampPrices,
       artProducts: spotlightPairProducts,
-      priceMaps: {
-        lockedUsdByProductId: lockedArtworkPrices,
-        streetLadderUsdByProductId: streetLadderPrices,
-      },
+      priceMaps: artworkPriceMaps,
     })
   }, [
     featuredArtistBundleActive,
     spotlightPairProducts,
     lampPrices,
-    lockedArtworkPrices,
-    streetLadderPrices,
+    artworkPriceMaps,
   ])
 
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
@@ -854,10 +853,7 @@ export function Configurator({
     const compareAt = computeFeaturedBundleRegularSubtotalUsd({
       lampNaturalLines: lampPricesNatural,
       artProducts: spotlightPairProducts,
-      priceMaps: {
-        lockedUsdByProductId: lockedArtworkPrices,
-        streetLadderUsdByProductId: streetLadderPrices,
-      },
+      priceMaps: artworkPriceMaps,
     })
     const bundleInCart = isFeaturedArtistBundleActive({
       lampQuantity,
@@ -876,8 +872,7 @@ export function Configurator({
     spotlightData,
     spotlightPairProducts,
     lampPrice,
-    lockedArtworkPrices,
-    streetLadderPrices,
+    artworkPriceMaps,
     lampQuantity,
     cartOrder,
     allProducts,
@@ -1130,7 +1125,7 @@ export function Configurator({
 
   useEffect(() => {
     setOrderSummary({ total: orderTotal, itemCount: orderItemCount })
-  }, [orderTotal, orderItemCount, setOrderSummary, lockedArtworkPrices, streetLadderPrices])
+  }, [orderTotal, orderItemCount, setOrderSummary, artworkPriceMaps])
 
   // Provide OrderBar props to shared OrderBar (rendered in ExperienceClient)
   useEffect(() => {
@@ -1160,6 +1155,7 @@ export function Configurator({
       wizardHighlightActive: showHighlightAnimation,
       lockedArtworkPrices,
       streetLadderPrices,
+      streetPricingSeasonFallback: activeSeason === 'season2' ? 2 : 1,
       featuredBundleCheckout: featuredArtistBundleActive ? featuredBundleCheckoutPayload : null,
     })
   }, [
@@ -2312,6 +2308,7 @@ export function Configurator({
             isMobile={isMobile}
             lockedArtworkPrices={lockedArtworkPrices}
             streetLadderPrices={streetLadderPrices}
+            streetPricingSeasonFallback={activeSeason === 'season2' ? 2 : 1}
             featuredBundleCheckout={featuredArtistBundleActive ? featuredBundleCheckoutPayload : null}
           />
             </div>

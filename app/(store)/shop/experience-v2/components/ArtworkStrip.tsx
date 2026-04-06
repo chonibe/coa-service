@@ -29,12 +29,13 @@ const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '
 const MERGE_CONFETTI_COUNT = 16
 const MERGE_CONFETTI_COLORS = ['#047AFF', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
 
-/** Match OrderBar: featured bundle unit → reserve lock → street ladder → Shopify min variant. */
+/** Match OrderBar / picker: bundle → lock → API ladder → Storefront ladder fallback → Shopify min variant. */
 function stripArtworkUnitUsd(
   product: ShopifyProduct,
   lockedArtworkPrices: Record<string, number> | undefined,
   streetLadderPrices: Record<string, number> | undefined,
-  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined
+  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined,
+  streetPricingSeasonFallback?: 1 | 2
 ): number {
   const k = normalizeExperienceProductKey(product.id)
   const bundleUnit = featuredBundleCheckout?.artworkUnitUsdByNumericId[k]
@@ -42,6 +43,7 @@ function stripArtworkUnitUsd(
   return experienceArtworkUnitUsd(product, {
     lockedUsdByProductId: lockedArtworkPrices,
     streetLadderUsdByProductId: streetLadderPrices,
+    seasonBandsFallback: streetPricingSeasonFallback,
   })
 }
 
@@ -50,9 +52,16 @@ function formatStripPrice(
   isEarlyAccess: boolean,
   lockedArtworkPrices: Record<string, number> | undefined,
   streetLadderPrices: Record<string, number> | undefined,
-  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined
+  featuredBundleCheckout: FeaturedBundleCheckoutPrices | null | undefined,
+  streetPricingSeasonFallback?: 1 | 2
 ): { main: string; compareAt: string | null } {
-  const base = stripArtworkUnitUsd(product, lockedArtworkPrices, streetLadderPrices, featuredBundleCheckout)
+  const base = stripArtworkUnitUsd(
+    product,
+    lockedArtworkPrices,
+    streetLadderPrices,
+    featuredBundleCheckout,
+    streetPricingSeasonFallback
+  )
   if (!(base > 0)) return { main: '', compareAt: null }
   if (isEarlyAccess) {
     const discounted = Math.round(base * 0.9 * 100) / 100
@@ -220,6 +229,7 @@ interface ArtworkCardProps {
   /** Align card price with OrderBar / checkout (ladder, locks, bundle). */
   lockedArtworkPrices?: Record<string, number>
   streetLadderPrices?: Record<string, number>
+  streetPricingSeasonFallback?: 1 | 2
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
 
@@ -260,6 +270,7 @@ function ArtworkCard({
   suppressSelectionRing = false,
   lockedArtworkPrices,
   streetLadderPrices,
+  streetPricingSeasonFallback,
   featuredBundleCheckout,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -271,7 +282,8 @@ function ArtworkCard({
     isEarlyAccess,
     lockedArtworkPrices,
     streetLadderPrices,
-    featuredBundleCheckout
+    featuredBundleCheckout,
+    streetPricingSeasonFallback
   )
 
   const handleWishlistToggle = useCallback(
@@ -286,7 +298,8 @@ function ArtworkCard({
           product,
           lockedArtworkPrices,
           streetLadderPrices,
-          featuredBundleCheckout
+          featuredBundleCheckout,
+          streetPricingSeasonFallback
         )
         const price =
           unitUsd > 0
@@ -303,7 +316,16 @@ function ArtworkCard({
         })
       }
     },
-    [product, inWishlist, addItem, removeItem, lockedArtworkPrices, streetLadderPrices, featuredBundleCheckout]
+    [
+      product,
+      inWishlist,
+      addItem,
+      removeItem,
+      lockedArtworkPrices,
+      streetLadderPrices,
+      streetPricingSeasonFallback,
+      featuredBundleCheckout,
+    ]
   )
 
   const handleLampSelect = useCallback(() => {
@@ -648,6 +670,7 @@ interface ArtworkStripProps {
   /** Same maps as OrderBar so selector prices match cart / Stripe lines */
   lockedArtworkPrices?: Record<string, number>
   streetLadderPrices?: Record<string, number>
+  streetPricingSeasonFallback?: 1 | 2
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
 
@@ -706,6 +729,7 @@ export function ArtworkStrip({
   isMobile = false,
   lockedArtworkPrices,
   streetLadderPrices,
+  streetPricingSeasonFallback,
   featuredBundleCheckout,
 }: ArtworkStripProps) {
   // Tap-nudge: pick 4 random card indices, animate them one by one until user taps any card
@@ -909,6 +933,7 @@ export function ArtworkStrip({
                       suppressSelectionRing={shouldMerge}
                       lockedArtworkPrices={lockedArtworkPrices}
                       streetLadderPrices={streetLadderPrices}
+                      streetPricingSeasonFallback={streetPricingSeasonFallback}
                       featuredBundleCheckout={featuredBundleCheckout}
                     />
                   </div>
@@ -1000,6 +1025,7 @@ export function ArtworkStrip({
                       isMobile={isMobile}
                       lockedArtworkPrices={lockedArtworkPrices}
                       streetLadderPrices={streetLadderPrices}
+                      streetPricingSeasonFallback={streetPricingSeasonFallback}
                       featuredBundleCheckout={featuredBundleCheckout}
                     />
                   </div>

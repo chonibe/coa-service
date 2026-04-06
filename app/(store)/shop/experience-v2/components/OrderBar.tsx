@@ -84,6 +84,8 @@ interface OrderBarProps {
   lockedArtworkPrices?: Record<string, number>
   /** Street ladder buy-now USD per artwork (numeric product id) from edition-states */
   streetLadderPrices?: Record<string, number>
+  /** Active season tab — used only when API ladder misses (Storefront metafield + inventory fallback). */
+  streetPricingSeasonFallback?: 1 | 2
   /** Featured artist bundle: allocated line prices totaling $159 */
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
@@ -144,6 +146,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   collectedProductIds,
   lockedArtworkPrices,
   streetLadderPrices,
+  streetPricingSeasonFallback,
   featuredBundleCheckout,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
@@ -179,8 +182,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     () => ({
       lockedUsdByProductId: lockedArtworkPrices,
       streetLadderUsdByProductId: streetLadderPrices,
+      seasonBandsFallback: streetPricingSeasonFallback,
     }),
-    [lockedArtworkPrices, streetLadderPrices]
+    [lockedArtworkPrices, streetLadderPrices, streetPricingSeasonFallback]
   )
 
   const lampPrice = parsePrice(lamp)
