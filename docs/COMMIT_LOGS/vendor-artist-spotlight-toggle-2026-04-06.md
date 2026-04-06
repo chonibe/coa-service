@@ -17,7 +17,12 @@ Adds `vendors.artist_spotlight_enabled` (default **on**) and an admin **Vendors*
 
 ## Apply on database
 
-Run pending migrations on your Supabase project (e.g. `npx supabase db push --yes --include-all` after `supabase link`), or apply the SQL in the migration file in the dashboard SQL editor.
+1. **If `supabase db push --include-all` fails** on older migrations (e.g. duplicate policy on `experience_quiz_signups`), apply **only** this migration with a direct Postgres URL from `.env.local`:
+   ```bash
+   node scripts/apply-migration-from-env.mjs supabase/migrations/20260406121000_vendor_artist_spotlight_enabled.sql
+   npx supabase migration repair 20260406121000 --status applied --linked
+   ```
+2. Or paste the SQL from [`supabase/migrations/20260406121000_vendor_artist_spotlight_enabled.sql`](../../supabase/migrations/20260406121000_vendor_artist_spotlight_enabled.sql) into the Supabase SQL editor and run it.
 
 ## Verification
 
