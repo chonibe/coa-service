@@ -2,7 +2,7 @@
 
 ## Commit: fix(experience): show lamp volume discount + featured bundle sections when admin flags expect it (2026-04-06)
 
-**Ref:** `101470f13`
+**Ref:** `0af7384bd`
 
 ### Summary
 **Lamp volume discount** UI was never visible: promo chips were behind **`false &&`**, and the progress bar lived inside a **`hidden`** lamp card. **Featured bundle under Spline** only rendered when **`collectionArtworkCount === 0`**, so users with a **restored cart** never saw the block even when the admin bundle toggle was on and the CTA was still valid.
