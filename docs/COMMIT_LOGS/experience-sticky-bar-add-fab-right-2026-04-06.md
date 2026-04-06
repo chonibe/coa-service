@@ -1,5 +1,7 @@
 # Commit context: Experience sticky bar — add (+) FAB on the right (2026-04-06)
 
+**Commit:** `793233cfc` — `fix(ui): move experience add-artwork + FAB to the right of thumbnails`
+
 ## Checklist
 
 - [x] [ExperienceCheckoutStickyBar.tsx](../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) — Top row order: scrollable thumbnails (`flex-1`) first, **add-artwork button last**; when thumbnails suppressed, `justify-end` so the FAB stays on the right.
