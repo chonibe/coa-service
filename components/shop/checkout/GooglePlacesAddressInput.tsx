@@ -84,19 +84,35 @@ function parsePlaceResult(place: google.maps.places.PlaceResult): AddressSuggest
   }
 }
 
-export function GooglePlacesAddressInput({
-  id,
-  value,
-  onChange,
-  onSelect,
-  country,
-  placeholder = 'Street address',
-  className,
-  disabled,
-  autoComplete,
-  enterKeyHint,
-  inputMode,
-}: GooglePlacesAddressInputProps) {
+function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
+  return (value: T | null) => {
+    for (const ref of refs) {
+      if (!ref) continue
+      if (typeof ref === 'function') ref(value)
+      else (ref as React.MutableRefObject<T | null>).current = value
+    }
+  }
+}
+
+export const GooglePlacesAddressInput = React.forwardRef<
+  HTMLInputElement,
+  GooglePlacesAddressInputProps
+>(function GooglePlacesAddressInput(
+  {
+    id,
+    value,
+    onChange,
+    onSelect,
+    country,
+    placeholder = 'Street address',
+    className,
+    disabled,
+    autoComplete,
+    enterKeyHint,
+    inputMode,
+  },
+  forwardedRef
+) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null)
   const [scriptLoaded, setScriptLoaded] = React.useState(false)
@@ -131,16 +147,24 @@ export function GooglePlacesAddressInput({
     document.head.appendChild(script)
   }, [apiKey])
 
-  React.useEffect(() => {
+  /** Latest country for initial Autocomplete options when script becomes ready (avoids stale closure vs geo-updated form). */
+  const countryRef = React.useRef(country)
+  countryRef.current = country
+
+  /** useLayoutEffect: bind after Dialog/portal DOM commit so the input ref exists and predictions attach reliably. */
+  React.useLayoutEffect(() => {
     if (!scriptLoaded || !inputRef.current || !apiKey) return
+    const inputEl = inputRef.current
+    const c = countryRef.current
     const opts: google.maps.places.AutocompleteOptions = {
       types: ['geocode'],
       fields: ['address_components', 'formatted_address', 'place_id', 'name'],
-      componentRestrictions: country ? { country: country.toLowerCase() } : undefined,
+      componentRestrictions: c?.trim() ? { country: c.toLowerCase() } : undefined,
     }
-    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, opts)
-    const listener = autocompleteRef.current.addListener('place_changed', () => {
-      const place = autocompleteRef.current?.getPlace()
+    const ac = new google.maps.places.Autocomplete(inputEl, opts)
+    autocompleteRef.current = ac
+    const listener = ac.addListener('place_changed', () => {
+      const place = ac.getPlace()
       if (!place) return
       const suggestion = parsePlaceResult(place)
       if (suggestion) {
@@ -149,17 +173,35 @@ export function GooglePlacesAddressInput({
       }
     })
     return () => {
-      if (typeof google !== 'undefined' && autocompleteRef.current && listener) {
-        google.maps.event.removeListener(listener)
+      if (typeof google === 'undefined') {
+        autocompleteRef.current = null
+        return
       }
+      google.maps.event.removeListener(listener)
+      google.maps.event.clearInstanceListeners(ac)
+      autocompleteRef.current = null
     }
-  }, [scriptLoaded, apiKey, country])
+  }, [scriptLoaded, apiKey])
+
+  React.useEffect(() => {
+    const ac = autocompleteRef.current
+    if (!ac || typeof google === 'undefined') return
+    try {
+      if (country?.trim()) {
+        ac.setComponentRestrictions({ country: country.toLowerCase() })
+      } else {
+        ac.setComponentRestrictions(null)
+      }
+    } catch {
+      // setComponentRestrictions can throw if Maps API not fully ready
+    }
+  }, [country])
 
   if (!apiKey) return null
 
   return (
     <input
-      ref={inputRef}
+      ref={mergeRefs(inputRef, forwardedRef)}
       id={id}
       type="text"
       value={value}
@@ -174,4 +216,6 @@ export function GooglePlacesAddressInput({
       aria-autocomplete="list"
     />
   )
-}
+})
+
+GooglePlacesAddressInput.displayName = 'GooglePlacesAddressInput'
