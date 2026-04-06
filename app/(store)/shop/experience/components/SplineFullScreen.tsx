@@ -675,11 +675,11 @@ export function SplineFullScreen({
             !hasGallery && !hasAccordion
               ? 'flex-1 min-w-0'
               : hasAccordion
-                ? 'min-h-[72svh]'
+                ? 'min-h-[72svh] max-md:min-h-[min(64svh,680px)]'
                 : 'min-h-[100svh]'
           )}
         >
-          <div className="flex-1 min-h-0 min-w-0 max-h-[min(72svh,820px)] relative">
+          <div className="flex-1 min-h-0 min-w-0 max-h-[min(72svh,820px)] relative max-md:pb-4">
           {!splineReady ? (
             <button
               type="button"
