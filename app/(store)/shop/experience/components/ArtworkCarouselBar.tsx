@@ -389,7 +389,7 @@ export function ArtworkCarouselBar({
                     }}
                     className={cn(
                       'relative isolate block aspect-[14/20] w-16 shrink-0 overflow-hidden rounded-[12px] sm:w-[4.5rem]',
-                      'ring-1 shadow-none ring-inset ring-black/10 dark:ring-white/15',
+                      'shadow-none ring-0',
                       'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                       theme === 'light'
                         ? 'focus-visible:outline-blue-600'
@@ -533,12 +533,7 @@ export function ArtworkCarouselBar({
                   <button
                     type="button"
                     onClick={() => onAddLampFromCarouselStrip?.()}
-                    className={cn(
-                      'relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
-                      theme === 'light'
-                        ? 'ring-1 ring-neutral-200/95 hover:ring-neutral-100'
-                        : 'ring-1 ring-white/45 hover:ring-white/60'
-                    )}
+                    className="relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden ring-0 shadow-none"
                     aria-label={`Add ${stripLampTitle} to order`}
                   >
                     <div className="absolute inset-0">
@@ -602,12 +597,7 @@ export function ArtworkCarouselBar({
                     <button
                       type="button"
                       onClick={() => onAddProduct ? onAddProduct(artwork) : onOpenPicker()}
-                      className={cn(
-                        'relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
-                        theme === 'light'
-                          ? 'ring-1 ring-neutral-200/95 hover:ring-neutral-100'
-                          : 'ring-1 ring-white/45 hover:ring-white/60'
-                      )}
+                      className="relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden ring-0 shadow-none"
                       aria-label={`Add ${artwork.title} to collection`}
                     >
                       <div className="absolute inset-0">
