@@ -12,11 +12,7 @@ import {
   EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
   resolveExperienceNextAction,
 } from '@/lib/shop/experience-journey-next-action'
-import {
-  getMiniSplineEmbedUrl,
-  readMiniSplineCarouselVisible,
-  writeMiniSplineCarouselVisible,
-} from '@/lib/shop/experience-carousel-mini-spline'
+import { getMiniSplineEmbedUrl } from '@/lib/shop/experience-carousel-mini-spline'
 import type { CarouselStripLampSplineProps } from './CarouselStripLampSpline'
 import { CarouselStripLampSpline } from './CarouselStripLampSpline'
 
@@ -47,6 +43,13 @@ interface ArtworkCarouselBarProps {
   onJumpToSpline?: () => void
   /** Same `Spline3DPreview` as the main lamp reel; when set with `onJumpToSpline`, used instead of embed/facade. */
   miniSplineLampPreview?: Omit<CarouselStripLampSplineProps, 'className'> | null
+  /** Strip mini lamp is shown only when `lampQuantity > 0`; first-slot + placeholder uses this for image/title. */
+  stripLampProduct?: ShopifyProduct | null
+  lampQuantity?: number
+  /** Empty collection + no lamp: spotlight-style + tile to add lamp to cart */
+  onAddLampFromCarouselStrip?: () => void
+  /** Lamp in cart: trash removes lamp from order */
+  onRemoveLampFromCarouselStrip?: () => void
 }
 
 export function ArtworkCarouselBar({
@@ -65,6 +68,10 @@ export function ArtworkCarouselBar({
   reserveCheckoutBar = false,
   onJumpToSpline,
   miniSplineLampPreview = null,
+  stripLampProduct = null,
+  lampQuantity = 0,
+  onAddLampFromCarouselStrip,
+  onRemoveLampFromCarouselStrip,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -72,10 +79,6 @@ export function ArtworkCarouselBar({
   const { pickerEngaged, orderDrawerOpen, orderBarProps } = useExperienceOrder()
   const lampQuantityForJourney = orderBarProps?.lampQuantity ?? 0
   const miniSplineEmbedUrl = useMemo(() => getMiniSplineEmbedUrl(), [])
-  const [miniSplineStripVisible, setMiniSplineStripVisible] = useState(true)
-  useEffect(() => {
-    setMiniSplineStripVisible(readMiniSplineCarouselVisible())
-  }, [])
 
   const journeyNext = useMemo(() => {
     if (orderDrawerOpen) return null
@@ -184,6 +187,20 @@ export function ArtworkCarouselBar({
 
   const hasCarouselArtworks = selectedArtworks.length > 0
   const emptyCollectionStart = !hasCarouselArtworks && stripMode === 'collection'
+
+  const lampInCart = lampQuantity > 0
+  const showStripMiniLampSpline =
+    stripMode === 'collection' &&
+    Boolean(onJumpToSpline && miniSplineLampPreview && lampInCart)
+  const showStripLampFirstPlaceholder =
+    stripMode === 'collection' &&
+    emptyCollectionStart &&
+    !lampInCart &&
+    Boolean(onJumpToSpline && onAddLampFromCarouselStrip)
+
+  const stripLampTitle = stripLampProduct?.title?.trim() || 'Street Lamp'
+  const stripLampImageUrl =
+    stripLampProduct?.featuredImage?.url || stripLampProduct?.images?.edges?.[0]?.node?.url || null
 
   const showSpotlightPlaceholders =
     stripMode === 'collection' &&
@@ -315,120 +332,94 @@ export function ArtworkCarouselBar({
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
           >
             <>
-              {stripMode === 'collection' && onJumpToSpline ? (
-                miniSplineStripVisible ? (
-                  <div
-                    data-carousel-item
-                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          writeMiniSplineCarouselVisible(false)
-                          setMiniSplineStripVisible(false)
-                        }}
-                        className={cn(
-                          'flex items-center justify-center transition-opacity opacity-40 hover:opacity-100',
-                          theme === 'light' ? 'text-neutral-700' : 'text-white/80'
-                        )}
-                        aria-label="Hide lamp preview from strip"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      </button>
-                    </div>
+              {showStripMiniLampSpline && onJumpToSpline ? (
+                <div
+                  data-carousel-item
+                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => {
-                        const reel = experienceReelRef?.current
-                        const spline = reel?.querySelector('[data-experience-reel-spline-section]')
-                        if (spline instanceof HTMLElement) {
-                          spline.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                        }
-                        onJumpToSpline()
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemoveLampFromCarouselStrip?.()
                       }}
                       className={cn(
-                        'relative isolate block aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[12px]',
-                        'ring-1 shadow-none ring-inset ring-black/10 dark:ring-white/15',
-                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                        theme === 'light'
-                          ? 'focus-visible:outline-blue-600'
-                          : 'focus-visible:outline-white/80'
+                        'flex items-center justify-center transition-opacity opacity-40 hover:opacity-100',
+                        theme === 'light' ? 'text-neutral-700' : 'text-white/80'
                       )}
-                      aria-label="Scroll to main lamp preview"
+                      aria-label="Remove Street Lamp from order"
                     >
-                      <div
-                        className={cn(
-                          'absolute inset-0 overflow-hidden',
-                          theme === 'light' ? 'bg-neutral-100' : 'bg-black'
-                        )}
-                      >
-                        {miniSplineLampPreview ? (
-                          <CarouselStripLampSpline
-                            image1={miniSplineLampPreview.image1}
-                            image2={miniSplineLampPreview.image2}
-                            lampPreviewCount={miniSplineLampPreview.lampPreviewCount}
-                            collectionArtworkCount={miniSplineLampPreview.collectionArtworkCount}
-                            resetTrigger={miniSplineLampPreview.resetTrigger}
-                            rotateToSide={miniSplineLampPreview.rotateToSide}
-                            rotateTrigger={miniSplineLampPreview.rotateTrigger}
-                            onFrontSideSettled={miniSplineLampPreview.onFrontSideSettled}
-                            className="h-full min-h-[4.5rem] w-full"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <div className="experience-carousel-mini-turntable flex h-[155%] w-[155%] shrink-0 items-center justify-center">
-                              {miniSplineEmbedUrl ? (
-                                <iframe
-                                  title="Lamp 3D preview"
-                                  src={miniSplineEmbedUrl}
-                                  className="pointer-events-none h-[220px] w-[220px] max-w-none shrink-0 border-0"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  loading="lazy"
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reel = experienceReelRef?.current
+                      const spline = reel?.querySelector('[data-experience-reel-spline-section]')
+                      if (spline instanceof HTMLElement) {
+                        spline.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }
+                      onJumpToSpline()
+                    }}
+                    className={cn(
+                      'relative isolate block aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[12px]',
+                      'ring-1 shadow-none ring-inset ring-black/10 dark:ring-white/15',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+                      theme === 'light'
+                        ? 'focus-visible:outline-blue-600'
+                        : 'focus-visible:outline-white/80'
+                    )}
+                    aria-label="Scroll to main lamp preview"
+                  >
+                    <div
+                      className={cn(
+                        'absolute inset-0 overflow-hidden',
+                        theme === 'light' ? 'bg-neutral-100' : 'bg-black'
+                      )}
+                    >
+                      {miniSplineLampPreview ? (
+                        <CarouselStripLampSpline
+                          image1={miniSplineLampPreview.image1}
+                          image2={miniSplineLampPreview.image2}
+                          lampPreviewCount={miniSplineLampPreview.lampPreviewCount}
+                          collectionArtworkCount={miniSplineLampPreview.collectionArtworkCount}
+                          resetTrigger={miniSplineLampPreview.resetTrigger}
+                          rotateToSide={miniSplineLampPreview.rotateToSide}
+                          rotateTrigger={miniSplineLampPreview.rotateTrigger}
+                          onFrontSideSettled={miniSplineLampPreview.onFrontSideSettled}
+                          className="h-full min-h-[4.5rem] w-full"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <div className="experience-carousel-mini-turntable flex h-[155%] w-[155%] shrink-0 items-center justify-center">
+                            {miniSplineEmbedUrl ? (
+                              <iframe
+                                title="Lamp 3D preview"
+                                src={miniSplineEmbedUrl}
+                                className="pointer-events-none h-[220px] w-[220px] max-w-none shrink-0 border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="relative h-[3.25rem] w-[3.25rem] shrink-0">
+                                <Image
+                                  src="/internal.webp"
+                                  alt=""
+                                  fill
+                                  className="object-contain"
+                                  sizes="56px"
+                                  unoptimized
                                 />
-                              ) : (
-                                <div className="relative h-[3.25rem] w-[3.25rem] shrink-0">
-                                  <Image
-                                    src="/internal.webp"
-                                    alt=""
-                                    fill
-                                    className="object-contain"
-                                    sizes="56px"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    data-carousel-item
-                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
-                  >
-                    <div className="flex h-3.5 w-5 items-center justify-center" aria-hidden />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        writeMiniSplineCarouselVisible(true)
-                        setMiniSplineStripVisible(true)
-                      }}
-                      className={cn(
-                        'flex h-[4.5rem] w-14 shrink-0 items-center justify-center rounded-[12px] border ring-1 ring-inset',
-                        theme === 'light'
-                          ? 'border-neutral-200/90 bg-neutral-100/80 text-neutral-600 ring-black/5'
-                          : 'border-white/15 bg-white/10 text-white/70 ring-white/10'
+                        </div>
                       )}
-                      aria-label="Show lamp preview in strip"
-                    >
-                      <Plus className="h-5 w-5 opacity-50" strokeWidth={2.25} />
-                    </button>
-                  </div>
-                )
+                    </div>
+                  </button>
+                </div>
               ) : null}
               {stripArtworks.map((artwork, i) => {
                 const index = stripWindowStart + i
@@ -513,6 +504,77 @@ export function ArtworkCarouselBar({
                   </div>
                   )
               })}
+              {showStripLampFirstPlaceholder ? (
+                <div
+                  key="strip-lamp-first-placeholder"
+                  data-carousel-item
+                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                >
+                  <div className="flex h-3.5 w-5 items-center justify-center" aria-hidden />
+                  <button
+                    type="button"
+                    onClick={() => onAddLampFromCarouselStrip?.()}
+                    className={cn(
+                      'relative block w-24 aspect-[14/20] rounded-[15px] transition-all duration-200 active:scale-[0.95] overflow-hidden',
+                      theme === 'light'
+                        ? 'ring-1 ring-neutral-200/95 hover:ring-neutral-100'
+                        : 'ring-1 ring-white/45 hover:ring-white/60'
+                    )}
+                    aria-label={`Add ${stripLampTitle} to order`}
+                  >
+                    <div className="absolute inset-0">
+                      {stripLampImageUrl ? (
+                        <Image
+                          src={getShopifyImageUrl(stripLampImageUrl, 400) ?? stripLampImageUrl}
+                          alt=""
+                          fill
+                          unoptimized
+                          className="object-cover opacity-65"
+                          sizes="96px"
+                        />
+                      ) : (
+                        <div className="relative h-full w-full">
+                          <Image
+                            src="/internal.webp"
+                            alt=""
+                            fill
+                            className="object-cover opacity-65"
+                            sizes="96px"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-black/20" />
+                    <div
+                      className={cn(
+                        'absolute inset-x-0 bottom-0 z-[2] pointer-events-none flex justify-center px-1 pb-1.5'
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5',
+                          'border border-white/30 dark:border-white/20',
+                          'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
+                          'text-white shadow-sm shadow-black/20'
+                        )}
+                      >
+                        <span
+                          className="min-w-0 flex-1 text-center text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
+                          title={stripLampTitle}
+                        >
+                          {stripLampTitle}
+                        </span>
+                        <Plus
+                          className="h-3 w-3 shrink-0 text-white opacity-95"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              ) : null}
               {placeholderItems.map((artwork, index) => {
                 const imageUrl = artwork.featuredImage?.url || artwork.images?.edges?.[0]?.node?.url
                 const isFirstItem = index === 0

@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: feat(experience): carousel mini lamp tied to lamp cart + first-state + tile (2026-04-06)
+
+**Ref:** _(set after commit)_
+
+### Summary
+**[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** shows the live mini **`Spline3DPreview`** only when **`lampQuantity > 0`**; trash removes the lamp via **`onRemoveLampFromCarouselStrip`**. **Empty collection** and **no lamp**: spotlight-style **`+`** tile (`stripLampProduct`, **`onAddLampFromCarouselStrip`**). **Artworks without lamp**: mini lamp tile hidden. **[`experience-carousel-mini-spline.ts`](lib/shop/experience-carousel-mini-spline.ts)** removes sessionStorage visibility. Both **ExperienceV2Client** shells pass **`lampQuantity`**, **`stripLampProduct`**, add/remove handlers.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [lib/shop/experience-carousel-mini-spline.ts](lib/shop/experience-carousel-mini-spline.ts)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): strip mini lamp uses same Spline3DPreview as main reel (2026-04-06)
 
 **Ref:** `1b1fbddac`

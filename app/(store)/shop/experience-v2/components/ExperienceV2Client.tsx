@@ -1445,6 +1445,10 @@ export function ExperienceV2Client({
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
         onJumpToSpline={handleJumpToSpline}
+        lampQuantity={lampQuantity}
+        stripLampProduct={lamp}
+        onAddLampFromCarouselStrip={() => handleLampQuantityChange(1)}
+        onRemoveLampFromCarouselStrip={() => handleLampQuantityChange(0)}
         miniSplineLampPreview={{
           image1,
           image2,
