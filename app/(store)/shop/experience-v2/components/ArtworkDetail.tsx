@@ -123,7 +123,6 @@ interface ArtworkDetailProps {
 
 const artistCache = new Map<string, ArtistData | null>()
 type SpotlightWithProducts = SpotlightData & { products?: ShopifyProduct[] }
-const spotlightCache = new Map<string, SpotlightWithProducts | null>()
 
 /** Horizontal gallery for artwork description + artist spotlight when both are present. */
 function ArtworkArtistDetailGallery({
@@ -430,9 +429,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
     if (artistCache.has(slug)) {
       setArtistData(artistCache.get(slug) || null)
-      setSpotlightData(spotlightCache.get(slug) ?? null)
-      return
     }
+    // Always refetch artist-spotlight for this slug — do not cache spotlight payload. A cached
+    // spotlight from before custom.video existed (or API changes) would hide collection video forever per tab.
 
     let cancelled = false
     setArtistLoading(true)
@@ -482,7 +481,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             instagram: spotToUse.instagram,
           }
           artistCache.set(slug, valid)
-          spotlightCache.set(slug, spotToUse)
           setArtistData(valid)
           setSpotlightData(spotToUse)
         } else {
@@ -492,12 +490,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           const a = data && !data.error ? data : null
           if (a && !cancelled) {
             artistCache.set(slug, a)
-            spotlightCache.set(slug, null)
             setArtistData(a)
             setSpotlightData(null)
           } else {
             artistCache.set(slug, null)
-            spotlightCache.set(slug, null)
             setArtistData(null)
             setSpotlightData(null)
           }
@@ -512,18 +508,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           const a = data && !data.error ? data : null
           if (a && !cancelled) {
             artistCache.set(slug, a)
-            spotlightCache.set(slug, null)
             setArtistData(a)
             setSpotlightData(null)
           } else {
             artistCache.set(slug, null)
-            spotlightCache.set(slug, null)
             setArtistData(null)
             setSpotlightData(null)
           }
         } catch {
           artistCache.set(slug, null)
-          spotlightCache.set(slug, null)
           setArtistData(null)
           setSpotlightData(null)
         }

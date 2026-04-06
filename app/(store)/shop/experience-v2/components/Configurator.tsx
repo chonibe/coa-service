@@ -78,7 +78,7 @@ import { LampGridCard } from './LampGridCard'
 import { getAdPreset, resolvePresetProducts } from '@/lib/experience/ad-presets'
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
-import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
+import { ArtistSpotlightBanner, type SpotlightData } from './ArtistSpotlightBanner'
 import { LampSelectorPromoBanner } from './LampSelectorPromoBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import {
@@ -213,17 +213,7 @@ export function Configurator({
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
   const [collectedProductIds, setCollectedProductIds] = useState<Set<string>>(new Set())
-  const [spotlightData, setSpotlightData] = useState<{
-    vendorName: string
-    vendorSlug: string
-    bio?: string
-    image?: string
-    instagram?: string
-    productIds: string[]
-    seriesName?: string
-    gifUrl?: string
-    unlisted?: boolean
-  } | null>(null)
+  const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [spotlightProductsFromApi, setSpotlightProductsFromApi] = useState<ShopifyProduct[]>([])
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
