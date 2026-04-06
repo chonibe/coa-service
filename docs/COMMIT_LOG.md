@@ -2,6 +2,8 @@
 
 ## Commit: fix(experience): featured bundle under Spline — resolve spotlight pair + always show card (2026-04-06)
 
+**Ref:** `c0b7bfe40`
+
 ### Summary
 The bundle block stayed empty when **`getSpotlightPairProducts`** could not match API **`productIds`** to SSR season lists (especially **Supabase spotlight** responses without `products`). **`collectionArtworkCount`** also used strict `p.id === cartId`, so gid vs numeric mismatches hid sections. **Spline** now caps 3D height so the bundle card sits closer to the first viewport; the card renders whenever offer + lamp + pair exist.
 
