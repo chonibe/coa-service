@@ -550,16 +550,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     [detailCarouselSlides.length, dragX]
   )
 
-  // Auto-rotate carousel on image slides only (stay on native video until the user swipes)
+  // Auto-rotate carousel on image slides only (stay on native video until the user swipes).
+  // Advance to the *next image* slide, not (i+1)%n — otherwise lamp intro at index 0 traps the
+  // carousel after wrapping from the last image (modulo lands on video; interval then never restarts).
   useEffect(() => {
     if (hasUserInteracted || detailCarouselSlides.length <= 1) return
     const current = detailCarouselSlides[imageIndex]
     if (current && current.type !== 'image') return
+    const n = detailCarouselSlides.length
     const id = setInterval(() => {
       setImageIndex((i) => {
-        const cur = detailCarouselSlides[i]
-        if (cur && cur.type !== 'image') return i
-        return (i + 1) % detailCarouselSlides.length
+        for (let step = 1; step <= n; step++) {
+          const j = (i + step) % n
+          if (detailCarouselSlides[j]?.type === 'image') return j
+        }
+        return i
       })
     }, 4000)
     return () => clearInterval(id)
