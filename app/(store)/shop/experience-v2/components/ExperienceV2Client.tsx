@@ -1521,7 +1521,7 @@ export function ExperienceV2Client({
       {detailProduct && artworkDetailProduct && (
         <ArtworkDetail
           product={artworkDetailProduct}
-          {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
+          {...spotlightOverridesForProduct(artworkDetailProduct, lamp.id, spotlightData)}
           isSelected={
             detailProduct.id === lamp.id
               ? lampQuantity > 0

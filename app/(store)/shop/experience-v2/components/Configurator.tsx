@@ -2054,7 +2054,7 @@ export function Configurator({
             <ArtworkDetail
               inline
               product={artworkDetailProduct}
-              {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
+              {...spotlightOverridesForProduct(artworkDetailProduct, lamp.id, spotlightData)}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
                 const product = artworkDetailProduct
@@ -2634,7 +2634,7 @@ export function Configurator({
       {detailProduct && artworkDetailProduct && isMobile && (
         <ArtworkDetail
           product={artworkDetailProduct}
-          {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
+          {...spotlightOverridesForProduct(artworkDetailProduct, lamp.id, spotlightData)}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
           isCollected={detailProduct.id !== lamp.id && (collectedProductIds.has(detailProduct.id) || collectedProductIds.has(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}

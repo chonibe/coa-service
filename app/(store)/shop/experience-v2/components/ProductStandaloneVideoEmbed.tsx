@@ -252,18 +252,19 @@ export function ArtistCollectionVideoEmbed({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10',
+        'aspect-video w-full overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10',
         className
       )}
     >
       {isPlaybackUrlHls(trimmed) ? (
-        <HlsOrSingleUrlVideo sources={syntheticSources} ariaLabel={title} className="mx-auto block" />
+        <HlsOrSingleUrlVideo sources={syntheticSources} ariaLabel={title} className="h-full w-full object-contain" />
       ) : (
         <HomeStyleProgressiveVideo
           url={trimmed}
           sources={syntheticSources}
           ariaLabel={title}
-          className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
+          deferLoadMs={0}
+          className="h-full w-full object-contain"
         />
       )}
     </div>

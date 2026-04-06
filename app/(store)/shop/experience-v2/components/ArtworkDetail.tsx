@@ -524,7 +524,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       })
 
     return () => { cancelled = true }
-  }, [isLampOrBundleProduct, artist, slug, artistSlugOverride, spotlightSlugsToTry])
+  }, [isLampOrBundleProduct, product.id, artist, slug, artistSlugOverride, spotlightSlugsToTry])
 
   const goToIndex = useCallback((i: number) => {
     setHasUserInteracted(true)
