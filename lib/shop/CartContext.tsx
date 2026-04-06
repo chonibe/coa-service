@@ -9,7 +9,9 @@
  * @module lib/shop/CartContext
  */
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode, useCallback } from 'react'
+import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 
 // ============================================
 // Types
@@ -47,6 +49,8 @@ type CartAction =
   | { type: 'LOAD_CART'; payload: CartState }
 
 interface CartContextValue extends CartState {
+  /** Unit USD for display and quick checkout: Street ladder when known, else stored cart price */
+  effectiveUnitUsd: (item: CartItem) => number
   // Actions
   addItem: (item: Omit<CartItem, 'id'>) => void
   removeItem: (id: string) => void
@@ -104,6 +108,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         newItems[existingIndex] = {
           ...existing,
           quantity: Math.min(newQuantity, maxQty),
+          price: action.payload.price,
         }
         
         return { ...state, items: newItems, isOpen: true }
@@ -199,7 +204,8 @@ interface CartProviderProps {
 
 export function CartProvider({ children }: CartProviderProps) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
-  
+  const [streetLadderUsdByProductId, setStreetLadderUsdByProductId] = useState<Record<string, number>>({})
+
   // Load cart from localStorage on mount
   useEffect(() => {
     try {
@@ -228,6 +234,32 @@ export function CartProvider({ children }: CartProviderProps) {
       console.warn('[CartContext] Failed to save cart to storage:', error)
     }
   }, [state.items, state.creditsToUse, state.orderNotes])
+
+  useEffect(() => {
+    const ids = Array.from(
+      new Set(
+        state.items
+          .map((i) => normalizeShopifyProductId(i.productId))
+          .filter((x): x is string => !!x)
+      )
+    )
+    if (ids.length === 0) {
+      setStreetLadderUsdByProductId({})
+      return
+    }
+    let cancelled = false
+    void fetchStreetEditionStatesMap(ids).then((map) => {
+      if (cancelled) return
+      const m: Record<string, number> = {}
+      for (const [id, row] of Object.entries(map)) {
+        if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
+      }
+      setStreetLadderUsdByProductId(m)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [state.items])
   
   // Actions
   const addItem = useCallback((item: Omit<CartItem, 'id'>) => {
@@ -258,11 +290,21 @@ export function CartProvider({ children }: CartProviderProps) {
     dispatch({ type: 'TOGGLE_CART', payload: isOpen })
   }, [])
   
+  const effectiveUnitUsd = useCallback(
+    (item: CartItem) => {
+      const key = normalizeShopifyProductId(item.productId) ?? ''
+      const ladder = streetLadderUsdByProductId[key]
+      if (ladder != null && ladder > 0) return ladder
+      return item.price
+    },
+    [streetLadderUsdByProductId]
+  )
+
   // Computed values
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
   
   const subtotal = state.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + effectiveUnitUsd(item) * item.quantity,
     0
   )
   
@@ -278,6 +320,7 @@ export function CartProvider({ children }: CartProviderProps) {
   
   const value: CartContextValue = {
     ...state,
+    effectiveUnitUsd,
     addItem,
     removeItem,
     updateQuantity,

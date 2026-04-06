@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import Stripe from 'stripe'
 import { getProduct, extractVariantId } from '@/lib/shopify/storefront-client'
+import { createClient } from '@/lib/supabase/server'
+import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 
 /**
  * Stripe Checkout API
@@ -21,6 +24,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 interface CheckoutLineItem {
   variantId: string // Shopify variant GID
   quantity: number
+  /** Numeric id or Product GID — when present, unit_amount may be overridden from Street ladder */
+  shopifyProductId?: string
   productHandle?: string
   productTitle?: string
   variantTitle?: string
@@ -67,9 +72,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    let pricedLineItems = lineItems
+    try {
+      const supabase = createClient()
+      const ladderIds = lineItems
+        .map((li) => normalizeShopifyProductId(li.shopifyProductId))
+        .filter((x): x is string => !!x)
+      if (ladderIds.length > 0) {
+        const ladder = await fetchStreetLadderUsdByNumericProductIds(supabase, ladderIds)
+        pricedLineItems = lineItems.map((item) => {
+          const key = normalizeShopifyProductId(item.shopifyProductId)
+          const u = key ? ladder[key] : undefined
+          if (u != null && u > 0) return { ...item, price: Math.round(u * 100) }
+          return item
+        })
+      }
+    } catch (e) {
+      console.warn('[checkout/stripe] Street ladder reprice skipped:', e)
+    }
     
     // Build Stripe line items
-    const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = lineItems.map((item) => ({
+    const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = pricedLineItems.map((item) => ({
       price_data: {
         currency: 'usd',
         unit_amount: item.price,
@@ -88,7 +112,7 @@ export async function POST(request: NextRequest) {
     }))
     
     // Build metadata with all Shopify variant IDs for order sync (Stripe metadata values max 500 chars — use compact format)
-    const shopifyVariantsCompact = lineItems
+    const shopifyVariantsCompact = pricedLineItems
       .map(item => `${extractVariantId(item.variantId)}:${item.quantity}`)
       .join(',')
     const sessionMetadata: Record<string, string> = {

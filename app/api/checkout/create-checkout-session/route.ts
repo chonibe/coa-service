@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 import { getEarlyAccessCouponCookie } from '@/lib/early-access'
+import { applyStreetLadderUsdToLineItems } from '@/lib/shop/street-ladder-line-pricing'
+import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
 const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
@@ -86,7 +89,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
-    const totalCents = items.reduce(
+    const ladderIds = items
+      .map((i) => normalizeShopifyProductId(i.productId))
+      .filter((x): x is string => !!x)
+    const ladderUsd = await fetchStreetLadderUsdByNumericProductIds(supabase, ladderIds)
+    const checkoutItems = applyStreetLadderUsdToLineItems(items, ladderUsd)
+
+    const totalCents = checkoutItems.reduce(
       (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
       0
     )
@@ -98,7 +107,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const shopifyVariantsCompact = items
+    const shopifyVariantsCompact = checkoutItems
       .map((i) => `${i.variantId.replace('gid://shopify/ProductVariant/', '')}:${i.quantity}`)
       .join(',')
     const email = customerEmail || shippingAddress?.email || ''
@@ -121,7 +130,7 @@ export async function POST(request: NextRequest) {
       ...(metaFbclid && { meta_fbclid: metaFbclid }),
       ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       items_json: JSON.stringify(
-        items.map((i) => ({
+        checkoutItems.map((i) => ({
           variantId: i.variantId,
           variantGid: i.variantGid,
           handle: i.handle,
@@ -209,7 +218,7 @@ export async function POST(request: NextRequest) {
       // Save shipping address to the Stripe Customer for pre-fill on future sessions
       ...(stripeCustomerId && { customer_update: { shipping: 'auto', address: 'auto' } }),
       metadata,
-      line_items: items.map((item) => ({
+      line_items: checkoutItems.map((item) => ({
         price_data: {
           currency: 'usd',
           unit_amount: Math.round(item.price * 100),

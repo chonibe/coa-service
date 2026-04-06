@@ -62,6 +62,7 @@ export function TransparentHeader({
           // Navigate to checkout or cart page
           window.location.href = '/shop/cart'
         }}
+        getDisplayUnitPrice={cart.effectiveUnitUsd}
         subtotal={cart.subtotal}
         total={cart.total}
       />

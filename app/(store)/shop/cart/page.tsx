@@ -40,6 +40,7 @@ function CartContentInner() {
     removeItem, 
     updateQuantity, 
     subtotal, 
+    effectiveUnitUsd,
     creditsToUse, 
     setCreditsToUse,
     creditsDiscount,
@@ -241,7 +242,7 @@ function CartContentInner() {
                 </div>
 
                 <p className="font-semibold text-slate-900 shrink-0 whitespace-nowrap sm:text-right sm:min-w-[4.5rem]">
-                  ${item.price.toFixed(2)}
+                  ${effectiveUnitUsd(item).toFixed(2)}
                 </p>
               </div>
 

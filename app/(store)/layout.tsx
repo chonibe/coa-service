@@ -63,7 +63,12 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
-  const isLandingOrStreetCollector = isLandingPage || isStreetCollectorPage
+  /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
+  const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
+  const isLandingOrStreetCollector =
+    isLandingPage || isStreetCollectorPage || isHomeV2Page
+  /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
+  const showLandingChatIcon = isLandingPage || isStreetCollectorPage
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
   const cart = useCart()
 
@@ -76,11 +81,12 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           lineItems: cart.items.map(item => ({
             variantId: item.variantId,
+            shopifyProductId: item.productId,
             quantity: item.quantity,
             productHandle: item.handle,
             productTitle: item.title,
             variantTitle: item.variantTitle,
-            price: Math.round(item.price * 100),
+            price: Math.round(cart.effectiveUnitUsd(item) * 100),
             imageUrl: item.image,
           })),
           creditsToUse: cart.creditsToUse,
@@ -94,7 +100,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       console.error('Checkout error:', error)
       alert('Failed to start checkout. Please try again.')
     }
-  }, [cart.items, cart.creditsToUse, cart.isEmpty, cart.orderNotes])
+  }, [cart])
 
   const handleUpdateQuantity = useCallback(async (lineId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -129,7 +135,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         <AffiliatePersistence />
       </Suspense>
       {pathnameReady && !isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
-      {pathnameReady && isLandingOrStreetCollector && <ChatIconScrollReveal />}
+      {pathnameReady && showLandingChatIcon && <ChatIconScrollReveal />}
       {hasMounted && !isExperiencePage && (
         <LocalCartDrawer
           isOpen={cart.isOpen}
@@ -138,6 +144,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
           onCheckout={handleCheckout}
+          getDisplayUnitPrice={cart.effectiveUnitUsd}
           subtotal={cart.subtotal}
           total={cart.total}
           creditsToUse={cart.creditsToUse}

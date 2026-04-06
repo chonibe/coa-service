@@ -5,6 +5,9 @@ import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 import { getEarlyAccessCouponCookie } from '@/lib/early-access'
+import { applyStreetLadderUsdToLineItems } from '@/lib/shop/street-ladder-line-pricing'
+import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -110,8 +113,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate cart totals
-    const subtotalCents = items.reduce(
+    const ladderProductIds = items
+      .map((i) => normalizeShopifyProductId(i.productId))
+      .filter((x): x is string => !!x)
+    const ladderUsd = await fetchStreetLadderUsdByNumericProductIds(supabase, ladderProductIds)
+    const checkoutItems = applyStreetLadderUsdToLineItems(items, ladderUsd)
+
+    // Calculate cart totals (Street ladder overrides Shopify list price when product is in DB)
+    const subtotalCents = checkoutItems.reduce(
       (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
       0
     )
@@ -174,7 +183,7 @@ export async function POST(request: NextRequest) {
           collector_identifier: email || '',
           session_type: 'one_time',
           status: 'pending',
-          line_items: items,
+          line_items: checkoutItems,
           credits_used: actualCreditsToUse,
           subtotal_cents: subtotalCents,
           credits_discount_cents: creditDiscountCents,
@@ -212,7 +221,7 @@ export async function POST(request: NextRequest) {
     const finalCancelUrl = cancelUrl || `${baseUrl}/shop/cart?cancelled=true`
 
     // Build Shopify variant metadata for webhook (Stripe metadata values max 500 chars — use compact format)
-    const shopifyVariantsCompact = items
+    const shopifyVariantsCompact = checkoutItems
       .map(item => `${item.variantId}:${item.quantity}`)
       .join(',')
 
@@ -227,18 +236,18 @@ export async function POST(request: NextRequest) {
           currency: 'usd',
           unit_amount: stripeChargeCents,
           product_data: {
-            name: items.length === 1 
-              ? items[0].title 
-              : `Order (${items.length} items) - Credits Applied`,
+            name: checkoutItems.length === 1 
+              ? checkoutItems[0].title 
+              : `Order (${checkoutItems.length} items) - Credits Applied`,
             description: `Subtotal: $${(subtotalCents / 100).toFixed(2)}, Credits: -$${(creditDiscountCents / 100).toFixed(2)}`,
-            images: items[0].image ? [items[0].image] : [],
+            images: checkoutItems[0].image ? [checkoutItems[0].image] : [],
           },
         },
         quantity: 1,
       })
     } else {
       // Show individual items
-      for (const item of items) {
+      for (const item of checkoutItems) {
         stripeLineItems.push({
           price_data: {
             currency: 'usd',
@@ -334,14 +343,14 @@ export async function POST(request: NextRequest) {
       collector_identifier: email || '',
       session_type: creditDiscountCents > 0 ? 'hybrid' : 'one_time',
       status: 'pending',
-      line_items: items,
+      line_items: checkoutItems,
       credits_used: actualCreditsToUse,
       subtotal_cents: subtotalCents,
       credits_discount_cents: creditDiscountCents,
       stripe_charge_cents: stripeChargeCents,
       stripe_payment_intent_id: stripeSession.payment_intent as string | undefined,
       metadata: {
-        shopify_variants: items.map(i => ({ variantId: i.variantId, variantGid: i.variantGid, quantity: i.quantity, productHandle: i.handle })),
+        shopify_variants: checkoutItems.map(i => ({ variantId: i.variantId, variantGid: i.variantGid, quantity: i.quantity, productHandle: i.handle })),
         ...(affiliateVendorId && { affiliate_vendor_id: affiliateVendorId.toString() }),
       },
     })

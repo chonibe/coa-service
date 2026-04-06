@@ -24,6 +24,8 @@ export interface LocalCartDrawerProps {
   onRemoveItem: (id: string) => void
   /** Called when user completes checkout (redirects to Stripe). Falls back to internal create API when using CheckoutLayout. */
   onCheckout: () => void
+  /** Per-line unit USD (e.g. Street ladder). Defaults to `item.price`. */
+  getDisplayUnitPrice?: (item: CartItem) => number
   subtotal: number
   total: number
   /** Credits to use (from CartContext) */
@@ -42,6 +44,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
       onUpdateQuantity,
       onRemoveItem,
       onCheckout,
+      getDisplayUnitPrice,
       subtotal,
       total,
       creditsToUse = 0,
@@ -50,6 +53,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
     },
     ref
   ) => {
+    const unitPrice = getDisplayUnitPrice ?? ((i: CartItem) => i.price)
     const checkout = useCheckout()
     const [isCheckingOut, setIsCheckingOut] = React.useState(false)
     const [checkoutError, setCheckoutError] = React.useState<string | null>(null)
@@ -261,6 +265,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                     >
                       <CartLineItem
                         item={item}
+                        displayUnitPrice={unitPrice(item)}
                         onUpdateQuantity={onUpdateQuantity}
                         onRemove={onRemoveItem}
                       />
@@ -323,11 +328,12 @@ LocalCartDrawer.displayName = 'LocalCartDrawer'
  */
 interface CartLineItemProps {
   item: CartItem
+  displayUnitPrice: number
   onUpdateQuantity: (id: string, quantity: number) => void
   onRemove: (id: string) => void
 }
 
-function CartLineItem({ item, onUpdateQuantity, onRemove }: CartLineItemProps) {
+function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: CartLineItemProps) {
   return (
     <div className="flex gap-4">
       {/* Image */}
@@ -360,7 +366,7 @@ function CartLineItem({ item, onUpdateQuantity, onRemove }: CartLineItemProps) {
           </p>
         )}
         <p className="text-sm font-semibold text-[#1a1a1a] mt-1">
-          ${item.price.toFixed(2)}
+          ${displayUnitPrice.toFixed(2)}
         </p>
 
         {/* Quantity controls */}
