@@ -8,6 +8,7 @@ import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
+import { CollectionArcLabel } from '../../experience/components/CollectionArcLabel'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import {
   EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
@@ -36,6 +37,13 @@ export interface ExperienceCheckoutStickyBarProps {
    * it duplicates the carousel. Keep add-artwork FAB + checkout. When false (user scrolled past the Spline section), show full summary.
    */
   suppressCartThumbnails?: boolean
+  /**
+   * Mobile: tapping a lamp or artwork thumbnail selects that item on the main Spline preview (same as the carousel strip).
+   * When set, it takes priority over `onViewLampDetail` for lamp tiles so the primary tap syncs the 3D preview.
+   */
+  onSelectThumbnailForSpline?: (product: ShopifyProduct) => void
+  /** Product id currently shown as selected on the lamp preview (e.g. active carousel tile). */
+  previewSelectedProductId?: string | null
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -63,12 +71,17 @@ function StickyThumb({
   isLamp,
   theme,
   onDetailPress,
+  onSplinePreviewPress,
+  isSplinePreviewSelected,
 }: {
   product: ShopifyProduct
   isLamp: boolean
   theme: 'light' | 'dark'
-  /** When set (lamp slots only), opens product detail sheet. */
+  /** When set (lamp slots only), opens product detail sheet. Ignored when `onSplinePreviewPress` is set. */
   onDetailPress?: () => void
+  /** Mobile: select this item on the Spline / carousel preview. */
+  onSplinePreviewPress?: () => void
+  isSplinePreviewSelected?: boolean
 }) {
   const raw = firstImageUrl(product)
   const src = raw ? (getShopifyImageUrl(raw, IMAGE_REQUEST_PX) ?? raw) : null
@@ -78,6 +91,15 @@ function StickyThumb({
     'relative shrink-0 overflow-hidden rounded-[15px]',
     /* Same portrait ratio as carousel thumbs; compact width for the sticky row */
     'w-9 aspect-[14/20] sm:w-10'
+  )
+
+  const interactiveFrame = cn(
+    frame,
+    'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
+    'ring-offset-2 transition-transform duration-200 active:scale-[0.95]',
+    'focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#047AFF] dark:focus-visible:ring-[#60A5FA]',
+    isSplinePreviewSelected &&
+      'ring-2 ring-[#FFBA94] ring-offset-1 ring-offset-transparent dark:ring-[#FFBA94]'
   )
 
   const inner = (
@@ -105,6 +127,23 @@ function StickyThumb({
     </>
   )
 
+  if (onSplinePreviewPress) {
+    return (
+      <button
+        type="button"
+        onClick={onSplinePreviewPress}
+        title={label}
+        aria-label={
+          isLamp ? `Select ${label} on lamp preview` : `Select artwork on lamp preview: ${label}`
+        }
+        aria-current={isSplinePreviewSelected ? 'true' : undefined}
+        className={interactiveFrame}
+      >
+        {inner}
+      </button>
+    )
+  }
+
   if (onDetailPress) {
     return (
       <button
@@ -114,7 +153,7 @@ function StickyThumb({
         aria-label={`${label}, view product details`}
         className={cn(
           frame,
-          'm-0 cursor-pointer border-0 bg-transparent p-0 text-left',
+          'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
           'ring-offset-2 transition-opacity hover:opacity-90',
           'focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#047AFF] dark:focus-visible:ring-[#60A5FA]'
         )}
@@ -146,6 +185,8 @@ export function ExperienceCheckoutStickyBar({
   onViewLampDetail,
   stripMode = 'collection',
   suppressCartThumbnails = false,
+  onSelectThumbnailForSpline,
+  previewSelectedProductId = null,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -289,8 +330,21 @@ export function ExperienceCheckoutStickyBar({
                             product={slot.product}
                             isLamp={slot.isLamp}
                             theme={theme}
+                            onSplinePreviewPress={
+                              onSelectThumbnailForSpline
+                                ? () => onSelectThumbnailForSpline(slot.product)
+                                : undefined
+                            }
+                            isSplinePreviewSelected={
+                              !!previewSelectedProductId &&
+                              previewSelectedProductId === slot.product.id
+                            }
                             onDetailPress={
-                              slot.isLamp && onViewLampDetail ? () => onViewLampDetail(slot.product) : undefined
+                              onSelectThumbnailForSpline
+                                ? undefined
+                                : slot.isLamp && onViewLampDetail
+                                  ? () => onViewLampDetail(slot.product)
+                                  : undefined
                             }
                           />
                         </Fragment>
@@ -313,15 +367,18 @@ export function ExperienceCheckoutStickyBar({
                   </div>
                 ) : null}
                 {onOpenPicker ? (
-                  <button
-                    type="button"
-                    onClick={onOpenPicker}
-                    className={cn(openPickerFabClass, 'relative z-[3] shrink-0')}
-                    aria-label="Add artwork to collection"
-                    title="Add artwork"
-                  >
-                    <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
-                  </button>
+                  <div className="relative z-[3] flex shrink-0 flex-col items-center gap-0">
+                    <CollectionArcLabel theme={theme} variant="fab" className="pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={onOpenPicker}
+                      className={openPickerFabClass}
+                      aria-label="Add artwork to collection"
+                      title="Add artwork"
+                    >
+                      <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                    </button>
+                  </div>
                 ) : null}
               </div>
             ) : null}

@@ -15,6 +15,7 @@ import {
 import { getMiniSplineEmbedUrl } from '@/lib/shop/experience-carousel-mini-spline'
 import type { CarouselStripLampSplineProps } from './CarouselStripLampSpline'
 import { CarouselStripLampSpline } from './CarouselStripLampSpline'
+import { CollectionArcLabel } from './CollectionArcLabel'
 
 /** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
 const MAX_CAROUSEL_STRIP_THUMBS = 7
@@ -655,8 +656,8 @@ export function ArtworkCarouselBar({
                   data-carousel-item
                   className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
                 >
-                  <div className="flex items-center justify-center gap-1.5" aria-hidden>
-                    <span className="inline-block w-3.5 h-3.5" />
+                  <div className="flex min-h-[1.25rem] items-end justify-center" aria-hidden>
+                    <CollectionArcLabel theme={theme} variant="strip" />
                   </div>
                   <button
                     type="button"
