@@ -1,3 +1,21 @@
+## Commit: Shop — resolve artwork detail product + gallery loading (2026-04-06)
+
+### Summary
+`detailProductFull ?? detailProduct` could show **another product’s** full payload until the new fetch finished, so the lamp (and others) often had **no `media`** and never built a video slide locally. **`resolveArtworkDetailProduct`** only uses `detailProductFull` when its id matches `detailProduct`. **`ArtworkDetail`** shows a **Loading gallery…** overlay while `isLoadingDetails` and Storefront **`media.edges`** are still empty. Wired in experience v2, legacy experience, and Configurator.
+
+### ✅ Implementation Checklist
+
+- [x] [`lib/shop/resolve-artwork-detail-product.ts`](../lib/shop/resolve-artwork-detail-product.ts) — Id-safe merge
+- [x] [`lib/shop/resolve-artwork-detail-product.test.ts`](../lib/shop/resolve-artwork-detail-product.test.ts) — Vitest
+- [x] [`app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx`](../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — `artworkDetailProduct` + PostHog `p`
+- [x] [`app/(store)/shop/experience/components/ExperienceV2Client.tsx`](../app/(store)/shop/experience/components/ExperienceV2Client.tsx) — same
+- [x] [`app/(store)/shop/experience-v2/components/Configurator.tsx`](../app/(store)/shop/experience-v2/components/Configurator.tsx) — same (inline + mobile sheet)
+- [x] [`app/(store)/shop/experience-v2/components/ArtworkDetail.tsx`](../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) — `GalleryLoadingOverlay`
+- [x] [`app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx`](../app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx) — eslint dep note
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+---
+
 ## Commit: Product detail — split intro video + slide-off to image carousel (2026-04-06)
 
 ### Summary
