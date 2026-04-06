@@ -405,36 +405,48 @@ export default function ExperienceLinksPage() {
                                 <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                                 <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">Early Access Links (10% off)</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <div className="flex-1 flex gap-1.5">
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1 flex flex-col gap-1 min-w-0">
+                                  <span className="text-[11px] font-medium text-violet-800/80 dark:text-violet-200/80">Experience</span>
+                                  <div className="flex gap-1.5 items-start">
                                   <Input
+                                    multiline
+                                    rows={3}
                                     value={earlyAccessLinks[artist.slug].experiencePage}
                                     readOnly
-                                    className="font-mono text-xs h-8"
+                                    className="font-mono text-xs break-all min-h-[4.5rem] resize-y"
+                                    onFocus={(e) => (e.target as HTMLTextAreaElement).select()}
                                   />
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => copyToClipboard(earlyAccessLinks[artist.slug].experiencePage, artist.slug)}
-                                    className="shrink-0 h-8"
+                                    className="shrink-0 h-8 mt-1"
                                   >
                                     {copiedSlug === artist.slug ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                                   </Button>
+                                  </div>
                                 </div>
-                                <div className="flex-1 flex gap-1.5">
+                                <div className="flex-1 flex flex-col gap-1 min-w-0">
+                                  <span className="text-[11px] font-medium text-violet-800/80 dark:text-violet-200/80">Artist page</span>
+                                  <div className="flex gap-1.5 items-start">
                                   <Input
+                                    multiline
+                                    rows={3}
                                     value={earlyAccessLinks[artist.slug].artistPage}
                                     readOnly
-                                    className="font-mono text-xs h-8"
+                                    className="font-mono text-xs break-all min-h-[4.5rem] resize-y"
+                                    onFocus={(e) => (e.target as HTMLTextAreaElement).select()}
                                   />
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => copyToClipboard(earlyAccessLinks[artist.slug].artistPage, artist.slug)}
-                                    className="shrink-0 h-8"
+                                    className="shrink-0 h-8 mt-1"
                                   >
                                     {copiedSlug === artist.slug ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                                   </Button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -488,17 +500,21 @@ export default function ExperienceLinksPage() {
           ) : earlyAccessLink ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Early Access Link</label>
-                <div className="flex gap-2">
+                <label className="text-sm font-medium">Artist page (early access + token)</label>
+                <div className="flex gap-2 items-start">
                   <Input
+                    multiline
+                    rows={4}
                     value={earlyAccessLink}
                     readOnly
-                    className="font-mono text-sm"
+                    className="font-mono text-sm break-all min-h-[5.5rem] resize-y"
+                    onFocus={(e) => (e.target as HTMLTextAreaElement).select()}
                   />
                   <Button
                     onClick={copyEarlyAccessLink}
                     variant="outline"
                     size="icon"
+                    className="shrink-0 mt-1"
                   >
                     {copiedEarlyAccessLink ? (
                       <Check className="h-4 w-4" />
@@ -507,38 +523,22 @@ export default function ExperienceLinksPage() {
                     )}
                   </Button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Artist Page Link</label>
-                <div className="flex gap-2">
-                  <Input
-                    value={earlyAccessLink}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    onClick={() => copyToClipboard(earlyAccessLink, selectedArtist?.slug || '')}
-                    variant="outline"
-                    size="icon"
-                  >
-                    {copiedSlug === selectedArtist?.slug ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Includes <code className="text-[11px]">token=</code> (signed payload). Full string wraps below so nothing is clipped.
+                </p>
               </div>
 
               {selectedArtist && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Experience Page Link</label>
-                  <div className="flex gap-2">
+                  <label className="text-sm font-medium">Experience page (same token)</label>
+                  <div className="flex gap-2 items-start">
                     <Input
+                      multiline
+                      rows={4}
                       value={`${baseUrl}/shop/experience?artist=${encodeURIComponent(selectedArtist.slug)}&unlisted=1&token=${encodeURIComponent(earlyAccessToken || '')}`}
                       readOnly
-                      className="font-mono text-sm"
+                      className="font-mono text-sm break-all min-h-[5.5rem] resize-y"
+                      onFocus={(e) => (e.target as HTMLTextAreaElement).select()}
                     />
                     <Button
                       onClick={() => {
@@ -547,6 +547,7 @@ export default function ExperienceLinksPage() {
                       }}
                       variant="outline"
                       size="icon"
+                      className="shrink-0 mt-1"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

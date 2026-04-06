@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: fix(admin): early access URLs show full token in multiline fields (2026-04-06)
+
+**Ref:** _(set with `git log -1 --oneline` after merge; message contains `fix(admin): show full early access token`)_
+
+### Summary
+Early access links carry a long `token=` query value. Single-line inputs only showed the start of the URL, so the signed token looked “missing.” **Experience links admin** now uses **multiline** read-only fields with **`break-all`**, **focus-to-select-all**, and **Experience / Artist** column labels. The early-access **dialog** drops the duplicate artist row and uses the same wrapping pattern for artist and experience URLs.
+
+### Implementation Checklist
+
+- [x] [app/admin/vendors/experience-links/page.tsx](app/admin/vendors/experience-links/page.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience-v2): softer choose-artworks hint — chip shine, + pulse, staggered tilt (2026-04-06)
 
 **Ref:** `184d6aa53`
