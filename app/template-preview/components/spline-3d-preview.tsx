@@ -2890,7 +2890,11 @@ export function Spline3DPreview({
     return (
       <div
         ref={containerRef}
-        className={cn(className, "relative w-full h-full min-w-0 min-h-0 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing")}
+        className={cn(
+          className,
+          'relative w-full h-full min-w-0 min-h-0 overflow-hidden flex items-center justify-center',
+          interactive ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+        )}
         style={{ touchAction: 'pan-y' }}
       >
         {/* Background layer - transparent in cameraFeedMode so video shows through */}

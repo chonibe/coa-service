@@ -76,8 +76,12 @@ interface SplineFullScreenProps {
   rotateTrigger: number
   resetTrigger?: number
   onFrontSideSettled?: (side: 'A' | 'B') => void
-  /** Count of artworks assigned to lamp preview (0–2). Idle turntable is off when at least one side has artwork. */
+  /** Count of artworks assigned to lamp preview (0–2). When `collectionArtworkCount` is omitted, idle turntable is off if at least one preview slot is filled. */
   lampPreviewCount?: number
+  /**
+   * Artworks in the experience collection/cart (not the lamp). When `0`, the lamp uses idle turntable and **disables** cursor/touch orbit; when `≥1`, behavior matches the legacy `lampPreviewCount` rule and interaction is on.
+   */
+  collectionArtworkCount?: number
   pickerOpen?: boolean
   className?: string
   /** Optional content to render in the top bar (e.g. artwork info). May be a function receiving { onRotate, isDesktop }. */
@@ -119,6 +123,7 @@ export function SplineFullScreen({
   resetTrigger = 0,
   onFrontSideSettled,
   lampPreviewCount = 0,
+  collectionArtworkCount,
   pickerOpen = false,
   className,
   topBarContent,
@@ -714,8 +719,16 @@ export function SplineFullScreen({
               parentScrollMode="contain"
               reelScrollContainerRef={scrollRef}
               animate
-              interactive
-              idleSpinEnabled={lampPreviewCount < 1}
+              interactive={
+                typeof collectionArtworkCount === 'number' ? collectionArtworkCount > 0 : true
+              }
+              idleSpinEnabled={
+                typeof collectionArtworkCount === 'number'
+                  ? collectionArtworkCount === 0
+                    ? true
+                    : lampPreviewCount < 1
+                  : lampPreviewCount < 1
+              }
               className="relative w-full h-full min-h-0 min-w-0"
               swapLampSides
               flipForSide="B"

@@ -67,6 +67,7 @@ import {
   ARTWORKS_PER_FREE_LAMP,
   lampVolumeDiscountPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
+import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
 import {
   captureFunnelEvent,
   FunnelEvents,
@@ -126,6 +127,7 @@ export function ExperienceV2Client({
 }: ExperienceV2ClientProps) {
   const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } =
     useExperienceOrder()
+  const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
   const { isAuthenticated } = useShopAuthContext()
   const artistCatalogForFilters = useExperienceArtistCatalog()
 
@@ -562,11 +564,11 @@ export function ExperienceV2Client({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     return prices
-  }, [lampQuantity, artworkCount, lampPrice])
+  }, [lampQuantity, artworkCount, lampPrice, lampVolumeDiscountEnabled])
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
@@ -608,7 +610,7 @@ export function ExperienceV2Client({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(2, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       lampPricesNatural.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     const compareAt = computeFeaturedBundleRegularSubtotalUsd({
@@ -638,6 +640,7 @@ export function ExperienceV2Client({
     cartOrder,
     allProducts,
     handleApplyFeaturedBundle,
+    lampVolumeDiscountEnabled,
   ])
   const orderItemCount = selectedArtworks.length + lampQuantity
 
@@ -1170,6 +1173,7 @@ export function ExperienceV2Client({
         resetTrigger={resetTrigger}
         onFrontSideSettled={handleFrontSideSettled}
         lampPreviewCount={lampPreviewOrder.length}
+        collectionArtworkCount={selectedArtworks.length}
         pickerOpen={isPickerOpen}
         topBarContent={({ onRotate, isDesktop }) => (
           <ArtworkInfoBar
