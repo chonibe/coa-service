@@ -2,7 +2,7 @@
 
 ## Commit: fix(experience): mobile reel below lamp + remove strip + after mini Spline (2026-04-06)
 
-**Ref:** _(set after commit)_
+**Ref:** `cc363a59c`
 
 ### Summary
 **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)**: mobile (**`max-md`**) Spline block when **`hasAccordion`** uses **`min-h-[min(64svh,680px)]`** (desktop **`72svh`** unchanged) and **`max-md:pb-4`** under the 3D viewport so the next reel content sits slightly lower with a small peek above the fold. **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)**: removed the **glass +** control after the mini Spline tile.
