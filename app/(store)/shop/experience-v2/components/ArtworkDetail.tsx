@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, useId } from 'react'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
 import { Check, ChevronDown, ChevronLeft, ImageIcon, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -25,6 +25,37 @@ import {
   buildStreetLampIntroCarouselSlide,
   splitProductCarouselMediaSlides,
 } from '@/lib/shop/product-carousel-slides'
+
+/** Collection `custom.video` — own block above the image carousel (not inside the swipe card). */
+function ArtistVideoSection({
+  url,
+  artistLabel,
+  className,
+}: {
+  url: string
+  artistLabel: string
+  className?: string
+}) {
+  const headingId = useId()
+  const embedTitle = `${artistLabel} — collection video`
+  return (
+    <section
+      className={cn(
+        'flex flex-col gap-2.5 rounded-xl border border-neutral-200/90 dark:border-white/10 bg-neutral-50/70 dark:bg-[#1c1818]/80 p-3 shadow-sm',
+        className
+      )}
+      aria-labelledby={headingId}
+    >
+      <h3
+        id={headingId}
+        className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-[#a09090]"
+      >
+        Artist video
+      </h3>
+      <ArtistCollectionVideoEmbed url={url} title={embedTitle} className="shadow-none ring-0" />
+    </section>
+  )
+}
 
 function GalleryLoadingOverlay({ show }: { show: boolean }) {
   if (!show) return null
@@ -578,9 +609,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       {/* Left: optional Shopify video (prints) + swipe carousel (lamp: intro MP4 first) + thumbnails */}
       <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0 gap-3">
         {!isLampOrBundleProduct && spotlightVideoUrl ? (
-          <ArtistCollectionVideoEmbed
+          <ArtistVideoSection
             url={spotlightVideoUrl}
-            title={`${editionArtistName || artist || 'Artist'} — collection video`}
+            artistLabel={editionArtistName || artist || 'Artist'}
           />
         ) : null}
         {hasVideoMedia && !isLampOrBundleProduct ? (
@@ -848,9 +879,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 {/* Left: Image carousel + thumbnails — 48% for balanced artwork focus */}
                 <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0 gap-3">
                   {!isLampOrBundleProduct && spotlightVideoUrl ? (
-                    <ArtistCollectionVideoEmbed
+                    <ArtistVideoSection
                       url={spotlightVideoUrl}
-                      title={`${editionArtistName || artist || 'Artist'} — collection video`}
+                      artistLabel={editionArtistName || artist || 'Artist'}
                     />
                   ) : null}
                   {hasVideoMedia && !isLampOrBundleProduct ? (
@@ -1252,9 +1283,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </button>
                 )}
                 {!isLampOrBundleProduct && spotlightVideoUrl ? (
-                  <ArtistCollectionVideoEmbed
+                  <ArtistVideoSection
                     url={spotlightVideoUrl}
-                    title={`${editionArtistName || artist || 'Artist'} — collection video`}
+                    artistLabel={editionArtistName || artist || 'Artist'}
                     className="w-[calc(100%-2rem)] max-w-sm mx-auto pt-10"
                   />
                 ) : null}

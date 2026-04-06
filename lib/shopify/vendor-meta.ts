@@ -7,8 +7,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 import { hasPage, getPage } from '@/content/shopify-content'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
-import { resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
-import { getCollection } from '@/lib/shopify/storefront-client'
+import {
+  getCollectionVideoUrlByAdmin,
+  resolveMediaGidToUrl,
+} from '@/lib/shopify/admin-collection-products'
+import { getCollection, type ShopifyCollection } from '@/lib/shopify/storefront-client'
 
 type AppSupabase = SupabaseClient<Database>
 
@@ -33,6 +36,23 @@ function getBioFromShopifyPage(handle: string): string | undefined {
     }
   }
   return undefined
+}
+
+/** Handles to try when vendor ↔ collection pairing uses suffixes (e.g. saturn-png) or DB slug differs. */
+function collectionHandleCandidates(vendorSlugFromDb: string | undefined, vendorName: string): string[] {
+  const slug = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  const fromVc = vendorSlugFromDb?.trim() ? slug(vendorSlugFromDb.trim()) : ''
+  const fromName = slug(vendorName)
+  const primaries = [...new Set([fromVc, fromName].filter(Boolean))]
+  const out: string[] = []
+  for (const p of primaries) {
+    out.push(p, `${p}-one`, `${p}-png`, `${p}-jpg`, `${p}-art`)
+  }
+  return [...new Set(out)]
 }
 
 export async function getVendorMeta(
@@ -91,34 +111,56 @@ export async function getVendorMeta(
   const { data: vc } = await vcQuery.maybeSingle()
   if (vc?.shopify_collection_handle) vendorSlug = vc.shopify_collection_handle
 
-  if (vendorSlug) {
+  const handleList = collectionHandleCandidates(vendorSlug, vendorName)
+  const loadedCols: ShopifyCollection[] = []
+  for (const h of handleList) {
     try {
-      const col = await getCollection(vendorSlug, { first: 1 })
-      if (col) {
-        if (!image) {
-          image = col.image?.url ?? col.products?.edges?.[0]?.node?.featuredImage?.url
-        }
-        if (!bio) {
-          const desc = col.description?.trim() || (col.descriptionHtml
-            ? col.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-            : '')
-          if (desc) bio = desc
-        }
-        if (!instagram && col.metafield?.value?.trim()) {
-          instagram = parseInstagramHandle(col.metafield.value)
-        }
-        if (col.gifMetafield?.value?.trim()) {
-          gifUrl = col.gifMetafield.value.trim()
-        }
-        if (col.videoMetafield?.value?.trim()) {
-          videoUrl = col.videoMetafield.value.trim()
-        }
-        if (col.unlistedMetafield?.value?.trim()) {
-          unlisted = true
-        }
-      }
+      const col = await getCollection(h, { first: 1 })
+      if (col) loadedCols.push(col)
     } catch {
       // Ignore
+    }
+  }
+
+  const primaryCol = loadedCols[0]
+  if (primaryCol) {
+    if (!image) {
+      image =
+        primaryCol.image?.url ?? primaryCol.products?.edges?.[0]?.node?.featuredImage?.url
+    }
+    if (!bio) {
+      const desc =
+        primaryCol.description?.trim() ||
+        (primaryCol.descriptionHtml
+          ? primaryCol.descriptionHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+          : '')
+      if (desc) bio = desc
+    }
+    if (!instagram && primaryCol.metafield?.value?.trim()) {
+      instagram = parseInstagramHandle(primaryCol.metafield.value)
+    }
+  }
+
+  for (const col of loadedCols) {
+    if (col.unlistedMetafield?.value?.trim()) {
+      unlisted = true
+    }
+    if (!gifUrl && col.gifMetafield?.value?.trim()) {
+      gifUrl = col.gifMetafield.value.trim()
+    }
+    if (!videoUrl && col.videoMetafield?.value?.trim()) {
+      videoUrl = col.videoMetafield.value.trim()
+    }
+  }
+
+  if (!videoUrl?.trim()) {
+    for (const col of loadedCols) {
+      if (!col.id) continue
+      const fromAdmin = await getCollectionVideoUrlByAdmin(col.id)
+      if (fromAdmin?.trim()) {
+        videoUrl = fromAdmin.trim()
+        break
+      }
     }
   }
 

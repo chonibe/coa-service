@@ -47,8 +47,15 @@ export async function GET(request: Request) {
     if (requestedArtist) {
       // Try collection by exact handle, then common variants (e.g. kymo → kymo-one, jack-jc-art → jack-j-c-art). Allow Admin/COA fallback for early-access.
       const jcVariant = requestedArtist.replace(/-jc-/, '-j-c-') // jack-jc-art → jack-j-c-art
-      const handlesToTry = [requestedArtist, `${requestedArtist}-one`, ...(jcVariant !== requestedArtist ? [jcVariant, `${jcVariant}-one`] : [])]
-      for (const h of handlesToTry) {
+      const suffixVariants = ['-one', '-png', '-jpg', '-art'] as const
+      const withSuffixes = (base: string) => suffixVariants.map((s) => `${base}${s}`)
+      const handlesToTry = [
+        requestedArtist,
+        ...withSuffixes(requestedArtist),
+        ...(jcVariant !== requestedArtist ? [jcVariant, ...withSuffixes(jcVariant)] : []),
+      ]
+      const uniqueHandles = [...new Set(handlesToTry.map((h) => h.trim()).filter(Boolean))]
+      for (const h of uniqueHandles) {
         const byCollection = await tryCollectionSpotlight(supabase, h, { allowEarlyAccessFallback: true })
         if (byCollection) {
           const payload = forceUnlisted ? { ...byCollection, unlisted: true } : byCollection
@@ -129,8 +136,18 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
       vendorName = slugToVendorName(vendorNameOrSlug)
       const next = await getProductsByVendor(vendorName, { first: 12, sortKey: 'CREATED_AT', reverse: true })
       vendorProducts = next?.products ?? []
-    } else if (vendorProducts?.length) {
-      vendorName = vendorProducts[0].vendor || vendorNameOrSlug
+    }
+    // Single-token slug from URL (e.g. saturn) does not match Storefront vendor:Saturn unless we title-case
+    if ((!vendorProducts || vendorProducts.length === 0) && !vendorNameOrSlug.includes('-')) {
+      const titled = slugToVendorName(vendorNameOrSlug.replace(/_/g, '-'))
+      if (titled !== vendorNameOrSlug) {
+        vendorName = titled
+        const next = await getProductsByVendor(vendorName, { first: 12, sortKey: 'CREATED_AT', reverse: true })
+        vendorProducts = next?.products ?? []
+      }
+    }
+    if (vendorProducts?.length) {
+      vendorName = vendorProducts[0].vendor || vendorName
     }
     const filtered = (vendorProducts || []).filter(
       (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
