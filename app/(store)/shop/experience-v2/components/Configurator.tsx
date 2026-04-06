@@ -89,6 +89,7 @@ import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import {
   loadImagePosition,
   saveImagePosition as persistImagePosition,
@@ -271,6 +272,20 @@ export function Configurator({
     () => [...productsSeason1, ...productsSeason2],
     [productsSeason1, productsSeason2]
   )
+
+  /** Filter sheet artist/tags: union of both seasons (deduped), not the active tab only. */
+  const productsForFilterPanel = useMemo(() => {
+    const seen = new Set<string>()
+    const out: ShopifyProduct[] = []
+    for (const p of allProducts) {
+      const k = normalizeShopifyProductId(p.id) ?? p.id
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(p)
+    }
+    return out
+  }, [allProducts])
+
   const [previewIndex, setPreviewIndex] = useState(0)
   const [imageScale, setImageScale] = useState(DEFAULT_SIDE_POSITION.scale)
   const [imageOffsetX, setImageOffsetX] = useState(DEFAULT_SIDE_POSITION.offsetX)
@@ -2307,7 +2322,7 @@ export function Configurator({
 
       {/* Filter panel */}
       <FilterPanel
-        products={products}
+        products={productsForFilterPanel}
         filters={filters}
         onChange={handleFiltersChange}
         isOpen={filterOpen}

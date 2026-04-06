@@ -290,6 +290,20 @@ export function ExperienceV2Client({
     () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),
     [activeSeason, productsSeason1, productsSeason2]
   )
+
+  /** Artist list in picker filters: both seasons (deduped) so tabs do not hide artists. */
+  const productsForFilterPanel = useMemo(() => {
+    const seen = new Set<string>()
+    const out: ShopifyProduct[] = []
+    for (const p of allProducts) {
+      const k = normalizeShopifyProductId(p.id) ?? p.id
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(p)
+    }
+    return out
+  }, [allProducts])
+
   const filteredProducts = useMemo(
     () => applyFilters(productsForActiveSeason, filters, '', cartOrder),
     [productsForActiveSeason, filters, cartOrder]
@@ -1335,7 +1349,7 @@ export function ExperienceV2Client({
         spotlightData={spotlightData}
         spotlightProducts={spotlightProducts.length > 0 ? spotlightProducts : spotlightProductsFromApi}
         onSpotlightSelect={handleSpotlightSelect}
-        productsForFilterPanel={productsForActiveSeason}
+        productsForFilterPanel={productsForFilterPanel}
         cartOrder={cartOrder}
         spotlightBannerExpanded={spotlightExpanded}
         streetEditionByProductId={streetEditionByProductId}
