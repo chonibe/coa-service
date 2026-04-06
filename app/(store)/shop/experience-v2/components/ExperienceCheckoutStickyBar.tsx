@@ -197,7 +197,9 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const checkoutPillClass = cn(
-    'relative z-[3] flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98]',
+    'relative z-[3] flex items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98] md:px-8',
+    'min-w-[12rem] sm:min-w-[14rem]',
+    suppressCartThumbnails ? 'flex-1' : 'shrink-0',
     'bg-[#047AFF] text-white hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]',
     journeyNext === 'open_checkout' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
