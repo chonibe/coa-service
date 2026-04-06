@@ -2,7 +2,7 @@
 
 ## Commit: fix(shop): product video — Storefront `embedUrl`, webm, HLS fatal fallback (2026-04-06)
 
-**Ref:** `325cc1d6e`
+**Ref:** `4e29c5af1`
 
 ### Summary
 **External** product video often failed because only deprecated **`embeddedUrl`** was used; Storefront **`embedUrl`** is now queried and preferred in **[`buildProductCarouselSlides`](lib/shop/product-carousel-slides.ts)**. Native **webm** progressive sources supported; **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** uses a stable **key** on progressive `<video>`, **`preload="auto"`**, and **fatal hls.js** → direct **`src`** fallback. **Test:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts).
