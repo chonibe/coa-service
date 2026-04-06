@@ -2,7 +2,7 @@
 
 ## Summary
 
-When the experience cart has **no Street Lamp** (`lampQuantity === 0`), the **artist spotlight accordion** at the top of the picker and onboarding strip is replaced by a **Street Lamp promo card**: image, title, price, **“Start your Bundle with a Street Lamp”** CTA, and a header that opens existing **`ArtworkDetail`** (bottom sheet on mobile, side panel on desktop).
+When the experience cart has **no Street Lamp** (`lampQuantity === 0`), the **artist spotlight accordion** at the top of the picker and onboarding strip is replaced by a **lamp promo card**: instructional line (“Start with the lamp, then add your artworks.”), product title, price, **“Add the lamp to start my bundle”** CTA, and a header that opens **`ArtworkDetail`** (bottom sheet on mobile, side panel on desktop).
 
 ## Checklist
 

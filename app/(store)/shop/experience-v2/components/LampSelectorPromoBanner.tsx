@@ -15,7 +15,7 @@ export interface LampSelectorPromoBannerProps {
   onOpenDetail: () => void
   onCloseDetail: () => void
   onAddLamp: () => void
-  /** Optional micro-label above title (parity with spotlight `showBadge`). */
+  /** When true, show the short “how it works” line above the product title. */
   showBadge?: boolean
 }
 
@@ -94,11 +94,16 @@ export function LampSelectorPromoBanner({
             </div>
             <div className="flex-1 min-w-0">
               {showBadge && (
-                <span className="text-xs font-medium uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  Street Lamp
-                </span>
+                <p className="text-[11px] sm:text-xs text-neutral-600 dark:text-[#b8a0a0] leading-snug pr-1">
+                  Start with the lamp, then add your artworks.
+                </p>
               )}
-              <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-[#FFBA94] truncate">
+              <h3
+                className={cn(
+                  'text-base sm:text-lg font-semibold text-neutral-900 dark:text-[#FFBA94] truncate',
+                  showBadge && 'mt-1'
+                )}
+              >
                 {title}
               </h3>
               {priceLabel ? (
@@ -129,7 +134,7 @@ export function LampSelectorPromoBanner({
               'dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
             )}
           >
-            Start your Bundle with a Street Lamp
+            Add the lamp to start my bundle
           </button>
         </div>
       </div>
