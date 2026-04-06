@@ -1,5 +1,30 @@
 # Commit Log
 
+## Commit: feat(shop): admin featured bundle modes + cart extras keep bundle pricing (2026-04-06)
+
+**Ref:** `2811092fd`
+
+### Summary
+**Featured artist bundle** is configurable in **`/admin/shop/discounts`**: enable/disable, **fixed total (USD)**, **percent off** regular lamp+2-prints subtotal, or **dollar amount off**. Stored in **`system_settings.shop_discount_flags`** as **`featuredBundleEnabled`**, **`featuredBundleMode`**, **`featuredBundleValue`**. Bundle **eligibility** no longer requires exactly two cart lines: with lamp qty 1 and at least one of each spotlight print, **extras bill at natural ladder/lock prices** while the first unit of each spotlight print stays in the bundle total ([**`lib/shop/experience-bundle-order-pricing.ts`**](lib/shop/experience-bundle-order-pricing.ts)). [**`OrderBar`**](app/(store)/shop/experience-v2/components/OrderBar.tsx) uses **cart indices** for bundle unit prices and splits **Stripe line items** when the same SKU mixes bundle vs extra pricing. Server load via [**`getShopDiscountSettings()`**](lib/shop/get-shop-discount-flags.ts); [**`ShopDiscountFlagsContext`**](app/(store)/shop/experience-v2/components/ShopDiscountFlagsContext.tsx) exposes **`useShopDiscountSettings()`**. API [**`/api/admin/shop/discount-flags`**](app/api/admin/shop/discount-flags/route.ts) GET/PATCH updated. Docs: [**`docs/features/admin-portal/README.md`**](docs/features/admin-portal/README.md).
+
+### Implementation Checklist
+
+- [x] [lib/shop/shop-discount-flags.ts](lib/shop/shop-discount-flags.ts)
+- [x] [lib/shop/experience-featured-bundle.ts](lib/shop/experience-featured-bundle.ts)
+- [x] [lib/shop/experience-bundle-order-pricing.ts](lib/shop/experience-bundle-order-pricing.ts)
+- [x] [lib/shop/get-shop-discount-flags.ts](lib/shop/get-shop-discount-flags.ts)
+- [x] [app/api/admin/shop/discount-flags/route.ts](app/api/admin/shop/discount-flags/route.ts)
+- [x] [app/admin/shop/discounts/page.tsx](app/admin/shop/discounts/page.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ShopDiscountFlagsContext.tsx](app/(store)/shop/experience-v2/components/ShopDiscountFlagsContext.tsx)
+- [x] [app/(store)/shop/experience-v2/components/OrderBar.tsx](app/(store)/shop/experience-v2/components/OrderBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/admin-portal/README.md](docs/features/admin-portal/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): disable Spline lamp cursor/touch orbit globally (2026-04-06)
 
 **Ref:** `6268d429b`
