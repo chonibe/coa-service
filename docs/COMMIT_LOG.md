@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: fix(experience): transparent carousel strip; mini Spline shell-colored backdrop (2026-04-06)
+
+**Ref:** `469c0e651`
+
+### Summary
+**[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** and experience **client** column wrappers use **`bg-transparent`**. **[`Spline3DPreview`](app/template-preview/components/spline-3d-preview.tsx)** adds **`cameraFeedCssBackdrop`**: with **`cameraFeedMode`**, WebGL stays alpha-clear but **CSS** backdrop + **canvas** `backgroundColor` can match **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** (`#F5F5F5` / `#171515`). **[`CarouselStripLampSpline`](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)** passes those hex values. **AR** in **[`Configurator`](app/(store)/shop/experience-v2/components/Configurator.tsx)** unchanged (no prop → transparent CSS).
+
+### Implementation Checklist
+
+- [x] [app/template-preview/components/spline-3d-preview.tsx](app/template-preview/components/spline-3d-preview.tsx)
+- [x] [app/(store)/shop/experience/components/CarouselStripLampSpline.tsx](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): carousel in-flow above Spline; purple picker + (2026-04-06)
 
 **Ref:** `bfcb430ba`
