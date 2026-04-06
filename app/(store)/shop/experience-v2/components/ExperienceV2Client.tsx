@@ -1626,6 +1626,7 @@ export function ExperienceV2Client({
             ? (carouselArtworks[activeCarouselIndex]?.id ?? null)
             : null
         }
+        lampPreviewProductIds={lampPreviewOrder}
       />
 
       <OrderBar

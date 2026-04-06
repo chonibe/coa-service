@@ -44,6 +44,11 @@ export interface ExperienceCheckoutStickyBarProps {
   onSelectThumbnailForSpline?: (product: ShopifyProduct) => void
   /** Product id currently shown as selected on the lamp preview (e.g. active carousel tile). */
   previewSelectedProductId?: string | null
+  /**
+   * Product IDs assigned to the lamp sides (same as `lampPreviewOrder` on the experience shell).
+   * Sticky **artwork** tiles show the “on preview” eye when their id is in this list (both sides).
+   */
+  lampPreviewProductIds?: string[]
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -56,12 +61,30 @@ function PlusSep({ theme }: { theme: 'light' | 'dark' }) {
   return (
     <span
       className={cn(
-        'shrink-0 self-center text-base font-semibold leading-none',
+        'shrink-0 self-end pb-[2px] text-base font-semibold leading-none',
         theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
       )}
       aria-hidden
     >
       +
+    </span>
+  )
+}
+
+/** Same meaning as carousel strip eye; sits in layout above the thumb (not overflow-clipped). */
+function LampPreviewEyeBadge({ theme }: { theme: 'light' | 'dark' }) {
+  return (
+    <span
+      role="img"
+      aria-label="Shown on lamp preview"
+      className={cn(
+        'pointer-events-none flex h-4 w-4 shrink-0 items-center justify-center rounded-full border shadow-md backdrop-blur-sm sm:h-[1.125rem] sm:w-[1.125rem]',
+        theme === 'light'
+          ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+          : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
+      )}
+    >
+      <Eye className="h-2 w-2 sm:h-2.5 sm:w-2.5" strokeWidth={2.5} aria-hidden />
     </span>
   )
 }
@@ -95,14 +118,10 @@ function StickyThumb({
 
   const interactiveFrame = cn(
     frame,
-    'relative isolate overflow-visible',
     'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
     'transition-transform duration-200 active:scale-[0.95]',
     'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
   )
-
-  /** Match carousel “on preview” affordance; sticky tiles are smaller than strip `w-24`. */
-  const showPreviewEye = Boolean(onSplinePreviewPress && isSplinePreviewSelected && !isLamp)
 
   const thumbImage = (
     <div className="absolute inset-0 rounded-[15px] overflow-hidden">
@@ -141,20 +160,6 @@ function StickyThumb({
         aria-current={isSplinePreviewSelected ? 'true' : undefined}
         className={interactiveFrame}
       >
-        {showPreviewEye ? (
-          <span
-            role="img"
-            aria-label="Shown on lamp preview"
-            className={cn(
-              'pointer-events-none absolute left-1/2 top-0 z-20 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm sm:h-[1.125rem] sm:w-[1.125rem]',
-              theme === 'light'
-                ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
-                : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
-            )}
-          >
-            <Eye className="h-2 w-2 sm:h-2.5 sm:w-2.5" strokeWidth={2.5} aria-hidden />
-          </span>
-        ) : null}
         {thumbImage}
       </button>
     )
@@ -203,6 +208,7 @@ export function ExperienceCheckoutStickyBar({
   suppressCartThumbnails = false,
   onSelectThumbnailForSpline,
   previewSelectedProductId = null,
+  lampPreviewProductIds = [],
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -332,50 +338,64 @@ export function ExperienceCheckoutStickyBar({
             {onOpenPicker || !suppressCartThumbnails ? (
               <div
                 className={cn(
-                  'flex w-full min-w-0 items-center gap-3',
+                  'flex w-full min-w-0 items-end gap-3',
                   suppressCartThumbnails && onOpenPicker ? 'justify-end' : ''
                 )}
               >
                 {!suppressCartThumbnails ? (
-                  <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-                    <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
-                      {visibleSlots.map((slot, index) => (
-                        <Fragment key={slot.key}>
-                          {index > 0 && <PlusSep theme={theme} />}
-                          <StickyThumb
-                            product={slot.product}
-                            isLamp={slot.isLamp}
-                            theme={theme}
-                            onSplinePreviewPress={
-                              onSelectThumbnailForSpline
-                                ? () => onSelectThumbnailForSpline(slot.product)
-                                : undefined
-                            }
-                            isSplinePreviewSelected={
-                              !!previewSelectedProductId &&
-                              previewSelectedProductId === slot.product.id
-                            }
-                            onDetailPress={
-                              onSelectThumbnailForSpline
-                                ? undefined
-                                : slot.isLamp && onViewLampDetail
-                                  ? () => onViewLampDetail(slot.product)
-                                  : undefined
-                            }
-                          />
-                        </Fragment>
-                      ))}
+                  <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide pt-1">
+                    <div className="flex w-max max-w-full min-w-0 items-end gap-1.5 pr-1">
+                      {visibleSlots.map((slot, index) => {
+                        const showLampPreviewEye =
+                          !slot.isLamp &&
+                          lampPreviewProductIds.length > 0 &&
+                          lampPreviewProductIds.includes(slot.product.id)
+                        return (
+                          <Fragment key={slot.key}>
+                            {index > 0 && <PlusSep theme={theme} />}
+                            <div className="flex shrink-0 flex-col items-center gap-0.5">
+                              <div className="flex h-[15px] w-full shrink-0 items-end justify-center">
+                                {showLampPreviewEye ? <LampPreviewEyeBadge theme={theme} /> : null}
+                              </div>
+                              <StickyThumb
+                                product={slot.product}
+                                isLamp={slot.isLamp}
+                                theme={theme}
+                                onSplinePreviewPress={
+                                  onSelectThumbnailForSpline
+                                    ? () => onSelectThumbnailForSpline(slot.product)
+                                    : undefined
+                                }
+                                isSplinePreviewSelected={
+                                  !!previewSelectedProductId &&
+                                  previewSelectedProductId === slot.product.id
+                                }
+                                onDetailPress={
+                                  onSelectThumbnailForSpline
+                                    ? undefined
+                                    : slot.isLamp && onViewLampDetail
+                                      ? () => onViewLampDetail(slot.product)
+                                      : undefined
+                                }
+                              />
+                            </div>
+                          </Fragment>
+                        )
+                      })}
                       {overflowCount > 0 && (
                         <>
                           <PlusSep theme={theme} />
-                          <div
-                            className={cn(
-                              'flex w-9 aspect-[14/20] shrink-0 items-center justify-center rounded-[15px] text-xs font-bold tabular-nums sm:w-10',
-                              theme === 'light' ? 'text-neutral-600' : 'text-white/80'
-                            )}
-                            title={`${overflowCount} more items`}
-                          >
-                            +{overflowCount}
+                          <div className="flex shrink-0 flex-col items-center gap-0.5">
+                            <div className="h-[15px] w-full shrink-0" aria-hidden />
+                            <div
+                              className={cn(
+                                'flex w-9 aspect-[14/20] shrink-0 items-center justify-center rounded-[15px] text-xs font-bold tabular-nums sm:w-10',
+                                theme === 'light' ? 'text-neutral-600' : 'text-white/80'
+                              )}
+                              title={`${overflowCount} more items`}
+                            >
+                              +{overflowCount}
+                            </div>
                           </div>
                         </>
                       )}

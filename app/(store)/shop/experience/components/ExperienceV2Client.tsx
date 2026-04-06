@@ -1686,6 +1686,7 @@ export function ExperienceV2Client({
             ? (activeStripProducts[activeCarouselIndex]?.id ?? null)
             : null
         }
+        lampPreviewProductIds={lampPreviewOrder}
       />
 
       <OrderBar
