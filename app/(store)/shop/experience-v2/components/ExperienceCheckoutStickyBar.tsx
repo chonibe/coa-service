@@ -61,7 +61,7 @@ function PlusSep({ theme }: { theme: 'light' | 'dark' }) {
   return (
     <span
       className={cn(
-        'shrink-0 self-end pb-[2px] text-base font-semibold leading-none',
+        'shrink-0 self-center text-base font-semibold leading-none',
         theme === 'light' ? 'text-neutral-400' : 'text-[#d4b8b8]'
       )}
       aria-hidden
@@ -338,13 +338,13 @@ export function ExperienceCheckoutStickyBar({
             {onOpenPicker || !suppressCartThumbnails ? (
               <div
                 className={cn(
-                  'flex w-full min-w-0 items-end gap-3',
+                  'flex w-full min-w-0 items-center gap-3',
                   suppressCartThumbnails && onOpenPicker ? 'justify-end' : ''
                 )}
               >
                 {!suppressCartThumbnails ? (
                   <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide pt-1">
-                    <div className="flex w-max max-w-full min-w-0 items-end gap-1.5 pr-1">
+                    <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
                       {visibleSlots.map((slot, index) => {
                         const showLampPreviewEye =
                           !slot.isLamp &&
