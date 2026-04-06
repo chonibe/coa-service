@@ -106,11 +106,6 @@ export function LampSelectorPromoBanner({
               >
                 {title}
               </h3>
-              {priceLabel ? (
-                <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] tabular-nums mt-0.5">
-                  {priceLabel}
-                </p>
-              ) : null}
             </div>
             <ChevronDown className="w-4 h-4 shrink-0 text-neutral-500 dark:text-[#c4a0a0]" aria-hidden />
           </div>
@@ -128,13 +123,16 @@ export function LampSelectorPromoBanner({
               e.stopPropagation()
               onAddLamp()
             }}
+            aria-label={
+              priceLabel ? `Add lamp to cart, ${priceLabel}` : 'Add lamp to cart'
+            }
             className={cn(
               'w-full rounded-lg px-3 py-2.5 text-center text-xs font-semibold transition-colors sm:text-sm',
               'bg-neutral-900 text-white hover:bg-neutral-800',
               'dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
             )}
           >
-            Add the lamp to start my bundle
+            {priceLabel ? `Add lamp to cart — ${priceLabel}` : 'Add lamp to cart'}
           </button>
         </div>
       </div>

@@ -38,7 +38,7 @@ const minimalLamp = {
 } as ShopifyProduct
 
 describe('LampSelectorPromoBanner', () => {
-  it('calls onAddLamp when bundle CTA is clicked', () => {
+  it('calls onAddLamp when add-to-cart CTA is clicked', () => {
     const onAddLamp = jest.fn()
     render(
       <LampSelectorPromoBanner
@@ -50,7 +50,7 @@ describe('LampSelectorPromoBanner', () => {
         onAddLamp={onAddLamp}
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: /add the lamp to start my bundle/i }))
+    fireEvent.click(screen.getByRole('button', { name: /add lamp to cart/i }))
     expect(onAddLamp).toHaveBeenCalledTimes(1)
   })
 
