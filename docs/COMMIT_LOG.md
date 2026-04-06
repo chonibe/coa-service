@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(experience-v2): softer choose-artworks hint — chip shine, + pulse, staggered tilt (2026-04-06)
+
+**Ref:** `184d6aa53`
+
+### Summary
+After the lamp is in the cart, **choose-artworks** no longer uses the purple full-card pulse on artwork tiles. **Strip + picker** use staggered **occasional card tilt**, a **white/cream shine** only on the **glass title chip** (aligned with chip colors), and a **slower pulse only on the `+`**. Global **sticky / primary** journey CTAs use a slightly slower pulse/shine cycle.
+
+### Implementation Checklist
+
+- [x] [app/globals.css](app/globals.css) — `experience-journey-artwork-*` utilities; slower `animate-experience-artwork-cta-pulse` / shine
+- [x] [app/(store)/shop/experience-v2/components/ArtworkStrip.tsx](app/(store)/shop/experience-v2/components/ArtworkStrip.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience-v2): priority journey next-action pulse and shine on CTAs (2026-04-06)
 
 **Ref:** `06d4e5ee6`
