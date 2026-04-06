@@ -1065,6 +1065,14 @@ export function ExperienceV2Client({
     handleLampSelect(product)
   }, [carouselArtworks, handleLampSelect, lamp])
 
+  const handleStickyThumbnailSplineSelect = useCallback(
+    (product: ShopifyProduct) => {
+      const idx = carouselSlotIndexForProductId(cartOrder, product.id)
+      if (idx >= 0) handleTapCarouselItem(idx)
+    },
+    [cartOrder, handleTapCarouselItem]
+  )
+
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
   }, [])
@@ -1612,6 +1620,14 @@ export function ExperienceV2Client({
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
         suppressCartThumbnails={splineInView}
+        onSelectThumbnailForSpline={
+          isMobile && !splineInView ? handleStickyThumbnailSplineSelect : undefined
+        }
+        previewSelectedProductId={
+          activeCarouselIndex >= 0
+            ? (carouselArtworks[activeCarouselIndex]?.id ?? null)
+            : null
+        }
       />
 
       <OrderBar
