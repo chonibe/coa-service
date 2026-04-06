@@ -669,6 +669,7 @@ export function SplineFullScreen({
         {/* Spline 3D — facade (LCP) then deferred Spline mount */}
         <div
           ref={(r) => { sectionRefs.current[splineSectionIndex] = r }}
+          data-experience-reel-spline-section
           className={cn(
             'relative z-0 flex w-full flex-shrink-0 flex-col',
             !hasGallery && !hasAccordion

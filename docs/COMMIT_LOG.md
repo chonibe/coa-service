@@ -1,5 +1,26 @@
 # Commit Log
 
+## Commit: fix(experience): carousel mini Spline tile — turntable spin, no hover (2026-04-06)
+
+**Ref:** _(see `git log -1 --oneline`)_
+
+### Summary
+The collection strip **mini lamp / Spline** thumb ([`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)) has **no hover / scale** on the tile; the visual uses a **continuous Y-axis** spin (`.experience-carousel-mini-turntable` in [`globals.css`](app/globals.css), disabled for `prefers-reduced-motion`). Optional embed: **`NEXT_PUBLIC_EXPERIENCE_CAROUSEL_MINI_SPLINE_EMBED_URL`**; else **`/internal.webp`**. Session visibility: [`experience-carousel-mini-spline.ts`](lib/shop/experience-carousel-mini-spline.ts). Tap scrolls the reel via **`[data-experience-reel-spline-section]`** in [`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx) and **`onJumpToSpline`** from both **ExperienceV2Client** entry points. [`.env.example`](.env.example) and [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md) updated.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-carousel-mini-spline.ts](lib/shop/experience-carousel-mini-spline.ts)
+- [x] [app/globals.css](app/globals.css)
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [.env.example](.env.example)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): skip saturn_png for default artist spotlight (2026-04-06)
 
 **Ref:** _(see `git log -1 --oneline`)_

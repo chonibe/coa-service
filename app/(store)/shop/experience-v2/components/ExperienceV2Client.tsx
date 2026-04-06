@@ -1263,6 +1263,11 @@ export function ExperienceV2Client({
     return streetEditionByProductId[k] ?? null
   }, [detailProduct, lamp.id, streetEditionByProductId])
 
+  const handleJumpToSpline = useCallback(() => {
+    scrollToSplineRef.current = true
+    setPreviewSlideIndex(0)
+  }, [])
+
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <SplineFullScreen
@@ -1439,6 +1444,7 @@ export function ExperienceV2Client({
         onTapItem={handleTapCarouselItem}
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
+        onJumpToSpline={handleJumpToSpline}
       />
 
       {pickerHasBeenOpened && (

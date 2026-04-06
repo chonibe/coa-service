@@ -893,6 +893,28 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation-delay: var(--journey-card-tilt-delay, 0s);
 }
 
+/** Collection strip: mini lamp / Spline thumb — continuous Y spin (no hover; see ArtworkCarouselBar). */
+@keyframes experience-carousel-mini-turntable-spin {
+  from {
+    transform: perspective(220px) rotateY(0deg);
+  }
+  to {
+    transform: perspective(220px) rotateY(360deg);
+  }
+}
+
+.experience-carousel-mini-turntable {
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  animation: experience-carousel-mini-turntable-spin 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-carousel-mini-turntable {
+    animation: none;
+  }
+}
+
 /* Parallax container */
 .parallax-container {
   perspective: 1px;
