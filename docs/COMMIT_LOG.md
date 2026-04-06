@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(experience): show all season artists in artwork filter panel (2026-04-06)
+
+**Ref:** `a907ce6d0`
+
+### Summary
+The artwork picker **FilterPanel** (and onboarding **Configurator** filters) built the **artist** list from **`productsForActiveSeason`**, so users only saw artists for the **current Season 1 / Season 2 tab**. **`productsForFilterPanel`** is now a **deduped union** of all loaded products from **both seasons** (by normalized Shopify product id). **`filteredProducts`** / the grid still use the active season only, so filtering by an artist shows their works in the tab you are on (and users can switch season or use browse-other-season as before).
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): scroll reel to details when opening ArtworkDetail from title (2026-03-29)
 
 **Ref:** `cab274faf`
