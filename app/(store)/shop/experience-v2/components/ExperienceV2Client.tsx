@@ -1270,7 +1270,7 @@ export function ExperienceV2Client({
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
+      <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
       <SplineFullScreen
         className={cn(
           'order-3 relative min-h-0 h-auto w-full flex-1',
@@ -1438,7 +1438,7 @@ export function ExperienceV2Client({
         </div>
       )}
 
-      <div className="order-2 w-full shrink-0">
+      <div className="order-2 w-full shrink-0 bg-transparent">
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}

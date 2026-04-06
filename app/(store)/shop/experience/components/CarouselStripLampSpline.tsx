@@ -125,7 +125,7 @@ export function CarouselStripLampSpline({
   }
 
   return (
-    <div className={cn('pointer-events-none relative h-full w-full', className)}>
+    <div className={cn('pointer-events-none relative h-full w-full bg-transparent', className)}>
       <ComponentErrorBoundary componentName="CarouselStripLampSpline" fallback={errorFallback}>
         <Spline3DPreview
           image1={image1}
@@ -140,6 +140,7 @@ export function CarouselStripLampSpline({
           interactive={false}
           idleSpinEnabled={idleSpinEnabled}
           cameraFeedMode
+          cameraFeedCssBackdrop={theme === 'light' ? '#F5F5F5' : '#171515'}
           className="relative h-full w-full min-h-0 min-w-0"
           swapLampSides
           flipForSide="B"

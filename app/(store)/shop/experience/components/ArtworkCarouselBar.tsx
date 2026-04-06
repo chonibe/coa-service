@@ -288,16 +288,16 @@ export function ArtworkCarouselBar({
   return (
     <div
       className={cn(
-        'pointer-events-none relative z-50 w-full shrink-0 transition-[opacity] duration-300 ease-out',
+        'pointer-events-none relative z-50 w-full shrink-0 bg-transparent transition-[opacity] duration-300 ease-out',
         splineInView ? 'opacity-100' : 'h-0 min-h-0 overflow-hidden opacity-0'
       )}
     >
-      <div className="relative px-4 pt-2 pb-1 md:pt-3 md:pb-2">
-        <div className="relative z-[1] flex flex-col items-center gap-2 pointer-events-none">
-          <div className="relative flex w-full flex-col gap-2">
+      <div className="relative bg-transparent px-4 pt-2 pb-1 md:pt-3 md:pb-2">
+        <div className="relative z-[1] flex flex-col items-center gap-2 bg-transparent pointer-events-none">
+          <div className="relative flex w-full flex-col gap-2 bg-transparent">
           <div
             ref={carouselWheelHostRef}
-            className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 px-3"
+            className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 bg-transparent px-3"
           >
             {stripMode === 'watchlist' && onSwitchToCollection && (
               <div className="flex w-full min-w-0 flex-row items-end justify-center gap-2">
@@ -341,7 +341,7 @@ export function ArtworkCarouselBar({
             onClickCapture={handleClickCapture}
             className={cn(
               /* justify-start + snap-start: snap-center/mandatory clips first/last tiles and blocks full scroll */
-              'touch-manipulation flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto scrollbar-hide snap-x snap-proximity pb-3',
+              'touch-manipulation flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent scrollbar-hide snap-x snap-proximity pb-3',
               'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}

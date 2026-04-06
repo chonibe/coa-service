@@ -183,6 +183,11 @@ interface Spline3DPreviewProps {
   resetTrigger?: number
   /** When true, render with transparent background for AR/camera-feed compositing (camera feed shown behind) */
   cameraFeedMode?: boolean
+  /**
+   * With `cameraFeedMode`, WebGL clear stays transparent; optional CSS hex for backdrop div + canvas element so
+   * the viewport matches the experience shell (e.g. `#171515`) instead of reading black. Omit for true AR (fully transparent CSS).
+   */
+  cameraFeedCssBackdrop?: string | null
   /** Rotate lamp to show this side: 'A' shows side A (image1), 'B' shows side B (image2) */
   rotateToSide?: 'A' | 'B' | null
   /** Trigger counter to force re-triggering rotation even if side hasn't changed */
@@ -233,6 +238,7 @@ export function Spline3DPreview({
   interactive = false,
   resetTrigger = 0,
   cameraFeedMode = false,
+  cameraFeedCssBackdrop = null,
   rotateToSide = null,
   rotateTrigger = 0,
   onFrontSideSettled,
@@ -2898,7 +2904,8 @@ export function Spline3DPreview({
 
   if (minimal) {
     const bgTheme = previewTheme ?? lampVariant
-    const bgHex = cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515')
+    const shellHex = bgTheme === 'light' ? '#F5F5F5' : '#171515'
+    const bgHex = cameraFeedMode ? (cameraFeedCssBackdrop ?? 'transparent') : shellHex
     const loadingFg = bgTheme === 'light' ? 'text-neutral-500' : 'text-white/50'
     const spinBorder = bgTheme === 'light' ? 'border-neutral-400 border-t-neutral-600' : 'border-white/30 border-t-white'
     const normalizedTurns = ((previewQuarterTurns % 4) + 4) % 4
@@ -2912,7 +2919,7 @@ export function Spline3DPreview({
         )}
         style={{ touchAction: 'pan-y' }}
       >
-        {/* Background layer - transparent in cameraFeedMode so video shows through */}
+        {/* Background: themed shell, or transparent for AR; strip mini uses cameraFeedCssBackdrop + alpha WebGL */}
         <div
           className="absolute inset-0 -z-10"
           style={{ backgroundColor: bgHex }}
@@ -2964,7 +2971,7 @@ export function Spline3DPreview({
             display: "block",
             maxWidth: "100%",
             maxHeight: "100%",
-            backgroundColor: cameraFeedMode ? 'transparent' : (bgTheme === 'light' ? '#F5F5F5' : '#171515'),
+            backgroundColor: cameraFeedMode ? (cameraFeedCssBackdrop ?? 'transparent') : shellHex,
             pointerEvents: 'none',
             touchAction: 'none',
             transform: `translateY(-3%) rotate(${normalizedTurns * 90}deg)`,
