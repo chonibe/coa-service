@@ -31,6 +31,7 @@ import {
 import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
 import {
   EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
+  EXPERIENCE_JOURNEY_PAYMENT_TEXT_HIGHLIGHT_CLASS,
   resolveExperienceNextAction,
 } from '@/lib/shop/experience-journey-next-action'
 
@@ -653,18 +654,19 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       type="button"
       onClick={() => setPaymentSectionExpanded((p) => !p)}
       data-testid="add-payment-method-button"
-      className={cn(
-        'flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow',
-        journeyNextAction === 'add_payment' && journeyHighlight
-      )}
+      className="flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow"
     >
       <span className="flex items-center gap-3">
         <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#c4a0a0]')} />
         <span
           data-testid="add-payment-method-button-text"
           className={cn(
-            'font-medium',
-            !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-900 dark:text-[#f0e8e8]'
+            journeyNextAction === 'add_payment'
+              ? EXPERIENCE_JOURNEY_PAYMENT_TEXT_HIGHLIGHT_CLASS
+              : cn(
+                  'font-medium',
+                  !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-900 dark:text-[#f0e8e8]'
+                )
           )}
         >
           {hasPaymentSelection ? paymentMethodLabel : 'Add payment method'}
@@ -1026,8 +1028,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                         onClick={() => setPaymentSectionExpanded(false)}
                         data-testid="payment-done-button"
                         className={cn(
-                          'text-sm font-medium text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD] rounded-lg px-2 py-1.5 min-h-[44px] min-w-[44px]',
-                          journeyNextAction === 'payment_done' && journeyHighlight
+                          'text-sm text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD] rounded-lg px-2 py-1.5 min-h-[44px] min-w-[44px]',
+                          journeyNextAction === 'payment_done' ? 'font-semibold' : 'font-medium'
                         )}
                       >
                         Done
