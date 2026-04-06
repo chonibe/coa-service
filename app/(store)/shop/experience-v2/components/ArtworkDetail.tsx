@@ -124,6 +124,146 @@ function ArtworkArtistDetailGallery({
   )
 }
 
+/** Lamp / bundle (productIncludes): no accordions — description, included items, and specs as stacked sections. */
+function LampFlatDetailsSections({
+  description,
+  productDetailsLabel,
+  productIncludes,
+  productSpecs,
+  layout,
+}: {
+  description: string
+  productDetailsLabel: string
+  productIncludes?: ArtworkDetailProps['productIncludes']
+  productSpecs?: ArtworkDetailProps['productSpecs']
+  layout: 'mobile' | 'desktop'
+}) {
+  const wrap =
+    layout === 'mobile'
+      ? 'px-4 space-y-5 pt-5 pb-3 border-t border-neutral-100 dark:border-white/10'
+      : 'space-y-5 pt-1'
+  const hasAny =
+    description.trim() ||
+    (productIncludes && productIncludes.length > 0) ||
+    (productSpecs && productSpecs.length > 0)
+  if (!hasAny) return null
+
+  const includeIconMap = {
+    lamp: Lamp,
+    ruler: Ruler,
+    cable: Cable,
+    plug: Plug,
+    book: BookOpen,
+    magnet: Magnet,
+    package: Package,
+    gift: Gift,
+    bag: ShoppingBag,
+  } as const
+
+  const specIconMap = {
+    ruler: Ruler,
+    scale: Scale,
+    box: Box,
+    sun: Sun,
+    battery: Battery,
+    zap: Zap,
+  } as const
+
+  const afterDesc = Boolean(description.trim())
+
+  return (
+    <div className={wrap}>
+      {description.trim() ? (
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
+              <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+            </div>
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">{productDetailsLabel}</h3>
+          </div>
+          <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
+        </section>
+      ) : null}
+
+      {productIncludes && productIncludes.length > 0 ? (
+        <section
+          className={cn(
+            afterDesc && 'pt-5 mt-5 border-t border-neutral-100 dark:border-white/10'
+          )}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
+              <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+            </div>
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">What&apos;s included</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {productIncludes.map((item, i) => {
+              const Icon = includeIconMap[item.icon]
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
+                >
+                  <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
+                  {item.label}
+                </span>
+              )
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {productSpecs && productSpecs.length > 0 ? (
+        <section
+          className={cn(
+            (afterDesc || (productIncludes && productIncludes.length > 0)) &&
+              'pt-5 mt-5 border-t border-neutral-100 dark:border-white/10'
+          )}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
+              <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+            </div>
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Specifications</h3>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {productSpecs.map((spec, i) => {
+              const SpecIcon = spec.icon ? specIconMap[spec.icon] : List
+              const isSingleValue = spec.items.length === 1
+              return (
+                <div
+                  key={i}
+                  className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-3"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
+                    <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
+                      {spec.title}
+                    </h4>
+                  </div>
+                  {isSingleValue ? (
+                    <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {spec.items.map((item, j) => (
+                        <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                          <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
 export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
@@ -168,17 +308,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     dragX.set(0)
   }, [imageIndex, dragX])
 
-  // Scroll hint — nudge down on open so user sees accordions below the image
+  // Scroll hint — nudge down on open so user sees content below the image (skip lamp flat layout)
   useEffect(() => {
     const el = scrollContainerRef.current
     if (!el) return
     el.scrollTop = 0
-    // Wait for the sheet spring animation to settle before nudging
+    if (isLampOrBundleProduct) return
     const timer = setTimeout(() => {
       el.scrollTo({ top: 48, behavior: 'smooth' })
     }, 650)
     return () => clearTimeout(timer)
-  }, [product.id])
+  }, [product.id, isLampOrBundleProduct])
 
   const handleZoomChange = useCallback(() => {
     setImageZoom((z) => {
@@ -215,6 +355,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
   const productDetailsLabel = isLampOrBundleProduct ? 'Product details' : 'Artwork details'
+  /** Street Lamp / bundle: portrait 3:4 frame; prints keep fixed-height hero. */
+  const desktopDetailImageFrameClass = cn(
+    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner',
+    isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(42dvh,380px)] max-h-[380px]'
+  )
+  const mobileDetailImageFrameClass = cn(
+    'relative w-[calc(100%-2rem)] max-w-sm mx-auto bg-neutral-50 dark:bg-[#1a1616] rounded-lg overflow-hidden',
+    isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(36dvh,260px)] max-h-[260px]'
+  )
   const streetLadderBlock = useMemo(
     () =>
       !isLampOrBundleProduct
@@ -465,7 +614,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       {/* Left: Image carousel + thumbnails */}
       <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
         {displayImages.length > 0 && (
-          <div ref={constraintsRef} className="relative w-full shrink-0 h-[min(42dvh,380px)] max-h-[380px] bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner">
+          <div ref={constraintsRef} className={desktopDetailImageFrameClass}>
             <AnimatePresence initial={false} mode="sync">
               <motion.div
                 key={`${imageIndex}-${currentImage?.url ?? ''}`}
@@ -561,6 +710,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <span className="text-xs">Loading details…</span>
             </div>
           )}
+          {isLampOrBundleProduct ? (
+            <LampFlatDetailsSections
+              description={description}
+              productDetailsLabel={productDetailsLabel}
+              productIncludes={productIncludes}
+              productSpecs={productSpecs}
+              layout="desktop"
+            />
+          ) : null}
           {showArtworkArtistGallery ? (
             <>
               {!isLampOrBundleProduct && spotlightGifUrl ? (
@@ -584,7 +742,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                 </div>
               ) : null}
-              {description.trim() && (
+              {!isLampOrBundleProduct && description.trim() && (
                 <div className="py-3 border-b border-neutral-100 dark:border-white/10">
                   <button
                     type="button"
@@ -729,7 +887,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {displayImages.length > 0 && (
                     <div
                       ref={constraintsRef}
-                      className="relative w-full shrink-0 h-[min(42dvh,380px)] max-h-[380px] bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner"
+                      className={desktopDetailImageFrameClass}
                     >
                       <AnimatePresence initial={false} mode="sync">
                         <motion.div
@@ -931,102 +1089,114 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       ))}
                     </div>
                   )}
-                  {productIncludes && productIncludes.length > 0 && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
-                      <button
-                        onClick={() => setShowIncludes(!showIncludes)}
-                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
-                            <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-                          </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                            What&apos;s included
-                          </span>
-                        </div>
-                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showIncludes && 'rotate-180')} />
-                      </button>
-                      <AnimatePresence>
-                        {showIncludes && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
+                  {isLampOrBundleProduct ? (
+                    <LampFlatDetailsSections
+                      description={description}
+                      productDetailsLabel={productDetailsLabel}
+                      productIncludes={productIncludes}
+                      productSpecs={productSpecs}
+                      layout="desktop"
+                    />
+                  ) : (
+                    <>
+                      {productIncludes && productIncludes.length > 0 && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                          <button
+                            onClick={() => setShowIncludes(!showIncludes)}
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                           >
-                            <div className="flex flex-wrap gap-2 pt-3 pb-1">
-                              {productIncludes.map((item, i) => {
-                                const Icon = { lamp: Lamp, ruler: Ruler, cable: Cable, plug: Plug, book: BookOpen, magnet: Magnet, package: Package, gift: Gift, bag: ShoppingBag }[item.icon]
-                                return (
-                                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium">
-                                    <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
-                                    {item.label}
-                                  </span>
-                                )
-                              })}
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
+                                <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                              </div>
+                              <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
+                                What&apos;s included
+                              </span>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                  {productSpecs && productSpecs.length > 0 && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10">
-                      <button
-                        onClick={() => setShowSpecs(!showSpecs)}
-                        className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
-                            <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-                          </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
-                            Specifications
-                          </span>
+                            <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showIncludes && 'rotate-180')} />
+                          </button>
+                          <AnimatePresence>
+                            {showIncludes && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="flex flex-wrap gap-2 pt-3 pb-1">
+                                  {productIncludes.map((item, i) => {
+                                    const Icon = { lamp: Lamp, ruler: Ruler, cable: Cable, plug: Plug, book: BookOpen, magnet: Magnet, package: Package, gift: Gift, bag: ShoppingBag }[item.icon]
+                                    return (
+                                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium">
+                                        <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
+                                        {item.label}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                        <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showSpecs && 'rotate-180')} />
-                      </button>
-                      <AnimatePresence>
-                        {showSpecs && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
+                      )}
+                      {productSpecs && productSpecs.length > 0 && (
+                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                          <button
+                            onClick={() => setShowSpecs(!showSpecs)}
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
                           >
-                            <div className="grid gap-3 sm:grid-cols-2 pt-3 pb-1">
-                              {productSpecs.map((spec, i) => {
-                                const SpecIcon = spec.icon ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon] : List
-                                const isSingleValue = spec.items.length === 1
-                                return (
-                                  <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/30 px-4 py-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                                      <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-experience-highlight uppercase tracking-wider">{spec.title}</h4>
-                                    </div>
-                                    {isSingleValue ? (
-                                      <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
-                                    ) : (
-                                      <ul className="space-y-1.5">
-                                        {spec.items.map((item, j) => (
-                                          <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
-                                            <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
-                                            <span>{item}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </div>
-                                )
-                              })}
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
+                                <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
+                              </div>
+                              <span className="text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-[#FFBA94]">
+                                Specifications
+                              </span>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                            <ChevronDown className={cn('w-4 h-4 text-neutral-400 transition-transform duration-200', showSpecs && 'rotate-180')} />
+                          </button>
+                          <AnimatePresence>
+                            {showSpecs && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="grid gap-3 sm:grid-cols-2 pt-3 pb-1">
+                                  {productSpecs.map((spec, i) => {
+                                    const SpecIcon = spec.icon ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon] : List
+                                    const isSingleValue = spec.items.length === 1
+                                    return (
+                                      <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/30 px-4 py-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
+                                          <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-experience-highlight uppercase tracking-wider">{spec.title}</h4>
+                                        </div>
+                                        {isSingleValue ? (
+                                          <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
+                                        ) : (
+                                          <ul className="space-y-1.5">
+                                            {spec.items.map((item, j) => (
+                                              <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
+                                                <span>{item}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+                    </>
                   )}
                   {isLoadingDetails && (
                     <div className="py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
@@ -1052,7 +1222,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     </>
                   ) : (
                     <>
-                      {description.trim() && (
+                      {!isLampOrBundleProduct && description.trim() && (
                         <div className="py-3 border-t border-neutral-100 dark:border-white/10">
                           <button
                             type="button"
@@ -1161,7 +1331,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             {displayImages.length > 0 && (
               <div
                 ref={constraintsRef}
-                className="relative h-[min(36dvh,260px)] max-h-[260px] w-[calc(100%-2rem)] max-w-sm mx-auto bg-neutral-50 dark:bg-[#1a1616] rounded-lg overflow-hidden"
+                className={mobileDetailImageFrameClass}
               >
                 {/* Close button on top of card (mobile only) */}
                 {!isSlideout && (
@@ -1251,6 +1421,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
+            {isLampOrBundleProduct ? (
+              <LampFlatDetailsSections
+                description={description}
+                productDetailsLabel={productDetailsLabel}
+                productIncludes={productIncludes}
+                productSpecs={productSpecs}
+                layout="mobile"
+              />
+            ) : null}
+
             {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
               <div className="mx-4 mt-3 rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
                 <ScarcityBadge
@@ -1285,8 +1465,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
-            {/* What's included (collapsible) */}
-            {productIncludes && productIncludes.length > 0 && (
+            {productIncludes && productIncludes.length > 0 && !isLampOrBundleProduct && (
               <div className="px-4 pb-3">
                 <button
                   onClick={() => setShowIncludes(!showIncludes)}
@@ -1344,8 +1523,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </div>
             )}
 
-            {/* Specifications (collapsible) */}
-            {productSpecs && productSpecs.length > 0 && (
+            {productSpecs && productSpecs.length > 0 && !isLampOrBundleProduct && (
               <div className="px-4 pb-3">
                 <button
                   onClick={() => setShowSpecs(!showSpecs)}
@@ -1441,7 +1619,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               </>
             ) : (
               <>
-                {description.trim() && (
+                {!isLampOrBundleProduct && description.trim() && (
                   <div className="px-4 pb-3">
                     <button
                       type="button"
