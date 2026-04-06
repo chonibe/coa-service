@@ -1,5 +1,20 @@
 # Commit Log
 
+## Commit: fix(experience): mini Spline transparent — clear WebGL color buffer 1 (2026-04-06)
+
+**Ref:** _(set after commit)_
+
+### Summary
+[`Spline3DPreview`](app/template-preview/components/spline-3d-preview.tsx) **`cameraFeedMode`** path: added **`clearWebglTransparent`** so **`clearBufferfv(COLOR, 1, …)`** is set to **transparent** as well as buffer **0** — Spline runtime otherwise forces draw buffer **1** to opaque black after `gl.clear`, which blocked a see-through mini strip canvas.
+
+### Implementation Checklist
+
+- [x] [app/template-preview/components/spline-3d-preview.tsx](app/template-preview/components/spline-3d-preview.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): mobile reel below lamp + remove strip + after mini Spline (2026-04-06)
 
 **Ref:** `cc363a59c`

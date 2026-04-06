@@ -99,6 +99,35 @@ function findExperienceDesignatedScrollRegion(): HTMLElement | null {
   return null
 }
 
+/**
+ * When `cameraFeedMode` is on, Spline’s renderer.clear still ends with
+ * `clearBufferfv(COLOR, 1, [0,0,0,1])` (opaque). Clear both draw buffers to transparent
+ * so the mini strip and AR modes composite correctly.
+ */
+function clearWebglTransparent(
+  renderer: { getContext?: () => WebGLRenderingContext | WebGL2RenderingContext | null },
+  color = true,
+  depth = true,
+  stencil = true
+) {
+  const gl = renderer.getContext?.() ?? null
+  if (!gl) return
+  let mask = 0
+  if (color) mask |= gl.COLOR_BUFFER_BIT
+  if (depth) mask |= gl.DEPTH_BUFFER_BIT
+  if (stencil) mask |= gl.STENCIL_BUFFER_BIT
+  gl.clear(mask)
+  const gl2 = gl as WebGL2RenderingContext
+  if (color && typeof gl2.clearBufferfv === 'function') {
+    gl2.clearBufferfv(gl2.COLOR, 0, [0, 0, 0, 0])
+    try {
+      gl2.clearBufferfv(gl2.COLOR, 1, [0, 0, 0, 0])
+    } catch {
+      /* second color attachment may not exist */
+    }
+  }
+}
+
 interface Spline3DPreviewProps {
   image1: string | null
   image2: string | null
@@ -1437,15 +1466,8 @@ export function Spline3DPreview({
             if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
             if (renderer && typeof renderer.clear === 'function') {
               if (!rendererClearOriginalRef.current) rendererClearOriginalRef.current = renderer.clear.bind(renderer)
-              const gl = renderer.getContext?.()
               renderer.clear = function (color = true, depth = true, stencil = true) {
-                if (!gl) return
-                let mask = 0
-                if (color) mask |= gl.COLOR_BUFFER_BIT
-                if (depth) mask |= gl.DEPTH_BUFFER_BIT
-                if (stencil) mask |= gl.STENCIL_BUFFER_BIT
-                gl.clear(mask)
-                if (color && gl.clearBufferfv) gl.clearBufferfv(gl.COLOR, 0, [0, 0, 0, 0])
+                clearWebglTransparent(renderer, color, depth, stencil)
               }
             }
           } else {
@@ -2428,15 +2450,8 @@ export function Spline3DPreview({
       if (renderer?.setClearColor) renderer.setClearColor(0x000000, 0)
       if (renderer && typeof renderer.clear === 'function') {
         if (!rendererClearOriginalRef.current) rendererClearOriginalRef.current = renderer.clear.bind(renderer)
-        const gl = renderer.getContext?.()
         renderer.clear = function (color = true, depth = true, stencil = true) {
-          if (!gl) return
-          let mask = 0
-          if (color) mask |= gl.COLOR_BUFFER_BIT
-          if (depth) mask |= gl.DEPTH_BUFFER_BIT
-          if (stencil) mask |= gl.STENCIL_BUFFER_BIT
-          gl.clear(mask)
-          if (color && gl.clearBufferfv) gl.clearBufferfv(gl.COLOR, 0, [0, 0, 0, 0])
+          clearWebglTransparent(renderer, color, depth, stencil)
         }
       }
     } else {
