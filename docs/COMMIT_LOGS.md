@@ -1,3 +1,16 @@
+## Commit: Product detail — split intro video + slide-off to image carousel (2026-04-06)
+
+### Summary
+When the first carousel slide is native Shopify video, the hero video is no longer a draggable carousel page: it sits on its own layer with the first **post-video** slide underneath; on `ended`, the video wrapper animates left (`x: -100%`) and `goToIndex(1)` runs so the image carousel takes over. Video-only products show the poster after playback. Later video slides still use the swipe overlay inside the carousel.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx`](../app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx) — Split intro, `swipeOverlay` prop on `ProductCarouselVideoSlide`, exit animation + state
+- [x] [`docs/features/experience-v2/README.md`](../docs/features/experience-v2/README.md) — Version note
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+---
+
 ## Commit: Experience — lamp detail loads full product for Shopify video carousel (2026-04-06)
 
 ### Summary
