@@ -1,6 +1,6 @@
 # Commit context: Experience carousel floats over reel (2026-04-06)
 
-**Commit:** `e63f06073` — `fix(ui): float experience carousel over reel for true see-through strip`
+**Commit:** `f1ce2e062` — `fix(ui): float experience carousel over reel for true see-through strip`
 
 ## Checklist
 
