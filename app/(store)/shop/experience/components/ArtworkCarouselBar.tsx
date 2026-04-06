@@ -285,6 +285,14 @@ export function ArtworkCarouselBar({
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
+  /** Add-to-strip tiles: light glass caption — avoid black fills so the reel shows through */
+  const stripAddTileCaptionClass = cn(
+    'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 backdrop-blur-sm border shadow-sm',
+    theme === 'light'
+      ? 'border-neutral-200/90 bg-white/90 text-neutral-900'
+      : 'border-white/35 bg-white/15 text-white'
+  )
+
   return (
     <div
       className={cn(
@@ -502,11 +510,11 @@ export function ArtworkCarouselBar({
                         ) : (
                           <div className={cn(
                             'w-full h-full flex items-center justify-center',
-                            theme === 'light' ? 'bg-neutral-200' : 'bg-neutral-800'
+                            theme === 'light' ? 'bg-neutral-200' : 'bg-white/10'
                           )}>
                             <span className={cn(
                               'text-xs',
-                              theme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                              theme === 'light' ? 'text-neutral-600' : 'text-neutral-300'
                             )}>{index + 1}</span>
                           </div>
                         )}
@@ -556,20 +564,12 @@ export function ArtworkCarouselBar({
                         </div>
                       )}
                     </div>
-                    <div className="absolute inset-0 bg-black/20" />
                     <div
                       className={cn(
                         'absolute inset-x-0 bottom-0 z-[2] pointer-events-none flex justify-center px-1 pb-1.5'
                       )}
                     >
-                      <div
-                        className={cn(
-                          'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5',
-                          'border border-white/30 dark:border-white/20',
-                          'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-                          'text-white shadow-sm shadow-black/20'
-                        )}
-                      >
+                      <div className={stripAddTileCaptionClass}>
                         <span
                           className="min-w-0 flex-1 text-center text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
                           title={stripLampTitle}
@@ -577,7 +577,10 @@ export function ArtworkCarouselBar({
                           {stripLampTitle}
                         </span>
                         <Plus
-                          className="h-3 w-3 shrink-0 text-white opacity-95"
+                          className={cn(
+                            'h-3 w-3 shrink-0 opacity-95',
+                            theme === 'light' ? 'text-neutral-800' : 'text-white'
+                          )}
                           strokeWidth={2.5}
                           aria-hidden
                         />
@@ -622,29 +625,21 @@ export function ArtworkCarouselBar({
                         ) : (
                           <div className={cn(
                             'w-full h-full flex items-center justify-center',
-                            theme === 'light' ? 'bg-neutral-200' : 'bg-neutral-800'
+                            theme === 'light' ? 'bg-neutral-200' : 'bg-white/10'
                           )}>
                             <span className={cn(
                               'text-xs',
-                              theme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                              theme === 'light' ? 'text-neutral-600' : 'text-neutral-300'
                             )}>+</span>
                           </div>
                         )}
                       </div>
-                      <div className="absolute inset-0 bg-black/20" />
                       <div
                         className={cn(
                           'absolute inset-x-0 bottom-0 z-[2] pointer-events-none flex justify-center px-1 pb-1.5'
                         )}
                       >
-                        <div
-                          className={cn(
-                            'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5',
-                            'border border-white/30 dark:border-white/20',
-                            'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-                            'text-white shadow-sm shadow-black/20'
-                          )}
-                        >
+                        <div className={stripAddTileCaptionClass}>
                           <span
                             className="min-w-0 flex-1 text-center text-[9px] font-semibold leading-tight tracking-tight line-clamp-2 break-words [overflow-wrap:anywhere]"
                             title={artwork.title}
@@ -652,7 +647,10 @@ export function ArtworkCarouselBar({
                             {artwork.title}
                           </span>
                           <Plus
-                            className="h-3 w-3 shrink-0 text-white opacity-95"
+                            className={cn(
+                              'h-3 w-3 shrink-0 opacity-95',
+                              theme === 'light' ? 'text-neutral-800' : 'text-white'
+                            )}
                             strokeWidth={2.5}
                             aria-hidden
                           />
