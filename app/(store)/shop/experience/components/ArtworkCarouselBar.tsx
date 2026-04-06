@@ -37,7 +37,10 @@ interface ArtworkCarouselBarProps {
   stripMode?: 'collection' | 'watchlist'
   /** When in watchlist mode, switch back to collection thumbnails */
   onSwitchToCollection?: () => void
-  /** Lift strip above fixed checkout sticky bar (≥1 artwork or empty **collection** row on sticky bar) */
+  /**
+   * When the sticky checkout row already exposes add-artwork / empty-bundle CTAs, hide duplicate controls in the strip
+   * (≥1 artwork or empty **collection** row on sticky bar).
+   */
   reserveCheckoutBar?: boolean
   /** Scroll reel to Spline + sync preview slide (collection strip mini lamp / Spline tile) */
   onJumpToSpline?: () => void
@@ -50,11 +53,6 @@ interface ArtworkCarouselBarProps {
   onAddLampFromCarouselStrip?: () => void
   /** Lamp in cart: trash removes lamp from order */
   onRemoveLampFromCarouselStrip?: () => void
-  /**
-   * Mobile (`max-md`): strip sits in normal flow under the header (with volume bar above when present),
-   * above the Spline reel. Desktop keeps the bottom overlay strip.
-   */
-  dockCarouselTopOnMobile?: boolean
 }
 
 export function ArtworkCarouselBar({
@@ -77,7 +75,6 @@ export function ArtworkCarouselBar({
   lampQuantity = 0,
   onAddLampFromCarouselStrip,
   onRemoveLampFromCarouselStrip,
-  dockCarouselTopOnMobile = false,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
@@ -240,7 +237,7 @@ export function ArtworkCarouselBar({
   }, [isDesktop, selectedArtworks.length, stripWindowStart, activeIndex])
 
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
-  /** Carousel thumbs stay w-24; + control scaled down */
+  /** Carousel thumbs stay w-24; neutral glass (e.g. watchlist back) */
   const glassAddButtonClass = cn(
     'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
@@ -257,6 +254,23 @@ export function ArtworkCarouselBar({
         ]
   )
 
+  /** Opens artwork picker — purple CTA */
+  const pickerPlusButtonClass = cn(
+    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
+    'backdrop-blur-xl backdrop-saturate-150 shadow-lg text-white',
+    theme === 'light'
+      ? [
+          'border-violet-600 bg-violet-600',
+          'shadow-[0_6px_24px_rgba(124,58,237,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]',
+          'hover:bg-violet-700 hover:border-violet-700 hover:shadow-[0_8px_28px_rgba(124,58,237,0.42)]',
+        ]
+      : [
+          'border-violet-400/85 bg-violet-600',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
+          'hover:bg-violet-500 hover:border-violet-300',
+        ]
+  )
+
   /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
   const emptyCollectionCtaClass = cn(
     'relative flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
@@ -266,44 +280,19 @@ export function ArtworkCarouselBar({
     journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
-  const glassAddWithJourney = cn(
-    glassAddButtonClass,
+  const pickerPlusWithJourney = cn(
+    pickerPlusButtonClass,
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
-
-  const checkoutBarLift = 'bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
 
   return (
     <div
       className={cn(
-        'pointer-events-none z-50 w-full transition-[transform,opacity] duration-300 ease-out',
-        dockCarouselTopOnMobile
-          ? cn(
-              'max-md:relative max-md:shrink-0',
-              splineInView
-                ? 'max-md:translate-y-0 max-md:opacity-100'
-                : 'max-md:pointer-events-none max-md:h-0 max-md:min-h-0 max-md:overflow-hidden max-md:opacity-0 max-md:pb-0 max-md:pt-0',
-              'md:absolute md:inset-x-0 md:bottom-0 md:pb-safe',
-              reserveCheckoutBar
-                ? 'md:bottom-[max(0px,calc(3.75rem+env(safe-area-inset-bottom,0px)))]'
-                : 'md:bottom-0',
-              splineInView ? 'md:translate-y-0' : 'md:translate-y-full'
-            )
-          : cn(
-              'absolute inset-x-0 pb-safe',
-              reserveCheckoutBar ? checkoutBarLift : 'bottom-0',
-              splineInView ? 'translate-y-0' : 'translate-y-full'
-            )
+        'pointer-events-none relative z-50 w-full shrink-0 transition-[opacity] duration-300 ease-out',
+        splineInView ? 'opacity-100' : 'h-0 min-h-0 overflow-hidden opacity-0'
       )}
     >
-      <div
-        className={cn(
-          'relative px-4',
-          dockCarouselTopOnMobile
-            ? 'max-md:pt-2 max-md:pb-1 md:pt-10 md:pb-5'
-            : 'pt-6 pb-4 md:pt-10 md:pb-5'
-        )}
-      >
+      <div className="relative px-4 pt-2 pb-1 md:pt-3 md:pb-2">
         <div className="relative z-[1] flex flex-col items-center gap-2 pointer-events-none">
           <div className="relative flex w-full flex-col gap-2">
           <div
@@ -684,7 +673,7 @@ export function ArtworkCarouselBar({
                   <button
                     type="button"
                     onClick={onOpenPicker}
-                    className={glassAddWithJourney}
+                    className={pickerPlusWithJourney}
                     aria-label="Add artwork to collection"
                     title="Add artwork to collection"
                   >

@@ -1270,11 +1270,10 @@ export function ExperienceV2Client({
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
-      <div className="relative min-h-0 w-full flex-1 max-md:flex max-md:flex-col md:block md:h-full">
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
       <SplineFullScreen
         className={cn(
-          'max-md:order-3 max-md:relative max-md:flex-1 max-md:min-h-0 max-md:h-auto max-md:w-full',
-          'md:order-none md:absolute md:inset-0 md:h-full',
+          'order-3 relative min-h-0 h-auto w-full flex-1',
         )}
         image1={image1}
         image2={image2}
@@ -1378,7 +1377,7 @@ export function ExperienceV2Client({
       {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && volumeDiscountBarLabel && (
         <div
           className={cn(
-            'relative z-[55] w-full shrink-0 px-4 py-2.5 border-b max-md:order-1 md:order-none',
+            'order-1 relative z-[55] w-full shrink-0 px-4 py-2.5 border-b',
             theme === 'light'
               ? 'border-emerald-200/80 bg-emerald-50/95'
               : 'border-emerald-500/30 bg-emerald-950/45'
@@ -1439,9 +1438,8 @@ export function ExperienceV2Client({
         </div>
       )}
 
-      <div className="max-md:order-2 w-full shrink-0 md:contents">
+      <div className="order-2 w-full shrink-0">
       <ArtworkCarouselBar
-        dockCarouselTopOnMobile
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
         selectedArtworks={carouselArtworks}

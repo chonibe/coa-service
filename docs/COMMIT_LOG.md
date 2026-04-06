@@ -1,8 +1,27 @@
 # Commit Log
 
+## Commit: feat(experience): carousel in-flow above Spline; purple picker + (2026-04-06)
+
+**Ref:** `e2e05db6a`
+
+### Summary
+**[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)**: removed **`dockCarouselTopOnMobile`** and **all bottom `absolute` / checkout-bar lift** positioning — the strip is **`relative shrink-0`** in the main column **above** **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** at **all breakpoints** (both [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) shells use **`flex-col`** + flex **order**). **Open-picker +** uses **violet** glass styling. **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** add-artwork FAB uses **violet** instead of blue.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/features/experience/README.md](docs/features/experience/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): product video embed matches home VideoPlayer load pattern (2026-04-06)
 
-**Ref:** `07a6fbca2`
+**Ref:** `15b52aa61`
 
 ### Summary
 **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** progressive (non-HLS) native video now mirrors **[`VideoPlayer`](components/sections/VideoPlayer.tsx)**: **`preload="none"`**, **250ms deferred `src`** so the poster paints first, and **`<source type="…">`** from new helpers **[`shopifyMimeTypeForPlaybackUrl`](lib/shop/product-carousel-slides.ts)** / [`shopifyProgressiveVideoMimeTypeFromUrl`](lib/shop/product-carousel-slides.ts). **Tests:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts). **Docs:** [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md).

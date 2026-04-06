@@ -32,8 +32,8 @@ export interface ExperienceCheckoutStickyBarProps {
   /** When `collection` and there are no artworks yet, the bar shows the primary CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
   /**
-   * When the bottom artwork carousel is on-screen (same scroll region as Spline), hide the thumbnail strip —
-   * it duplicates the carousel. Keep add-artwork FAB + checkout. When false (user scrolled past), show full summary.
+   * When the artwork carousel strip is visible (above the Spline in the main column), hide the thumbnail strip —
+   * it duplicates the carousel. Keep add-artwork FAB + checkout. When false (user scrolled past the Spline section), show full summary.
    */
   suppressCartThumbnails?: boolean
 }
@@ -133,8 +133,8 @@ function StickyThumb({
 
 /**
  * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows thumbnails (unless `suppressCartThumbnails`), checkout, and optional add FAB.
- * When `suppressCartThumbnails` (carousel strip visible under Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB + checkout remain.
- * Featured bundle promo (lamp + two prints) lives in [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) when the collection strip is empty.
+ * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB + checkout remain.
+ * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable — not in the carousel strip.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
 export function ExperienceCheckoutStickyBar({
@@ -189,7 +189,10 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const openPickerFabClass = cn(
-    'relative flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[#047AFF] bg-[#047AFF] text-white shadow-md transition-all active:scale-95 hover:border-[#0366d6] hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF] sm:h-[3.25rem] sm:w-[3.25rem]',
+    'relative flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border text-white shadow-md transition-all active:scale-95 sm:h-[3.25rem] sm:w-[3.25rem]',
+    theme === 'light'
+      ? 'border-violet-600 bg-violet-600 shadow-violet-600/35 hover:border-violet-700 hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600'
+      : 'border-violet-500 bg-violet-600 shadow-black/40 hover:border-violet-400 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400',
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
