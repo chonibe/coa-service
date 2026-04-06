@@ -43,7 +43,7 @@ interface ArtworkDetailProps {
   productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
   /** Optional specifications sections with icon (e.g. Dimensions, Weight, Materials) */
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
-  /** Override add button label (e.g. "Add Lamp to order" for lamp product) */
+  /** Override add button label (e.g. "Add lamp to cart" for lamp product) */
   addToOrderLabel?: string
   /** When true, show "Collected" badge (user owns this from past orders) */
   isCollected?: boolean
@@ -53,7 +53,7 @@ interface ArtworkDetailProps {
   isEarlyAccess?: boolean
   /** When true, render inline in a panel (no overlay/slideout) — for left-panel embedding on desktop */
   inline?: boolean
-  /** When true, hide the add-to-order CTA button (e.g. for Experience V2 where selection is in picker) */
+  /** When true, hide the add-to-cart CTA button */
   hideCta?: boolean
   /** Override slug for artist fetch — use spotlight's vendorSlug when available so artist bio matches selector (e.g. jack-jc-art vs jack-j-c-art) */
   artistSlugOverride?: string
@@ -124,7 +124,7 @@ function ArtworkArtistDetailGallery({
   )
 }
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add artwork to order', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
   const images = product.images?.edges?.map((e) => e.node) ?? []
   const fallbackImage = product.featuredImage
   const allImages = images.length > 0 ? images : fallbackImage ? [fallbackImage] : []
@@ -646,7 +646,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           )}
           {!hideCta && (
             <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]')}>
-              {isSelected ? <><Check className="w-4 h-4" />Added to order — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
+              {isSelected ? <><Check className="w-4 h-4" />Added to cart — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
             </button>
           )}
         </div>
@@ -1135,7 +1135,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         {isSelected ? (
                           <>
                             <Check className="w-4 h-4" />
-                            Added to order — Tap to remove
+                            Added to cart — Tap to remove
                           </>
                         ) : isSoldOut ? (
                           'Sold Out'
@@ -1633,7 +1633,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {isSelected ? (
                     <>
                       <Check className="w-4 h-4" />
-                      Added to order &mdash; Tap to remove
+                      Added to cart &mdash; Tap to remove
                     </>
                   ) : isSoldOut ? (
                     'Sold Out'

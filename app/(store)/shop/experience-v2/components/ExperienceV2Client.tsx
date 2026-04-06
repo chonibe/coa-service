@@ -1334,9 +1334,8 @@ export function ExperienceV2Client({
           onClose={() => setDetailProduct(null)}
           isLoadingDetails={detailProductLoading}
           isMobile={isMobile}
-          hideCta
           hideScarcityBar={detailProduct.id === lamp.id}
-          addToOrderLabel={detailProduct.id === lamp.id ? 'Add Lamp to order' : 'Add artwork to order'}
+          addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
           productIncludes={
             detailProduct.id === lamp.id
               ? [

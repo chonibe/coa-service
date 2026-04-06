@@ -2037,7 +2037,7 @@ export function Configurator({
               isNewDrop={!!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
               isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
               hideScarcityBar={detailProduct.id === lamp.id}
-              addToOrderLabel={detailProduct.id === lamp.id ? 'Add Lamp to order' : 'Add artwork to order'}
+              addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
               productIncludes={detailProduct.id === lamp.id ? [{ label: 'A Street Lamp', icon: 'lamp' as const }, { label: 'USB-C cable – 150mm length', icon: 'cable' as const }, { label: 'Internal magnet mount', icon: 'magnet' as const }, { label: 'EU/US wall adapter', icon: 'plug' as const }, { label: 'Care instruction booklet', icon: 'book' as const }, { label: 'Protective bag', icon: 'bag' as const }] : undefined}
               productSpecs={detailProduct.id === lamp.id ? [{ title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] }, { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] }, { title: 'Materials', icon: 'box' as const, items: ['Silver anodized matte finish, Aluminum 6063', 'Polycarbonate transparent and double matte optical diffusion', 'Neodymium magnet built into the frame (N52)'] }, { title: 'Light', icon: 'sun' as const, items: ['Energy efficient, heat resistant high output LED / 500 lumen, lasts up to 50,000 hours', 'Light temperatures: 2700K (Warm White), 3000K (Soft White), 5000K (Daylight)', 'Touch dimmer with multiple light options'] }, { title: 'Battery', icon: 'battery' as const, items: ['2500 mAh 3.7V 18650 rechargeable lithium ion', 'Up to 8 hours battery life with constant use'] }, { title: 'Charging', icon: 'zap' as const, items: ['Type C charging port', '1.8 m 360° magnetic head charging cable', 'EU/US wall adapter'] }] : undefined}
             />
@@ -2571,7 +2571,7 @@ export function Configurator({
           isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
           productBadges={undefined}
           hideScarcityBar={detailProduct.id === lamp.id}
-          addToOrderLabel={detailProduct.id === lamp.id ? 'Add Lamp to order' : 'Add artwork to order'}
+          addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
           productIncludes={
             detailProduct.id === lamp.id
               ? [
