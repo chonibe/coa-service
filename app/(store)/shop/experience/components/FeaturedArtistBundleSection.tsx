@@ -21,31 +21,31 @@ function BundlePlusSep({ theme }: { theme: 'light' | 'dark' }) {
   )
 }
 
+const bundleThumbFrameClass =
+  'relative aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[10px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15 sm:w-24 sm:rounded-[15px]'
+
 function BundlePortraitThumb({
   product,
   theme,
   isLamp,
   priority,
+  onPress,
 }: {
   product: ShopifyProduct
   theme: 'light' | 'dark'
   isLamp?: boolean
   priority?: boolean
+  /** When set, thumb is a button that adds this item to the cart */
+  onPress?: () => void
 }) {
   const imageUrl = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url
   const label = (product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')).trim()
-  return (
-    <div
-      className={cn(
-        'relative aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[10px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15',
-        'sm:w-24 sm:rounded-[15px]'
-      )}
-      title={label}
-    >
+  const inner = (
+    <>
       {imageUrl ? (
         <Image
           src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
-          alt={label}
+          alt=""
           fill
           unoptimized
           className="object-cover"
@@ -61,6 +61,7 @@ function BundlePortraitThumb({
                 'h-6 w-6 sm:h-10 sm:w-10',
                 theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]'
               )}
+              aria-hidden
             />
           ) : (
             <span
@@ -74,6 +75,31 @@ function BundlePortraitThumb({
           )}
         </span>
       )}
+    </>
+  )
+
+  if (onPress) {
+    return (
+      <button
+        type="button"
+        onClick={onPress}
+        title={label}
+        aria-label={`Add ${label} to cart`}
+        className={cn(
+          bundleThumbFrameClass,
+          'cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
+          'transition-transform duration-200 active:scale-[0.98]',
+          'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
+        )}
+      >
+        {inner}
+      </button>
+    )
+  }
+
+  return (
+    <div className={bundleThumbFrameClass} title={label}>
+      {inner}
     </div>
   )
 }
@@ -83,6 +109,10 @@ export interface FeaturedArtistBundleSectionProps {
   offer: FeaturedBundleFilterOffer
   lamp: ShopifyProduct
   artworks: [ShopifyProduct, ShopifyProduct]
+  /** Lamp thumbnail: ensure Street Lamp is in the cart (same as filter panel add lamp). */
+  onThumbnailAddLamp?: () => void
+  /** Print thumbnails: add that artwork if not already in cart. */
+  onThumbnailAddArtwork?: (product: ShopifyProduct) => void
 }
 
 /** Featured artist bundle block: thumbnails, pricing, primary Add to cart (under Spline in the reel). */
@@ -91,8 +121,13 @@ export function FeaturedArtistBundleSection({
   offer,
   lamp,
   artworks,
+  onThumbnailAddLamp,
+  onThumbnailAddArtwork,
 }: FeaturedArtistBundleSectionProps) {
   const disabled = offer.disabled === true
+  const lampAddable = !disabled && Boolean(onThumbnailAddLamp) && lamp.availableForSale !== false
+  const printAddable = (p: ShopifyProduct) =>
+    !disabled && Boolean(onThumbnailAddArtwork) && p.availableForSale
 
   return (
     <section
@@ -117,11 +152,35 @@ export function FeaturedArtistBundleSection({
           Featured artist bundle
         </h2>
         <div className="flex w-full min-w-0 items-end justify-center gap-1 sm:gap-2 md:gap-3">
-          <BundlePortraitThumb product={lamp} theme={theme} isLamp priority />
+          <BundlePortraitThumb
+            product={lamp}
+            theme={theme}
+            isLamp
+            priority
+            onPress={lampAddable ? onThumbnailAddLamp : undefined}
+          />
           <BundlePlusSep theme={theme} />
-          <BundlePortraitThumb product={artworks[0]} theme={theme} priority />
+          <BundlePortraitThumb
+            product={artworks[0]}
+            theme={theme}
+            priority
+            onPress={
+              printAddable(artworks[0]) && onThumbnailAddArtwork
+                ? () => onThumbnailAddArtwork(artworks[0])
+                : undefined
+            }
+          />
           <BundlePlusSep theme={theme} />
-          <BundlePortraitThumb product={artworks[1]} theme={theme} priority />
+          <BundlePortraitThumb
+            product={artworks[1]}
+            theme={theme}
+            priority
+            onPress={
+              printAddable(artworks[1]) && onThumbnailAddArtwork
+                ? () => onThumbnailAddArtwork(artworks[1])
+                : undefined
+            }
+          />
         </div>
         <p
           className={cn(

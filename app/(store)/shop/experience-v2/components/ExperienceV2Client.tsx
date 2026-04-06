@@ -1047,6 +1047,55 @@ export function ExperienceV2Client({
     [getSideToShowForProduct]
   )
 
+  const handleFeaturedBundleThumbAddLamp = useCallback(() => {
+    handleLampQuantityChange(Math.max(lampQuantity, 1))
+    handleSpotlightSelect(true)
+    setFilterOpen(false)
+    triggerPriceBump()
+  }, [handleLampQuantityChange, lampQuantity, handleSpotlightSelect, triggerPriceBump])
+
+  const handleFeaturedBundleThumbAddArtwork = useCallback(
+    (product: ShopifyProduct) => {
+      if (!product.availableForSale) return
+      setCartOrder((prev) => {
+        if (prev.includes(product.id)) return prev
+        const nextCart = [...prev, product.id]
+        setLastAddedProductId(product.id)
+        scrollToSplineRef.current = true
+        setPreviewSlideIndex(0)
+        setDisplayedProduct(product)
+        const variant = product.variants?.edges?.[0]?.node
+        trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
+        setLampPreviewOrder((prevLamp) => {
+          const idx = prevLamp.indexOf(product.id)
+          if (idx >= 0) {
+            const sideToShow = getSideToShowForProduct(prevLamp, product.id)
+            setRotateTrigger((t) => t + 1)
+            setRotateToSide(sideToShow)
+            setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
+            return prevLamp
+          }
+          const newOrder =
+            prevLamp.length >= 2
+              ? currentFrontSideRef.current === 'A'
+                ? [product.id, prevLamp[1]!]
+                : [prevLamp[0]!, product.id]
+              : [...prevLamp, product.id]
+          const sideToShow = getSideToShowForProduct(newOrder, product.id)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+          setActiveCarouselIndex(carouselSlotIndexForProductId(nextCart, product.id))
+          return newOrder
+        })
+        return nextCart
+      })
+      handleSpotlightSelect(true)
+      setFilterOpen(false)
+      triggerPriceBump()
+    },
+    [getSideToShowForProduct, handleSpotlightSelect, triggerPriceBump]
+  )
+
   const handleTapCarouselItem = useCallback((index: number) => {
     const product = carouselArtworks[index]
     if (!product) return
@@ -1383,6 +1432,8 @@ export function ExperienceV2Client({
         featuredBundleOffer={featuredBundleFilterOffer}
         bundlePreviewLamp={lamp}
         bundlePreviewArtworks={spotlightPairProducts ?? null}
+        onFeaturedBundleThumbnailAddLamp={handleFeaturedBundleThumbAddLamp}
+        onFeaturedBundleThumbnailAddArtwork={handleFeaturedBundleThumbAddArtwork}
       />
 
       {/* Float above the reel (no flex reservation) so transparent strip shows the 3D viewport behind it */}

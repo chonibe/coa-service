@@ -125,6 +125,10 @@ interface SplineFullScreenProps {
   featuredBundleOffer?: FeaturedBundleFilterOffer | null
   bundlePreviewLamp?: ShopifyProduct | null
   bundlePreviewArtworks?: ShopifyProduct[] | null
+  /** Featured bundle card: tap lamp thumbnail to add Street Lamp to cart */
+  onFeaturedBundleThumbnailAddLamp?: () => void
+  /** Featured bundle card: tap print thumbnail to add that artwork (add-only) */
+  onFeaturedBundleThumbnailAddArtwork?: (product: ShopifyProduct) => void
 }
 
 export function SplineFullScreen({
@@ -156,6 +160,8 @@ export function SplineFullScreen({
   featuredBundleOffer = null,
   bundlePreviewLamp = null,
   bundlePreviewArtworks = null,
+  onFeaturedBundleThumbnailAddLamp,
+  onFeaturedBundleThumbnailAddArtwork,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const featuredBundleDataReady =
@@ -779,6 +785,8 @@ export function SplineFullScreen({
               offer={featuredBundleOffer}
               lamp={bundlePreviewLamp}
               artworks={[bundlePreviewArtworks[0]!, bundlePreviewArtworks[1]!]}
+              onThumbnailAddLamp={onFeaturedBundleThumbnailAddLamp}
+              onThumbnailAddArtwork={onFeaturedBundleThumbnailAddArtwork}
             />
           ) : null}
         </div>
