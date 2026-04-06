@@ -49,20 +49,19 @@ import { Heart } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
-import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
+import { computeExperienceFeaturedBundlePricing } from '@/lib/shop/experience-bundle-order-pricing'
 import {
-  FEATURED_ARTIST_BUNDLE_USD,
-  computeFeaturedBundleCheckoutPrices,
   computeFeaturedBundleRegularSubtotalUsd,
   getSpotlightPairProducts,
-  isFeaturedArtistBundleActive,
+  isFeaturedArtistBundleEligible,
 } from '@/lib/shop/experience-featured-bundle'
+import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flags'
 import {
   ARTWORKS_PER_FREE_LAMP,
   lampVolumeDiscountPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
-import { useShopDiscountFlags } from '../../experience-v2/components/ShopDiscountFlagsContext'
+import { useShopDiscountSettings } from '../../experience-v2/components/ShopDiscountFlagsContext'
 
 type WatchlistApiRow = {
   id: string
@@ -167,7 +166,8 @@ export function ExperienceV2Client({
     setHeaderCenterContent,
     setHeaderTrailingContent,
   } = useExperienceOrder()
-  const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
+  const { flags: discountFlags, featuredBundle: featuredBundleDiscount } = useShopDiscountSettings()
+  const { lampArtworkVolume: lampVolumeDiscountEnabled } = discountFlags
 
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
@@ -665,17 +665,6 @@ export function ExperienceV2Client({
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
   const artworkCount = selectedArtworks.length
 
-  const featuredArtistBundleActive = useMemo(
-    () =>
-      isFeaturedArtistBundleActive({
-        lampQuantity,
-        cartOrder,
-        spotlightProductIds: spotlightData?.productIds ?? [],
-        resolveProduct: (gid) => allProducts.find((p) => p.id === gid),
-      }),
-    [lampQuantity, cartOrder, spotlightData?.productIds, allProducts]
-  )
-
   const lampPrices = useMemo(() => {
     const prices: number[] = []
     for (let k = 1; k <= lampQuantity; k++) {
@@ -698,29 +687,38 @@ export function ExperienceV2Client({
     }),
     [lockedArtworkPrices, streetLadderPrices, activeSeason]
   )
-  const artworksTotal = selectedArtworks.reduce(
-    (sum, p) => sum + experienceArtworkUnitUsd(p, artworkPriceMaps),
-    0
+  const bundlePricing = useMemo(
+    () =>
+      computeExperienceFeaturedBundlePricing({
+        lampQuantity,
+        lampPrices,
+        cartOrder,
+        spotlightProductIds: spotlightData?.productIds ?? [],
+        spotlightPairProducts,
+        resolveProduct: (gid) => allProducts.find((p) => p.id === gid),
+        priceMaps: artworkPriceMaps,
+        selectedProducts: selectedArtworks,
+        featuredBundle: featuredBundleDiscount,
+      }),
+    [
+      lampQuantity,
+      lampPrices,
+      cartOrder,
+      spotlightData?.productIds,
+      spotlightPairProducts,
+      allProducts,
+      artworkPriceMaps,
+      selectedArtworks,
+      featuredBundleDiscount,
+    ]
   )
-  const subtotalNatural = lampTotal + artworksTotal
-  const orderTotal = featuredArtistBundleActive ? FEATURED_ARTIST_BUNDLE_USD : subtotalNatural
 
-  const featuredBundleCheckoutPayload = useMemo(() => {
-    if (!featuredArtistBundleActive || !spotlightPairProducts) return null
-    return computeFeaturedBundleCheckoutPrices({
-      lampNaturalLines: lampPrices,
-      artProducts: spotlightPairProducts,
-      priceMaps: artworkPriceMaps,
-    })
-  }, [
-    featuredArtistBundleActive,
-    spotlightPairProducts,
-    lampPrices,
-    artworkPriceMaps,
-  ])
+  const featuredArtistBundlePricingActive = bundlePricing.pricingActive
+  const orderTotal = bundlePricing.orderTotalUsd
+  const featuredBundleCheckoutPayload = bundlePricing.featuredBundleCheckout
 
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
-    if (!spotlightData || !spotlightPairProducts) return null
+    if (!featuredBundleDiscount.enabled || !spotlightData || !spotlightPairProducts) return null
     const [p1, p2] = spotlightPairProducts
     const bothForSale = p1.availableForSale && p2.availableForSale
     const lampPricesNatural: number[] = []
@@ -736,7 +734,8 @@ export function ExperienceV2Client({
       artProducts: spotlightPairProducts,
       priceMaps: artworkPriceMaps,
     })
-    const bundleInCart = isFeaturedArtistBundleActive({
+    const bundleUsd = computeFeaturedBundleEffectiveUsd(compareAt, featuredBundleDiscount)
+    const bundleInCart = isFeaturedArtistBundleEligible({
       lampQuantity,
       cartOrder,
       spotlightProductIds: spotlightData.productIds,
@@ -744,12 +743,13 @@ export function ExperienceV2Client({
     })
     return {
       vendorName: spotlightData.vendorName,
-      bundleUsd: FEATURED_ARTIST_BUNDLE_USD,
+      bundleUsd,
       compareAtUsd: compareAt,
       onApply: handleApplyFeaturedBundle,
       disabled: bundleInCart || !bothForSale,
     }
   }, [
+    featuredBundleDiscount,
     spotlightData,
     spotlightPairProducts,
     lampPrice,
@@ -930,7 +930,10 @@ export function ExperienceV2Client({
       lockedArtworkPrices,
       streetLadderPrices,
       streetPricingSeasonFallback: activeSeason === 'season2' ? 2 : 1,
-      featuredBundleCheckout: featuredArtistBundleActive ? featuredBundleCheckoutPayload : null,
+      featuredBundleCheckout: featuredArtistBundlePricingActive ? featuredBundleCheckoutPayload : null,
+      bundlePricedArtworkIndices: featuredArtistBundlePricingActive
+        ? bundlePricing.bundlePricedArtworkIndices
+        : undefined,
     })
   }, [
     lamp,
@@ -943,8 +946,9 @@ export function ExperienceV2Client({
     lockedArtworkPrices,
     streetLadderPrices,
     activeSeason,
-    featuredArtistBundleActive,
+    featuredArtistBundlePricingActive,
     featuredBundleCheckoutPayload,
+    bundlePricing.bundlePricedArtworkIndices,
     handleLampQuantityChange,
     handleAdjustArtworkQuantity,
     setOrderBarProps,
@@ -1616,7 +1620,10 @@ export function ExperienceV2Client({
         lockedArtworkPrices={lockedArtworkPrices}
         streetLadderPrices={streetLadderPrices}
         streetPricingSeasonFallback={activeSeason === 'season2' ? 2 : 1}
-        featuredBundleCheckout={featuredArtistBundleActive ? featuredBundleCheckoutPayload : null}
+        featuredBundleCheckout={featuredArtistBundlePricingActive ? featuredBundleCheckoutPayload : null}
+        bundlePricedArtworkIndices={
+          featuredArtistBundlePricingActive ? bundlePricing.bundlePricedArtworkIndices : undefined
+        }
       />
     </div>
   )

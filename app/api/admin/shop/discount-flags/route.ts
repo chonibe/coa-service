@@ -4,14 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import { verifyAdminSessionToken, ADMIN_SESSION_COOKIE_NAME } from '@/lib/admin-session'
 import { isAdminEmail } from '@/lib/vendor-auth'
 import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasRole } from '@/lib/auth/unified-session'
-import { getShopDiscountFlags } from '@/lib/shop/get-shop-discount-flags'
+import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import {
-  mergeShopDiscountFlagsWithDefaults,
-  parseStoredShopDiscountFlags,
-  pickShopDiscountFlagUpdates,
+  mergeShopDiscountSettingsWithDefaults,
+  parseStoredShopDiscountSettings,
+  pickShopDiscountSettingsUpdates,
   SHOP_DISCOUNT_FLAGS_KEY,
   SHOP_DISCOUNT_REGISTRY,
-  type ShopDiscountFlags,
+  type ShopDiscountSettings,
 } from '@/lib/shop/shop-discount-flags'
 
 async function requireAdminApi(): Promise<{ ok: true; email: string } | { ok: false; status: number }> {
@@ -32,9 +32,18 @@ async function requireAdminApi(): Promise<{ ok: true; email: string } | { ok: fa
   return { ok: false, status: 401 }
 }
 
+function settingsToStoredValue(s: ShopDiscountSettings): Record<string, unknown> {
+  return {
+    lampArtworkVolume: s.flags.lampArtworkVolume,
+    featuredBundleEnabled: s.featuredBundle.enabled,
+    featuredBundleMode: s.featuredBundle.mode,
+    featuredBundleValue: s.featuredBundle.value,
+  }
+}
+
 /**
  * GET /api/admin/shop/discount-flags
- * Merged flags + registry for the admin UI.
+ * Merged flags, featured bundle pricing, and registry for the admin UI.
  */
 export async function GET() {
   const auth = await requireAdminApi()
@@ -42,16 +51,17 @@ export async function GET() {
     return NextResponse.json({ error: 'Admin authentication required' }, { status: auth.status })
   }
 
-  const flags = await getShopDiscountFlags()
+  const settings = await getShopDiscountSettings()
   return NextResponse.json({
-    flags,
+    flags: settings.flags,
+    featuredBundle: settings.featuredBundle,
     registry: SHOP_DISCOUNT_REGISTRY,
   })
 }
 
 /**
  * PATCH /api/admin/shop/discount-flags
- * Body: partial flags, e.g. `{ "lampArtworkVolume": true }`
+ * Body: partial fields, e.g. `{ "lampArtworkVolume": true }` or bundle keys.
  */
 export async function PATCH(request: NextRequest) {
   const auth = await requireAdminApi()
@@ -66,10 +76,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const updates = pickShopDiscountFlagUpdates(body)
+  const updates = pickShopDiscountSettingsUpdates(body)
   if (!updates) {
     return NextResponse.json(
-      { error: 'No valid discount flag fields provided' },
+      { error: 'No valid discount fields provided' },
       { status: 400 }
     )
   }
@@ -82,15 +92,34 @@ export async function PATCH(request: NextRequest) {
     .eq('key', SHOP_DISCOUNT_FLAGS_KEY)
     .maybeSingle()
 
-  const parsed = parseStoredShopDiscountFlags(row?.value ?? null)
-  const current = mergeShopDiscountFlagsWithDefaults(parsed)
-  const next: ShopDiscountFlags = { ...current, ...updates }
+  const parsed = parseStoredShopDiscountSettings(row?.value ?? null)
+  const current = mergeShopDiscountSettingsWithDefaults(parsed)
+
+  const next: ShopDiscountSettings = {
+    flags: {
+      ...current.flags,
+      ...(updates.lampArtworkVolume !== undefined ? { lampArtworkVolume: updates.lampArtworkVolume } : {}),
+    },
+    featuredBundle: {
+      enabled:
+        updates.featuredBundleEnabled !== undefined
+          ? updates.featuredBundleEnabled
+          : current.featuredBundle.enabled,
+      mode: updates.featuredBundleMode ?? current.featuredBundle.mode,
+      value:
+        updates.featuredBundleValue !== undefined
+          ? updates.featuredBundleValue
+          : current.featuredBundle.value,
+    },
+  }
+
+  const stored = settingsToStoredValue(next)
 
   const { error: upsertError } = await supabase.from('system_settings').upsert(
     {
       key: SHOP_DISCOUNT_FLAGS_KEY,
-      value: next as unknown as Record<string, boolean>,
-      description: 'Shop experience discount toggles (admin-managed)',
+      value: stored as unknown as Record<string, unknown>,
+      description: 'Shop experience discount toggles and bundle pricing (admin-managed)',
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'key' }
@@ -103,7 +132,8 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    flags: next,
+    flags: next.flags,
+    featuredBundle: next.featuredBundle,
     registry: SHOP_DISCOUNT_REGISTRY,
   })
 }

@@ -48,18 +48,26 @@ const PaymentStep = dynamic(
 const qtyStepperBtnClass =
   'qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded border border-neutral-200 dark:border-white/20 text-neutral-700 dark:text-[#d4b8b8] bg-neutral-50 dark:bg-[#201c1c] hover:bg-neutral-100 dark:hover:bg-[#2a2424] transition-colors disabled:opacity-40 disabled:pointer-events-none'
 
-/** Consecutive identical product IDs in cart order are one line with quantity = run length. */
-function groupConsecutiveArtworks(products: ShopifyProduct[]): Array<{
-  product: ShopifyProduct
-  quantity: number
-  runStartIndex: number
-}> {
+/**
+ * Consecutive same-SKU runs; splits when unit price differs (e.g. one bundle-priced line + extra at ladder price).
+ */
+function groupConsecutiveArtworksWithUnits(
+  products: ShopifyProduct[],
+  unitAtIndex: (p: ShopifyProduct, i: number) => number
+): Array<{ product: ShopifyProduct; quantity: number; runStartIndex: number }> {
   const runs: Array<{ product: ShopifyProduct; quantity: number; runStartIndex: number }> = []
   let i = 0
   while (i < products.length) {
     const product = products[i]
+    const unit = unitAtIndex(product, i)
     let j = i + 1
-    while (j < products.length && products[j].id === product.id) j++
+    while (j < products.length) {
+      const p2 = products[j]
+      if (p2.id !== product.id) break
+      const u2 = unitAtIndex(p2, j)
+      if (Math.round(u2 * 100) !== Math.round(unit * 100)) break
+      j++
+    }
     runs.push({ product, quantity: j - i, runStartIndex: i })
     i = j
   }
@@ -87,8 +95,10 @@ interface OrderBarProps {
   streetLadderPrices?: Record<string, number>
   /** Active season tab — used only when API ladder misses (Storefront metafield + inventory fallback). */
   streetPricingSeasonFallback?: 1 | 2
-  /** Featured artist bundle: allocated line prices totaling $159 */
+  /** Featured artist bundle: allocated line prices for lamp + two spotlight prints */
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
+  /** Which `selectedArtworks` indices use bundle unit prices (extras use natural ladder/lock prices). */
+  bundlePricedArtworkIndices?: Set<number> | null
 }
 
 export interface OrderBarRef {
@@ -149,6 +159,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   streetLadderPrices,
   streetPricingSeasonFallback,
   featuredBundleCheckout,
+  bundlePricedArtworkIndices,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -191,7 +202,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const lampPrice = parsePrice(lamp)
   const artworkCount = selectedArtworks.length
-  const artworkRuns = React.useMemo(() => groupConsecutiveArtworks(selectedArtworks), [selectedArtworks])
   const includeLamp = lampQuantity > 0
 
   const lampPrices = React.useMemo(() => {
@@ -213,13 +223,20 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   }, [lampQuantity, artworkCount, lampPrice, featuredBundleCheckout, lampVolumeDiscountEnabled])
 
   const artworkUnitUsd = React.useCallback(
-    (p: ShopifyProduct) => {
-      const k = normalizeExperienceProductKey(p.id)
-      const bundleUnit = featuredBundleCheckout?.artworkUnitUsdByNumericId[k]
-      if (bundleUnit != null && bundleUnit > 0) return bundleUnit
+    (p: ShopifyProduct, cartIndex: number) => {
+      if (bundlePricedArtworkIndices?.has(cartIndex)) {
+        const k = normalizeExperienceProductKey(p.id)
+        const bundleUnit = featuredBundleCheckout?.artworkUnitUsdByNumericId[k]
+        if (bundleUnit != null && bundleUnit > 0) return bundleUnit
+      }
       return experienceArtworkUnitUsd(p, priceMaps)
     },
-    [featuredBundleCheckout, priceMaps]
+    [featuredBundleCheckout, priceMaps, bundlePricedArtworkIndices]
+  )
+
+  const artworkRuns = React.useMemo(
+    () => groupConsecutiveArtworksWithUnits(selectedArtworks, artworkUnitUsd),
+    [selectedArtworks, artworkUnitUsd]
   )
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
@@ -240,7 +257,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     [selectedArtworks, priceMaps]
   )
 
-  const artworksTotal = selectedArtworks.reduce((sum, p) => sum + artworkUnitUsd(p), 0)
+  const artworksTotal = selectedArtworks.reduce(
+    (sum, p, i) => sum + artworkUnitUsd(p, i),
+    0
+  )
   const total = lampTotal + artworksTotal
   const lampSavings =
     lampQuantity > 0
@@ -264,10 +284,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     let ai = 0
     while (ai < selectedArtworks.length) {
       const p = selectedArtworks[ai]
+      const unit = artworkUnitUsd(p, ai)
       let aj = ai + 1
-      while (aj < selectedArtworks.length && selectedArtworks[aj].id === p.id) aj++
+      while (aj < selectedArtworks.length) {
+        const p2 = selectedArtworks[aj]
+        if (p2.id !== p.id) break
+        const u2 = artworkUnitUsd(p2, aj)
+        if (Math.round(u2 * 100) !== Math.round(unit * 100)) break
+        aj++
+      }
       const qty = aj - ai
-      const unit = artworkUnitUsd(p)
       const pAdj =
         unit !== storefrontVariantUsd(p)
           ? ({
@@ -320,8 +346,15 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     let wi = 0
     while (wi < selectedArtworks.length) {
       const art = selectedArtworks[wi]
+      const unit = artworkUnitUsd(art, wi)
       let wj = wi + 1
-      while (wj < selectedArtworks.length && selectedArtworks[wj].id === art.id) wj++
+      while (wj < selectedArtworks.length) {
+        const art2 = selectedArtworks[wj]
+        if (art2.id !== art.id) break
+        const u2 = artworkUnitUsd(art2, wj)
+        if (Math.round(u2 * 100) !== Math.round(unit * 100)) break
+        wj++
+      }
       if (!art.availableForSale) {
         wi = wj
         continue
@@ -333,7 +366,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         variantGid: art.variants?.edges?.[0]?.node?.id ?? '',
         handle: art.handle,
         title: art.title,
-        price: artworkUnitUsd(art),
+        price: unit,
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
       })
@@ -635,7 +668,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
         {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
-          const lineSubtotal = artworkUnitUsd(art) * quantity
+          const lineSubtotal = artworkUnitUsd(art, runStartIndex) * quantity
           return (
           <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">

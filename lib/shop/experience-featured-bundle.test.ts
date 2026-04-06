@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest'
 import type { ShopifyProduct } from '../shopify/storefront-client'
 import {
   allocateUsdByWeights,
   computeFeaturedBundleCheckoutPrices,
   computeFeaturedBundleRegularSubtotalUsd,
   FEATURED_ARTIST_BUNDLE_USD,
+  getFeaturedBundleConsumedCartIndices,
   getSpotlightPairProducts,
   isFeaturedArtistBundleActive,
 } from './experience-featured-bundle'
@@ -51,7 +51,7 @@ describe('allocateUsdByWeights', () => {
 })
 
 describe('computeFeaturedBundleCheckoutPrices', () => {
-  it('totals exactly FEATURED_ARTIST_BUNDLE_USD', () => {
+  it('totals exactly targetBundleUsd', () => {
     const lampLines = [99]
     const art: [ShopifyProduct, ShopifyProduct] = [
       mockProduct('gid://shopify/Product/1', { price: 40 }),
@@ -60,6 +60,7 @@ describe('computeFeaturedBundleCheckoutPrices', () => {
     const r = computeFeaturedBundleCheckoutPrices({
       lampNaturalLines: lampLines,
       artProducts: art,
+      targetBundleUsd: FEATURED_ARTIST_BUNDLE_USD,
     })
     const sum =
       r.lampLineUsd.reduce((a, b) => a + b, 0) +
@@ -103,6 +104,20 @@ describe('getSpotlightPairProducts', () => {
   })
 })
 
+describe('getFeaturedBundleConsumedCartIndices', () => {
+  it('returns first occurrence of each spotlight print', () => {
+    const idx = getFeaturedBundleConsumedCartIndices(
+      [
+        'gid://shopify/Product/2',
+        'gid://shopify/Product/1',
+        'gid://shopify/Product/3',
+      ],
+      ['1', '2']
+    )
+    expect(idx).toEqual([0, 1])
+  })
+})
+
 describe('isFeaturedArtistBundleActive', () => {
   const p1 = mockProduct('gid://shopify/Product/1')
   const p2 = mockProduct('gid://shopify/Product/2')
@@ -143,7 +158,7 @@ describe('isFeaturedArtistBundleActive', () => {
     ).toBe(false)
   })
 
-  it('is false when duplicate ids in cart', () => {
+  it('is false when duplicate ids in cart cannot cover both spotlight prints', () => {
     expect(
       isFeaturedArtistBundleActive({
         lampQuantity: 1,
@@ -152,5 +167,21 @@ describe('isFeaturedArtistBundleActive', () => {
         resolveProduct: resolve,
       })
     ).toBe(false)
+  })
+
+  it('is true when spotlight pair is present plus extra artworks', () => {
+    const p3 = mockProduct('gid://shopify/Product/3')
+    expect(
+      isFeaturedArtistBundleActive({
+        lampQuantity: 1,
+        cartOrder: [
+          'gid://shopify/Product/1',
+          'gid://shopify/Product/2',
+          'gid://shopify/Product/3',
+        ],
+        spotlightProductIds: ['1', '2'],
+        resolveProduct: (g) => (g.includes('3') ? p3 : resolve(g)),
+      })
+    ).toBe(true)
   })
 })

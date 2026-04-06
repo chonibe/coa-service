@@ -2,25 +2,33 @@
 
 import { createContext, useContext, type ReactNode } from 'react'
 import {
-  DEFAULT_SHOP_DISCOUNT_FLAGS,
+  DEFAULT_SHOP_DISCOUNT_SETTINGS,
   type ShopDiscountFlags,
+  type ShopDiscountSettings,
 } from '@/lib/shop/shop-discount-flags'
 
-const ShopDiscountFlagsContext = createContext<ShopDiscountFlags | null>(null)
+const ShopDiscountSettingsContext = createContext<ShopDiscountSettings | null>(null)
 
 export function ShopDiscountFlagsProvider({
   value,
   children,
 }: {
-  value: ShopDiscountFlags
+  value: ShopDiscountSettings
   children: ReactNode
 }) {
   return (
-    <ShopDiscountFlagsContext.Provider value={value}>{children}</ShopDiscountFlagsContext.Provider>
+    <ShopDiscountSettingsContext.Provider value={value}>
+      {children}
+    </ShopDiscountSettingsContext.Provider>
   )
+}
+
+/** Full settings (lamp flag + featured bundle pricing). */
+export function useShopDiscountSettings(): ShopDiscountSettings {
+  return useContext(ShopDiscountSettingsContext) ?? DEFAULT_SHOP_DISCOUNT_SETTINGS
 }
 
 /** Falls back to defaults when used outside a provider (e.g. onboarding OrderBar with qty 0). */
 export function useShopDiscountFlags(): ShopDiscountFlags {
-  return useContext(ShopDiscountFlagsContext) ?? DEFAULT_SHOP_DISCOUNT_FLAGS
+  return useShopDiscountSettings().flags
 }

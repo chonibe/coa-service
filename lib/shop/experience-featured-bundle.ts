@@ -5,7 +5,7 @@ import {
   type ExperienceArtworkPriceMaps,
 } from './experience-artwork-unit-price'
 
-/** Fixed checkout / display subtotal for lamp + first two spotlight prints (before promo). */
+/** Fixed checkout / display subtotal for lamp + first two spotlight prints (before promo); default when admin mode is `fixed_total`. */
 export const FEATURED_ARTIST_BUNDLE_USD = 159
 
 export type SpotlightLike = {
@@ -42,35 +42,54 @@ export function getSpotlightPairProducts(
   return [p1, p2]
 }
 
-export function isFeaturedArtistBundleActive(args: {
+/**
+ * First cart index for each spotlight print (left-to-right). Extra copies of the same SKU stay unbundled for pricing.
+ */
+export function getFeaturedBundleConsumedCartIndices(
+  cartOrder: string[],
+  spotlightProductIds: string[]
+): [number, number] | null {
+  const s0 = normalizeExperienceProductKey(spotlightProductIds[0] ?? '')
+  const s1 = normalizeExperienceProductKey(spotlightProductIds[1] ?? '')
+  if (!s0 || !s1 || s0 === s1) return null
+
+  const i0 = cartOrder.findIndex((g) => normalizeExperienceProductKey(g) === s0)
+  const i1 = cartOrder.findIndex((g) => normalizeExperienceProductKey(g) === s1)
+  if (i0 < 0 || i1 < 0) return null
+
+  return i0 <= i1 ? [i0, i1] : [i1, i0]
+}
+
+/**
+ * True when lamp qty is 1, cart includes at least one of each spotlight print (extras allowed), and both resolved products sell.
+ */
+export function isFeaturedArtistBundleEligible(args: {
   lampQuantity: number
   cartOrder: string[]
   spotlightProductIds: string[]
   resolveProduct: (productGid: string) => ShopifyProduct | null | undefined
 }): boolean {
   if (args.lampQuantity !== 1) return false
-  if (args.cartOrder.length !== 2) return false
 
-  const c0 = normalizeExperienceProductKey(args.cartOrder[0]!)
-  const c1 = normalizeExperienceProductKey(args.cartOrder[1]!)
-  if (!c0 || !c1 || c0 === c1) return false
+  const pair = getFeaturedBundleConsumedCartIndices(args.cartOrder, args.spotlightProductIds)
+  if (!pair) return false
 
-  const s0 = normalizeExperienceProductKey(args.spotlightProductIds[0] ?? '')
-  const s1 = normalizeExperienceProductKey(args.spotlightProductIds[1] ?? '')
-  if (!s0 || !s1 || s0 === s1) return false
-
-  const cartSet = new Set([c0, c1])
-  const spotSet = new Set([s0, s1])
-  if (cartSet.size !== 2 || spotSet.size !== 2) return false
-  for (const id of cartSet) {
-    if (!spotSet.has(id)) return false
-  }
-
-  const pA = args.resolveProduct(args.cartOrder[0]!)
-  const pB = args.resolveProduct(args.cartOrder[1]!)
+  const [ia, ib] = pair
+  const pA = args.resolveProduct(args.cartOrder[ia]!)
+  const pB = args.resolveProduct(args.cartOrder[ib]!)
   if (!pA?.availableForSale || !pB?.availableForSale) return false
 
   return true
+}
+
+/** @alias {@link isFeaturedArtistBundleEligible} */
+export function isFeaturedArtistBundleActive(args: {
+  lampQuantity: number
+  cartOrder: string[]
+  spotlightProductIds: string[]
+  resolveProduct: (productGid: string) => ShopifyProduct | null | undefined
+}): boolean {
+  return isFeaturedArtistBundleEligible(args)
 }
 
 /**
@@ -111,20 +130,20 @@ export type FeaturedBundleCheckoutPrices = {
 }
 
 /**
- * Split {@link FEATURED_ARTIST_BUNDLE_USD} across lamp line(s) + two artwork units using natural prices as weights.
+ * Split `targetBundleUsd` across lamp line(s) + two artwork units using natural prices as weights.
  */
 export function computeFeaturedBundleCheckoutPrices(args: {
   lampNaturalLines: number[]
   artProducts: [ShopifyProduct, ShopifyProduct]
   priceMaps?: ExperienceArtworkPriceMaps
+  /** Effective bundle total for lamp + the two spotlight prints (from admin rules). */
+  targetBundleUsd: number
 }): FeaturedBundleCheckoutPrices {
-  const { lampNaturalLines, artProducts, priceMaps } = args
-  const lampSum = lampNaturalLines.reduce((a, b) => a + b, 0)
+  const { lampNaturalLines, artProducts, priceMaps, targetBundleUsd } = args
   const u1 = experienceArtworkUnitUsd(artProducts[0], priceMaps)
   const u2 = experienceArtworkUnitUsd(artProducts[1], priceMaps)
-  const lineCount = lampNaturalLines.length + 2
   const weights: number[] = [...lampNaturalLines, u1, u2]
-  const allocated = allocateUsdByWeights(weights, FEATURED_ARTIST_BUNDLE_USD)
+  const allocated = allocateUsdByWeights(weights, targetBundleUsd)
 
   const lampLineUsd = allocated.slice(0, lampNaturalLines.length)
   const a1 = allocated[lampNaturalLines.length] ?? 0

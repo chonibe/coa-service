@@ -1,16 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import {
-  mergeShopDiscountFlagsWithDefaults,
-  parseStoredShopDiscountFlags,
+  mergeShopDiscountSettingsWithDefaults,
+  parseStoredShopDiscountSettings,
   SHOP_DISCOUNT_FLAGS_KEY,
   type ShopDiscountFlags,
+  type ShopDiscountSettings,
 } from '@/lib/shop/shop-discount-flags'
 
-/**
- * Load merged shop discount flags from `system_settings` (service role).
- * On error or missing row, returns {@link DEFAULT_SHOP_DISCOUNT_FLAGS} via merge.
- */
-export async function getShopDiscountFlags(): Promise<ShopDiscountFlags> {
+async function loadShopDiscountSettingsRow(): Promise<ShopDiscountSettings> {
   try {
     const supabase = createClient()
     const { data, error } = await supabase
@@ -20,14 +17,30 @@ export async function getShopDiscountFlags(): Promise<ShopDiscountFlags> {
       .maybeSingle()
 
     if (error && error.code !== 'PGRST116') {
-      console.warn('[getShopDiscountFlags] query error:', error.message)
-      return mergeShopDiscountFlagsWithDefaults(null)
+      console.warn('[getShopDiscountSettings] query error:', error.message)
+      return mergeShopDiscountSettingsWithDefaults(null)
     }
 
-    const parsed = parseStoredShopDiscountFlags(data?.value ?? null)
-    return mergeShopDiscountFlagsWithDefaults(parsed)
+    const parsed = parseStoredShopDiscountSettings(data?.value ?? null)
+    return mergeShopDiscountSettingsWithDefaults(parsed)
   } catch (e) {
-    console.warn('[getShopDiscountFlags] failed:', e)
-    return mergeShopDiscountFlagsWithDefaults(null)
+    console.warn('[getShopDiscountSettings] failed:', e)
+    return mergeShopDiscountSettingsWithDefaults(null)
   }
+}
+
+/**
+ * Load merged shop discount settings from `system_settings` (service role).
+ * On error or missing row, returns defaults via merge.
+ */
+export async function getShopDiscountSettings(): Promise<ShopDiscountSettings> {
+  return loadShopDiscountSettingsRow()
+}
+
+/**
+ * Load merged shop discount flags (lamp ladder toggle only).
+ */
+export async function getShopDiscountFlags(): Promise<ShopDiscountFlags> {
+  const s = await loadShopDiscountSettingsRow()
+  return s.flags
 }

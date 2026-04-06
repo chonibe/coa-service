@@ -8,7 +8,7 @@ import {
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
 import { ExperienceV2ClientLoader } from './components/ExperienceV2ClientLoader'
-import { getShopDiscountFlags } from '@/lib/shop/get-shop-discount-flags'
+import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,7 +92,7 @@ async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug
   const { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 } =
     buildProductsFromSeasons(season1Result, season2Result)
 
-  const shopDiscountFlags = await getShopDiscountFlags()
+  const shopDiscountSettings = await getShopDiscountSettings()
 
   return (
     <ExperienceV2ClientLoader
@@ -102,7 +102,7 @@ async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug
       pageInfoSeason1={pageInfoSeason1}
       pageInfoSeason2={pageInfoSeason2}
       initialArtistSlug={initialArtistSlug}
-      shopDiscountFlags={shopDiscountFlags}
+      shopDiscountSettings={shopDiscountSettings}
     />
   )
 }

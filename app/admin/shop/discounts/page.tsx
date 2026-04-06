@@ -10,6 +10,8 @@ import {
   CardTitle,
   Switch,
   Label,
+  Button,
+  Input,
 } from "@/components/ui"
 import { ArrowLeftIcon, TagIcon } from "@heroicons/react/24/outline"
 import { Loader2 } from "lucide-react"
@@ -18,13 +20,17 @@ import type {
   ShopDiscountFlagId,
   ShopDiscountFlags,
   ShopDiscountRegistryEntry,
+  FeaturedBundleDiscountMode,
+  FeaturedBundleDiscountSettings,
 } from "@/lib/shop/shop-discount-flags"
 
 export default function AdminShopDiscountsPage() {
   const [loading, setLoading] = useState(true)
   const [flags, setFlags] = useState<ShopDiscountFlags | null>(null)
   const [registry, setRegistry] = useState<ShopDiscountRegistryEntry[]>([])
+  const [featuredBundle, setFeaturedBundle] = useState<FeaturedBundleDiscountSettings | null>(null)
   const [savingId, setSavingId] = useState<ShopDiscountFlagId | null>(null)
+  const [savingBundle, setSavingBundle] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -33,9 +39,11 @@ export default function AdminShopDiscountsPage() {
       if (!res.ok) throw new Error("Failed to load discount flags")
       const data = (await res.json()) as {
         flags: ShopDiscountFlags
+        featuredBundle: FeaturedBundleDiscountSettings
         registry: ShopDiscountRegistryEntry[]
       }
       setFlags(data.flags)
+      setFeaturedBundle(data.featuredBundle)
       setRegistry(data.registry ?? [])
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to load")
@@ -63,8 +71,9 @@ export default function AdminShopDiscountsPage() {
         const err = (await res.json().catch(() => ({}))) as { error?: string }
         throw new Error(err.error || "Save failed")
       }
-      const data = (await res.json()) as { flags: ShopDiscountFlags }
+      const data = (await res.json()) as { flags: ShopDiscountFlags; featuredBundle?: FeaturedBundleDiscountSettings }
       setFlags(data.flags)
+      if (data.featuredBundle) setFeaturedBundle(data.featuredBundle)
       toast.success("Saved")
     } catch (e: unknown) {
       setFlags({ ...flags, [id]: prev })
@@ -73,6 +82,40 @@ export default function AdminShopDiscountsPage() {
       setSavingId(null)
     }
   }
+
+  const saveFeaturedBundle = async () => {
+    if (!featuredBundle) return
+    setSavingBundle(true)
+    try {
+      const res = await fetch("/api/admin/shop/discount-flags", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          featuredBundleEnabled: featuredBundle.enabled,
+          featuredBundleMode: featuredBundle.mode,
+          featuredBundleValue: featuredBundle.value,
+        }),
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(err.error || "Save failed")
+      }
+      const data = (await res.json()) as { featuredBundle: FeaturedBundleDiscountSettings }
+      setFeaturedBundle(data.featuredBundle)
+      toast.success("Bundle settings saved")
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Save failed")
+    } finally {
+      setSavingBundle(false)
+    }
+  }
+
+  const valueLabel =
+    featuredBundle?.mode === "percent_off"
+      ? "Percent off regular bundle subtotal (0–100)"
+      : featuredBundle?.mode === "amount_off"
+        ? "Dollars off regular bundle subtotal"
+        : "Fixed bundle total (USD, lamp + 2 spotlight prints)"
 
   return (
     <div className="space-y-6">
@@ -137,6 +180,80 @@ export default function AdminShopDiscountsPage() {
               </CardContent>
             </Card>
           ))}
+
+          {featuredBundle && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Featured artist bundle (lamp + 2 spotlight prints)</CardTitle>
+                <CardDescription>
+                  When the cart qualifies (one lamp and at least one of each spotlight print), the first unit of each
+                  spotlight print is included in the bundle total. Extra copies of those prints use normal artwork
+                  pricing.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <Label htmlFor="featured-bundle-enabled">Enable bundle pricing</Label>
+                  <Switch
+                    id="featured-bundle-enabled"
+                    checked={featuredBundle.enabled}
+                    onCheckedChange={(checked) =>
+                      setFeaturedBundle((b) => (b ? { ...b, enabled: checked } : b))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="featured-bundle-mode">Pricing mode</Label>
+                  <select
+                    id="featured-bundle-mode"
+                    className="flex h-9 w-full max-w-md rounded-md border border-input bg-background px-3 py-1 text-sm"
+                    value={featuredBundle.mode}
+                    onChange={(e) =>
+                      setFeaturedBundle((b) =>
+                        b
+                          ? { ...b, mode: e.target.value as FeaturedBundleDiscountMode }
+                          : b
+                      )
+                    }
+                  >
+                    <option value="fixed_total">Fixed total (USD)</option>
+                    <option value="percent_off">Percent off regular subtotal</option>
+                    <option value="amount_off">Fixed dollars off regular subtotal</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="featured-bundle-value">{valueLabel}</Label>
+                  <Input
+                    id="featured-bundle-value"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    className="max-w-xs"
+                    value={Number.isFinite(featuredBundle.value) ? String(featuredBundle.value) : ""}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value)
+                      setFeaturedBundle((b) =>
+                        b ? { ...b, value: Number.isFinite(v) ? v : 0 } : b
+                      )
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => void saveFeaturedBundle()}
+                  disabled={savingBundle || savingId !== null}
+                >
+                  {savingBundle && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Save bundle settings
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  API fields: <code className="bg-muted px-1 rounded">featuredBundleEnabled</code>,{" "}
+                  <code className="bg-muted px-1 rounded">featuredBundleMode</code>,{" "}
+                  <code className="bg-muted px-1 rounded">featuredBundleValue</code>
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       ) : (
         <p className="text-muted-foreground">No discount definitions configured.</p>

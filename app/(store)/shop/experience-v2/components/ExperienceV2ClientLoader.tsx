@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import type { ShopDiscountFlags } from '@/lib/shop/shop-discount-flags'
+import type { ShopDiscountSettings } from '@/lib/shop/shop-discount-flags'
 import { ShopDiscountFlagsProvider } from './ShopDiscountFlagsContext'
 
 interface PageInfo {
@@ -18,7 +18,7 @@ interface ExperienceV2ClientLoaderProps {
   pageInfoSeason2: PageInfo
   /** When set (e.g. from ?artist= URL), fetch spotlight for this artist */
   initialArtistSlug?: string
-  shopDiscountFlags: ShopDiscountFlags
+  shopDiscountSettings: ShopDiscountSettings
 }
 
 function LoadingSkeleton() {
@@ -38,11 +38,11 @@ const ExperienceV2Client = dynamic(
 )
 
 export function ExperienceV2ClientLoader({
-  shopDiscountFlags,
+  shopDiscountSettings,
   ...rest
 }: ExperienceV2ClientLoaderProps) {
   return (
-    <ShopDiscountFlagsProvider value={shopDiscountFlags}>
+    <ShopDiscountFlagsProvider value={shopDiscountSettings}>
       <ExperienceV2Client {...rest} />
     </ShopDiscountFlagsProvider>
   )

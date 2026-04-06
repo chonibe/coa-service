@@ -44,6 +44,8 @@ export interface OrderBarContextProps {
   streetPricingSeasonFallback?: 1 | 2
   /** When set, OrderBar / Stripe line items use these USD amounts (featured artist bundle). */
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
+  /** Cart indices (aligned with `selectedArtworks`) that use bundle artwork unit prices from `featuredBundleCheckout`. */
+  bundlePricedArtworkIndices?: Set<number> | null
   /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */
   wizardHighlightStep?: number
   /** Wizard: whether highlight animation is active */
