@@ -1,5 +1,7 @@
 # Commit context: Artwork carousel strip — remove tile rings (2026-04-06)
 
+**Commit:** `b6f380e62` — `fix(ui): remove ring outline from experience carousel strip tiles`
+
 ## Checklist
 
 - [x] [ArtworkCarouselBar.tsx](../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) — Strip lamp placeholder + spotlight placeholder tiles: drop `ring-1 ring-white/45` (dark) / neutral rings (light); use `ring-0 shadow-none`.
