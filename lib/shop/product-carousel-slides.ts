@@ -109,6 +109,25 @@ export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): strin
   return pickVideoSourceUrl(sources)
 }
 
+/** MIME for a Shopify CDN file URL when Storefront did not send `mimeType` (home `VideoPlayer` uses the same idea for `<source type>`). */
+export function shopifyProgressiveVideoMimeTypeFromUrl(url: string): string {
+  const path = url.split(/[?#]/)[0]?.toLowerCase() ?? ''
+  if (path.endsWith('.webm')) return 'video/webm'
+  if (path.endsWith('.mov')) return 'video/quicktime'
+  return 'video/mp4'
+}
+
+/** Prefer Storefront `mimeType` / `format` for the chosen URL; else infer from file extension. */
+export function shopifyMimeTypeForPlaybackUrl(
+  sources: ShopifyVideo['sources'],
+  playbackUrl: string
+): string {
+  const match = sources.find((s) => s.url === playbackUrl)
+  const fromMeta = match ? shopifyVideoSourceTypeAttr(match) : undefined
+  if (fromMeta) return fromMeta
+  return shopifyProgressiveVideoMimeTypeFromUrl(playbackUrl)
+}
+
 function appendAutoplayToExternalEmbed(url: string): string {
   try {
     const absolute = url.startsWith('//') ? `https:${url}` : url

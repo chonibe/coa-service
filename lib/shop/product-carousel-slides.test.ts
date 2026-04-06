@@ -4,6 +4,8 @@ import {
   buildProductCarouselSlides,
   carouselSlideIsNonImage,
   pickVideoSourceUrl,
+  shopifyMimeTypeForPlaybackUrl,
+  shopifyProgressiveVideoMimeTypeFromUrl,
   shopifyProgressiveVideoSources,
   shopifyVideoPlaybackUrl,
 } from './product-carousel-slides'
@@ -23,6 +25,33 @@ describe('pickVideoSourceUrl', () => {
       { url: 'https://cdn/large', mimeType: 'video/quicktime', width: 1080, height: 1920, format: 'mov' },
     ])
     expect(url).toBe('https://cdn/large')
+  })
+})
+
+describe('shopifyProgressiveVideoMimeTypeFromUrl', () => {
+  it('maps extensions', () => {
+    expect(shopifyProgressiveVideoMimeTypeFromUrl('https://cdn/x.mp4')).toBe('video/mp4')
+    expect(shopifyProgressiveVideoMimeTypeFromUrl('https://cdn/x.webm?foo=1')).toBe('video/webm')
+    expect(shopifyProgressiveVideoMimeTypeFromUrl('https://cdn/x.mov')).toBe('video/quicktime')
+  })
+})
+
+describe('shopifyMimeTypeForPlaybackUrl', () => {
+  it('uses Storefront mimeType when URL matches a source', () => {
+    expect(
+      shopifyMimeTypeForPlaybackUrl(
+        [
+          {
+            url: 'https://cdn/a.mp4',
+            mimeType: 'video/mp4',
+            format: 'mp4',
+            width: 1080,
+            height: 1920,
+          },
+        ],
+        'https://cdn/a.mp4'
+      )
+    ).toBe('video/mp4')
   })
 })
 

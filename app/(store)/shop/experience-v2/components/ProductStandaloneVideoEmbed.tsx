@@ -1,10 +1,65 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
-import { pickVideoSourceUrl, shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+import {
+  pickVideoSourceUrl,
+  shopifyMimeTypeForPlaybackUrl,
+  shopifyVideoPlaybackUrl,
+} from '@/lib/shop/product-carousel-slides'
+
+/** Same defer + `preload="none"` + typed `<source>` pattern as `components/sections/VideoPlayer.tsx` for Shopify file URLs. */
+function HomeStyleProgressiveVideo({
+  url,
+  sources,
+  poster,
+  ariaLabel,
+  className,
+  deferLoadMs = 250,
+}: {
+  url: string
+  sources: ShopifyVideo['sources']
+  poster?: string
+  ariaLabel: string
+  className?: string
+  /** Match hero `VideoPlayer` poster-first behavior; use `0` to attach `src` immediately. */
+  deferLoadMs?: number
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoLoadStarted, setVideoLoadStarted] = useState(deferLoadMs <= 0)
+
+  useEffect(() => {
+    if (deferLoadMs <= 0) {
+      setVideoLoadStarted(true)
+      return
+    }
+    setVideoLoadStarted(false)
+    const t = setTimeout(() => {
+      setVideoLoadStarted(true)
+      videoRef.current?.load?.()
+    }, deferLoadMs)
+    return () => clearTimeout(t)
+  }, [deferLoadMs, url])
+
+  const mime = shopifyMimeTypeForPlaybackUrl(sources, url)
+
+  return (
+    <video
+      ref={videoRef}
+      className={className}
+      src={videoLoadStarted ? url : undefined}
+      poster={poster}
+      controls
+      playsInline
+      preload="none"
+      aria-label={ariaLabel}
+    >
+      {videoLoadStarted && <source src={url} type={mime} />}
+    </video>
+  )
+}
 
 function isPlaybackUrlHls(url: string): boolean {
   return /\.m3u8(\?|$)/i.test(url) || (url.includes('m3u8') && !/\.mp4(\?|$)/i.test(url))
@@ -137,14 +192,12 @@ export function ProductStandaloneVideoEmbed({
                   className="mx-auto block"
                 />
               ) : (
-                <video
-                  className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
-                  src={playbackUrl}
-                  controls
-                  playsInline
-                  preload="auto"
+                <HomeStyleProgressiveVideo
+                  url={playbackUrl}
+                  sources={slide.sources}
                   poster={slide.poster?.url ?? undefined}
-                  aria-label={label}
+                  ariaLabel={label}
+                  className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
                 />
               )}
             </div>

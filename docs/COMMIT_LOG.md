@@ -1,8 +1,25 @@
 # Commit Log
 
+## Commit: fix(shop): product video embed matches home VideoPlayer load pattern (2026-04-06)
+
+**Ref:** `15b52aa61`
+
+### Summary
+**[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** progressive (non-HLS) native video now mirrors **[`VideoPlayer`](components/sections/VideoPlayer.tsx)**: **`preload="none"`**, **250ms deferred `src`** so the poster paints first, and **`<source type="…">`** from new helpers **[`shopifyMimeTypeForPlaybackUrl`](lib/shop/product-carousel-slides.ts)** / [`shopifyProgressiveVideoMimeTypeFromUrl`](lib/shop/product-carousel-slides.ts). **Tests:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts). **Docs:** [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md).
+
+### Implementation Checklist
+
+- [x] [lib/shop/product-carousel-slides.ts](lib/shop/product-carousel-slides.ts)
+- [x] [lib/shop/product-carousel-slides.test.ts](lib/shop/product-carousel-slides.test.ts)
+- [x] [app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): mobile carousel above Spline reel under header (2026-04-06)
 
-**Ref:** `71bed8158`
+**Ref:** `f10b55875`
 
 ### Summary
 On **`max-md`**, the **artwork collection strip** ([`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)) uses **`dockCarouselTopOnMobile`**: **normal flow** at the **top of the experience content** (after the volume-discount row when shown in v2), with the **main [`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx) reel** **`flex-1`** below. **`md` and up** unchanged: Spline **absolute** full region, strip **absolute** bottom with **`reserveCheckoutBar`** lift. Both [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) entry points pass the prop and wrap reel + strip in a **`max-md:flex-col`** **`order`** layout.
