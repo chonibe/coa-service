@@ -4,17 +4,35 @@ import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagra
 import { getVendorMeta, parseInstagramHandle } from '@/lib/shopify/vendor-meta'
 import { getCollectionProductHandlesByHandle, getCollectionGifUrlByAdmin, resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
 import { getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles, type ShopifyProduct } from '@/lib/shopify/storefront-client'
+import {
+  buildVendorSpotlightEligibilityMap,
+  firstEligibleProductIndex,
+} from '@/lib/shop/artist-spotlight-vendor-eligibility'
 
 /**
  * Artist Spotlight API
  *
- * Returns the "artist spotlight" for the experience: default is derived from the
- * latest 2 artworks added to Season 2 (2025-edition). Also supports ?artist= for
- * direct/affiliate links. Used for the experience selector banner: filter artworks,
- * "New Drop" badge, artist info card.
+ * Returns the "artist spotlight" for the experience: default is Jack J.C. Art (if the
+ * collection resolves), then the newest eligible artist in Season 2 (2025-edition),
+ * then the newest Shopify product — skipping vendors in `DEFAULT_SPOTLIGHT_SKIP_VENDORS`
+ * and any vendor with `vendors.artist_spotlight_enabled = false` (admin Vendors UI).
+ * `?artist=` affiliate links ignore those flags. Used for the experience banner, filters,
+ * "New Drop" badge, and artist info card.
  */
 
 const SEASON_2_HANDLE = '2025-edition'
+
+/** Vendors excluded from *automatic* default spotlight (Season 2 / Shopify newest). `?artist=` still works. */
+const DEFAULT_SPOTLIGHT_SKIP_VENDORS = new Set(['saturn_png'])
+
+function normalizeVendorForSpotlight(name: string | null | undefined): string {
+  return (name ?? '').trim().toLowerCase().replace(/\s+/g, '_')
+}
+
+function shouldSkipDefaultSpotlightVendor(vendor: string | null | undefined): boolean {
+  const key = normalizeVendorForSpotlight(vendor)
+  return !key || DEFAULT_SPOTLIGHT_SKIP_VENDORS.has(key)
+}
 
 export async function GET(request: Request) {
   try {
@@ -45,7 +63,10 @@ export async function GET(request: Request) {
     // Default: Jack J.C. Art spotlight first, then latest artist (Season 2, Shopify, Supabase)
     const jackJcArtHandles = ['jack-jc-art', 'jack-j-c-art', 'jack-jc-art-one', 'jack-j-c-art-one']
     for (const h of jackJcArtHandles) {
-      const jackResult = await tryCollectionSpotlight(supabase, h, { allowEarlyAccessFallback: false })
+      const jackResult = await tryCollectionSpotlight(supabase, h, {
+        allowEarlyAccessFallback: false,
+        requireDefaultSpotlightEligible: true,
+      })
       if (jackResult && !jackResult.unlisted) return NextResponse.json(jackResult)
     }
 
@@ -152,7 +173,7 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
 async function tryCollectionSpotlight(
   supabase: ReturnType<typeof createClient>,
   collectionHandle: string,
-  options?: { allowEarlyAccessFallback?: boolean }
+  options?: { allowEarlyAccessFallback?: boolean; requireDefaultSpotlightEligible?: boolean }
 ): Promise<SpotlightResult | null> {
   try {
     const col = await getCollectionWithListProducts(collectionHandle, { first: 8 })
@@ -177,6 +198,12 @@ async function tryCollectionSpotlight(
     if (nodes.length === 0) return null
 
     const vendorName = (nodes[0]?.vendor) || col.title || collectionHandle.replace(/-/g, ' ')
+
+    if (options?.requireDefaultSpotlightEligible) {
+      const elig = await buildVendorSpotlightEligibilityMap(supabase, [vendorName])
+      if (elig.get(vendorName) === false) return null
+    }
+
     const productIds = nodes
       .slice(0, 4)
       .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
@@ -240,11 +267,28 @@ async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClien
     )
     if (nodes.length === 0) return null
 
-    const vendorName = nodes[0].vendor || col.title || SEASON_2_HANDLE.replace(/-/g, ' ')
-    const productIds = nodes
+    const vendorNamesOrdered = nodes.map((n) => n.vendor)
+    const seasonElig = await buildVendorSpotlightEligibilityMap(
+      supabase,
+      vendorNamesOrdered.filter(Boolean) as string[]
+    )
+    const startIdx = firstEligibleProductIndex(vendorNamesOrdered, seasonElig, {
+      skipVendor: (name) => shouldSkipDefaultSpotlightVendor(name),
+    })
+    if (startIdx < 0) return null
+
+    const anchor = nodes[startIdx]
+    if (!anchor?.vendor) return null
+
+    const anchorKey = normalizeVendorForSpotlight(anchor.vendor)
+    const vendorNodes = nodes.filter((p) => normalizeVendorForSpotlight(p.vendor) === anchorKey)
+    if (vendorNodes.length === 0) return null
+
+    const vendorName = anchor.vendor || col.title || SEASON_2_HANDLE.replace(/-/g, ' ')
+    const productIds = vendorNodes
       .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
       .filter(Boolean)
-    const newest = nodes[0]
+    const newest = vendorNodes[0]
 
     const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, null)
     const handle = vendorSlug || slugify(vendorName)
@@ -266,7 +310,7 @@ async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClien
       gifUrl,
       unlisted,
       /** So experience clients can resolve the featured bundle + merge into selector without relying on first collection page. */
-      products: nodes.slice(0, 4),
+      products: vendorNodes.slice(0, 4),
     }
   } catch {
     return null
@@ -277,14 +321,22 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
   try {
     // Storefront API returns published products only; CREATED_AT desc = most recently activated
     const { products } = await getProducts({
-      first: 5,
+      first: 20,
       sortKey: 'CREATED_AT',
       reverse: true,
     })
-    // Skip lamp and non-artwork products; find first product with a vendor (artist)
-    const newest = (products || []).find(
-      (p) => p.vendor && p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    const candidates = (products || []).filter(
+      (p) =>
+        p.vendor &&
+        !shouldSkipDefaultSpotlightVendor(p.vendor) &&
+        p.handle !== 'street_lamp' &&
+        !p.handle?.startsWith('street-lamp')
     )
+    const shopifyElig = await buildVendorSpotlightEligibilityMap(
+      supabase,
+      candidates.map((p) => p.vendor!)
+    )
+    const newest = candidates.find((p) => shopifyElig.get(p.vendor!) !== false)
     if (!newest?.vendor) return null
 
     const vendorName = newest.vendor
@@ -347,6 +399,9 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
     .single()
 
   if (seriesError || !series) return null
+
+  const seriesElig = await buildVendorSpotlightEligibilityMap(supabase, [series.vendor_name])
+  if (seriesElig.get(series.vendor_name) === false) return null
 
   const { data: members, error: membersError } = await supabase
     .from('artwork_series_members')

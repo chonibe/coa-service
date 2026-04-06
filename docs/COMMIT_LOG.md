@@ -1,5 +1,75 @@
 # Commit Log
 
+## Commit: fix(shop): skip saturn_png for default artist spotlight (2026-04-06)
+
+**Ref:** _(see `git log -1 --oneline`)_
+
+### Summary
+
+[`app/api/shop/artist-spotlight/route.ts`](app/api/shop/artist-spotlight/route.ts) adds **`DEFAULT_SPOTLIGHT_SKIP_VENDORS`** (`saturn_png`) so automatic **Season 2** and **newest Shopify product** spotlight picks skip that vendor; the next eligible artist is used. **`?artist=`** / **`?vendor=`** links still load any artist. Shopify fallback scans **`first: 20`** recent products. Docs: [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md), [`docs/COMMIT_LOGS/experience-spotlight-skip-saturn-png-2026-04-06.md`](docs/COMMIT_LOGS/experience-spotlight-skip-saturn-png-2026-04-06.md).
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-spotlight/route.ts](app/api/shop/artist-spotlight/route.ts)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOGS/experience-spotlight-skip-saturn-png-2026-04-06.md](docs/COMMIT_LOGS/experience-spotlight-skip-saturn-png-2026-04-06.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: fix(experience): standalone product video in ArtworkDetail (slideout + mobile) (2026-04-06)
+
+**Ref:** _(see `git log -1 --oneline` — message contains `fix(experience): standalone product video`)_
+
+### Summary
+Product **video** is no longer shown inside the swipe carousel or behind a video/photos toggle. **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** renders Shopify video (progressive `<source>`, HLS via **`hls.js`** when needed) or **external** embed **above** the image carousel in **[`ArtworkDetail`](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)** for **inline desktop**, **desktop slideout**, and **mobile sheet**. **[`ProductDetailCarousel`](app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx)** is **images only**; **[`splitProductCarouselMediaSlides`](lib/shop/product-carousel-slides.ts)** splits **[`buildProductCarouselSlides`](lib/shop/product-carousel-slides.ts)** output. Docs: **[`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md)**.
+
+### Implementation Checklist
+
+- [x] [lib/shop/product-carousel-slides.ts](lib/shop/product-carousel-slides.ts) — `splitProductCarouselMediaSlides`
+- [x] [app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx](app/(store)/shop/experience-v2/components/ProductDetailCarousel.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ArtworkDetail.tsx](app/(store)/shop/experience-v2/components/ArtworkDetail.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(experience): smaller carousel mini Spline tile + turntable yaw (2026-04-06)
+
+**Ref:** `d19ea0b66`
+
+### Summary
+The **ArtworkCarouselBar** mini lamp tile is **narrower** than artwork thumbs (**`w-14`** vs **`w-24`**) with matching corner radius. A slow **Y-axis oscillation** (`perspective(200px) rotateY(±20deg)`, **5s** ease-in-out loop) reads as a **turntable** while keeping the facade/embed visible; **`prefers-reduced-motion`** disables the animation in [`globals.css`](app/globals.css) (`.experience-carousel-mini-turntable`).
+
+### Implementation Checklist
+
+- [x] [app/globals.css](app/globals.css)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(experience): carousel mini 3D Spline tile (+ / trash) (2026-04-06)
+
+**Ref:** `1e857ab65`
+
+### Summary
+The bottom **ArtworkCarouselBar** strip gains a **first-slot mini lamp / 3D preview** tile: **on by default** (like spotlight placeholders), **trash** removes it from the strip, **+** on the dimmed placeholder restores it. Tapping the active tile jumps the vertical reel to the main **Spline** view. Without `NEXT_PUBLIC_EXPERIENCE_CAROUSEL_MINI_SPLINE_EMBED_URL`, the tile uses the static **facade** image (`/internal.webp`); with the env var set, a small **Spline embed iframe** renders inside the thumb. Visibility persists in **`sessionStorage`** via [`experience-carousel-mini-spline.ts`](lib/shop/experience-carousel-mini-spline.ts). Wired from both experience [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) entry points.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-carousel-mini-spline.ts](lib/shop/experience-carousel-mini-spline.ts)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [.env.example](.env.example)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(checkout): auto-open payment when address complete; gate Place order on method (2026-04-06)
 
 **Ref:** `d32241e60`
