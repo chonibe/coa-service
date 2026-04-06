@@ -59,7 +59,6 @@ BEGIN
     END IF;
   END IF;
 END $$;
-
 -- ============================================
 -- PART 2: Add currency field to collector_ledger_entries
 -- ============================================
@@ -100,7 +99,6 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_collector_ledger_currency ON collector_ledger_entries(currency);
   END IF;
 END $$;
-
 -- ============================================
 -- PART 3: Add payout_id reference for tracking payout withdrawals
 -- ============================================
@@ -140,7 +138,6 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_collector_ledger_payout_id ON collector_ledger_entries(payout_id);
   END IF;
 END $$;
-
 -- ============================================
 -- PART 4: Update helper functions to support currency
 -- ============================================
@@ -189,7 +186,6 @@ BEGIN
     $function$ LANGUAGE plpgsql;';
   END IF;
 END $$;
-
 -- ============================================
 -- PART 5: Create function to get unified balance (both credits and USD)
 -- ============================================
@@ -223,4 +219,3 @@ BEGIN
     $function$ LANGUAGE plpgsql;';
   END IF;
 END $$;
-

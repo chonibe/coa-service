@@ -17,18 +17,15 @@ CREATE TABLE IF NOT EXISTS crm_saved_views (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_saved_views_workspace ON crm_saved_views(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_saved_views_entity_type ON crm_saved_views(entity_type);
 CREATE INDEX IF NOT EXISTS idx_saved_views_created_by ON crm_saved_views(created_by);
 CREATE INDEX IF NOT EXISTS idx_saved_views_workspace_entity ON crm_saved_views(workspace_id, entity_type);
-
 -- Unique constraint: Only one default view per entity type per workspace
 CREATE UNIQUE INDEX IF NOT EXISTS idx_saved_views_default_per_entity 
   ON crm_saved_views(workspace_id, entity_type) 
   WHERE is_default = true;
-
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_crm_saved_views_updated_at()
 RETURNS TRIGGER AS $$
@@ -37,15 +34,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_saved_views_updated_at
   BEFORE UPDATE ON crm_saved_views
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_saved_views_updated_at();
-
 -- RLS Policies
 ALTER TABLE crm_saved_views ENABLE ROW LEVEL SECURITY;
-
 -- Users can view their own views and shared views in their workspace
 CREATE POLICY "Users can view saved views"
   ON crm_saved_views FOR SELECT
@@ -55,7 +49,6 @@ CREATE POLICY "Users can view saved views"
       SELECT workspace_id FROM crm_workspace_members WHERE user_id = auth.uid()
     ))
   );
-
 -- Users can create saved views in their workspace
 CREATE POLICY "Users can create saved views"
   ON crm_saved_views FOR INSERT
@@ -65,7 +58,6 @@ CREATE POLICY "Users can create saved views"
       SELECT workspace_id FROM crm_workspace_members WHERE user_id = auth.uid()
     )
   );
-
 -- Users can update their own views
 CREATE POLICY "Users can update their own views"
   ON crm_saved_views FOR UPDATE
@@ -75,7 +67,6 @@ CREATE POLICY "Users can update their own views"
       SELECT workspace_id FROM crm_workspace_members WHERE user_id = auth.uid()
     )
   );
-
 -- Users can delete their own views
 CREATE POLICY "Users can delete their own views"
   ON crm_saved_views FOR DELETE
@@ -85,7 +76,6 @@ CREATE POLICY "Users can delete their own views"
       SELECT workspace_id FROM crm_workspace_members WHERE user_id = auth.uid()
     )
   );
-
 -- Helper function to get default workspace ID for a user
 CREATE OR REPLACE FUNCTION get_user_workspace_id(p_user_id UUID)
 RETURNS UUID AS $$
@@ -101,7 +91,3 @@ BEGIN
   RETURN v_workspace_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
-
-

@@ -6,17 +6,14 @@
 -- This migration will fail if duplicates still exist
 
 BEGIN;
-
 -- Add partial unique index on shopify_customer_id (only for non-null values)
 -- This allows multiple NULL values but ensures uniqueness for actual Shopify IDs
 CREATE UNIQUE INDEX IF NOT EXISTS idx_collector_profiles_unique_shopify_customer_id 
 ON collector_profiles (shopify_customer_id) 
 WHERE shopify_customer_id IS NOT NULL;
-
 -- Add comment explaining the constraint
 COMMENT ON INDEX idx_collector_profiles_unique_shopify_customer_id IS 
   'Ensures each Shopify customer ID is associated with only one collector profile. NULL values are allowed (for collectors without Shopify accounts).';
-
 -- Verify no duplicates exist
 DO $$
 DECLARE
@@ -37,8 +34,6 @@ BEGIN
 
   RAISE NOTICE 'Unique constraint applied successfully. No duplicates found.';
 END $$;
-
 COMMIT;
-
 -- Rollback script (if needed):
--- DROP INDEX IF EXISTS idx_collector_profiles_unique_shopify_customer_id;
+-- DROP INDEX IF EXISTS idx_collector_profiles_unique_shopify_customer_id;;

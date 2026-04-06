@@ -14,7 +14,6 @@ DROP FUNCTION IF EXISTS restore_record(TEXT, UUID);
 DROP FUNCTION IF EXISTS apply_field_defaults(TEXT, UUID, UUID);
 DROP FUNCTION IF EXISTS process_default_value(JSONB, TEXT, UUID);
 DROP FUNCTION IF EXISTS update_crm_webhook_subscriptions_updated_at();
-
 -- ============================================
 -- PART 1: Default Values for Attributes
 -- ============================================
@@ -22,24 +21,20 @@ DROP FUNCTION IF EXISTS update_crm_webhook_subscriptions_updated_at();
 -- Add is_default_value_enabled flag
 ALTER TABLE crm_custom_fields 
 ADD COLUMN IF NOT EXISTS is_default_value_enabled BOOLEAN DEFAULT false;
-
 -- Convert default_value from TEXT to JSONB to support complex defaults
 -- First, create a new column
 ALTER TABLE crm_custom_fields 
 ADD COLUMN IF NOT EXISTS default_value_jsonb JSONB;
-
 -- Migrate existing default_value TEXT to JSONB (if any exist)
 -- Simple text values become: {"type": "static", "value": "text"}
 UPDATE crm_custom_fields
 SET default_value_jsonb = jsonb_build_object('type', 'static', 'value', default_value)
 WHERE default_value IS NOT NULL 
   AND default_value_jsonb IS NULL;
-
 -- Add index for performance
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_default_enabled 
 ON crm_custom_fields(is_default_value_enabled) 
 WHERE is_default_value_enabled = true;
-
 -- Helper function to process default values
 CREATE OR REPLACE FUNCTION process_default_value(
   p_default_value JSONB,
@@ -90,7 +85,6 @@ BEGIN
   RETURN p_default_value;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Function to apply defaults when creating records
 CREATE OR REPLACE FUNCTION apply_field_defaults(
   p_entity_type TEXT,
@@ -150,22 +144,17 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON COLUMN crm_custom_fields.is_default_value_enabled IS 
 'Whether default values should be applied when creating new records';
-
 COMMENT ON COLUMN crm_custom_fields.default_value_jsonb IS 
 'Default value in JSONB format. Supports:
 - Static: {"type": "static", "value": <any JSON value>}
 - Dynamic: {"type": "dynamic", "value": "current-user"} for actor references
 - Dynamic: {"type": "dynamic", "value": "P1M"} for ISO 8601 durations (date/timestamp fields)';
-
 COMMENT ON FUNCTION process_default_value IS 
 'Processes a default value JSONB, handling both static and dynamic defaults';
-
 COMMENT ON FUNCTION apply_field_defaults IS 
 'Applies default values for all enabled custom fields when creating a new record';
-
 -- ============================================
 -- PART 2: Archiving System (Soft Delete)
 -- ============================================
@@ -173,35 +162,27 @@ COMMENT ON FUNCTION apply_field_defaults IS
 -- Add is_archived to crm_customers (people)
 ALTER TABLE crm_customers 
 ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
-
 CREATE INDEX IF NOT EXISTS idx_crm_customers_is_archived 
 ON crm_customers(is_archived) 
 WHERE is_archived = false;
-
 -- Add is_archived to crm_companies
 ALTER TABLE crm_companies 
 ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
-
 CREATE INDEX IF NOT EXISTS idx_crm_companies_is_archived 
 ON crm_companies(is_archived) 
 WHERE is_archived = false;
-
 -- Add is_archived to crm_list_entries
 ALTER TABLE crm_list_entries 
 ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
-
 CREATE INDEX IF NOT EXISTS idx_crm_list_entries_is_archived 
 ON crm_list_entries(is_archived) 
 WHERE is_archived = false;
-
 -- Add is_archived to crm_activities
 ALTER TABLE crm_activities 
 ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
-
 CREATE INDEX IF NOT EXISTS idx_crm_activities_is_archived 
 ON crm_activities(is_archived) 
 WHERE is_archived = false;
-
 -- Helper function to archive a record
 CREATE OR REPLACE FUNCTION archive_record(
   p_table_name TEXT,
@@ -213,7 +194,6 @@ BEGIN
   USING p_record_id;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Helper function to restore a record
 CREATE OR REPLACE FUNCTION restore_record(
   p_table_name TEXT,
@@ -225,25 +205,18 @@ BEGIN
   USING p_record_id;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON COLUMN crm_customers.is_archived IS 
 'Soft delete flag. When true, record is archived and hidden from default queries.';
-
 COMMENT ON COLUMN crm_companies.is_archived IS 
 'Soft delete flag. When true, record is archived and hidden from default queries.';
-
 COMMENT ON COLUMN crm_list_entries.is_archived IS 
 'Soft delete flag. When true, entry is archived and hidden from default queries.';
-
 COMMENT ON COLUMN crm_activities.is_archived IS 
 'Soft delete flag. When true, activity is archived and hidden from default queries.';
-
 COMMENT ON FUNCTION archive_record IS 
 'Archives a record by setting is_archived = true';
-
 COMMENT ON FUNCTION restore_record IS 
 'Restores an archived record by setting is_archived = false';
-
 -- ============================================
 -- PART 3: Comment Resolution
 -- ============================================
@@ -251,21 +224,16 @@ COMMENT ON FUNCTION restore_record IS
 -- Add resolution columns to crm_comments
 ALTER TABLE crm_comments 
 ADD COLUMN IF NOT EXISTS is_resolved BOOLEAN DEFAULT false;
-
 ALTER TABLE crm_comments 
 ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP WITH TIME ZONE;
-
 ALTER TABLE crm_comments 
 ADD COLUMN IF NOT EXISTS resolved_by_user_id UUID;
-
 -- Create indexes for resolution queries
 CREATE INDEX IF NOT EXISTS idx_crm_comments_is_resolved 
 ON crm_comments(is_resolved) 
 WHERE is_resolved = true;
-
 CREATE INDEX IF NOT EXISTS idx_crm_comments_resolved_by 
 ON crm_comments(resolved_by_user_id);
-
 -- Helper function to resolve a comment
 CREATE OR REPLACE FUNCTION resolve_comment(
   p_comment_id UUID,
@@ -282,7 +250,6 @@ BEGIN
   WHERE id = p_comment_id;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Helper function to unresolve a comment
 CREATE OR REPLACE FUNCTION unresolve_comment(
   p_comment_id UUID
@@ -298,22 +265,16 @@ BEGIN
   WHERE id = p_comment_id;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON COLUMN crm_comments.is_resolved IS 
 'Whether this comment has been resolved';
-
 COMMENT ON COLUMN crm_comments.resolved_at IS 
 'Timestamp when the comment was resolved';
-
 COMMENT ON COLUMN crm_comments.resolved_by_user_id IS 
 'User ID who resolved the comment';
-
 COMMENT ON FUNCTION resolve_comment IS 
 'Resolves a comment by setting is_resolved = true and recording resolver';
-
 COMMENT ON FUNCTION unresolve_comment IS 
 'Unresolves a comment by setting is_resolved = false and clearing resolver info';
-
 -- ============================================
 -- PART 4: Webhook Filtering
 -- ============================================
@@ -330,17 +291,13 @@ CREATE TABLE IF NOT EXISTS crm_webhook_subscriptions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_active 
 ON crm_webhook_subscriptions(active) 
 WHERE active = true;
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_events 
 ON crm_webhook_subscriptions USING GIN(events);
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_filter 
 ON crm_webhook_subscriptions USING GIN(filter);
-
 -- Helper function to evaluate webhook filters
 CREATE OR REPLACE FUNCTION evaluate_webhook_filter(
   p_filter JSONB,
@@ -398,7 +355,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Trigger for updated_at on webhook subscriptions
 CREATE OR REPLACE FUNCTION update_crm_webhook_subscriptions_updated_at()
 RETURNS TRIGGER AS $$
@@ -407,7 +363,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Drop trigger if it exists (only after table is created)
 DO $$
 BEGIN
@@ -415,22 +370,16 @@ BEGIN
     DROP TRIGGER IF EXISTS update_crm_webhook_subscriptions_updated_at ON crm_webhook_subscriptions;
   END IF;
 END $$;
-
 CREATE TRIGGER update_crm_webhook_subscriptions_updated_at
   BEFORE UPDATE ON crm_webhook_subscriptions
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_webhook_subscriptions_updated_at();
-
 COMMENT ON TABLE crm_webhook_subscriptions IS 
 'CRM webhook subscriptions with server-side filtering support';
-
 COMMENT ON COLUMN crm_webhook_subscriptions.filter IS 
 'Server-side filter in format: {"field": "object", "operator": "equals", "value": "people"}
 Supports nested paths: {"field": "actor.type", "operator": "equals", "value": "user"}';
-
 COMMENT ON COLUMN crm_webhook_subscriptions.events IS 
 'Array of event types to subscribe to (e.g., ["record.created", "record.updated"])';
-
 COMMENT ON FUNCTION evaluate_webhook_filter IS 
 'Evaluates a webhook filter against a payload. Returns true if payload matches filter.';
-

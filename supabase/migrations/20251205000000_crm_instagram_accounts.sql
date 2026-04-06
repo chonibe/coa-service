@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS crm_instagram_accounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, instagram_account_id)
 );
-
 -- ============================================
 -- PART 2: Indexes
 -- ============================================
@@ -29,16 +28,13 @@ CREATE TABLE IF NOT EXISTS crm_instagram_accounts (
 CREATE INDEX IF NOT EXISTS idx_crm_instagram_accounts_user_id ON crm_instagram_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_instagram_accounts_account_id ON crm_instagram_accounts(instagram_account_id);
 CREATE INDEX IF NOT EXISTS idx_crm_instagram_accounts_is_active ON crm_instagram_accounts(is_active);
-
 -- ============================================
 -- PART 3: Trigger for Updated At
 -- ============================================
 
 -- Drop trigger if it exists, then create it
 DROP TRIGGER IF EXISTS update_crm_instagram_accounts_updated_at ON crm_instagram_accounts;
-
 CREATE TRIGGER update_crm_instagram_accounts_updated_at
   BEFORE UPDATE ON crm_instagram_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-

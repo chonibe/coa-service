@@ -15,22 +15,18 @@ CREATE TABLE IF NOT EXISTS order_status_notes (
   source TEXT DEFAULT 'auto',       -- Source of the note: 'auto' (system), 'manual' (admin), 'webhook'
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Indexes for efficient lookups
 CREATE INDEX IF NOT EXISTS idx_order_status_notes_order_id ON order_status_notes(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_status_notes_order_name ON order_status_notes(order_name);
 CREATE INDEX IF NOT EXISTS idx_order_status_notes_created_at ON order_status_notes(created_at DESC);
-
 -- Add RLS policies
 ALTER TABLE order_status_notes ENABLE ROW LEVEL SECURITY;
-
 -- Allow authenticated users to read notes (admins will have access)
 CREATE POLICY "Allow authenticated read access to order_status_notes"
   ON order_status_notes
   FOR SELECT
   TO authenticated
   USING (true);
-
 -- Allow service role full access
 CREATE POLICY "Allow service role full access to order_status_notes"
   ON order_status_notes
@@ -38,7 +34,6 @@ CREATE POLICY "Allow service role full access to order_status_notes"
   TO service_role
   USING (true)
   WITH CHECK (true);
-
 COMMENT ON TABLE order_status_notes IS 'Stores shipping status change history for orders, used for admin visibility and notification tracking';
 COMMENT ON COLUMN order_status_notes.order_id IS 'Shopify order ID or warehouse order ID (e.g., WH-12345)';
 COMMENT ON COLUMN order_status_notes.order_name IS 'Human-readable order name (e.g., #1174)';

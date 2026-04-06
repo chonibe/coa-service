@@ -307,7 +307,10 @@ export function mergeShopifyCollectionBioWithResearch(
     if (rN.includes(prefix)) return researchBlock
   }
 
-  return `${collection}\n\n${researchBlock}`
+  // Curated CSV story (+ optional history) should lead: explore cards, lightbox, and profile
+  // all read from the start of `bio`. Collection/vendor HTML often duplicates or overruns;
+  // keep it after research when both are distinct.
+  return `${researchBlock}\n\n${collection}`
 }
 
 export function mergeResearchBio(slug: string, existingBio: string | undefined): string | undefined {

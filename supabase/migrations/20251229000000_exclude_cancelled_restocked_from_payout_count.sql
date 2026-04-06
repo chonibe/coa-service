@@ -89,7 +89,6 @@ BEGIN
   ORDER BY amount DESC;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Update get_vendor_pending_line_items function
 DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
@@ -148,4 +147,3 @@ BEGIN
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-

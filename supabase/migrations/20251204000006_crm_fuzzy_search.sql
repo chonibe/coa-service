@@ -7,7 +7,6 @@
 -- ============================================
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
 -- ============================================
 -- PART 2: Create function to enable pg_trgm if needed
 -- ============================================
@@ -20,7 +19,6 @@ BEGIN
   RETURN;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 3: Fuzzy search function for people
 -- ============================================
@@ -80,7 +78,6 @@ BEGIN
   LIMIT result_limit;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 4: Fuzzy search function for companies
 -- ============================================
@@ -135,7 +132,6 @@ BEGIN
   LIMIT result_limit;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 5: Create indexes for better search performance
 -- ============================================
@@ -144,21 +140,15 @@ $$ LANGUAGE plpgsql;
 CREATE INDEX IF NOT EXISTS idx_crm_customers_name_trgm ON crm_customers USING GIN ((COALESCE(first_name || ' ' || last_name, '')) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_email_trgm ON crm_customers USING GIN (email gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_phone_trgm ON crm_customers USING GIN (phone gin_trgm_ops);
-
 CREATE INDEX IF NOT EXISTS idx_crm_companies_name_trgm ON crm_companies USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_companies_domain_trgm ON crm_companies USING GIN (domain gin_trgm_ops);
-
 -- ============================================
 -- PART 6: Comments for documentation
 -- ============================================
 
 COMMENT ON FUNCTION fuzzy_search_people IS
 'Fuzzy search for people using trigram similarity. Returns results with similarity scores and matched fields.';
-
 COMMENT ON FUNCTION fuzzy_search_companies IS
 'Fuzzy search for companies using trigram similarity. Returns results with similarity scores and matched fields.';
-
 COMMENT ON FUNCTION enable_pg_trgm_if_needed IS
 'Placeholder function for API compatibility. pg_trgm extension should be enabled via migration.';
-
-

@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import type { Metadata } from 'next'
+import { buildShopExperienceMetadata } from '@/lib/seo/experience-metadata'
 import {
   getExperienceLampAndSeasonCollections,
   type ShopifyCollection,
@@ -30,9 +31,12 @@ const getCachedExperienceBundle = unstable_cache(
   { revalidate: 300, tags: ['experience-products'] }
 )
 
-export const metadata: Metadata = {
-  title: 'Experience V2 | Street Collector',
-  description: 'Build your Street Lamp with artwork you love. New streamlined experience.',
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ artist?: string; vendor?: string; unlisted?: string }>
+}): Promise<Metadata> {
+  return buildShopExperienceMetadata(searchParams, '/shop/experience')
 }
 
 function filterLamp(products: ShopifyProduct[]) {

@@ -20,16 +20,13 @@ BEGIN
     ALTER TYPE collector_transaction_type ADD VALUE 'platform_fee';
   END IF;
 END $$;
-
 -- 2. Add tax_year column to collector_ledger_entries
 ALTER TABLE collector_ledger_entries 
 ADD COLUMN IF NOT EXISTS tax_year INTEGER;
-
 -- 3. Populate tax_year for existing entries
 UPDATE collector_ledger_entries 
 SET tax_year = EXTRACT(YEAR FROM created_at)
 WHERE tax_year IS NULL;
-
 -- 4. Create trigger to enforce immutability on collector_ledger_entries
 CREATE OR REPLACE FUNCTION protect_ledger_immutability()
 RETURNS TRIGGER AS $$
@@ -42,12 +39,10 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trg_protect_ledger_immutability ON collector_ledger_entries;
 CREATE TRIGGER trg_protect_ledger_immutability
 BEFORE UPDATE OR DELETE ON collector_ledger_entries
 FOR EACH ROW EXECUTE FUNCTION protect_ledger_immutability();
-
 -- 5. Consolidate vendor_ledger_entries into collector_ledger_entries
 -- We need to map vendor_name to auth_id for collector_identifier
 DO $$
@@ -109,7 +104,5 @@ BEGIN
     END LOOP;
   END IF;
 END $$;
-
 -- 6. Add tax_year index for reporting
 CREATE INDEX IF NOT EXISTS idx_collector_ledger_tax_year ON collector_ledger_entries(tax_year);
-

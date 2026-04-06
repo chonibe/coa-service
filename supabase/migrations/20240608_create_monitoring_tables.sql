@@ -9,7 +9,6 @@ CREATE TABLE system_logs (
     trace_id UUID,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create performance_metrics table for tracking system performance
 CREATE TABLE performance_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,7 +19,6 @@ CREATE TABLE performance_metrics (
     error_message TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create error_tracking table for comprehensive error logging
 CREATE TABLE error_tracking (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,7 +30,6 @@ CREATE TABLE error_tracking (
     severity TEXT NOT NULL CHECK (severity IN ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create webhook_destinations table for managing webhook integrations
 CREATE TABLE webhook_destinations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -43,7 +40,6 @@ CREATE TABLE webhook_destinations (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create webhook_delivery_logs table for tracking webhook delivery attempts
 CREATE TABLE webhook_delivery_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,29 +53,23 @@ CREATE TABLE webhook_delivery_logs (
     error_message TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes for performance optimization
 CREATE INDEX idx_system_logs_timestamp ON system_logs(timestamp);
 CREATE INDEX idx_system_logs_level ON system_logs(level);
 CREATE INDEX idx_system_logs_source ON system_logs(source);
-
 CREATE INDEX idx_performance_metrics_timestamp ON performance_metrics(timestamp);
 CREATE INDEX idx_performance_metrics_operation ON performance_metrics(operation);
-
 CREATE INDEX idx_error_tracking_timestamp ON error_tracking(timestamp);
 CREATE INDEX idx_error_tracking_severity ON error_tracking(severity);
-
 CREATE INDEX idx_webhook_destinations_active ON webhook_destinations(active);
 CREATE INDEX idx_webhook_delivery_logs_destination ON webhook_delivery_logs(destination_id);
 CREATE INDEX idx_webhook_delivery_logs_status ON webhook_delivery_logs(status);
-
 -- Add row-level security for sensitive tables
 ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE performance_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE error_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_destinations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_delivery_logs ENABLE ROW LEVEL SECURITY;
-
 -- Create policies to restrict access
 -- Policies commented out - admin_users table may not exist yet
 -- Will be enabled once admin_users table is created
@@ -102,4 +92,4 @@ ALTER TABLE webhook_delivery_logs ENABLE ROW LEVEL SECURITY;
 
 -- CREATE POLICY "Webhook delivery logs are viewable by admins only" 
 -- ON webhook_delivery_logs FOR SELECT 
--- USING (auth.uid() IN (SELECT user_id FROM admin_users)); 
+-- USING (auth.uid() IN (SELECT user_id FROM admin_users));;

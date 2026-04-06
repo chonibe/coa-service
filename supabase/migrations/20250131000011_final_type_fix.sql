@@ -108,4 +108,3 @@ BEGIN
     RETURN edition_count;
 END;
 $$;
-

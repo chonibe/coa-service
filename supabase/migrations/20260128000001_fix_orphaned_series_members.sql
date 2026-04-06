@@ -27,7 +27,6 @@ BEGIN
     AND vps.id IS NULL;
 END;
 $$;
-
 -- Create function to clean up orphaned records
 CREATE OR REPLACE FUNCTION cleanup_orphaned_series_members()
 RETURNS INTEGER
@@ -55,10 +54,8 @@ BEGIN
   RETURN deleted_count;
 END;
 $$;
-
 -- Run the cleanup
 SELECT cleanup_orphaned_series_members() as cleaned_count;
-
 -- Add comment to track this fix
 COMMENT ON FUNCTION find_orphaned_series_members() IS 'Finds artwork_series_members records with invalid submission_id references';
 COMMENT ON FUNCTION cleanup_orphaned_series_members() IS 'Removes artwork_series_members records with orphaned submission_id references';

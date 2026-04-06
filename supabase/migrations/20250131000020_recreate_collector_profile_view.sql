@@ -3,7 +3,6 @@
 
 -- Drop if exists
 DROP VIEW IF EXISTS collector_profile_comprehensive;
-
 CREATE OR REPLACE VIEW collector_profile_comprehensive AS
 WITH contact_base AS (
   SELECT email FROM auth.users WHERE email IS NOT NULL
@@ -108,5 +107,4 @@ SELECT
 FROM contact_base cb
 LEFT JOIN auth.users u ON u.email = cb.email
 LEFT JOIN collector_profiles cp ON cp.user_id = u.id;
-
 COMMENT ON VIEW collector_profile_comprehensive IS 'Inclusive aggregated view of collector profiles combining auth, custom profile, shopify, and warehouse data for both registered users and guests with computed display fields and robust PII resolution.';

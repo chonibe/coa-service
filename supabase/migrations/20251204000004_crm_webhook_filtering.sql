@@ -17,17 +17,13 @@ CREATE TABLE IF NOT EXISTS crm_webhook_subscriptions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_active 
 ON crm_webhook_subscriptions(active) 
 WHERE active = true;
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_events 
 ON crm_webhook_subscriptions USING GIN(events);
-
 CREATE INDEX IF NOT EXISTS idx_crm_webhook_subscriptions_filter 
 ON crm_webhook_subscriptions USING GIN(filter);
-
 -- ============================================
 -- PART 2: Helper function to evaluate webhook filters
 -- ============================================
@@ -88,22 +84,16 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 3: Comments for documentation
 -- ============================================
 
 COMMENT ON TABLE crm_webhook_subscriptions IS 
 'CRM webhook subscriptions with server-side filtering support';
-
 COMMENT ON COLUMN crm_webhook_subscriptions.filter IS 
 'Server-side filter in format: {"field": "object", "operator": "equals", "value": "people"}
 Supports nested paths: {"field": "actor.type", "operator": "equals", "value": "user"}';
-
 COMMENT ON COLUMN crm_webhook_subscriptions.events IS 
 'Array of event types to subscribe to (e.g., ["record.created", "record.updated"])';
-
 COMMENT ON FUNCTION evaluate_webhook_filter IS 
 'Evaluates a webhook filter against a payload. Returns true if payload matches filter.';
-
-

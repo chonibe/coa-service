@@ -12,7 +12,6 @@ BEGIN
     ADD COLUMN vip_artwork_id TEXT; -- References vendor_product_submissions.id
   END IF;
 END $$;
-
 -- Add credits_amount for credits bonus benefits
 DO $$
 BEGIN
@@ -24,7 +23,6 @@ BEGIN
     ADD COLUMN credits_amount INTEGER; -- Amount of credits to grant
   END IF;
 END $$;
-
 -- Add drop_date for early drop access benefits
 DO $$
 BEGIN
@@ -36,7 +34,6 @@ BEGIN
     ADD COLUMN drop_date TIMESTAMP WITH TIME ZONE; -- Early access drop date
   END IF;
 END $$;
-
 -- Add exclusive_visibility_series_id for exclusive visibility benefits
 DO $$
 BEGIN
@@ -48,17 +45,13 @@ BEGIN
     ADD COLUMN exclusive_visibility_series_id UUID REFERENCES artwork_series(id) ON DELETE SET NULL;
   END IF;
 END $$;
-
 -- Create indexes for efficient queries
 CREATE INDEX IF NOT EXISTS idx_product_benefits_vip_artwork_id 
 ON product_benefits(vip_artwork_id) 
 WHERE vip_artwork_id IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_product_benefits_drop_date 
 ON product_benefits(drop_date) 
 WHERE drop_date IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_product_benefits_exclusive_visibility_series_id 
 ON product_benefits(exclusive_visibility_series_id) 
 WHERE exclusive_visibility_series_id IS NOT NULL;
-

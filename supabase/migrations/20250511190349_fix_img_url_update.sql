@@ -31,4 +31,4 @@ BEGIN
     
     -- Log the number of rows updated
     RAISE NOTICE 'Rows updated: %', match_count;
-END $$; 
+END $$;

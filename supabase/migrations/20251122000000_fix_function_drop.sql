@@ -1,6 +1,5 @@
 -- Fix: Drop function before recreating to avoid return type conflicts
 DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
-
 -- Recreate with updated return type (includes refund_status)
 CREATE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
@@ -46,4 +45,3 @@ BEGIN
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-

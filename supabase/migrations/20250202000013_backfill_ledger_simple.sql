@@ -127,7 +127,6 @@ BEGIN
   RAISE NOTICE '========================================';
 
 END $$;
-
 -- Verify what was created
 SELECT 
   'Verification' as check_name,
@@ -139,4 +138,3 @@ WHERE
   transaction_type = 'payout_earned'
   AND currency = 'USD'
   AND created_at > NOW() - INTERVAL '5 minutes';
-

@@ -28,7 +28,6 @@ BEGIN
     RAISE NOTICE 'Removed % duplicate migration entries', dup_count;
   END IF;
 END $$;
-
 -- Now re-insert the migrations that were removed, keeping only one entry per version
 INSERT INTO supabase_migrations.schema_migrations (version, name, statements)
 SELECT DISTINCT ON (version)
@@ -53,7 +52,6 @@ WHERE version IN (
   ) AS t(version)
 )
 ON CONFLICT (version) DO NOTHING;
-
 -- Mark all missing migrations as applied
 INSERT INTO supabase_migrations.schema_migrations (version, name, statements)
 VALUES

@@ -1,7 +1,6 @@
 -- Enable bigint support for order IDs
 ALTER TABLE orders
 ALTER COLUMN id TYPE bigint USING id::bigint;
-
 -- Create resequencing utility function
 CREATE OR REPLACE FUNCTION resequence_edition_numbers()
 RETURNS void AS $$
@@ -31,6 +30,5 @@ BEGIN
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Add comment to function
-COMMENT ON FUNCTION resequence_edition_numbers() IS 'Utility function to resequence edition numbers for all orders'; 
+COMMENT ON FUNCTION resequence_edition_numbers() IS 'Utility function to resequence edition numbers for all orders';

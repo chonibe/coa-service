@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS artwork_series (
   -- Ensure unique series name per vendor
   UNIQUE(vendor_id, name)
 );
-
 -- Create artwork_series_members table
 CREATE TABLE IF NOT EXISTS artwork_series_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,12 +32,10 @@ CREATE TABLE IF NOT EXISTS artwork_series_members (
   -- Ensure unique submission per series
   UNIQUE(series_id, submission_id)
 );
-
 -- Create partial unique index for shopify_product_id (only when not null)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_series_members_unique_product 
 ON artwork_series_members(series_id, shopify_product_id) 
 WHERE shopify_product_id IS NOT NULL;
-
 -- Add series columns to vendor_product_submissions
 DO $$
 BEGIN
@@ -60,22 +57,18 @@ BEGIN
     ADD COLUMN series_metadata JSONB;
   END IF;
 END $$;
-
 -- Create indexes for artwork_series
 CREATE INDEX IF NOT EXISTS idx_artwork_series_vendor_id ON artwork_series(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_artwork_series_vendor_name ON artwork_series(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_artwork_series_is_active ON artwork_series(is_active) WHERE is_active = true;
-
 -- Create indexes for artwork_series_members
 CREATE INDEX IF NOT EXISTS idx_series_members_series_id ON artwork_series_members(series_id);
 CREATE INDEX IF NOT EXISTS idx_series_members_submission_id ON artwork_series_members(submission_id) WHERE submission_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_series_members_product_id ON artwork_series_members(shopify_product_id) WHERE shopify_product_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_series_members_unlock_order ON artwork_series_members(unlock_order) WHERE unlock_order IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_series_members_display_order ON artwork_series_members(display_order);
-
 -- Create index for vendor_product_submissions series_id
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_series_id ON vendor_product_submissions(series_id) WHERE series_id IS NOT NULL;
-
 -- Create function to update updated_at timestamp for artwork_series
 CREATE OR REPLACE FUNCTION update_artwork_series_updated_at()
 RETURNS TRIGGER AS $$
@@ -84,14 +77,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger for updated_at on artwork_series
 DROP TRIGGER IF EXISTS trigger_update_artwork_series_updated_at ON artwork_series;
 CREATE TRIGGER trigger_update_artwork_series_updated_at
   BEFORE UPDATE ON artwork_series
   FOR EACH ROW
   EXECUTE FUNCTION update_artwork_series_updated_at();
-
 -- Add RLS policies
 DO $$
 BEGIN
@@ -125,4 +116,3 @@ BEGIN
       WITH CHECK (true);
   END IF;
 END $$;
-

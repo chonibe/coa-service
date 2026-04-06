@@ -34,4 +34,4 @@ BEGIN
     LEFT JOIN order_line_items_v2 l ON l.product_id::TEXT = pi.product_id
     ORDER BY pi.product_id;
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;

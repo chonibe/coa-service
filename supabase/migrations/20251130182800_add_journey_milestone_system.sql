@@ -12,7 +12,6 @@ BEGIN
     ADD COLUMN milestone_config JSONB DEFAULT '{"completion_type": "all_sold", "auto_complete": true}'::jsonb;
   END IF;
 END $$;
-
 -- Add journey_position to artwork_series
 DO $$
 BEGIN
@@ -24,7 +23,6 @@ BEGIN
     ADD COLUMN journey_position JSONB;
   END IF;
 END $$;
-
 -- Add completed_at to artwork_series
 DO $$
 BEGIN
@@ -36,7 +34,6 @@ BEGIN
     ADD COLUMN completed_at TIMESTAMP WITH TIME ZONE;
   END IF;
 END $$;
-
 -- Add completion_progress to artwork_series
 DO $$
 BEGIN
@@ -48,7 +45,6 @@ BEGIN
     ADD COLUMN completion_progress JSONB DEFAULT '{"total_artworks": 0, "sold_artworks": 0, "percentage_complete": 0}'::jsonb;
   END IF;
 END $$;
-
 -- Add connected_series_ids to artwork_series
 DO $$
 BEGIN
@@ -60,7 +56,6 @@ BEGIN
     ADD COLUMN connected_series_ids UUID[] DEFAULT ARRAY[]::UUID[];
   END IF;
 END $$;
-
 -- Add unlocks_series_ids to artwork_series
 DO $$
 BEGIN
@@ -72,7 +67,6 @@ BEGIN
     ADD COLUMN unlocks_series_ids UUID[] DEFAULT ARRAY[]::UUID[];
   END IF;
 END $$;
-
 -- Add is_milestone to artwork_series
 DO $$
 BEGIN
@@ -84,7 +78,6 @@ BEGIN
     ADD COLUMN is_milestone BOOLEAN DEFAULT false;
   END IF;
 END $$;
-
 -- Add milestone_order to artwork_series
 DO $$
 BEGIN
@@ -96,7 +89,6 @@ BEGIN
     ADD COLUMN milestone_order INTEGER;
   END IF;
 END $$;
-
 -- Create journey_map_settings table
 CREATE TABLE IF NOT EXISTS journey_map_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -109,7 +101,6 @@ CREATE TABLE IF NOT EXISTS journey_map_settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(vendor_id)
 );
-
 -- Create series_completion_history table
 CREATE TABLE IF NOT EXISTS series_completion_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -120,7 +111,6 @@ CREATE TABLE IF NOT EXISTS series_completion_history (
   final_stats JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_artwork_series_milestone_order ON artwork_series(milestone_order) WHERE milestone_order IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_artwork_series_is_milestone ON artwork_series(is_milestone) WHERE is_milestone = true;
@@ -131,7 +121,6 @@ CREATE INDEX IF NOT EXISTS idx_journey_map_settings_vendor_id ON journey_map_set
 CREATE INDEX IF NOT EXISTS idx_series_completion_history_series_id ON series_completion_history(series_id);
 CREATE INDEX IF NOT EXISTS idx_series_completion_history_vendor_id ON series_completion_history(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_series_completion_history_completed_at ON series_completion_history(completed_at);
-
 -- Create function to update updated_at timestamp for journey_map_settings
 CREATE OR REPLACE FUNCTION update_journey_map_settings_updated_at()
 RETURNS TRIGGER AS $$
@@ -140,14 +129,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger for updated_at on journey_map_settings
 DROP TRIGGER IF EXISTS trigger_update_journey_map_settings_updated_at ON journey_map_settings;
 CREATE TRIGGER trigger_update_journey_map_settings_updated_at
   BEFORE UPDATE ON journey_map_settings
   FOR EACH ROW
   EXECUTE FUNCTION update_journey_map_settings_updated_at();
-
 -- Create function to calculate series completion progress
 CREATE OR REPLACE FUNCTION calculate_series_completion_progress(series_id_param UUID)
 RETURNS JSONB AS $$
@@ -187,7 +174,6 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create function to check and auto-complete series if threshold is met
 CREATE OR REPLACE FUNCTION check_and_complete_series(series_id_param UUID)
 RETURNS BOOLEAN AS $$
@@ -280,7 +266,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Add RLS policies for new tables
 DO $$
 BEGIN

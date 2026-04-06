@@ -45,7 +45,6 @@ BEGIN
     CREATE TYPE crm_platform AS ENUM ('email', 'instagram', 'facebook', 'whatsapp', 'shopify');
   END IF;
 END $$;
-
 -- ============================================
 -- PART 2: Email Accounts Table
 -- ============================================
@@ -69,11 +68,9 @@ CREATE TABLE IF NOT EXISTS crm_email_accounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, email_address, provider)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_email_accounts_user_id ON crm_email_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_email_accounts_email ON crm_email_accounts(email_address);
 CREATE INDEX IF NOT EXISTS idx_crm_email_accounts_is_active ON crm_email_accounts(is_active);
-
 -- ============================================
 -- PART 3: Facebook Accounts Table
 -- ============================================
@@ -94,11 +91,9 @@ CREATE TABLE IF NOT EXISTS crm_facebook_accounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, page_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_facebook_accounts_user_id ON crm_facebook_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_facebook_accounts_page_id ON crm_facebook_accounts(page_id);
 CREATE INDEX IF NOT EXISTS idx_crm_facebook_accounts_is_active ON crm_facebook_accounts(is_active);
-
 -- ============================================
 -- PART 4: WhatsApp Accounts Table
 -- ============================================
@@ -120,11 +115,9 @@ CREATE TABLE IF NOT EXISTS crm_whatsapp_accounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, phone_number)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_whatsapp_accounts_user_id ON crm_whatsapp_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_whatsapp_accounts_phone ON crm_whatsapp_accounts(phone_number);
 CREATE INDEX IF NOT EXISTS idx_crm_whatsapp_accounts_is_active ON crm_whatsapp_accounts(is_active);
-
 -- ============================================
 -- PART 5: Update Conversations Table
 -- ============================================
@@ -132,15 +125,12 @@ CREATE INDEX IF NOT EXISTS idx_crm_whatsapp_accounts_is_active ON crm_whatsapp_a
 -- Add platform_account_id to link conversations to specific accounts
 ALTER TABLE crm_conversations 
 ADD COLUMN IF NOT EXISTS platform_account_id UUID;
-
 -- Add index for platform_account_id
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_platform_account_id 
 ON crm_conversations(platform_account_id);
-
 -- Add comment explaining the field
 COMMENT ON COLUMN crm_conversations.platform_account_id IS 
 'References the account ID from crm_email_accounts, crm_facebook_accounts, or crm_whatsapp_accounts depending on platform';
-
 -- ============================================
 -- PART 6: Contact Identifiers for Deduplication
 -- ============================================
@@ -158,11 +148,9 @@ CREATE TABLE IF NOT EXISTS crm_contact_identifiers (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(identifier_type, identifier_value)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_contact_identifiers_customer_id ON crm_contact_identifiers(customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_contact_identifiers_type_value ON crm_contact_identifiers(identifier_type, identifier_value);
 CREATE INDEX IF NOT EXISTS idx_crm_contact_identifiers_platform ON crm_contact_identifiers(platform);
-
 -- ============================================
 -- PART 7: Contact Merge History
 -- ============================================
@@ -176,10 +164,8 @@ CREATE TABLE IF NOT EXISTS crm_contact_merge_history (
   merged_data JSONB, -- Snapshot of what was merged
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_contact_merge_history_merged_into ON crm_contact_merge_history(merged_into_customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_contact_merge_history_merged_from ON crm_contact_merge_history(merged_from_customer_id);
-
 -- ============================================
 -- PART 8: Update Customers Table for Multi-Platform
 -- ============================================
@@ -190,12 +176,10 @@ ADD COLUMN IF NOT EXISTS facebook_id TEXT,
 ADD COLUMN IF NOT EXISTS facebook_username TEXT,
 ADD COLUMN IF NOT EXISTS whatsapp_id TEXT,
 ADD COLUMN IF NOT EXISTS whatsapp_phone TEXT;
-
 -- Add indexes for new identifier fields
 CREATE INDEX IF NOT EXISTS idx_crm_customers_facebook_id ON crm_customers(facebook_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_whatsapp_id ON crm_customers(whatsapp_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_whatsapp_phone ON crm_customers(whatsapp_phone);
-
 -- ============================================
 -- PART 9: Triggers for Updated At
 -- ============================================
@@ -205,22 +189,18 @@ CREATE TRIGGER update_crm_email_accounts_updated_at
   BEFORE UPDATE ON crm_email_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_facebook_accounts_updated_at
   BEFORE UPDATE ON crm_facebook_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_whatsapp_accounts_updated_at
   BEFORE UPDATE ON crm_whatsapp_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_contact_identifiers_updated_at
   BEFORE UPDATE ON crm_contact_identifiers
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================
 -- PART 10: Function to Find Duplicate Contacts
 -- ============================================
@@ -281,4 +261,3 @@ BEGIN
   ORDER BY m.match_score DESC, m.customer_id;
 END;
 $$ LANGUAGE plpgsql;
-

@@ -84,4 +84,3 @@ BEGIN
   ORDER BY avt.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
-

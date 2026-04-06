@@ -18,17 +18,14 @@ CREATE TABLE IF NOT EXISTS crm_saved_views (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create unique partial index to ensure only one default view per entity type per user
 CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_saved_views_unique_default 
   ON crm_saved_views(entity_type, created_by_user_id) 
   WHERE is_default = true;
-
 CREATE INDEX IF NOT EXISTS idx_crm_saved_views_entity_type ON crm_saved_views(entity_type);
 CREATE INDEX IF NOT EXISTS idx_crm_saved_views_created_by ON crm_saved_views(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_saved_views_is_shared ON crm_saved_views(is_shared);
 CREATE INDEX IF NOT EXISTS idx_crm_saved_views_is_default ON crm_saved_views(is_default);
-
 -- ============================================
 -- PART 2: Update Trigger
 -- ============================================
@@ -40,12 +37,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_saved_views_updated_at
   BEFORE UPDATE ON crm_saved_views
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_saved_views_updated_at();
-
 -- ============================================
 -- PART 3: Helper Functions
 -- ============================================
@@ -78,4 +73,3 @@ BEGIN
   LIMIT 1;
 END;
 $$ LANGUAGE plpgsql;
-

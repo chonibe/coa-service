@@ -79,7 +79,6 @@ BEGIN
   ORDER BY avt.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Update get_vendor_payout_by_order function
 CREATE OR REPLACE FUNCTION get_vendor_payout_by_order(
   p_vendor_name TEXT,
@@ -184,7 +183,3 @@ BEGIN
   ORDER BY os.order_date DESC;
 END;
 $$ LANGUAGE plpgsql;
-
-
-
-

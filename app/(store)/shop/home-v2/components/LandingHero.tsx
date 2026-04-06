@@ -67,7 +67,6 @@ export function LandingHero() {
 
   return (
     <section className={styles.hero} aria-label="Hero">
-      <div className={styles.heroScanline} aria-hidden />
       <div className={styles.heroMedia} aria-hidden>
         <video autoPlay muted loop playsInline preload="auto">
           <source src={hero.videoUrl} type="video/mp4" />

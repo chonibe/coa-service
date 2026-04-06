@@ -27,7 +27,6 @@ DROP FUNCTION IF EXISTS migrate_conversation_tags();
 DROP FUNCTION IF EXISTS update_crm_workspace_members_updated_at();
 DROP FUNCTION IF EXISTS update_crm_role_permissions_updated_at();
 DROP FUNCTION IF EXISTS update_crm_tags_updated_at();
-
 -- ============================================
 -- PART 1: Additional Attribute Types (Phase 3)
 -- ============================================
@@ -95,7 +94,6 @@ BEGIN
   END CASE;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Helper function to format attribute value for display
 CREATE OR REPLACE FUNCTION format_attribute_value_for_display(
   p_field_type TEXT,
@@ -167,20 +165,16 @@ BEGIN
   END CASE;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON FUNCTION validate_attribute_value IS
 'Validates attribute values based on their field type. Returns true if value structure is valid.';
-
 COMMENT ON FUNCTION format_attribute_value_for_display IS
 'Formats attribute values for human-readable display based on their field type.';
-
 -- ============================================
 -- PART 2: Fuzzy Search Support (Phase 3)
 -- ============================================
 
 -- Enable pg_trgm extension for fuzzy matching
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
 -- Create function to enable pg_trgm if needed
 CREATE OR REPLACE FUNCTION enable_pg_trgm_if_needed()
 RETURNS void AS $$
@@ -190,7 +184,6 @@ BEGIN
   RETURN;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Fuzzy search function for people
 CREATE OR REPLACE FUNCTION fuzzy_search_people(
   search_term TEXT,
@@ -247,7 +240,6 @@ BEGIN
   LIMIT result_limit;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Fuzzy search function for companies
 CREATE OR REPLACE FUNCTION fuzzy_search_companies(
   search_term TEXT,
@@ -299,24 +291,18 @@ BEGIN
   LIMIT result_limit;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create indexes for better search performance
 CREATE INDEX IF NOT EXISTS idx_crm_customers_name_trgm ON crm_customers USING GIN ((COALESCE(first_name || ' ' || last_name, '')) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_email_trgm ON crm_customers USING GIN (email gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_phone_trgm ON crm_customers USING GIN (phone gin_trgm_ops);
-
 CREATE INDEX IF NOT EXISTS idx_crm_companies_name_trgm ON crm_companies USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_crm_companies_domain_trgm ON crm_companies USING GIN (domain gin_trgm_ops);
-
 COMMENT ON FUNCTION fuzzy_search_people IS
 'Fuzzy search for people using trigram similarity. Returns results with similarity scores and matched fields.';
-
 COMMENT ON FUNCTION fuzzy_search_companies IS
 'Fuzzy search for companies using trigram similarity. Returns results with similarity scores and matched fields.';
-
 COMMENT ON FUNCTION enable_pg_trgm_if_needed IS
 'Placeholder function for API compatibility. pg_trgm extension should be enabled via migration.';
-
 -- ============================================
 -- PART 3: Workspace Permissions System (Phase 3)
 -- ============================================
@@ -336,12 +322,10 @@ CREATE TABLE IF NOT EXISTS crm_workspace_members (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(workspace_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_workspace_id ON crm_workspace_members(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_user_id ON crm_workspace_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_role ON crm_workspace_members(role);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_is_active ON crm_workspace_members(is_active);
-
 -- Permission Scopes Table
 CREATE TABLE IF NOT EXISTS crm_permission_scopes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -351,10 +335,8 @@ CREATE TABLE IF NOT EXISTS crm_permission_scopes (
   action TEXT NOT NULL, -- 'read', 'write', 'delete', 'manage'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_permission_scopes_resource_type ON crm_permission_scopes(resource_type);
 CREATE INDEX IF NOT EXISTS idx_crm_permission_scopes_action ON crm_permission_scopes(action);
-
 -- Insert default permission scopes
 INSERT INTO crm_permission_scopes (name, description, resource_type, action) VALUES
   ('people.read', 'Read access to people records', 'people', 'read'),
@@ -371,7 +353,6 @@ INSERT INTO crm_permission_scopes (name, description, resource_type, action) VAL
   ('settings.manage', 'Manage workspace settings', 'settings', 'manage'),
   ('members.manage', 'Manage workspace members', 'members', 'manage')
 ON CONFLICT (name) DO NOTHING;
-
 -- Role-Based Permission Templates
 CREATE TABLE IF NOT EXISTS crm_role_permissions (
   role TEXT PRIMARY KEY, -- 'owner', 'admin', 'member', 'viewer'
@@ -379,7 +360,6 @@ CREATE TABLE IF NOT EXISTS crm_role_permissions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Insert default role permissions
 INSERT INTO crm_role_permissions (role, permissions) VALUES
   ('owner', '["people.read", "people.write", "people.delete", "companies.read", "companies.write", "companies.delete", "activities.read", "activities.write", "fields.manage", "lists.manage", "webhooks.manage", "settings.manage", "members.manage"]'::jsonb),
@@ -387,7 +367,6 @@ INSERT INTO crm_role_permissions (role, permissions) VALUES
   ('member', '["people.read", "people.write", "companies.read", "companies.write", "activities.read", "activities.write"]'::jsonb),
   ('viewer', '["people.read", "companies.read", "activities.read"]'::jsonb)
 ON CONFLICT (role) DO NOTHING;
-
 -- Helper Function to Check Permissions
 CREATE OR REPLACE FUNCTION check_workspace_permission(
   p_user_id UUID,
@@ -436,7 +415,6 @@ BEGIN
   RETURN v_has_permission;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Helper Function to Get User Role
 CREATE OR REPLACE FUNCTION get_workspace_member_role(
   p_user_id UUID,
@@ -456,7 +434,6 @@ BEGIN
   RETURN COALESCE(v_role, 'none');
 END;
 $$ LANGUAGE plpgsql;
-
 -- Updated_at Triggers
 CREATE OR REPLACE FUNCTION update_crm_workspace_members_updated_at()
 RETURNS TRIGGER AS $$
@@ -465,12 +442,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_workspace_members_updated_at
   BEFORE UPDATE ON crm_workspace_members
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_workspace_members_updated_at();
-
 CREATE OR REPLACE FUNCTION update_crm_role_permissions_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -478,27 +453,20 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_role_permissions_updated_at
   BEFORE UPDATE ON crm_role_permissions
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_role_permissions_updated_at();
-
 COMMENT ON TABLE crm_workspace_members IS
 'Workspace members with roles and custom permissions';
-
 COMMENT ON TABLE crm_permission_scopes IS
 'Available permission scopes that can be granted to workspace members';
-
 COMMENT ON TABLE crm_role_permissions IS
 'Default permissions for each role (owner, admin, member, viewer)';
-
 COMMENT ON FUNCTION check_workspace_permission IS
 'Checks if a user has a specific permission. Returns true if granted, false otherwise.';
-
 COMMENT ON FUNCTION get_workspace_member_role IS
 'Gets the role of a workspace member. Returns role name or "none" if not a member.';
-
 -- ============================================
 -- PART 4: Inbox Enhancements (Phase 4)
 -- ============================================
@@ -538,12 +506,10 @@ BEGIN
     ALTER TABLE crm_messages ADD COLUMN thread_order INTEGER DEFAULT 0;
   END IF;
 END $$;
-
 -- Create indexes for threading
 CREATE INDEX IF NOT EXISTS idx_crm_messages_thread_id ON crm_messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_parent_message_id ON crm_messages(parent_message_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_thread_order ON crm_messages(thread_id, thread_order);
-
 -- Tags System
 CREATE TABLE IF NOT EXISTS crm_tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -554,7 +520,6 @@ CREATE TABLE IF NOT EXISTS crm_tags (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(name, workspace_id)
 );
-
 CREATE TABLE IF NOT EXISTS crm_conversation_tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES crm_conversations(id) ON DELETE CASCADE,
@@ -562,13 +527,11 @@ CREATE TABLE IF NOT EXISTS crm_conversation_tags (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(conversation_id, tag_id)
 );
-
 -- Create indexes for tags
 CREATE INDEX IF NOT EXISTS idx_crm_tags_name ON crm_tags(name);
 CREATE INDEX IF NOT EXISTS idx_crm_tags_workspace_id ON crm_tags(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conversation_tags_conversation_id ON crm_conversation_tags(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conversation_tags_tag_id ON crm_conversation_tags(tag_id);
-
 -- Enrichment Data
 DO $$
 BEGIN
@@ -579,9 +542,7 @@ BEGIN
     ALTER TABLE crm_customers ADD COLUMN enrichment_data JSONB DEFAULT '{}';
   END IF;
 END $$;
-
 CREATE INDEX IF NOT EXISTS idx_crm_customers_enrichment_data ON crm_customers USING GIN (enrichment_data);
-
 -- Conversation Enhancements
 DO $$
 BEGIN
@@ -599,10 +560,8 @@ BEGIN
     ALTER TABLE crm_conversations ADD COLUMN unread_count INTEGER DEFAULT 0;
   END IF;
 END $$;
-
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_is_starred ON crm_conversations(is_starred);
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_unread_count ON crm_conversations(unread_count);
-
 -- Message Read Status
 CREATE TABLE IF NOT EXISTS crm_message_reads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -611,10 +570,8 @@ CREATE TABLE IF NOT EXISTS crm_message_reads (
   read_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(message_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_message_reads_message_id ON crm_message_reads(message_id);
 CREATE INDEX IF NOT EXISTS idx_crm_message_reads_user_id ON crm_message_reads(user_id);
-
 -- Functions for Threading
 CREATE OR REPLACE FUNCTION generate_thread_id()
 RETURNS UUID AS $$
@@ -622,7 +579,6 @@ BEGIN
   RETURN gen_random_uuid();
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION calculate_thread_depth(p_message_id UUID)
 RETURNS INTEGER AS $$
 DECLARE
@@ -643,7 +599,6 @@ BEGIN
   RETURN v_depth;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION update_message_thread_info()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -682,13 +637,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS update_message_thread_info_trigger ON crm_messages;
 CREATE TRIGGER update_message_thread_info_trigger
   BEFORE INSERT ON crm_messages
   FOR EACH ROW
   EXECUTE FUNCTION update_message_thread_info();
-
 -- Function to Update Unread Count
 CREATE OR REPLACE FUNCTION update_conversation_unread_count()
 RETURNS TRIGGER AS $$
@@ -712,13 +665,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS update_conversation_unread_count_trigger ON crm_messages;
 CREATE TRIGGER update_conversation_unread_count_trigger
   AFTER INSERT ON crm_messages
   FOR EACH ROW
   EXECUTE FUNCTION update_conversation_unread_count();
-
 -- Function to Migrate Existing Tags
 CREATE OR REPLACE FUNCTION migrate_conversation_tags()
 RETURNS void AS $$
@@ -756,7 +707,6 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Updated_at Triggers
 CREATE OR REPLACE FUNCTION update_crm_tags_updated_at()
 RETURNS TRIGGER AS $$
@@ -765,37 +715,27 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_tags_updated_at
   BEFORE UPDATE ON crm_tags
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_tags_updated_at();
-
 -- Comments for Documentation
 COMMENT ON TABLE crm_tags IS
 'Tags that can be applied to conversations for organization and filtering';
-
 COMMENT ON TABLE crm_conversation_tags IS
 'Junction table linking conversations to tags';
-
 COMMENT ON COLUMN crm_messages.thread_id IS
 'UUID identifying the email thread this message belongs to';
-
 COMMENT ON COLUMN crm_messages.parent_message_id IS
 'Reference to the parent message in the thread hierarchy';
-
 COMMENT ON COLUMN crm_messages.thread_depth IS
 'Depth level in the thread tree (0 = root message)';
-
 COMMENT ON COLUMN crm_messages.thread_order IS
 'Order of message within thread (for sorting)';
-
 COMMENT ON COLUMN crm_customers.enrichment_data IS
 'JSONB object containing enriched data from AI/third-party sources';
-
 COMMENT ON TABLE crm_message_reads IS
 'Tracks which messages have been read by which users';
-
 -- ============================================
 -- Migration Complete
 -- ============================================
@@ -808,5 +748,4 @@ COMMENT ON TABLE crm_message_reads IS
 -- 
 -- To migrate existing tags from conversations.tags array, run:
 -- SELECT migrate_conversation_tags();
--- ============================================
-
+-- ============================================;

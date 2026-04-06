@@ -2,7 +2,6 @@
 -- The issue is COALESCE(p.product_id::TEXT, p.id::TEXT) where p.id might be bigint
 
 DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
-
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
   line_item_id TEXT,
@@ -54,4 +53,3 @@ BEGIN
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-

@@ -20,13 +20,11 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
   updated_at timestamptz DEFAULT now(),
   UNIQUE(user_id, role)
 );
-
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role ON public.user_roles(role);
 CREATE INDEX IF NOT EXISTS idx_user_roles_resource_id ON public.user_roles(resource_id) WHERE resource_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_user_roles_active ON public.user_roles(is_active) WHERE is_active = true;
-
 -- Trigger to update updated_at
 CREATE OR REPLACE FUNCTION public.update_user_roles_updated_at()
 RETURNS TRIGGER AS $$
@@ -35,12 +33,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trigger_update_user_roles_updated_at
   BEFORE UPDATE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_user_roles_updated_at();
-
 -- ============================================
 -- 2. Create role_permissions table
 -- ============================================
@@ -54,10 +50,8 @@ CREATE TABLE IF NOT EXISTS public.role_permissions (
   created_at timestamptz DEFAULT now(),
   UNIQUE(role, permission)
 );
-
 CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON public.role_permissions(role);
 CREATE INDEX IF NOT EXISTS idx_role_permissions_resource_type ON public.role_permissions(resource_type) WHERE resource_type IS NOT NULL;
-
 -- ============================================
 -- 3. Create user_permission_overrides table
 -- ============================================
@@ -74,10 +68,8 @@ CREATE TABLE IF NOT EXISTS public.user_permission_overrides (
   created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, permission)
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_user_id ON public.user_permission_overrides(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_active ON public.user_permission_overrides(granted) WHERE granted = true;
-
 -- ============================================
 -- 4. Seed default role permissions
 -- ============================================
@@ -117,7 +109,6 @@ INSERT INTO public.role_permissions (role, permission, resource_type, descriptio
   ('collector', 'benefits:access', 'benefits', 'Access exclusive content and benefits'),
   ('collector', 'avatar:manage', 'avatar', 'Manage avatar and customization')
 ON CONFLICT (role, permission) DO NOTHING;
-
 -- ============================================
 -- 5. Create audit log for role changes
 -- ============================================
@@ -134,11 +125,9 @@ CREATE TABLE IF NOT EXISTS public.user_role_audit_log (
   new_state jsonb,
   reason text
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_user_id ON public.user_role_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_performed_at ON public.user_role_audit_log(performed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_performed_by ON public.user_role_audit_log(performed_by);
-
 -- Trigger to log role changes
 CREATE OR REPLACE FUNCTION public.log_user_role_change()
 RETURNS TRIGGER AS $$
@@ -177,12 +166,10 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER trigger_log_user_role_change
   AFTER INSERT OR UPDATE OR DELETE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.log_user_role_change();
-
 -- ============================================
 -- 6. Enable RLS on new tables
 -- ============================================
@@ -191,12 +178,10 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_permission_overrides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_role_audit_log ENABLE ROW LEVEL SECURITY;
-
 -- Policies for user_roles (admins can manage all, users can view their own)
 CREATE POLICY "Users can view their own roles"
   ON public.user_roles FOR SELECT
   USING (user_id = auth.uid());
-
 CREATE POLICY "Admins can manage all roles"
   ON public.user_roles FOR ALL
   USING (
@@ -207,12 +192,10 @@ CREATE POLICY "Admins can manage all roles"
         AND ur.is_active = true
     )
   );
-
 -- Policies for role_permissions (readable by all authenticated users)
 CREATE POLICY "Authenticated users can view role permissions"
   ON public.role_permissions FOR SELECT
   USING (auth.uid() IS NOT NULL);
-
 CREATE POLICY "Admins can manage role permissions"
   ON public.role_permissions FOR ALL
   USING (
@@ -223,12 +206,10 @@ CREATE POLICY "Admins can manage role permissions"
         AND ur.is_active = true
     )
   );
-
 -- Policies for user_permission_overrides
 CREATE POLICY "Users can view their own permission overrides"
   ON public.user_permission_overrides FOR SELECT
   USING (user_id = auth.uid());
-
 CREATE POLICY "Admins can manage permission overrides"
   ON public.user_permission_overrides FOR ALL
   USING (
@@ -239,7 +220,6 @@ CREATE POLICY "Admins can manage permission overrides"
         AND ur.is_active = true
     )
   );
-
 -- Policies for audit log (admins only)
 CREATE POLICY "Admins can view audit log"
   ON public.user_role_audit_log FOR SELECT
@@ -251,7 +231,6 @@ CREATE POLICY "Admins can view audit log"
         AND ur.is_active = true
     )
   );
-
 -- ============================================
 -- 7. Helper functions
 -- ============================================
@@ -265,7 +244,6 @@ RETURNS text[] AS $$
     AND is_active = true
     AND (expires_at IS NULL OR expires_at > now());
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- Check if user has a specific role
 CREATE OR REPLACE FUNCTION public.user_has_role(p_user_id uuid, p_role text)
 RETURNS boolean AS $$
@@ -278,7 +256,6 @@ RETURNS boolean AS $$
       AND (expires_at IS NULL OR expires_at > now())
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- Get all permissions for a user (including overrides)
 CREATE OR REPLACE FUNCTION public.get_user_permissions(p_user_id uuid)
 RETURNS TABLE(permission text, source text) AS $$
@@ -311,7 +288,6 @@ BEGIN
     AND (upo.expires_at IS NULL OR upo.expires_at > now());
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
-
 -- Check if user has a specific permission
 CREATE OR REPLACE FUNCTION public.user_has_permission(p_user_id uuid, p_permission text)
 RETURNS boolean AS $$
@@ -321,7 +297,6 @@ RETURNS boolean AS $$
     WHERE permission = p_permission
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- ============================================
 -- Comments for documentation
 -- ============================================
@@ -330,7 +305,6 @@ COMMENT ON TABLE public.user_roles IS 'Unified table storing all user roles (adm
 COMMENT ON TABLE public.role_permissions IS 'Defines permissions available to each role';
 COMMENT ON TABLE public.user_permission_overrides IS 'User-specific permission grants or revocations';
 COMMENT ON TABLE public.user_role_audit_log IS 'Audit trail of all role changes';
-
 COMMENT ON COLUMN public.user_roles.resource_id IS 'For vendors: vendor_id; for collectors: null; for admins: null';
 COMMENT ON COLUMN public.user_roles.metadata IS 'Additional role-specific data (e.g., migration source, custom settings)';
 COMMENT ON COLUMN public.user_permission_overrides.granted IS 'true = grant permission, false = revoke permission';

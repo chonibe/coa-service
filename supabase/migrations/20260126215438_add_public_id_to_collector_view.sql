@@ -159,6 +159,5 @@ SELECT
 FROM contact_base cb
 LEFT JOIN auth.users u ON LOWER(u.email) = cb.email
 LEFT JOIN collector_profiles cp ON LOWER(cp.email) = cb.email;
-
 -- Add comment to document the security fix
 COMMENT ON VIEW collector_profile_comprehensive IS 'Comprehensive collector profile view with secure public_id for URLs. The public_id field is a SHA-256 hash of the email address to prevent PII exposure in URLs while maintaining stable identifiers.';

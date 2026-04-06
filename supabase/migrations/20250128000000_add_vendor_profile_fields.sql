@@ -18,4 +18,3 @@ BEGIN
     ALTER TABLE vendors ADD COLUMN artist_history TEXT;
   END IF;
 END $$;
-

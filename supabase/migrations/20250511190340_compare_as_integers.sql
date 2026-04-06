@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS assign_edition_numbers(TEXT);
-
 CREATE FUNCTION assign_edition_numbers(p_product_id TEXT)
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -50,4 +49,4 @@ BEGIN
 
     RETURN edition_count;
 END;
-$$; 
+$$;

@@ -41,20 +41,16 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Drop existing trigger if it exists
 DROP TRIGGER IF EXISTS trigger_enforce_line_item_status ON order_line_items_v2;
-
 -- Create the trigger
 CREATE TRIGGER trigger_enforce_line_item_status
   BEFORE INSERT OR UPDATE ON order_line_items_v2
   FOR EACH ROW
   EXECUTE FUNCTION enforce_line_item_status();
-
 -- Add a comment to document the trigger
 COMMENT ON TRIGGER trigger_enforce_line_item_status ON order_line_items_v2 IS 
   'Automatically sets status=inactive for restocked/refunded items. Safety net against application bugs.';
-
 -- ============================================================================
 -- Optional: Create a check constraint for additional validation
 -- ============================================================================
@@ -64,4 +60,4 @@ COMMENT ON TRIGGER trigger_enforce_line_item_status ON order_line_items_v2 IS
 
 -- ALTER TABLE order_line_items_v2 
 -- ADD CONSTRAINT chk_restocked_status 
--- CHECK (restocked = false OR status = 'inactive');
+-- CHECK (restocked = false OR status = 'inactive');;

@@ -68,9 +68,9 @@ export const streetCollectorContent = {
         description:
           'Press, click, done. No tools, no hassle — new art in seconds.',
         desktopVideo:
-          'https://cdn.shopify.com/videos/c/o/v/7964f935647e4978b2a6af7a4ea7f450.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/0347e65039e84d04920d3dffad235bf6.mp4',
         mobileVideo:
-          'https://cdn.shopify.com/videos/c/o/v/7964f935647e4978b2a6af7a4ea7f450.mp4',
+          'https://cdn.shopify.com/videos/c/o/v/0347e65039e84d04920d3dffad235bf6.mp4',
       },
       {
         title: 'Mount it',

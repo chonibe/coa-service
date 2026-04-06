@@ -1,6 +1,5 @@
 -- Drop the function if it exists
 DROP FUNCTION IF EXISTS assign_edition_numbers(TEXT);
-
 -- Recreate the function with explicit parameter qualification
 CREATE FUNCTION assign_edition_numbers(p_product_id TEXT)
 RETURNS INTEGER
@@ -37,4 +36,4 @@ BEGIN
 
     RETURN edition_count;
 END;
-$$; 
+$$;

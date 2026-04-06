@@ -113,10 +113,3 @@ BEGIN
   ORDER BY av.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
-
-
-
-
-
-
-

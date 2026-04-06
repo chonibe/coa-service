@@ -87,7 +87,6 @@ BEGIN
   WHERE v.vendor_name IS NOT NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 -- 2. Update get_vendor_pending_line_items
 DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)

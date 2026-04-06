@@ -172,7 +172,7 @@ export function LampIncludesSpecsPanel({
                           key={j}
                           className="flex items-start gap-2 text-xs text-neutral-700 dark:text-[#d4b8b8] leading-relaxed"
                         >
-                          <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-[#5c0000]" />
+                          <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-white/90" />
                           <span>{item}</span>
                         </li>
                       ))}

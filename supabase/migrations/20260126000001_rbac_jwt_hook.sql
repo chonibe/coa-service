@@ -76,10 +76,8 @@ BEGIN
   RETURN jsonb_set(event, '{claims}', claims);
 END;
 $$;
-
 -- Grant execute permission to service role
 GRANT EXECUTE ON FUNCTION public.custom_access_token(jsonb) TO service_role;
-
 -- ============================================
 -- 2. Create helper function for JWT role checking
 -- ============================================
@@ -101,7 +99,6 @@ RETURNS boolean AS $$
     )
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- Create schema alias for backward compatibility (if auth schema access is available)
 -- This allows RLS policies to use auth.has_role() syntax
 DO $$
@@ -115,7 +112,6 @@ EXCEPTION
   WHEN OTHERS THEN
     RAISE NOTICE 'Error creating auth.has_role: %', SQLERRM;
 END $$;
-
 -- ============================================
 -- 3. Create helper function for JWT permission checking
 -- ============================================
@@ -135,7 +131,6 @@ RETURNS boolean AS $$
     )
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- Create schema alias for backward compatibility
 DO $$
 BEGIN
@@ -146,7 +141,6 @@ EXCEPTION
   WHEN OTHERS THEN
     RAISE NOTICE 'Error creating auth.has_permission: %', SQLERRM;
 END $$;
-
 -- ============================================
 -- 4. Create helper to get vendor_id from JWT
 -- ============================================
@@ -158,7 +152,6 @@ RETURNS integer AS $$
     ''
   )::integer;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- Create schema alias for backward compatibility
 DO $$
 BEGIN
@@ -169,7 +162,6 @@ EXCEPTION
   WHEN OTHERS THEN
     RAISE NOTICE 'Error creating auth.jwt_vendor_id: %', SQLERRM;
 END $$;
-
 -- ============================================
 -- 5. Create helper to check if user is admin
 -- ============================================
@@ -179,7 +171,6 @@ CREATE OR REPLACE FUNCTION public.is_admin_user()
 RETURNS boolean AS $$
   SELECT public.has_role('admin');
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- ============================================
 -- 6. Test functions (can be removed in production)
 -- ============================================
@@ -189,7 +180,6 @@ CREATE OR REPLACE FUNCTION public.debug_jwt_claims()
 RETURNS jsonb AS $$
   SELECT current_setting('request.jwt.claims', true)::jsonb;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- ============================================
 -- Comments for documentation
 -- ============================================

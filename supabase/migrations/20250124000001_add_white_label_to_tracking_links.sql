@@ -4,7 +4,8 @@
 -- Add logo_url and primary_color columns
 ALTER TABLE shared_order_tracking_links 
 ADD COLUMN IF NOT EXISTS logo_url TEXT,
-ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#8217ff'; -- Default purple color
+ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#8217ff';
+-- Default purple color
 
 -- Add comment for documentation
 COMMENT ON COLUMN shared_order_tracking_links.logo_url IS 'URL to customer company logo for white-label branding';

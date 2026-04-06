@@ -8,12 +8,9 @@ CREATE TABLE IF NOT EXISTS nfc_tag_scans (
   ip_address    text,
   user_agent    text
 );
-
 -- Index for fast tag-level lookups
 CREATE INDEX IF NOT EXISTS idx_nfc_tag_scans_tag_id ON nfc_tag_scans(tag_id);
-
 -- Index for time-range queries / analytics
 CREATE INDEX IF NOT EXISTS idx_nfc_tag_scans_scanned_at ON nfc_tag_scans(scanned_at);
-
 -- Enable RLS (deny by default — admin access only via service role key)
 ALTER TABLE nfc_tag_scans ENABLE ROW LEVEL SECURITY;

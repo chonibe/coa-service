@@ -33,4 +33,4 @@ BEGIN
     WHERE p.product_id IS NOT NULL OR l.product_id IS NOT NULL
     ORDER BY pi.product_id;
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;

@@ -16,14 +16,9 @@ CREATE TABLE IF NOT EXISTS "public"."warehouse_orders" (
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- Indexes for fast lookups
 CREATE INDEX IF NOT EXISTS idx_warehouse_orders_order_id ON "public"."warehouse_orders"("order_id");
 CREATE INDEX IF NOT EXISTS idx_warehouse_orders_ship_email ON "public"."warehouse_orders"("ship_email");
 CREATE INDEX IF NOT EXISTS idx_warehouse_orders_shopify_order_id ON "public"."warehouse_orders"("shopify_order_id");
-
 -- Add comment
 COMMENT ON TABLE "public"."warehouse_orders" IS 'Local cache of ChinaDivision warehouse order data, including PII for cross-referencing.';
-
-
-

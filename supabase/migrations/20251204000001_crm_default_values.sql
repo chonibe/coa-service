@@ -9,19 +9,16 @@
 -- Add is_default_value_enabled flag
 ALTER TABLE crm_custom_fields 
 ADD COLUMN IF NOT EXISTS is_default_value_enabled BOOLEAN DEFAULT false;
-
 -- Convert default_value from TEXT to JSONB to support complex defaults
 -- First, create a new column
 ALTER TABLE crm_custom_fields 
 ADD COLUMN IF NOT EXISTS default_value_jsonb JSONB;
-
 -- Migrate existing default_value TEXT to JSONB (if any exist)
 -- Simple text values become: {"type": "static", "value": "text"}
 UPDATE crm_custom_fields
 SET default_value_jsonb = jsonb_build_object('type', 'static', 'value', default_value)
 WHERE default_value IS NOT NULL 
   AND default_value_jsonb IS NULL;
-
 -- Drop old default_value column after migration
 -- ALTER TABLE crm_custom_fields DROP COLUMN IF EXISTS default_value;
 
@@ -29,7 +26,6 @@ WHERE default_value IS NOT NULL
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_default_enabled 
 ON crm_custom_fields(is_default_value_enabled) 
 WHERE is_default_value_enabled = true;
-
 -- ============================================
 -- PART 2: Helper function to process default values
 -- ============================================
@@ -83,7 +79,6 @@ BEGIN
   RETURN p_default_value;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 3: Function to apply defaults when creating records
 -- ============================================
@@ -146,23 +141,18 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 4: Comments for documentation
 -- ============================================
 
 COMMENT ON COLUMN crm_custom_fields.is_default_value_enabled IS 
 'Whether default values should be applied when creating new records';
-
 COMMENT ON COLUMN crm_custom_fields.default_value_jsonb IS 
 'Default value in JSONB format. Supports:
 - Static: {"type": "static", "value": <any JSON value>}
 - Dynamic: {"type": "dynamic", "value": "current-user"} for actor references
 - Dynamic: {"type": "dynamic", "value": "P1M"} for ISO 8601 durations (date/timestamp fields)';
-
 COMMENT ON FUNCTION process_default_value IS 
 'Processes a default value JSONB, handling both static and dynamic defaults';
-
 COMMENT ON FUNCTION apply_field_defaults IS 
 'Applies default values for all enabled custom fields when creating a new record';
-

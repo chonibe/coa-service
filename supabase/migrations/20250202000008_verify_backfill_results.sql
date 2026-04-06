@@ -14,7 +14,6 @@ FROM collector_ledger_entries
 WHERE 
   transaction_type = 'payout_earned'
   AND currency = 'USD';
-
 -- Check 2: Sample of ledger entries (first 10)
 SELECT 
   id,
@@ -30,7 +29,6 @@ WHERE
   AND currency = 'USD'
 ORDER BY created_at DESC
 LIMIT 10;
-
 -- Check 3: Compare vendor names with collector identifiers
 SELECT 
   v.vendor_name,
@@ -52,7 +50,6 @@ WHERE v.vendor_name IN (
 GROUP BY v.vendor_name, v.auth_id
 ORDER BY total_in_ledger DESC
 LIMIT 20;
-
 -- Check 4: Are there any ledger entries that don't match vendors?
 SELECT 
   cle.collector_identifier,
@@ -69,7 +66,6 @@ WHERE
   )
 GROUP BY cle.collector_identifier
 LIMIT 10;
-
 -- Check 5: Check if collector accounts exist
 SELECT 
   ca.collector_identifier,
@@ -86,4 +82,3 @@ WHERE ca.account_type = 'vendor'
 GROUP BY ca.collector_identifier, ca.account_type, ca.vendor_id
 ORDER BY total_balance DESC
 LIMIT 20;
-

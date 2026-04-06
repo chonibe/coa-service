@@ -29,14 +29,11 @@ CREATE TABLE IF NOT EXISTS artwork_slides (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Index for efficient product slide queries
 CREATE INDEX IF NOT EXISTS idx_artwork_slides_product_order 
   ON artwork_slides(product_id, display_order);
-
 -- Enable RLS
 ALTER TABLE artwork_slides ENABLE ROW LEVEL SECURITY;
-
 -- Vendors can manage their own product slides
 CREATE POLICY "Vendors can manage their product slides"
   ON artwork_slides FOR ALL
@@ -46,12 +43,10 @@ CREATE POLICY "Vendors can manage their product slides"
       WHERE p.id = product_id AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
-
 -- Anyone can view published slides
 CREATE POLICY "Anyone can view published slides"
   ON artwork_slides FOR SELECT
   USING (is_published = true);
-
 -- Update timestamp trigger
 CREATE OR REPLACE FUNCTION update_artwork_slides_updated_at()
 RETURNS TRIGGER AS $$
@@ -60,12 +55,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER artwork_slides_updated_at
   BEFORE UPDATE ON artwork_slides
   FOR EACH ROW
   EXECUTE FUNCTION update_artwork_slides_updated_at();
-
 -- Grant permissions
 GRANT SELECT ON artwork_slides TO anon;
 GRANT ALL ON artwork_slides TO authenticated;

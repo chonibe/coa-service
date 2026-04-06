@@ -20,12 +20,10 @@ CREATE TABLE IF NOT EXISTS crm_workspace_members (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(workspace_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_workspace_id ON crm_workspace_members(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_user_id ON crm_workspace_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_role ON crm_workspace_members(role);
 CREATE INDEX IF NOT EXISTS idx_crm_workspace_members_is_active ON crm_workspace_members(is_active);
-
 -- ============================================
 -- PART 2: Permission Scopes Table
 -- ============================================
@@ -38,10 +36,8 @@ CREATE TABLE IF NOT EXISTS crm_permission_scopes (
   action TEXT NOT NULL, -- 'read', 'write', 'delete', 'manage'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_permission_scopes_resource_type ON crm_permission_scopes(resource_type);
 CREATE INDEX IF NOT EXISTS idx_crm_permission_scopes_action ON crm_permission_scopes(action);
-
 -- Insert default permission scopes
 INSERT INTO crm_permission_scopes (name, description, resource_type, action) VALUES
   ('people.read', 'Read access to people records', 'people', 'read'),
@@ -58,7 +54,6 @@ INSERT INTO crm_permission_scopes (name, description, resource_type, action) VAL
   ('settings.manage', 'Manage workspace settings', 'settings', 'manage'),
   ('members.manage', 'Manage workspace members', 'members', 'manage')
 ON CONFLICT (name) DO NOTHING;
-
 -- ============================================
 -- PART 3: Role-Based Permission Templates
 -- ============================================
@@ -69,7 +64,6 @@ CREATE TABLE IF NOT EXISTS crm_role_permissions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Insert default role permissions
 INSERT INTO crm_role_permissions (role, permissions) VALUES
   ('owner', '["people.read", "people.write", "people.delete", "companies.read", "companies.write", "companies.delete", "activities.read", "activities.write", "fields.manage", "lists.manage", "webhooks.manage", "settings.manage", "members.manage"]'::jsonb),
@@ -77,7 +71,6 @@ INSERT INTO crm_role_permissions (role, permissions) VALUES
   ('member', '["people.read", "people.write", "companies.read", "companies.write", "activities.read", "activities.write"]'::jsonb),
   ('viewer', '["people.read", "companies.read", "activities.read"]'::jsonb)
 ON CONFLICT (role) DO NOTHING;
-
 -- ============================================
 -- PART 4: Helper Function to Check Permissions
 -- ============================================
@@ -129,7 +122,6 @@ BEGIN
   RETURN v_has_permission;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 5: Helper Function to Get User Role
 -- ============================================
@@ -152,7 +144,6 @@ BEGIN
   RETURN COALESCE(v_role, 'none');
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 6: Updated_at Triggers
 -- ============================================
@@ -164,12 +155,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_workspace_members_updated_at
   BEFORE UPDATE ON crm_workspace_members
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_workspace_members_updated_at();
-
 CREATE OR REPLACE FUNCTION update_crm_role_permissions_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -177,29 +166,21 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_role_permissions_updated_at
   BEFORE UPDATE ON crm_role_permissions
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_role_permissions_updated_at();
-
 -- ============================================
 -- PART 7: Comments for documentation
 -- ============================================
 
 COMMENT ON TABLE crm_workspace_members IS
 'Workspace members with roles and custom permissions';
-
 COMMENT ON TABLE crm_permission_scopes IS
 'Available permission scopes that can be granted to workspace members';
-
 COMMENT ON TABLE crm_role_permissions IS
 'Default permissions for each role (owner, admin, member, viewer)';
-
 COMMENT ON FUNCTION check_workspace_permission IS
 'Checks if a user has a specific permission. Returns true if granted, false otherwise.';
-
 COMMENT ON FUNCTION get_workspace_member_role IS
 'Gets the role of a workspace member. Returns role name or "none" if not a member.';
-
-

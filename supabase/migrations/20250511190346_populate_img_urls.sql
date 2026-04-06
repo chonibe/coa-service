@@ -14,4 +14,4 @@ BEGIN
     
     -- Log the results
     RAISE NOTICE 'Update completed';
-END $$; 
+END $$;

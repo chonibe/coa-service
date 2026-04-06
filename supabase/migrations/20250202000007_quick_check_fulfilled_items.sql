@@ -13,7 +13,6 @@ FROM order_line_items_v2 oli
 WHERE 
   oli.vendor_name IS NOT NULL
   AND oli.fulfillment_status = 'fulfilled';
-
 -- Check 2: Sample of fulfilled line items (first 10)
 SELECT 
   oli.line_item_id,
@@ -28,7 +27,6 @@ WHERE
   AND oli.fulfillment_status = 'fulfilled'
 ORDER BY oli.created_at DESC
 LIMIT 10;
-
 -- Check 3: How many already have ledger entries?
 SELECT 
   'Line Items with Ledger Entries' as check_name,
@@ -38,7 +36,6 @@ WHERE
   cle.transaction_type = 'payout_earned'
   AND cle.currency = 'USD'
   AND cle.line_item_id IS NOT NULL;
-
 -- Check 4: Estimated total payout from fulfilled items
 SELECT 
   oli.vendor_name,
@@ -71,4 +68,3 @@ WHERE
 GROUP BY oli.vendor_name
 ORDER BY estimated_payout DESC
 LIMIT 20;
-

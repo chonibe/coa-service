@@ -104,8 +104,6 @@ BEGIN
     ALTER TABLE crm_customers ADD COLUMN metadata JSONB;
   END IF;
 END $$;
-
 -- Add indexes if they don't exist
 CREATE INDEX IF NOT EXISTS idx_crm_customers_total_orders ON crm_customers(total_orders);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_last_order_date ON crm_customers(last_order_date DESC);
-

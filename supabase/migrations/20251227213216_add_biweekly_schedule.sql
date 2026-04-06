@@ -4,15 +4,12 @@
 -- Update schedule_type CHECK constraint to include 'biweekly'
 ALTER TABLE payout_schedules
 DROP CONSTRAINT IF EXISTS payout_schedules_schedule_type_check;
-
 ALTER TABLE payout_schedules
 ADD CONSTRAINT payout_schedules_schedule_type_check 
 CHECK (schedule_type IN ('weekly', 'monthly', 'biweekly', 'manual'));
-
 -- Add biweekly_interval field (1st/15th or custom day)
 ALTER TABLE payout_schedules
 ADD COLUMN IF NOT EXISTS biweekly_interval INTEGER CHECK (biweekly_interval >= 1 AND biweekly_interval <= 28);
-
 -- Update calculate_next_payout_run function to support bi-weekly
 CREATE OR REPLACE FUNCTION calculate_next_payout_run(
   p_schedule_type TEXT,
@@ -80,7 +77,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Update update_payout_schedule_next_runs function to include biweekly_interval
 CREATE OR REPLACE FUNCTION update_payout_schedule_next_runs()
 RETURNS void AS $$
@@ -91,11 +87,3 @@ BEGIN
     AND schedule_type != 'manual';
 END;
 $$ LANGUAGE plpgsql;
-
-
-
-
-
-
-
-

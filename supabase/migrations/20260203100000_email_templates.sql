@@ -14,33 +14,27 @@ CREATE TABLE IF NOT EXISTS email_templates (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_email_templates_category ON email_templates(category);
 CREATE INDEX IF NOT EXISTS idx_email_templates_enabled ON email_templates(enabled);
-
 -- RLS policies
 ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
-
 -- Allow authenticated admin users to read/write templates
 CREATE POLICY "Allow authenticated read access to email_templates"
   ON email_templates
   FOR SELECT
   TO authenticated
   USING (true);
-
 CREATE POLICY "Allow service role full access to email_templates"
   ON email_templates
   FOR ALL
   TO service_role
   USING (true)
   WITH CHECK (true);
-
 -- Comments
 COMMENT ON TABLE email_templates IS 'Customizable email templates for automated notifications';
 COMMENT ON COLUMN email_templates.template_key IS 'Unique identifier used in code to reference this template';
 COMMENT ON COLUMN email_templates.variables IS 'JSON array of {name, description, example} for available template variables';
-
 -- Seed default templates
 INSERT INTO email_templates (template_key, name, description, category, subject, html_body, variables) VALUES
 

@@ -24,11 +24,9 @@ CREATE TABLE IF NOT EXISTS crm_custom_fields (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(field_name, entity_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_entity_type ON crm_custom_fields(entity_type);
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_is_active ON crm_custom_fields(is_active);
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_display_order ON crm_custom_fields(display_order);
-
 -- ============================================
 -- PART 2: Custom Field Values
 -- ============================================
@@ -44,11 +42,9 @@ CREATE TABLE IF NOT EXISTS crm_custom_field_values (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(field_id, entity_type, entity_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_custom_field_values_field_id ON crm_custom_field_values(field_id);
 CREATE INDEX IF NOT EXISTS idx_crm_custom_field_values_entity ON crm_custom_field_values(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_crm_custom_field_values_value ON crm_custom_field_values(field_value);
-
 -- ============================================
 -- PART 3: Triggers
 -- ============================================
@@ -57,9 +53,7 @@ CREATE TRIGGER update_crm_custom_fields_updated_at
   BEFORE UPDATE ON crm_custom_fields
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_custom_field_values_updated_at
   BEFORE UPDATE ON crm_custom_field_values
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-

@@ -1,8 +1,11 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 export function MeetTheLamp() {
   const { meetLamp } = homeV2LandingContent
@@ -46,9 +49,19 @@ export function MeetTheLamp() {
     setActiveIndex((i) => (i + 1) % meetLamp.features.length)
   }
 
+  const reveal = useLandingScrollReveal({ mode: 'stagger', rootMargin: '0px 0px -12% 0px' })
+
   return (
-    <section className={styles.lampSection} id="meet-the-lamp" aria-label="Meet the lamp">
-      <div className={styles.lampHeader}>
+    <section
+      ref={reveal.ref}
+      className={cn(styles.lampSection, reveal.className)}
+      id="meet-the-lamp"
+      aria-label="Meet the lamp"
+    >
+      <div
+        className={cn(styles.lampHeader, styles.landingStagger)}
+        style={{ '--stagger': 0 } as CSSProperties}
+      >
         <div className={styles.eyebrow}>{meetLamp.eyebrow}</div>
         <h2 className={styles.sectionTitle}>
           Designed for
@@ -57,7 +70,10 @@ export function MeetTheLamp() {
         </h2>
       </div>
 
-      <div className={styles.lampFeature}>
+      <div
+        className={cn(styles.lampFeature, styles.landingStagger)}
+        style={{ '--stagger': 1 } as CSSProperties}
+      >
         <div className={styles.lampVideoCol}>
           <video
             ref={videoRef}

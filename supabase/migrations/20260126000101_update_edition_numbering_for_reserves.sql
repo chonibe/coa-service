@@ -172,7 +172,6 @@ BEGIN
     RETURN edition_count;
 END;
 $$;
-
 -- Update trigger to exclude internal reserve orders
 CREATE OR REPLACE FUNCTION auto_assign_edition_on_insert_or_update()
 RETURNS TRIGGER AS $$
@@ -202,6 +201,5 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Add comment
 COMMENT ON FUNCTION assign_edition_numbers(TEXT) IS 'Assigns sequential edition numbers to active line items for a product. Starts from #2 if first_edition_reserved is true. Excludes internal reserve orders and Street Collector items. Preserves edition numbers for authenticated items.';

@@ -20,12 +20,10 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
   updated_at timestamptz DEFAULT now(),
   UNIQUE(user_id, role)
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role ON public.user_roles(role);
 CREATE INDEX IF NOT EXISTS idx_user_roles_resource_id ON public.user_roles(resource_id) WHERE resource_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_user_roles_active ON public.user_roles(is_active) WHERE is_active = true;
-
 CREATE OR REPLACE FUNCTION public.update_user_roles_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -33,13 +31,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trigger_update_user_roles_updated_at ON public.user_roles;
 CREATE TRIGGER trigger_update_user_roles_updated_at
   BEFORE UPDATE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_user_roles_updated_at();
-
 CREATE TABLE IF NOT EXISTS public.role_permissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   role text NOT NULL CHECK (role IN ('admin', 'vendor', 'collector')),
@@ -49,10 +45,8 @@ CREATE TABLE IF NOT EXISTS public.role_permissions (
   created_at timestamptz DEFAULT now(),
   UNIQUE(role, permission)
 );
-
 CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON public.role_permissions(role);
 CREATE INDEX IF NOT EXISTS idx_role_permissions_resource_type ON public.role_permissions(resource_type) WHERE resource_type IS NOT NULL;
-
 CREATE TABLE IF NOT EXISTS public.user_permission_overrides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -65,10 +59,8 @@ CREATE TABLE IF NOT EXISTS public.user_permission_overrides (
   created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, permission)
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_user_id ON public.user_permission_overrides(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_active ON public.user_permission_overrides(granted) WHERE granted = true;
-
 INSERT INTO public.role_permissions (role, permission, resource_type, description) VALUES
   ('admin', 'admin:all', 'system', 'Full system access'),
   ('admin', 'vendors:manage', 'vendors', 'Manage all vendors'),
@@ -99,7 +91,6 @@ INSERT INTO public.role_permissions (role, permission, resource_type, descriptio
   ('collector', 'benefits:access', 'benefits', 'Access exclusive content and benefits'),
   ('collector', 'avatar:manage', 'avatar', 'Manage avatar and customization')
 ON CONFLICT (role, permission) DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS public.user_role_audit_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -112,11 +103,9 @@ CREATE TABLE IF NOT EXISTS public.user_role_audit_log (
   new_state jsonb,
   reason text
 );
-
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_user_id ON public.user_role_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_performed_at ON public.user_role_audit_log(performed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_role_audit_log_performed_by ON public.user_role_audit_log(performed_by);
-
 CREATE OR REPLACE FUNCTION public.log_user_role_change()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -154,23 +143,19 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trigger_log_user_role_change ON public.user_roles;
 CREATE TRIGGER trigger_log_user_role_change
   AFTER INSERT OR UPDATE OR DELETE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.log_user_role_change();
-
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_permission_overrides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_role_audit_log ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
 CREATE POLICY "Users can view their own roles"
   ON public.user_roles FOR SELECT
   USING (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "Admins can manage all roles" ON public.user_roles;
 CREATE POLICY "Admins can manage all roles"
   ON public.user_roles FOR ALL
@@ -182,12 +167,10 @@ CREATE POLICY "Admins can manage all roles"
         AND ur.is_active = true
     )
   );
-
 DROP POLICY IF EXISTS "Authenticated users can view role permissions" ON public.role_permissions;
 CREATE POLICY "Authenticated users can view role permissions"
   ON public.role_permissions FOR SELECT
   USING (auth.uid() IS NOT NULL);
-
 DROP POLICY IF EXISTS "Admins can manage role permissions" ON public.role_permissions;
 CREATE POLICY "Admins can manage role permissions"
   ON public.role_permissions FOR ALL
@@ -199,12 +182,10 @@ CREATE POLICY "Admins can manage role permissions"
         AND ur.is_active = true
     )
   );
-
 DROP POLICY IF EXISTS "Users can view their own permission overrides" ON public.user_permission_overrides;
 CREATE POLICY "Users can view their own permission overrides"
   ON public.user_permission_overrides FOR SELECT
   USING (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "Admins can manage permission overrides" ON public.user_permission_overrides;
 CREATE POLICY "Admins can manage permission overrides"
   ON public.user_permission_overrides FOR ALL
@@ -216,7 +197,6 @@ CREATE POLICY "Admins can manage permission overrides"
         AND ur.is_active = true
     )
   );
-
 DROP POLICY IF EXISTS "Admins can view audit log" ON public.user_role_audit_log;
 CREATE POLICY "Admins can view audit log"
   ON public.user_role_audit_log FOR SELECT
@@ -228,7 +208,6 @@ CREATE POLICY "Admins can view audit log"
         AND ur.is_active = true
     )
   );
-
 CREATE OR REPLACE FUNCTION public.get_user_roles(p_user_id uuid)
 RETURNS text[] AS $$
   SELECT array_agg(role)
@@ -237,7 +216,6 @@ RETURNS text[] AS $$
     AND is_active = true
     AND (expires_at IS NULL OR expires_at > now());
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 CREATE OR REPLACE FUNCTION public.user_has_role(p_user_id uuid, p_role text)
 RETURNS boolean AS $$
   SELECT EXISTS (
@@ -249,7 +227,6 @@ RETURNS boolean AS $$
       AND (expires_at IS NULL OR expires_at > now())
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 CREATE OR REPLACE FUNCTION public.get_user_permissions(p_user_id uuid)
 RETURNS TABLE(permission text, source text) AS $$
 BEGIN
@@ -278,7 +255,6 @@ BEGIN
     AND (upo.expires_at IS NULL OR upo.expires_at > now());
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
-
 CREATE OR REPLACE FUNCTION public.user_has_permission(p_user_id uuid, p_permission text)
 RETURNS boolean AS $$
   SELECT EXISTS (
@@ -287,7 +263,6 @@ RETURNS boolean AS $$
     WHERE permission = p_permission
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- ============================================
 -- PART 2: JWT Hook Functions
 -- ============================================
@@ -333,10 +308,8 @@ BEGIN
   RETURN jsonb_set(event, '{claims}', claims);
 END;
 $$;
-
 GRANT EXECUTE ON FUNCTION public.custom_access_token(jsonb) TO service_role;
-
-CREATE OR REPLACE FUNCTION public.has_role(required_role text)
+CREATE OR REPLACE FUNCTION auth.has_role(required_role text)
 RETURNS boolean AS $$
   SELECT required_role = ANY(
     COALESCE(
@@ -351,17 +324,7 @@ RETURNS boolean AS $$
     )
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
--- Try to create alias in auth schema (may fail due to permissions)
-DO $$
-BEGIN
-  EXECUTE 'CREATE OR REPLACE FUNCTION public.has_role(required_role text) RETURNS boolean AS $func$ SELECT public.has_role(required_role) $func$ LANGUAGE sql STABLE SECURITY DEFINER';
-EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Cannot create public.has_role - will use public.has_role in RLS policies';
-END $$;
-
-CREATE OR REPLACE FUNCTION public.has_permission(required_permission text)
+CREATE OR REPLACE FUNCTION auth.has_permission(required_permission text)
 RETURNS boolean AS $$
   SELECT required_permission = ANY(
     COALESCE(
@@ -376,38 +339,17 @@ RETURNS boolean AS $$
     )
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
--- Try to create alias in auth schema
-DO $$
-BEGIN
-  EXECUTE 'CREATE OR REPLACE FUNCTION auth.has_permission(required_permission text) RETURNS boolean AS $func$ SELECT public.has_permission(required_permission) $func$ LANGUAGE sql STABLE SECURITY DEFINER';
-EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Cannot create auth.has_permission - will use public.has_permission in RLS policies';
-END $$;
-
-CREATE OR REPLACE FUNCTION public.jwt_vendor_id()
+CREATE OR REPLACE FUNCTION auth.jwt_vendor_id()
 RETURNS integer AS $$
   SELECT NULLIF(
     current_setting('request.jwt.claims', true)::jsonb->>'vendor_id',
     ''
   )::integer;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
--- Try to create alias in auth schema
-DO $$
-BEGIN
-  EXECUTE 'CREATE OR REPLACE FUNCTION public.jwt_vendor_id() RETURNS integer AS $func$ SELECT public.jwt_vendor_id() $func$ LANGUAGE sql STABLE SECURITY DEFINER';
-EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Cannot create public.jwt_vendor_id - will use public.jwt_vendor_id in RLS policies';
-END $$;
-
 CREATE OR REPLACE FUNCTION public.is_admin_user()
 RETURNS boolean AS $$
-  SELECT public.has_role('admin');
+  SELECT auth.has_role('admin');
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 -- ============================================
 -- PART 3: Data Migration
 -- ============================================
@@ -423,7 +365,6 @@ FROM public.admin_accounts aa
 WHERE aa.auth_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = aa.auth_id AND ur.role = 'admin')
 ON CONFLICT (user_id, role) DO NOTHING;
-
 INSERT INTO public.user_roles (user_id, role, resource_id, is_active, metadata, granted_at)
 SELECT 
   vu.auth_id,
@@ -437,7 +378,6 @@ JOIN public.vendors v ON v.id = vu.vendor_id
 WHERE vu.auth_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = vu.auth_id AND ur.role = 'vendor')
 ON CONFLICT (user_id, role) DO NOTHING;
-
 INSERT INTO public.user_roles (user_id, role, is_active, metadata, granted_at)
 SELECT 
   cp.user_id,
@@ -449,7 +389,6 @@ FROM public.collector_profiles cp
 WHERE cp.user_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = cp.user_id AND ur.role = 'collector')
 ON CONFLICT (user_id, role) DO NOTHING;
-
 INSERT INTO public.user_roles (user_id, role, is_active, metadata, granted_at)
 SELECT DISTINCT
   o.customer_id::uuid,
@@ -464,7 +403,6 @@ WHERE o.customer_id IS NOT NULL
   AND o.customer_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 GROUP BY o.customer_id, o.customer_email
 ON CONFLICT (user_id, role) DO NOTHING;
-
 INSERT INTO public.user_roles (user_id, role, resource_id, is_active, metadata, granted_at)
 SELECT 
   v.auth_id,
@@ -477,10 +415,8 @@ FROM public.vendors v
 WHERE v.auth_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = v.auth_id AND ur.role = 'vendor')
 ON CONFLICT (user_id, role) DO NOTHING;
-
 CREATE INDEX IF NOT EXISTS idx_user_roles_migration_source 
   ON public.user_roles ((metadata->>'source'));
-
 -- ============================================
 -- PART 4: Update RLS Policies
 -- ============================================
@@ -489,158 +425,143 @@ DROP POLICY IF EXISTS "Vendors can access their own data" ON public.vendors;
 DROP POLICY IF EXISTS "Admins can access all vendors" ON public.vendors;
 CREATE POLICY "Vendors can access their own data"
   ON public.vendors FOR ALL
-  USING (public.has_role('vendor') AND id = public.jwt_vendor_id());
+  USING (auth.has_role('vendor') AND id = auth.jwt_vendor_id());
 CREATE POLICY "Admins can access all vendors"
   ON public.vendors FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Vendors can view their own messages" ON public.vendor_messages;
 DROP POLICY IF EXISTS "Vendors can create messages" ON public.vendor_messages;
 DROP POLICY IF EXISTS "Vendors can update their messages" ON public.vendor_messages;
 DROP POLICY IF EXISTS "Admins can view all messages" ON public.vendor_messages;
 CREATE POLICY "Vendors can view their own messages"
   ON public.vendor_messages FOR SELECT
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Vendors can create messages"
   ON public.vendor_messages FOR INSERT
-  WITH CHECK (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  WITH CHECK (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Vendors can update their messages"
   ON public.vendor_messages FOR UPDATE
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Admins can manage all messages"
   ON public.vendor_messages FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Vendors can view their notifications" ON public.vendor_notifications;
 DROP POLICY IF EXISTS "Vendors can update their notifications" ON public.vendor_notifications;
 DROP POLICY IF EXISTS "Admins can view all notifications" ON public.vendor_notifications;
 CREATE POLICY "Vendors can view their notifications"
   ON public.vendor_notifications FOR SELECT
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Vendors can update their notifications"
   ON public.vendor_notifications FOR UPDATE
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Admins can manage all notifications"
   ON public.vendor_notifications FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Collectors can view their own items" ON public.order_line_items_v2;
 DROP POLICY IF EXISTS "Vendors can view their items" ON public.order_line_items_v2;
 DROP POLICY IF EXISTS "Admins can view all items" ON public.order_line_items_v2;
 CREATE POLICY "Collectors can view their own items"
   ON public.order_line_items_v2 FOR SELECT
-  USING (public.has_role('collector') AND (owner_id = auth.uid() OR LOWER(owner_email) = LOWER((SELECT email FROM auth.users WHERE id = auth.uid()))));
+  USING (auth.has_role('collector') AND (owner_id = auth.uid() OR LOWER(owner_email) = LOWER((SELECT email FROM auth.users WHERE id = auth.uid()))));
 CREATE POLICY "Vendors can view their items"
   ON public.order_line_items_v2 FOR SELECT
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Admins can manage all items"
   ON public.order_line_items_v2 FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.collector_profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.collector_profiles;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON public.collector_profiles;
 CREATE POLICY "Collectors can view their own profile"
   ON public.collector_profiles FOR SELECT
-  USING (public.has_role('collector') AND user_id = auth.uid());
+  USING (auth.has_role('collector') AND user_id = auth.uid());
 CREATE POLICY "Collectors can update their own profile"
   ON public.collector_profiles FOR UPDATE
-  USING (public.has_role('collector') AND user_id = auth.uid());
+  USING (auth.has_role('collector') AND user_id = auth.uid());
 CREATE POLICY "Collectors can insert their own profile"
   ON public.collector_profiles FOR INSERT
-  WITH CHECK (public.has_role('collector') AND user_id = auth.uid());
+  WITH CHECK (auth.has_role('collector') AND user_id = auth.uid());
 CREATE POLICY "Admins can manage all profiles"
   ON public.collector_profiles FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Vendors can view their products" ON public.products;
 DROP POLICY IF EXISTS "Vendors can manage their products" ON public.products;
 DROP POLICY IF EXISTS "Admins can view all products" ON public.products;
 DROP POLICY IF EXISTS "Public can view published products" ON public.products;
 CREATE POLICY "Vendors can view their products"
   ON public.products FOR SELECT
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Vendors can manage their products"
   ON public.products FOR ALL
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Admins can manage all products"
   ON public.products FOR ALL
-  USING (public.has_role('admin'));
+  USING (auth.has_role('admin'));
 CREATE POLICY "Public can view published products"
   ON public.products FOR SELECT
   USING (status = 'active');
-
 DO $$
 BEGIN
   DROP POLICY IF EXISTS "allow_all_with_app_auth" ON public.journey_map_settings;
 EXCEPTION
   WHEN undefined_table THEN NULL;
 END $$;
-
 CREATE POLICY "Vendors can manage their journey settings"
   ON public.journey_map_settings
   FOR ALL
-  USING (public.has_role('vendor') AND vendor_id = public.jwt_vendor_id());
-
+  USING (auth.has_role('vendor') AND vendor_id = auth.jwt_vendor_id());
 CREATE POLICY "Admins can manage all journey settings"
   ON public.journey_map_settings
   FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DO $$
 BEGIN
   DROP POLICY IF EXISTS "allow_all_with_app_auth" ON public.series_completion_history;
 EXCEPTION
   WHEN undefined_table THEN NULL;
 END $$;
-
 CREATE POLICY "Collectors can view their completion history"
   ON public.series_completion_history
   FOR SELECT
-  USING (public.has_role('collector') AND user_id = auth.uid());
-
+  USING (auth.has_role('collector') AND user_id = auth.uid());
 CREATE POLICY "Collectors can manage their completion history"
   ON public.series_completion_history
   FOR ALL
-  USING (public.has_role('collector') AND user_id = auth.uid());
-
+  USING (auth.has_role('collector') AND user_id = auth.uid());
 CREATE POLICY "Admins can view all completion history"
   ON public.series_completion_history
   FOR SELECT
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Vendors can manage their series" ON public.artwork_series;
 DROP POLICY IF EXISTS "Collectors can view unlocked series" ON public.artwork_series;
 DROP POLICY IF EXISTS "Public can view published series" ON public.artwork_series;
 CREATE POLICY "Vendors can manage their series"
   ON public.artwork_series
   FOR ALL
-  USING (public.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id()));
+  USING (auth.has_role('vendor') AND vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id()));
 CREATE POLICY "Collectors can view series"
   ON public.artwork_series
   FOR SELECT
-  USING (public.has_role('collector') OR public.has_role('admin') OR is_published = true);
+  USING (auth.has_role('collector') OR auth.has_role('admin') OR is_published = true);
 CREATE POLICY "Admins can manage all series"
   ON public.artwork_series
   FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders;
 DROP POLICY IF EXISTS "Vendors can view orders with their products" ON public.orders;
 DROP POLICY IF EXISTS "Admins can view all orders" ON public.orders;
 CREATE POLICY "Collectors can view their own orders"
   ON public.orders
   FOR SELECT
-  USING (public.has_role('collector') AND (customer_id = auth.uid()::text OR LOWER(customer_email) = LOWER((SELECT email FROM auth.users WHERE id = auth.uid()))));
+  USING (auth.has_role('collector') AND (customer_id = auth.uid()::text OR LOWER(customer_email) = LOWER((SELECT email FROM auth.users WHERE id = auth.uid()))));
 CREATE POLICY "Vendors can view orders with their products"
   ON public.orders
   FOR SELECT
-  USING (public.has_role('vendor') AND id IN (SELECT DISTINCT order_id FROM public.order_line_items_v2 WHERE vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = public.jwt_vendor_id())));
+  USING (auth.has_role('vendor') AND id IN (SELECT DISTINCT order_id FROM public.order_line_items_v2 WHERE vendor_name IN (SELECT v.vendor_name FROM public.vendors v WHERE v.id = auth.jwt_vendor_id())));
 CREATE POLICY "Admins can manage all orders"
   ON public.orders
   FOR ALL
-  USING (public.has_role('admin'));
-
+  USING (auth.has_role('admin'));
 -- ============================================
 -- Success Summary
 -- ============================================

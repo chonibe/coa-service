@@ -7,4 +7,4 @@
 -- ON DELETE SET NULL;
 
 -- Add index for better join performance
-CREATE INDEX IF NOT EXISTS idx_order_line_items_v2_product_id ON order_line_items_v2(product_id); 
+CREATE INDEX IF NOT EXISTS idx_order_line_items_v2_product_id ON order_line_items_v2(product_id);

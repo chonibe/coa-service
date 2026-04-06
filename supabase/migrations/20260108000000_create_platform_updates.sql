@@ -9,21 +9,17 @@ CREATE TABLE IF NOT EXISTS public.platform_updates (
   created_at timestamptz DEFAULT now(),
   admin_email text NOT NULL
 );
-
 -- Add indexes for better performance
 CREATE INDEX IF NOT EXISTS platform_updates_created_at_idx ON public.platform_updates (created_at DESC);
 CREATE INDEX IF NOT EXISTS platform_updates_category_idx ON public.platform_updates (category);
-
 -- Enable RLS (standard in this repo for security)
 ALTER TABLE public.platform_updates ENABLE ROW LEVEL SECURITY;
-
 -- Allow admins to manage updates
 DROP POLICY IF EXISTS "Admins can manage platform updates" ON public.platform_updates;
 CREATE POLICY "Admins can manage platform updates" ON public.platform_updates
   FOR ALL
   USING (true)
   WITH CHECK (true);
-
 -- Insert initial data from PROJECT_DASHBOARD.md (only if not exists)
 INSERT INTO public.platform_updates (title, description, category, version, admin_email)
 SELECT * FROM (VALUES 
@@ -34,6 +30,3 @@ SELECT * FROM (VALUES
 ('Collector Dashboard Launch', 'Added aggregated collector dashboard with artworks grid, artist journeys, and credits management.', 'feature', '1.1.0', 'admin@streetcollector.com')
 ) AS v(title, description, category, version, admin_email)
 WHERE NOT EXISTS (SELECT 1 FROM public.platform_updates WHERE title = v.title);
-
-
-

@@ -1,8 +1,11 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 export function StepsSection() {
   const { steps } = homeV2LandingContent
@@ -47,9 +50,19 @@ export function StepsSection() {
     setActiveIndex((i) => (i + 1) % steps.items.length)
   }
 
+  const reveal = useLandingScrollReveal({ mode: 'stagger', rootMargin: '0px 0px -10% 0px' })
+
   return (
-    <section className={styles.section} id="how-it-works" aria-label="How it works">
-      <div className={styles.sectionHeader}>
+    <section
+      ref={reveal.ref}
+      className={cn(styles.section, reveal.className)}
+      id="how-it-works"
+      aria-label="How it works"
+    >
+      <div
+        className={cn(styles.sectionHeader, styles.landingStagger)}
+        style={{ '--stagger': 0 } as CSSProperties}
+      >
         <div className={styles.eyebrow}>{steps.eyebrow}</div>
         <h2 className={styles.sectionTitle}>
           Bringing art into
@@ -58,7 +71,12 @@ export function StepsSection() {
         </h2>
       </div>
 
-      <div className={styles.stepsTabs} role="tablist" aria-label="Steps">
+      <div
+        className={cn(styles.stepsTabs, styles.landingStagger)}
+        style={{ '--stagger': 1 } as CSSProperties}
+        role="tablist"
+        aria-label="Steps"
+      >
         {steps.items.map((s, idx) => (
           <button
             key={s.tabTitle}
@@ -79,7 +97,8 @@ export function StepsSection() {
       </div>
 
       <div
-        className={styles.stepContent}
+        className={cn(styles.stepContent, styles.landingStagger)}
+        style={{ '--stagger': 2 } as CSSProperties}
         role="tabpanel"
         id="home-v2-step-panel"
         aria-labelledby={`home-v2-step-tab-${activeIndex}`}

@@ -40,5 +40,4 @@
 
 -- Note: This migration file serves as documentation only.
 -- The actual buckets and policies must be created manually in the Supabase Dashboard
--- or via the Supabase Management API.
-
+-- or via the Supabase Management API.;

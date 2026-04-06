@@ -11,9 +11,7 @@ BEGIN
     ADD COLUMN vip_series_id UUID REFERENCES artwork_series(id) ON DELETE SET NULL;
   END IF;
 END $$;
-
 -- Create index for efficient queries
 CREATE INDEX IF NOT EXISTS idx_product_benefits_vip_series_id 
 ON product_benefits(vip_series_id) 
 WHERE vip_series_id IS NOT NULL;
-

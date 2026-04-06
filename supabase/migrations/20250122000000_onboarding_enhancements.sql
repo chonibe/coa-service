@@ -29,11 +29,9 @@ BEGIN
     ALTER TABLE vendors ADD COLUMN onboarding_abandoned_at TIMESTAMP WITH TIME ZONE;
   END IF;
 END $$;
-
 -- Create indexes for analytics queries
 CREATE INDEX IF NOT EXISTS idx_vendors_onboarding_step ON vendors(onboarding_step) WHERE onboarding_completed = false;
 CREATE INDEX IF NOT EXISTS idx_vendors_onboarding_started ON vendors(onboarding_started_at) WHERE onboarding_started_at IS NOT NULL;
-
 -- Create onboarding_analytics table for tracking step-by-step analytics
 CREATE TABLE IF NOT EXISTS onboarding_analytics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,12 +44,10 @@ CREATE TABLE IF NOT EXISTS onboarding_analytics (
   completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for onboarding_analytics
 CREATE INDEX IF NOT EXISTS idx_onboarding_analytics_vendor ON onboarding_analytics(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_onboarding_analytics_step ON onboarding_analytics(step_number);
 CREATE INDEX IF NOT EXISTS idx_onboarding_analytics_created ON onboarding_analytics(created_at);
-
 -- Add RLS policies if RLS is enabled
 DO $$
 BEGIN
@@ -70,4 +66,3 @@ BEGIN
       WITH CHECK (true);
   END IF;
 END $$;
-

@@ -13,13 +13,10 @@ BEGIN
     ALTER TYPE store_payment_method ADD VALUE 'credits';
   END IF;
 END $$;
-
 -- Add credits_used column to vendor_store_purchases
 ALTER TABLE vendor_store_purchases
 ADD COLUMN IF NOT EXISTS credits_used NUMERIC(10,2);
-
 -- Add index for credits_used queries
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_credits_used 
 ON vendor_store_purchases(credits_used) 
 WHERE credits_used IS NOT NULL;
-

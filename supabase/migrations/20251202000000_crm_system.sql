@@ -12,7 +12,6 @@ BEGIN
     CREATE TYPE crm_platform AS ENUM ('email', 'instagram');
   END IF;
 END $$;
-
 -- Conversation status enum
 DO $$
 BEGIN
@@ -20,7 +19,6 @@ BEGIN
     CREATE TYPE crm_conversation_status AS ENUM ('open', 'closed', 'pending');
   END IF;
 END $$;
-
 -- Message direction enum
 DO $$
 BEGIN
@@ -28,7 +26,6 @@ BEGIN
     CREATE TYPE crm_message_direction AS ENUM ('inbound', 'outbound');
   END IF;
 END $$;
-
 -- ============================================
 -- PART 2: Create crm_customers table
 -- ============================================
@@ -57,14 +54,12 @@ CREATE TABLE IF NOT EXISTS crm_customers (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for crm_customers
 CREATE INDEX IF NOT EXISTS idx_crm_customers_shopify_id ON crm_customers(shopify_customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_email ON crm_customers(email);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_instagram_id ON crm_customers(instagram_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_total_orders ON crm_customers(total_orders);
 CREATE INDEX IF NOT EXISTS idx_crm_customers_last_order_date ON crm_customers(last_order_date DESC);
-
 -- ============================================
 -- PART 3: Create crm_conversations table
 -- ============================================
@@ -78,13 +73,11 @@ CREATE TABLE IF NOT EXISTS crm_conversations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for crm_conversations
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_customer_id ON crm_conversations(customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_platform ON crm_conversations(platform);
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_status ON crm_conversations(status);
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_last_message_at ON crm_conversations(last_message_at DESC);
-
 -- ============================================
 -- PART 4: Create crm_messages table
 -- ============================================
@@ -98,13 +91,11 @@ CREATE TABLE IF NOT EXISTS crm_messages (
   metadata JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for crm_messages
 CREATE INDEX IF NOT EXISTS idx_crm_messages_conversation_id ON crm_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_direction ON crm_messages(direction);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_external_id ON crm_messages(external_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_created_at ON crm_messages(created_at DESC);
-
 -- ============================================
 -- PART 5: Create function to update updated_at timestamp
 -- ============================================
@@ -116,18 +107,15 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create triggers for updated_at
 CREATE TRIGGER update_crm_customers_updated_at
   BEFORE UPDATE ON crm_customers
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_conversations_updated_at
   BEFORE UPDATE ON crm_conversations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================
 -- PART 6: Create function to update conversation last_message_at
 -- ============================================
@@ -141,10 +129,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger to update last_message_at when a message is inserted
 CREATE TRIGGER update_conversation_last_message_at_trigger
   AFTER INSERT ON crm_messages
   FOR EACH ROW
   EXECUTE FUNCTION update_conversation_last_message_at();
-

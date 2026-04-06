@@ -12,12 +12,10 @@ BEGIN
     ADD COLUMN series_id UUID REFERENCES artwork_series(id) ON DELETE CASCADE;
   END IF;
 END $$;
-
 -- Create index on series_id for efficient queries
 CREATE INDEX IF NOT EXISTS idx_product_benefits_series_id 
 ON product_benefits(series_id) 
 WHERE series_id IS NOT NULL;
-
 -- Add hidden_series_id column for "Hidden Series" benefit type
 DO $$
 BEGIN
@@ -29,12 +27,10 @@ BEGIN
     ADD COLUMN hidden_series_id UUID REFERENCES artwork_series(id) ON DELETE SET NULL;
   END IF;
 END $$;
-
 -- Create index on hidden_series_id
 CREATE INDEX IF NOT EXISTS idx_product_benefits_hidden_series_id 
 ON product_benefits(hidden_series_id) 
 WHERE hidden_series_id IS NOT NULL;
-
 -- Add constraint to ensure either product_id OR series_id is provided (but not both)
 -- Note: product_id is currently NOT NULL, so we'll make it nullable and add a check constraint
 DO $$
@@ -63,4 +59,3 @@ BEGIN
     );
   END IF;
 END $$;
-

@@ -80,6 +80,10 @@ interface ArtworkInfoBarProps {
   onRotate?: () => void
   /** When true, hide title/artist (moved to header center on desktop) */
   hideTitle?: boolean
+  /** When true, do not push displayed product / gallery into the parent reel (collection landing). */
+  suppressReelSync?: boolean
+  /** When set, mobile hero title above Spline uses this instead of the active product title. */
+  heroTitleOverride?: string | null
   /** Slide index for gallery image at thumb idx 1 (second image). Idx 0 uses slide 1 (details). */
   gallerySlideOffset?: number
   /** When true, reel has edition status as slide 0; Spline is slide 1, details slide 2 */
@@ -100,6 +104,8 @@ export function ArtworkInfoBar({
   thumbnailPlacement = 'inline',
   onRotate,
   hideTitle = false,
+  suppressReelSync = false,
+  heroTitleOverride = null,
   gallerySlideOffset = 1,
   editionLeadBeforeSpline = false,
 }: ArtworkInfoBarProps) {
@@ -165,8 +171,9 @@ export function ArtworkInfoBar({
       : displayedProduct
 
   useEffect(() => {
+    if (suppressReelSync) return
     onDisplayedProductChange?.(productForImages ?? displayedProduct ?? null)
-  }, [displayedProduct, productForImages, onDisplayedProductChange])
+  }, [displayedProduct, productForImages, onDisplayedProductChange, suppressReelSync])
 
   const orderedImages = useMemo(
     () => getOrderedImages(productForImages),
@@ -178,8 +185,9 @@ export function ArtworkInfoBar({
   )
 
   useEffect(() => {
+    if (suppressReelSync) return
     onGalleryImagesChange?.(galleryImages)
-  }, [galleryImages, onGalleryImagesChange])
+  }, [galleryImages, onGalleryImagesChange, suppressReelSync])
 
   const [portalReady, setPortalReady] = useState(false)
   useLayoutEffect(() => {
@@ -197,8 +205,8 @@ export function ArtworkInfoBar({
     idx === 0 ? detailSlide : gallerySlideOffset + idx - 1
 
   const isLamp = displayedProduct?.id === lampProduct?.id
-  const title = displayedProduct.title ?? ''
-  const artist = isLamp ? '' : (displayedProduct.vendor ?? '')
+  const title = heroTitleOverride?.trim() ? heroTitleOverride.trim() : (displayedProduct.title ?? '')
+  const artist = heroTitleOverride ? '' : isLamp ? '' : (displayedProduct.vendor ?? '')
 
   /** First reel slide that shows an extra product photo (after details hero). */
   const firstGalleryImageSlide =
@@ -228,6 +236,29 @@ export function ArtworkInfoBar({
         {/* Row: artwork title and artist — desktop: hidden (header); mobile: hero slide only, centered above Spline */}
         {showMobileHeroTitle && (
         <div className="flex w-full min-w-0 max-w-[min(92vw,20rem)] flex-col items-center justify-center px-1">
+          {heroTitleOverride ? (
+            <div className="min-w-0 w-full text-center cursor-default">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="hero-title-override"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-0.5 min-w-0 text-center"
+                >
+                  <p
+                    className={cn(
+                      'text-sm font-semibold text-balance line-clamp-2',
+                      theme === 'light' ? 'text-neutral-900' : 'text-white'
+                    )}
+                  >
+                    {title}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          ) : (
           <button
             type="button"
             onClick={() => onViewDetail?.(displayedProduct)}
@@ -266,6 +297,7 @@ export function ArtworkInfoBar({
               </motion.div>
             </AnimatePresence>
           </button>
+          )}
         </div>
         )}
 

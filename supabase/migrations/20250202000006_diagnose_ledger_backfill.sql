@@ -22,7 +22,6 @@ LEFT JOIN product_vendor_payouts pvp
 WHERE 
   oli.vendor_name IS NOT NULL
   AND oli.fulfillment_status = 'fulfilled';
-
 -- Check 2: How many ledger entries exist for payouts?
 SELECT 
   'Ledger Payout Entries' as check_name,
@@ -33,7 +32,6 @@ FROM collector_ledger_entries
 WHERE 
   transaction_type = 'payout_earned'
   AND currency = 'USD';
-
 -- Check 3: Which line items are missing from the ledger?
 SELECT 
   oli.line_item_id,
@@ -65,7 +63,6 @@ WHERE
   AND oli.fulfillment_status = 'fulfilled'
 ORDER BY oli.vendor_name, oli.order_id
 LIMIT 20;
-
 -- Check 4: Do vendors have collector accounts?
 SELECT 
   v.vendor_name,
@@ -85,7 +82,6 @@ WHERE v.vendor_name IN (
     AND vendor_name IS NOT NULL
 )
 ORDER BY v.vendor_name;
-
 -- Check 5: What's the current USD balance for each vendor?
 SELECT 
   v.vendor_name,
@@ -124,4 +120,3 @@ WHERE v.vendor_name IN (
     AND vendor_name IS NOT NULL
 )
 ORDER BY v.vendor_name;
-

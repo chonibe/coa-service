@@ -14,11 +14,3 @@ BEGIN
     RETURN v_missing_count;
 END;
 $$ LANGUAGE plpgsql;
-
-
-
-
-
-
-
-

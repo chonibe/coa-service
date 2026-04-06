@@ -8,7 +8,6 @@ BEGIN
     CREATE TYPE product_submission_status AS ENUM ('pending', 'approved', 'rejected', 'published');
   END IF;
 END $$;
-
 -- Create vendor_product_submissions table
 CREATE TABLE IF NOT EXISTS vendor_product_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,7 +25,6 @@ CREATE TABLE IF NOT EXISTS vendor_product_submissions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create vendor_collections table for tracking vendor collections
 CREATE TABLE IF NOT EXISTS vendor_collections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,19 +37,16 @@ CREATE TABLE IF NOT EXISTS vendor_collections (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(vendor_id)
 );
-
 -- Create indexes for vendor_product_submissions
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_vendor_id ON vendor_product_submissions(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_vendor_name ON vendor_product_submissions(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_status ON vendor_product_submissions(status);
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_submitted_at ON vendor_product_submissions(submitted_at);
 CREATE INDEX IF NOT EXISTS idx_vendor_product_submissions_shopify_product_id ON vendor_product_submissions(shopify_product_id) WHERE shopify_product_id IS NOT NULL;
-
 -- Create indexes for vendor_collections
 CREATE INDEX IF NOT EXISTS idx_vendor_collections_vendor_id ON vendor_collections(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_vendor_collections_vendor_name ON vendor_collections(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_vendor_collections_shopify_collection_id ON vendor_collections(shopify_collection_id) WHERE shopify_collection_id IS NOT NULL;
-
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_vendor_product_submissions_updated_at()
 RETURNS TRIGGER AS $$
@@ -60,7 +55,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION update_vendor_collections_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -68,20 +62,17 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create triggers for updated_at
 DROP TRIGGER IF EXISTS trigger_update_vendor_product_submissions_updated_at ON vendor_product_submissions;
 CREATE TRIGGER trigger_update_vendor_product_submissions_updated_at
   BEFORE UPDATE ON vendor_product_submissions
   FOR EACH ROW
   EXECUTE FUNCTION update_vendor_product_submissions_updated_at();
-
 DROP TRIGGER IF EXISTS trigger_update_vendor_collections_updated_at ON vendor_collections;
 CREATE TRIGGER trigger_update_vendor_collections_updated_at
   BEFORE UPDATE ON vendor_collections
   FOR EACH ROW
   EXECUTE FUNCTION update_vendor_collections_updated_at();
-
 -- Add RLS policies
 DO $$
 BEGIN
@@ -115,4 +106,3 @@ BEGIN
       WITH CHECK (true);
   END IF;
 END $$;
-

@@ -39,33 +39,27 @@ CREATE TABLE IF NOT EXISTS collector_notifications (
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON collector_notifications(recipient_email, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON collector_notifications(recipient_email, is_read, is_dismissed) WHERE is_read = false AND is_dismissed = false;
 CREATE INDEX IF NOT EXISTS idx_notifications_product ON collector_notifications(product_id);
-
 -- RLS
 ALTER TABLE collector_notifications ENABLE ROW LEVEL SECURITY;
-
 -- Collectors can only see their own notifications
 CREATE POLICY "Collectors can view own notifications"
   ON collector_notifications
   FOR SELECT
   USING (recipient_email = auth.jwt() ->> 'email');
-
 -- System can create notifications (will be done via service role)
 CREATE POLICY "System can create notifications"
   ON collector_notifications
   FOR INSERT
   WITH CHECK (true);
-
 -- Collectors can update their own (read, dismiss)
 CREATE POLICY "Collectors can update own notifications"
   ON collector_notifications
   FOR UPDATE
   USING (recipient_email = auth.jwt() ->> 'email');
-
 -- Function to create notification when artist replies
 CREATE OR REPLACE FUNCTION create_artist_reply_notification()
 RETURNS TRIGGER AS $$
@@ -117,11 +111,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Trigger for artist reply notifications
 CREATE TRIGGER on_artist_reply_create_notification
   AFTER INSERT ON artwork_story_posts
   FOR EACH ROW
   EXECUTE FUNCTION create_artist_reply_notification();
-
 COMMENT ON TABLE collector_notifications IS 'Push/in-app notifications for collectors';

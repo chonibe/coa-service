@@ -12,7 +12,6 @@ BEGIN
     ADD COLUMN release_date TIMESTAMP WITH TIME ZONE;
   END IF;
 END $$;
-
 -- Add genre_tags to artwork_series
 DO $$
 BEGIN
@@ -24,7 +23,6 @@ BEGIN
     ADD COLUMN genre_tags JSONB DEFAULT '[]'::jsonb;
   END IF;
 END $$;
-
 -- Add unlock_progress tracking to artwork_series
 DO $$
 BEGIN
@@ -36,7 +34,6 @@ BEGIN
     ADD COLUMN unlock_progress JSONB DEFAULT '{}'::jsonb;
   END IF;
 END $$;
-
 -- Add unlock_milestones to artwork_series
 DO $$
 BEGIN
@@ -48,10 +45,7 @@ BEGIN
     ADD COLUMN unlock_milestones JSONB DEFAULT '[]'::jsonb;
   END IF;
 END $$;
-
 -- Create index for release_date for sorting
 CREATE INDEX IF NOT EXISTS idx_artwork_series_release_date ON artwork_series(release_date) WHERE release_date IS NOT NULL;
-
 -- Create index for genre_tags for filtering
 CREATE INDEX IF NOT EXISTS idx_artwork_series_genre_tags ON artwork_series USING GIN (genre_tags);
-

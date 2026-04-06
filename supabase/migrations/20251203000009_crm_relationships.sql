@@ -17,19 +17,15 @@ CREATE TABLE IF NOT EXISTS crm_relationships (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(object_a_type, object_a_attribute_id, object_b_type, object_b_attribute_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_relationships_object_a ON crm_relationships(object_a_type, object_a_attribute_id);
 CREATE INDEX IF NOT EXISTS idx_crm_relationships_object_b ON crm_relationships(object_b_type, object_b_attribute_id);
-
 -- ============================================
 -- PART 2: Add relationship_id to custom_fields
 -- ============================================
 
 ALTER TABLE crm_custom_fields
   ADD COLUMN IF NOT EXISTS relationship_id UUID REFERENCES crm_relationships(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_relationship ON crm_custom_fields(relationship_id);
-
 -- ============================================
 -- PART 3: Bidirectional Update Function
 -- ============================================
@@ -102,7 +98,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 4: Trigger to Sync Relationship Updates
 -- ============================================
@@ -185,13 +180,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER sync_relationship_on_field_value_change
   AFTER INSERT OR UPDATE ON crm_custom_field_values
   FOR EACH ROW
   WHEN (NEW.field_value IS NOT NULL)
   EXECUTE FUNCTION trigger_sync_relationship();
-
 -- ============================================
 -- PART 5: Update Trigger
 -- ============================================
@@ -203,9 +196,7 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_relationships_updated_at
   BEFORE UPDATE ON crm_relationships
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_relationships_updated_at();
-

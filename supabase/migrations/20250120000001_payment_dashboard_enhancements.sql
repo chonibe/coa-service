@@ -32,7 +32,6 @@ BEGIN
     WHERE frequency IS NULL;
   END IF;
 END $$;
-
 -- Create payout_disputes table
 CREATE TABLE IF NOT EXISTS payout_disputes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -47,13 +46,11 @@ CREATE TABLE IF NOT EXISTS payout_disputes (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes for payout_disputes
 CREATE INDEX IF NOT EXISTS idx_payout_disputes_vendor ON payout_disputes(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_payout_disputes_status ON payout_disputes(status);
 CREATE INDEX IF NOT EXISTS idx_payout_disputes_payout_id ON payout_disputes(payout_id);
 CREATE INDEX IF NOT EXISTS idx_payout_disputes_priority ON payout_disputes(priority) WHERE status != 'closed';
-
 -- Create payout_dispute_comments table
 CREATE TABLE IF NOT EXISTS payout_dispute_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,11 +60,9 @@ CREATE TABLE IF NOT EXISTS payout_dispute_comments (
   is_internal BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes for payout_dispute_comments
 CREATE INDEX IF NOT EXISTS idx_payout_dispute_comments_dispute ON payout_dispute_comments(dispute_id);
 CREATE INDEX IF NOT EXISTS idx_payout_dispute_comments_created ON payout_dispute_comments(created_at);
-
 -- Add RLS policies if RLS is enabled
 -- Note: Authentication is handled at the application level via API guards
 -- RLS is enabled for security but policies allow access - app layer enforces authorization
@@ -104,4 +99,3 @@ BEGIN
       WITH CHECK (true);
   END IF;
 END $$;
-

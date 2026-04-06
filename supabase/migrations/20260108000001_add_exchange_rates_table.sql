@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(from_currency, to_currency)
 );
-
 -- Seed with current conservative values
 INSERT INTO exchange_rates (from_currency, to_currency, rate)
 VALUES 
@@ -18,5 +17,3 @@ VALUES
   ('ILS', 'USD', 0.27)
 ON CONFLICT (from_currency, to_currency) 
 DO UPDATE SET rate = EXCLUDED.rate, last_updated = NOW();
-
-

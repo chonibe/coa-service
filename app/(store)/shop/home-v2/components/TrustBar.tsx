@@ -1,7 +1,9 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 function TrustIcon({ kind }: { kind: 'check' | 'shield' | 'return' | 'clock' }) {
   const common = { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none' as const, stroke: 'currentColor', strokeWidth: 2 }
@@ -38,9 +40,10 @@ function TrustIcon({ kind }: { kind: 'check' | 'shield' | 'return' | 'clock' }) 
 export function TrustBar() {
   const items = homeV2LandingContent.trust
   const icons: Array<'check' | 'shield' | 'return' | 'clock'> = ['check', 'shield', 'return', 'clock']
+  const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -5% 0px' })
 
   return (
-    <div className={styles.trust} role="region" aria-label="Trust">
+    <div ref={reveal.ref} className={cn(styles.trust, reveal.className)} role="region" aria-label="Trust">
       {items.map((text, idx) => (
         <div className={styles.trustItem} key={`${text}-${idx}`}>
           <TrustIcon kind={icons[idx] ?? 'check'} />

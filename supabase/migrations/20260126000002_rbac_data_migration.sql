@@ -4,7 +4,6 @@
 -- Date: 2026-01-26
 
 BEGIN;
-
 -- ============================================
 -- 1. Migrate Admins from admin_accounts
 -- ============================================
@@ -27,7 +26,6 @@ WHERE aa.auth_id IS NOT NULL
     SELECT 1 FROM public.user_roles ur
     WHERE ur.user_id = aa.auth_id AND ur.role = 'admin'
   );
-
 -- Log migration
 DO $$
 DECLARE
@@ -39,7 +37,6 @@ BEGIN
   
   RAISE NOTICE 'Migrated % admin roles from admin_accounts', admin_count;
 END $$;
-
 -- ============================================
 -- 2. Migrate Vendors from vendor_users
 -- ============================================
@@ -65,7 +62,6 @@ WHERE vu.auth_id IS NOT NULL
     SELECT 1 FROM public.user_roles ur
     WHERE ur.user_id = vu.auth_id AND ur.role = 'vendor'
   );
-
 -- Log migration
 DO $$
 DECLARE
@@ -77,7 +73,6 @@ BEGIN
   
   RAISE NOTICE 'Migrated % vendor roles from vendor_users', vendor_count;
 END $$;
-
 -- ============================================
 -- 3. Migrate Collectors from collector_profiles
 -- ============================================
@@ -103,7 +98,6 @@ WHERE cp.user_id IS NOT NULL
     SELECT 1 FROM public.user_roles ur
     WHERE ur.user_id = cp.user_id AND ur.role = 'collector'
   );
-
 -- Log migration
 DO $$
 DECLARE
@@ -115,7 +109,6 @@ BEGIN
   
   RAISE NOTICE 'Migrated % collector roles from collector_profiles', collector_count;
 END $$;
-
 -- ============================================
 -- 4. Migrate Collectors from orders (users who purchased but have no profile)
 -- ============================================
@@ -145,7 +138,6 @@ WHERE o.customer_id IS NOT NULL
   -- And if customer_id looks like a valid UUID
   AND o.customer_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 GROUP BY o.customer_id, o.customer_email;
-
 -- Log migration
 DO $$
 DECLARE
@@ -157,7 +149,6 @@ BEGIN
   
   RAISE NOTICE 'Migrated % collector roles from orders table', order_collector_count;
 END $$;
-
 -- ============================================
 -- 5. Handle users with vendor.auth_id (legacy)
 -- ============================================
@@ -186,7 +177,6 @@ WHERE v.auth_id IS NOT NULL
     SELECT 1 FROM public.user_roles ur
     WHERE ur.user_id = v.auth_id AND ur.role = 'vendor'
   );
-
 -- Log migration
 DO $$
 DECLARE
@@ -198,7 +188,6 @@ BEGIN
   
   RAISE NOTICE 'Migrated % legacy vendor roles from vendors.auth_id', legacy_vendor_count;
 END $$;
-
 -- ============================================
 -- 6. Final Migration Summary
 -- ============================================
@@ -236,7 +225,6 @@ BEGIN
   RAISE NOTICE 'Users with multiple roles: %', multi_role_users;
   RAISE NOTICE '================================';
 END $$;
-
 -- ============================================
 -- 7. Create index for migration audit
 -- ============================================
@@ -244,8 +232,6 @@ END $$;
 -- Add index for querying migrated data by source
 CREATE INDEX IF NOT EXISTS idx_user_roles_migration_source 
   ON public.user_roles ((metadata->>'source'));
-
 COMMENT ON INDEX idx_user_roles_migration_source IS 
   'Index for querying user_roles by migration source (admin_accounts, vendor_users, collector_profiles, orders)';
-
 COMMIT;

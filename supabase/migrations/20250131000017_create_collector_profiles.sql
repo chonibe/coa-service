@@ -13,14 +13,11 @@ CREATE TABLE IF NOT EXISTS "public"."collector_profiles" (
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- Indexes for fast lookups
 CREATE INDEX IF NOT EXISTS idx_collector_profiles_user_id ON "public"."collector_profiles"("user_id");
 CREATE INDEX IF NOT EXISTS idx_collector_profiles_email ON "public"."collector_profiles"("email");
-
 -- Add comment
 COMMENT ON TABLE "public"."collector_profiles" IS 'User-managed collector profile information. Users can update their preferred names and details while preserving purchase history.';
-
 -- Migration: Create Profile Change History Table
 -- Immutable log of all profile changes
 
@@ -35,15 +32,12 @@ CREATE TABLE IF NOT EXISTS "public"."collector_profile_changes" (
     "reason" TEXT, -- Optional reason for change
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- Indexes for the change history
 CREATE INDEX IF NOT EXISTS idx_profile_changes_profile_id ON "public"."collector_profile_changes"("profile_id");
 CREATE INDEX IF NOT EXISTS idx_profile_changes_user_id ON "public"."collector_profile_changes"("user_id");
 CREATE INDEX IF NOT EXISTS idx_profile_changes_created_at ON "public"."collector_profile_changes"("created_at" DESC);
-
 -- Add comment
 COMMENT ON TABLE "public"."collector_profile_changes" IS 'Immutable audit log of all collector profile changes. Preserves the history of name and detail updates.';
-
 -- Create trigger to prevent updates to profile_changes
 CREATE OR REPLACE FUNCTION protect_profile_change_immutability()
 RETURNS TRIGGER AS $$
@@ -56,12 +50,10 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trg_protect_profile_change_immutability ON collector_profile_changes;
 CREATE TRIGGER trg_protect_profile_change_immutability
 BEFORE UPDATE OR DELETE ON collector_profile_changes
 FOR EACH ROW EXECUTE FUNCTION protect_profile_change_immutability();
-
 -- Create trigger to log profile changes
 CREATE OR REPLACE FUNCTION log_profile_change()
 RETURNS TRIGGER AS $$
@@ -140,12 +132,10 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trg_log_profile_change ON collector_profiles;
 CREATE TRIGGER trg_log_profile_change
 AFTER INSERT OR UPDATE ON collector_profiles
 FOR EACH ROW EXECUTE FUNCTION log_profile_change();
-
 -- Create updated_at trigger
 CREATE OR REPLACE FUNCTION update_collector_profile_updated_at()
 RETURNS TRIGGER AS $$
@@ -154,11 +144,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trg_update_collector_profile_updated_at ON collector_profiles;
 CREATE TRIGGER trg_update_collector_profile_updated_at
 BEFORE UPDATE ON collector_profiles
 FOR EACH ROW EXECUTE FUNCTION update_collector_profile_updated_at();
-
-
-

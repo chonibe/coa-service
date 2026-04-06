@@ -36,22 +36,18 @@ CREATE TABLE IF NOT EXISTS artwork_story_posts (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_story_posts_product_id ON artwork_story_posts(product_id);
 CREATE INDEX IF NOT EXISTS idx_story_posts_author ON artwork_story_posts(author_type, author_id);
 CREATE INDEX IF NOT EXISTS idx_story_posts_parent ON artwork_story_posts(parent_post_id) WHERE parent_post_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_story_posts_created_at ON artwork_story_posts(product_id, created_at DESC);
-
 -- RLS Policies
 ALTER TABLE artwork_story_posts ENABLE ROW LEVEL SECURITY;
-
 -- Anyone can view visible posts
 CREATE POLICY "Anyone can view visible story posts"
   ON artwork_story_posts
   FOR SELECT
   USING (is_visible = true);
-
 -- Artists can create posts for their products
 CREATE POLICY "Artists can create story posts"
   ON artwork_story_posts
@@ -64,13 +60,11 @@ CREATE POLICY "Artists can create story posts"
       AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
-
 -- Collectors can create posts (will be verified at API level)
 CREATE POLICY "Collectors can create story posts"
   ON artwork_story_posts
   FOR INSERT
   WITH CHECK (author_type = 'collector');
-
 -- Authors can update their own posts
 CREATE POLICY "Authors can update own posts"
   ON artwork_story_posts
@@ -79,7 +73,6 @@ CREATE POLICY "Authors can update own posts"
     (author_type = 'artist' AND author_id = (auth.jwt() ->> 'email')) OR
     (author_type = 'collector' AND author_id = (auth.jwt() ->> 'email'))
   );
-
 -- Authors can delete their own posts
 CREATE POLICY "Authors can delete own posts"
   ON artwork_story_posts
@@ -88,7 +81,6 @@ CREATE POLICY "Authors can delete own posts"
     (author_type = 'artist' AND author_id = (auth.jwt() ->> 'email')) OR
     (author_type = 'collector' AND author_id = (auth.jwt() ->> 'email'))
   );
-
 -- Artists can moderate (hide) any posts on their products
 CREATE POLICY "Artists can moderate story posts"
   ON artwork_story_posts
@@ -100,7 +92,6 @@ CREATE POLICY "Artists can moderate story posts"
       AND p.vendor_name = (auth.jwt() ->> 'email')
     )
   );
-
 -- Update trigger
 CREATE OR REPLACE FUNCTION update_story_post_timestamp()
 RETURNS TRIGGER AS $$
@@ -109,12 +100,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER story_posts_updated_at
   BEFORE UPDATE ON artwork_story_posts
   FOR EACH ROW
   EXECUTE FUNCTION update_story_post_timestamp();
-
 -- Comments for documentation
 COMMENT ON TABLE artwork_story_posts IS 'Collaborative story timeline for artworks - artists and collectors contribute';
 COMMENT ON COLUMN artwork_story_posts.author_type IS 'Either artist (vendor) or collector';

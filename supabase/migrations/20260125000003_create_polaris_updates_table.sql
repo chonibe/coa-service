@@ -33,14 +33,11 @@ CREATE TABLE IF NOT EXISTS polaris_updates (
   -- Unique constraint to prevent duplicate updates
   UNIQUE(package_name, latest_version)
 );
-
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_polaris_updates_status ON polaris_updates(status);
 CREATE INDEX IF NOT EXISTS idx_polaris_updates_created_at ON polaris_updates(created_at DESC);
-
 -- Enable Row Level Security
 ALTER TABLE polaris_updates ENABLE ROW LEVEL SECURITY;
-
 -- Helper function to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin_user()
 RETURNS BOOLEAN AS $$
@@ -61,25 +58,21 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Policy: Admin users can view all updates
 CREATE POLICY "Admin users can view polaris updates"
   ON polaris_updates
   FOR SELECT
   USING (is_admin_user());
-
 -- Policy: Admin users can insert updates (for automated checks)
 CREATE POLICY "Admin users can create polaris updates"
   ON polaris_updates
   FOR INSERT
   WITH CHECK (is_admin_user());
-
 -- Policy: Admin users can update status
 CREATE POLICY "Admin users can update polaris updates"
   ON polaris_updates
   FOR UPDATE
   USING (is_admin_user());
-
 -- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_polaris_updates_updated_at()
 RETURNS TRIGGER AS $$
@@ -88,12 +81,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_polaris_updates_timestamp
   BEFORE UPDATE ON polaris_updates
   FOR EACH ROW
   EXECUTE FUNCTION update_polaris_updates_updated_at();
-
 -- Comments for documentation
 COMMENT ON TABLE polaris_updates IS 'Tracks available Polaris package updates for admin approval';
 COMMENT ON COLUMN polaris_updates.package_name IS 'Name of the Polaris package (e.g., @shopify/polaris)';

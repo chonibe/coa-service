@@ -76,7 +76,6 @@ BEGIN
   END CASE;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 3: Helper function to format attribute value for display
 -- ============================================
@@ -151,17 +150,14 @@ BEGIN
   END CASE;
 END;
 $$ LANGUAGE plpgsql;
-
 -- ============================================
 -- PART 4: Comments for documentation
 -- ============================================
 
 COMMENT ON FUNCTION validate_attribute_value IS
 'Validates attribute values based on their field type. Returns true if value structure is valid.';
-
 COMMENT ON FUNCTION format_attribute_value_for_display IS
 'Formats attribute values for human-readable display based on their field type.';
-
 -- ============================================
 -- PART 5: Example configurations for each type
 -- ============================================
@@ -214,6 +210,4 @@ COMMENT ON FUNCTION format_attribute_value_for_display IS
 --   "full_name": "John Doe",
 --   "prefix": "Dr.",
 --   "suffix": "Jr."
--- }
-
-
+-- };

@@ -38,6 +38,23 @@ export function buildArtistOgTitle(name: string): string {
   return `${name} — Limited edition prints | ${BRAND}`
 }
 
+/** Experience /shop/experience* pages with ?artist= — never use internal “Experience V2” labels in SERP/social. */
+export function buildExperienceArtistTitles(
+  name: string,
+  opts?: { earlyAccess?: boolean }
+): { title: string; openGraphTitle: string } {
+  if (opts?.earlyAccess) {
+    return {
+      title: truncate(`Early access — ${name} | ${BRAND}`, MAX_TITLE),
+      openGraphTitle: `Early access — ${name} — Limited edition prints | ${BRAND}`,
+    }
+  }
+  return {
+    title: buildArtistTitle(name),
+    openGraphTitle: buildArtistOgTitle(name),
+  }
+}
+
 export function buildArtistH1(name: string): string {
   return name
 }

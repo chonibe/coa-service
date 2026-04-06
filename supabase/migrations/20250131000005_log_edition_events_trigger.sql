@@ -101,7 +101,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger on INSERT and UPDATE
 DROP TRIGGER IF EXISTS trg_log_edition_events ON order_line_items_v2;
 CREATE TRIGGER trg_log_edition_events
@@ -109,8 +108,6 @@ AFTER INSERT OR UPDATE ON order_line_items_v2
 FOR EACH ROW
 WHEN (NEW.edition_number IS NOT NULL)
 EXECUTE FUNCTION log_edition_event();
-
 -- Add comment
 COMMENT ON FUNCTION log_edition_event() IS 'Automatically logs edition events to edition_events table when changes occur in order_line_items_v2.';
 COMMENT ON TRIGGER trg_log_edition_events ON order_line_items_v2 IS 'Triggers event logging when edition-related fields change in order_line_items_v2.';
-

@@ -3,7 +3,6 @@
 -- Date: 2026-01-07 (earlier timestamp to run first)
 
 BEGIN;
-
 -- Mark all missing migrations as applied (they exist in remote but not in history)
 -- Using ON CONFLICT to handle duplicates gracefully
 -- Note: statements column is text[], so we use '{}' for empty array
@@ -44,5 +43,4 @@ VALUES
   ('20260125000002', 'add_smart_collection_support', '{}'),
   ('20260125', 'create_polaris_updates_table', '{}')
 ON CONFLICT (version) DO NOTHING;
-
 COMMIT;

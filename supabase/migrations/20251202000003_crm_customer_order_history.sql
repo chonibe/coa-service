@@ -17,10 +17,8 @@ CREATE TABLE IF NOT EXISTS crm_customer_orders (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(customer_id, order_id, order_source)
 );
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_crm_customer_orders_customer_id ON crm_customer_orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customer_orders_order_id ON crm_customer_orders(order_id);
 CREATE INDEX IF NOT EXISTS idx_crm_customer_orders_order_date ON crm_customer_orders(order_date DESC);
 CREATE INDEX IF NOT EXISTS idx_crm_customer_orders_order_source ON crm_customer_orders(order_source);
-

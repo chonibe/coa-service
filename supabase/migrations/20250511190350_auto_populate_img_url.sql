@@ -13,10 +13,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create a trigger to run the function after insert
 DROP TRIGGER IF EXISTS auto_populate_img_url ON order_line_items_v2;
 CREATE TRIGGER auto_populate_img_url
     AFTER INSERT ON order_line_items_v2
     FOR EACH ROW
-    EXECUTE FUNCTION populate_img_url(); 
+    EXECUTE FUNCTION populate_img_url();

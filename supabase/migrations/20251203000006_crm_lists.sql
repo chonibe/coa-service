@@ -17,11 +17,9 @@ CREATE TABLE IF NOT EXISTS crm_lists (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_lists_object_type ON crm_lists(object_type);
 CREATE INDEX IF NOT EXISTS idx_crm_lists_created_by ON crm_lists(created_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_crm_lists_is_system ON crm_lists(is_system);
-
 -- ============================================
 -- PART 2: List Entries Table
 -- ============================================
@@ -36,11 +34,9 @@ CREATE TABLE IF NOT EXISTS crm_list_entries (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(list_id, record_id, record_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_list_entries_list_id ON crm_list_entries(list_id);
 CREATE INDEX IF NOT EXISTS idx_crm_list_entries_record ON crm_list_entries(record_type, record_id);
 CREATE INDEX IF NOT EXISTS idx_crm_list_entries_position ON crm_list_entries(list_id, position);
-
 -- ============================================
 -- PART 3: List Attributes Table
 -- ============================================
@@ -59,10 +55,8 @@ CREATE TABLE IF NOT EXISTS crm_list_attributes (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(list_id, field_name)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_list_attributes_list_id ON crm_list_attributes(list_id);
 CREATE INDEX IF NOT EXISTS idx_crm_list_attributes_display_order ON crm_list_attributes(list_id, display_order);
-
 -- ============================================
 -- PART 4: List Entry Attribute Values Table
 -- ============================================
@@ -79,11 +73,9 @@ CREATE TABLE IF NOT EXISTS crm_list_entry_attribute_values (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(entry_id, attribute_id, active_from)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_list_entry_attr_values_entry ON crm_list_entry_attribute_values(entry_id);
 CREATE INDEX IF NOT EXISTS idx_crm_list_entry_attr_values_attr ON crm_list_entry_attribute_values(attribute_id);
 CREATE INDEX IF NOT EXISTS idx_crm_list_entry_attr_values_active ON crm_list_entry_attribute_values(entry_id, attribute_id, active_from);
-
 -- ============================================
 -- PART 5: Update Triggers
 -- ============================================
@@ -95,27 +87,22 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_lists_updated_at
   BEFORE UPDATE ON crm_lists
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_lists_updated_at();
-
 CREATE TRIGGER update_crm_list_entries_updated_at
   BEFORE UPDATE ON crm_list_entries
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_lists_updated_at();
-
 CREATE TRIGGER update_crm_list_attributes_updated_at
   BEFORE UPDATE ON crm_list_attributes
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_lists_updated_at();
-
 CREATE TRIGGER update_crm_list_entry_attr_values_updated_at
   BEFORE UPDATE ON crm_list_entry_attribute_values
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_lists_updated_at();
-
 -- ============================================
 -- PART 6: Helper Functions
 -- ============================================
@@ -144,4 +131,3 @@ BEGIN
   LIMIT 1;
 END;
 $$ LANGUAGE plpgsql;
-

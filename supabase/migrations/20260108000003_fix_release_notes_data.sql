@@ -9,7 +9,6 @@ SET
   impact_level = 'low',
   is_breaking = false
 WHERE title = 'Vercel AI Gateway Integration';
-
 -- Update the Vendor Dashboard Hardening record
 UPDATE public.platform_updates
 SET
@@ -18,7 +17,6 @@ SET
   impact_level = 'medium',
   is_breaking = false
 WHERE title = 'Vendor Dashboard Hardening';
-
 -- Update the Admin Portal UX Refresh record
 UPDATE public.platform_updates
 SET
@@ -27,7 +25,6 @@ SET
   impact_level = 'medium',
   is_breaking = false
 WHERE title = 'Admin Portal UX Refresh';
-
 -- Update the ChinaDivision Auto-Fulfillment record
 UPDATE public.platform_updates
 SET
@@ -36,7 +33,6 @@ SET
   impact_level = 'high',
   is_breaking = false
 WHERE title = 'ChinaDivision Auto-Fulfillment';
-
 -- Update the Collector dashboard launch record
 UPDATE public.platform_updates
 SET
@@ -45,7 +41,6 @@ SET
   impact_level = 'high',
   is_breaking = false
 WHERE title = 'Collector dashboard launch';
-
 -- Update the CRM Apollo foundations record
 UPDATE public.platform_updates
 SET
@@ -54,7 +49,6 @@ SET
   impact_level = 'high',
   is_breaking = false
 WHERE title = 'CRM Apollo foundations';
-
 -- Update the NFC unlock flow record
 UPDATE public.platform_updates
 SET
@@ -63,7 +57,6 @@ SET
   impact_level = 'critical',
   is_breaking = false
 WHERE title = 'NFC unlock flow + NTAG424 signing';
-
 -- Update the Marketplace Reliability record
 UPDATE public.platform_updates
 SET
@@ -72,7 +65,6 @@ SET
   impact_level = 'medium',
   is_breaking = false
 WHERE title = 'Collector vendor profile fix';
-
 -- Update the Historical Price Correction record
 UPDATE public.platform_updates
 SET

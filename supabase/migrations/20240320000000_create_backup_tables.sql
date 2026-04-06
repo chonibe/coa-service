@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS backup_settings (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- Create backups table
 CREATE TABLE IF NOT EXISTS backups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -21,11 +20,9 @@ CREATE TABLE IF NOT EXISTS backups (
   error TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- Create RLS policies
 ALTER TABLE backup_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
-
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Allow authenticated users to read backup settings" ON backup_settings;
 DROP POLICY IF EXISTS "Allow authenticated users to update backup settings" ON backup_settings;
@@ -33,7 +30,6 @@ DROP POLICY IF EXISTS "Allow authenticated users to insert backup settings" ON b
 DROP POLICY IF EXISTS "Allow authenticated users to read backups" ON backups;
 DROP POLICY IF EXISTS "Allow authenticated users to insert backups" ON backups;
 DROP POLICY IF EXISTS "Allow authenticated users to delete backups" ON backups;
-
 -- Create new policies with proper permissions
 DROP POLICY IF EXISTS "Enable all access for authenticated users on backup_settings" ON backup_settings;
 CREATE POLICY "Enable all access for authenticated users on backup_settings"
@@ -42,7 +38,6 @@ CREATE POLICY "Enable all access for authenticated users on backup_settings"
   TO authenticated
   USING (true)
   WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Enable all access for authenticated users on backups" ON backups;
 CREATE POLICY "Enable all access for authenticated users on backups"
   ON backups
@@ -50,15 +45,12 @@ CREATE POLICY "Enable all access for authenticated users on backups"
   TO authenticated
   USING (true)
   WITH CHECK (true);
-
 -- Grant service role permissions to bypass RLS
 ALTER TABLE backup_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE backups FORCE ROW LEVEL SECURITY;
-
 GRANT ALL ON backup_settings TO service_role;
 GRANT ALL ON backups TO service_role;
-
 -- Insert default settings if table is empty
 INSERT INTO backup_settings (id, google_drive_enabled, retention_days, max_backups, schedule_database, schedule_sheets)
 SELECT 1, true, 30, 10, '0 0 * * *', '0 1 * * *'
-WHERE NOT EXISTS (SELECT 1 FROM backup_settings WHERE id = 1); 
+WHERE NOT EXISTS (SELECT 1 FROM backup_settings WHERE id = 1);

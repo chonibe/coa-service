@@ -14,27 +14,22 @@ ADD COLUMN IF NOT EXISTS current_period_start timestamptz,
 ADD COLUMN IF NOT EXISTS current_period_end timestamptz,
 ADD COLUMN IF NOT EXISTS cancel_at_period_end boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS cancelled_at timestamptz;
-
 -- Index for Stripe subscription lookups
 CREATE INDEX IF NOT EXISTS idx_collector_credit_subscriptions_stripe_sub_id 
   ON public.collector_credit_subscriptions(stripe_subscription_id) 
   WHERE stripe_subscription_id IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_collector_credit_subscriptions_stripe_customer 
   ON public.collector_credit_subscriptions(stripe_customer_id) 
   WHERE stripe_customer_id IS NOT NULL;
-
 -- ============================================
 -- 2. Add stripe_customer_id to collectors table
 -- ============================================
 
 ALTER TABLE public.collectors
 ADD COLUMN IF NOT EXISTS stripe_customer_id text UNIQUE;
-
 CREATE INDEX IF NOT EXISTS idx_collectors_stripe_customer 
   ON public.collectors(stripe_customer_id) 
   WHERE stripe_customer_id IS NOT NULL;
-
 -- ============================================
 -- 3. Add 'appreciation' to transaction type enum
 -- ============================================
@@ -49,7 +44,6 @@ BEGIN
     ALTER TYPE collector_transaction_type ADD VALUE IF NOT EXISTS 'appreciation';
   END IF;
 END $$;
-
 -- ============================================
 -- 4. Create checkout_sessions table for idempotency
 -- ============================================
@@ -79,27 +73,22 @@ CREATE TABLE IF NOT EXISTS public.checkout_sessions (
   completed_at timestamptz,
   expires_at timestamptz DEFAULT (now() + interval '24 hours')
 );
-
 CREATE INDEX IF NOT EXISTS idx_checkout_sessions_collector 
   ON public.checkout_sessions(collector_id);
 CREATE INDEX IF NOT EXISTS idx_checkout_sessions_session_id 
   ON public.checkout_sessions(session_id);
 CREATE INDEX IF NOT EXISTS idx_checkout_sessions_status 
   ON public.checkout_sessions(status) WHERE status = 'pending';
-
 -- Enable RLS
 ALTER TABLE public.checkout_sessions ENABLE ROW LEVEL SECURITY;
-
 -- Users can view their own checkout sessions
 CREATE POLICY "Users can view their own checkout sessions"
   ON public.checkout_sessions FOR SELECT
   USING (collector_identifier = auth.jwt() ->> 'email');
-
 -- Service role can manage all
 CREATE POLICY "Service role can manage checkout sessions"
   ON public.checkout_sessions FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
-
 -- ============================================
 -- 5. Create webhook_events table for idempotency
 -- ============================================
@@ -114,17 +103,14 @@ CREATE TABLE IF NOT EXISTS public.webhook_events (
   error text,
   created_at timestamptz DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id 
   ON public.webhook_events(event_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_processed 
   ON public.webhook_events(processed) WHERE processed = false;
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created 
   ON public.webhook_events(created_at DESC);
-
 -- Enable RLS (admin only)
 ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Admins can view webhook events"
   ON public.webhook_events FOR SELECT
   USING (
@@ -135,7 +121,6 @@ CREATE POLICY "Admins can view webhook events"
         AND ur.is_active = true
     )
   );
-
 -- ============================================
 -- 6. Create membership_analytics table
 -- ============================================
@@ -169,13 +154,10 @@ CREATE TABLE IF NOT EXISTS public.membership_analytics (
   
   UNIQUE(date)
 );
-
 CREATE INDEX IF NOT EXISTS idx_membership_analytics_date 
   ON public.membership_analytics(date DESC);
-
 -- Enable RLS (admin only)
 ALTER TABLE public.membership_analytics ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Admins can view membership analytics"
   ON public.membership_analytics FOR SELECT
   USING (
@@ -186,11 +168,9 @@ CREATE POLICY "Admins can view membership analytics"
         AND ur.is_active = true
     )
   );
-
 CREATE POLICY "Service role can manage membership analytics"
   ON public.membership_analytics FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
-
 -- ============================================
 -- 7. Add membership permissions to role_permissions
 -- ============================================
@@ -208,19 +188,16 @@ INSERT INTO public.role_permissions (role, permission, resource_type, descriptio
   ('admin', 'membership:admin', 'membership', 'Admin access to all membership features'),
   ('admin', 'credits:admin', 'credits', 'Admin access to credit operations (deposit, adjust)')
 ON CONFLICT (role, permission) DO NOTHING;
-
 -- ============================================
 -- 8. Add credit_source column to ledger entries
 -- ============================================
 
 ALTER TABLE public.collector_ledger_entries
 ADD COLUMN IF NOT EXISTS credit_source text CHECK (credit_source IN ('subscription', 'purchase', 'bonus', 'refund', 'adjustment', 'appreciation'));
-
 -- Update existing subscription deposits to have source
 UPDATE public.collector_ledger_entries
 SET credit_source = 'subscription'
 WHERE transaction_type = 'deposit' AND credit_source IS NULL;
-
 -- ============================================
 -- Comments for documentation
 -- ============================================
@@ -228,7 +205,6 @@ WHERE transaction_type = 'deposit' AND credit_source IS NULL;
 COMMENT ON TABLE public.checkout_sessions IS 'Tracks checkout sessions for idempotency and cart persistence';
 COMMENT ON TABLE public.webhook_events IS 'Stores processed webhook events for idempotency';
 COMMENT ON TABLE public.membership_analytics IS 'Daily aggregated membership and credit metrics';
-
 COMMENT ON COLUMN public.collector_credit_subscriptions.stripe_subscription_id IS 'Stripe subscription ID for this membership';
 COMMENT ON COLUMN public.collector_credit_subscriptions.current_period_end IS 'When the current billing period ends';
 COMMENT ON COLUMN public.collector_ledger_entries.credit_source IS 'Source of credits: subscription, purchase, bonus, refund, adjustment, appreciation';

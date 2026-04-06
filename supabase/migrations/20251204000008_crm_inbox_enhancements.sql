@@ -41,12 +41,10 @@ BEGIN
     ALTER TABLE crm_messages ADD COLUMN thread_order INTEGER DEFAULT 0;
   END IF;
 END $$;
-
 -- Create indexes for threading
 CREATE INDEX IF NOT EXISTS idx_crm_messages_thread_id ON crm_messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_parent_message_id ON crm_messages(parent_message_id);
 CREATE INDEX IF NOT EXISTS idx_crm_messages_thread_order ON crm_messages(thread_id, thread_order);
-
 -- ============================================
 -- PART 2: Tags System
 -- ============================================
@@ -61,7 +59,6 @@ CREATE TABLE IF NOT EXISTS crm_tags (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(name, workspace_id)
 );
-
 -- Create crm_conversation_tags junction table
 CREATE TABLE IF NOT EXISTS crm_conversation_tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -70,13 +67,11 @@ CREATE TABLE IF NOT EXISTS crm_conversation_tags (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(conversation_id, tag_id)
 );
-
 -- Create indexes for tags
 CREATE INDEX IF NOT EXISTS idx_crm_tags_name ON crm_tags(name);
 CREATE INDEX IF NOT EXISTS idx_crm_tags_workspace_id ON crm_tags(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conversation_tags_conversation_id ON crm_conversation_tags(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_crm_conversation_tags_tag_id ON crm_conversation_tags(tag_id);
-
 -- ============================================
 -- PART 3: Enrichment Data
 -- ============================================
@@ -91,10 +86,8 @@ BEGIN
     ALTER TABLE crm_customers ADD COLUMN enrichment_data JSONB DEFAULT '{}';
   END IF;
 END $$;
-
 -- Create index for enrichment data queries
 CREATE INDEX IF NOT EXISTS idx_crm_customers_enrichment_data ON crm_customers USING GIN (enrichment_data);
-
 -- ============================================
 -- PART 4: Conversation Enhancements
 -- ============================================
@@ -109,7 +102,6 @@ BEGIN
     ALTER TABLE crm_conversations ADD COLUMN is_starred BOOLEAN DEFAULT false;
   END IF;
 END $$;
-
 -- Add unread_count column to crm_conversations if it doesn't exist
 DO $$
 BEGIN
@@ -120,11 +112,9 @@ BEGIN
     ALTER TABLE crm_conversations ADD COLUMN unread_count INTEGER DEFAULT 0;
   END IF;
 END $$;
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_is_starred ON crm_conversations(is_starred);
 CREATE INDEX IF NOT EXISTS idx_crm_conversations_unread_count ON crm_conversations(unread_count);
-
 -- ============================================
 -- PART 5: Message Read Status
 -- ============================================
@@ -137,11 +127,9 @@ CREATE TABLE IF NOT EXISTS crm_message_reads (
   read_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(message_id, user_id)
 );
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_crm_message_reads_message_id ON crm_message_reads(message_id);
 CREATE INDEX IF NOT EXISTS idx_crm_message_reads_user_id ON crm_message_reads(user_id);
-
 -- ============================================
 -- PART 6: Functions for Threading
 -- ============================================
@@ -153,7 +141,6 @@ BEGIN
   RETURN gen_random_uuid();
 END;
 $$ LANGUAGE plpgsql;
-
 -- Function to calculate thread depth
 CREATE OR REPLACE FUNCTION calculate_thread_depth(p_message_id UUID)
 RETURNS INTEGER AS $$
@@ -175,7 +162,6 @@ BEGIN
   RETURN v_depth;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Function to update thread information
 CREATE OR REPLACE FUNCTION update_message_thread_info()
 RETURNS TRIGGER AS $$
@@ -215,14 +201,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger to update thread info on insert
 DROP TRIGGER IF EXISTS update_message_thread_info_trigger ON crm_messages;
 CREATE TRIGGER update_message_thread_info_trigger
   BEFORE INSERT ON crm_messages
   FOR EACH ROW
   EXECUTE FUNCTION update_message_thread_info();
-
 -- ============================================
 -- PART 7: Function to Update Unread Count
 -- ============================================
@@ -249,14 +233,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger to update unread count
 DROP TRIGGER IF EXISTS update_conversation_unread_count_trigger ON crm_messages;
 CREATE TRIGGER update_conversation_unread_count_trigger
   AFTER INSERT ON crm_messages
   FOR EACH ROW
   EXECUTE FUNCTION update_conversation_unread_count();
-
 -- ============================================
 -- PART 8: Migrate Existing Tags
 -- ============================================
@@ -298,7 +280,6 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Run migration (commented out - run manually after verifying)
 -- SELECT migrate_conversation_tags();
 
@@ -313,37 +294,27 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_tags_updated_at
   BEFORE UPDATE ON crm_tags
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_tags_updated_at();
-
 -- ============================================
 -- PART 10: Comments for Documentation
 -- ============================================
 
 COMMENT ON TABLE crm_tags IS
 'Tags that can be applied to conversations for organization and filtering';
-
 COMMENT ON TABLE crm_conversation_tags IS
 'Junction table linking conversations to tags';
-
 COMMENT ON COLUMN crm_messages.thread_id IS
 'UUID identifying the email thread this message belongs to';
-
 COMMENT ON COLUMN crm_messages.parent_message_id IS
 'Reference to the parent message in the thread hierarchy';
-
 COMMENT ON COLUMN crm_messages.thread_depth IS
 'Depth level in the thread tree (0 = root message)';
-
 COMMENT ON COLUMN crm_messages.thread_order IS
 'Order of message within thread (for sorting)';
-
 COMMENT ON COLUMN crm_customers.enrichment_data IS
 'JSONB object containing enriched data from AI/third-party sources';
-
 COMMENT ON TABLE crm_message_reads IS
 'Tracks which messages have been read by which users';
-

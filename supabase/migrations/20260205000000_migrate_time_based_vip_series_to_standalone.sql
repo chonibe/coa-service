@@ -17,7 +17,6 @@ WITH target_series AS (
 -- Step 2: Remove all members from these series
 DELETE FROM artwork_series_members
 WHERE series_id IN (SELECT id FROM target_series);
-
 -- Step 3: Clear series_id from vendor_product_submissions
 UPDATE vendor_product_submissions
 SET series_id = NULL
@@ -25,7 +24,6 @@ WHERE series_id IN (
   SELECT id FROM artwork_series
   WHERE unlock_type IN ('time_based', 'vip')
 );
-
 -- Step 4: Delete the empty series (optional - kept for record/debugging)
 -- Uncomment the line below if you want to fully delete these series
 -- DELETE FROM artwork_series WHERE unlock_type IN ('time_based', 'vip');
@@ -39,4 +37,4 @@ WHERE series_id IN (
 -- FROM artwork_series s
 -- LEFT JOIN artwork_series_members m ON s.id = m.series_id
 -- WHERE s.unlock_type IN ('time_based', 'vip')
--- GROUP BY s.id, s.name, s.unlock_type;
+-- GROUP BY s.id, s.name, s.unlock_type;;

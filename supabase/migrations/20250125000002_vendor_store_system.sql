@@ -9,7 +9,6 @@ BEGIN
     CREATE TYPE store_purchase_type AS ENUM ('lamp', 'proof_print');
   END IF;
 END $$;
-
 -- Create enum for payment method
 DO $$
 BEGIN
@@ -17,7 +16,6 @@ BEGIN
     CREATE TYPE store_payment_method AS ENUM ('payout_balance', 'external');
   END IF;
 END $$;
-
 -- Create enum for purchase status
 DO $$
 BEGIN
@@ -25,7 +23,6 @@ BEGIN
     CREATE TYPE store_purchase_status AS ENUM ('pending', 'processing', 'fulfilled', 'cancelled');
   END IF;
 END $$;
-
 -- Create vendor_store_purchases table
 CREATE TABLE IF NOT EXISTS vendor_store_purchases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,7 +43,6 @@ CREATE TABLE IF NOT EXISTS vendor_store_purchases (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create vendor_proof_prints table
 CREATE TABLE IF NOT EXISTS vendor_proof_prints (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,7 +56,6 @@ CREATE TABLE IF NOT EXISTS vendor_proof_prints (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(vendor_id, submission_id)
 );
-
 -- Create vendor_lamp_purchases table
 CREATE TABLE IF NOT EXISTS vendor_lamp_purchases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -72,12 +67,10 @@ CREATE TABLE IF NOT EXISTS vendor_lamp_purchases (
   purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Add columns to vendors table
 ALTER TABLE vendors
   ADD COLUMN IF NOT EXISTS has_used_lamp_discount BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS store_balance NUMERIC(10,2) DEFAULT 0;
-
 -- Update vendor_ledger_entries to include store_purchase entry type
 DO $$
 BEGIN
@@ -101,22 +94,18 @@ EXCEPTION
       ADD CONSTRAINT vendor_ledger_entries_entry_type_check 
       CHECK (entry_type IN ('payout', 'refund_deduction', 'adjustment', 'store_purchase'));
 END $$;
-
 -- Create indexes for vendor_store_purchases
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_vendor_id ON vendor_store_purchases(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_vendor_name ON vendor_store_purchases(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_status ON vendor_store_purchases(status);
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_created_at ON vendor_store_purchases(created_at);
 CREATE INDEX IF NOT EXISTS idx_vendor_store_purchases_submission_id ON vendor_store_purchases(artwork_submission_id);
-
 -- Create indexes for vendor_proof_prints
 CREATE INDEX IF NOT EXISTS idx_vendor_proof_prints_vendor_id ON vendor_proof_prints(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_vendor_proof_prints_submission_id ON vendor_proof_prints(submission_id);
-
 -- Create indexes for vendor_lamp_purchases
 CREATE INDEX IF NOT EXISTS idx_vendor_lamp_purchases_vendor_id ON vendor_lamp_purchases(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_vendor_lamp_purchases_vendor_name ON vendor_lamp_purchases(vendor_name);
-
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_vendor_store_purchases_updated_at()
 RETURNS TRIGGER AS $$
@@ -125,14 +114,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger for vendor_store_purchases
 DROP TRIGGER IF EXISTS trigger_update_vendor_store_purchases_updated_at ON vendor_store_purchases;
 CREATE TRIGGER trigger_update_vendor_store_purchases_updated_at
   BEFORE UPDATE ON vendor_store_purchases
   FOR EACH ROW
   EXECUTE FUNCTION update_vendor_store_purchases_updated_at();
-
 -- Create function to update vendor_proof_prints updated_at
 CREATE OR REPLACE FUNCTION update_vendor_proof_prints_updated_at()
 RETURNS TRIGGER AS $$
@@ -141,11 +128,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger for vendor_proof_prints
 DROP TRIGGER IF EXISTS trigger_update_vendor_proof_prints_updated_at ON vendor_proof_prints;
 CREATE TRIGGER trigger_update_vendor_proof_prints_updated_at
   BEFORE UPDATE ON vendor_proof_prints
   FOR EACH ROW
   EXECUTE FUNCTION update_vendor_proof_prints_updated_at();
-

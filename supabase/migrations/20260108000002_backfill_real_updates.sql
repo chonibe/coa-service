@@ -67,6 +67,3 @@ VALUES
   false, 
   'admin@streetcollector.com'
 );
-
-
-

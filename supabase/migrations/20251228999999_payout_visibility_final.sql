@@ -1,14 +1,11 @@
 -- Final Payout Visibility and Ledger Rebuild
 -- This combines everything: excluding restocked/cancelled, historical fix, and admin visibility
 BEGIN;
-
 -- 1. Temporarily disable the immutability trigger
 DROP TRIGGER IF EXISTS trg_protect_ledger_immutability ON collector_ledger_entries;
-
 -- 2. Clear all payout-related financial records
 DELETE FROM collector_ledger_entries 
 WHERE transaction_type IN ('payout_earned', 'payout_withdrawal');
-
 -- 3. REBUILD earnings with strict filters (only fulfilled AND not restocked)
 INSERT INTO collector_ledger_entries (
     collector_identifier,
@@ -54,7 +51,6 @@ WHERE oli.fulfillment_status = 'fulfilled'
 AND (oli.restocked IS FALSE OR oli.restocked IS NULL)
 AND (oli.status IS NULL OR oli.status != 'cancelled')
 AND LOWER(oli.vendor_name) NOT IN ('street collector', 'street-collector', 'streetcollector');
-
 -- 4. Update Functions (Drop first to handle return type changes)
 DROP FUNCTION IF EXISTS get_pending_vendor_payouts();
 CREATE OR REPLACE FUNCTION get_pending_vendor_payouts()
@@ -132,7 +128,6 @@ BEGIN
   WHERE v.vendor_name IS NOT NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 DROP FUNCTION IF EXISTS get_vendor_pending_line_items(TEXT);
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
@@ -186,7 +181,6 @@ BEGIN
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION get_vendor_payout_by_order(
   p_vendor_name TEXT,
   p_order_id TEXT DEFAULT NULL
@@ -294,10 +288,8 @@ BEGIN
   WHERE os.payout_amount > 0 OR os.paid_line_items > 0;
 END;
 $$ LANGUAGE plpgsql;
-
 -- 5. Re-install the immutability trigger
 CREATE TRIGGER trg_protect_ledger_immutability
 BEFORE UPDATE OR DELETE ON collector_ledger_entries
 FOR EACH ROW EXECUTE FUNCTION protect_ledger_immutability();
-
 COMMIT;

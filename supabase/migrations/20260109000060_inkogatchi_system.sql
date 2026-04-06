@@ -5,7 +5,6 @@
 ALTER TYPE collector_transaction_type ADD VALUE IF NOT EXISTS 'nfc_scan_reward';
 ALTER TYPE collector_transaction_type ADD VALUE IF NOT EXISTS 'series_completion_reward';
 ALTER TYPE collector_transaction_type ADD VALUE IF NOT EXISTS 'avatar_purchase';
-
 -- 2. Create avatar_items table
 CREATE TABLE IF NOT EXISTS public.avatar_items (
     id SERIAL PRIMARY KEY,
@@ -18,7 +17,6 @@ CREATE TABLE IF NOT EXISTS public.avatar_items (
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 -- 3. Create collector_avatars table
 CREATE TABLE IF NOT EXISTS public.collector_avatars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,7 +27,6 @@ CREATE TABLE IF NOT EXISTS public.collector_avatars (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id)
 );
-
 -- 4. Create collector_avatar_inventory table
 CREATE TABLE IF NOT EXISTS public.collector_avatar_inventory (
     id SERIAL PRIMARY KEY,
@@ -38,13 +35,11 @@ CREATE TABLE IF NOT EXISTS public.collector_avatar_inventory (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, item_id)
 );
-
 -- 5. Add triggers for updated_at
 CREATE TRIGGER update_collector_avatars_updated_at
     BEFORE UPDATE ON collector_avatars
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
-
 -- 6. Insert initial "Base" items for the Spray Can evolution stages
 -- These are the free evolution bases
 INSERT INTO public.avatar_items (type, name, asset_url, credit_cost, required_level)
@@ -54,7 +49,6 @@ VALUES
     ('base', 'Artist Can', '/assets/avatars/base_stage_3.svg', 0, 10),
     ('base', 'Legend Can', '/assets/avatars/base_stage_4.svg', 0, 20)
 ON CONFLICT DO NOTHING;
-
 -- 7. Insert some starting cosmetic items
 INSERT INTO public.avatar_items (type, name, asset_url, credit_cost, required_level)
 VALUES 
@@ -62,4 +56,3 @@ VALUES
     ('eyes', 'Cool Shades', '/assets/avatars/items/eyes_shades.svg', 250, 2),
     ('body', 'Gold Chain', '/assets/avatars/items/body_chain.svg', 500, 5)
 ON CONFLICT DO NOTHING;
-

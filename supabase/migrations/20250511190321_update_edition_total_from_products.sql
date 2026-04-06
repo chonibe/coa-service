@@ -1,6 +1,5 @@
 -- Drop the function if it exists
 DROP FUNCTION IF EXISTS assign_edition_numbers(TEXT);
-
 -- Recreate the function to use edition_size from products table
 CREATE FUNCTION assign_edition_numbers(p_product_id TEXT)
 RETURNS INTEGER
@@ -50,4 +49,4 @@ BEGIN
 
     RETURN edition_count;
 END;
-$$; 
+$$;

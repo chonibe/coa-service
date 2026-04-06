@@ -7,17 +7,18 @@
 
 ALTER TABLE crm_custom_fields
   ADD COLUMN IF NOT EXISTS is_enriched BOOLEAN DEFAULT false,
-  ADD COLUMN IF NOT EXISTS enrichment_source TEXT; -- e.g., 'attio', 'clearbit', 'manual'
+  ADD COLUMN IF NOT EXISTS enrichment_source TEXT;
+-- e.g., 'attio', 'clearbit', 'manual'
 
 CREATE INDEX IF NOT EXISTS idx_crm_custom_fields_is_enriched ON crm_custom_fields(is_enriched);
-
 -- ============================================
 -- PART 2: Status Workflow Support
 -- ============================================
 
 -- Add status workflow configuration to custom fields
 ALTER TABLE crm_custom_fields
-  ADD COLUMN IF NOT EXISTS status_workflow JSONB; -- Configuration for status transitions
+  ADD COLUMN IF NOT EXISTS status_workflow JSONB;
+-- Configuration for status transitions
 
 -- Example status_workflow structure:
 -- {
@@ -72,4 +73,3 @@ BEGIN
   RETURN true;
 END;
 $$ LANGUAGE plpgsql;
-

@@ -145,4 +145,3 @@ SELECT
 FROM contact_base cb
 LEFT JOIN auth.users u ON LOWER(u.email) = cb.email
 LEFT JOIN collector_profiles cp ON LOWER(cp.email) = cb.email;
-

@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS vendor_payout_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(payout_id, line_item_id)
 );
-
 -- Add manual payout tracking columns if they don't exist
 DO $$
 BEGIN
@@ -48,16 +47,10 @@ BEGIN
         ALTER TABLE vendor_payout_items ADD COLUMN payout_reference TEXT;
     END IF;
 END $$;
-
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS vendor_payout_items_line_item_idx ON vendor_payout_items(line_item_id);
 CREATE INDEX IF NOT EXISTS vendor_payout_items_payout_id_idx ON vendor_payout_items(payout_id);
 CREATE INDEX IF NOT EXISTS vendor_payout_items_order_id_idx ON vendor_payout_items(order_id);
 CREATE INDEX IF NOT EXISTS vendor_payout_items_manually_marked_idx ON vendor_payout_items(manually_marked_paid) WHERE manually_marked_paid = TRUE;
-
 -- Add comment to table
 COMMENT ON TABLE vendor_payout_items IS 'Tracks individual line items included in vendor payouts, with support for manual payout marking and audit trail';
-
-
-
-

@@ -19,10 +19,10 @@ describe('mergeShopifyCollectionBioWithResearch', () => {
     expect(mergeShopifyCollectionBioWithResearch(collection, story, undefined)).toBe(story)
   })
 
-  it('concatenates when collection and research differ', () => {
+  it('puts curated research before collection when both differ (shop UI reads bio from the start)', () => {
     expect(
       mergeShopifyCollectionBioWithResearch('Exclusive prints on Street Collector.', 'Born in Lisbon in 1990.', undefined)
-    ).toBe('Exclusive prints on Street Collector.\n\nBorn in Lisbon in 1990.')
+    ).toBe('Born in Lisbon in 1990.\n\nExclusive prints on Street Collector.')
   })
 
   it('strips HTML for dedup and returns single research block when equivalent', () => {

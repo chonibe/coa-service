@@ -28,11 +28,9 @@ CREATE TABLE IF NOT EXISTS crm_companies (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_companies_name ON crm_companies(name);
 CREATE INDEX IF NOT EXISTS idx_crm_companies_domain ON crm_companies(domain);
 CREATE INDEX IF NOT EXISTS idx_crm_companies_email ON crm_companies(email);
-
 -- ============================================
 -- PART 2: Link Customers to Companies
 -- ============================================
@@ -40,9 +38,7 @@ CREATE INDEX IF NOT EXISTS idx_crm_companies_email ON crm_companies(email);
 -- Add company_id to customers table
 ALTER TABLE crm_customers 
 ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES crm_companies(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_crm_customers_company_id ON crm_customers(company_id);
-
 -- ============================================
 -- PART 3: Triggers
 -- ============================================
@@ -51,7 +47,6 @@ CREATE TRIGGER update_crm_companies_updated_at
   BEFORE UPDATE ON crm_companies
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================
 -- PART 4: Function to Update Company Metrics
 -- ============================================
@@ -94,10 +89,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Trigger to update company metrics when customer is updated
 CREATE TRIGGER update_company_metrics_on_customer_update
   AFTER INSERT OR UPDATE ON crm_customers
   FOR EACH ROW
   EXECUTE FUNCTION update_company_metrics();
-

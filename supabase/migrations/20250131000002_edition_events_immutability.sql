@@ -15,13 +15,10 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger to protect edition_events from updates and deletes
 DROP TRIGGER IF EXISTS trg_protect_edition_events_immutability ON edition_events;
 CREATE TRIGGER trg_protect_edition_events_immutability
 BEFORE UPDATE OR DELETE ON edition_events
 FOR EACH ROW EXECUTE FUNCTION protect_ledger_immutability();
-
 -- Add comment
 COMMENT ON TRIGGER trg_protect_edition_events_immutability ON edition_events IS 'Prevents updates and deletes to edition_events table to ensure audit trail integrity.';
-

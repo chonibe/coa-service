@@ -8,14 +8,11 @@ CREATE TABLE IF NOT EXISTS vendor_balance_snapshots (
   snapshot_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 -- Create indexes for vendor_balance_snapshots
 CREATE INDEX IF NOT EXISTS idx_vendor_balance_snapshots_vendor_date 
 ON vendor_balance_snapshots(vendor_name, snapshot_date DESC);
-
 CREATE INDEX IF NOT EXISTS idx_vendor_balance_snapshots_date 
 ON vendor_balance_snapshots(snapshot_date DESC);
-
 -- Function to create a balance snapshot for a vendor
 CREATE OR REPLACE FUNCTION create_vendor_balance_snapshot(p_vendor_name TEXT)
 RETURNS void AS $$
@@ -74,11 +71,3 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql;
-
-
-
-
-
-
-
-

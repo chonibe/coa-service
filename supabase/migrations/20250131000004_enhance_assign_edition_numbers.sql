@@ -3,7 +3,6 @@
 -- Works with both pending (paid but unfulfilled) and fulfilled items
 
 DROP FUNCTION IF EXISTS assign_edition_numbers(TEXT);
-
 CREATE OR REPLACE FUNCTION assign_edition_numbers(p_product_id TEXT)
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -97,7 +96,5 @@ BEGIN
     RETURN edition_count;
 END;
 $$;
-
 -- Add comment
 COMMENT ON FUNCTION assign_edition_numbers(TEXT) IS 'Assigns sequential edition numbers to active line items for a product. Preserves edition numbers for authenticated items. Handles uniqueness constraint violations gracefully.';
-

@@ -130,7 +130,6 @@ BEGIN
   ORDER BY avt.amount DESC;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Update function to get vendor pending line items (exclude refunded items)
 CREATE OR REPLACE FUNCTION get_vendor_pending_line_items(p_vendor_name TEXT)
 RETURNS TABLE (
@@ -176,4 +175,3 @@ BEGIN
   ORDER BY oli.order_id, oli.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
-

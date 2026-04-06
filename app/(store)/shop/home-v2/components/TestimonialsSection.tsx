@@ -1,13 +1,20 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
 
 export function TestimonialsSection() {
   const { testimonials } = homeV2LandingContent
+  const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -6% 0px' })
 
   return (
-    <section className={styles.testimonialsSection} aria-label="Testimonials">
+    <section
+      ref={reveal.ref}
+      className={cn(styles.testimonialsSection, reveal.className)}
+      aria-label="Testimonials"
+    >
       <div className={styles.testimonialsHeader}>
         <div>
           <div className={styles.eyebrow}>{testimonials.eyebrow}</div>

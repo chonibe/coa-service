@@ -2,7 +2,6 @@
 ALTER TABLE "public"."order_line_items_v2" 
 ADD COLUMN IF NOT EXISTS "edition_number" INTEGER,
 ADD COLUMN IF NOT EXISTS "edition_total" INTEGER;
-
 -- Create a function to assign edition numbers for a product
 CREATE OR REPLACE FUNCTION assign_edition_numbers(product_id TEXT)
 RETURNS INTEGER
@@ -41,7 +40,6 @@ BEGIN
     RETURN edition_count;
 END;
 $$;
-
 -- Create a function to get the next available edition number for a product
 CREATE OR REPLACE FUNCTION get_next_edition_number(product_id TEXT)
 RETURNS INTEGER
@@ -60,7 +58,6 @@ BEGIN
     RETURN next_number;
 END;
 $$;
-
 -- Create a function to get the total editions for a product
 CREATE OR REPLACE FUNCTION get_total_editions(product_id TEXT)
 RETURNS INTEGER
@@ -78,4 +75,4 @@ BEGIN
 
     RETURN total;
 END;
-$$; 
+$$;

@@ -30,7 +30,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Create trigger AFTER INSERT and UPDATE
 -- This ensures the row exists before we try to assign edition numbers
 -- The assign_edition_numbers function will update the row with the edition number
@@ -40,8 +39,6 @@ AFTER INSERT OR UPDATE ON order_line_items_v2
 FOR EACH ROW
 WHEN (NEW.status = 'active' AND NEW.edition_number IS NULL AND NEW.product_id IS NOT NULL)
 EXECUTE FUNCTION auto_assign_edition_on_insert_or_update();
-
 -- Add comment
 COMMENT ON FUNCTION auto_assign_edition_on_insert_or_update() IS 'Automatically assigns edition numbers to line items when they become active and have no edition number.';
 COMMENT ON TRIGGER trg_auto_assign_edition ON order_line_items_v2 IS 'Triggers automatic edition number assignment when line items are inserted or updated with active status and no edition number.';
-

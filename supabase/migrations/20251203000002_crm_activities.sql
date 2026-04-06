@@ -24,7 +24,6 @@ BEGIN
     );
   END IF;
 END $$;
-
 -- ============================================
 -- PART 2: Activities Table
 -- ============================================
@@ -51,7 +50,6 @@ CREATE TABLE IF NOT EXISTS crm_activities (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_activities_customer_id ON crm_activities(customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_activities_company_id ON crm_activities(company_id);
 CREATE INDEX IF NOT EXISTS idx_crm_activities_conversation_id ON crm_activities(conversation_id);
@@ -62,7 +60,6 @@ CREATE INDEX IF NOT EXISTS idx_crm_activities_assigned_to ON crm_activities(assi
 CREATE INDEX IF NOT EXISTS idx_crm_activities_is_completed ON crm_activities(is_completed);
 CREATE INDEX IF NOT EXISTS idx_crm_activities_due_date ON crm_activities(due_date);
 CREATE INDEX IF NOT EXISTS idx_crm_activities_platform ON crm_activities(platform);
-
 -- ============================================
 -- PART 3: Triggers
 -- ============================================
@@ -71,7 +68,6 @@ CREATE TRIGGER update_crm_activities_updated_at
   BEFORE UPDATE ON crm_activities
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================
 -- PART 4: Function to Get Timeline for Record
 -- ============================================
@@ -107,4 +103,3 @@ BEGIN
   OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql;
-

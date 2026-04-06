@@ -10,7 +10,6 @@ SELECT
   MIN(created_at) as oldest_entry,
   MAX(created_at) as newest_entry
 FROM collector_ledger_entries;
-
 -- Check 2: What collector identifiers exist in the ledger?
 SELECT 
   collector_identifier,
@@ -23,7 +22,6 @@ WHERE transaction_type = 'payout_earned' AND currency = 'USD'
 GROUP BY collector_identifier
 ORDER BY entry_count DESC
 LIMIT 20;
-
 -- Check 3: For Carsten Gueth specifically - what should the collector identifier be?
 SELECT 
   v.vendor_name,
@@ -35,7 +33,6 @@ SELECT
    AND transaction_type = 'payout_earned' AND currency = 'USD') as entries_found
 FROM vendors v
 WHERE v.vendor_name = 'Carsten Gueth';
-
 -- Check 4: What fulfilled line items exist for Carsten Gueth?
 SELECT 
   oli.line_item_id,
@@ -71,7 +68,6 @@ WHERE
   AND oli.fulfillment_status = 'fulfilled'
 ORDER BY oli.created_at DESC
 LIMIT 10;
-
 -- Check 5: Check if there are any errors in the migration by looking at recent entries
 SELECT 
   'Recent Ledger Activity' as check_name,
@@ -79,4 +75,3 @@ SELECT
   COUNT(DISTINCT collector_identifier) as unique_collectors
 FROM collector_ledger_entries
 WHERE created_at > NOW() - INTERVAL '1 hour';
-

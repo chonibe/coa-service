@@ -8,7 +8,6 @@ VALUES (
   'A container section that can hold multiple nested content blocks'
 )
 ON CONFLICT (name) DO NOTHING;
-
 -- Add parent_block_id column to product_benefits for block nesting
 -- NULL means top-level block, a value means child of that parent block
 DO $$
@@ -30,7 +29,6 @@ BEGIN
       'References a parent Section Group block. NULL for top-level blocks.';
   END IF;
 END $$;
-
 -- Add display_order_in_parent for ordering within a section (different from top-level display_order)
 DO $$
 BEGIN

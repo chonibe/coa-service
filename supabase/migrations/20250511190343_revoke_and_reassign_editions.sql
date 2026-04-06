@@ -47,4 +47,4 @@ BEGIN
     -- The trigger we created earlier will automatically update the edition_counter
     -- in the products table
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;

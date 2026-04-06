@@ -18,11 +18,9 @@ CREATE TABLE IF NOT EXISTS crm_record_actions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_record_actions_entity_type ON crm_record_actions(entity_type);
 CREATE INDEX IF NOT EXISTS idx_crm_record_actions_display_order ON crm_record_actions(entity_type, display_order);
 CREATE INDEX IF NOT EXISTS idx_crm_record_actions_is_active ON crm_record_actions(is_active);
-
 -- ============================================
 -- PART 2: Record Widgets Table
 -- ============================================
@@ -39,11 +37,9 @@ CREATE TABLE IF NOT EXISTS crm_record_widgets (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_record_widgets_entity_type ON crm_record_widgets(entity_type);
 CREATE INDEX IF NOT EXISTS idx_crm_record_widgets_display_order ON crm_record_widgets(entity_type, display_order);
 CREATE INDEX IF NOT EXISTS idx_crm_record_widgets_is_active ON crm_record_widgets(is_active);
-
 -- ============================================
 -- PART 3: Update Triggers
 -- ============================================
@@ -55,14 +51,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_crm_record_actions_updated_at
   BEFORE UPDATE ON crm_record_actions
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_record_actions_widgets_updated_at();
-
 CREATE TRIGGER update_crm_record_widgets_updated_at
   BEFORE UPDATE ON crm_record_widgets
   FOR EACH ROW
   EXECUTE FUNCTION update_crm_record_actions_widgets_updated_at();
-

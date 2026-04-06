@@ -20,12 +20,10 @@ CREATE TABLE IF NOT EXISTS crm_ai_insights (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(entity_type, entity_id, insight_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_ai_insights_entity ON crm_ai_insights(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_crm_ai_insights_type ON crm_ai_insights(insight_type);
 CREATE INDEX IF NOT EXISTS idx_crm_ai_insights_is_active ON crm_ai_insights(is_active);
 CREATE INDEX IF NOT EXISTS idx_crm_ai_insights_expires_at ON crm_ai_insights(expires_at);
-
 -- ============================================
 -- PART 2: AI Enrichment Data
 -- ============================================
@@ -43,10 +41,8 @@ CREATE TABLE IF NOT EXISTS crm_ai_enrichment (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(customer_id, enrichment_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_crm_ai_enrichment_customer_id ON crm_ai_enrichment(customer_id);
 CREATE INDEX IF NOT EXISTS idx_crm_ai_enrichment_type ON crm_ai_enrichment(enrichment_type);
-
 -- ============================================
 -- PART 3: Triggers
 -- ============================================
@@ -55,9 +51,7 @@ CREATE TRIGGER update_crm_ai_insights_updated_at
   BEFORE UPDATE ON crm_ai_insights
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_crm_ai_enrichment_updated_at
   BEFORE UPDATE ON crm_ai_enrichment
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-

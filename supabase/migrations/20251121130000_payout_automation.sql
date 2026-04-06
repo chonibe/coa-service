@@ -13,22 +13,17 @@ CREATE TABLE IF NOT EXISTS payout_schedules (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(vendor_name)
 );
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_payout_schedules_enabled ON payout_schedules(enabled) WHERE enabled = TRUE;
 CREATE INDEX IF NOT EXISTS idx_payout_schedules_next_run ON payout_schedules(next_run) WHERE enabled = TRUE;
-
 -- Add email notification preferences for refund deductions (table already exists from previous migration)
 ALTER TABLE vendor_notification_preferences
 ADD COLUMN IF NOT EXISTS refund_deduction BOOLEAN DEFAULT TRUE;
-
 -- Add payout_failed and payout_pending columns if they don't exist
 ALTER TABLE vendor_notification_preferences
 ADD COLUMN IF NOT EXISTS payout_failed BOOLEAN DEFAULT TRUE;
-
 ALTER TABLE vendor_notification_preferences
 ADD COLUMN IF NOT EXISTS payout_pending BOOLEAN DEFAULT TRUE;
-
 -- Create email_log table to track sent emails
 CREATE TABLE IF NOT EXISTS email_log (
   id SERIAL PRIMARY KEY,
@@ -44,13 +39,11 @@ CREATE TABLE IF NOT EXISTS email_log (
   delivered_at TIMESTAMP WITH TIME ZONE,
   opened_at TIMESTAMP WITH TIME ZONE
 );
-
 -- Create indexes for email_log
 CREATE INDEX IF NOT EXISTS idx_email_log_recipient ON email_log(recipient_email);
 CREATE INDEX IF NOT EXISTS idx_email_log_type ON email_log(email_type);
 CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status);
 CREATE INDEX IF NOT EXISTS idx_email_log_sent_at ON email_log(sent_at DESC);
-
 -- Function to calculate next run time for a schedule
 CREATE OR REPLACE FUNCTION calculate_next_payout_run(
   p_schedule_type TEXT,
@@ -88,7 +81,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 -- Function to update next_run for all enabled schedules
 CREATE OR REPLACE FUNCTION update_payout_schedule_next_runs()
 RETURNS void AS $$
@@ -99,4 +91,3 @@ BEGIN
     AND schedule_type != 'manual';
 END;
 $$ LANGUAGE plpgsql;
-
