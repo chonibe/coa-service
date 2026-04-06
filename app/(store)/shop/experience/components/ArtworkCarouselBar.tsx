@@ -17,7 +17,7 @@ function BundleInlinePlusSep({ theme }: { theme: 'light' | 'dark' }) {
   return (
     <span
       className={cn(
-        'shrink-0 self-end pb-3 text-lg font-semibold leading-none',
+        'shrink-0 self-end pb-2 text-sm font-semibold leading-none sm:pb-3 sm:text-lg',
         theme === 'light' ? 'text-neutral-500' : 'text-[#d4b8b8]'
       )}
       aria-hidden
@@ -42,7 +42,10 @@ function BundleInlinePortraitThumb({
   const label = (product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')).trim()
   return (
     <div
-      className="relative w-24 shrink-0 aspect-[14/20] overflow-hidden rounded-[15px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15"
+      className={cn(
+        'relative aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[10px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15',
+        'sm:w-24 sm:rounded-[15px]'
+      )}
       title={label}
     >
       {imageUrl ? (
@@ -52,7 +55,7 @@ function BundleInlinePortraitThumb({
           fill
           unoptimized
           className="object-cover"
-          sizes="96px"
+          sizes="(max-width: 640px) 56px, 96px"
           priority={priority}
           loading={priority ? 'eager' : 'lazy'}
         />
@@ -60,10 +63,18 @@ function BundleInlinePortraitThumb({
         <span className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-800">
           {isLamp ? (
             <ExperienceOrderLampIcon
-              className={cn('h-10 w-10', theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]')}
+              className={cn(
+                'h-6 w-6 sm:h-10 sm:w-10',
+                theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]'
+              )}
             />
           ) : (
-            <span className={cn('text-xs', theme === 'light' ? 'text-neutral-600' : 'text-neutral-400')}>
+            <span
+              className={cn(
+                'text-[10px] sm:text-xs',
+                theme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+              )}
+            >
               —
             </span>
           )}
@@ -338,12 +349,13 @@ export function ArtworkCarouselBar({
               </p>
             )}
             {showFeaturedBundleInline && featuredBundleOffer && bundlePreviewLamp && bundlePreviewArtworks ? (
-              <div className="mb-1 flex w-full flex-col items-center gap-3 px-1">
+              <div className="mb-0.5 flex w-full max-w-[min(100%,17.5rem)] flex-col items-center gap-2 px-0 sm:mb-1 sm:max-w-none sm:gap-3 sm:px-1">
                 <button
                   type="button"
                   onClick={() => featuredBundleOffer.onApply()}
                   className={cn(
-                    'w-full max-w-md rounded-2xl border px-4 py-4 text-left shadow-lg transition-all duration-200 active:scale-[0.99]',
+                    'w-full rounded-xl border px-2.5 py-2.5 text-left shadow-lg transition-all duration-200 active:scale-[0.99]',
+                    'sm:max-w-md sm:rounded-2xl sm:px-4 sm:py-4',
                     theme === 'light'
                       ? 'border-amber-200/90 bg-amber-50/90 shadow-amber-200/20'
                       : 'border-[#FFBA94]/40 bg-[#2a2420]/95 shadow-black/40'
@@ -351,13 +363,13 @@ export function ArtworkCarouselBar({
                 >
                   <p
                     className={cn(
-                      'mb-3 text-center text-[10px] font-semibold uppercase tracking-wide',
+                      'mb-2 text-center text-[9px] font-semibold uppercase tracking-wide sm:mb-3 sm:text-[10px]',
                       theme === 'light' ? 'text-amber-900' : 'text-[#FFBA94]'
                     )}
                   >
                     Featured artist bundle
                   </p>
-                  <div className="flex w-full min-w-0 items-end justify-center gap-2 sm:gap-3">
+                  <div className="flex w-full min-w-0 items-end justify-center gap-1 sm:gap-2 md:gap-3">
                     <BundleInlinePortraitThumb
                       product={bundlePreviewLamp}
                       theme={theme}
@@ -371,18 +383,19 @@ export function ArtworkCarouselBar({
                   </div>
                   <p
                     className={cn(
-                      'mt-3 text-center text-sm font-semibold',
+                      'mt-2 text-center text-[11px] font-semibold leading-snug sm:mt-3 sm:text-sm',
                       theme === 'light' ? 'text-neutral-900' : 'text-white'
                     )}
                   >
                     Get {featuredBundleOffer.vendorName} bundle — $
                     {formatPriceCompact(featuredBundleOffer.bundleUsd)}
                   </p>
-                  <p className="mt-1 text-center text-xs text-neutral-600 dark:text-[#c4a0a0]">
+                  <p className="mt-0.5 text-center text-[10px] leading-snug text-neutral-600 dark:text-[#c4a0a0] sm:mt-1 sm:text-xs">
                     <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
                       ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
                     </span>{' '}
-                    regular · lamp + 2 prints
+                    <span className="hidden sm:inline">regular · lamp + 2 prints</span>
+                    <span className="sm:hidden">reg. · lamp + 2</span>
                   </p>
                 </button>
               </div>

@@ -142,6 +142,8 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
           (igFromResearch ? `https://www.instagram.com/${igFromResearch}/` : undefined)
         return {
           ...artist,
+          /** Experience ?artist= must match Shopify collection handle when vendor_collections is paired. */
+          slug: meta.vendorSlug || artist.slug,
           image,
           bio,
           instagramUrl,

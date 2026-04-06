@@ -10,6 +10,18 @@ This version reuses the same Spline 3D configuration, cart integration, contexts
 
 `/shop/experience-v2`
 
+## Admin: pair Shopify collection to an artist (experience links & bio)
+
+The public `?artist=` parameter must match the **Shopify collection handle**. Admins can paste an **Admin collection URL** (for example `https://admin.shopify.com/store/…/collections/686811218306`), a **storefront** `/collections/your-handle` URL, or a numeric collection id on **Artist Experience Links** (`/admin/vendors/experience-links`). **Preview** checks title, handle, image, and description from Shopify; **Save link** writes `vendor_collections` (`shopify_collection_id`, `shopify_collection_handle`, `collection_title`).
+
+- **UI:** [`app/admin/vendors/experience-links/page.tsx`](../../../app/admin/vendors/experience-links/page.tsx)
+- **API:** `POST /api/admin/vendor-collections/link-collection` — [`app/api/admin/vendor-collections/link-collection/route.ts`](../../../app/api/admin/vendor-collections/link-collection/route.ts)
+- **Parsing / Shopify REST:** [`lib/shopify/parse-shopify-collection-url.ts`](../../../lib/shopify/parse-shopify-collection-url.ts), [`lib/shopify/resolve-pasted-collection.ts`](../../../lib/shopify/resolve-pasted-collection.ts)
+
+`GET /api/shop/artists` uses the paired handle as `slug` when present (see [`lib/shop/artists-list.ts`](../../../lib/shop/artists-list.ts)) so copied experience links stay aligned with the collection.
+
+**Tests:** [`lib/shopify/parse-shopify-collection-url.test.ts`](../../../lib/shopify/parse-shopify-collection-url.test.ts) (`npx jest lib/shopify/parse-shopify-collection-url.test.ts`).
+
 ## Architecture
 
 ```

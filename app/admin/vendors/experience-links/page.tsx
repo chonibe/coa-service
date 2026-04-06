@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Link2, Copy, Check, Loader2, ExternalLink, Sparkles } from "lucide-react"
+import { Link2, Copy, Check, Loader2, ExternalLink, Sparkles, ImageIcon } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 import { Button, Input, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Alert, AlertDescription } from "@/components/ui"
 
@@ -19,6 +19,14 @@ interface EarlyAccessLinks {
   token: string
 }
 
+interface CollectionLinkPreview {
+  shopifyCollectionId: string
+  shopifyCollectionHandle: string
+  collectionTitle: string
+  imageUrl: string | null
+  descriptionPreview: string
+}
+
 export default function ExperienceLinksPage() {
   const [artists, setArtists] = useState<Artist[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -34,6 +42,10 @@ export default function ExperienceLinksPage() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false)
   const [earlyAccessError, setEarlyAccessError] = useState<string | null>(null)
   const [copiedEarlyAccessLink, setCopiedEarlyAccessLink] = useState(false)
+  const [collectionUrlInputs, setCollectionUrlInputs] = useState<Record<string, string>>({})
+  const [collectionPreviewBySlug, setCollectionPreviewBySlug] = useState<Record<string, CollectionLinkPreview>>({})
+  const [collectionLinkErrorBySlug, setCollectionLinkErrorBySlug] = useState<Record<string, string>>({})
+  const [collectionLinkingSlug, setCollectionLinkingSlug] = useState<string | null>(null)
 
   const baseUrl =
     typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "https://streetcollector.com"
@@ -159,6 +171,45 @@ export default function ExperienceLinksPage() {
     a.slug.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const linkShopifyCollection = async (artist: Artist, previewOnly: boolean) => {
+    const url = collectionUrlInputs[artist.slug]?.trim()
+    if (!url) {
+      setCollectionLinkErrorBySlug((prev) => ({
+        ...prev,
+        [artist.slug]: "Paste a collection URL or id first.",
+      }))
+      return
+    }
+    setCollectionLinkingSlug(artist.slug)
+    setCollectionLinkErrorBySlug((prev) => ({ ...prev, [artist.slug]: "" }))
+    try {
+      const res = await fetch("/api/admin/vendor-collections/link-collection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorName: artist.name,
+          collectionUrl: url,
+          previewOnly,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || "Request failed")
+      }
+      if (data.preview) {
+        setCollectionPreviewBySlug((prev) => ({ ...prev, [artist.slug]: data.preview }))
+      }
+      if (!previewOnly && data.saved) {
+        await fetchArtists()
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to link collection"
+      setCollectionLinkErrorBySlug((prev) => ({ ...prev, [artist.slug]: msg }))
+    } finally {
+      setCollectionLinkingSlug(null)
+    }
+  }
+
   return (
     <div className="container mx-auto py-10 max-w-4xl">
       <div className="flex flex-col space-y-6">
@@ -177,6 +228,7 @@ export default function ExperienceLinksPage() {
             </CardTitle>
             <CardDescription>
               Each link opens the lamp builder with the artist&apos;s works filtered first. Copy the full URL or the short link for Instagram bios.
+              Pair the Shopify collection (Admin URL or <code className="text-xs">/collections/handle</code>) so the slug, hero image, and bio match the collection.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -268,6 +320,84 @@ export default function ExperienceLinksPage() {
                             </a>
                           </div>
                           
+                          <div className="mt-2 pt-3 border-t space-y-2 w-full max-w-xl">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Shopify collection (experience bio &amp; links)
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Input
+                                placeholder="https://admin.shopify.com/store/…/collections/123 or /collections/handle"
+                                value={collectionUrlInputs[artist.slug] ?? ""}
+                                onChange={(e) =>
+                                  setCollectionUrlInputs((prev) => ({
+                                    ...prev,
+                                    [artist.slug]: e.target.value,
+                                  }))
+                                }
+                                className="font-mono text-xs flex-1"
+                              />
+                              <div className="flex gap-2 shrink-0">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={collectionLinkingSlug === artist.slug}
+                                  onClick={() => linkShopifyCollection(artist, true)}
+                                >
+                                  {collectionLinkingSlug === artist.slug ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Preview"
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={collectionLinkingSlug === artist.slug}
+                                  onClick={() => linkShopifyCollection(artist, false)}
+                                >
+                                  Save link
+                                </Button>
+                              </div>
+                            </div>
+                            {collectionLinkErrorBySlug[artist.slug] ? (
+                              <p className="text-xs text-destructive">{collectionLinkErrorBySlug[artist.slug]}</p>
+                            ) : null}
+                            {collectionPreviewBySlug[artist.slug] ? (
+                              <div className="flex gap-3 rounded-md border bg-muted/30 p-3 text-xs">
+                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-muted flex items-center justify-center">
+                                  {collectionPreviewBySlug[artist.slug].imageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={collectionPreviewBySlug[artist.slug].imageUrl!}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                  <p className="font-medium truncate">
+                                    {collectionPreviewBySlug[artist.slug].collectionTitle}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    Handle:{" "}
+                                    <code className="text-[11px]">
+                                      {collectionPreviewBySlug[artist.slug].shopifyCollectionHandle}
+                                    </code>{" "}
+                                    · id {collectionPreviewBySlug[artist.slug].shopifyCollectionId}
+                                  </p>
+                                  {collectionPreviewBySlug[artist.slug].descriptionPreview ? (
+                                    <p className="text-muted-foreground line-clamp-3">
+                                      {collectionPreviewBySlug[artist.slug].descriptionPreview}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+
                           {earlyAccessLinks[artist.slug] && (
                             <div className="flex flex-col gap-2 p-3 bg-violet-50 dark:bg-violet-950/20 rounded-md border border-violet-200 dark:border-violet-900/30">
                               <div className="flex items-center gap-2 mb-1">
