@@ -20,8 +20,10 @@ import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { Checkbox, Label } from '@/components/ui'
 import {
   experienceArtworkUnitUsd,
+  normalizeExperienceProductKey,
   storefrontVariantUsd,
 } from '@/lib/shop/experience-artwork-unit-price'
+import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -78,6 +80,8 @@ interface OrderBarProps {
   lockedArtworkPrices?: Record<string, number>
   /** Street ladder buy-now USD per artwork (numeric product id) from edition-states */
   streetLadderPrices?: Record<string, number>
+  /** Featured artist bundle: allocated line prices totaling $159 */
+  featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
 }
 
 export interface OrderBarRef {
@@ -139,6 +143,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   collectedProductIds,
   lockedArtworkPrices,
   streetLadderPrices,
+  featuredBundleCheckout,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -183,6 +188,12 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const includeLamp = lampQuantity > 0
 
   const lampPrices = React.useMemo(() => {
+    if (
+      featuredBundleCheckout?.lampLineUsd?.length &&
+      featuredBundleCheckout.lampLineUsd.length === lampQuantity
+    ) {
+      return [...featuredBundleCheckout.lampLineUsd]
+    }
     const prices: number[] = []
     for (let k = 1; k <= lampQuantity; k++) {
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
@@ -192,15 +203,44 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     return prices
-  }, [lampQuantity, artworkCount, lampPrice])
+  }, [lampQuantity, artworkCount, lampPrice, featuredBundleCheckout])
+
+  const artworkUnitUsd = React.useCallback(
+    (p: ShopifyProduct) => {
+      const k = normalizeExperienceProductKey(p.id)
+      const bundleUnit = featuredBundleCheckout?.artworkUnitUsdByNumericId[k]
+      if (bundleUnit != null && bundleUnit > 0) return bundleUnit
+      return experienceArtworkUnitUsd(p, priceMaps)
+    },
+    [featuredBundleCheckout, priceMaps]
+  )
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
-  const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const artworksTotal = selectedArtworks.reduce(
-    (sum, p) => sum + experienceArtworkUnitUsd(p, priceMaps),
-    0
+  const naturalLampTotal = React.useMemo(() => {
+    let sum = 0
+    for (let k = 1; k <= lampQuantity; k++) {
+      const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
+      const end = k * ARTWORKS_PER_FREE_LAMP
+      const allocated = Math.max(0, Math.min(artworkCount, end) - start)
+      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      sum += lampPrice * Math.max(0, 1 - discountPct / 100)
+    }
+    return sum
+  }, [lampQuantity, artworkCount, lampPrice])
+
+  const naturalArtworksTotal = React.useMemo(
+    () => selectedArtworks.reduce((sum, p) => sum + experienceArtworkUnitUsd(p, priceMaps), 0),
+    [selectedArtworks, priceMaps]
   )
+
+  const artworksTotal = selectedArtworks.reduce((sum, p) => sum + artworkUnitUsd(p), 0)
   const total = lampTotal + artworksTotal
+  const lampSavings =
+    lampQuantity > 0
+      ? featuredBundleCheckout
+        ? Math.max(0, naturalLampTotal + naturalArtworksTotal - total)
+        : lampQuantity * lampPrice - lampTotal
+      : 0
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
 
@@ -220,7 +260,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       let aj = ai + 1
       while (aj < selectedArtworks.length && selectedArtworks[aj].id === p.id) aj++
       const qty = aj - ai
-      const unit = experienceArtworkUnitUsd(p, priceMaps)
+      const unit = artworkUnitUsd(p)
       const pAdj =
         unit !== storefrontVariantUsd(p)
           ? ({
@@ -241,7 +281,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     trackBeginCheckout(items, total, 'USD', {
       em: checkout.address?.email || undefined,
     })
-  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, priceMaps])
+  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, artworkUnitUsd])
 
   const buildLineItems = useCallback(() => {
     const items: Array<{
@@ -286,14 +326,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         variantGid: art.variants?.edges?.[0]?.node?.id ?? '',
         handle: art.handle,
         title: art.title,
-        price: experienceArtworkUnitUsd(art, priceMaps),
+        price: artworkUnitUsd(art),
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
       })
       wi = wj
     }
     return items
-  }, [lamp, lampQuantity, lampPrices, selectedArtworks, priceMaps])
+  }, [lamp, lampQuantity, lampPrices, selectedArtworks, artworkUnitUsd])
 
   /* Preload checkout session when cart drawer opens – payment dialog loads instantly */
   const preloadKeyRef = React.useRef<string>('')
@@ -730,7 +770,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <div className="px-6 pb-6">
             {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-[#FFBA94] mb-3">Checkout</h3>
+              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-3">Checkout</h3>
               {addressRow}
               {paymentRow}
               {/* Stripe mounts only after Place order is clicked — avoids Link verification on drawer load */}
@@ -857,7 +897,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                       </button>
                     </div>
                     <div className="border-t border-neutral-200 dark:border-white/10 pt-4 mt-2">
-                      <h3 className="text-sm font-medium text-[#FFBA94] mb-3">Billing address</h3>
+                      <h3 className="text-sm font-medium text-neutral-950 dark:text-[#FFBA94] mb-3">Billing address</h3>
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id="same-as-address-exp"

@@ -12,7 +12,12 @@ import {
   ArtistSpotlightBanner,
   type SpotlightData,
 } from '../../experience-v2/components/ArtistSpotlightBanner'
-import { FilterPanel, hasActiveFilters, type FilterState } from '../../experience-v2/components/FilterPanel'
+import {
+  FilterPanel,
+  hasActiveFilters,
+  type FeaturedBundleFilterOffer,
+  type FilterState,
+} from '../../experience-v2/components/FilterPanel'
 import { cn } from '@/lib/utils'
 import { buildArtworkRowsByArtist } from '@/lib/shop/experience-artwork-rows'
 import {
@@ -368,6 +373,8 @@ interface ArtworkPickerSheetProps {
   spotlightBannerExpanded?: boolean
   /** Numeric Shopify product id → Street Collector ladder copy */
   streetEditionByProductId?: Record<string, StreetEditionStatesRow>
+  /** Featured artist bundle CTA in filters (legacy /experience picker) */
+  featuredBundleOffer?: FeaturedBundleFilterOffer | null
 }
 
 export function ArtworkPickerSheet({
@@ -394,6 +401,7 @@ export function ArtworkPickerSheet({
   cartOrder = [],
   spotlightBannerExpanded,
   streetEditionByProductId = {},
+  featuredBundleOffer,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -877,6 +885,7 @@ export function ArtworkPickerSheet({
                 isOpen={filterOpen}
                 onClose={onFilterClose}
                 cartOrder={cartOrder}
+                featuredBundleOffer={featuredBundleOffer ?? undefined}
               />
             )}
             </motion.div>

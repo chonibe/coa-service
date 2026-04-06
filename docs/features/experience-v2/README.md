@@ -139,6 +139,17 @@ When tapping a carousel item, `handleLampSelect` **toggles** lamp assignment (se
 
 Persisted carts: if `lampPreviewOrder` is present in `localStorage` (including as an empty array), that value is honored on load; older saves without the key still default preview to the first two cart IDs.
 
+## Featured artist bundle ($159)
+
+When the current **artist spotlight** from [`/api/shop/artist-spotlight`](../../../app/api/shop/artist-spotlight/route.ts) has at least two resolvable prints in catalog order:
+
+- **First visit with an empty saved cart** (no prior `cartOrder` lines): both [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) entry points **once** seed `cartOrder` and `lampPreviewOrder` with those two product IDs (lamp quantity stays **1**). A ref prevents re-seeding after the user clears the cart in-session.
+- **Bundle pricing**: If `lampQuantity === 1`, the cart is **exactly two distinct lines** matching the **first two** spotlight `productIds`, and every line is `availableForSale`, the **displayed subtotal** and **Stripe line items** total **$159.00** before promos. Amounts are **allocated** across one lamp line and two artwork lines proportionally to natural prices (lamp ladder + [`experienceArtworkUnitUsd`](../../../lib/shop/experience-artwork-unit-price.ts)), adjusted to **15900** cents — see [`experience-featured-bundle.ts`](../../../lib/shop/experience-featured-bundle.ts).
+- **UI**: [`FilterPanel`](../../../app/(store)/shop/experience-v2/components/FilterPanel.tsx) optional CTA — primary **“Get [vendor] bundle — $159”** and strikethrough **regular** subtotal for the same trio (computed). [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) shows **Featured artist bundle · {vendor}** when active. Onboarding [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) receives the same offer.
+- **Fulfillment**: Shopify variants are unchanged; only **checkout** amounts reflect the bundle.
+
+**Tests:** [`lib/shop/experience-featured-bundle.test.ts`](../../../lib/shop/experience-featured-bundle.test.ts)
+
 ## Cart Integration
 
 - Artworks are added to cart when selected in the picker
@@ -261,3 +272,4 @@ npm run dev
 - Updated: 2026-03-29 — [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx): mobile row copy **`N artwork` / `N artworks`** (drop “added”).
 - Updated: 2026-03-29 — **Open detail from title**: [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) **`handleViewDetail`** sets **`previewSlideIndex`** to the reel’s **details** section (slide **1**) when opening [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (same path as header title, mobile title, info thumb, strip “details” taps).
 - Updated: 2026-04-06 — **Picker / wizard filters**: [`FilterPanel`](../../../app/(store)/shop/experience-v2/components/FilterPanel.tsx) artist (and tag) options use **both seasons’ loaded products** via **`productsForFilterPanel`** in [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) (experience-v2 + legacy experience) and [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) onboarding; grid + `applyFilters` still follow the active season tab.
+- Updated: 2026-04-06 — **Featured artist bundle ($159)**: [`experience-featured-bundle.ts`](../../../lib/shop/experience-featured-bundle.ts), seed + pricing in both experience clients + Configurator; [`OrderBar`](../../../app/(store)/shop/experience-v2/components/OrderBar.tsx) + context checkout overrides; sticky bar + filter CTA; legacy [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) forwards `featuredBundleOffer`.

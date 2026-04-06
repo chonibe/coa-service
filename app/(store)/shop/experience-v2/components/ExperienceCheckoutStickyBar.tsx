@@ -26,6 +26,8 @@ export interface ExperienceCheckoutStickyBarProps {
   onOpenPicker?: () => void
   /** When `collection` and there are no artworks yet, the bar shows the primary “choose artwork” CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
+  /** When set, show “Featured artist bundle” label with this artist name */
+  featuredBundleVendorName?: string
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -104,6 +106,7 @@ export function ExperienceCheckoutStickyBar({
   orderSubtotal,
   onOpenPicker,
   stripMode = 'collection',
+  featuredBundleVendorName,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -185,6 +188,16 @@ export function ExperienceCheckoutStickyBar({
           ) : null
         ) : (
           <>
+            {featuredBundleVendorName ? (
+              <p
+                className={cn(
+                  'mb-2 text-center text-xs font-semibold uppercase tracking-wide',
+                  theme === 'light' ? 'text-amber-800' : 'text-[#FFBA94]'
+                )}
+              >
+                Featured artist bundle · {featuredBundleVendorName}
+              </p>
+            ) : null}
             <div className="flex w-full min-w-0 items-center gap-3">
               {onOpenPicker ? (
                 <button
@@ -199,8 +212,8 @@ export function ExperienceCheckoutStickyBar({
               ) : null}
               {/* Thumbnails hug the checkout button (right); extra space stays left of this block. */}
               <div className="flex min-w-0 flex-1 justify-end md:hidden">
-                {/* Mobile: lamp + count only — no horizontal artwork thumbs (too tight next to checkout). */}
-                <div className="flex min-w-0 max-w-full items-center justify-end gap-2">
+                {/* Mobile: lamp + artworks — full strip when featured bundle (2 prints), else lamp + count */}
+                <div className="flex min-w-0 max-w-full items-center justify-end gap-1.5">
                   <div className="relative shrink-0">
                     <StickyThumb product={lamp} isLamp theme={theme} />
                     {lampQuantity > 1 ? (
@@ -212,18 +225,31 @@ export function ExperienceCheckoutStickyBar({
                       </span>
                     ) : null}
                   </div>
-                  <PlusSep theme={theme} />
-                  <p
-                    className={cn(
-                      'min-w-0 shrink text-sm font-semibold leading-tight',
-                      theme === 'light' ? 'text-neutral-900' : 'text-white'
-                    )}
-                  >
-                    <span className="tabular-nums">{selectedArtworks.length}</span>
-                    <span>
-                      {selectedArtworks.length === 1 ? ' artwork' : ' artworks'}
-                    </span>
-                  </p>
+                  {featuredBundleVendorName && selectedArtworks.length >= 1 ? (
+                    <>
+                      {selectedArtworks.slice(0, 2).map((p) => (
+                        <Fragment key={p.id}>
+                          <PlusSep theme={theme} />
+                          <StickyThumb product={p} isLamp={false} theme={theme} />
+                        </Fragment>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <PlusSep theme={theme} />
+                      <p
+                        className={cn(
+                          'min-w-0 shrink text-sm font-semibold leading-tight',
+                          theme === 'light' ? 'text-neutral-900' : 'text-white'
+                        )}
+                      >
+                        <span className="tabular-nums">{selectedArtworks.length}</span>
+                        <span>
+                          {selectedArtworks.length === 1 ? ' artwork' : ' artworks'}
+                        </span>
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="hidden min-w-0 flex-1 justify-end md:flex">

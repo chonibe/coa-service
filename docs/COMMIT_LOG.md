@@ -1,5 +1,30 @@
 # Commit Log
 
+## Commit: feat(shop): featured artist bundle $159 — experience checkout + filters (2026-04-06)
+
+**Ref:** `24e8c0bd2`
+
+### Summary
+**Featured artist bundle** defaults empty carts to the first two **artist spotlight** prints (one-time seed), shows **$159** subtotal and **Stripe** line totals when `lampQuantity === 1` and cart matches spotlight pair (allocated across lamp + 2 SKUs via [`lib/shop/experience-featured-bundle.ts`](lib/shop/experience-featured-bundle.ts)). **FilterPanel** CTA with compare-at regular total; **ExperienceCheckoutStickyBar** bundle label; **OrderBar** / context `featuredBundleCheckout` overrides. Parity on **legacy** `/shop/experience` [`ExperienceV2Client`](app/(store)/shop/experience/components/ExperienceV2Client.tsx) + [`ArtworkPickerSheet`](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx); onboarding **Configurator** wired.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-featured-bundle.ts](lib/shop/experience-featured-bundle.ts)
+- [x] [lib/shop/experience-featured-bundle.test.ts](lib/shop/experience-featured-bundle.test.ts)
+- [x] [app/(store)/shop/experience-v2/ExperienceOrderContext.tsx](app/(store)/shop/experience-v2/ExperienceOrderContext.tsx)
+- [x] [app/(store)/shop/experience-v2/components/OrderBar.tsx](app/(store)/shop/experience-v2/components/OrderBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/FilterPanel.tsx](app/(store)/shop/experience-v2/components/FilterPanel.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkPickerSheet.tsx](app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/features/experience/README.md](docs/features/experience/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): show all season artists in artwork filter panel (2026-04-06)
 
 **Ref:** `a907ce6d0`

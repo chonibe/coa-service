@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
 
 export interface OrderBarRefLike {
   testZeroOrder: () => Promise<void>
@@ -39,6 +40,8 @@ export interface OrderBarContextProps {
   lockedArtworkPrices?: Record<string, number>
   /** Street ladder list USD from edition-states (numeric Shopify product id → dollars) */
   streetLadderPrices?: Record<string, number>
+  /** When set, OrderBar / Stripe line items use these USD amounts (featured artist bundle). */
+  featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
   /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */
   wizardHighlightStep?: number
   /** Wizard: whether highlight animation is active */

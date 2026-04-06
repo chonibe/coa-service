@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, SlidersHorizontal } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
-import { cn } from '@/lib/utils'
+import { cn, formatPriceCompact } from '@/lib/utils'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
 
@@ -26,6 +26,15 @@ export const DEFAULT_FILTERS: FilterState = {
   inStockOnly: false,
   sortBy: 'featured',
   minStarRating: null,
+}
+
+/** Optional CTA in the filter sheet: featured artist lamp + 2-print bundle. */
+export interface FeaturedBundleFilterOffer {
+  vendorName: string
+  bundleUsd: number
+  compareAtUsd: number
+  onApply: () => void
+  disabled?: boolean
 }
 
 export function hasActiveFilters(f: FilterState): boolean {
@@ -50,6 +59,8 @@ interface FilterPanelProps {
   cartOrder?: string[]
   /** When provided, called instead of global open-wishlist event (e.g. to open WishlistSwiperSheet in experience) */
   onOpenWishlist?: () => void
+  /** Featured artist bundle (lamp + 2 spotlight prints) — shown above Artist list when set */
+  featuredBundleOffer?: FeaturedBundleFilterOffer | null
 }
 
 const PRICE_PRESETS: Array<{ label: string; range: [number, number] }> = [
@@ -85,7 +96,17 @@ function applyFilterAndTrack(
   onChange(next)
 }
 
-export function FilterPanel({ products, filters, onChange, isOpen, onClose, wishlistCount = 0, cartOrder = [], onOpenWishlist }: FilterPanelProps) {
+export function FilterPanel({
+  products,
+  filters,
+  onChange,
+  isOpen,
+  onClose,
+  wishlistCount = 0,
+  cartOrder = [],
+  onOpenWishlist,
+  featuredBundleOffer,
+}: FilterPanelProps) {
   const filterPanelOpenLogged = useRef(false)
   useEffect(() => {
     if (!isOpen) {
@@ -214,6 +235,36 @@ export function FilterPanel({ products, filters, onChange, isOpen, onClose, wish
                   ))}
                 </div>
               </section>
+
+              {featuredBundleOffer ? (
+                <section className="rounded-xl border border-amber-200/80 bg-amber-50/90 p-3 dark:border-[#FFBA94]/35 dark:bg-[#2a2420]/90">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-900 dark:text-[#FFBA94] mb-2">
+                    Featured artist bundle
+                  </h4>
+                  <button
+                    type="button"
+                    disabled={featuredBundleOffer.disabled}
+                    onClick={() => {
+                      featuredBundleOffer.onApply()
+                      onClose()
+                    }}
+                    className={cn(
+                      'w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors',
+                      featuredBundleOffer.disabled
+                        ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
+                        : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                    )}
+                  >
+                    Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
+                  </button>
+                  <p className="mt-2 text-xs text-neutral-600 dark:text-[#c4a0a0] leading-snug">
+                    <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
+                      ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
+                    </span>{' '}
+                    <span className="text-neutral-500 dark:text-[#b89090]">regular</span> for lamp + 2 prints
+                  </p>
+                </section>
+              ) : null}
 
               {/* Artists */}
               {allArtists.length > 1 && (

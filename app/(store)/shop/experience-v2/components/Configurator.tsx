@@ -79,7 +79,14 @@ import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-ma
 
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
 import { ArtworkDetail } from './ArtworkDetail'
-import { FilterPanel, applyFilters, hasActiveFilters, DEFAULT_FILTERS, type FilterState } from './FilterPanel'
+import {
+  FilterPanel,
+  applyFilters,
+  hasActiveFilters,
+  DEFAULT_FILTERS,
+  type FeaturedBundleFilterOffer,
+  type FilterState,
+} from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
@@ -90,9 +97,16 @@ import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
-import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
-import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
+import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
+import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
+import {
+  FEATURED_ARTIST_BUNDLE_USD,
+  computeFeaturedBundleCheckoutPrices,
+  computeFeaturedBundleRegularSubtotalUsd,
+  getSpotlightPairProducts,
+  isFeaturedArtistBundleActive,
+} from '@/lib/shop/experience-featured-bundle'
 import {
   loadImagePosition,
   saveImagePosition as persistImagePosition,
@@ -190,6 +204,7 @@ export function Configurator({
     gifUrl?: string
     unlisted?: boolean
   } | null>(null)
+  const [spotlightProductsFromApi, setSpotlightProductsFromApi] = useState<ShopifyProduct[]>([])
   const [productsSeason1, setProductsSeason1] = useState<ShopifyProduct[]>(() => initialSeason1)
   const [productsSeason2, setProductsSeason2] = useState<ShopifyProduct[]>(() => initialSeason2)
   const [pageInfoSeason1, setPageInfoSeason1] = useState<SeasonPageInfo>(() => initialPage1)
@@ -283,6 +298,58 @@ export function Configurator({
     () => [...productsSeason1, ...productsSeason2],
     [productsSeason1, productsSeason2]
   )
+
+  const [streetEditionByProductId, setStreetEditionByProductId] = useState<
+    Record<string, StreetEditionStatesRow>
+  >({})
+  const [lockedArtworkPrices, setLockedArtworkPrices] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (allProducts.length === 0) return
+    const ids = allProducts
+      .map((p) => normalizeShopifyProductId(p.id))
+      .filter((x): x is string => !!x)
+    if (ids.length === 0) return
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      void fetchStreetEditionStatesMap(ids)
+        .then((map) => {
+          if (!cancelled) setStreetEditionByProductId(map)
+        })
+        .catch(() => {})
+    }, 400)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [allProducts])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLockedArtworkPrices({})
+      return
+    }
+    fetch('/api/shop/reserve/locks', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : { locks: [] }))
+      .then((j: { locks?: Array<{ shopify_product_id: string; locked_price_usd: number }> }) => {
+        const m: Record<string, number> = {}
+        for (const row of j.locks || []) {
+          if (row.shopify_product_id && row.locked_price_usd > 0) {
+            m[row.shopify_product_id] = row.locked_price_usd
+          }
+        }
+        setLockedArtworkPrices(m)
+      })
+      .catch(() => setLockedArtworkPrices({}))
+  }, [isAuthenticated])
+
+  const streetLadderPrices = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const [id, row] of Object.entries(streetEditionByProductId)) {
+      if (row.priceUsd != null && row.priceUsd > 0) m[id] = row.priceUsd
+    }
+    return m
+  }, [streetEditionByProductId])
 
   /** Filter sheet artist/tags: union of both seasons (deduped), not the active tab only. */
   const productsForFilterPanel = useMemo(() => {
@@ -403,6 +470,10 @@ export function Configurator({
   const [cartOrder, setCartOrder] = useState<string[]>(() => loadedCart.cartOrder)
   /** Non-lamp owners start at 0; they must add lamp via paywall first, then choose artwork */
   const [lampQuantity, setLampQuantity] = useState(() => loadedCart.lampQuantity)
+  /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp. A/B skip variant always starts false so they must see paywall first. */
+  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => (forceShowLampPaywall ? false : loadedCart.lampPaywallSkipped))
+  /** Session-only skip: resets on refresh. On ads page we use this so lamp card shows every new session but they can skip during the session. */
+  const [sessionLampPaywallSkipped, setSessionLampPaywallSkipped] = useState(false)
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
   const [detailProductFull, setDetailProductFull] = useState<ShopifyProduct | null>(null)
   const [detailProductLoading, setDetailProductLoading] = useState(false)
@@ -522,8 +593,14 @@ export function Configurator({
   const spotlightArtistVendorForFilter = useMemo(() => {
     if (!spotlightData) return ''
     const fromCatalog = spotlightProducts[0]?.vendor?.trim()
-    return fromCatalog || spotlightData.vendorName
-  }, [spotlightData, spotlightProducts])
+    const fromApi = spotlightProductsFromApi[0]?.vendor?.trim()
+    return fromCatalog || fromApi || spotlightData.vendorName
+  }, [spotlightData, spotlightProducts, spotlightProductsFromApi])
+
+  const spotlightPairProducts = useMemo(
+    () => getSpotlightPairProducts(spotlightData, spotlightProductsFromApi, allProducts),
+    [spotlightData, spotlightProductsFromApi, allProducts]
+  )
 
   // When spotlight is expanded: filter to that artist and switch series. When collapsed: remove filter.
   const handleSpotlightSelect = useCallback((isExpanding: boolean) => {
@@ -549,6 +626,18 @@ export function Configurator({
       }))
     }
   }, [spotlightData, spotlightArtistVendorForFilter, productsSeason1, productsSeason2, activeSeason])
+
+  const handleApplyFeaturedBundle = useCallback(() => {
+    const pair = getSpotlightPairProducts(spotlightData, spotlightProductsFromApi, allProducts)
+    if (!pair) return
+    const [p1, p2] = pair
+    setLampQuantity(1)
+    setCartOrder([p1.id, p2.id])
+    setLampPreviewOrder([p1.id, p2.id])
+    handleSpotlightSelect(true)
+    setFilterOpen(false)
+    triggerPriceBump()
+  }, [spotlightData, spotlightProductsFromApi, allProducts, handleSpotlightSelect, triggerPriceBump])
 
   useEffect(() => {
     if (!spotlightData?.vendorName) return
@@ -673,8 +762,8 @@ export function Configurator({
         if (!cancelled && data?.vendorName && Array.isArray(data?.productIds)) {
           setSpotlightData(data)
           spotlightFromAffiliateRef.current = !!initialArtistSlug
-          // Merge spotlight products so they appear in selector (Jack J.C. Art, etc.)
           const products = (data.products as ShopifyProduct[] | undefined) ?? []
+          setSpotlightProductsFromApi(products)
           if (products.length) {
             setProductsSeason2((prev) => {
               const existingIds = new Set(prev.map((p) => p.id))
@@ -685,11 +774,13 @@ export function Configurator({
           }
         } else {
           setSpotlightData(null)
+          setSpotlightProductsFromApi([])
           spotlightFromAffiliateRef.current = false
         }
       })
       .catch(() => {
         setSpotlightData(null)
+        setSpotlightProductsFromApi([])
         spotlightFromAffiliateRef.current = false
       })
     return () => { cancelled = true }
@@ -732,16 +823,32 @@ export function Configurator({
   const DISCOUNT_PER_ARTWORK = 7.5
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
   const artworkCount = selectedProducts.length
-  const lampPrices: number[] = []
-  const lampProgress: number[] = []
-  for (let k = 1; k <= lampQuantity; k++) {
-    const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
-    const end = k * ARTWORKS_PER_FREE_LAMP
-    const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-    const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
-    lampPrices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
-    lampProgress.push(Math.min(100, (allocated / ARTWORKS_PER_FREE_LAMP) * 100))
-  }
+
+  const featuredArtistBundleActive = useMemo(
+    () =>
+      isFeaturedArtistBundleActive({
+        lampQuantity,
+        cartOrder,
+        spotlightProductIds: spotlightData?.productIds ?? [],
+        resolveProduct: (gid) => allProducts.find((p) => p.id === gid),
+      }),
+    [lampQuantity, cartOrder, spotlightData?.productIds, allProducts]
+  )
+
+  const { lampPrices, lampProgress } = useMemo(() => {
+    const prices: number[] = []
+    const progress: number[] = []
+    for (let k = 1; k <= lampQuantity; k++) {
+      const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
+      const end = k * ARTWORKS_PER_FREE_LAMP
+      const allocated = Math.max(0, Math.min(artworkCount, end) - start)
+      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
+      progress.push(Math.min(100, (allocated / ARTWORKS_PER_FREE_LAMP) * 100))
+    }
+    return { lampPrices: prices, lampProgress: progress }
+  }, [lampQuantity, artworkCount, lampPrice])
+
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
   const discountBarLabel = 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
@@ -755,13 +862,73 @@ export function Configurator({
       }),
     0
   )
-  const orderTotal = lampTotal + artworksTotal
+  const subtotalNatural = lampTotal + artworksTotal
+  const orderTotal = featuredArtistBundleActive ? FEATURED_ARTIST_BUNDLE_USD : subtotalNatural
   const orderItemCount = selectedProducts.length + lampQuantity
 
-  /** When true, user skipped paywall or deselected lamp — show artworks without requiring lamp. A/B skip variant always starts false so they must see paywall first. */
-  const [lampPaywallSkipped, setLampPaywallSkipped] = useState(() => (forceShowLampPaywall ? false : loadedCart.lampPaywallSkipped))
-  /** Session-only skip: resets on refresh. On ads page we use this so lamp card shows every new session but they can skip during the session. */
-  const [sessionLampPaywallSkipped, setSessionLampPaywallSkipped] = useState(false)
+  const featuredBundleCheckoutPayload = useMemo(() => {
+    if (!featuredArtistBundleActive || !spotlightPairProducts) return null
+    return computeFeaturedBundleCheckoutPrices({
+      lampNaturalLines: lampPrices,
+      artProducts: spotlightPairProducts,
+      priceMaps: {
+        lockedUsdByProductId: lockedArtworkPrices,
+        streetLadderUsdByProductId: streetLadderPrices,
+      },
+    })
+  }, [
+    featuredArtistBundleActive,
+    spotlightPairProducts,
+    lampPrices,
+    lockedArtworkPrices,
+    streetLadderPrices,
+  ])
+
+  const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
+    if (!spotlightData || !spotlightPairProducts) return null
+    const [p1, p2] = spotlightPairProducts
+    if (!p1.availableForSale || !p2.availableForSale) return null
+    const lampPricesNatural: number[] = []
+    for (let k = 1; k <= 1; k++) {
+      const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
+      const end = k * ARTWORKS_PER_FREE_LAMP
+      const allocated = Math.max(0, Math.min(2, end) - start)
+      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      lampPricesNatural.push(lampPrice * Math.max(0, 1 - discountPct / 100))
+    }
+    const compareAt = computeFeaturedBundleRegularSubtotalUsd({
+      lampNaturalLines: lampPricesNatural,
+      artProducts: spotlightPairProducts,
+      priceMaps: {
+        lockedUsdByProductId: lockedArtworkPrices,
+        streetLadderUsdByProductId: streetLadderPrices,
+      },
+    })
+    const bundleInCart = isFeaturedArtistBundleActive({
+      lampQuantity,
+      cartOrder,
+      spotlightProductIds: spotlightData.productIds,
+      resolveProduct: (gid) => allProducts.find((p) => p.id === gid),
+    })
+    return {
+      vendorName: spotlightData.vendorName,
+      bundleUsd: FEATURED_ARTIST_BUNDLE_USD,
+      compareAtUsd: compareAt,
+      onApply: handleApplyFeaturedBundle,
+      disabled: bundleInCart,
+    }
+  }, [
+    spotlightData,
+    spotlightPairProducts,
+    lampPrice,
+    lockedArtworkPrices,
+    streetLadderPrices,
+    lampQuantity,
+    cartOrder,
+    allProducts,
+    handleApplyFeaturedBundle,
+  ])
+
   /** When user deselects lamp (quantity → 0), keep them on artworks */
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(n)
@@ -1038,6 +1205,7 @@ export function Configurator({
       wizardHighlightActive: showHighlightAnimation,
       lockedArtworkPrices,
       streetLadderPrices,
+      featuredBundleCheckout: featuredArtistBundleActive ? featuredBundleCheckoutPayload : null,
     })
   }, [
     lamp,
@@ -1062,6 +1230,8 @@ export function Configurator({
     showHighlightAnimation,
     lockedArtworkPrices,
     streetLadderPrices,
+    featuredArtistBundleActive,
+    featuredBundleCheckoutPayload,
     setOrderBarProps,
   ])
 
@@ -2402,6 +2572,7 @@ export function Configurator({
         isOpen={filterOpen}
         onClose={() => setFilterOpen(false)}
         cartOrder={cartOrder}
+        featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
       />
 
       {/* Artwork / lamp detail drawer — overlay only on mobile; desktop uses inline panel in left area */}
