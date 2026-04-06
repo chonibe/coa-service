@@ -178,8 +178,8 @@ export function ArtworkCarouselBar({
   }, [isDesktop, selectedArtworks.length, stripWindowStart, activeIndex])
 
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
-  /** Carousel thumbs stay w-24; + control scaled down */
-  const glassAddButtonClass = cn(
+  /** Watchlist: back-to-collection control stays frosted */
+  const watchlistBackButtonClass = cn(
     'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
@@ -193,6 +193,14 @@ export function ArtworkCarouselBar({
           'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
           'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
         ]
+  )
+
+  /** Collection strip: add-artwork + — blue (matches legacy sticky FAB) */
+  const carouselAddArtworkPlusClass = cn(
+    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border text-white shadow-lg transition-all duration-200 active:scale-[0.95]',
+    theme === 'light'
+      ? 'border-blue-600 bg-blue-600 shadow-blue-600/25 hover:border-blue-700 hover:bg-blue-700 hover:shadow-blue-600/35'
+      : 'border-blue-500 bg-blue-600 shadow-black/40 hover:border-blue-400 hover:bg-blue-500'
   )
 
   /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
@@ -440,7 +448,7 @@ export function ArtworkCarouselBar({
                   <button
                     type="button"
                     onClick={onOpenPicker}
-                    className={glassAddButtonClass}
+                    className={carouselAddArtworkPlusClass}
                     aria-label="Add artwork to collection"
                     title="Add artwork to collection"
                   >

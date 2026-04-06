@@ -166,7 +166,8 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const openPickerFabClass = cn(
-    'flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[#047AFF] bg-[#047AFF] text-white shadow-md transition-all active:scale-95 hover:border-[#0366d6] hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF] sm:h-[3.25rem] sm:w-[3.25rem]'
+    'flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-600/30 transition-all active:scale-95 hover:border-violet-700 hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 sm:h-[3.25rem] sm:w-[3.25rem]',
+    theme === 'dark' && 'border-violet-500 hover:border-violet-400 hover:bg-violet-500'
   )
 
   if (!visible) return null
