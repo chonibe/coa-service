@@ -172,7 +172,7 @@ function StickyThumb({
 
 /**
  * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (cart thumbnails unless `suppressCartThumbnails`, **add-artwork + on the right**) and a **full-width checkout button below**.
- * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays **right-aligned** on the top row above checkout.
+ * When `suppressCartThumbnails` (desktop: carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays **right-aligned** on the top row above checkout. On **mobile** the carousel strip is not shown — callers should pass **`false`** so cart thumbnails stay visible.
  * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable — not in the carousel strip.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */

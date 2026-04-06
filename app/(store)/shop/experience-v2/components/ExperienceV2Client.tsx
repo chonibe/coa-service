@@ -1446,7 +1446,7 @@ export function ExperienceV2Client({
           </div>
         )}
 
-        <div className="w-full shrink-0 bg-transparent text-transparent">
+        <div className="hidden w-full shrink-0 bg-transparent text-transparent md:block">
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
@@ -1619,10 +1619,8 @@ export function ExperienceV2Client({
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
-        suppressCartThumbnails={splineInView}
-        onSelectThumbnailForSpline={
-          isMobile && !splineInView ? handleStickyThumbnailSplineSelect : undefined
-        }
+        suppressCartThumbnails={!isMobile && splineInView}
+        onSelectThumbnailForSpline={isMobile ? handleStickyThumbnailSplineSelect : undefined}
         previewSelectedProductId={
           activeCarouselIndex >= 0
             ? (carouselArtworks[activeCarouselIndex]?.id ?? null)
