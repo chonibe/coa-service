@@ -27,6 +27,10 @@ export function ExperienceSlideoutMenu() {
   const isOnOnboarding = pathname?.startsWith(ONBOARDING_PATH_PREFIX) ?? false
   const { menuOpen: open, setMenuOpen: setOpen, openAuthWhenMenuOpens, setOpenAuthWhenMenuOpens, onboardingRedirectPath } = useExperienceAuthContext()
   const { orderBarProps, total, promoCode, promoDiscount, setPromoCode, setPromoDiscount, discountCelebrationAmount, setDiscountCelebrationAmount, headerCenterContent, headerTrailingContent } = useExperienceOrder()
+  const viewLampDetail = orderBarProps?.onViewLampDetail
+  const lampForSpecs = orderBarProps?.lamp
+  const openLampSpecifications =
+    viewLampDetail && lampForSpecs ? () => viewLampDetail(lampForSpecs) : undefined
   const [shouldPulse, setShouldPulse] = useState(false)
   const prevLampQuantity = useRef(0)
   const { theme } = useExperienceTheme()
@@ -169,6 +173,7 @@ export function ExperienceSlideoutMenu() {
         orderTotal={total}
         volumeDiscountLabel={orderBarProps?.lampSavings != null && orderBarProps.lampSavings > 0 ? 'Volume Discount Applied' : undefined}
         volumeDiscountDescription={orderBarProps?.lampSavings != null && orderBarProps.lampSavings > 0 ? 'Discount varies by size & material' : undefined}
+        onSpecifications={openLampSpecifications}
       />
     </>
   )

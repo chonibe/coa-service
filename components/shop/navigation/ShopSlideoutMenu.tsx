@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun } from 'lucide-react'
+import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Ruler } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
@@ -42,6 +42,8 @@ export interface ShopSlideoutMenuProps {
   showPromoCodes?: boolean
   /** When true, show Light/Dark mode toggle (experience page) */
   showThemeToggle?: boolean
+  /** Experience: open Street Lamp product detail (includes/specs slideout); menu closes first */
+  onSpecifications?: () => void
 }
 
 /**
@@ -79,6 +81,7 @@ export function ShopSlideoutMenu({
   volumeDiscountDescription,
   showPromoCodes = false,
   showThemeToggle = false,
+  onSpecifications,
 }: ShopSlideoutMenuProps) {
   const [authOpen, setAuthOpen] = useState(false)
   const { theme: experienceTheme, setTheme: setExperienceTheme } = useExperienceTheme()
@@ -235,6 +238,21 @@ export function ShopSlideoutMenu({
           )}
 
           <nav className="flex flex-col py-4">
+            {onSpecifications && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onSpecifications()
+                }}
+                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10"
+              >
+                <span className="flex items-center gap-4">
+                  <Ruler size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                  <span className="text-neutral-900 dark:text-white font-medium">Specifications</span>
+                </span>
+              </button>
+            )}
             {MENU_ITEMS.filter((item) => showPromoCodes || !('openPromoModal' in item && item.openPromoModal)).map((item) => {
               const Icon = item.icon
               const content = (
