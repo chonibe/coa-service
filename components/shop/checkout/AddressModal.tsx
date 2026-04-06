@@ -668,19 +668,16 @@ export function AddressModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-[200] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        {/*
+          Radix Content must not combine translate-based centering with tailwindcss-animate enter/exit:
+          both use transform, so the sheet can render off-screen while the overlay still dims.
+          Shell: full-viewport flex (no transform). Card: relative for absolute country/phone sheets.
+        */}
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 z-[101] flex flex-col overflow-hidden relative',
-            'rounded-t-2xl sm:rounded-xl',
-            isDark ? 'bg-[#171515]' : 'bg-white',
-            // Mobile: nearly full screen with rounded top; desktop: centered modal
-            'max-h-[96dvh] top-[4dvh]',
-            'sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:shadow-xl',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
-            'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
+            'group fixed inset-0 z-[201] flex flex-col justify-end sm:justify-center sm:items-center',
+            'border-0 bg-transparent p-0 shadow-none outline-none pointer-events-none'
           )}
           aria-describedby={undefined}
           onOpenAutoFocus={(e) => {
@@ -691,14 +688,37 @@ export function AddressModal({
           }}
           onPointerDownOutside={(e) => {
             const target = e.target as HTMLElement
-            if (target.closest?.('.pac-container')) e.preventDefault()
+            if (
+              target.closest?.('.pac-container') ||
+              target.closest?.('gmp-place-autocomplete')
+            ) {
+              e.preventDefault()
+            }
           }}
           onInteractOutside={(e) => {
             const target = e.target as HTMLElement
-            if (target.closest?.('.pac-container')) e.preventDefault()
+            if (
+              target.closest?.('.pac-container') ||
+              target.closest?.('gmp-place-autocomplete')
+            ) {
+              e.preventDefault()
+            }
           }}
         >
-          <div className={cn('flex flex-col h-full min-h-0', isDark && 'dark')}>
+          <div
+            className={cn(
+              'pointer-events-auto relative flex w-full max-w-full flex-col overflow-hidden',
+              'max-h-[96dvh] min-h-0 sm:max-h-[90vh] sm:w-full sm:max-w-md',
+              'rounded-t-2xl sm:rounded-xl',
+              isDark ? 'bg-[#171515]' : 'bg-white',
+              'shadow-2xl',
+              'group-data-[state=open]:animate-in group-data-[state=closed]:animate-out',
+              'group-data-[state=closed]:fade-out-0 group-data-[state=open]:fade-in-0',
+              'max-sm:group-data-[state=closed]:slide-out-to-bottom max-sm:group-data-[state=open]:slide-in-from-bottom',
+              'sm:group-data-[state=open]:zoom-in-95 sm:group-data-[state=closed]:zoom-out-95'
+            )}
+          >
+          <div className={cn('flex min-h-0 flex-1 flex-col', isDark && 'dark')}>
 
             {/* Drag handle — mobile only */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
@@ -961,6 +981,7 @@ export function AddressModal({
                     {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
                     process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY ? (
                       <GooglePlacesAddressInput
+                        ref={addressLine1Ref}
                         id="address-line1"
                         value={form.addressLine1}
                         enterKeyHint="next"
@@ -1458,6 +1479,7 @@ export function AddressModal({
               </div>
             </div>
           )}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

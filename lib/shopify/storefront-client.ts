@@ -126,24 +126,59 @@ export async function storefrontQuery<T>(
     })
   }
 
+  const isTimeoutLike = (e: unknown) =>
+    (e as { name?: string })?.name === 'TimeoutError' || (e as { name?: string })?.name === 'AbortError'
+
+  const isLikelyNetworkFailure = (e: unknown) => {
+    const msg = String((e as Error)?.message ?? e ?? '')
+    const cause = (e as { cause?: { code?: string } })?.cause
+    return (
+      msg.includes('fetch failed') ||
+      cause?.code === 'ENOTFOUND' ||
+      cause?.code === 'ECONNREFUSED' ||
+      cause?.code === 'ETIMEDOUT'
+    )
+  }
+
+  const networkFailureHint =
+    'Check network/VPN/DNS, that SHOPIFY_SHOP and Storefront token env vars are set for this environment ' +
+    '(run `vercel env pull` for local), and that Node can reach https://' +
+    SHOPIFY_SHOP +
+    '. '
+
   let response: Response
   try {
     response = await attemptFetch()
-  } catch (error: any) {
-    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+  } catch (error: unknown) {
+    if (isTimeoutLike(error)) {
       // Retry once on timeout — Vercel serverless cold starts can push the first
       // request over the limit; a second attempt usually succeeds.
       console.warn(`[Shopify] First attempt timed out after ${STOREFRONT_TIMEOUT_MS}ms — retrying once`)
       await storefrontRetryDelay()
       try {
         response = await attemptFetch()
-      } catch (retryError: any) {
-        if (retryError?.name === 'TimeoutError' || retryError?.name === 'AbortError') {
+      } catch (retryError: unknown) {
+        if (isTimeoutLike(retryError)) {
           throw new Error(`Shopify Storefront request timed out after ${STOREFRONT_TIMEOUT_MS}ms (both attempts)`)
         }
         throw retryError
       }
+    } else if (isLikelyNetworkFailure(error)) {
+      console.warn('[Shopify] Storefront fetch failed — retrying once after short delay')
+      await storefrontRetryDelay()
+      try {
+        response = await attemptFetch()
+      } catch (retryError: unknown) {
+        throw new Error(
+          `Shopify Storefront API request failed (network): ${String((retryError as Error)?.message ?? retryError)}. ` +
+            networkFailureHint
+        )
+      }
     } else {
+      const msg = String((error as Error)?.message ?? error ?? '')
+      if (msg.includes('fetch') || msg.toLowerCase().includes('network')) {
+        console.warn('[Shopify]', networkFailureHint)
+      }
       throw error
     }
   }

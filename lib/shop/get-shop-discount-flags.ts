@@ -24,7 +24,15 @@ async function loadShopDiscountSettingsRow(): Promise<ShopDiscountSettings> {
     const parsed = parseStoredShopDiscountSettings(data?.value ?? null)
     return mergeShopDiscountSettingsWithDefaults(parsed)
   } catch (e) {
-    console.warn('[getShopDiscountSettings] failed:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes('fetch failed') || msg.includes('Failed to fetch')) {
+      console.warn(
+        '[getShopDiscountSettings] Supabase unreachable (fetch failed). For local dev: set NEXT_PUBLIC_SUPABASE_URL / keys (e.g. vercel env pull) and check VPN/firewall.',
+        e
+      )
+    } else {
+      console.warn('[getShopDiscountSettings] failed:', e)
+    }
     return mergeShopDiscountSettingsWithDefaults(null)
   }
 }

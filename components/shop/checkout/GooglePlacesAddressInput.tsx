@@ -46,7 +46,7 @@ function extractPostalFromFormatted(formatted: string): string {
   return ''
 }
 
-/** Parse Google Places address_components into structured address (includes postal_code/ZIP) */
+/** Parse legacy Places PlaceResult */
 function parsePlaceResult(place: google.maps.places.PlaceResult): AddressSuggestion | null {
   const components = place.address_components || []
   const get = (type: string) =>
@@ -84,6 +84,49 @@ function parsePlaceResult(place: google.maps.places.PlaceResult): AddressSuggest
   }
 }
 
+/** New Places API (Place class) uses addressComponents with longText / shortText */
+function parseNewPlaceToSuggestion(place: {
+  id?: string
+  displayName?: string
+  formattedAddress?: string
+  addressComponents?: Array<{ longText?: string; shortText?: string; types: string[] }>
+}): AddressSuggestion | null {
+  const components = place.addressComponents ?? []
+  const get = (type: string) =>
+    components.find((c) => c.types.includes(type))?.longText || ''
+  const getShort = (type: string) =>
+    components.find((c) => c.types.includes(type))?.shortText || ''
+
+  const streetNumber = get('street_number')
+  const route = get('route')
+  const locality = get('locality') || get('sublocality') || get('sublocality_level_1')
+  const state = getShort('administrative_area_level_1') || get('administrative_area_level_1')
+  const postalFromComponents = get('postal_code') || ''
+  const countryCode = getShort('country')
+
+  const addressLine1 =
+    [streetNumber, route].filter(Boolean).join(' ') || (place.displayName ?? '')
+
+  const formattedAddress = place.formattedAddress || ''
+  const postalCode = postalFromComponents || extractPostalFromFormatted(formattedAddress)
+
+  if (!addressLine1 && !locality && !postalCode) return null
+
+  const placeName =
+    formattedAddress ||
+    [addressLine1, locality, state, postalCode, countryCode].filter(Boolean).join(', ')
+
+  return {
+    id: place.id || `gp-${Date.now()}`,
+    place_name: placeName,
+    addressLine1,
+    city: locality,
+    state: state || undefined,
+    postalCode,
+    country: countryCode,
+  }
+}
+
 function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
   return (value: T | null) => {
     for (const ref of refs) {
@@ -93,6 +136,8 @@ function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
     }
   }
 }
+
+type WidgetMode = 'pending' | 'legacy' | 'element'
 
 export const GooglePlacesAddressInput = React.forwardRef<
   HTMLInputElement,
@@ -107,7 +152,6 @@ export const GooglePlacesAddressInput = React.forwardRef<
     placeholder = 'Street address',
     className,
     disabled,
-    autoComplete,
     enterKeyHint,
     inputMode,
   },
@@ -115,45 +159,208 @@ export const GooglePlacesAddressInput = React.forwardRef<
 ) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null)
+  const elementHostRef = React.useRef<HTMLDivElement>(null)
+  const placeAutocompleteElRef = React.useRef<
+    google.maps.places.PlaceAutocompleteElement | null
+  >(null)
+
+  const [widgetMode, setWidgetMode] = React.useState<WidgetMode>('pending')
   const [scriptLoaded, setScriptLoaded] = React.useState(false)
+
   const onChangeRef = React.useRef(onChange)
   const onSelectRef = React.useRef(onSelect)
   onChangeRef.current = onChange
   onSelectRef.current = onSelect
+
   const apiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
     process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
 
+  const countryRef = React.useRef(country)
+  countryRef.current = country
+
   React.useEffect(() => {
     if (!apiKey || typeof window === 'undefined') return
-    if (window.google?.maps?.places?.Autocomplete) {
-      setScriptLoaded(true)
+
+    const markReady = () => {
+      const g = window.google?.maps as
+        | (typeof google.maps & {
+            importLibrary?: (name: string) => Promise<unknown>
+          })
+        | undefined
+      if (!g?.importLibrary) {
+        setWidgetMode(typeof google.maps.places?.Autocomplete === 'function' ? 'legacy' : 'pending')
+        setScriptLoaded(true)
+        return
+      }
+      void g
+        .importLibrary('places')
+        .then((lib: unknown) => {
+          const L = lib as {
+            PlaceAutocompleteElement?: new (opts?: object) => google.maps.places.PlaceAutocompleteElement
+          }
+          if (typeof L.PlaceAutocompleteElement === 'function') {
+            setWidgetMode('element')
+          } else {
+            setWidgetMode('legacy')
+          }
+          setScriptLoaded(true)
+        })
+        .catch(() => {
+          setWidgetMode(typeof google.maps.places?.Autocomplete === 'function' ? 'legacy' : 'pending')
+          setScriptLoaded(true)
+        })
+    }
+
+    if (window.google?.maps?.importLibrary) {
+      markReady()
       return
     }
+    if (window.google?.maps?.places?.Autocomplete) {
+      markReady()
+      return
+    }
+
     const existing = document.querySelector('script[src*="maps.googleapis.com"]')
     if (existing) {
       const check = () => {
-        if (window.google?.maps?.places?.Autocomplete) setScriptLoaded(true)
-        else setTimeout(check, 100)
+        if (window.google?.maps?.importLibrary || window.google?.maps?.places?.Autocomplete) {
+          markReady()
+        } else {
+          setTimeout(check, 100)
+        }
       }
       check()
       return
     }
+
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async&v=weekly`
     script.async = true
     script.defer = true
-    script.onload = () => setScriptLoaded(true)
+    script.onload = () => markReady()
     document.head.appendChild(script)
   }, [apiKey])
 
-  /** Latest country for initial Autocomplete options when script becomes ready (avoids stale closure vs geo-updated form). */
-  const countryRef = React.useRef(country)
-  countryRef.current = country
-
-  /** useLayoutEffect: bind after Dialog/portal DOM commit so the input ref exists and predictions attach reliably. */
+  /** New PlaceAutocompleteElement (required for Google Cloud projects created after March 2025). */
   React.useLayoutEffect(() => {
-    if (!scriptLoaded || !inputRef.current || !apiKey) return
+    if (!scriptLoaded || widgetMode !== 'element' || !elementHostRef.current || !apiKey) return
+    const host = elementHostRef.current
+    host.textContent = ''
+
+    const constCtor = (
+      google.maps.places as typeof google.maps.places & {
+        PlaceAutocompleteElement?: new (opts?: object) => google.maps.places.PlaceAutocompleteElement
+      }
+    ).PlaceAutocompleteElement
+    if (typeof constCtor !== 'function') {
+      setWidgetMode('legacy')
+      return
+    }
+
+    const c = countryRef.current
+    const el = new constCtor({
+      placeholder,
+      includedRegionCodes: c?.trim() ? [c.trim().toLowerCase()] : [],
+    })
+    el.id = id
+    if (disabled) {
+      try {
+        ;(el as { disabled?: boolean }).disabled = true
+      } catch {
+        /* optional property */
+      }
+    }
+    el.className = cn(
+      inputBase.replace(/^flex /, ''),
+      'flex w-full min-h-10 items-center',
+      className
+    )
+    el.value = value
+    host.appendChild(el)
+    placeAutocompleteElRef.current = el
+
+    const assignForwardedToInnerInput = () => {
+      try {
+        const inner = (el as { input?: HTMLInputElement }).input
+        if (!inner || !forwardedRef) return
+        if (typeof forwardedRef === 'function') forwardedRef(inner)
+        else (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = inner
+      } catch {
+        /* shadow DOM timing */
+      }
+    }
+    queueMicrotask(assignForwardedToInnerInput)
+
+    const onGmpSelect = async (ev: Event) => {
+      const e = ev as unknown as { placePrediction?: { toPlace: () => google.maps.places.Place } }
+      const pred = e.placePrediction
+      if (!pred) return
+      const place = pred.toPlace()
+      try {
+        await place.fetchFields({
+          fields: ['addressComponents', 'formattedAddress', 'displayName', 'id'],
+        })
+      } catch {
+        return
+      }
+      const suggestion = parseNewPlaceToSuggestion(place)
+      if (suggestion) {
+        onChangeRef.current(suggestion.addressLine1)
+        onSelectRef.current?.(suggestion)
+      }
+    }
+
+    const onInput = () => {
+      try {
+        onChangeRef.current((el as { value: string }).value ?? '')
+      } catch {
+        /* */
+      }
+    }
+
+    el.addEventListener('gmp-select', onGmpSelect)
+    el.addEventListener('input', onInput)
+
+    return () => {
+      el.removeEventListener('gmp-select', onGmpSelect)
+      el.removeEventListener('input', onInput)
+      host.textContent = ''
+      placeAutocompleteElRef.current = null
+      if (forwardedRef && typeof forwardedRef !== 'function') {
+        (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = null
+      }
+    }
+    /* className / value / forwardedRef: synced outside this effect to avoid tearing down PlaceAutocompleteElement */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scriptLoaded, widgetMode, apiKey, id, placeholder, disabled])
+
+  React.useEffect(() => {
+    const el = placeAutocompleteElRef.current
+    if (!el || widgetMode !== 'element') return
+    try {
+      const c = country?.trim()
+      ;(el as { includedRegionCodes?: string[] }).includedRegionCodes = c ? [c.toLowerCase()] : []
+    } catch {
+      /* */
+    }
+  }, [country, widgetMode])
+
+  React.useEffect(() => {
+    const el = placeAutocompleteElRef.current
+    if (!el || widgetMode !== 'element') return
+    try {
+      if ((el as { value: string }).value !== value) {
+        ;(el as { value: string }).value = value
+      }
+    } catch {
+      /* */
+    }
+  }, [value, widgetMode])
+
+  /** Legacy Autocomplete — still used when importLibrary / PlaceAutocompleteElement unavailable. */
+  React.useLayoutEffect(() => {
+    if (!scriptLoaded || widgetMode !== 'legacy' || !inputRef.current || !apiKey) return
     const inputEl = inputRef.current
     const c = countryRef.current
     const opts: google.maps.places.AutocompleteOptions = {
@@ -161,7 +368,12 @@ export const GooglePlacesAddressInput = React.forwardRef<
       fields: ['address_components', 'formatted_address', 'place_id', 'name'],
       componentRestrictions: c?.trim() ? { country: c.toLowerCase() } : undefined,
     }
-    const ac = new google.maps.places.Autocomplete(inputEl, opts)
+    let ac: google.maps.places.Autocomplete
+    try {
+      ac = new google.maps.places.Autocomplete(inputEl, opts)
+    } catch {
+      return
+    }
     autocompleteRef.current = ac
     const listener = ac.addListener('place_changed', () => {
       const place = ac.getPlace()
@@ -181,11 +393,11 @@ export const GooglePlacesAddressInput = React.forwardRef<
       google.maps.event.clearInstanceListeners(ac)
       autocompleteRef.current = null
     }
-  }, [scriptLoaded, apiKey])
+  }, [scriptLoaded, widgetMode, apiKey])
 
   React.useEffect(() => {
     const ac = autocompleteRef.current
-    if (!ac || typeof google === 'undefined') return
+    if (!ac || typeof google === 'undefined' || widgetMode !== 'legacy') return
     try {
       if (country?.trim()) {
         ac.setComponentRestrictions({ country: country.toLowerCase() })
@@ -193,11 +405,15 @@ export const GooglePlacesAddressInput = React.forwardRef<
         ac.setComponentRestrictions(null)
       }
     } catch {
-      // setComponentRestrictions can throw if Maps API not fully ready
+      /* */
     }
-  }, [country])
+  }, [country, widgetMode])
 
   if (!apiKey) return null
+
+  if (widgetMode === 'element' && scriptLoaded) {
+    return <div ref={elementHostRef} className="w-full min-h-[2.5rem]" />
+  }
 
   return (
     <input
@@ -212,8 +428,6 @@ export const GooglePlacesAddressInput = React.forwardRef<
       enterKeyHint={enterKeyHint}
       inputMode={inputMode}
       className={cn(inputBase, className)}
-      role="combobox"
-      aria-autocomplete="list"
     />
   )
 })
