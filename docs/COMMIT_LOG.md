@@ -2,7 +2,7 @@
 
 ## Commit: feat(experience): featured artist bundle under Spline + Add to cart (2026-04-06)
 
-**Ref:** `3cb5bbf71`
+**Ref:** `150849227`
 
 ### Summary
 The **featured artist bundle** moved from **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** to **[`FeaturedArtistBundleSection`](app/(store)/shop/experience/components/FeaturedArtistBundleSection.tsx)** under the 3D preview in **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** (thumbnails, pricing, **Add to cart**). Both experience **[`ExperienceV2Client`](app/(store)/shop/experience/components/ExperienceV2Client.tsx)** shells pass **`featuredBundleOffer`**, **`bundlePreviewLamp`**, **`bundlePreviewArtworks`**. **[`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md)** updated.
