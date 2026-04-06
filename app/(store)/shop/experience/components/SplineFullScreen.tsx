@@ -22,6 +22,8 @@ import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { ArtworkAccordions } from './ArtworkAccordions'
+import { FeaturedArtistBundleSection } from './FeaturedArtistBundleSection'
+import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
   if (ref == null) return
@@ -113,6 +115,10 @@ interface SplineFullScreenProps {
   streetEditionRow?: StreetEditionStatesRow | null
   /** Early-access ladder pricing for displayed artwork */
   displayedProductEarlyAccess?: boolean
+  /** When collection is empty and data is complete, featured bundle renders under the 3D preview in the reel */
+  featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  bundlePreviewLamp?: ShopifyProduct | null
+  bundlePreviewArtworks?: ShopifyProduct[] | null
 }
 
 export function SplineFullScreen({
@@ -141,8 +147,19 @@ export function SplineFullScreen({
   editionLeadBeforeSpline = false,
   streetEditionRow = null,
   displayedProductEarlyAccess = false,
+  featuredBundleOffer = null,
+  bundlePreviewLamp = null,
+  bundlePreviewArtworks = null,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
+  const showFeaturedBundleSection =
+    typeof collectionArtworkCount === 'number' &&
+    collectionArtworkCount === 0 &&
+    featuredBundleOffer != null &&
+    featuredBundleOffer.disabled !== true &&
+    bundlePreviewLamp != null &&
+    Array.isArray(bundlePreviewArtworks) &&
+    bundlePreviewArtworks.length === 2
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
   /** True when Spline + top thumb column have scrolled mostly out of the reel — show a docked Back to top FAB. */
@@ -750,6 +767,14 @@ export function SplineFullScreen({
           </ComponentErrorBoundary>
           )}
           </div>
+          {showFeaturedBundleSection && featuredBundleOffer && bundlePreviewLamp && bundlePreviewArtworks ? (
+            <FeaturedArtistBundleSection
+              theme={theme}
+              offer={featuredBundleOffer}
+              lamp={bundlePreviewLamp}
+              artworks={[bundlePreviewArtworks[0]!, bundlePreviewArtworks[1]!]}
+            />
+          ) : null}
         </div>
 
         {/* Artist bio, artwork card, specs (full stack or content-only when edition is above Spline) */}

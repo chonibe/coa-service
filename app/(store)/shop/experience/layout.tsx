@@ -12,7 +12,7 @@ export const viewport = {
 export default function ExperienceLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <link rel="preload" href="/internal.webp" as="image" />
+      <link rel="preload" href="/internal.webp" as="image" crossOrigin="anonymous" />
       <ExperienceOrderProvider>
         <ExperienceThemeProvider>
           <ExperienceAuthProvider>

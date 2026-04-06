@@ -1261,6 +1261,9 @@ export function ExperienceV2Client({
         experienceReelRef={experienceReelRef}
         streetEditionRow={displayedStreetEditionRow}
         displayedProductEarlyAccess={displayedEarlyAccess}
+        featuredBundleOffer={featuredBundleFilterOffer}
+        bundlePreviewLamp={lamp}
+        bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
 
       <ArtworkCarouselBar
@@ -1273,9 +1276,6 @@ export function ExperienceV2Client({
         onTapItem={handleTapCarouselItem}
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
-        featuredBundleOffer={featuredBundleFilterOffer}
-        bundlePreviewLamp={lamp}
-        bundlePreviewArtworks={spotlightPairProducts ?? undefined}
       />
 
       {pickerHasBeenOpened && (

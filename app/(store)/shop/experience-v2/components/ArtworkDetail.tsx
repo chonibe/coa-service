@@ -179,6 +179,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const panX = useMotionValue(0)
   const panY = useMotionValue(0)
 
+  /** Must be declared before any hook that references it (dependency arrays are evaluated eagerly). */
+  const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+
   useEffect(() => {
     setImageIndex(0)
     setShowDescription(false)
@@ -246,7 +249,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const quantityAvailable = typeof firstVariant?.quantityAvailable === 'number' ? firstVariant.quantityAvailable : undefined
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
-  const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
   const productDetailsLabel = isLampOrBundleProduct ? 'Product details' : 'Artwork details'
   /** Street Lamp / bundle: portrait 3:4 frame; prints keep fixed-height hero. */
   const desktopDetailImageFrameClass = cn(

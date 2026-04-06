@@ -1442,6 +1442,9 @@ export function ExperienceV2Client({
         editionLeadBeforeSpline={editionLeadBeforeSpline}
         streetEditionRow={displayedStreetEditionRow}
         displayedProductEarlyAccess={displayedEarlyAccess}
+        featuredBundleOffer={featuredBundleFilterOffer}
+        bundlePreviewLamp={lamp}
+        bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
 
       <ArtworkCarouselBar
@@ -1468,9 +1471,6 @@ export function ExperienceV2Client({
         onRemoveItem={(i) => void handleCarouselBarRemove(i)}
         onOpenPicker={handleOpenPicker}
         onAddProduct={handleToggleSelect}
-        featuredBundleOffer={featuredBundleFilterOffer}
-        bundlePreviewLamp={lamp}
-        bundlePreviewArtworks={spotlightPairProducts ?? undefined}
       />
 
       {pickerHasBeenOpened && (
