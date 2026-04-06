@@ -2,7 +2,7 @@
 
 ## Commit: feat(experience): carousel in-flow above Spline; purple picker + (2026-04-06)
 
-**Ref:** `e2e05db6a`
+**Ref:** `bfcb430ba`
 
 ### Summary
 **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)**: removed **`dockCarouselTopOnMobile`** and **all bottom `absolute` / checkout-bar lift** positioning — the strip is **`relative shrink-0`** in the main column **above** **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** at **all breakpoints** (both [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) shells use **`flex-col`** + flex **order**). **Open-picker +** uses **violet** glass styling. **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** add-artwork FAB uses **violet** instead of blue.
