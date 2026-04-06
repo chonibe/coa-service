@@ -47,7 +47,7 @@ experience-v2/
 
 ## Journey CTA pulse (next action)
 
-A single **priority-ordered** funnel step drives **pulse + shine** on the correct control: `animate-experience-artwork-cta-pulse` plus `.experience-journey-cta-shine` in [`app/globals.css`](../../../app/globals.css). **`@media (prefers-reduced-motion: reduce)`** disables the shine sweep (and existing pulse rules apply).
+A single **priority-ordered** funnel step drives **pulse + shine** on the correct control: `animate-experience-artwork-cta-pulse` plus `.experience-journey-cta-shine` in [`app/globals.css`](../../../app/globals.css) for primary CTAs (sticky, checkout, lamp). **After the lamp is in cart**, the selector’s artwork cards use **`.experience-journey-artwork-*`** instead: occasional **card tilt** (staggered), **white/cream shine** only on the **glass title chip** (matching the chip), and a **slower pulse only on the `+`** — not the purple full-card pulse or the bottom-row Add button. **`@media (prefers-reduced-motion: reduce)`** applies globally to animations.
 
 - **Resolver:** [`lib/shop/experience-journey-next-action.ts`](../../../lib/shop/experience-journey-next-action.ts) — `resolveExperienceNextAction`, `EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS`
 - **Tests:** [`lib/shop/experience-journey-next-action.test.ts`](../../../lib/shop/experience-journey-next-action.test.ts) (`npx jest lib/shop/experience-journey-next-action.test.ts`)

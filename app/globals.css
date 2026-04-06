@@ -739,7 +739,7 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 }
 
 .animate-experience-artwork-cta-pulse {
-  animation: experience-artwork-cta-pulse 2.2s ease-in-out infinite;
+  animation: experience-artwork-cta-pulse 3.5s ease-in-out infinite;
 }
 
 /** Composable with pulse: subtle diagonal shine sweep (host must stay `relative overflow-hidden`) */
@@ -770,7 +770,7 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     rgba(255, 255, 255, 0) 65%,
     transparent 100%
   );
-  animation: experience-journey-cta-shine 2.8s ease-in-out infinite;
+  animation: experience-journey-cta-shine 3.6s ease-in-out infinite;
   pointer-events: none;
   mix-blend-mode: overlay;
 }
@@ -786,6 +786,111 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
       transparent 100%
     );
   }
+}
+
+/**
+ * Choose-artworks hint in selector (strip + picker): no full-card purple pulse.
+ * Occasional tilt on the card, white/cream shine on the glass title chip only, slower pulse on the + only.
+ */
+@keyframes experience-journey-artwork-plus-pulse {
+  0%,
+  72%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  80%,
+  88% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+}
+
+.experience-journey-artwork-plus-pulse {
+  display: inline-flex;
+  animation: experience-journey-artwork-plus-pulse 4.8s ease-in-out infinite;
+  animation-delay: var(--journey-plus-delay, 0s);
+  transform-origin: center;
+}
+
+@keyframes experience-journey-artwork-chip-shine {
+  0%,
+  87%,
+  100% {
+    transform: translateX(-150%) skewX(-11deg);
+    opacity: 0;
+  }
+  88% {
+    opacity: 1;
+  }
+  95% {
+    transform: translateX(210%) skewX(-11deg);
+    opacity: 0.35;
+  }
+}
+
+.experience-journey-artwork-title-chip-hint {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.experience-journey-artwork-title-chip-hint > * {
+  position: relative;
+  z-index: 1;
+}
+
+.experience-journey-artwork-title-chip-hint::after {
+  content: '';
+  position: absolute;
+  inset: -35% -55%;
+  width: 58%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 70%,
+    transparent 100%
+  );
+  animation: experience-journey-artwork-chip-shine 12s ease-in-out infinite;
+  animation-delay: var(--journey-chip-shine-delay, 0s);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .experience-journey-artwork-title-chip-hint::after {
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0) 30%,
+      rgba(248, 236, 236, 0.42) 50%,
+      rgba(255, 255, 255, 0) 70%,
+      transparent 100%
+    );
+  }
+}
+
+@keyframes experience-journey-artwork-card-tilt {
+  0%,
+  84%,
+  100% {
+    transform: perspective(560px) rotateY(0deg) rotateX(0deg);
+  }
+  88% {
+    transform: perspective(560px) rotateY(2.4deg) rotateX(-1deg);
+  }
+  92% {
+    transform: perspective(560px) rotateY(-1.9deg) rotateX(0.65deg);
+  }
+}
+
+.experience-journey-artwork-card-tilt {
+  transform-style: preserve-3d;
+  animation: experience-journey-artwork-card-tilt 14s ease-in-out infinite;
+  animation-delay: var(--journey-card-tilt-delay, 0s);
 }
 
 /* Parallax container */

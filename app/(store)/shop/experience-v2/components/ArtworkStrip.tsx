@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,7 +23,6 @@ import {
 } from '@/lib/shop/experience-artwork-unit-price'
 import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
 import type { ExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
-import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -356,6 +355,8 @@ function ArtworkCard({
   const selectionChrome = getStripCardSelectionChrome(isInCart, suppressSelectionRing)
 
   const showTapHint = showTapNudge && !isInCart && !isSoldOut && lampPosition === null
+  const journeyStripHint =
+    journeyPulseChooseArtworks && !isInCart && !isSoldOut
 
   return (
     <motion.div
@@ -368,8 +369,14 @@ function ArtworkCard({
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
-        (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden'
+        (isInCart || (isFirstCard && showHighlightAnimation)) ? 'overflow-visible' : 'overflow-hidden',
+        journeyStripHint && 'experience-journey-artwork-card-tilt'
       )}
+      style={
+        journeyStripHint
+          ? ({ '--journey-card-tilt-delay': `${globalIdx * 1.15}s` } as CSSProperties)
+          : undefined
+      }
     >
       <motion.div
         className={cn(
@@ -480,8 +487,14 @@ function ArtworkCard({
                 'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-                'text-white shadow-sm shadow-black/20'
+                'text-white shadow-sm shadow-black/20',
+                journeyStripHint && 'experience-journey-artwork-title-chip-hint'
               )}
+              style={
+                journeyStripHint
+                  ? ({ '--journey-chip-shine-delay': `${globalIdx * 0.7}s` } as CSSProperties)
+                  : undefined
+              }
             >
               <span
                 className={cn(
@@ -493,11 +506,20 @@ function ArtworkCard({
                 {product.title}
               </span>
               {!isInCart && !isSoldOut && (
-                <Plus
-                  className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
+                <span
+                  className={cn(journeyStripHint && 'experience-journey-artwork-plus-pulse')}
+                  style={
+                    journeyStripHint
+                      ? ({ '--journey-plus-delay': `${globalIdx * 0.45}s` } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  <Plus
+                    className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                </span>
               )}
             </div>
           </div>
@@ -608,8 +630,7 @@ function ArtworkCard({
               !isInCart && 'h-5 px-2 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#262222]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-white/80 dark:hover:bg-[#2c2828]/90',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-[#e8d4d4]',
-              isSoldOut && 'opacity-40 cursor-not-allowed',
-              journeyPulseChooseArtworks && !isInCart && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+              isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
             style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}
             aria-label={isInCart ? 'Remove from order' : 'Add artwork to order'}

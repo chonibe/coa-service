@@ -1,11 +1,8 @@
 'use client'
 
-import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo, type CSSProperties } from 'react'
 import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
-import {
-  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
-  resolveExperienceNextAction,
-} from '@/lib/shop/experience-journey-next-action'
+import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import Image from 'next/image'
 import { Plus, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -112,8 +109,10 @@ interface ArtworkCardV2Props {
   suppressSelectionRing?: boolean
   /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
   streetPricing?: StreetEditionStatesRow | null
-  /** Journey: pulse add affordance on picker card */
+  /** Journey: subtle tilt + title-chip shine + plus pulse (not full-card) */
   journeyPulseChooseArtworks?: boolean
+  /** Stagger animations across virtual rows */
+  journeyStaggerIndex?: number
 }
 
 function ArtworkCardV2({
@@ -130,6 +129,7 @@ function ArtworkCardV2({
   suppressSelectionRing = false,
   streetPricing = null,
   journeyPulseChooseArtworks = false,
+  journeyStaggerIndex = 0,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
@@ -148,6 +148,9 @@ function ArtworkCardV2({
     onSelect(product)
   }, [product, onSelect])
 
+  const journeyPickerHint =
+    journeyPulseChooseArtworks && !isSelected && product.availableForSale
+
   return (
     <motion.div
       data-product-id={product.id}
@@ -158,11 +161,13 @@ function ArtworkCardV2({
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
         !roundLeft && roundRight && 'rounded-r-xl',
-        journeyPulseChooseArtworks &&
-          !isSelected &&
-          product.availableForSale &&
-          EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+        journeyPickerHint && 'experience-journey-artwork-card-tilt'
       )}
+      style={
+        journeyPickerHint
+          ? ({ '--journey-card-tilt-delay': `${journeyStaggerIndex * 1.2}s` } as CSSProperties)
+          : undefined
+      }
     >
       <motion.div
         className={cn(
@@ -260,8 +265,14 @@ function ArtworkCardV2({
                 'picker-title-chip flex w-4/5 max-w-[80%] min-w-0 items-center gap-1.5 rounded-lg px-2 py-1',
                 'border border-white/30 dark:border-white/20',
                 'bg-black/40 backdrop-blur-md backdrop-saturate-150 dark:bg-black/50',
-                'text-white shadow-sm shadow-black/20'
+                'text-white shadow-sm shadow-black/20',
+                journeyPickerHint && 'experience-journey-artwork-title-chip-hint'
               )}
+              style={
+                journeyPickerHint
+                  ? ({ '--journey-chip-shine-delay': `${journeyStaggerIndex * 0.75}s` } as CSSProperties)
+                  : undefined
+              }
             >
               <span
                 className={cn(
@@ -273,11 +284,20 @@ function ArtworkCardV2({
                 {product.title}
               </span>
               {!isSelected && (
-                <Plus
-                  className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
+                <span
+                  className={cn(journeyPickerHint && 'experience-journey-artwork-plus-pulse')}
+                  style={
+                    journeyPickerHint
+                      ? ({ '--journey-plus-delay': `${journeyStaggerIndex * 0.5}s` } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  <Plus
+                    className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                </span>
               )}
             </div>
           </div>
@@ -800,6 +820,7 @@ export function ArtworkPickerSheet({
                                   !p1Selected &&
                                   product1.availableForSale
                                 }
+                                journeyStaggerIndex={virtualRow.index}
                               />
                             </div>
                           )}
@@ -838,6 +859,7 @@ export function ArtworkPickerSheet({
                                   !p2Selected &&
                                   product2.availableForSale
                                 }
+                                journeyStaggerIndex={virtualRow.index}
                               />
                             </div>
                           )}
@@ -861,6 +883,7 @@ export function ArtworkPickerSheet({
                                   !p1Selected &&
                                   product1.availableForSale
                                 }
+                                journeyStaggerIndex={virtualRow.index}
                               />
                             </div>
                           )}
