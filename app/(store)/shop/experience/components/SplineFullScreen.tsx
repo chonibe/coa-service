@@ -241,7 +241,7 @@ export function SplineFullScreen({
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
-  /** Compact glass control — sits left, above carousel + add row (see docked wrapper padding). */
+  /** Compact glass control — docked top-left (`fixed` + z above experience carousel strip). */
   const backToTopIconClass = cn(
     'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-[0.96]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-md',
@@ -842,13 +842,12 @@ export function SplineFullScreen({
         )}
       </div>
 
-      {/* Docked back-to-top — left, compact; lifted above sticky bar (thumbnails row + full-width checkout) */}
+      {/* Docked back-to-top — top-left; fixed + z above sibling carousel overlay (z-50) */}
       {hasGallery && backToTopDocked && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[19] flex justify-start pl-4 pr-4 md:pl-6 md:pr-6"
+          className="pointer-events-none fixed left-4 z-[55] md:left-6"
           style={{
-            paddingBottom:
-              'calc(8rem + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
+            top: 'max(0.75rem, env(safe-area-inset-top, 0px))',
           }}
         >
           <button
