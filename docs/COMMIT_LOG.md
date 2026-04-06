@@ -2,7 +2,7 @@
 
 ## Commit: fix(experience): strip mini lamp shows base mesh only — no artwork textures (2026-04-06)
 
-**Ref:** `4f29b54f4`
+**Ref:** `aee1dc3af`
 
 ### Summary
 **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** passes **`image1`/`image2` null** and **`lampPreviewCount`/`collectionArtworkCount` 0** into **[`CarouselStripLampSpline`](app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)** so the carousel thumb uses **`Spline3DPreview`** base lamp panels only. **Reset / rotate / `onFrontSideSettled`** still come from **`miniSplineLampPreview`** so the mini stays aligned with the main lamp orientation. Main **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** is unchanged.
@@ -17,7 +17,7 @@
 
 ## Commit: feat(experience): carousel mini lamp tied to lamp cart + first-state + tile (2026-04-06)
 
-**Ref:** `4f29b54f4`
+**Ref:** `625b7d3e3`
 
 ### Summary
 **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** shows the live mini **`Spline3DPreview`** only when **`lampQuantity > 0`**; trash removes the lamp via **`onRemoveLampFromCarouselStrip`**. **Empty collection** and **no lamp**: spotlight-style **`+`** tile (`stripLampProduct`, **`onAddLampFromCarouselStrip`**). **Artworks without lamp**: mini lamp tile hidden. **[`experience-carousel-mini-spline.ts`](lib/shop/experience-carousel-mini-spline.ts)** removes sessionStorage visibility. Both **ExperienceV2Client** shells pass **`lampQuantity`**, **`stripLampProduct`**, add/remove handlers.
