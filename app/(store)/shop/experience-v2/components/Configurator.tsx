@@ -835,7 +835,7 @@ export function Configurator({
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
     if (!spotlightData || !spotlightPairProducts) return null
     const [p1, p2] = spotlightPairProducts
-    if (!p1.availableForSale || !p2.availableForSale) return null
+    const bothForSale = p1.availableForSale && p2.availableForSale
     const lampPricesNatural: number[] = []
     for (let k = 1; k <= 1; k++) {
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
@@ -863,7 +863,7 @@ export function Configurator({
       bundleUsd: FEATURED_ARTIST_BUNDLE_USD,
       compareAtUsd: compareAt,
       onApply: handleApplyFeaturedBundle,
-      disabled: bundleInCart,
+      disabled: bundleInCart || !bothForSale,
     }
   }, [
     spotlightData,

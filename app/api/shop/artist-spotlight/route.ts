@@ -265,6 +265,8 @@ async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClien
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
       unlisted,
+      /** So experience clients can resolve the featured bundle + merge into selector without relying on first collection page. */
+      products: nodes.slice(0, 4),
     }
   } catch {
     return null
@@ -294,8 +296,10 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
       sortKey: 'CREATED_AT',
       reverse: true,
     })
-    const productIds = (vendorProducts || [])
-      .filter((p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp'))
+    const artworkNodes = (vendorProducts || []).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    const productIds = artworkNodes
       .slice(0, 4)
       .map((p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id)
       .filter(Boolean)
@@ -317,6 +321,7 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
       seriesName: undefined,
       gifUrl,
       unlisted,
+      products: artworkNodes.slice(0, 4),
     }
   } catch {
     return null
