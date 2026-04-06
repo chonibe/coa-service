@@ -1,3 +1,22 @@
+## Commit: Experience — lamp detail loads full product for Shopify video carousel (2026-04-06)
+
+### Summary
+The Street Lamp from collection/list queries still had no `media`, so the product-detail carousel could only show images. **`ExperienceV2Client` (experience-v2)** still short-circuited `detailProductFull` to the lightweight `detailProduct` when opening the lamp, skipping the full-product API. That branch was removed so the lamp uses the same cache + **`/api/shop/products/[handle]`** path as other products. **Legacy experience** `ExperienceV2Client` now prefetches the lamp handle into `fullProductCacheRef` on mount (matching v2 warm-cache behavior). Effect dependency arrays no longer include unused `lamp.id`.
+
+### ✅ Implementation Checklist
+
+- [x] [`app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx`](../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — Remove lamp-only `setDetailProductFull(detailProduct)` shortcut; tidy analytics effect deps
+- [x] [`app/(store)/shop/experience/components/ExperienceV2Client.tsx`](../app/(store)/shop/experience/components/ExperienceV2Client.tsx) — Mount effect: fetch full lamp into `fullProductCacheRef`; detail fetch effect deps
+- [x] [`app/(store)/shop/experience-v2/components/Configurator.tsx`](../app/(store)/shop/experience-v2/components/Configurator.tsx) — Detail fetch effect deps (`detailProduct` only)
+- [x] [`docs/features/experience-v2/README.md`](../docs/features/experience-v2/README.md) — Version note (lamp + video / full product)
+- [x] [`docs/COMMIT_LOGS.md`](./COMMIT_LOGS.md) — This entry
+
+### 📌 Verification
+
+- `npx vitest run lib/shop/product-carousel-slides.test.ts` — pass
+
+---
+
 ## Commit: Address modal — phone country sheet only below `sm` (640px) (2026-03-27)
 
 ### Summary

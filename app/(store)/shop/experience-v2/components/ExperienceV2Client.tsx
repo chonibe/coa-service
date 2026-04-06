@@ -847,11 +847,6 @@ export function ExperienceV2Client({
       setDetailProductLoading(false)
       return
     }
-    if (detailProduct.id === lamp.id) {
-      setDetailProductFull(detailProduct)
-      setDetailProductLoading(false)
-      return
-    }
     const handle = detailProduct.handle
     const cached = fullProductCacheRef.current.get(handle)
     if (cached) {
@@ -875,7 +870,7 @@ export function ExperienceV2Client({
         if (!cancelled) setDetailProductLoading(false)
       })
     return () => { cancelled = true }
-  }, [detailProduct, lamp.id])
+  }, [detailProduct])
 
   // PostHog: artwork detail sheet — view_item + preview (once per opened product)
   useEffect(() => {
@@ -894,7 +889,7 @@ export function ExperienceV2Client({
       handle: p.handle,
       device_type: getDeviceType(),
     })
-  }, [detailProduct, detailProductFull, detailProductLoading, lamp.id])
+  }, [detailProduct, detailProductFull, detailProductLoading])
 
   const handleLampSelect = useCallback((product: ShopifyProduct) => {
     setLampPreviewOrder((prev) => {

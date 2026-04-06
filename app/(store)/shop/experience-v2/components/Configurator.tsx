@@ -678,7 +678,7 @@ export function Configurator({
         if (!cancelled) setDetailProductLoading(false)
       })
     return () => { cancelled = true }
-  }, [detailProduct, lamp.id])
+  }, [detailProduct])
 
   useEffect(() => {
     prefetchProduct(lamp.handle)

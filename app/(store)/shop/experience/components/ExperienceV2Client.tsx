@@ -204,6 +204,22 @@ export function ExperienceV2Client({
   const [splineInView, setSplineInView] = useState(true)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  /** List `lamp` from SSR has no `media`; warm cache so detail carousel gets Video + sources. */
+  useEffect(() => {
+    const h = lamp.handle
+    if (!h || fullProductCacheRef.current.has(h)) return
+    let cancelled = false
+    fetch(`/api/shop/products/${encodeURIComponent(h)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.product) return
+        fullProductCacheRef.current.set(h, data.product as ShopifyProduct)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [lamp.handle])
   const scrollToSplineRef = useRef(false)
 
   const allProducts = useMemo(
@@ -990,7 +1006,7 @@ export function ExperienceV2Client({
         if (!cancelled) setDetailProductLoading(false)
       })
     return () => { cancelled = true }
-  }, [detailProduct, lamp.id])
+  }, [detailProduct])
 
   const handleLampSelect = useCallback(
     (product: ShopifyProduct, explicitStripIndex?: number) => {
