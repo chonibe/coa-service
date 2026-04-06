@@ -24,6 +24,10 @@ import {
   storefrontVariantUsd,
 } from '@/lib/shop/experience-artwork-unit-price'
 import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
+import {
+  ARTWORKS_PER_FREE_LAMP,
+  lampVolumeDiscountPercentForAllocated,
+} from '@/lib/shop/lamp-artwork-volume-discount'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -123,9 +127,6 @@ function AnimatedPrice({ value }: { value: number }) {
   return <span className="tabular-nums">${formatPriceCompact(display)}</span>
 }
 
-const ARTWORKS_PER_FREE_LAMP = 14
-const DISCOUNT_PER_ARTWORK = 7.5
-
 function isProductCollected(productId: string, collectedIds?: Set<string>): boolean {
   if (!collectedIds?.size) return false
   const numeric = productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
@@ -199,7 +200,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     return prices
@@ -222,7 +223,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       sum += lampPrice * Math.max(0, 1 - discountPct / 100)
     }
     return sum

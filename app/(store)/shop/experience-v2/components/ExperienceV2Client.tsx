@@ -63,6 +63,10 @@ import {
   isFeaturedArtistBundleActive,
 } from '@/lib/shop/experience-featured-bundle'
 import {
+  ARTWORKS_PER_FREE_LAMP,
+  lampVolumeDiscountPercentForAllocated,
+} from '@/lib/shop/lamp-artwork-volume-discount'
+import {
   captureFunnelEvent,
   FunnelEvents,
   getDeviceType,
@@ -543,8 +547,6 @@ export function ExperienceV2Client({
   }, [sideBProduct?.id, image2])
 
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
-  const ARTWORKS_PER_FREE_LAMP = 14
-  const DISCOUNT_PER_ARTWORK = 7.5
   const artworkCount = selectedArtworks.length
 
   const featuredArtistBundleActive = useMemo(
@@ -564,7 +566,7 @@ export function ExperienceV2Client({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     return prices
@@ -611,7 +613,7 @@ export function ExperienceV2Client({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(2, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       lampPricesNatural.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     const compareAt = computeFeaturedBundleRegularSubtotalUsd({
@@ -1264,6 +1266,9 @@ export function ExperienceV2Client({
         onTapItem={handleTapCarouselItem}
         onRemoveItem={handleRemoveCarouselSlot}
         onOpenPicker={handleOpenPicker}
+        featuredBundleOffer={featuredBundleFilterOffer}
+        bundlePreviewLamp={lamp}
+        bundlePreviewArtworks={spotlightPairProducts ?? undefined}
       />
 
       {pickerHasBeenOpened && (
@@ -1393,7 +1398,6 @@ export function ExperienceV2Client({
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
         featuredBundleVendorName={featuredArtistBundleActive ? spotlightData?.vendorName : undefined}
-        featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
       />
 
       <OrderBar

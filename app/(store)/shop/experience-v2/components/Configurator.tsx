@@ -109,6 +109,13 @@ import {
   isFeaturedArtistBundleActive,
 } from '@/lib/shop/experience-featured-bundle'
 import {
+  ARTWORKS_PER_FREE_LAMP,
+  DISCOUNT_PER_ARTWORK_PCT,
+  LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED,
+  lampVolumeDiscountPercentForAllocated,
+  lampVolumeProgressPercentForAllocated,
+} from '@/lib/shop/lamp-artwork-volume-discount'
+import {
   loadImagePosition,
   saveImagePosition as persistImagePosition,
   DEFAULT_SIDE_POSITION,
@@ -768,9 +775,6 @@ export function Configurator({
     [allProducts, cartOrder]
   )
 
-  // Lamp discount (7.5% per artwork, 14 artworks = 100% off) — matches OrderBar logic
-  const ARTWORKS_PER_FREE_LAMP = 14
-  const DISCOUNT_PER_ARTWORK = 7.5
   const lampPrice = parseFloat(lamp.priceRange?.minVariantPrice?.amount ?? '0')
   const artworkCount = selectedProducts.length
 
@@ -792,17 +796,18 @@ export function Configurator({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
-      progress.push(Math.min(100, (allocated / ARTWORKS_PER_FREE_LAMP) * 100))
+      progress.push(lampVolumeProgressPercentForAllocated(allocated))
     }
     return { lampPrices: prices, lampProgress: progress }
   }, [lampQuantity, artworkCount, lampPrice])
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const discountBarLabel = 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
-  const firstLampDiscountPercent = lampQuantity > 0 ? Math.min(Math.min(artworkCount, ARTWORKS_PER_FREE_LAMP) * DISCOUNT_PER_ARTWORK, 100) : 0
+  const discountBarLabel = LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED
+    ? 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
+    : undefined
   const artworksTotal = selectedProducts.reduce(
     (sum, p) =>
       sum +
@@ -843,7 +848,7 @@ export function Configurator({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(2, end) - start)
-      const discountPct = Math.min(allocated * DISCOUNT_PER_ARTWORK, 100)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
       lampPricesNatural.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     const compareAt = computeFeaturedBundleRegularSubtotalUsd({
@@ -1320,8 +1325,10 @@ export function Configurator({
         setRotateToSide(sideToShow)
         return newOrder
       })
-      const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK / 100)
-      if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
+      if (LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED) {
+        const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK_PCT / 100)
+        if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
+      }
     } else {
       // Removing from cart: keep Spline in sync with the strip (same IDs as lampPreviewOrder).
       setLampPreviewOrder((prev) => {
@@ -2240,7 +2247,7 @@ export function Configurator({
                 )}
               </div>
               {/* Discount progress — compact, only when lamp + artworks */}
-              {lampQuantity > 0 && artworkCount > 0 && (
+              {LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED && lampQuantity > 0 && artworkCount > 0 && (
                 <div className="px-3 pt-1.5 pb-2 border-t border-neutral-600 bg-neutral-800/50">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-300">
