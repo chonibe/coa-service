@@ -110,6 +110,8 @@ export function ExperienceCheckoutStickyBar({
 
   const hasArtworks = selectedArtworks.length >= 1
   const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
+  /** Lamp in experience cart but user still needs to pick artwork(s). */
+  const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
   const visible = hasArtworks || showEmptyCollectionCta
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
 
@@ -137,7 +139,9 @@ export function ExperienceCheckoutStickyBar({
 
   const summaryLabel = useMemo(() => {
     if (!hasArtworks && stripMode === 'collection') {
-      return 'Create your own bundle — open artwork picker'
+      return lampQuantity > 0
+        ? 'Choose your artworks — open artwork picker'
+        : 'Create your own bundle — open artwork picker'
     }
     const parts: string[] = []
     if (lampQuantity > 0) {
@@ -147,11 +151,18 @@ export function ExperienceCheckoutStickyBar({
     return `Checkout summary: ${parts.join(', ')}`
   }, [lampQuantity, selectedArtworks.length, hasArtworks, stripMode])
 
-  const chooseFirstArtworkClass = cn(
+  const createBundleCtaClass = cn(
     'flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
     theme === 'light'
       ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
       : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400'
+  )
+
+  const chooseArtworksAfterLampClass = cn(
+    'flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] animate-experience-artwork-cta-pulse',
+    theme === 'light'
+      ? 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700'
+      : 'border-violet-500 bg-violet-600 text-white shadow-black/40 hover:bg-violet-500 hover:border-violet-400'
   )
 
   const openPickerFabClass = cn(
@@ -176,10 +187,12 @@ export function ExperienceCheckoutStickyBar({
             <button
               type="button"
               onClick={onOpenPicker}
-              className={cn(chooseFirstArtworkClass, 'w-full')}
-              aria-label="Create your own bundle"
+              className={cn(lampInCartNeedsArtwork ? chooseArtworksAfterLampClass : createBundleCtaClass, 'w-full')}
+              aria-label={lampInCartNeedsArtwork ? 'Choose your artworks' : 'Create your own bundle'}
             >
-              <span className="min-w-0 truncate">Create your own bundle</span>
+              <span className="min-w-0 truncate">
+                {lampInCartNeedsArtwork ? 'Choose your Artworks' : 'Create your own bundle'}
+              </span>
               <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
             </button>
           ) : null

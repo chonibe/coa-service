@@ -108,6 +108,19 @@ export function ExperienceSlideoutMenu() {
           {!isOnOnboarding && (
             <div className={cn('relative flex items-center gap-2 self-center shrink-0', showLampCard && lamp && pastLampPaywall ? 'md:ml-8 lg:ml-auto' : 'ml-auto')}>
               {headerTrailingContent}
+              {lampQuantity > 0 && cartCount === 0 && (
+                <span
+                  className={cn(
+                    'inline-flex max-w-[min(9.5rem,46vw)] items-center truncate rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-tight sm:max-w-none sm:px-2.5 sm:py-1 sm:text-xs',
+                    'border-violet-300 bg-violet-50 text-violet-800',
+                    'dark:border-violet-500/50 dark:bg-violet-950/80 dark:text-violet-100'
+                  )}
+                  role="status"
+                  aria-live="polite"
+                >
+                  Lamp added to Cart
+                </span>
+              )}
               <ExperienceCartChip variant="light" />
               {discountCelebrationAmount !== null && (
                 <DiscountCelebration

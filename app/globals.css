@@ -721,6 +721,27 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation: lampPulse 0.5s ease-out forwards;
 }
 
+/** Experience v2: sticky CTA when lamp is in cart but no artworks yet (purple, smooth pulse) */
+@keyframes experience-artwork-cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 24px rgba(124, 58, 237, 0.35),
+      0 0 0 0 rgba(167, 139, 250, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 12px 32px rgba(109, 40, 217, 0.45),
+      0 0 0 12px rgba(167, 139, 250, 0);
+    transform: scale(1.02);
+  }
+}
+
+.animate-experience-artwork-cta-pulse {
+  animation: experience-artwork-cta-pulse 2.2s ease-in-out infinite;
+}
+
 /* Parallax container */
 .parallax-container {
   perspective: 1px;
