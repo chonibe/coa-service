@@ -1,6 +1,6 @@
 # Commit context: “Collection” arc label above add-artwork selector (2026-04-06)
 
-**Commit:** `797025772` — `feat(shop): curved Collection label above add-artwork + selector`
+**Commit:** `ccf34490c` — `feat(shop): curved Collection label above add-artwork + selector`
 
 ## Checklist
 
