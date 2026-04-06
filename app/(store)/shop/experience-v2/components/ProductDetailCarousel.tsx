@@ -388,7 +388,7 @@ export function ProductDetailCarousel({
       exitAnimStartedRef.current = false
       setVideoMountKey((k) => k + 1)
     }
-  }, [slideIndex, introSlide])
+  }, [slideIndex, introSlide?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- introSlide?.id only
 
   const onIntroVideoEnded = () => {
     exitAnimStartedRef.current = true

@@ -52,6 +52,7 @@ import {
 } from '@/lib/shop/experience-spotlight-match'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
@@ -189,6 +190,11 @@ export function ExperienceV2Client({
   const abAssignedRef = useRef(false)
   const lastDetailPreviewIdRef = useRef<string | null>(null)
   const scrollToSplineRef = useRef(false)
+
+  const artworkDetailProduct = useMemo(
+    () => (detailProduct ? resolveArtworkDetailProduct(detailProduct, detailProductFull) : null),
+    [detailProduct, detailProductFull]
+  )
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -881,7 +887,7 @@ export function ExperienceV2Client({
     if (detailProductLoading) return
     if (lastDetailPreviewIdRef.current === detailProduct.id) return
     lastDetailPreviewIdRef.current = detailProduct.id
-    const p = detailProductFull ?? detailProduct
+    const p = resolveArtworkDetailProduct(detailProduct, detailProductFull) ?? detailProduct
     const variant = p.variants?.edges?.[0]?.node
     trackViewItem({ ...storefrontProductToItem(p, variant, 1), item_list_name: 'experience-v2' })
     captureFunnelEvent(FunnelEvents.experience_artwork_previewed, {
@@ -1337,9 +1343,9 @@ export function ExperienceV2Client({
       />
       )}
 
-      {detailProduct && (
+      {detailProduct && artworkDetailProduct && (
         <ArtworkDetail
-          product={detailProductFull ?? detailProduct}
+          product={artworkDetailProduct}
           {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
           isSelected={
             detailProduct.id === lamp.id

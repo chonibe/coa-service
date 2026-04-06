@@ -100,6 +100,7 @@ import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
 import { cn } from '@/lib/utils'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
 import { useExperienceArtistCatalog } from '@/lib/shop/use-experience-artist-catalog'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
@@ -440,6 +441,10 @@ export function Configurator({
   const [detailProduct, setDetailProduct] = useState<ShopifyProduct | null>(null)
   const [detailProductFull, setDetailProductFull] = useState<ShopifyProduct | null>(null)
   const [detailProductLoading, setDetailProductLoading] = useState(false)
+  const artworkDetailProduct = useMemo(
+    () => (detailProduct ? resolveArtworkDetailProduct(detailProduct, detailProductFull) : null),
+    [detailProduct, detailProductFull]
+  )
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
   const prefetchingRef = useRef<Set<string>>(new Set())
   /** Mobile only: 'collapsed' = show preview, selector bar only; 'half' = selector visible alongside preview */
@@ -2031,15 +2036,15 @@ export function Configurator({
         {/* Selector body: expanded content + OrderBar — keep visible when collapsed so OrderBar (fixed on mobile) still renders */}
         <div ref={selectorBodyRef} className="flex flex-col flex-1 min-h-0 overflow-hidden min-w-0">
         {/* Desktop: when artwork selected, show inline info panel in place of selector */}
-        {detailProduct && !isMobile ? (
+        {detailProduct && artworkDetailProduct && !isMobile ? (
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <ArtworkDetail
               inline
-              product={detailProductFull ?? detailProduct}
+              product={artworkDetailProduct}
               {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
               isSelected={detailProduct.id === lamp.id ? lampQuantity > 0 : cartOrder.includes(detailProduct.id)}
               onToggleSelect={() => {
-                const product = detailProductFull ?? detailProduct
+                const product = artworkDetailProduct
                 if (product.id === lamp.id) handleLampQuantityChange(lampQuantity > 0 ? 0 : 1)
                 else { const wasInCart = cartOrder.includes(product.id); handleAddToCart(product); if (!wasInCart) setDetailProduct(null) }
               }}
@@ -2572,9 +2577,9 @@ export function Configurator({
       />
 
       {/* Artwork / lamp detail drawer — overlay only on mobile; desktop uses inline panel in left area */}
-      {detailProduct && isMobile && (
+      {detailProduct && artworkDetailProduct && isMobile && (
         <ArtworkDetail
-          product={detailProductFull ?? detailProduct}
+          product={artworkDetailProduct}
           {...spotlightOverridesForProduct(detailProduct, lamp.id, spotlightData)}
           isMobile={isMobile}
           isLoadingDetails={detailProductLoading}
@@ -2645,7 +2650,7 @@ export function Configurator({
               : cartOrder.includes(detailProduct.id)
           }
           onToggleSelect={() => {
-            const product = detailProductFull ?? detailProduct
+            const product = artworkDetailProduct
             if (product.id === lamp.id) {
               handleLampQuantityChange(lampQuantity > 0 ? 0 : 1)
             } else {
