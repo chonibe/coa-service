@@ -26,6 +26,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
   const [taxId, setTaxId] = useState("")
   const [taxCountry, setTaxCountry] = useState("GB")
   const [isCompany, setIsCompany] = useState(false)
+  const [artistSpotlightEnabled, setArtistSpotlightEnabled] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,6 +39,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
       setTaxId(vendor.tax_id || "")
       setTaxCountry(vendor.tax_country || "GB")
       setIsCompany(vendor.is_company || false)
+      setArtistSpotlightEnabled(vendor.artist_spotlight_enabled !== false)
     } else {
       setInstagramUrl("")
       setNotes("")
@@ -45,6 +47,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
       setTaxId("")
       setTaxCountry("GB")
       setIsCompany(false)
+      setArtistSpotlightEnabled(true)
     }
     setError(null)
   }, [vendor, open])
@@ -69,6 +72,7 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
           tax_id: taxId,
           tax_country: taxCountry,
           is_company: isCompany,
+          artist_spotlight_enabled: artistSpotlightEnabled,
         }),
       })
 
@@ -184,6 +188,26 @@ export function VendorDialog({ vendor, open, onOpenChange, onSave }: VendorDialo
                 <SelectItem value="OTHER">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="text-right">
+              <Label htmlFor="artist-spotlight">Shop spotlight</Label>
+            </div>
+            <div className="col-span-3 flex items-center space-x-2">
+              <Checkbox
+                id="artist-spotlight"
+                checked={artistSpotlightEnabled}
+                onCheckedChange={(checked) => setArtistSpotlightEnabled(checked === true)}
+              />
+              <label
+                htmlFor="artist-spotlight"
+                className="text-sm font-medium leading-snug text-muted-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Eligible for default artist spotlight on the lamp experience (Jack / Season 2 / newest). Affiliate{" "}
+                <code className="text-xs">?artist=</code> links still work when off.
+              </label>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">

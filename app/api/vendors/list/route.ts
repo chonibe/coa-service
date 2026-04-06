@@ -42,7 +42,10 @@ export async function GET(request: NextRequest) {
           if (custom) {
             vendor.instagram_url = custom.instagram_url
             vendor.notes = custom.notes
+            vendor.artist_spotlight_enabled = custom.artist_spotlight_enabled !== false
             console.log("Merged custom data for vendor:", vendor.name, vendor.instagram_url)
+          } else {
+            vendor.artist_spotlight_enabled = true
           }
         })
       } else {

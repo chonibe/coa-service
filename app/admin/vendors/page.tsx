@@ -251,6 +251,7 @@ export default function VendorsPage() {
                           </Button>
                         </TableHead>
                         <TableHead className="hidden md:table-cell">Instagram</TableHead>
+                        <TableHead className="hidden lg:table-cell w-[120px]">Spotlight</TableHead>
                         <TableHead className="text-right">
                           <div className="flex items-center justify-end">
                             <Package className="h-4 w-4 mr-1" />
@@ -279,6 +280,11 @@ export default function VendorsPage() {
                             ) : (
                               <span className="text-muted-foreground text-sm">Not set</span>
                             )}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <Badge variant={vendor.artist_spotlight_enabled !== false ? "default" : "secondary"}>
+                              {vendor.artist_spotlight_enabled !== false ? "On" : "Off"}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <Badge variant="secondary">{vendor.product_count || 0}</Badge>

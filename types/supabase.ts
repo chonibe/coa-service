@@ -5535,6 +5535,7 @@ export type Database = {
           address: string | null
           artist_bio: string | null
           artist_history: string | null
+          artist_spotlight_enabled: boolean
           artwork_style: string | null
           auth_id: string | null
           bank_account: string | null
@@ -5587,6 +5588,7 @@ export type Database = {
           address?: string | null
           artist_bio?: string | null
           artist_history?: string | null
+          artist_spotlight_enabled?: boolean
           artwork_style?: string | null
           auth_id?: string | null
           bank_account?: string | null
@@ -5639,6 +5641,7 @@ export type Database = {
           address?: string | null
           artist_bio?: string | null
           artist_history?: string | null
+          artist_spotlight_enabled?: boolean
           artwork_style?: string | null
           auth_id?: string | null
           bank_account?: string | null

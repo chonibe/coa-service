@@ -11,7 +11,16 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json()
-    const { vendor_name, instagram_url, notes, paypal_email, tax_id, tax_country, is_company } = body
+    const {
+      vendor_name,
+      instagram_url,
+      notes,
+      paypal_email,
+      tax_id,
+      tax_country,
+      is_company,
+      artist_spotlight_enabled,
+    } = body
 
     if (!vendor_name) {
       return NextResponse.json({ message: "Vendor name is required" }, { status: 400 })
@@ -31,6 +40,9 @@ export async function POST(request: NextRequest) {
 
     const now = new Date().toISOString()
 
+    const spotlightOn =
+      typeof artist_spotlight_enabled === "boolean" ? artist_spotlight_enabled : true
+
     if (existingVendor) {
       // Update existing vendor
       const { error: updateError } = await supabase
@@ -42,6 +54,7 @@ export async function POST(request: NextRequest) {
           tax_id,
           tax_country,
           is_company,
+          artist_spotlight_enabled: spotlightOn,
           updated_at: now,
         })
         .eq("vendor_name", vendor_name)
@@ -60,6 +73,7 @@ export async function POST(request: NextRequest) {
         tax_id,
         tax_country,
         is_company,
+        artist_spotlight_enabled: spotlightOn,
         created_at: now,
         updated_at: now,
       })
