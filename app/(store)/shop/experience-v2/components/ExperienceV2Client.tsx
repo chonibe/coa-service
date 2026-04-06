@@ -1438,7 +1438,7 @@ export function ExperienceV2Client({
         </div>
       )}
 
-      <div className="order-2 w-full shrink-0 bg-transparent">
+      <div className="order-2 w-full shrink-0 bg-transparent text-transparent">
       <ArtworkCarouselBar
         splineInView={splineInView}
         experienceReelRef={experienceReelRef}
