@@ -47,6 +47,7 @@ import {
 export default function ProductPage() {
   const params = useParams<{ handle: string }>()
   const cart = useCart()
+  const { shippingPromo, shippingPromoReady } = cart
   const [product, setProduct] = useState<ShopifyProduct | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ShopifyProductVariant | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
@@ -429,9 +430,17 @@ export default function ProductPage() {
                   </div>
                 )}
                 
-                {/* Shipping info */}
+                {/* Shipping info — matches Stripe Checkout when promo settings load */}
                 <p className="text-[#1a1a1a]/60">
-                  Free shipping on orders over $75
+                  {shippingPromoReady ? (
+                    shippingPromo.shippingFreeOver70 ? (
+                      `Free standard shipping on orders $${shippingPromo.freeOverUsd}+; $${shippingPromo.standardUnderUsd} standard shipping below.`
+                    ) : (
+                      'Free standard shipping on all orders.'
+                    )
+                  ) : (
+                    'Shipping options are confirmed at checkout.'
+                  )}
                 </p>
                 
                 {/* SKU */}

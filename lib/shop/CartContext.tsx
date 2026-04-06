@@ -48,9 +48,26 @@ type CartAction =
   | { type: 'TOGGLE_CART'; payload?: boolean }
   | { type: 'LOAD_CART'; payload: CartState }
 
+/** Public shipping promo (from `/api/shop/shipping-promo`); aligns cart copy with Stripe Checkout. */
+export interface ShopShippingPromo {
+  shippingFreeOver70: boolean
+  freeOverUsd: number
+  standardUnderUsd: number
+}
+
+const DEFAULT_SHIPPING_PROMO: ShopShippingPromo = {
+  shippingFreeOver70: false,
+  freeOverUsd: 70,
+  standardUnderUsd: 10,
+}
+
 interface CartContextValue extends CartState {
   /** Unit USD for display and quick checkout: Street ladder when known, else stored cart price */
   effectiveUnitUsd: (item: CartItem) => number
+  /** Tiered standard shipping enabled (free at/above freeOverUsd; standardUnderUsd below). */
+  shippingPromo: ShopShippingPromo
+  /** False until first `/api/shop/shipping-promo` response (success or failure). */
+  shippingPromoReady: boolean
   // Actions
   addItem: (item: Omit<CartItem, 'id'>) => void
   removeItem: (id: string) => void
@@ -205,6 +222,8 @@ interface CartProviderProps {
 export function CartProvider({ children }: CartProviderProps) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
   const [streetLadderUsdByProductId, setStreetLadderUsdByProductId] = useState<Record<string, number>>({})
+  const [shippingPromo, setShippingPromo] = useState<ShopShippingPromo>(DEFAULT_SHIPPING_PROMO)
+  const [shippingPromoReady, setShippingPromoReady] = useState(false)
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -260,6 +279,31 @@ export function CartProvider({ children }: CartProviderProps) {
       cancelled = true
     }
   }, [state.items])
+
+  useEffect(() => {
+    let cancelled = false
+    void fetch('/api/shop/shipping-promo')
+      .then(async (res) => {
+        if (!res.ok || cancelled) return
+        const data = (await res.json()) as Record<string, unknown>
+        if (cancelled || typeof data.shippingFreeOver70 !== 'boolean') return
+        setShippingPromo({
+          shippingFreeOver70: data.shippingFreeOver70,
+          freeOverUsd: typeof data.freeOverUsd === 'number' ? data.freeOverUsd : DEFAULT_SHIPPING_PROMO.freeOverUsd,
+          standardUnderUsd:
+            typeof data.standardUnderUsd === 'number'
+              ? data.standardUnderUsd
+              : DEFAULT_SHIPPING_PROMO.standardUnderUsd,
+        })
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setShippingPromoReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
   
   // Actions
   const addItem = useCallback((item: Omit<CartItem, 'id'>) => {
@@ -321,6 +365,8 @@ export function CartProvider({ children }: CartProviderProps) {
   const value: CartContextValue = {
     ...state,
     effectiveUnitUsd,
+    shippingPromo,
+    shippingPromoReady,
     addItem,
     removeItem,
     updateQuantity,

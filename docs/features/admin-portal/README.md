@@ -13,6 +13,7 @@
 - OAuth Callback Logic: [`app/auth/callback/route.ts`](../../../app/auth/callback/route.ts)
 - Admin Login Endpoint: [`app/api/admin/login/route.ts`](../../../app/api/admin/login/route.ts)
 - Shop discount toggles: [`app/admin/shop/discounts/page.tsx`](../../../app/admin/shop/discounts/page.tsx), [`app/api/admin/shop/discount-flags/route.ts`](../../../app/api/admin/shop/discount-flags/route.ts), [`lib/shop/shop-discount-flags.ts`](../../../lib/shop/shop-discount-flags.ts), [`lib/shop/get-shop-discount-flags.ts`](../../../lib/shop/get-shop-discount-flags.ts)
+- Tiered Stripe shipping (free over $70 / $10 below when enabled): [`lib/shop/stripe-checkout-shipping.ts`](../../../lib/shop/stripe-checkout-shipping.ts), [`app/api/checkout/stripe/route.ts`](../../../app/api/checkout/stripe/route.ts), [`app/api/checkout/create/route.ts`](../../../app/api/checkout/create/route.ts), public [`app/api/shop/shipping-promo/route.ts`](../../../app/api/shop/shipping-promo/route.ts), [`lib/shop/CartContext.tsx`](../../../lib/shop/CartContext.tsx)
 - Guarded Admin APIs:
   - [`app/api/admin/orders/route.ts`](../../../app/api/admin/orders/route.ts)
   - [`app/api/admin/orders/[orderId]/route.ts`](../../../app/api/admin/orders/%5BorderId%5D/route.ts)
@@ -69,11 +70,12 @@
 | `/api/auth/impersonate/end` | POST | Exit impersonation and return to admin dashboard. | Signed `admin_session` |
 | `/api/admin/shop/discount-flags` | GET | Read merged shop discount flags + registry metadata. | Unified admin session or signed `admin_session` |
 | `/api/admin/shop/discount-flags` | PATCH | Update one or more flags; upserts `system_settings` key `shop_discount_flags`. | Unified admin session or signed `admin_session` |
+| `/api/shop/shipping-promo` | GET | Read-only shipping promo for storefront (`shippingFreeOver70`, `freeOverUsd`, `standardUnderUsd`). Used by cart/product copy; short CDN cache. | None |
 
 ## Database Schema Changes
 - **New Table**: `admin_actions` - Logs all admin actions on vendor data with action type, vendor ID, and details.
 - **Existing Tables**: `vendors`, `orders`, `backup_settings`, `backups`, `impersonation_logs`, `failed_login_attempts` are reused with stricter guards.
-- **Shop discounts**: Boolean flags stored in `system_settings` with `key = 'shop_discount_flags'` and JSON value (e.g. `{ "lampArtworkVolume": true }`). No migration required if the table already exists ([`supabase/migrations/20260203120000_system_settings.sql`](../../../supabase/migrations/20260203120000_system_settings.sql)); the app merges with code defaults when the row is absent.
+- **Shop discounts**: Boolean flags stored in `system_settings` with `key = 'shop_discount_flags'` and JSON value (e.g. `{ "lampArtworkVolume": true, "shippingFreeOver70": true }`). Flag `shippingFreeOver70` controls Stripe Checkout standard shipping: when `true`, merchandise subtotal under $70 gets $10 standard and $70+ gets free standard (express remains $15); when `false`, standard is always free with the same express option. No migration required if the table already exists ([`supabase/migrations/20260203120000_system_settings.sql`](../../../supabase/migrations/20260203120000_system_settings.sql)); the app merges with code defaults when the row is absent.
 
 ## UI/UX Considerations
 - Navigation is grouped (Overview, Products, Orders & Ops, Vendors & Payouts, Reports, CRM, Preview, Settings) for faster scanning; command palette (`⌘/Ctrl + K`) jumps directly to destinations.

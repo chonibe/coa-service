@@ -8,6 +8,8 @@ import { getEarlyAccessCouponCookie } from '@/lib/early-access'
 import { applyStreetLadderUsdToLineItems } from '@/lib/shop/street-ladder-line-pricing'
 import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
+import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -304,6 +306,8 @@ export async function POST(request: NextRequest) {
     const paymentMethodTypes: Stripe.Checkout.SessionCreateParams['payment_method_types'] =
       paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal', 'link']
 
+    const shopDiscountSettings = await getShopDiscountSettings()
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       line_items: stripeLineItems,
@@ -329,6 +333,10 @@ export async function POST(request: NextRequest) {
         shipping_address_collection: {
           allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'JP'],
         },
+        shipping_options: buildStripeCheckoutShippingOptions(
+          subtotalCents,
+          shopDiscountSettings.flags.shippingFreeOver70
+        ),
       }),
       billing_address_collection: 'required',
       ...(discounts?.length ? { discounts } : { allow_promotion_codes: true }),

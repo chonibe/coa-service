@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
-import type { CartItem } from '@/lib/shop/CartContext'
+import { useCart, type CartItem } from '@/lib/shop/CartContext'
 
 /**
  * NavCart - Cart preview panel with suggestions
@@ -39,7 +39,10 @@ export function NavCart({
   className,
 }: NavCartProps) {
   const isEmpty = items.length === 0
-  const freeShippingThreshold = 75
+  const { shippingPromo, shippingPromoReady } = useCart()
+  const showTieredFreeShippingBar =
+    shippingPromoReady && shippingPromo.shippingFreeOver70
+  const freeShippingThreshold = shippingPromo.freeOverUsd
   const progressToFreeShipping = Math.min((subtotal / freeShippingThreshold) * 100, 100)
   const remainingForFreeShipping = Math.max(freeShippingThreshold - subtotal, 0)
 
@@ -64,8 +67,8 @@ export function NavCart({
         )}
       </div>
 
-      {/* Free Shipping Progress */}
-      {!isEmpty && remainingForFreeShipping > 0 && (
+      {/* Free Shipping Progress — only when admin tiered shipping is enabled */}
+      {!isEmpty && showTieredFreeShippingBar && remainingForFreeShipping > 0 && (
         <div className="mb-4 p-3 bg-[#f5f5f5] rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-[#1a1a1a]/60">

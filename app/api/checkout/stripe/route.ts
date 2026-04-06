@@ -5,6 +5,8 @@ import { getProduct, extractVariantId } from '@/lib/shopify/storefront-client'
 import { createClient } from '@/lib/supabase/server'
 import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
+import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
 
 /**
  * Stripe Checkout API
@@ -91,6 +93,12 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.warn('[checkout/stripe] Street ladder reprice skipped:', e)
     }
+
+    const subtotalCents = pricedLineItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    )
+    const shopDiscountSettings = await getShopDiscountSettings()
     
     // Build Stripe line items
     const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = pricedLineItems.map((item) => ({
@@ -141,48 +149,10 @@ export async function POST(request: NextRequest) {
             'LU', 'MT', 'CY', 'NZ', 'SG', 'HK', 'JP', 'KR', 'IL', 'AE',
           ],
         },
-        shipping_options: [
-          {
-            shipping_rate_data: {
-              type: 'fixed_amount',
-              fixed_amount: {
-                amount: 0,
-                currency: 'usd',
-              },
-              display_name: 'Free shipping',
-              delivery_estimate: {
-                minimum: {
-                  unit: 'business_day',
-                  value: 5,
-                },
-                maximum: {
-                  unit: 'business_day',
-                  value: 10,
-                },
-              },
-            },
-          },
-          {
-            shipping_rate_data: {
-              type: 'fixed_amount',
-              fixed_amount: {
-                amount: 1500,
-                currency: 'usd',
-              },
-              display_name: 'Express shipping',
-              delivery_estimate: {
-                minimum: {
-                  unit: 'business_day',
-                  value: 2,
-                },
-                maximum: {
-                  unit: 'business_day',
-                  value: 5,
-                },
-              },
-            },
-          },
-        ],
+        shipping_options: buildStripeCheckoutShippingOptions(
+          subtotalCents,
+          shopDiscountSettings.flags.shippingFreeOver70
+        ),
       }),
     }
     

@@ -5,13 +5,14 @@
 
 export const SHOP_DISCOUNT_FLAGS_KEY = 'shop_discount_flags'
 
-/** Supported boolean flag keys (lamp ladder toggle). */
-export type ShopDiscountFlagId = 'lampArtworkVolume'
+/** Supported boolean flag keys (shop experience toggles). */
+export type ShopDiscountFlagId = 'lampArtworkVolume' | 'shippingFreeOver70'
 
 export type ShopDiscountFlags = Record<ShopDiscountFlagId, boolean>
 
 export const DEFAULT_SHOP_DISCOUNT_FLAGS: ShopDiscountFlags = {
   lampArtworkVolume: false,
+  shippingFreeOver70: false,
 }
 
 /** How the spotlight “lamp + 2 prints” bundle price is computed vs regular subtotal for those three lines. */
@@ -55,6 +56,13 @@ export const SHOP_DISCOUNT_REGISTRY: ShopDiscountRegistryEntry[] = [
     description:
       'When on, each artwork in the cart reduces the Street Lamp price on a ladder (7.5% per artwork, up to 100% off one lamp per 14 artworks). When off, each lamp bills at full price.',
     defaultEnabled: DEFAULT_SHOP_DISCOUNT_FLAGS.lampArtworkVolume,
+  },
+  {
+    id: 'shippingFreeOver70',
+    label: 'Tiered standard shipping (Stripe Checkout)',
+    description:
+      'When on, standard shipping is free when merchandise subtotal is $70 or more; below $70, standard shipping is $10. Express shipping remains $15. When off, standard shipping is always free ($0) with the same express option.',
+    defaultEnabled: DEFAULT_SHOP_DISCOUNT_FLAGS.shippingFreeOver70,
   },
 ]
 
@@ -102,6 +110,7 @@ export function computeFeaturedBundleEffectiveUsd(
 /** Normalize JSON from DB (string or object). */
 export function parseStoredShopDiscountSettings(raw: unknown): Partial<{
   lampArtworkVolume: boolean
+  shippingFreeOver70: boolean
   featuredBundleEnabled: boolean
   featuredBundleMode: FeaturedBundleDiscountMode
   featuredBundleValue: number
@@ -119,12 +128,14 @@ export function parseStoredShopDiscountSettings(raw: unknown): Partial<{
   const rec = obj as Record<string, unknown>
   const out: Partial<{
     lampArtworkVolume: boolean
+    shippingFreeOver70: boolean
     featuredBundleEnabled: boolean
     featuredBundleMode: FeaturedBundleDiscountMode
     featuredBundleValue: number
   }> = {}
 
   if (typeof rec.lampArtworkVolume === 'boolean') out.lampArtworkVolume = rec.lampArtworkVolume
+  if (typeof rec.shippingFreeOver70 === 'boolean') out.shippingFreeOver70 = rec.shippingFreeOver70
 
   if (typeof rec.featuredBundleEnabled === 'boolean') out.featuredBundleEnabled = rec.featuredBundleEnabled
   if (typeof rec.featuredBundleMode === 'string' && BUNDLE_MODES.has(rec.featuredBundleMode as FeaturedBundleDiscountMode)) {
@@ -140,13 +151,17 @@ export function parseStoredShopDiscountSettings(raw: unknown): Partial<{
 /** @deprecated use parseStoredShopDiscountSettings */
 export function parseStoredShopDiscountFlags(raw: unknown): Partial<ShopDiscountFlags> | null {
   const p = parseStoredShopDiscountSettings(raw)
-  if (!p || p.lampArtworkVolume === undefined) return null
-  return { lampArtworkVolume: p.lampArtworkVolume }
+  if (!p) return null
+  const out: Partial<ShopDiscountFlags> = {}
+  if (p.lampArtworkVolume !== undefined) out.lampArtworkVolume = p.lampArtworkVolume
+  if (p.shippingFreeOver70 !== undefined) out.shippingFreeOver70 = p.shippingFreeOver70
+  return Object.keys(out).length ? out : null
 }
 
 export function mergeShopDiscountSettingsWithDefaults(
   stored: Partial<{
     lampArtworkVolume: boolean
+    shippingFreeOver70: boolean
     featuredBundleEnabled: boolean
     featuredBundleMode: FeaturedBundleDiscountMode
     featuredBundleValue: number
@@ -155,6 +170,7 @@ export function mergeShopDiscountSettingsWithDefaults(
   const flags: ShopDiscountFlags = {
     ...DEFAULT_SHOP_DISCOUNT_FLAGS,
     ...(stored?.lampArtworkVolume !== undefined ? { lampArtworkVolume: stored.lampArtworkVolume } : {}),
+    ...(stored?.shippingFreeOver70 !== undefined ? { shippingFreeOver70: stored.shippingFreeOver70 } : {}),
   }
   const featuredBundle: FeaturedBundleDiscountSettings = {
     enabled:
@@ -174,7 +190,12 @@ export function mergeShopDiscountFlagsWithDefaults(
   stored: Partial<ShopDiscountFlags> | null | undefined
 ): ShopDiscountFlags {
   return mergeShopDiscountSettingsWithDefaults(
-    stored ? { lampArtworkVolume: stored.lampArtworkVolume } : null
+    stored
+      ? {
+          ...(stored.lampArtworkVolume !== undefined ? { lampArtworkVolume: stored.lampArtworkVolume } : {}),
+          ...(stored.shippingFreeOver70 !== undefined ? { shippingFreeOver70: stored.shippingFreeOver70 } : {}),
+        }
+      : null
   ).flags
 }
 
@@ -189,9 +210,10 @@ export function pickShopDiscountFlagUpdates(body: unknown): Partial<ShopDiscount
   return Object.keys(out).length ? out : null
 }
 
-/** Full settings PATCH: lamp boolean + optional bundle fields. */
+/** Full settings PATCH: flag booleans + optional bundle fields. */
 export function pickShopDiscountSettingsUpdates(body: unknown): Partial<{
   lampArtworkVolume: boolean
+  shippingFreeOver70: boolean
   featuredBundleEnabled: boolean
   featuredBundleMode: FeaturedBundleDiscountMode
   featuredBundleValue: number
@@ -200,12 +222,14 @@ export function pickShopDiscountSettingsUpdates(body: unknown): Partial<{
   const rec = body as Record<string, unknown>
   const out: Partial<{
     lampArtworkVolume: boolean
+    shippingFreeOver70: boolean
     featuredBundleEnabled: boolean
     featuredBundleMode: FeaturedBundleDiscountMode
     featuredBundleValue: number
   }> = {}
 
   if (typeof rec.lampArtworkVolume === 'boolean') out.lampArtworkVolume = rec.lampArtworkVolume
+  if (typeof rec.shippingFreeOver70 === 'boolean') out.shippingFreeOver70 = rec.shippingFreeOver70
   if (typeof rec.featuredBundleEnabled === 'boolean') out.featuredBundleEnabled = rec.featuredBundleEnabled
   if (typeof rec.featuredBundleMode === 'string' && BUNDLE_MODES.has(rec.featuredBundleMode as FeaturedBundleDiscountMode)) {
     out.featuredBundleMode = rec.featuredBundleMode as FeaturedBundleDiscountMode

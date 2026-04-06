@@ -1,5 +1,30 @@
 # Commit Log
 
+## Commit: feat(shop): admin tiered standard shipping free over $70 / $10 below (2026-04-06)
+
+**Ref:** `c20d5a74d`
+
+### Summary
+New boolean **`shippingFreeOver70`** in **`system_settings.shop_discount_flags`** (admin **Shop discounts**). When enabled, Stripe Checkout standard shipping is **$10** under **$70** merchandise subtotal and **free** at or above $70; express stays **$15**. When disabled, behavior matches legacy (**free** standard + express). Shared builder [`lib/shop/stripe-checkout-shipping.ts`](lib/shop/stripe-checkout-shipping.ts) wires [`app/api/checkout/stripe/route.ts`](app/api/checkout/stripe/route.ts) and [`app/api/checkout/create/route.ts`](app/api/checkout/create/route.ts). Public [`GET /api/shop/shipping-promo`](app/api/shop/shipping-promo/route.ts) and [`lib/shop/CartContext.tsx`](lib/shop/CartContext.tsx) align the product page and [`components/shop/navigation/NavCart.tsx`](components/shop/navigation/NavCart.tsx).
+
+### Implementation Checklist
+
+- [x] [lib/shop/shop-discount-flags.ts](lib/shop/shop-discount-flags.ts)
+- [x] [app/api/admin/shop/discount-flags/route.ts](app/api/admin/shop/discount-flags/route.ts)
+- [x] [lib/shop/stripe-checkout-shipping.ts](lib/shop/stripe-checkout-shipping.ts)
+- [x] [lib/shop/stripe-checkout-shipping.test.ts](lib/shop/stripe-checkout-shipping.test.ts)
+- [x] [app/api/checkout/stripe/route.ts](app/api/checkout/stripe/route.ts)
+- [x] [app/api/checkout/create/route.ts](app/api/checkout/create/route.ts)
+- [x] [app/api/shop/shipping-promo/route.ts](app/api/shop/shipping-promo/route.ts)
+- [x] [lib/shop/CartContext.tsx](lib/shop/CartContext.tsx)
+- [x] [app/(store)/shop/[handle]/page.tsx](app/(store)/shop/[handle]/page.tsx)
+- [x] [components/shop/navigation/NavCart.tsx](components/shop/navigation/NavCart.tsx)
+- [x] [lib/shop/shop-discount-flags.test.ts](lib/shop/shop-discount-flags.test.ts)
+- [x] [docs/features/admin-portal/README.md](docs/features/admin-portal/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): featured artist bundle under Spline + Add to cart (2026-04-06)
 
 **Ref:** `150849227`

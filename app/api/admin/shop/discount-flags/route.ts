@@ -35,6 +35,7 @@ async function requireAdminApi(): Promise<{ ok: true; email: string } | { ok: fa
 function settingsToStoredValue(s: ShopDiscountSettings): Record<string, unknown> {
   return {
     lampArtworkVolume: s.flags.lampArtworkVolume,
+    shippingFreeOver70: s.flags.shippingFreeOver70,
     featuredBundleEnabled: s.featuredBundle.enabled,
     featuredBundleMode: s.featuredBundle.mode,
     featuredBundleValue: s.featuredBundle.value,
@@ -99,6 +100,7 @@ export async function PATCH(request: NextRequest) {
     flags: {
       ...current.flags,
       ...(updates.lampArtworkVolume !== undefined ? { lampArtworkVolume: updates.lampArtworkVolume } : {}),
+      ...(updates.shippingFreeOver70 !== undefined ? { shippingFreeOver70: updates.shippingFreeOver70 } : {}),
     },
     featuredBundle: {
       enabled:
