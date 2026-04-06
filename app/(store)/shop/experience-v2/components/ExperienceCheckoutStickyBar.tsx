@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo } from 'react'
 import Image from 'next/image'
-import { ChevronRight, Plus } from 'lucide-react'
+import { ChevronRight, Eye, Plus } from 'lucide-react'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
@@ -95,15 +95,17 @@ function StickyThumb({
 
   const interactiveFrame = cn(
     frame,
+    'relative isolate overflow-visible',
     'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
-    'ring-offset-2 transition-transform duration-200 active:scale-[0.95]',
-    'focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#047AFF] dark:focus-visible:ring-[#60A5FA]',
-    isSplinePreviewSelected &&
-      'ring-2 ring-[#FFBA94] ring-offset-1 ring-offset-transparent dark:ring-[#FFBA94]'
+    'transition-transform duration-200 active:scale-[0.95]',
+    'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
   )
 
-  const inner = (
-    <>
+  /** Match carousel “on preview” affordance; sticky tiles are smaller than strip `w-24`. */
+  const showPreviewEye = Boolean(onSplinePreviewPress && isSplinePreviewSelected && !isLamp)
+
+  const thumbImage = (
+    <div className="absolute inset-0 rounded-[15px] overflow-hidden">
       {src ? (
         <Image
           src={src}
@@ -124,7 +126,7 @@ function StickyThumb({
           )}
         </span>
       )}
-    </>
+    </div>
   )
 
   if (onSplinePreviewPress) {
@@ -139,7 +141,21 @@ function StickyThumb({
         aria-current={isSplinePreviewSelected ? 'true' : undefined}
         className={interactiveFrame}
       >
-        {inner}
+        {showPreviewEye ? (
+          <span
+            role="img"
+            aria-label="Shown on lamp preview"
+            className={cn(
+              'pointer-events-none absolute left-1/2 top-0 z-20 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm sm:h-[1.125rem] sm:w-[1.125rem]',
+              theme === 'light'
+                ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+                : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
+            )}
+          >
+            <Eye className="h-2 w-2 sm:h-2.5 sm:w-2.5" strokeWidth={2.5} aria-hidden />
+          </span>
+        ) : null}
+        {thumbImage}
       </button>
     )
   }
@@ -153,19 +169,19 @@ function StickyThumb({
         aria-label={`${label}, view product details`}
         className={cn(
           frame,
-          'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
-          'ring-offset-2 transition-opacity hover:opacity-90',
-          'focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#047AFF] dark:focus-visible:ring-[#60A5FA]'
+          'relative m-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
+          'transition-opacity hover:opacity-90',
+          'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
         )}
       >
-        {inner}
+        {thumbImage}
       </button>
     )
   }
 
   return (
-    <div className={frame} title={label}>
-      {inner}
+    <div className={cn(frame, 'relative')} title={label}>
+      {thumbImage}
     </div>
   )
 }
