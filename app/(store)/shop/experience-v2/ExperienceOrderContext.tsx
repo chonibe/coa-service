@@ -77,6 +77,12 @@ interface ExperienceOrderContextValue extends ExperienceOrderState {
   /** Optional content before cart chip (e.g. edition watchlist toggle) */
   headerTrailingContent: ReactNode | null
   setHeaderTrailingContent: (content: ReactNode | null) => void
+  /** True after user opens the artwork picker (V2 sticky/carousel). Embedded Configurator sets true on mount. */
+  pickerEngaged: boolean
+  setPickerEngaged: (engaged: boolean) => void
+  /** OrderBar checkout drawer visibility — synced from OrderBar for journey CTA pulses */
+  orderDrawerOpen: boolean
+  setOrderDrawerOpen: (open: boolean) => void
 }
 
 const defaultValue: ExperienceOrderContextValue = {
@@ -103,6 +109,10 @@ const defaultValue: ExperienceOrderContextValue = {
   setHeaderCenterContent: () => {},
   headerTrailingContent: null,
   setHeaderTrailingContent: () => {},
+  pickerEngaged: false,
+  setPickerEngaged: () => {},
+  orderDrawerOpen: false,
+  setOrderDrawerOpen: () => {},
 }
 
 const ExperienceOrderContext = createContext<ExperienceOrderContextValue>(defaultValue)
@@ -116,6 +126,8 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
   const [priceBumpTrigger, setPriceBumpTriggerState] = useState(0)
   const [headerCenterContent, setHeaderCenterContentState] = useState<ReactNode | null>(null)
   const [headerTrailingContent, setHeaderTrailingContentState] = useState<ReactNode | null>(null)
+  const [pickerEngaged, setPickerEngagedState] = useState(false)
+  const [orderDrawerOpen, setOrderDrawerOpenState] = useState(false)
   const orderBarRef = useRef<OrderBarRefLike | null>(null)
 
   const setHeaderCenterContent = useCallback((content: ReactNode | null) => {
@@ -124,6 +136,14 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
 
   const setHeaderTrailingContent = useCallback((content: ReactNode | null) => {
     setHeaderTrailingContentState(content)
+  }, [])
+
+  const setPickerEngaged = useCallback((engaged: boolean) => {
+    setPickerEngagedState(engaged)
+  }, [])
+
+  const setOrderDrawerOpen = useCallback((open: boolean) => {
+    setOrderDrawerOpenState(open)
   }, [])
 
   const triggerPriceBump = useCallback(() => {
@@ -164,6 +184,10 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
     setHeaderCenterContent,
     headerTrailingContent,
     setHeaderTrailingContent,
+    pickerEngaged,
+    setPickerEngaged,
+    orderDrawerOpen,
+    setOrderDrawerOpen,
   }
 
   return (

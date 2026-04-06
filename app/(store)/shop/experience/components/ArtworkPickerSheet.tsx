@@ -1,6 +1,11 @@
 'use client'
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
+import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
+import {
+  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
+  resolveExperienceNextAction,
+} from '@/lib/shop/experience-journey-next-action'
 import Image from 'next/image'
 import { Plus, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -107,6 +112,8 @@ interface ArtworkCardV2Props {
   suppressSelectionRing?: boolean
   /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
   streetPricing?: StreetEditionStatesRow | null
+  /** Journey: pulse add affordance on picker card */
+  journeyPulseChooseArtworks?: boolean
 }
 
 function ArtworkCardV2({
@@ -122,6 +129,7 @@ function ArtworkCardV2({
   isEarlyAccess = false,
   suppressSelectionRing = false,
   streetPricing = null,
+  journeyPulseChooseArtworks = false,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
@@ -149,7 +157,11 @@ function ArtworkCardV2({
         surfaces.shell,
         roundLeft && roundRight && 'rounded-xl',
         roundLeft && !roundRight && 'rounded-l-xl',
-        !roundLeft && roundRight && 'rounded-r-xl'
+        !roundLeft && roundRight && 'rounded-r-xl',
+        journeyPulseChooseArtworks &&
+          !isSelected &&
+          product.availableForSale &&
+          EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
       )}
     >
       <motion.div
@@ -430,6 +442,7 @@ export function ArtworkPickerSheet({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const prevSeasonRef = useRef(activeSeason)
   const { theme } = useExperienceTheme()
+  const { pickerEngaged, orderDrawerOpen } = useExperienceOrder()
 
   useEffect(() => {
     if (prevSeasonRef.current !== activeSeason && isOpen && scrollRef.current) {
@@ -481,6 +494,20 @@ export function ArtworkPickerSheet({
     !!onPickerAddLamp &&
     !!onOpenLampPickerDetail &&
     !!onCloseLampPickerDetail
+
+  const pickerJourneyNext = useMemo(() => {
+    const qty = pickerLampQuantity ?? 0
+    return resolveExperienceNextAction({
+      lampQuantity: qty,
+      artworkCount: selectedArtworks.length,
+      pickerEngaged,
+      orderDrawerOpen,
+      hasAddress: false,
+      hasPaymentSelection: false,
+      paymentSectionExpanded: false,
+      paymentStripeUnlocked: false,
+    })
+  }, [pickerLampQuantity, selectedArtworks.length, pickerEngaged, orderDrawerOpen])
 
   const pickerLampUnitPrice =
     typeof pickerLampPriceUsd === 'number'
@@ -695,6 +722,7 @@ export function ArtworkPickerSheet({
                     onCloseDetail={onCloseLampPickerDetail}
                     onAddLamp={onPickerAddLamp}
                     showBadge
+                    highlightAddCta={showLampPromoInPicker && pickerJourneyNext === 'add_lamp'}
                   />
                 </div>
               ) : spotlightData && onSpotlightSelect ? (
@@ -767,6 +795,11 @@ export function ArtworkPickerSheet({
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
                                 streetPricing={streetPricingForProduct(product1)}
+                                journeyPulseChooseArtworks={
+                                  pickerJourneyNext === 'choose_artworks' &&
+                                  !p1Selected &&
+                                  product1.availableForSale
+                                }
                               />
                             </div>
                           )}
@@ -800,6 +833,11 @@ export function ArtworkPickerSheet({
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
                                 streetPricing={streetPricingForProduct(product2)}
+                                journeyPulseChooseArtworks={
+                                  pickerJourneyNext === 'choose_artworks' &&
+                                  !p2Selected &&
+                                  product2.availableForSale
+                                }
                               />
                             </div>
                           )}
@@ -818,6 +856,11 @@ export function ArtworkPickerSheet({
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 streetPricing={streetPricingForProduct(product1)}
+                                journeyPulseChooseArtworks={
+                                  pickerJourneyNext === 'choose_artworks' &&
+                                  !p1Selected &&
+                                  product1.availableForSale
+                                }
                               />
                             </div>
                           )}

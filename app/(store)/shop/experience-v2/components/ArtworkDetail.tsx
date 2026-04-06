@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from '
 import { Check, ChevronDown, ChevronLeft, ImageIcon, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
+import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
 import { ScarcityBadge, ScarcityWatchRegion } from './ScarcityBadge'
 import { ArtistSpotlightBanner, SpotlightCollectionGif, type SpotlightData } from './ArtistSpotlightBanner'
 import { HorizontalTwoSlideGallery } from './HorizontalTwoSlideGallery'
@@ -84,6 +85,8 @@ interface ArtworkDetailProps {
   spotlightDataOverride?: SpotlightData | null
   /** Street edition-states row for ladder copy in scarcity bar */
   streetEdition?: StreetEditionStatesRow | null
+  /** Journey: pulse primary add CTA (e.g. add lamp) */
+  journeyCtaPulse?: boolean
 }
 
 const artistCache = new Map<string, ArtistData | null>()
@@ -179,7 +182,7 @@ function LampFlatDetailsSections({
   )
 }
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null, journeyCtaPulse = false }: ArtworkDetailProps) {
   const carouselSlides = useMemo(() => buildProductCarouselSlides(product), [product])
   /** List/cached products omit `media`; full Storefront payload includes `media.edges`. */
   const galleryAwaitingMedia =
@@ -713,7 +716,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             />
           )}
           {!hideCta && (
-            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]')}>
+            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
               {isSelected ? <><Check className="w-4 h-4" />Added to cart — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
             </button>
           )}
@@ -1141,7 +1144,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                             ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
                             : isSoldOut
                               ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                              : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
+                              : 'bg-[#047AFF] text-white hover:bg-[#0366d6]',
+                          journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                         )}
                       >
                         {isSelected ? (
@@ -1586,7 +1590,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
                       : isSoldOut
                         ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                        : 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
+                        : 'bg-[#047AFF] text-white hover:bg-[#0366d6]',
+                    journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                   )}
                 >
                   {isSelected ? (

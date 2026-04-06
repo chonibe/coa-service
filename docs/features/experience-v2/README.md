@@ -45,6 +45,15 @@ experience-v2/
 
 **Shared lib:** [`edition-stages.ts`](../../../lib/shop/edition-stages.ts) — stage thresholds, template interpolation, email strings.
 
+## Journey CTA pulse (next action)
+
+A single **priority-ordered** funnel step drives **pulse + shine** on the correct control: `animate-experience-artwork-cta-pulse` plus `.experience-journey-cta-shine` in [`app/globals.css`](../../../app/globals.css). **`@media (prefers-reduced-motion: reduce)`** disables the shine sweep (and existing pulse rules apply).
+
+- **Resolver:** [`lib/shop/experience-journey-next-action.ts`](../../../lib/shop/experience-journey-next-action.ts) — `resolveExperienceNextAction`, `EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS`
+- **Tests:** [`lib/shop/experience-journey-next-action.test.ts`](../../../lib/shop/experience-journey-next-action.test.ts) (`npx jest lib/shop/experience-journey-next-action.test.ts`)
+- **Context:** [`ExperienceOrderContext.tsx`](../../../app/(store)/shop/experience-v2/ExperienceOrderContext.tsx) — `pickerEngaged` / `setPickerEngaged` (picker open paths, Configurator mount), `orderDrawerOpen` / `setOrderDrawerOpen` (OrderBar drawer)
+- **Wired UI:** [`ExperienceCheckoutStickyBar.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx), [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx), [`Configurator.tsx`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx), [`ArtworkStrip.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkStrip.tsx), [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx), [`ArtworkDetail.tsx`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx), [`ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx), [`LampGridCard.tsx`](../../../app/(store)/shop/experience-v2/components/LampGridCard.tsx), [`LampSelectorPromoBanner.tsx`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx), [`OrderBar.tsx`](../../../app/(store)/shop/experience-v2/components/OrderBar.tsx)
+
 ## Components
 
 ### ExperienceV2Client
@@ -306,3 +315,4 @@ npm run dev
 - Updated: 2026-04-06 — [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) **Street Lamp** sheet/panel: **3:4** image frame; **flat** product copy / included / specs (no chevron accordions); mobile stacks details directly under the hero.
 - Updated: 2026-04-06 — **Lamp includes + specs**: [`LampIncludesSpecsPanel`](../../../app/(store)/shop/experience-v2/components/LampIncludesSpecsPanel.tsx) — one combined panel; **mobile** sticky bar shows it **under the title** with nested scroll; **desktop / inline** keeps it under **Product details** in the column.
 - Updated: 2026-04-06 — **Lamp detail + Shopify video**: List/SSR `lamp` has no Storefront **`media`**. [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) no longer short-circuits `detailProductFull` to the list product when `detailProduct.id === lamp.id`; it always uses cache or **`GET /api/shop/products/[handle]`** (full [`PRODUCT_FRAGMENT`](../../../lib/shopify/storefront-queries.ts)) so [`buildProductCarouselSlides`](../../../lib/shop/product-carousel-slides.ts) can emit **Video** slides. Legacy [`experience/components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience/components/ExperienceV2Client.tsx) **warms** the same cache for `lamp.handle` on mount. [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) already prefetches the lamp handle for the drawer.
+- Updated: 2026-04-06 — **Journey CTA pulse**: [`resolveExperienceNextAction`](../../../lib/shop/experience-journey-next-action.ts) + context flags [`pickerEngaged` / `orderDrawerOpen`](../../../app/(store)/shop/experience-v2/ExperienceOrderContext.tsx); pulse/shine on sticky bar, carousel, selector, picker sheet, lamp detail, and OrderBar checkout steps (see [Journey CTA pulse](#journey-cta-pulse-next-action)).

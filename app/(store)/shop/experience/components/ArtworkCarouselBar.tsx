@@ -1,12 +1,17 @@
 'use client'
 
-import { useRef, useEffect, useState, type RefObject } from 'react'
+import { useRef, useEffect, useState, useMemo, type RefObject } from 'react'
 import Image from 'next/image'
 import { ChevronRight, Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
+import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { cn } from '@/lib/utils'
+import {
+  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
+  resolveExperienceNextAction,
+} from '@/lib/shop/experience-journey-next-action'
 
 /** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
 const MAX_CAROUSEL_STRIP_THUMBS = 7
@@ -51,6 +56,21 @@ export function ArtworkCarouselBar({
   const scrollRef = useRef<HTMLDivElement>(null)
   const carouselWheelHostRef = useRef<HTMLDivElement>(null)
   const { theme } = useExperienceTheme()
+  const { pickerEngaged, orderDrawerOpen, orderBarProps } = useExperienceOrder()
+  const lampQuantityForJourney = orderBarProps?.lampQuantity ?? 0
+  const journeyNext = useMemo(() => {
+    if (orderDrawerOpen) return null
+    return resolveExperienceNextAction({
+      lampQuantity: lampQuantityForJourney,
+      artworkCount: selectedArtworks.length,
+      pickerEngaged,
+      orderDrawerOpen: false,
+      hasAddress: false,
+      hasPaymentSelection: false,
+      paymentSectionExpanded: false,
+      paymentStripeUnlocked: false,
+    })
+  }, [orderDrawerOpen, pickerEngaged, lampQuantityForJourney, selectedArtworks.length])
   const [isDesktop, setIsDesktop] = useState(false)
   const isDraggingRef = useRef(false)
   const didDragRef = useRef(false)
@@ -178,8 +198,8 @@ export function ArtworkCarouselBar({
   }, [isDesktop, selectedArtworks.length, stripWindowStart, activeIndex])
 
   /* 12×18 (same 14:21 ratio, smaller); 12px corners */
-  /** Watchlist: back-to-collection control stays frosted */
-  const watchlistBackButtonClass = cn(
+  /** Carousel thumbs stay w-24; + control scaled down */
+  const glassAddButtonClass = cn(
     'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
@@ -195,20 +215,18 @@ export function ArtworkCarouselBar({
         ]
   )
 
-  /** Collection strip: add-artwork + — blue (matches legacy sticky FAB) */
-  const carouselAddArtworkPlusClass = cn(
-    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border text-white shadow-lg transition-all duration-200 active:scale-[0.95]',
-    theme === 'light'
-      ? 'border-blue-600 bg-blue-600 shadow-blue-600/25 hover:border-blue-700 hover:bg-blue-700 hover:shadow-blue-600/35'
-      : 'border-blue-500 bg-blue-600 shadow-black/40 hover:border-blue-400 hover:bg-blue-500'
-  )
-
   /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
   const emptyCollectionCtaClass = cn(
-    'flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
+    'relative flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
     theme === 'light'
       ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
-      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400'
+      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400',
+    journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+  )
+
+  const glassAddWithJourney = cn(
+    glassAddButtonClass,
+    journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
   return (
@@ -448,7 +466,7 @@ export function ArtworkCarouselBar({
                   <button
                     type="button"
                     onClick={onOpenPicker}
-                    className={carouselAddArtworkPlusClass}
+                    className={glassAddWithJourney}
                     aria-label="Add artwork to collection"
                     title="Add artwork to collection"
                   >

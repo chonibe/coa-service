@@ -742,6 +742,52 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation: experience-artwork-cta-pulse 2.2s ease-in-out infinite;
 }
 
+/** Composable with pulse: subtle diagonal shine sweep (host must stay `relative overflow-hidden`) */
+@keyframes experience-journey-cta-shine {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-12deg);
+  }
+}
+
+.experience-journey-cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.experience-journey-cta-shine::after {
+  content: '';
+  position: absolute;
+  inset: -20% -40%;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0) 65%,
+    transparent 100%
+  );
+  animation: experience-journey-cta-shine 2.8s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-color-scheme: dark) {
+  .experience-journey-cta-shine::after {
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0) 35%,
+      rgba(255, 230, 220, 0.2) 50%,
+      rgba(255, 255, 255, 0) 65%,
+      transparent 100%
+    );
+  }
+}
+
 /* Parallax container */
 .parallax-container {
   perspective: 1px;

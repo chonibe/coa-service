@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
+import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
 
 interface TrustChip {
   icon: React.ComponentType<{ className?: string }>
@@ -17,9 +18,11 @@ interface LampGridCardProps {
   onViewDetail: () => void
   className?: string
   trustChips?: TrustChip[]
+  /** Pulse + shine on the primary “Start Collecting” control (journey: add lamp) */
+  highlightPrimary?: boolean
 }
 
-export function LampGridCard({ onAddLamp, className }: LampGridCardProps) {
+export function LampGridCard({ onAddLamp, className, highlightPrimary }: LampGridCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -37,7 +40,10 @@ export function LampGridCard({ onAddLamp, className }: LampGridCardProps) {
           type="button"
           onClick={onAddLamp}
           style={{ touchAction: 'manipulation' }}
-          className="flex items-center justify-center w-11 h-11 rounded-full bg-[#FFBA94] hover:bg-[#ffcaaa] active:scale-[0.98] text-[#1a0e08] transition-all shadow-md shadow-[#FFBA94]/10"
+          className={cn(
+            'relative flex items-center justify-center w-11 h-11 rounded-full bg-[#FFBA94] hover:bg-[#ffcaaa] active:scale-[0.98] text-[#1a0e08] transition-all shadow-md shadow-[#FFBA94]/10',
+            highlightPrimary && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+          )}
           aria-label="Start collecting"
         >
           <Plus className="w-5 h-5 shrink-0" />

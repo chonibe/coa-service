@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
+import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
 
 export interface LampSelectorPromoBannerProps {
   lamp: ShopifyProduct
@@ -17,6 +18,8 @@ export interface LampSelectorPromoBannerProps {
   onAddLamp: () => void
   /** When true, show the short “how it works” line above the product title. */
   showBadge?: boolean
+  /** Journey: pulse + shine on “Add lamp to cart” */
+  highlightAddCta?: boolean
 }
 
 export function LampSelectorPromoBanner({
@@ -27,6 +30,7 @@ export function LampSelectorPromoBanner({
   onCloseDetail,
   onAddLamp,
   showBadge = true,
+  highlightAddCta = false,
 }: LampSelectorPromoBannerProps) {
   const thumb =
     lamp.featuredImage?.url ?? lamp.images?.edges?.[0]?.node?.url ?? null
@@ -127,9 +131,10 @@ export function LampSelectorPromoBanner({
               priceLabel ? `Add lamp to cart, ${priceLabel}` : 'Add lamp to cart'
             }
             className={cn(
-              'w-full rounded-lg px-3 py-2.5 text-center text-xs font-semibold transition-colors sm:text-sm',
+              'relative w-full rounded-lg px-3 py-2.5 text-center text-xs font-semibold transition-colors sm:text-sm',
               'bg-neutral-900 text-white hover:bg-neutral-800',
-              'dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+              'dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]',
+              highlightAddCta && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
             )}
           >
             {priceLabel ? `Add lamp to cart — ${priceLabel}` : 'Add lamp to cart'}

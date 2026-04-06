@@ -22,6 +22,8 @@ import {
   normalizeExperienceProductKey,
 } from '@/lib/shop/experience-artwork-unit-price'
 import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
+import type { ExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
+import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
 
 const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
@@ -231,6 +233,7 @@ interface ArtworkCardProps {
   streetLadderPrices?: Record<string, number>
   streetPricingSeasonFallback?: 1 | 2
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
+  journeyPulseChooseArtworks?: boolean
 }
 
 function getFirstImageForWishlist(product: ShopifyProduct | null | undefined): string | null {
@@ -272,6 +275,7 @@ function ArtworkCard({
   streetLadderPrices,
   streetPricingSeasonFallback,
   featuredBundleCheckout,
+  journeyPulseChooseArtworks = false,
 }: ArtworkCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isInWishlist, addItem, removeItem } = useWishlist()
@@ -604,7 +608,8 @@ function ArtworkCard({
               !isInCart && 'h-5 px-2 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#262222]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-white/80 dark:hover:bg-[#2c2828]/90',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-[#e8d4d4]',
-              isSoldOut && 'opacity-40 cursor-not-allowed'
+              isSoldOut && 'opacity-40 cursor-not-allowed',
+              journeyPulseChooseArtworks && !isInCart && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
             )}
             style={!isInCart && !isSoldOut ? { backdropFilter: 'blur(12px) saturate(180%)', WebkitBackdropFilter: 'blur(12px) saturate(180%)' } : undefined}
             aria-label={isInCart ? 'Remove from order' : 'Add artwork to order'}
@@ -672,6 +677,8 @@ interface ArtworkStripProps {
   streetLadderPrices?: Record<string, number>
   streetPricingSeasonFallback?: 1 | 2
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
+  /** From funnel resolver — pulses add buttons on cards not yet in cart */
+  journeyNextAction?: ExperienceNextAction | null
 }
 
 const SENTINEL_HEIGHT = 80
@@ -731,6 +738,7 @@ export function ArtworkStrip({
   streetLadderPrices,
   streetPricingSeasonFallback,
   featuredBundleCheckout,
+  journeyNextAction = null,
 }: ArtworkStripProps) {
   // Tap-nudge: pick 4 random card indices, animate them one by one until user taps any card
   const [nudgeDone, setNudgeDone] = useState(false)
@@ -935,6 +943,9 @@ export function ArtworkStrip({
                       streetLadderPrices={streetLadderPrices}
                       streetPricingSeasonFallback={streetPricingSeasonFallback}
                       featuredBundleCheckout={featuredBundleCheckout}
+                      journeyPulseChooseArtworks={
+                        journeyNextAction === 'choose_artworks' && !p1InCart && product1.availableForSale
+                      }
                     />
                   </div>
                 )}
@@ -988,6 +999,9 @@ export function ArtworkStrip({
                       lockedArtworkPrices={lockedArtworkPrices}
                       streetLadderPrices={streetLadderPrices}
                       featuredBundleCheckout={featuredBundleCheckout}
+                      journeyPulseChooseArtworks={
+                        journeyNextAction === 'choose_artworks' && !p2InCart && product2.availableForSale
+                      }
                     />
                   </div>
                 )}
@@ -1027,6 +1041,9 @@ export function ArtworkStrip({
                       streetLadderPrices={streetLadderPrices}
                       streetPricingSeasonFallback={streetPricingSeasonFallback}
                       featuredBundleCheckout={featuredBundleCheckout}
+                      journeyPulseChooseArtworks={
+                        journeyNextAction === 'choose_artworks' && !p1InCart && product1.availableForSale
+                      }
                     />
                   </div>
                 )}

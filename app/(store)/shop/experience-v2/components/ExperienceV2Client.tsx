@@ -55,6 +55,7 @@ import {
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
+import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
@@ -132,8 +133,15 @@ export function ExperienceV2Client({
   initialArtistSlug,
 }: ExperienceV2ClientProps) {
   const searchParams = useSearchParams()
-  const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } =
-    useExperienceOrder()
+  const {
+    setOrderSummary,
+    setOrderBarProps,
+    triggerPriceBump,
+    setHeaderCenterContent,
+    setPickerEngaged,
+    pickerEngaged,
+    orderDrawerOpen,
+  } = useExperienceOrder()
   const { flags: discountFlags, featuredBundle: featuredBundleDiscount } = useShopDiscountSettings()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = discountFlags
   const { isAuthenticated } = useShopAuthContext()
@@ -399,6 +407,23 @@ export function ExperienceV2Client({
     [cartOrder, findProductByCartId]
   )
 
+  const experienceJourneyDetailNext = useMemo(() => {
+    if (orderDrawerOpen) return null
+    return resolveExperienceNextAction({
+      lampQuantity,
+      artworkCount: selectedArtworks.length,
+      pickerEngaged,
+      orderDrawerOpen,
+      hasAddress: false,
+      hasPaymentSelection: false,
+      paymentSectionExpanded: false,
+      paymentStripeUnlocked: false,
+    })
+  }, [orderDrawerOpen, pickerEngaged, lampQuantity, selectedArtworks.length])
+
+  /** No prints in cart yet: show turntable + bundle on Spline only, not Street Lamp product chrome. */
+  const isCollectionStart = cartOrder.length === 0
+
   const carouselArtworks = useMemo(() => {
     const ids = uniqueCartIdsInOrder(cartOrder)
     return ids.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[]
@@ -534,6 +559,10 @@ export function ExperienceV2Client({
   useEffect(() => {
     saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
   }, [cartOrder, lampQuantity, lampPreviewOrder])
+
+  useEffect(() => {
+    if (isCollectionStart) setGalleryImages([])
+  }, [isCollectionStart])
 
   // Preload first few product images when carousel is visible so selector opens with cached images
   useEffect(() => {
@@ -1058,6 +1087,7 @@ export function ExperienceV2Client({
   }, [])
 
   const handleOpenPicker = useCallback(() => {
+    setPickerEngaged(true)
     cartCountWhenPickerOpenedRef.current = cartOrder.length
     setPickerHasBeenOpened(true)
     captureFunnelEvent(FunnelEvents.experience_picker_opened, {
@@ -1078,7 +1108,7 @@ export function ExperienceV2Client({
       }))
     }
     setIsPickerOpen(true)
-  }, [cartOrder.length, spotlightData?.vendorName, spotlightArtistVendorForFilter])
+  }, [cartOrder.length, setPickerEngaged, spotlightData?.vendorName, spotlightArtistVendorForFilter])
 
   const handleClosePicker = useCallback(() => {
     captureFunnelEvent(FunnelEvents.experience_picker_closed, {
@@ -1102,10 +1132,14 @@ export function ExperienceV2Client({
   const { theme } = useExperienceTheme()
 
   // Sync displayedIndex and displayedProduct when user taps carousel item (last selected = displayed).
-  // When the lamp preview is empty, keep reel details on the Street Lamp (carousel strip must not override).
+  // Collection start: no reel accordion / lamp product — turntable + featured bundle only.
   const lastClickedProductId = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex]?.id ?? null : null
   const lastClickedProduct = activeCarouselIndex >= 0 ? carouselArtworks[activeCarouselIndex] ?? null : null
   useEffect(() => {
+    if (isCollectionStart) {
+      setDisplayedProduct(null)
+      return
+    }
     if (lampPreviewOrder.length === 0) {
       setDisplayedProduct(lamp)
       return
@@ -1127,6 +1161,7 @@ export function ExperienceV2Client({
       setDisplayedProduct(lastClickedProduct)
     }
   }, [
+    isCollectionStart,
     lampPreviewOrder.length,
     lamp,
     lastClickedProductId,
@@ -1140,6 +1175,21 @@ export function ExperienceV2Client({
   useEffect(() => {
     if (!isDesktop) {
       setHeaderCenterContent(null)
+      return () => setHeaderCenterContent(null)
+    }
+    if (isCollectionStart) {
+      setHeaderCenterContent(
+        <div
+          className={cn(
+            'text-center min-w-0 max-w-[200px] md:max-w-[320px] mx-auto pointer-events-none',
+            theme === 'light' ? 'text-neutral-900' : 'text-white'
+          )}
+        >
+          <p className={cn('text-sm font-semibold truncate', theme === 'light' ? 'text-neutral-900' : 'text-white')}>
+            Start your Collection
+          </p>
+        </div>
+      )
       return () => setHeaderCenterContent(null)
     }
     if (!displayedProduct) {
@@ -1168,7 +1218,7 @@ export function ExperienceV2Client({
       </button>
     )
     return () => setHeaderCenterContent(null)
-  }, [isDesktop, displayedProduct, lamp.id, theme, handleViewDetail, setHeaderCenterContent])
+  }, [isDesktop, isCollectionStart, displayedProduct, lamp.id, theme, handleViewDetail, setHeaderCenterContent])
 
   // 3-section layout: 0=Spline, 1=Accordion (if product shown), 2=Gallery (if 2+ images, first shown in details)
   const hasAccordion = !!displayedProduct
@@ -1230,7 +1280,7 @@ export function ExperienceV2Client({
           <ArtworkInfoBar
             sideAProduct={sideAProduct}
             sideBProduct={sideBProduct}
-            lampProduct={lampPreviewOrder.length === 0 ? lamp : null}
+            lampProduct={isCollectionStart ? null : lampPreviewOrder.length === 0 ? lamp : null}
             displayedIndex={displayedIndex}
             lastClickedProductId={lastClickedProductId}
             onGalleryImagesChange={handleGalleryImagesChange}
@@ -1242,6 +1292,8 @@ export function ExperienceV2Client({
             thumbnailPlacement="right"
             onRotate={onRotate}
             hideTitle={isDesktop}
+            suppressReelSync={isCollectionStart}
+            heroTitleOverride={isCollectionStart ? 'Start your Collection' : null}
           />
         )}
         galleryImages={galleryImages}
@@ -1513,6 +1565,11 @@ export function ExperienceV2Client({
             !!spotlightData &&
             productMatchesSpotlight(detailProduct, spotlightData) &&
             !spotlightData.unlisted
+          }
+          journeyCtaPulse={
+            detailProduct.id === lamp.id &&
+            lampQuantity === 0 &&
+            experienceJourneyDetailNext === 'add_lamp'
           }
         />
       )}

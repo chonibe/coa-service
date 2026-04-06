@@ -9,6 +9,10 @@ import { useExperienceTheme } from '../ExperienceThemeContext'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import {
+  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
+  resolveExperienceNextAction,
+} from '@/lib/shop/experience-journey-next-action'
 /** Portrait tiles match [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) strip (14×20, 15px radius). */
 const THUMB_WIDTH_PX = 36
 const IMAGE_REQUEST_PX = 280
@@ -105,8 +109,22 @@ export function ExperienceCheckoutStickyBar({
   onOpenPicker,
   stripMode = 'collection',
 }: ExperienceCheckoutStickyBarProps) {
-  const { openOrderBar, promoDiscount } = useExperienceOrder()
+  const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
+
+  const journeyNext = useMemo(() => {
+    if (orderDrawerOpen) return null
+    return resolveExperienceNextAction({
+      lampQuantity,
+      artworkCount: selectedArtworks.length,
+      pickerEngaged,
+      orderDrawerOpen: false,
+      hasAddress: false,
+      hasPaymentSelection: false,
+      paymentSectionExpanded: false,
+      paymentStripeUnlocked: false,
+    })
+  }, [orderDrawerOpen, pickerEngaged, lampQuantity, selectedArtworks.length])
 
   const hasArtworks = selectedArtworks.length >= 1
   const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
@@ -114,6 +132,34 @@ export function ExperienceCheckoutStickyBar({
   const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
   const visible = hasArtworks || showEmptyCollectionCta
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
+
+  const createBundleCtaClass = cn(
+    'relative flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
+    theme === 'light'
+      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
+      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400',
+    journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+  )
+
+  const chooseArtworksAfterLampClass = cn(
+    'relative flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
+    theme === 'light'
+      ? 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700'
+      : 'border-violet-500 bg-violet-600 text-white shadow-black/40 hover:bg-violet-500 hover:border-violet-400',
+    (journeyNext === 'choose_artworks' || lampInCartNeedsArtwork) && 'animate-experience-artwork-cta-pulse',
+    journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+  )
+
+  const openPickerFabClass = cn(
+    'relative flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[#047AFF] bg-[#047AFF] text-white shadow-md transition-all active:scale-95 hover:border-[#0366d6] hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF] sm:h-[3.25rem] sm:w-[3.25rem]',
+    journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+  )
+
+  const checkoutPillClass = cn(
+    'relative z-[3] flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98]',
+    'bg-[#047AFF] text-white hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]',
+    journeyNext === 'open_checkout' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+  )
 
   const slots = useMemo<Slot[]>(() => {
     const out: Slot[] = []
@@ -150,25 +196,6 @@ export function ExperienceCheckoutStickyBar({
     parts.push(`${selectedArtworks.length} artwork${selectedArtworks.length !== 1 ? 's' : ''}`)
     return `Checkout summary: ${parts.join(', ')}`
   }, [lampQuantity, selectedArtworks.length, hasArtworks, stripMode])
-
-  const createBundleCtaClass = cn(
-    'flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
-    theme === 'light'
-      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
-      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400'
-  )
-
-  const chooseArtworksAfterLampClass = cn(
-    'flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] animate-experience-artwork-cta-pulse',
-    theme === 'light'
-      ? 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700'
-      : 'border-violet-500 bg-violet-600 text-white shadow-black/40 hover:bg-violet-500 hover:border-violet-400'
-  )
-
-  const openPickerFabClass = cn(
-    'flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-600/30 transition-all active:scale-95 hover:border-violet-700 hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 sm:h-[3.25rem] sm:w-[3.25rem]',
-    theme === 'dark' && 'border-violet-500 hover:border-violet-400 hover:bg-violet-500'
-  )
 
   if (!visible) return null
 
@@ -239,10 +266,7 @@ export function ExperienceCheckoutStickyBar({
               <button
                 type="button"
                 onClick={openOrderBar}
-                className={cn(
-                  'relative z-[3] flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98]',
-                  'bg-[#047AFF] text-white hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]'
-                )}
+                className={checkoutPillClass}
                 aria-label={`Open checkout, total ${finalTotal.toFixed(2)} dollars`}
               >
                 <span className="whitespace-nowrap">

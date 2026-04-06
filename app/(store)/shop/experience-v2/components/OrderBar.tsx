@@ -29,6 +29,10 @@ import {
   lampVolumeDiscountPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
 import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
+import {
+  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
+  resolveExperienceNextAction,
+} from '@/lib/shop/experience-journey-next-action'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -171,7 +175,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [paymentStripeUnlocked, setPaymentStripeUnlocked] = useState(false)
   const paymentStripeActive = paymentStripeUnlocked
   const [enteredCardInfo, setEnteredCardInfo] = useState<{ brand: string; last4: string } | null>(null)
-  const { promoDiscount } = useExperienceOrder()
+  const { promoDiscount, pickerEngaged, setOrderDrawerOpen } = useExperienceOrder()
   const checkout = useCheckout()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
 
@@ -190,6 +194,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       setPreloadedClientSecret(null)
     }
   }, [drawerOpen])
+
+  useEffect(() => {
+    setOrderDrawerOpen(drawerOpen)
+    return () => setOrderDrawerOpen(false)
+  }, [drawerOpen, setOrderDrawerOpen])
 
   const priceMaps = React.useMemo(
     () => ({
@@ -537,26 +546,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     }
   }
 
-  /* ─── Summary rows (Address, Payment, Promo) ─── */
-  const addressRow = (
-    <button
-      type="button"
-      onClick={() => setAddressModalOpen(true)}
-      data-testid="add-address-button"
-      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
-    >
-      <span className="flex items-center gap-3">
-        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-[#047AFF]' : 'text-neutral-500')} />
-        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900 dark:text-[#f0e8e8]' : 'text-[#047AFF] dark:text-[#60A5FA] font-medium'}>
-          {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
-        </span>
-      </span>
-      {hasAddress && (
-        <span className="text-neutral-500 dark:text-experience-highlight/80 hover:text-neutral-700 dark:hover:text-[#FFBA94]">Change</span>
-      )}
-    </button>
-  )
-
   const paymentMethodLabel = React.useMemo(() => {
     if (checkout.savedCard && (checkout.paymentMethod === 'card' || checkout.paymentMethod === 'link')) {
       const brand = checkout.savedCard.brand.charAt(0).toUpperCase() + checkout.savedCard.brand.slice(1)
@@ -582,12 +571,65 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   }, [checkout.savedCard, checkout.paymentMethod, checkout.paymentMethodDisplayType, enteredCardInfo])
 
   const hasPaymentSelection = paymentSectionExpanded || !!checkout.paymentMethodDisplayType
+
+  const journeyNextAction = React.useMemo(
+    () =>
+      resolveExperienceNextAction({
+        lampQuantity,
+        artworkCount: selectedArtworks.length,
+        pickerEngaged,
+        orderDrawerOpen: drawerOpen,
+        hasAddress,
+        hasPaymentSelection,
+        paymentSectionExpanded,
+        paymentStripeUnlocked,
+      }),
+    [
+      lampQuantity,
+      selectedArtworks.length,
+      pickerEngaged,
+      drawerOpen,
+      hasAddress,
+      hasPaymentSelection,
+      paymentSectionExpanded,
+      paymentStripeUnlocked,
+    ]
+  )
+
+  const journeyHighlight = EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+
+  /* ─── Summary rows (Address, Payment, Promo) ─── */
+  const addressRow = (
+    <button
+      type="button"
+      onClick={() => setAddressModalOpen(true)}
+      data-testid="add-address-button"
+      className={cn(
+        'flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow',
+        journeyNextAction === 'add_address' && journeyHighlight
+      )}
+    >
+      <span className="flex items-center gap-3">
+        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-[#047AFF]' : 'text-neutral-500')} />
+        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900 dark:text-[#f0e8e8]' : 'text-[#047AFF] dark:text-[#60A5FA] font-medium'}>
+          {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
+        </span>
+      </span>
+      {hasAddress && (
+        <span className="text-neutral-500 dark:text-experience-highlight/80 hover:text-neutral-700 dark:hover:text-[#FFBA94]">Change</span>
+      )}
+    </button>
+  )
+
   const paymentRow = (
     <button
       type="button"
       onClick={() => setPaymentSectionExpanded((p) => !p)}
       data-testid="add-payment-method-button"
-      className="flex w-full items-center justify-between gap-2 py-2.5 text-left"
+      className={cn(
+        'flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow',
+        journeyNextAction === 'add_payment' && journeyHighlight
+      )}
     >
       <span className="flex items-center gap-3">
         <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#c4a0a0]')} />
@@ -769,7 +811,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       amount={finalTotal}
       disabled={itemCount === 0 || !allAvailable}
       onClick={handlePlaceOrderClick}
-      className="text-sm"
+      className={cn(
+        'text-sm relative',
+        journeyNextAction === 'place_order' && journeyHighlight
+      )}
     />
   )
 
@@ -931,7 +976,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                         type="button"
                         onClick={() => setPaymentSectionExpanded(false)}
                         data-testid="payment-done-button"
-                        className="text-sm font-medium text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD]"
+                        className={cn(
+                          'text-sm font-medium text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD] rounded-lg px-2 py-1.5 min-h-[44px] min-w-[44px]',
+                          journeyNextAction === 'payment_done' && journeyHighlight
+                        )}
                       >
                         Done
                       </button>

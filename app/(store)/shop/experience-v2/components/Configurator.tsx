@@ -91,6 +91,7 @@ import {
   type FilterState,
 } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
 import { trackViewItem, trackAddToCart, trackSearch, trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
@@ -203,6 +204,9 @@ export function Configurator({
     openOrderBar,
     setDiscountCelebrationAmount,
     triggerPriceBump,
+    pickerEngaged,
+    orderDrawerOpen,
+    setPickerEngaged,
   } = useExperienceOrder()
   const { flags: discountFlags, featuredBundle: featuredBundleDiscount } = useShopDiscountSettings()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = discountFlags
@@ -935,6 +939,25 @@ export function Configurator({
 
   /** Lamp card: on ads use session skip only (card shows every new session, skip hides for current session). Else use persisted skip. */
   const showLampPaywall = lampQuantity === 0 && (adPreset ? !sessionLampPaywallSkipped : !lampPaywallSkipped)
+
+  useEffect(() => {
+    setPickerEngaged(true)
+  }, [setPickerEngaged])
+
+  const experienceJourneySurfaceNext = useMemo(() => {
+    if (orderDrawerOpen) return null
+    return resolveExperienceNextAction({
+      lampQuantity,
+      artworkCount: cartOrder.length,
+      pickerEngaged,
+      orderDrawerOpen: false,
+      hasAddress: false,
+      hasPaymentSelection: false,
+      paymentSectionExpanded: false,
+      paymentStripeUnlocked: false,
+    })
+  }, [orderDrawerOpen, lampQuantity, cartOrder.length, pickerEngaged])
+
   const showHighlightAnimation = false // temporarily hidden for user testing
   const totalWizardSteps = isMobile ? 6 : 5
   const lastWizardStep = totalWizardSteps - 1
@@ -2055,6 +2078,11 @@ export function Configurator({
               isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
               hideScarcityBar={detailProduct.id === lamp.id}
               addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
+              journeyCtaPulse={
+                experienceJourneySurfaceNext === 'add_lamp' &&
+                detailProduct.id === lamp.id &&
+                lampQuantity === 0
+              }
               productIncludes={detailProduct.id === lamp.id ? [{ label: 'A Street Lamp', icon: 'lamp' as const }, { label: 'USB-C cable – 150mm length', icon: 'cable' as const }, { label: 'Internal magnet mount', icon: 'magnet' as const }, { label: 'EU/US wall adapter', icon: 'plug' as const }, { label: 'Care instruction booklet', icon: 'book' as const }, { label: 'Protective bag', icon: 'bag' as const }] : undefined}
               productSpecs={detailProduct.id === lamp.id ? [{ title: 'Dimensions', icon: 'ruler' as const, items: ['21 × 14 × 7 cm ~ 8.1 × 5.7 × 2.7 in'] }, { title: 'Weight', icon: 'scale' as const, items: ['1.1 kg ~ 2.4 lb'] }, { title: 'Materials', icon: 'box' as const, items: ['Silver anodized matte finish, Aluminum 6063', 'Polycarbonate transparent and double matte optical diffusion', 'Neodymium magnet built into the frame (N52)'] }, { title: 'Light', icon: 'sun' as const, items: ['Energy efficient, heat resistant high output LED / 500 lumen, lasts up to 50,000 hours', 'Light temperatures: 2700K (Warm White), 3000K (Soft White), 5000K (Daylight)', 'Touch dimmer with multiple light options'] }, { title: 'Battery', icon: 'battery' as const, items: ['2500 mAh 3.7V 18650 rechargeable lithium ion', 'Up to 8 hours battery life with constant use'] }, { title: 'Charging', icon: 'zap' as const, items: ['Type C charging port', '1.8 m 360° magnetic head charging cable', 'EU/US wall adapter'] }] : undefined}
             />
@@ -2144,6 +2172,7 @@ export function Configurator({
                   lamp={lamp}
                   lampPrice={lampPrice}
                   trustChips={LAMP_TRUST_CHIPS}
+                  highlightPrimary={experienceJourneySurfaceNext === 'add_lamp' && showLampPaywall}
                   onAddLamp={() => {
                     if (isGAEnabled()) trackEnhancedEvent('experience_lamp_paywall_add_to_cart', { source: 'configurator' })
                     handleLampQuantityChange(1)
@@ -2203,6 +2232,9 @@ export function Configurator({
                   }}
                   onAddLamp={() => handleLampQuantityChange(1)}
                   showBadge
+                  highlightAddCta={
+                    experienceJourneySurfaceNext === 'add_lamp' && !showLampPaywall && lampQuantity === 0
+                  }
                 />
               </div>
             ) : spotlightData ? (
@@ -2383,6 +2415,7 @@ export function Configurator({
             streetLadderPrices={streetLadderPrices}
             streetPricingSeasonFallback={activeSeason === 'season2' ? 2 : 1}
             featuredBundleCheckout={featuredArtistBundlePricingActive ? featuredBundleCheckoutPayload : null}
+            journeyNextAction={experienceJourneySurfaceNext}
           />
             </div>
             {/* Tap-to-deblur overlay — sibling of blur div, anchors to the outer relative wrapper */}
@@ -2620,6 +2653,11 @@ export function Configurator({
           productBadges={undefined}
           hideScarcityBar={detailProduct.id === lamp.id}
           addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
+          journeyCtaPulse={
+            experienceJourneySurfaceNext === 'add_lamp' &&
+            detailProduct.id === lamp.id &&
+            lampQuantity === 0
+          }
           productIncludes={
             detailProduct.id === lamp.id
               ? [
