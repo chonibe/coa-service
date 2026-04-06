@@ -26,6 +26,11 @@ export interface ExperienceJourneyNextActionInput {
   paymentSectionExpanded: boolean
   /** True after user commits via Place order with address (Stripe mounted) */
   paymentStripeUnlocked: boolean
+  /**
+   * When set (e.g. OrderBar), true only after wallet/card is actually usable — not merely payment section expanded.
+   * Controls `add_payment` vs `place_order` when the section is open but no method is chosen yet.
+   */
+  paymentMethodReady?: boolean
 }
 
 /**
@@ -50,7 +55,11 @@ export function resolveExperienceNextAction(
     hasPaymentSelection,
     paymentSectionExpanded,
     paymentStripeUnlocked,
+    paymentMethodReady,
   } = input
+
+  const paymentReady =
+    paymentMethodReady !== undefined ? paymentMethodReady : hasPaymentSelection
 
   if (!pickerEngaged && lampQuantity === 0 && artworkCount === 0) {
     return 'create_bundle'
@@ -67,13 +76,14 @@ export function resolveExperienceNextAction(
   if (orderDrawerOpen && !hasAddress) {
     return 'add_address'
   }
-  if (orderDrawerOpen && hasAddress && !hasPaymentSelection) {
+  if (orderDrawerOpen && hasAddress && !paymentReady) {
     return 'add_payment'
   }
   // Prefer final submit over collapsing payment when both could show
   if (
     orderDrawerOpen &&
     hasAddress &&
+    paymentReady &&
     paymentSectionExpanded &&
     paymentStripeUnlocked
   ) {

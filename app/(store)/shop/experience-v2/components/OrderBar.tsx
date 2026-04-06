@@ -157,6 +157,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   onLampQuantityChange,
   onAdjustArtworkQuantity,
   onSelectArtwork,
+  onViewLampDetail,
   isGift,
   collectedProductIds,
   lockedArtworkPrices,
@@ -181,6 +182,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const firedBeginCheckoutRef = useRef(false)
   const firedAddPaymentInfoRef = useRef(false)
+  /** One auto-open of Stripe per drawer session when shipping address is already complete */
+  const autoOpenedPaymentForDrawerRef = useRef(false)
 
   useExperienceOpenOrder(() => {
     setDrawerOpen(true)
@@ -192,6 +195,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     if (!drawerOpen) {
       setPaymentStripeUnlocked(false)
       setPreloadedClientSecret(null)
+      autoOpenedPaymentForDrawerRef.current = false
     }
   }, [drawerOpen])
 
@@ -527,18 +531,39 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   const hasAddress = checkout.isAddressComplete()
 
+  /** Wallet / card ready — not merely "payment section expanded" */
+  const hasUsablePaymentMethod = React.useMemo(() => {
+    const dt = checkout.paymentMethodDisplayType
+    if (!dt) return false
+    if (dt === 'google_pay' || dt === 'paypal') return true
+    if (dt === 'card' || dt === 'link') {
+      return !!(checkout.savedCard || enteredCardInfo)
+    }
+    return false
+  }, [checkout.paymentMethodDisplayType, checkout.savedCard, enteredCardInfo])
+
+  // Same as tapping Place order once with a complete address: mount Stripe + expand payment (no extra tap)
+  useEffect(() => {
+    if (!drawerOpen) return
+    if (!hasAddress || itemCount === 0 || !allAvailable) return
+    if (autoOpenedPaymentForDrawerRef.current) return
+    autoOpenedPaymentForDrawerRef.current = true
+    setPaymentStripeUnlocked(true)
+    setPaymentSectionExpanded(true)
+  }, [drawerOpen, hasAddress, itemCount, allAvailable])
+
   const paymentFormRef = React.useRef<HTMLFormElement | null>(null)
   const handlePlaceOrderClick = () => {
     if (!hasAddress) {
       setAddressModalOpen(true)
       return
     }
-    // Only mount Stripe / preload session after user commits via Place order (avoids Link verification on load or when expanding payment alone)
     setPaymentStripeUnlocked(true)
     if (!paymentSectionExpanded) {
       setPaymentSectionExpanded(true)
       return
     }
+    if (!hasUsablePaymentMethod) return
     if (paymentFormRef.current) {
       paymentFormRef.current.requestSubmit()
     } else {
@@ -583,6 +608,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         hasPaymentSelection,
         paymentSectionExpanded,
         paymentStripeUnlocked,
+        paymentMethodReady: hasUsablePaymentMethod,
       }),
     [
       lampQuantity,
@@ -593,6 +619,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       hasPaymentSelection,
       paymentSectionExpanded,
       paymentStripeUnlocked,
+      hasUsablePaymentMethod,
     ]
   )
 
@@ -665,7 +692,22 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         {lampQuantity > 0 && (
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
-              <ExperienceOrderLampIcon className={cn('h-7 w-7', 'text-neutral-400 dark:text-[#d4b8b8]')} />
+              {onViewLampDetail ? (
+                <button
+                  type="button"
+                  onClick={() => onViewLampDetail(lamp)}
+                  className={cn(
+                    'shrink-0 rounded-lg p-0.5 -m-0.5 transition-colors',
+                    'text-neutral-400 dark:text-[#d4b8b8]',
+                    'hover:text-[#047AFF] dark:hover:text-[#60A5FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]'
+                  )}
+                  aria-label="View Street Lamp product details"
+                >
+                  <ExperienceOrderLampIcon className="h-7 w-7" />
+                </button>
+              ) : (
+                <ExperienceOrderLampIcon className={cn('h-7 w-7', 'text-neutral-400 dark:text-[#d4b8b8]')} />
+              )}
               <span className="text-sm text-neutral-900 dark:text-[#f0e8e8] truncate min-w-0">Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
             </div>
             <div className="flex items-center justify-center gap-0.5 shrink-0 justify-self-center">
@@ -805,17 +847,24 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   }
 
   const finalTotal = Math.max(0, total - promoDiscount)
+  const checkoutButtonDisabled = itemCount === 0 || !allAvailable || !hasUsablePaymentMethod
+  const placeOrderButtonLabel =
+    hasAddress && itemCount > 0 && allAvailable && !hasUsablePaymentMethod ? (
+      <span>Select payment method</span>
+    ) : null
   const placeOrderButton = (
     <CheckoutButton
       variant={getCheckoutButtonVariant()}
       amount={finalTotal}
-      disabled={itemCount === 0 || !allAvailable}
+      disabled={checkoutButtonDisabled}
       onClick={handlePlaceOrderClick}
       className={cn(
         'text-sm relative',
         journeyNextAction === 'place_order' && journeyHighlight
       )}
-    />
+    >
+      {placeOrderButtonLabel}
+    </CheckoutButton>
   )
 
   return (
@@ -967,7 +1016,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                     />
                     ) : (
                       <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] py-2">
-                        Tap <span className="font-medium text-neutral-900 dark:text-[#f0e8e8]">Place order</span> below to enter payment details.
+                        Add your payment details below.
                       </p>
                     )}
                     <div className="flex items-center justify-between gap-2">

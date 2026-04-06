@@ -76,6 +76,24 @@ describe('resolveExperienceNextAction', () => {
     ).toBe('add_payment')
   })
 
+  it('returns add_payment when payment section open but method not ready (OrderBar)', () => {
+    expect(
+      resolveExperienceNextAction(
+        base({
+          pickerEngaged: true,
+          lampQuantity: 1,
+          artworkCount: 1,
+          orderDrawerOpen: true,
+          hasAddress: true,
+          hasPaymentSelection: true,
+          paymentSectionExpanded: true,
+          paymentStripeUnlocked: true,
+          paymentMethodReady: false,
+        })
+      )
+    ).toBe('add_payment')
+  })
+
   it('returns place_order when stripe unlocked and payment section expanded (beats payment_done)', () => {
     expect(
       resolveExperienceNextAction(
@@ -88,6 +106,7 @@ describe('resolveExperienceNextAction', () => {
           hasPaymentSelection: true,
           paymentSectionExpanded: true,
           paymentStripeUnlocked: true,
+          paymentMethodReady: true,
         })
       )
     ).toBe('place_order')
