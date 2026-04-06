@@ -23,8 +23,8 @@ export function getSpotlightPairProducts(
 ): [ShopifyProduct, ShopifyProduct] | null {
   if (!spotlightData?.productIds?.length || spotlightData.productIds.length < 2) return null
 
-  const id1 = normalizeExperienceProductKey(spotlightData.productIds[0]!)
-  const id2 = normalizeExperienceProductKey(spotlightData.productIds[1]!)
+  const id1 = normalizeExperienceProductKey(spotlightData.productIds[0] as string | number)
+  const id2 = normalizeExperienceProductKey(spotlightData.productIds[1] as string | number)
   if (!id1 || !id2) return null
 
   const find = (numericId: string): ShopifyProduct | null => {

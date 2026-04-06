@@ -42,6 +42,7 @@ import {
   spotlightOverridesForProduct,
 } from '@/lib/shop/experience-spotlight-match'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
+import { normalizeExperienceProductKey } from '@/lib/shop/experience-artwork-unit-price'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
@@ -233,6 +234,14 @@ export function ExperienceV2Client({
     [productsSeason1, productsSeason2]
   )
 
+  const findProductByCartId = useCallback(
+    (cartId: string) => {
+      const k = normalizeExperienceProductKey(cartId)
+      return allProducts.find((p) => normalizeExperienceProductKey(p.id) === k)
+    },
+    [allProducts]
+  )
+
   const { isAuthenticated, loading: shopAuthLoading } = useShopAuthContext()
   const artistCatalogForFilters = useExperienceArtistCatalog()
   const [watchlistRows, setWatchlistRows] = useState<WatchlistApiRow[]>([])
@@ -354,14 +363,14 @@ export function ExperienceV2Client({
     [productsForActiveSeason, filters, cartOrder]
   )
   const selectedArtworks = useMemo(
-    () => cartOrder.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[],
-    [allProducts, cartOrder]
+    () => cartOrder.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[],
+    [cartOrder, findProductByCartId]
   )
 
   const carouselArtworks = useMemo(() => {
     const ids = uniqueCartIdsInOrder(cartOrder)
-    return ids.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[]
-  }, [allProducts, cartOrder])
+    return ids.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[]
+  }, [cartOrder, findProductByCartId])
 
   const activeStripProducts = useMemo(
     () => (carouselStripMode === 'watchlist' ? watchlistDisplayProducts : carouselArtworks),
@@ -371,9 +380,10 @@ export function ExperienceV2Client({
   const resolveProductById = useCallback(
     (id: string | null | undefined): ShopifyProduct | null => {
       if (!id) return null
-      const fromCatalog = allProducts.find((p) => p.id === id)
+      const k = normalizeExperienceProductKey(id)
+      const fromCatalog = allProducts.find((p) => normalizeExperienceProductKey(p.id) === k)
       if (fromCatalog) return fromCatalog
-      return watchlistDisplayProducts.find((p) => p.id === id) ?? null
+      return watchlistDisplayProducts.find((p) => normalizeExperienceProductKey(p.id) === k) ?? null
     },
     [allProducts, watchlistDisplayProducts]
   )

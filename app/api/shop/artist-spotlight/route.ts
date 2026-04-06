@@ -97,14 +97,14 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
   try {
     let vendorName = vendorNameOrSlug
     let { products: vendorProducts } = await getProductsByVendor(vendorNameOrSlug, {
-      first: 4,
+      first: 12,
       sortKey: 'CREATED_AT',
       reverse: true,
     })
     // Shopify vendor is often title-case; try slug as title-case if no products
     if ((!vendorProducts || vendorProducts.length === 0) && vendorNameOrSlug.includes('-')) {
       vendorName = slugToVendorName(vendorNameOrSlug)
-      const next = await getProductsByVendor(vendorName, { first: 4, sortKey: 'CREATED_AT', reverse: true })
+      const next = await getProductsByVendor(vendorName, { first: 12, sortKey: 'CREATED_AT', reverse: true })
       vendorProducts = next?.products ?? []
     } else if (vendorProducts?.length) {
       vendorName = vendorProducts[0].vendor || vendorNameOrSlug
@@ -229,7 +229,7 @@ async function tryCollectionSpotlight(
 async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClient>): Promise<SpotlightResult | null> {
   try {
     const col = await getCollectionWithListProducts(SEASON_2_HANDLE, {
-      first: 2,
+      first: 8,
       sortKey: 'CREATED',
       reverse: true,
     })
@@ -292,7 +292,7 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
 
     // Get recent products from same vendor (the "new drop") — max 4 items per drop
     const { products: vendorProducts } = await getProductsByVendor(vendorName, {
-      first: 4,
+      first: 12,
       sortKey: 'CREATED_AT',
       reverse: true,
     })
@@ -372,7 +372,7 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
     }
   }
 
-  const productIds = members
+  let productIds = members
     .map((m) => m.shopify_product_id?.trim())
     .filter(Boolean)
     .slice(0, 4) as string[]
@@ -388,6 +388,38 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
   if (!image) image = await getArtistImageByHandle(handle)
   if (!bio) bio = await getCollectionDescription(handle)
 
+  /** Supabase IDs alone are often missing from the experience SSR product lists — attach Storefront nodes for bundle resolution. */
+  let spotlightProducts: ShopifyProduct[] | undefined
+  try {
+    const { products: vendorProducts } = await getProductsByVendor(series.vendor_name, {
+      first: 12,
+      sortKey: 'CREATED_AT',
+      reverse: true,
+    })
+    const artworkNodes = (vendorProducts || []).filter(
+      (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
+    )
+    if (artworkNodes.length >= 2) {
+      spotlightProducts = artworkNodes.slice(0, 4)
+      const vendorNumeric = artworkNodes.map(
+        (p) => p.id.replace(/^gid:\/\/shopify\/Product\//i, '') || p.id
+      )
+      const merged: string[] = []
+      const seen = new Set<string>()
+      const push = (raw: string) => {
+        const k = raw.replace(/^gid:\/\/shopify\/Product\//i, '') || raw
+        if (!k || seen.has(k)) return
+        seen.add(k)
+        merged.push(k)
+      }
+      for (const id of productIds) push(id)
+      for (const id of vendorNumeric) push(id)
+      if (merged.length >= 2) productIds = merged.slice(0, 4)
+    }
+  } catch {
+    // optional enrichment
+  }
+
   return {
     vendorName: series.vendor_name,
     vendorSlug: handle,
@@ -395,6 +427,7 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
     image: image || undefined,
     instagram,
     productIds,
+    products: spotlightProducts,
     seriesName: series.name,
     gifUrl: meta.gifUrl,
     unlisted: meta.unlisted,

@@ -66,6 +66,7 @@ import {
   isFeaturedArtistBundleEligible,
   isFeaturedBundleSpotlightPrintsPurchasable,
 } from '@/lib/shop/experience-featured-bundle'
+import { normalizeExperienceProductKey } from '@/lib/shop/experience-artwork-unit-price'
 import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flags'
 import {
   ARTWORKS_PER_FREE_LAMP,
@@ -336,6 +337,11 @@ export function ExperienceV2Client({
     [productsSeason1, productsSeason2]
   )
 
+  const findProductByCartId = useCallback((cartId: string) => {
+    const k = normalizeExperienceProductKey(cartId)
+    return allProducts.find((p) => normalizeExperienceProductKey(p.id) === k)
+  }, [allProducts])
+
   const [streetEditionByProductId, setStreetEditionByProductId] = useState<
     Record<string, StreetEditionStatesRow>
   >({})
@@ -389,14 +395,14 @@ export function ExperienceV2Client({
   }, [isAuthenticated])
 
   const selectedArtworks = useMemo(
-    () => cartOrder.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[],
-    [allProducts, cartOrder]
+    () => cartOrder.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[],
+    [cartOrder, findProductByCartId]
   )
 
   const carouselArtworks = useMemo(() => {
     const ids = uniqueCartIdsInOrder(cartOrder)
-    return ids.map((id) => allProducts.find((p) => p.id === id)).filter(Boolean) as ShopifyProduct[]
-  }, [allProducts, cartOrder])
+    return ids.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[]
+  }, [cartOrder, findProductByCartId])
 
   const productsForActiveSeason = useMemo(
     () => (activeSeason === 'season1' ? productsSeason1 : productsSeason2),

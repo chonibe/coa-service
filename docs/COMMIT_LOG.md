@@ -1,5 +1,23 @@
 # Commit Log
 
+## Commit: fix(experience): featured bundle under Spline — resolve spotlight pair + always show card (2026-04-06)
+
+### Summary
+The bundle block stayed empty when **`getSpotlightPairProducts`** could not match API **`productIds`** to SSR season lists (especially **Supabase spotlight** responses without `products`). **`collectionArtworkCount`** also used strict `p.id === cartId`, so gid vs numeric mismatches hid sections. **Spline** now caps 3D height so the bundle card sits closer to the first viewport; the card renders whenever offer + lamp + pair exist.
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-spotlight/route.ts](app/api/shop/artist-spotlight/route.ts) — Supabase path: vendor `products` + merged ids; larger vendor/season fetches
+- [x] [lib/shop/experience-artwork-unit-price.ts](lib/shop/experience-artwork-unit-price.ts) — `normalizeExperienceProductKey` accepts number/string
+- [x] [lib/shop/experience-featured-bundle.ts](lib/shop/experience-featured-bundle.ts) — pair id normalization
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx) — show card when data ready; max-height on 3D wrapper
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — cart → product by normalized id
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx) — same + `resolveProductById`
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): show lamp volume discount + featured bundle sections when admin flags expect it (2026-04-06)
 
 **Ref:** `0af7384bd`

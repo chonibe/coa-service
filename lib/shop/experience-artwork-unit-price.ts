@@ -1,9 +1,10 @@
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { streetEditionRowFromStorefrontProduct } from '@/lib/shop/street-edition-from-storefront'
 
-/** Numeric Shopify product id (no gid prefix). */
-export function normalizeExperienceProductKey(productId: string): string {
-  return productId.replace(/^gid:\/\/shopify\/Product\//i, '') || productId
+/** Numeric Shopify product id (no gid prefix). Accepts Storefront gid strings or numeric JSON from APIs. */
+export function normalizeExperienceProductKey(productId: string | number): string {
+  const s = typeof productId === 'number' && Number.isFinite(productId) ? String(productId) : String(productId ?? '')
+  return s.replace(/^gid:\/\/shopify\/Product\//i, '') || s
 }
 
 export function storefrontVariantUsd(product: ShopifyProduct): number {
