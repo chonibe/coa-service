@@ -15,6 +15,11 @@ import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo, setUserProperty } from '@/lib/posthog'
+import { EARLY_ACCESS_CART_REFRESH_EVENT } from '@/lib/early-access-constants'
+import {
+  computeEarlyAccessCartDiscount,
+  readEarlyAccessCouponPresent,
+} from '@/lib/shop/early-access-cart'
 
 function getPaymentMethodLabel(method: PaymentMethodType): string {
   switch (method) {
@@ -104,6 +109,19 @@ export function CheckoutLayout({
 }: CheckoutLayoutProps) {
   const countryOptions = useShippingCountries()
   const checkout = useCheckout()
+  const [earlyAccessCookieActive, setEarlyAccessCookieActive] = React.useState(false)
+
+  React.useEffect(() => {
+    const sync = () => setEarlyAccessCookieActive(readEarlyAccessCouponPresent())
+    sync()
+    window.addEventListener('focus', sync)
+    window.addEventListener(EARLY_ACCESS_CART_REFRESH_EVENT, sync)
+    return () => {
+      window.removeEventListener('focus', sync)
+      window.removeEventListener(EARLY_ACCESS_CART_REFRESH_EVENT, sync)
+    }
+  }, [])
+
   const {
     address,
     billingAddress,
@@ -129,8 +147,23 @@ export function CheckoutLayout({
   } = checkout
 
   const isAddressComplete = checkout.isAddressComplete()
-  const effectiveDiscount = discount + promoDiscount
-  const finalTotal = total - promoDiscount
+  const earlyAccessDiscount = React.useMemo(
+    () =>
+      computeEarlyAccessCartDiscount(subtotal, discount, {
+        cookieActive: earlyAccessCookieActive,
+        promoCodeEntered: !!promoCode?.trim(),
+      }),
+    [subtotal, discount, earlyAccessCookieActive, promoCode]
+  )
+
+  const effectiveDiscount = discount + promoDiscount + earlyAccessDiscount
+  const finalTotal = total - promoDiscount - earlyAccessDiscount
+
+  const discountLabelParts: string[] = []
+  if (discount > 0) discountLabelParts.push(discountLabel || 'Credits')
+  if (earlyAccessDiscount > 0) discountLabelParts.push('Early access')
+  if (promoDiscount > 0) discountLabelParts.push('Promo')
+  const compositeDiscountLabel = discountLabelParts.join(', ')
 
   const handlePayClick = async () => {
     if (disabled) return
@@ -233,7 +266,7 @@ export function CheckoutLayout({
         {effectiveDiscount > 0 && !suppressDiscountInSummary && (
           <div className="flex justify-between text-sm">
             <span className="text-neutral-600 dark:text-[#c4a0a0]">
-              Discount{discountLabel ? ` (${discountLabel})` : ''}
+              Discount{compositeDiscountLabel ? ` (${compositeDiscountLabel})` : ''}
             </span>
             <span className="font-medium text-green-700">
               -${effectiveDiscount.toFixed(2)}

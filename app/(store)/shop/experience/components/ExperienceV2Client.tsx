@@ -42,6 +42,7 @@ import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-sta
 import { Heart } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
+import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 
 type WatchlistApiRow = {
@@ -372,6 +373,7 @@ export function ExperienceV2Client({
       .then((r) => {
         if (cancelled) return
         if (!r.ok) console.warn('Early access token invalid or expired')
+        else dispatchEarlyAccessCartRefresh()
       })
       .catch((err) => {
         if (!cancelled) console.error('Error fetching early access coupon:', err)

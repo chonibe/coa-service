@@ -18,6 +18,7 @@ const Configurator = dynamic(() => import('./Configurator').then((m) => ({ defau
   ),
 })
 import { useExperienceOrder } from '../ExperienceOrderContext'
+import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import { captureFunnelEvent, FunnelEvents, getDeviceType, setUserProperty } from '@/lib/posthog'
@@ -154,8 +155,8 @@ export function ExperienceClient({
           try {
             const response = await fetch(`/api/shop/early-access-coupon?artist=${encodeURIComponent(initialArtistSlug!)}&token=${encodeURIComponent(token)}`)
             if (response.ok) {
-              const data = await response.json()
-              // Cookie is set by the API; coupon code intentionally not logged
+              await response.json()
+              dispatchEarlyAccessCartRefresh()
             } else {
               console.warn('Early access token invalid or expired')
             }

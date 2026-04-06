@@ -4,11 +4,17 @@
  */
 
 import { cookies } from 'next/headers'
+import {
+  EARLY_ACCESS_ARTIST_COOKIE,
+  EARLY_ACCESS_COUPON_COOKIE,
+  EARLY_ACCESS_COUPON_MAX_AGE_DAYS,
+} from './early-access-constants'
 
-/** Cookie name for storing early access coupon code */
-export const EARLY_ACCESS_COUPON_COOKIE = 'early_access_coupon'
-export const EARLY_ACCESS_ARTIST_COOKIE = 'early_access_artist'
-export const EARLY_ACCESS_COUPON_MAX_AGE_DAYS = 7 // Coupon valid for 7 days
+export {
+  EARLY_ACCESS_ARTIST_COOKIE,
+  EARLY_ACCESS_COUPON_COOKIE,
+  EARLY_ACCESS_COUPON_MAX_AGE_DAYS,
+} from './early-access-constants'
 
 /**
  * Set early access coupon code in cookie

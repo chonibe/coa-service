@@ -6,6 +6,7 @@ import { AFFILIATE_REF_COOKIE, AFFILIATE_REF_MAX_AGE_DAYS } from '@/lib/affiliat
 import { trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
 import { ArtistProfilePageClient } from './ArtistProfilePageClient'
+import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
 
 type Props = {
   artist: ArtistProfileApiResponse
@@ -44,6 +45,7 @@ export function ArtistPageClient({ artist, slug }: Props) {
           if (response.ok) {
             const data = await response.json()
             setEarlyAccessCoupon(data.couponCode)
+            dispatchEarlyAccessCartRefresh()
           }
         } catch {
           /* ignore */
