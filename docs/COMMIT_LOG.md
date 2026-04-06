@@ -1,8 +1,24 @@
 # Commit Log
 
+## Commit: fix(experience): mobile reel below lamp + remove strip + after mini Spline (2026-04-06)
+
+**Ref:** _(set after commit)_
+
+### Summary
+**[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)**: mobile (**`max-md`**) Spline block when **`hasAccordion`** uses **`min-h-[min(64svh,680px)]`** (desktop **`72svh`** unchanged) and **`max-md:pb-4`** under the 3D viewport so the next reel content sits slightly lower with a small peek above the fold. **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)**: removed the **glass +** control after the mini Spline tile.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx)
+- [x] [app/(store)/shop/experience/components/ArtworkCarouselBar.tsx](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): align experience native video with PDP — `shopifyVideoPlaybackUrl`, single `<video src>` (2026-04-06)
 
-**Ref:** `d25a8cbd9`
+**Ref:** `8798505de`
 
 ### Summary
 Experience **native** Shopify video used **multiple `<source>`** elements sorted by **width**, while the PDP ([`ProductGallery`](app/(store)/shop/[handle]/components/ProductGallery.tsx)) uses **one URL** (tallest progressive rendition). Added **[`shopifyVideoPlaybackUrl`](lib/shop/product-carousel-slides.ts)** (tallest progressive, else HLS/`pickVideoSourceUrl`), **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** uses **`<video src>`** when the chosen URL is not HLS, and **`convertShopifyMedia`** now calls the same helper plus **`embedUrl` ?? `embeddedUrl`** for external video. **Tests:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts). **Docs:** [`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md).
