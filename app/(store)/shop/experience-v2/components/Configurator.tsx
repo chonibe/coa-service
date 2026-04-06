@@ -112,10 +112,10 @@ import {
 import {
   ARTWORKS_PER_FREE_LAMP,
   DISCOUNT_PER_ARTWORK_PCT,
-  LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED,
   lampVolumeDiscountPercentForAllocated,
   lampVolumeProgressPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
+import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
 import {
   loadImagePosition,
   saveImagePosition as persistImagePosition,
@@ -200,6 +200,7 @@ export function Configurator({
     setDiscountCelebrationAmount,
     triggerPriceBump,
   } = useExperienceOrder()
+  const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
   const [activeSeason, setActiveSeason] = useState<SeasonTab>('season2')
   const [crewCountMap, setCrewCountMap] = useState<Record<string, number>>({})
   const [collectedProductIds, setCollectedProductIds] = useState<Set<string>>(new Set())
@@ -797,16 +798,16 @@ export function Configurator({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
-      progress.push(lampVolumeProgressPercentForAllocated(allocated))
+      progress.push(lampVolumeProgressPercentForAllocated(allocated, lampVolumeDiscountEnabled))
     }
     return { lampPrices: prices, lampProgress: progress }
-  }, [lampQuantity, artworkCount, lampPrice])
+  }, [lampQuantity, artworkCount, lampPrice, lampVolumeDiscountEnabled])
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
-  const discountBarLabel = LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED
+  const discountBarLabel = lampVolumeDiscountEnabled
     ? 'Volume discount : 7.5% Off the Street lamp - for each artwork you add'
     : undefined
   const artworkPriceMaps = useMemo(
@@ -848,7 +849,7 @@ export function Configurator({
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(2, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       lampPricesNatural.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     const compareAt = computeFeaturedBundleRegularSubtotalUsd({
@@ -878,6 +879,7 @@ export function Configurator({
     cartOrder,
     allProducts,
     handleApplyFeaturedBundle,
+    lampVolumeDiscountEnabled,
   ])
 
   /** When user deselects lamp (quantity → 0), keep them on artworks */
@@ -1328,7 +1330,7 @@ export function Configurator({
         setRotateToSide(sideToShow)
         return newOrder
       })
-      if (LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED) {
+      if (lampVolumeDiscountEnabled) {
         const savingsFromOneArtwork = lampPrice * (DISCOUNT_PER_ARTWORK_PCT / 100)
         if (savingsFromOneArtwork >= 0.01) setDiscountCelebrationAmount(savingsFromOneArtwork)
       }
@@ -1350,7 +1352,7 @@ export function Configurator({
         return newOrder
       })
     }
-  }, [cartOrder, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct])
+  }, [cartOrder, lampPrice, setDiscountCelebrationAmount, getSideToShowForProduct, lampVolumeDiscountEnabled])
 
   useEffect(() => {
     if (!lastAddedProductId) return
@@ -1473,7 +1475,6 @@ export function Configurator({
               side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
               minimal
               animate
-              interactive
               idleSpinEnabled={lampPreviewOrder.length === 0}
               className="relative w-full h-full"
               onPanelsFound={setPanelStatus}
@@ -2250,7 +2251,7 @@ export function Configurator({
                 )}
               </div>
               {/* Discount progress — compact, only when lamp + artworks */}
-              {LAMP_ARTWORK_VOLUME_DISCOUNT_ENABLED && lampQuantity > 0 && artworkCount > 0 && (
+              {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && (
                 <div className="px-3 pt-1.5 pb-2 border-t border-neutral-600 bg-neutral-800/50">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-300">

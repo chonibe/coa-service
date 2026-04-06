@@ -2,6 +2,8 @@
 
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import type { ShopDiscountFlags } from '@/lib/shop/shop-discount-flags'
+import { ShopDiscountFlagsProvider } from '../../experience-v2/components/ShopDiscountFlagsContext'
 
 interface PageInfo {
   hasNextPage: boolean
@@ -15,6 +17,7 @@ interface ExperienceV2ClientLoaderProps {
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
   initialArtistSlug?: string
+  shopDiscountFlags: ShopDiscountFlags
 }
 
 function LoadingSkeleton() {
@@ -33,6 +36,13 @@ const ExperienceV2Client = dynamic(
   { ssr: false, loading: () => <LoadingSkeleton /> }
 )
 
-export function ExperienceV2ClientLoader(props: ExperienceV2ClientLoaderProps) {
-  return <ExperienceV2Client {...props} />
+export function ExperienceV2ClientLoader({
+  shopDiscountFlags,
+  ...rest
+}: ExperienceV2ClientLoaderProps) {
+  return (
+    <ShopDiscountFlagsProvider value={shopDiscountFlags}>
+      <ExperienceV2Client {...rest} />
+    </ShopDiscountFlagsProvider>
+  )
 }

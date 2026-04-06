@@ -12,6 +12,7 @@
 - Admin Session Utilities: [`lib/admin-session.ts`](../../../lib/admin-session.ts)
 - OAuth Callback Logic: [`app/auth/callback/route.ts`](../../../app/auth/callback/route.ts)
 - Admin Login Endpoint: [`app/api/admin/login/route.ts`](../../../app/api/admin/login/route.ts)
+- Shop discount toggles: [`app/admin/shop/discounts/page.tsx`](../../../app/admin/shop/discounts/page.tsx), [`app/api/admin/shop/discount-flags/route.ts`](../../../app/api/admin/shop/discount-flags/route.ts), [`lib/shop/shop-discount-flags.ts`](../../../lib/shop/shop-discount-flags.ts), [`lib/shop/get-shop-discount-flags.ts`](../../../lib/shop/get-shop-discount-flags.ts)
 - Guarded Admin APIs:
   - [`app/api/admin/orders/route.ts`](../../../app/api/admin/orders/route.ts)
   - [`app/api/admin/orders/[orderId]/route.ts`](../../../app/api/admin/orders/%5BorderId%5D/route.ts)
@@ -66,10 +67,13 @@
 | `/api/admin/vendors/update-email` | POST | Update vendor contact email (logs admin action). | Signed `admin_session` |
 | `/api/auth/impersonate` | POST | Impersonate vendor context (for testing/support). | Signed `admin_session` + Supabase admin session |
 | `/api/auth/impersonate/end` | POST | Exit impersonation and return to admin dashboard. | Signed `admin_session` |
+| `/api/admin/shop/discount-flags` | GET | Read merged shop discount flags + registry metadata. | Unified admin session or signed `admin_session` |
+| `/api/admin/shop/discount-flags` | PATCH | Update one or more flags; upserts `system_settings` key `shop_discount_flags`. | Unified admin session or signed `admin_session` |
 
 ## Database Schema Changes
 - **New Table**: `admin_actions` - Logs all admin actions on vendor data with action type, vendor ID, and details.
 - **Existing Tables**: `vendors`, `orders`, `backup_settings`, `backups`, `impersonation_logs`, `failed_login_attempts` are reused with stricter guards.
+- **Shop discounts**: Boolean flags stored in `system_settings` with `key = 'shop_discount_flags'` and JSON value (e.g. `{ "lampArtworkVolume": true }`). No migration required if the table already exists ([`supabase/migrations/20260203120000_system_settings.sql`](../../../supabase/migrations/20260203120000_system_settings.sql)); the app merges with code defaults when the row is absent.
 
 ## UI/UX Considerations
 - Navigation is grouped (Overview, Products, Orders & Ops, Vendors & Payouts, Reports, CRM, Preview, Settings) for faster scanning; command palette (`⌘/Ctrl + K`) jumps directly to destinations.
@@ -83,6 +87,7 @@
 
 ## Testing Requirements
 - Automated: `npm run test -- vendor-auth` verifies admin overrides and redirect sanitization.
+- Shop discount flag parsing/merge: [`lib/shop/shop-discount-flags.test.ts`](../../../lib/shop/shop-discount-flags.test.ts); lamp ladder math: [`lib/shop/lamp-artwork-volume-discount.test.ts`](../../../lib/shop/lamp-artwork-volume-discount.test.ts).
 - Manual smoke tests:
   1. Attempt to open `/admin` without cookies → expect redirect to `/admin/login`.
   2. Sign in as whitelisted admin via Google → confirm redirect to `/admin/dashboard` and vendor switcher availability.
@@ -109,9 +114,10 @@
 - Migrate vendor override mapping to Supabase configuration table with UI management.
 
 ## Version & Change Log
-- **Version**: 2.1.0
-- **Last Updated**: 2025-12-11
+- **Version**: 2.2.0
+- **Last Updated**: 2026-04-06
 - **Change Log**:
+  - 2026-04-06: **Shop discounts admin** – `/admin/shop/discounts` lists app-controlled shop discount toggles (starting with lamp artwork volume discount); `GET`/`PATCH` `/api/admin/shop/discount-flags`; flags persisted under `system_settings.shop_discount_flags`; shop experience reads flags server-side and passes them via `ShopDiscountFlagsProvider` ([`app/(store)/shop/experience-v2/components/ShopDiscountFlagsContext.tsx`](../../../app/(store)/shop/experience-v2/components/ShopDiscountFlagsContext.tsx)).
   - 2025-12-11: **UX Refresh** – grouped navigation, command palette, overview-first admin home, and vendor explorer filter improvements.
     - Added command palette component (`app/admin/components/command-palette.tsx`) with `⌘/Ctrl + K` shortcut and grouped nav targets.
     - Admin home now highlights system health, today’s actions, recent activity log, and a job activity panel before product sync flows (`app/admin/page.tsx`).

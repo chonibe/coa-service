@@ -46,7 +46,11 @@ When the Spline 3D model captured touch for rotation, users couldn't scroll the 
 
 12. **Gallery: Back to top** — When there are multiple gallery images (`galleryImages.length > 1`), a pill button scrolls the reel to section 0 (Spline), calls `onSlideChange(0)`, and uses the same slide-sync guard as other programmatic jumps. While the Spline section is still largely in view, the button sits **below the last gallery image**. Once the user scrolls past the top reel (IntersectionObserver on section 0; when visible fraction drops below ~12% the 3D + thumbnail stack is effectively gone), the **inline** control hides and a **docked** pill appears at the **bottom of the preview column** (`absolute`) so it stays reachable without scrolling to the gallery end. Both pills use **glassmorphism** (`backdrop-blur-xl`, translucent fill, light border, inset + soft drop shadow) aligned with the bottom [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) **+** control.
 
-**Result** — Horizontal swipe = rotate lamp. Vertical swipe = scroll page. Reel uses native scrolling over the model; Configurator still scrolls the artwork panel from the 3D column. Thumbnail highlights stay stable during smooth section jumps.
+**Result** — Vertical swipe = scroll page. Reel uses native scrolling over the model; Configurator still scrolls the artwork panel from the 3D column. Thumbnail highlights stay stable during smooth section jumps.
+
+### Spline: no pointer orbit on lamp (2026-04-06)
+
+The 3D lamp preview **does not** follow the cursor or react to horizontal drag/touch for orbit. [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) passes **`interactive={false}`** to [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx); [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) omits **`interactive`** (same default). **Idle turntable** (`idleSpinEnabled`) and **UI-driven rotation** (side A/B, quarter turns) still apply.
 
 **Files changed**:
 - [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — canvas pointer-events disabled, orbit controls disabled, gesture detection on container, wheel forwarding for sibling scroll regions

@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(experience): disable Spline lamp cursor/touch orbit globally (2026-04-06)
+
+**Ref:** `TBD`
+
+### Summary
+The 3D lamp no longer tracks the pointer for yaw/pitch. **[`SplineFullScreen`](app/(store)/shop/experience/components/SplineFullScreen.tsx)** always passes **`interactive={false}`** to **`Spline3DPreview`**; **[`Configurator`](app/(store)/shop/experience-v2/components/Configurator.tsx)** no longer enables **`interactive`**. **`collectionArtworkCount`** still controls **idle turntable** vs **`lampPreviewCount`** rules only. Docs updated in **[`docs/features/experience/README.md`](docs/features/experience/README.md)** and **[`docs/features/experience-v2/README.md`](docs/features/experience-v2/README.md)**.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience/README.md](docs/features/experience/README.md)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): featured bundle inline in carousel above choose-artwork sticky (2026-04-06)
 
 **Ref:** `7542b892c`

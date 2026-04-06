@@ -69,6 +69,7 @@ Integrates with:
 
 Wrapper around `Spline3DPreview` using **exact same configuration** as Experience V1:
 
+- **No cursor/touch orbit** on the lamp (`interactive={false}` in [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx)); idle turntable and UI rotation only. The v2 shell’s [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) also leaves `interactive` off.
 - Same object IDs: `side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"`, `side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"`
 - Same texture settings: `swapLampSides`, `flipForSide="B"`, `flipForSideB="horizontal"`
 - Loads image position from localStorage via `loadImagePosition()`

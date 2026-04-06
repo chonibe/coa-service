@@ -4,6 +4,8 @@ import { unstable_cache } from 'next/cache'
 import { getProduct } from '@/lib/shopify/storefront-client'
 import { getAffiliateArtistSlugFromSearchParams } from '@/lib/affiliate-tracking'
 import { ExperienceOnboardingClient } from '../../components/ExperienceOnboardingClient'
+import { getShopDiscountFlags } from '@/lib/shop/get-shop-discount-flags'
+import { ShopDiscountFlagsProvider } from '../../components/ShopDiscountFlagsContext'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +51,8 @@ export default async function ExperienceOnboardingPage({ searchParams }: Onboard
     )
   }
 
+  const shopDiscountFlags = await getShopDiscountFlags()
+
   return (
     <Suspense
       fallback={
@@ -57,10 +61,12 @@ export default async function ExperienceOnboardingPage({ searchParams }: Onboard
         </div>
       }
     >
-      <ExperienceOnboardingClient
-        lamp={lamp}
-        initialArtistSlug={initialArtistSlug}
-      />
+      <ShopDiscountFlagsProvider value={shopDiscountFlags}>
+        <ExperienceOnboardingClient
+          lamp={lamp}
+          initialArtistSlug={initialArtistSlug}
+        />
+      </ShopDiscountFlagsProvider>
     </Suspense>
   )
 }

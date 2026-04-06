@@ -28,6 +28,7 @@ import {
   ARTWORKS_PER_FREE_LAMP,
   lampVolumeDiscountPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
+import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
 
 // Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
 // payment section is expanded by the user — keeps them off the initial experience bundle.
@@ -161,6 +162,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [enteredCardInfo, setEnteredCardInfo] = useState<{ brand: string; last4: string } | null>(null)
   const { promoDiscount } = useExperienceOrder()
   const checkout = useCheckout()
+  const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
 
   const firedBeginCheckoutRef = useRef(false)
   const firedAddPaymentInfoRef = useRef(false)
@@ -204,11 +206,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       prices.push(lampPrice * Math.max(0, 1 - discountPct / 100))
     }
     return prices
-  }, [lampQuantity, artworkCount, lampPrice, featuredBundleCheckout])
+  }, [lampQuantity, artworkCount, lampPrice, featuredBundleCheckout, lampVolumeDiscountEnabled])
 
   const artworkUnitUsd = React.useCallback(
     (p: ShopifyProduct) => {
@@ -227,11 +229,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
       const end = k * ARTWORKS_PER_FREE_LAMP
       const allocated = Math.max(0, Math.min(artworkCount, end) - start)
-      const discountPct = lampVolumeDiscountPercentForAllocated(allocated)
+      const discountPct = lampVolumeDiscountPercentForAllocated(allocated, lampVolumeDiscountEnabled)
       sum += lampPrice * Math.max(0, 1 - discountPct / 100)
     }
     return sum
-  }, [lampQuantity, artworkCount, lampPrice])
+  }, [lampQuantity, artworkCount, lampPrice, lampVolumeDiscountEnabled])
 
   const naturalArtworksTotal = React.useMemo(
     () => selectedArtworks.reduce((sum, p) => sum + experienceArtworkUnitUsd(p, priceMaps), 0),

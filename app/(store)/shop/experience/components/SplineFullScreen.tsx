@@ -79,7 +79,7 @@ interface SplineFullScreenProps {
   /** Count of artworks assigned to lamp preview (0–2). When `collectionArtworkCount` is omitted, idle turntable is off if at least one preview slot is filled. */
   lampPreviewCount?: number
   /**
-   * Artworks in the experience collection/cart (not the lamp). When `0`, the lamp uses idle turntable and **disables** cursor/touch orbit; when `≥1`, behavior matches the legacy `lampPreviewCount` rule and interaction is on.
+   * Artworks in the experience collection/cart (not the lamp). When `0`, the lamp uses idle turntable; when `≥1`, idle spin follows the legacy `lampPreviewCount` rule. Cursor/touch orbit is always off on the 3D preview.
    */
   collectionArtworkCount?: number
   pickerOpen?: boolean
@@ -719,9 +719,7 @@ export function SplineFullScreen({
               parentScrollMode="contain"
               reelScrollContainerRef={scrollRef}
               animate
-              interactive={
-                typeof collectionArtworkCount === 'number' ? collectionArtworkCount > 0 : true
-              }
+              interactive={false}
               idleSpinEnabled={
                 typeof collectionArtworkCount === 'number'
                   ? collectionArtworkCount === 0

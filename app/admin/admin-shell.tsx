@@ -29,6 +29,7 @@ import {
   PencilIcon,
   BuildingOffice2Icon,
   MegaphoneIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline"
 import { Package } from "lucide-react"
 import { Icon } from "@/components/icon"
@@ -371,6 +372,12 @@ export function AdminShell({ children }: AdminShellProps) {
         },
       ],
       expanded: pathname?.startsWith('/admin/messaging') || false,
+    },
+    {
+      group: "Settings",
+      title: "Shop discounts",
+      href: "/admin/shop/discounts",
+      icon: <Icon size="md"><TagIcon className="h-5 w-5" /></Icon>,
     },
     {
       group: "Settings",
