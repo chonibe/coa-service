@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import Image from 'next/image'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
 import { Check, ChevronDown, ChevronLeft, ImageIcon, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -20,9 +19,11 @@ import {
 import { EditionWatchWithNarrative } from './EditionWatchWithNarrative'
 import { LampDescriptionSection, LampIncludesSpecsPanel } from './LampIncludesSpecsPanel'
 import { ProductDetailCarousel, ProductDetailThumbnailStrip } from './ProductDetailCarousel'
+import { ArtistCollectionVideoEmbed, ProductStandaloneVideoEmbed } from './ProductStandaloneVideoEmbed'
 import {
   buildProductCarouselSlides,
-  carouselSlideIsNonImage,
+  buildStreetLampIntroCarouselSlide,
+  splitProductCarouselMediaSlides,
 } from '@/lib/shop/product-carousel-slides'
 
 function GalleryLoadingOverlay({ show }: { show: boolean }) {
@@ -184,6 +185,13 @@ function LampFlatDetailsSections({
 
 export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null, journeyCtaPulse = false }: ArtworkDetailProps) {
   const carouselSlides = useMemo(() => buildProductCarouselSlides(product), [product])
+  const { videoSlides, imageSlides } = useMemo(
+    () => splitProductCarouselMediaSlides(carouselSlides),
+    [carouselSlides]
+  )
+  const hasVideoMedia = videoSlides.length > 0
+  const hasImageMedia = imageSlides.length > 0
+  const hasGalleryMedia = hasVideoMedia || hasImageMedia
   /** List/cached products omit `media`; full Storefront payload includes `media.edges`. */
   const galleryAwaitingMedia =
     isLoadingDetails &&
@@ -207,6 +215,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
   /** Must be declared before any hook that references it (dependency arrays are evaluated eagerly). */
   const isLampOrBundleProduct = Boolean(productIncludes && productIncludes.length > 0)
+
+  const detailCarouselSlides = useMemo(() => {
+    if (!isLampOrBundleProduct) return imageSlides
+    return [buildStreetLampIntroCarouselSlide(product.title || 'Street Lamp'), ...imageSlides]
+  }, [isLampOrBundleProduct, imageSlides, product.title])
 
   useEffect(() => {
     setImageIndex(0)
@@ -276,15 +289,19 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const editionSize = product.metafields?.find((m) => m && m.namespace === 'custom' && m.key === 'edition_size')?.value
   const editionSizeNum = editionSize ? parseInt(editionSize, 10) : null
   const productDetailsLabel = isLampOrBundleProduct ? 'Product details' : 'Artwork details'
-  /** Street Lamp / bundle: portrait 3:4 frame; prints keep fixed-height hero. */
-  const desktopDetailImageFrameClass = cn(
-    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] rounded-xl overflow-hidden shadow-inner',
+  /** Hero inside unified media card: lamp 3:4; prints fixed height. Shell supplies rounded-xl. */
+  const detailHeroAreaClassDesktop = cn(
+    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] overflow-hidden',
     isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(42dvh,380px)] max-h-[380px]'
   )
-  const mobileDetailImageFrameClass = cn(
-    'relative w-[calc(100%-2rem)] max-w-sm mx-auto bg-neutral-50 dark:bg-[#1a1616] rounded-lg overflow-hidden',
+  const detailHeroAreaClassMobile = cn(
+    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] overflow-hidden',
     isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(36dvh,260px)] max-h-[260px]'
   )
+  const unifiedMediaCardClass =
+    'rounded-xl overflow-hidden border border-neutral-200/90 dark:border-white/10 bg-neutral-100 dark:bg-[#1a1616] shadow-inner ring-1 ring-black/10 dark:ring-white/10 flex flex-col w-full'
+  const unifiedMediaDividerClass =
+    'border-t border-neutral-200/70 dark:border-white/10 bg-neutral-50/95 dark:bg-black/30'
   const streetLadderBlock = useMemo(
     () =>
       !isLampOrBundleProduct
@@ -339,6 +356,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   }, [editionMetricsForWatch, product, editionArtistName])
 
   const spotlightGifUrl = spotlightDataOverride?.gifUrl ?? spotlightData?.gifUrl
+  const spotlightVideoUrl = (spotlightDataOverride?.videoUrl ?? spotlightData?.videoUrl)?.trim() || ''
 
   const productIdShort = product.id.replace(/^gid:\/\/shopify\/Product\//i, '') || product.id
   const spotlightForBanner: SpotlightData | null = isLampOrBundleProduct
@@ -392,7 +410,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       for (const s of spotlightSlugsToTry) {
         const r = await fetch(`/api/shop/artist-spotlight?artist=${encodeURIComponent(s)}`)
         const data = r.ok ? await r.json() : null
-        if (data?.vendorName && (data.bio || data.image || data.instagram || data.gifUrl)) return data
+        if (data?.vendorName && (data.bio || data.image || data.instagram || data.gifUrl || data.videoUrl))
+          return data
       }
       return null
     }
@@ -421,7 +440,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             spotToUse.bio ||
             spotToUse.image ||
             spotToUse.instagram ||
-            spotToUse.gifUrl)
+            spotToUse.gifUrl ||
+            spotToUse.videoUrl)
         ) {
           const valid = {
             name: spotToUse.vendorName ?? artist,
@@ -497,16 +517,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); handleClose() }
-      if (e.key === 'ArrowLeft') goToIndex((imageIndex - 1 + carouselSlides.length) % carouselSlides.length)
-      if (e.key === 'ArrowRight') goToIndex((imageIndex + 1) % carouselSlides.length)
+      if (detailCarouselSlides.length === 0) return
+      if (e.key === 'ArrowLeft') {
+        goToIndex((imageIndex - 1 + detailCarouselSlides.length) % detailCarouselSlides.length)
+      }
+      if (e.key === 'ArrowRight') {
+        goToIndex((imageIndex + 1) % detailCarouselSlides.length)
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleClose, carouselSlides.length, imageIndex, goToIndex])
+  }, [handleClose, detailCarouselSlides.length, imageIndex, goToIndex])
 
   const handleDragEnd = useCallback(
     (_: any, info: PanInfo) => {
-      if (carouselSlides.length <= 1) return
+      if (detailCarouselSlides.length <= 1) return
       setHasUserInteracted(true)
       const velocity = info.velocity.x
       const offset = info.offset.x
@@ -515,61 +540,80 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
       const shouldNext = offset < -threshold || velocity < -velocityThreshold
       const shouldPrev = offset > threshold || velocity > velocityThreshold
       if (shouldNext) {
-        setImageIndex((i) => (i + 1) % carouselSlides.length)
+        setImageIndex((i) => (i + 1) % detailCarouselSlides.length)
       } else if (shouldPrev) {
-        setImageIndex((i) => (i - 1 + carouselSlides.length) % carouselSlides.length)
+        setImageIndex((i) => (i - 1 + detailCarouselSlides.length) % detailCarouselSlides.length)
       } else {
         animate(dragX, 0, { type: 'spring', stiffness: 400, damping: 40 })
       }
     },
-    [carouselSlides.length, dragX]
+    [detailCarouselSlides.length, dragX]
   )
 
-  // Auto-rotate slideshow when user hasn't interacted (pause on native / external video slides)
+  // Auto-rotate carousel on image slides only (stay on native video until the user swipes)
   useEffect(() => {
-    if (
-      hasUserInteracted ||
-      carouselSlides.length <= 1 ||
-      carouselSlideIsNonImage(carouselSlides[imageIndex])
-    )
-      return
+    if (hasUserInteracted || detailCarouselSlides.length <= 1) return
+    const current = detailCarouselSlides[imageIndex]
+    if (current && current.type !== 'image') return
     const id = setInterval(() => {
-      setImageIndex((i) => (i + 1) % carouselSlides.length)
+      setImageIndex((i) => {
+        const cur = detailCarouselSlides[i]
+        if (cur && cur.type !== 'image') return i
+        return (i + 1) % detailCarouselSlides.length
+      })
     }, 4000)
     return () => clearInterval(id)
-  }, [hasUserInteracted, carouselSlides.length, carouselSlides, imageIndex])
+  }, [hasUserInteracted, detailCarouselSlides, imageIndex])
 
   const isSlideout = !isMobile
 
   // Inline mode: render content in a panel (no overlay) — for left-panel embedding on desktop
   const renderDesktopContent = () => (
     <>
-      {/* Left: Image carousel + thumbnails */}
-      <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
-        {carouselSlides.length > 0 && (
-          <>
-            <ProductDetailCarousel
-              slides={carouselSlides}
-              slideIndex={imageIndex}
-              goToIndex={goToIndex}
-              constraintsRef={constraintsRef}
-              imageZoom={imageZoom}
-              panX={panX}
-              panY={panY}
-              dragX={dragX}
-              handleDragEnd={handleDragEnd}
-              handleZoomChange={handleZoomChange}
-              productTitle={product.title}
-              frameClassName={desktopDetailImageFrameClass}
-              sizes="(max-width: 768px) 100vw, 480px"
-            />
-            <ProductDetailThumbnailStrip
-              slides={carouselSlides}
-              slideIndex={imageIndex}
-              goToIndex={goToIndex}
-            />
-          </>
-        )}
+      {/* Left: optional Shopify video (prints) + swipe carousel (lamp: intro MP4 first) + thumbnails */}
+      <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0 gap-3">
+        {!isLampOrBundleProduct && spotlightVideoUrl ? (
+          <ArtistCollectionVideoEmbed
+            url={spotlightVideoUrl}
+            title={`${editionArtistName || artist || 'Artist'} — collection video`}
+          />
+        ) : null}
+        {hasVideoMedia && !isLampOrBundleProduct ? (
+          <ProductStandaloneVideoEmbed videoSlides={videoSlides} productTitle={product.title} />
+        ) : null}
+        {detailCarouselSlides.length > 0 ? (
+          <div className={unifiedMediaCardClass}>
+            <div className={detailHeroAreaClassDesktop}>
+              <ProductDetailCarousel
+                slides={detailCarouselSlides}
+                slideIndex={imageIndex}
+                goToIndex={goToIndex}
+                constraintsRef={constraintsRef}
+                imageZoom={imageZoom}
+                panX={panX}
+                panY={panY}
+                dragX={dragX}
+                handleDragEnd={handleDragEnd}
+                handleZoomChange={handleZoomChange}
+                productTitle={product.title}
+                frameClassName="absolute inset-0"
+                sizes="(max-width: 768px) 100vw, 480px"
+                showPaginationDots={detailCarouselSlides.length <= 1}
+              />
+              <GalleryLoadingOverlay show={galleryAwaitingMedia} />
+            </div>
+            {detailCarouselSlides.length > 1 ? (
+              <div className={unifiedMediaDividerClass}>
+                <ProductDetailThumbnailStrip
+                  slides={detailCarouselSlides}
+                  slideIndex={imageIndex}
+                  goToIndex={goToIndex}
+                  className="mt-0 justify-center gap-1.5 px-2 py-2 flex-nowrap"
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
           <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
             <ScarcityBadge
@@ -797,12 +841,21 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               /* Desktop: left = carousel (48%), right = info (52%) */
               <>
                 {/* Left: Image carousel + thumbnails — 48% for balanced artwork focus */}
-                <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0">
-                  {carouselSlides.length > 0 && (
-                    <>
-                      <div className="relative w-full shrink-0">
+                <div className="flex flex-col min-w-0 w-[48%] max-w-[420px] shrink-0 gap-3">
+                  {!isLampOrBundleProduct && spotlightVideoUrl ? (
+                    <ArtistCollectionVideoEmbed
+                      url={spotlightVideoUrl}
+                      title={`${editionArtistName || artist || 'Artist'} — collection video`}
+                    />
+                  ) : null}
+                  {hasVideoMedia && !isLampOrBundleProduct ? (
+                    <ProductStandaloneVideoEmbed videoSlides={videoSlides} productTitle={product.title} />
+                  ) : null}
+                  {detailCarouselSlides.length > 0 ? (
+                    <div className={unifiedMediaCardClass}>
+                      <div className={cn(detailHeroAreaClassDesktop, 'w-full shrink-0')}>
                         <ProductDetailCarousel
-                          slides={carouselSlides}
+                          slides={detailCarouselSlides}
                           slideIndex={imageIndex}
                           goToIndex={goToIndex}
                           constraintsRef={constraintsRef}
@@ -813,18 +866,24 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           handleDragEnd={handleDragEnd}
                           handleZoomChange={handleZoomChange}
                           productTitle={product.title}
-                          frameClassName={desktopDetailImageFrameClass}
+                          frameClassName="absolute inset-0"
                           sizes="(max-width: 768px) 100vw, 480px"
+                          showPaginationDots={detailCarouselSlides.length <= 1}
                         />
                         <GalleryLoadingOverlay show={galleryAwaitingMedia} />
                       </div>
-                      <ProductDetailThumbnailStrip
-                        slides={carouselSlides}
-                        slideIndex={imageIndex}
-                        goToIndex={goToIndex}
-                      />
-                    </>
-                  )}
+                      {detailCarouselSlides.length > 1 ? (
+                        <div className={unifiedMediaDividerClass}>
+                          <ProductDetailThumbnailStrip
+                            slides={detailCarouselSlides}
+                            slideIndex={imageIndex}
+                            goToIndex={goToIndex}
+                            className="mt-0 justify-center gap-1.5 px-2 py-2 flex-nowrap"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
                     <div className="mt-4 rounded-xl border border-neutral-200/90 dark:border-[#3d3636] bg-neutral-50/80 dark:bg-[#1c1818]/60 px-4 py-4 w-full">
                       <ScarcityBadge
@@ -1174,45 +1233,98 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             ) : (
           /* Mobile: single scroll column */
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-64">
-            {/* Swipeable image gallery */}
-            {carouselSlides.length > 0 && (
-              <div className={mobileDetailImageFrameClass}>
+            {/* Swipeable gallery (lamp: intro video as first carousel slide) */}
+            {(hasGalleryMedia || detailCarouselSlides.length > 0) && (
+              <div className="relative flex w-full flex-col gap-3">
                 {!isSlideout && (
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="absolute top-2 left-1/2 -translate-x-1/2 z-30 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors"
+                    className="absolute top-2 left-1/2 z-30 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
                     aria-label="Close"
                   >
                     <ChevronDown className="w-5 h-5" />
                   </button>
                 )}
-                <ProductDetailCarousel
-                  slides={carouselSlides}
-                  slideIndex={imageIndex}
-                  goToIndex={goToIndex}
-                  constraintsRef={constraintsRef}
-                  imageZoom={imageZoom}
-                  panX={panX}
-                  panY={panY}
-                  dragX={dragX}
-                  handleDragEnd={handleDragEnd}
-                  handleZoomChange={handleZoomChange}
-                  productTitle={product.title}
-                  frameClassName="absolute inset-0"
-                  sizes="(max-width: 768px) 100vw, 420px"
-                />
-                <GalleryLoadingOverlay show={galleryAwaitingMedia} />
+                {!isLampOrBundleProduct && spotlightVideoUrl ? (
+                  <ArtistCollectionVideoEmbed
+                    url={spotlightVideoUrl}
+                    title={`${editionArtistName || artist || 'Artist'} — collection video`}
+                    className="w-[calc(100%-2rem)] max-w-sm mx-auto pt-10"
+                  />
+                ) : null}
+                {hasVideoMedia && !isLampOrBundleProduct ? (
+                  <ProductStandaloneVideoEmbed
+                    videoSlides={videoSlides}
+                    productTitle={product.title}
+                    className="w-[calc(100%-2rem)] max-w-sm mx-auto pt-10"
+                  />
+                ) : null}
+                {detailCarouselSlides.length > 0 ? (
+                  <div
+                    className={cn(
+                      'w-[calc(100%-2rem)] max-w-sm mx-auto',
+                      !isSlideout && 'pt-10'
+                    )}
+                  >
+                    <div className={unifiedMediaCardClass}>
+                      <div className={detailHeroAreaClassMobile}>
+                        <ProductDetailCarousel
+                          slides={detailCarouselSlides}
+                          slideIndex={imageIndex}
+                          goToIndex={goToIndex}
+                          constraintsRef={constraintsRef}
+                          imageZoom={imageZoom}
+                          panX={panX}
+                          panY={panY}
+                          dragX={dragX}
+                          handleDragEnd={handleDragEnd}
+                          handleZoomChange={handleZoomChange}
+                          productTitle={product.title}
+                          frameClassName="absolute inset-0"
+                          sizes="(max-width: 768px) 100vw, 420px"
+                          showPaginationDots={detailCarouselSlides.length <= 1}
+                        />
+                        <GalleryLoadingOverlay show={galleryAwaitingMedia} />
+                      </div>
+                      {detailCarouselSlides.length > 1 ? (
+                        <div className={unifiedMediaDividerClass}>
+                          <ProductDetailThumbnailStrip
+                            slides={detailCarouselSlides}
+                            slideIndex={imageIndex}
+                            goToIndex={goToIndex}
+                            className="mt-0 justify-center gap-1.5 px-2 py-2 flex-nowrap"
+                          />
+                        </div>
+                      ) : null}
+                      {isLampOrBundleProduct ? (
+                        <>
+                          {description.trim() ? (
+                            <div className={unifiedMediaDividerClass}>
+                              <LampDescriptionSection
+                                description={description}
+                                productDetailsLabel={productDetailsLabel}
+                                layout="embedded"
+                              />
+                            </div>
+                          ) : null}
+                          {(productIncludes && productIncludes.length > 0) ||
+                          (productSpecs && productSpecs.length > 0) ? (
+                            <div className={unifiedMediaDividerClass}>
+                              <LampIncludesSpecsPanel
+                                variant="embedded"
+                                productIncludes={productIncludes}
+                                productSpecs={productSpecs}
+                              />
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
-
-            {isLampOrBundleProduct ? (
-              <LampDescriptionSection
-                description={description}
-                productDetailsLabel={productDetailsLabel}
-                layout="mobile"
-              />
-            ) : null}
 
             {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
               <div className="mx-4 mt-3 rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
@@ -1566,9 +1678,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </div>
               </div>
-              {isLampOrBundleProduct ? (
-                <LampIncludesSpecsPanel variant="sticky" productIncludes={productIncludes} productSpecs={productSpecs} />
-              ) : null}
               {isLampOrBundleProduct && !hideScarcityBar && (
                 <ScarcityBadge
                   quantityAvailable={quantityAvailable}

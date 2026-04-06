@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 import { hasPage, getPage } from '@/content/shopify-content'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
 import { getCollection } from '@/lib/shopify/storefront-client'
 
 type AppSupabase = SupabaseClient<Database>
@@ -44,6 +45,8 @@ export async function getVendorMeta(
   vendorSlug?: string
   instagram?: string
   gifUrl?: string
+  /** Collection metafield custom.video (URL or resolved file reference) */
+  videoUrl?: string
   unlisted?: boolean
 }> {
   let bio: string | undefined
@@ -51,6 +54,7 @@ export async function getVendorMeta(
   let vendorSlug: string | undefined
   let instagram: string | undefined
   let gifUrl: string | undefined
+  let videoUrl: string | undefined
   let unlisted: boolean | undefined
   let resolvedVendorId = vendorId
 
@@ -106,6 +110,9 @@ export async function getVendorMeta(
         if (col.gifMetafield?.value?.trim()) {
           gifUrl = col.gifMetafield.value.trim()
         }
+        if (col.videoMetafield?.value?.trim()) {
+          videoUrl = col.videoMetafield.value.trim()
+        }
         if (col.unlistedMetafield?.value?.trim()) {
           unlisted = true
         }
@@ -113,6 +120,15 @@ export async function getVendorMeta(
     } catch {
       // Ignore
     }
+  }
+
+  if (gifUrl?.startsWith('gid://')) {
+    const resolved = await resolveMediaGidToUrl(gifUrl)
+    if (resolved) gifUrl = resolved
+  }
+  if (videoUrl?.startsWith('gid://')) {
+    const resolved = await resolveMediaGidToUrl(videoUrl)
+    if (resolved) videoUrl = resolved
   }
 
   if (!bio) {
@@ -123,5 +139,5 @@ export async function getVendorMeta(
     }
   }
 
-  return { bio, image, vendorSlug, instagram, gifUrl, unlisted }
+  return { bio, image, vendorSlug, instagram, gifUrl, videoUrl, unlisted }
 }

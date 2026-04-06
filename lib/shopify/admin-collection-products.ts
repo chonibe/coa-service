@@ -1,3 +1,6 @@
+import { pickVideoSourceUrl } from '@/lib/shop/product-carousel-slides'
+import type { ShopifyVideo } from '@/lib/shopify/storefront-client'
+
 /**
  * Shopify Admin API — collection products (including unlisted)
  *
@@ -20,7 +23,7 @@ export function isAdminCollectionApiAvailable(): boolean {
 }
 
 /**
- * Resolve a Shopify media GID (e.g. gid://shopify/MediaImage/123) to an image URL via Admin API.
+ * Resolve a Shopify media GID (e.g. MediaImage, GenericFile, or Video) to a playable/file URL via Admin API.
  */
 export async function resolveMediaGidToUrl(gid: string): Promise<string | null> {
   if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN || !gid?.startsWith('gid://')) return null
@@ -34,6 +37,15 @@ export async function resolveMediaGidToUrl(gid: string): Promise<string | null> 
           ... on GenericFile {
             url
           }
+          ... on Video {
+            sources {
+              url
+              mimeType
+              format
+              height
+              width
+            }
+          }
         }
       }
     `
@@ -46,8 +58,16 @@ export async function resolveMediaGidToUrl(gid: string): Promise<string | null> 
     if (!response.ok) return null
     const json = await response.json()
     const node = json?.data?.node
-    const url = node?.image?.url ?? node?.url
-    return typeof url === 'string' ? url.trim() || null : null
+    const imageOrFileUrl = node?.image?.url ?? node?.url
+    if (typeof imageOrFileUrl === 'string' && imageOrFileUrl.trim()) return imageOrFileUrl.trim()
+
+    const sources = node?.sources as ShopifyVideo['sources'] | undefined
+    if (sources?.length) {
+      const picked = pickVideoSourceUrl(sources)
+      return picked?.trim() || null
+    }
+
+    return null
   } catch {
     return null
   }
@@ -66,6 +86,39 @@ export async function getCollectionGifUrlByAdmin(collectionId: string): Promise<
       query getCollectionGif($id: ID!) {
         collection(id: $id) {
           metafield(namespace: "custom", key: "gif") { value }
+        }
+      }
+    `
+    const response = await fetch(`https://${SHOPIFY_SHOP}/admin/api/2024-01/graphql.json`, {
+      method: 'POST',
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ query, variables: { id: gid } }),
+      next: { revalidate: 60 },
+    })
+    if (!response.ok) return null
+    const json = await response.json()
+    const value = json?.data?.collection?.metafield?.value?.trim()
+    if (!value) return null
+    if (value.startsWith('http://') || value.startsWith('https://')) return value
+    const resolved = await resolveMediaGidToUrl(value)
+    return resolved ?? value
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Fetch collection metafield custom.video via Admin API (when Storefront omits or value is file reference).
+ * Resolves media GIDs to a URL (Video → progressive/HLS URL; file → URL).
+ */
+export async function getCollectionVideoUrlByAdmin(collectionId: string): Promise<string | null> {
+  if (!SHOPIFY_SHOP || !SHOPIFY_ACCESS_TOKEN) return null
+  const gid = collectionId.startsWith('gid://') ? collectionId : `gid://shopify/Collection/${collectionId}`
+  try {
+    const query = `
+      query getCollectionVideo($id: ID!) {
+        collection(id: $id) {
+          metafield(namespace: "custom", key: "video") { value }
         }
       }
     `

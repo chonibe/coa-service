@@ -17,6 +17,8 @@ export interface SpotlightData {
   seriesName?: string
   /** URL from collection metafield custom.gif — when set, show GIF image */
   gifUrl?: string
+  /** URL from collection metafield custom.video — artist promo clip above artwork carousel */
+  videoUrl?: string
   /** When true, collection is unlisted (early access); card uses distinct glow and artworks show "Early access" */
   unlisted?: boolean
 }

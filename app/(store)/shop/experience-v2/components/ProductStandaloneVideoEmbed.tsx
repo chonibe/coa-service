@@ -158,6 +158,118 @@ function HlsOrSingleUrlVideo({
   )
 }
 
+function youtubeEmbedUrl(raw: string): string | null {
+  try {
+    const absolute = raw.startsWith('//') ? `https:${raw}` : raw.startsWith('http') ? raw : `https://${raw}`
+    const u = new URL(absolute)
+    if (u.hostname === 'youtu.be') {
+      const id = u.pathname.replace(/^\//, '').split('/')[0]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
+    if (u.hostname.includes('youtube.com')) {
+      const v = u.searchParams.get('v')
+      if (v) return `https://www.youtube.com/embed/${v}`
+      const m = u.pathname.match(/^\/embed\/([^/?]+)/)
+      if (m) return `https://www.youtube.com/embed/${m[1]}`
+      const shorts = u.pathname.match(/^\/shorts\/([^/?]+)/)
+      if (shorts) return `https://www.youtube.com/embed/${shorts[1]}`
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+function vimeoEmbedUrl(raw: string): string | null {
+  try {
+    const absolute = raw.startsWith('//') ? `https:${raw}` : raw.startsWith('http') ? raw : `https://${raw}`
+    const u = new URL(absolute)
+    if (!u.hostname.includes('vimeo.com')) return null
+    const m = u.pathname.match(/\/(?:video\/)?(\d+)/)
+    return m ? `https://player.vimeo.com/video/${m[1]}` : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Collection metafield `custom.video`: YouTube/Vimeo → iframe; Shopify/direct file → &lt;video&gt; (incl. HLS when needed).
+ */
+export function ArtistCollectionVideoEmbed({
+  url,
+  title,
+  className,
+}: {
+  url: string
+  title: string
+  className?: string
+}) {
+  const trimmed = url.trim()
+  if (!trimmed) return null
+
+  const yt = youtubeEmbedUrl(trimmed)
+  if (yt) {
+    return (
+      <div
+        className={cn(
+          'aspect-video w-full overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10',
+          className
+        )}
+      >
+        <iframe
+          title={title}
+          src={yt}
+          className="h-full w-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    )
+  }
+
+  const vm = vimeoEmbedUrl(trimmed)
+  if (vm) {
+    return (
+      <div
+        className={cn(
+          'aspect-video w-full overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10',
+          className
+        )}
+      >
+        <iframe
+          title={title}
+          src={vm}
+          className="h-full w-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    )
+  }
+
+  const syntheticSources = [{ url: trimmed, format: isPlaybackUrlHls(trimmed) ? 'm3u8' : 'mp4' }] as ShopifyVideo['sources']
+
+  return (
+    <div
+      className={cn(
+        'overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10',
+        className
+      )}
+    >
+      {isPlaybackUrlHls(trimmed) ? (
+        <HlsOrSingleUrlVideo sources={syntheticSources} ariaLabel={title} className="mx-auto block" />
+      ) : (
+        <HomeStyleProgressiveVideo
+          url={trimmed}
+          sources={syntheticSources}
+          ariaLabel={title}
+          className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
+        />
+      )}
+    </div>
+  )
+}
+
 /**
  * Product video **outside** the swipe carousel: plain &lt;video&gt; / iframe only (browser handles playback).
  */

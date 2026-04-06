@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getArtistImageByHandle, getCollectionDescription, getCollectionInstagram } from '@/lib/shopify/artist-image'
 import { getVendorMeta, parseInstagramHandle } from '@/lib/shopify/vendor-meta'
-import { getCollectionProductHandlesByHandle, getCollectionGifUrlByAdmin, resolveMediaGidToUrl } from '@/lib/shopify/admin-collection-products'
+import {
+  getCollectionProductHandlesByHandle,
+  getCollectionGifUrlByAdmin,
+  getCollectionVideoUrlByAdmin,
+  resolveMediaGidToUrl,
+} from '@/lib/shopify/admin-collection-products'
 import { getCollectionWithListProducts, getProducts, getProductsByVendor, getProductsByHandles, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import {
   buildVendorSpotlightEligibilityMap,
@@ -93,6 +98,8 @@ type SpotlightResult = {
   seriesName?: string
   /** URL from collection metafield custom.gif — when set, show GIF overlay on collapsed spotlight card */
   gifUrl?: string
+  /** URL from collection metafield custom.video — artist promo video above artwork carousel on PDP */
+  videoUrl?: string
   /** When true, collection is unlisted (only shown when requested via ?artist=; excluded from default spotlight) */
   unlisted?: boolean
   /** Product objects for preselection when ?artist= is present (enables lamp preview without season load) */
@@ -136,7 +143,11 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
       .filter(Boolean)
     const newest = filtered[0]
 
-    const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, null)
+    const { bio, image, vendorSlug, instagram, gifUrl, videoUrl, unlisted } = await getVendorMeta(
+      supabase,
+      vendorName,
+      null
+    )
     const handle = vendorSlug || slugify(vendorName)
     // Try handle and handle-one so we get collection image/description when handle is e.g. kymo-one
     const artistImage = image ||
@@ -154,6 +165,7 @@ async function tryVendorSpotlight(supabase: ReturnType<typeof createClient>, ven
       productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
       seriesName: undefined,
       gifUrl,
+      videoUrl,
       unlisted,
       products: filtered.slice(0, 4),
     }
@@ -219,9 +231,23 @@ async function tryCollectionSpotlight(
       const resolved = await resolveMediaGidToUrl(gifUrl)
       if (resolved) gifUrl = resolved
     }
+    let videoUrl = col.videoMetafield?.value?.trim() || undefined
+    if (!videoUrl && col.id) {
+      const fromAdminVideo = await getCollectionVideoUrlByAdmin(col.id)
+      if (fromAdminVideo) videoUrl = fromAdminVideo
+    }
+    if (videoUrl?.startsWith('gid://')) {
+      const resolved = await resolveMediaGidToUrl(videoUrl)
+      if (resolved) videoUrl = resolved
+    }
     const unlisted = Boolean(col.unlistedMetafield?.value?.trim())
 
-    const { bio, image, vendorSlug, instagram } = await getVendorMeta(supabase, vendorName, null)
+    const { bio, image, vendorSlug, instagram, videoUrl: metaVideo } = await getVendorMeta(
+      supabase,
+      vendorName,
+      null
+    )
+    if (!videoUrl && metaVideo) videoUrl = metaVideo
     const handle = vendorSlug || slugify(vendorName) || collectionHandle
     const artistImage = imageFromCol || image || (await getArtistImageByHandle(handle))
     const collectionBio = bioFromCol || bio || (!bioFromCol && !bio ? await getCollectionDescription(handle) : undefined)
@@ -239,6 +265,7 @@ async function tryCollectionSpotlight(
       productIds: productIds.length > 0 ? productIds : (newest ? [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id] : []),
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
+      videoUrl,
       unlisted,
       products: nodes.slice(0, 4),
     }
@@ -285,7 +312,11 @@ async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClien
       .filter(Boolean)
     const newest = vendorNodes[0]
 
-    const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, null)
+    const { bio, image, vendorSlug, instagram, gifUrl, videoUrl, unlisted } = await getVendorMeta(
+      supabase,
+      vendorName,
+      null
+    )
     const handle = vendorSlug || slugify(vendorName)
     const artistImage =
       image ||
@@ -303,6 +334,7 @@ async function trySeason2LatestSpotlight(supabase: ReturnType<typeof createClien
       productIds: productIds.length > 0 ? productIds : [newest.id.replace(/^gid:\/\/shopify\/Product\//i, '') || newest.id],
       seriesName: col.title !== vendorName ? col.title : undefined,
       gifUrl,
+      videoUrl,
       unlisted,
       /** So experience clients can resolve the featured bundle + merge into selector without relying on first collection page. */
       products: vendorNodes.slice(0, 4),
@@ -352,7 +384,11 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
       .filter(Boolean)
 
     // Get vendor bio/image/instagram from Supabase (vendor profile → collection → getArtistImageByHandle)
-    const { bio, image, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, vendorName, null)
+    const { bio, image, vendorSlug, instagram, gifUrl, videoUrl, unlisted } = await getVendorMeta(
+      supabase,
+      vendorName,
+      null
+    )
     const handle = vendorSlug || slugify(vendorName)
     const artistImage = image || (await getArtistImageByHandle(handle))
     const collectionBio = !bio ? await getCollectionDescription(handle) : undefined
@@ -367,6 +403,7 @@ async function tryShopifySpotlight(supabase: ReturnType<typeof createClient>) {
       productIds: productIds.length > 0 ? productIds : [numericId],
       seriesName: undefined,
       gifUrl,
+      videoUrl,
       unlisted,
       products: artworkNodes.slice(0, 4),
     }
@@ -405,7 +442,8 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
     .not('shopify_product_id', 'is', null)
 
   if (membersError || !members?.length) {
-    const { bio: metaBio, image: metaImage, vendorSlug, instagram, gifUrl, unlisted } = await getVendorMeta(supabase, series.vendor_name, series.vendor_id)
+    const { bio: metaBio, image: metaImage, vendorSlug, instagram, gifUrl, videoUrl, unlisted } =
+      await getVendorMeta(supabase, series.vendor_name, series.vendor_id)
     const handle = vendorSlug || slugify(series.vendor_name)
     const artistImage = metaImage || series.thumbnail_url || (await getArtistImageByHandle(handle))
     const collectionBio = !metaBio && !series.description?.trim() ? await getCollectionDescription(handle) : undefined
@@ -418,6 +456,7 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
       productIds: [],
       seriesName: series.name,
       gifUrl,
+      videoUrl,
       unlisted,
     }
   }
@@ -480,6 +519,7 @@ async function trySupabaseSpotlight(supabase: ReturnType<typeof createClient>) {
     products: spotlightProducts,
     seriesName: series.name,
     gifUrl: meta.gifUrl,
+    videoUrl: meta.videoUrl,
     unlisted: meta.unlisted,
   }
 }

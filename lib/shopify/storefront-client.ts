@@ -377,6 +377,8 @@ export interface ShopifyCollection {
   metafield?: { value?: string } | null
   /** Collection metafield custom.gif — URL for GIF overlay on artist spotlight card when collapsed */
   gifMetafield?: { value?: string } | null
+  /** Collection metafield custom.video — artist/collection promo video URL or file reference (paired with vendor collection) */
+  videoMetafield?: { value?: string } | null
   /** Collection metafield custom.unlisted — when truthy, hide from default experience spotlight (only via direct link) */
   unlistedMetafield?: { value?: string } | null
   /** Collection metafield custom.product_handles — comma-separated product handles for unlisted products (Storefront omits unlisted from collection.products) */
@@ -692,6 +694,9 @@ const COLLECTION_FRAGMENT = `
       value
     }
     gifMetafield: metafield(namespace: "custom", key: "gif") {
+      value
+    }
+    videoMetafield: metafield(namespace: "custom", key: "video") {
       value
     }
     unlistedMetafield: metafield(namespace: "custom", key: "unlisted") {
