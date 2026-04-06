@@ -152,13 +152,16 @@ export function SplineFullScreen({
   bundlePreviewArtworks = null,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
-  const showFeaturedBundleSection =
-    typeof collectionArtworkCount === 'number' &&
-    collectionArtworkCount === 0 &&
+  /** Empty cart: promo under Spline. Non-empty: show when the bundle CTA is still actionable (not disabled). */
+  const featuredBundleDataReady =
     featuredBundleOffer != null &&
     bundlePreviewLamp != null &&
     Array.isArray(bundlePreviewArtworks) &&
     bundlePreviewArtworks.length === 2
+  const collectionEmpty = typeof collectionArtworkCount === 'number' && collectionArtworkCount === 0
+  const showFeaturedBundleSection =
+    featuredBundleDataReady &&
+    (collectionEmpty || !featuredBundleOffer.disabled)
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
   /** True when Spline + top thumb column have scrolled mostly out of the reel — show a docked Back to top FAB. */

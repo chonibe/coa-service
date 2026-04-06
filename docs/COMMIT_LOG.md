@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(experience): show lamp volume discount + featured bundle sections when admin flags expect it (2026-04-06)
+
+**Ref:** `101470f13`
+
+### Summary
+**Lamp volume discount** UI was never visible: promo chips were behind **`false &&`**, and the progress bar lived inside a **`hidden`** lamp card. **Featured bundle under Spline** only rendered when **`collectionArtworkCount === 0`**, so users with a **restored cart** never saw the block even when the admin bundle toggle was on and the CTA was still valid.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx) — enable volume promo chip; visible progress + savings strip
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) — theme-aware volume discount strip between Spline and carousel
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx) — under-Spline bundle when empty collection **or** actionable offer (`!disabled`)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(admin): Polaris Switch checked state + shop discounts On/Off labels (2026-04-06)
 
 **Ref:** `b565c3a76`

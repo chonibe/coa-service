@@ -38,7 +38,9 @@ const ArtworkPickerSheet = dynamic(
   () => import('../../experience/components/ArtworkPickerSheet').then((m) => ({ default: m.ArtworkPickerSheet })),
   { ssr: false }
 )
-import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { TicketPercent } from 'lucide-react'
+import { cn, formatPriceCompact } from '@/lib/utils'
 import {
   carouselSlotIndexForProductId,
   clampCarouselIndex,
@@ -68,6 +70,7 @@ import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flag
 import {
   ARTWORKS_PER_FREE_LAMP,
   lampVolumeDiscountPercentForAllocated,
+  lampVolumeProgressPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
 import { useShopDiscountSettings } from './ShopDiscountFlagsContext'
 import {
@@ -588,6 +591,19 @@ export function ExperienceV2Client({
 
   const lampTotal = lampPrices.reduce((a, b) => a + b, 0)
   const lampSavings = lampQuantity > 0 ? lampQuantity * lampPrice - lampTotal : 0
+  const lampProgress = useMemo(() => {
+    const progress: number[] = []
+    for (let k = 1; k <= lampQuantity; k++) {
+      const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
+      const end = k * ARTWORKS_PER_FREE_LAMP
+      const allocated = Math.max(0, Math.min(artworkCount, end) - start)
+      progress.push(lampVolumeProgressPercentForAllocated(allocated, lampVolumeDiscountEnabled))
+    }
+    return progress
+  }, [lampQuantity, artworkCount, lampVolumeDiscountEnabled])
+  const volumeDiscountBarLabel = lampVolumeDiscountEnabled
+    ? 'Volume discount: 7.5% off the Street Lamp for each artwork you add'
+    : null
   const artworkPriceMaps = useMemo(
     () => ({
       lockedUsdByProductId: lockedArtworkPrices,
@@ -1290,6 +1306,70 @@ export function ExperienceV2Client({
         bundlePreviewLamp={lamp}
         bundlePreviewArtworks={spotlightPairProducts ?? null}
       />
+
+      {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && volumeDiscountBarLabel && (
+        <div
+          className={cn(
+            'w-full shrink-0 px-4 py-2.5 border-b',
+            theme === 'light'
+              ? 'border-emerald-200/80 bg-emerald-50/95'
+              : 'border-emerald-500/30 bg-emerald-950/45'
+          )}
+        >
+          <div className="mx-auto max-w-lg">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span
+                className={cn(
+                  'flex items-center gap-1.5 text-[11px] font-medium min-w-0',
+                  theme === 'light' ? 'text-emerald-900' : 'text-emerald-100/95'
+                )}
+              >
+                <TicketPercent
+                  className={cn('w-3.5 h-3.5 shrink-0', theme === 'light' ? 'text-emerald-700' : 'text-emerald-400')}
+                  aria-hidden
+                />
+                <span className="leading-snug">{volumeDiscountBarLabel}</span>
+              </span>
+              {lampSavings > 0 && (
+                <span
+                  className={cn(
+                    'text-[11px] font-semibold tabular-nums shrink-0',
+                    theme === 'light' ? 'text-emerald-800' : 'text-emerald-200'
+                  )}
+                >
+                  -${formatPriceCompact(lampSavings)}
+                </span>
+              )}
+            </div>
+            <div
+              className={cn(
+                'relative h-1.5 rounded-full overflow-hidden flex',
+                theme === 'light' ? 'bg-emerald-200/80' : 'bg-neutral-800/90'
+              )}
+            >
+              {Array.from({ length: lampQuantity }).map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'flex-1 min-w-0 h-full overflow-hidden relative border-l first:border-l-0',
+                    theme === 'light' ? 'border-emerald-300/60' : 'border-neutral-700/80'
+                  )}
+                >
+                  <motion.div
+                    className={cn(
+                      'absolute inset-y-0 left-0 bg-gradient-to-r',
+                      theme === 'light' ? 'from-emerald-600 to-teal-500' : 'from-emerald-500 to-teal-400'
+                    )}
+                    initial={false}
+                    animate={{ width: `${lampProgress[i] ?? 0}%` }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <ArtworkCarouselBar
         splineInView={splineInView}

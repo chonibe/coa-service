@@ -2152,7 +2152,7 @@ export function Configurator({
                 />
               </div>
               <div className="flex items-center justify-between gap-3">
-                {false && (
+                {lampVolumeDiscountEnabled && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/40">
                     <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                     <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
@@ -2174,11 +2174,13 @@ export function Configurator({
             </div>
           )}
 
-          {/* Discount chip — mobile only (hidden) */}
-          {false && lampQuantity > 0 && (
-            <div className="md:hidden flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-emerald-950/60 border border-emerald-800/40 self-start">
-              <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-              <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">The more art you collect, the more you save on your lamp</p>
+          {/* Volume discount chip — when admin flag on and user has a lamp in the build */}
+          {lampVolumeDiscountEnabled && lampQuantity > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-emerald-950/60 border border-emerald-800/40 self-start">
+              <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-hidden />
+              <p className="text-[11px] font-semibold bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent leading-none whitespace-nowrap">
+                The more art you collect, the more you save on your lamp
+              </p>
             </div>
           )}
 
@@ -2216,6 +2218,35 @@ export function Configurator({
               </div>
             ) : null
           ) : null}
+
+          {lampVolumeDiscountEnabled && lampQuantity > 0 && artworkCount > 0 && discountBarLabel && (
+            <div className="w-full mb-3 rounded-lg border border-emerald-500/35 bg-emerald-950/35 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-200/95 min-w-0">
+                  <TicketPercent className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-hidden />
+                  <span className="leading-snug">{discountBarLabel}</span>
+                </span>
+                {lampSavings > 0 && (
+                  <span className="text-[11px] font-semibold text-emerald-200 tabular-nums shrink-0">
+                    -${formatPriceCompact(lampSavings)}
+                  </span>
+                )}
+              </div>
+              <div className="relative h-1.5 rounded-full overflow-hidden flex bg-neutral-800/90">
+                {Array.from({ length: lampQuantity }).map((_, i) => (
+                  <div key={i} className="flex-1 min-w-0 h-full overflow-hidden relative border-l border-neutral-700/80 first:border-l-0">
+                    <motion.div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-400"
+                      initial={false}
+                      animate={{ width: `${lampProgress[i] ?? 0}%` }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Street lamp — hidden; now in top toolbar only */}
           <div className="hidden">
             <div className={cn(
