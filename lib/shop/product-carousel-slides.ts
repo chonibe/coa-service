@@ -92,6 +92,23 @@ export function pickVideoSourceUrl(sources: ShopifyVideo['sources']): string | n
   return byWidth[0]?.url ?? null
 }
 
+/**
+ * Same idea as PDP `ProductGallery` native video: pick **one** progressive file by **tallest height**
+ * (not width-sorted `<source>` lists). If there is no MP4/MOV/WebM, fall back to HLS / `pickVideoSourceUrl`.
+ */
+export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): string | null {
+  if (!sources?.length) return null
+  const progressive = shopifyProgressiveVideoSources(sources)
+  if (progressive.length > 0) {
+    const best = progressive.reduce(
+      (a, b) => ((b.height || 0) > (a.height || 0) ? b : a),
+      progressive[0]
+    )
+    return best.url
+  }
+  return pickVideoSourceUrl(sources)
+}
+
 function appendAutoplayToExternalEmbed(url: string): string {
   try {
     const absolute = url.startsWith('//') ? `https:${url}` : url

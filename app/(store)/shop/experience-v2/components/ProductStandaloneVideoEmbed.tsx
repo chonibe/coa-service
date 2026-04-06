@@ -4,11 +4,11 @@ import { useEffect, useRef } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
-import {
-  pickVideoSourceUrl,
-  shopifyProgressiveVideoSources,
-  shopifyVideoSourceTypeAttr,
-} from '@/lib/shop/product-carousel-slides'
+import { pickVideoSourceUrl, shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+
+function isPlaybackUrlHls(url: string): boolean {
+  return /\.m3u8(\?|$)/i.test(url) || (url.includes('m3u8') && !/\.mp4(\?|$)/i.test(url))
+}
 
 function HlsOrSingleUrlVideo({
   sources,
@@ -121,43 +121,32 @@ export function ProductStandaloneVideoEmbed({
     <div className={cn('flex w-full flex-col gap-3', className)}>
       {videoSlides.map((slide) => {
         if (slide.type === 'video') {
-          const progressive = shopifyProgressiveVideoSources(slide.sources)
           const label = slide.alt || productTitle
-          if (progressive.length > 0) {
-            const progressiveKey = progressive.map((s) => s.url).join('|')
-            return (
-              <div
-                key={`${slide.id}-${progressiveKey}`}
-                className="overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10"
-              >
+          const playbackUrl = shopifyVideoPlaybackUrl(slide.sources)
+          if (!playbackUrl) return null
+          return (
+            <div
+              key={`${slide.id}-${playbackUrl}`}
+              className="overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10"
+            >
+              {isPlaybackUrlHls(playbackUrl) ? (
+                <HlsOrSingleUrlVideo
+                  sources={slide.sources}
+                  poster={slide.poster?.url ?? undefined}
+                  ariaLabel={label}
+                  className="mx-auto block"
+                />
+              ) : (
                 <video
-                  key={progressiveKey}
                   className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
+                  src={playbackUrl}
                   controls
                   playsInline
                   preload="auto"
                   poster={slide.poster?.url ?? undefined}
                   aria-label={label}
-                >
-                  {progressive.map((s) => {
-                    const t = shopifyVideoSourceTypeAttr(s)
-                    return <source key={s.url} src={s.url} {...(t ? { type: t } : {})} />
-                  })}
-                </video>
-              </div>
-            )
-          }
-          return (
-            <div
-              key={slide.id}
-              className="overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10"
-            >
-              <HlsOrSingleUrlVideo
-                sources={slide.sources}
-                poster={slide.poster?.url ?? undefined}
-                ariaLabel={label}
-                className="mx-auto block"
-              />
+                />
+              )}
             </div>
           )
         }

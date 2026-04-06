@@ -5,6 +5,7 @@ import {
   carouselSlideIsNonImage,
   pickVideoSourceUrl,
   shopifyProgressiveVideoSources,
+  shopifyVideoPlaybackUrl,
 } from './product-carousel-slides'
 
 describe('pickVideoSourceUrl', () => {
@@ -22,6 +23,41 @@ describe('pickVideoSourceUrl', () => {
       { url: 'https://cdn/large', mimeType: 'video/quicktime', width: 1080, height: 1920, format: 'mov' },
     ])
     expect(url).toBe('https://cdn/large')
+  })
+})
+
+describe('shopifyVideoPlaybackUrl', () => {
+  it('picks tallest progressive rendition (height beats width ordering)', () => {
+    const url = shopifyVideoPlaybackUrl([
+      {
+        url: 'https://cdn/wide.mp4',
+        mimeType: 'video/mp4',
+        width: 1920,
+        height: 1080,
+        format: 'mp4',
+      },
+      {
+        url: 'https://cdn/tall.mp4',
+        mimeType: 'video/mp4',
+        width: 1080,
+        height: 1920,
+        format: 'mp4',
+      },
+    ])
+    expect(url).toBe('https://cdn/tall.mp4')
+  })
+
+  it('falls back to HLS when no progressive sources', () => {
+    const url = shopifyVideoPlaybackUrl([
+      {
+        url: 'https://cdn/master.m3u8',
+        mimeType: 'application/vnd.apple.mpegurl',
+        width: 1920,
+        height: 1080,
+        format: 'm3u8',
+      },
+    ])
+    expect(url).toBe('https://cdn/master.m3u8')
   })
 })
 

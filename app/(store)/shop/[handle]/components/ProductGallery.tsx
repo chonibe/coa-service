@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
 import { type ShopifyMedia } from '@/lib/shopify/storefront-client'
 
 /**
@@ -66,28 +67,29 @@ export function convertShopifyMedia(shopifyMedia: ShopifyMedia[]): ProductMedia[
           alt: item.image.altText || '',
         }
       case 'VIDEO': {
-        const bestSource = item.sources.reduce((best, current) => 
-          (current.height || 0) > (best.height || 0) ? current : best
-        , item.sources[0])
+        const playback = shopifyVideoPlaybackUrl(item.sources)
         return {
           id: item.id,
           type: 'video' as const,
-          src: bestSource?.url || '',
+          src: playback || '',
           alt: '',
           previewImage: item.previewImage?.url,
           sources: item.sources,
         }
       }
-      case 'EXTERNAL_VIDEO':
+      case 'EXTERNAL_VIDEO': {
+        const embed =
+          item.embedUrl?.trim() || item.embeddedUrl?.trim() || ''
         return {
           id: item.id,
           type: 'external_video' as const,
-          src: item.embeddedUrl,
+          src: embed,
           alt: '',
           previewImage: item.previewImage?.url,
           host: item.host,
-          embeddedUrl: item.embeddedUrl,
+          embeddedUrl: embed,
         }
+      }
       case 'MODEL_3D': {
         const glbSource = item.sources.find(s => s.format === 'glb') || item.sources[0]
         return {
