@@ -159,7 +159,17 @@ export default function AdminShopDiscountsPage() {
                       Default when unset: {entry.defaultEnabled ? "on" : "off"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span
+                      className={
+                        flags[entry.id]
+                          ? "w-9 text-right text-xs font-semibold text-primary"
+                          : "w-9 text-right text-xs font-medium text-muted-foreground"
+                      }
+                      aria-live="polite"
+                    >
+                      {flags[entry.id] ? "On" : "Off"}
+                    </span>
                     {savingId === entry.id && (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
                     )}
@@ -169,7 +179,7 @@ export default function AdminShopDiscountsPage() {
                     <Switch
                       id={`discount-${entry.id}`}
                       checked={flags[entry.id]}
-                      disabled={savingId !== null}
+                      disabled={savingId === entry.id}
                       onCheckedChange={(checked) => void toggle(entry.id, checked)}
                     />
                   </div>
@@ -194,13 +204,25 @@ export default function AdminShopDiscountsPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="featured-bundle-enabled">Enable bundle pricing</Label>
-                  <Switch
-                    id="featured-bundle-enabled"
-                    checked={featuredBundle.enabled}
-                    onCheckedChange={(checked) =>
-                      setFeaturedBundle((b) => (b ? { ...b, enabled: checked } : b))
-                    }
-                  />
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={
+                        featuredBundle.enabled
+                          ? "w-9 text-right text-xs font-semibold text-primary"
+                          : "w-9 text-right text-xs font-medium text-muted-foreground"
+                      }
+                    >
+                      {featuredBundle.enabled ? "On" : "Off"}
+                    </span>
+                    <Switch
+                      id="featured-bundle-enabled"
+                      checked={featuredBundle.enabled}
+                      disabled={savingBundle}
+                      onCheckedChange={(checked) =>
+                        setFeaturedBundle((b) => (b ? { ...b, enabled: checked } : b))
+                      }
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="featured-bundle-mode">Pricing mode</Label>
@@ -241,7 +263,7 @@ export default function AdminShopDiscountsPage() {
                 <Button
                   type="button"
                   onClick={() => void saveFeaturedBundle()}
-                  disabled={savingBundle || savingId !== null}
+                  disabled={savingBundle}
                 >
                   {savingBundle && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Save bundle settings

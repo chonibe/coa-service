@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: fix(admin): Polaris Switch checked state + shop discounts On/Off labels (2026-04-06)
+
+**Ref:** `TBD`
+
+### Summary
+**[`PolarisSwitch`](components/polaris/polaris-switch.tsx)** uses **`peer` / `peer-checked`** for on-state styling (replaces label **`has-[:checked]`**). **[`/admin/shop/discounts`](app/admin/shop/discounts/page.tsx)** shows **On/Off**; only the saving row’s switch is disabled during PATCH.
+
+### Implementation Checklist
+
+- [x] [components/polaris/polaris-switch.tsx](components/polaris/polaris-switch.tsx)
+- [x] [app/admin/shop/discounts/page.tsx](app/admin/shop/discounts/page.tsx)
+- [x] [docs/features/admin-portal/README.md](docs/features/admin-portal/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(experience): featured bundle visible for early access / unlisted spotlight (2026-04-06)
 
 **Ref:** `6f34c4096`
