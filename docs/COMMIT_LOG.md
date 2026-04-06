@@ -2,7 +2,7 @@
 
 ## Commit: feat(experience): featured bundle inline in carousel above choose-artwork sticky (2026-04-06)
 
-**Ref:** `bec6aa7aa`
+**Ref:** `7542b892c`
 
 ### Summary
 The **$159 featured artist bundle** is no longer promoted twice on the main experience. A **single centered card** in **[`ArtworkCarouselBar`](app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** shows **Street Lamp + two spotlight prints** (same **`w-24` / `aspect-[14/20]` / `rounded-[15px]`** as the strip), **`+` separators**, pricing, and one tap to **`onApply`**. It appears only when the **collection strip is empty**, **`reserveCheckoutBar`** is true, and the offer is enabled. **Spotlight placeholder tiles** in the strip are suppressed while this card shows. **[`ExperienceCheckoutStickyBar`](app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx)** keeps **“Choose your first artwork”** (and checkout when items exist) but **drops duplicate bundle promos**; **`featuredBundleVendorName`** when the bundle is active is unchanged.
