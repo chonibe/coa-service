@@ -1,5 +1,25 @@
 # Commit Log
 
+## Commit: fix(experience): featured bundle visible for early access / unlisted spotlight (2026-04-06)
+
+**Ref:** `TBD`
+
+### Summary
+Early-access links often load spotlight prints with **`availableForSale: false`**, which hid the under-Spline bundle (**`SplineFullScreen`** required `disabled !== true`) and disabled the CTA. **[`isFeaturedBundleSpotlightPrintsPurchasable`](lib/shop/experience-featured-bundle.ts)** treats **`?token=`**, **`unlisted`** spotlight, or legacy **`?unlisted=`** URL as allowing the bundle action. **experience-v2** [`ExperienceV2Client`](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) now appends **`unlisted=1`** to the artist-spotlight request when the page URL includes **`unlisted`** (matches legacy experience). **[`Configurator`](app/(store)/shop/experience-v2/components/Configurator.tsx)** uses the same purchasability helper.
+
+### Implementation Checklist
+
+- [x] [lib/shop/experience-featured-bundle.ts](lib/shop/experience-featured-bundle.ts)
+- [x] [lib/shop/experience-featured-bundle.test.ts](lib/shop/experience-featured-bundle.test.ts)
+- [x] [app/(store)/shop/experience/components/SplineFullScreen.tsx](app/(store)/shop/experience/components/SplineFullScreen.tsx)
+- [x] [app/(store)/shop/experience/components/ExperienceV2Client.tsx](app/(store)/shop/experience/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx](app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
+- [x] [app/(store)/shop/experience-v2/components/Configurator.tsx](app/(store)/shop/experience-v2/components/Configurator.tsx)
+- [x] [docs/features/experience-v2/README.md](docs/features/experience-v2/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(shop): admin tiered standard shipping free over $70 / $10 below (2026-04-06)
 
 **Ref:** `014cf0d52`

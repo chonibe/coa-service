@@ -43,6 +43,20 @@ export function getSpotlightPairProducts(
 }
 
 /**
+ * Whether the featured-bundle **CTA** should be enabled for the two spotlight prints.
+ * Unlisted / early-access links often load products with `availableForSale: false` while checkout still works
+ * (private token, coupon cookie, etc.).
+ */
+export function isFeaturedBundleSpotlightPrintsPurchasable(
+  p1: Pick<ShopifyProduct, 'availableForSale'>,
+  p2: Pick<ShopifyProduct, 'availableForSale'>,
+  opts: { spotlightUnlisted?: boolean; earlyAccessTokenInUrl?: boolean }
+): boolean {
+  if (p1.availableForSale && p2.availableForSale) return true
+  return Boolean(opts.spotlightUnlisted || opts.earlyAccessTokenInUrl)
+}
+
+/**
  * First cart index for each spotlight print (left-to-right). Extra copies of the same SKU stay unbundled for pricing.
  */
 export function getFeaturedBundleConsumedCartIndices(

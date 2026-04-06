@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -60,6 +61,7 @@ import {
   computeFeaturedBundleRegularSubtotalUsd,
   getSpotlightPairProducts,
   isFeaturedArtistBundleEligible,
+  isFeaturedBundleSpotlightPrintsPurchasable,
 } from '@/lib/shop/experience-featured-bundle'
 import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flags'
 import {
@@ -124,6 +126,7 @@ export function ExperienceV2Client({
   pageInfoSeason2: initialPageInfo2,
   initialArtistSlug,
 }: ExperienceV2ClientProps) {
+  const searchParams = useSearchParams()
   const { setOrderSummary, setOrderBarProps, triggerPriceBump, setHeaderCenterContent } =
     useExperienceOrder()
   const { flags: discountFlags, featuredBundle: featuredBundleDiscount } = useShopDiscountSettings()
@@ -167,6 +170,22 @@ export function ExperienceV2Client({
   const [splineInView, setSplineInView] = useState(true)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
+  /** List `lamp` from SSR has no `media`; warm cache so detail carousel gets Video + sources. */
+  useEffect(() => {
+    const h = lamp.handle
+    if (!h || fullProductCacheRef.current.has(h)) return
+    let cancelled = false
+    fetch(`/api/shop/products/${encodeURIComponent(h)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.product) return
+        fullProductCacheRef.current.set(h, data.product as ShopifyProduct)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [lamp.handle])
   const abAssignedRef = useRef(false)
   const lastDetailPreviewIdRef = useRef<string | null>(null)
   const scrollToSplineRef = useRef(false)
@@ -237,9 +256,11 @@ export function ExperienceV2Client({
 
   // Fetch artist spotlight: use ?artist= when present (e.g. /shop/experience-v2?artist=jack-jc-art), else default latest
   useEffect(() => {
-    const url = initialArtistSlug
+    const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
+    const base = initialArtistSlug
       ? `/api/shop/artist-spotlight?artist=${encodeURIComponent(initialArtistSlug)}`
       : '/api/shop/artist-spotlight'
+    const url = forceUnlisted && initialArtistSlug ? `${base}&unlisted=1` : base
     fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -265,7 +286,7 @@ export function ExperienceV2Client({
         setSpotlightData(null)
         setSpotlightProductsFromApi([])
       })
-  }, [initialArtistSlug])
+  }, [initialArtistSlug, searchParams])
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -602,7 +623,12 @@ export function ExperienceV2Client({
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
     if (!featuredBundleDiscount.enabled || !spotlightData || !spotlightPairProducts) return null
     const [p1, p2] = spotlightPairProducts
-    const bothForSale = p1.availableForSale && p2.availableForSale
+    const earlyAccessTokenInUrl = Boolean(searchParams.get('token')?.trim())
+    const forceUnlistedUrl = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
+    const bundlePrintsPurchasable = isFeaturedBundleSpotlightPrintsPurchasable(p1, p2, {
+      spotlightUnlisted: Boolean(spotlightData.unlisted || forceUnlistedUrl),
+      earlyAccessTokenInUrl,
+    })
     const lampPricesNatural: number[] = []
     for (let k = 1; k <= 1; k++) {
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
@@ -628,7 +654,7 @@ export function ExperienceV2Client({
       bundleUsd,
       compareAtUsd: compareAt,
       onApply: handleApplyFeaturedBundle,
-      disabled: bundleInCart || !bothForSale,
+      disabled: bundleInCart || !bundlePrintsPurchasable,
     }
   }, [
     featuredBundleDiscount,
@@ -641,6 +667,7 @@ export function ExperienceV2Client({
     allProducts,
     handleApplyFeaturedBundle,
     lampVolumeDiscountEnabled,
+    searchParams,
   ])
   const orderItemCount = selectedArtworks.length + lampQuantity
 
@@ -856,10 +883,7 @@ export function ExperienceV2Client({
       lastDetailPreviewIdRef.current = null
       return
     }
-    const ready =
-      detailProduct.id === lamp.id ||
-      (detailProductFull?.id === detailProduct.id && !detailProductLoading)
-    if (!ready) return
+    if (detailProductLoading) return
     if (lastDetailPreviewIdRef.current === detailProduct.id) return
     lastDetailPreviewIdRef.current = detailProduct.id
     const p = detailProductFull ?? detailProduct

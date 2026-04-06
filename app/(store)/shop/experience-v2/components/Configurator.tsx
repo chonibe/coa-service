@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -107,6 +108,7 @@ import {
   computeFeaturedBundleRegularSubtotalUsd,
   getSpotlightPairProducts,
   isFeaturedArtistBundleEligible,
+  isFeaturedBundleSpotlightPrintsPurchasable,
 } from '@/lib/shop/experience-featured-bundle'
 import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flags'
 import {
@@ -189,6 +191,7 @@ export function Configurator({
   forceShowLampPaywall = false,
   adPreset,
 }: ConfiguratorProps) {
+  const searchParams = useSearchParams()
   useRatingSync()
   const { isAuthenticated } = useShopAuth()
   const artistCatalogForFilters = useExperienceArtistCatalog()
@@ -627,7 +630,7 @@ export function Configurator({
 
   // Prefetch full product when card enters view — so detail drawer opens instantly
   const prefetchProduct = useCallback((handle: string) => {
-    if (!handle || handle === lamp.handle) return
+    if (!handle) return
     if (fullProductCacheRef.current.has(handle)) return
     if (prefetchingRef.current.has(handle)) return
     prefetchingRef.current.add(handle)
@@ -649,11 +652,6 @@ export function Configurator({
   useEffect(() => {
     if (!detailProduct) {
       setDetailProductFull(null)
-      setDetailProductLoading(false)
-      return
-    }
-    if (detailProduct.id === lamp.id) {
-      setDetailProductFull(detailProduct)
       setDetailProductLoading(false)
       return
     }
@@ -681,6 +679,10 @@ export function Configurator({
       })
     return () => { cancelled = true }
   }, [detailProduct, lamp.id])
+
+  useEffect(() => {
+    prefetchProduct(lamp.handle)
+  }, [lamp.handle, prefetchProduct])
 
   const previewed = filteredProducts[previewIndex] ?? filteredProducts[0]
 
@@ -842,7 +844,11 @@ export function Configurator({
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
     if (!featuredBundleDiscount.enabled || !spotlightData || !spotlightPairProducts) return null
     const [p1, p2] = spotlightPairProducts
-    const bothForSale = p1.availableForSale && p2.availableForSale
+    const earlyAccessTokenInUrl = Boolean(searchParams.get('token')?.trim())
+    const bundlePrintsPurchasable = isFeaturedBundleSpotlightPrintsPurchasable(p1, p2, {
+      spotlightUnlisted: spotlightData.unlisted || forceUnlisted,
+      earlyAccessTokenInUrl,
+    })
     const lampPricesNatural: number[] = []
     for (let k = 1; k <= 1; k++) {
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
@@ -868,12 +874,13 @@ export function Configurator({
       bundleUsd,
       compareAtUsd: compareAt,
       onApply: handleApplyFeaturedBundle,
-      disabled: bundleInCart || !bothForSale,
+      disabled: bundleInCart || !bundlePrintsPurchasable,
     }
   }, [
     featuredBundleDiscount,
     spotlightData,
     spotlightPairProducts,
+    forceUnlisted,
     lampPrice,
     artworkPriceMaps,
     lampQuantity,
@@ -881,6 +888,7 @@ export function Configurator({
     allProducts,
     handleApplyFeaturedBundle,
     lampVolumeDiscountEnabled,
+    searchParams,
   ])
 
   /** When user deselects lamp (quantity → 0), keep them on artworks */

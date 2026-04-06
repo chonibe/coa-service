@@ -156,7 +156,6 @@ export function SplineFullScreen({
     typeof collectionArtworkCount === 'number' &&
     collectionArtworkCount === 0 &&
     featuredBundleOffer != null &&
-    featuredBundleOffer.disabled !== true &&
     bundlePreviewLamp != null &&
     Array.isArray(bundlePreviewArtworks) &&
     bundlePreviewArtworks.length === 2

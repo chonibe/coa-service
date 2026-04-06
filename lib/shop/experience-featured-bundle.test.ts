@@ -7,6 +7,7 @@ import {
   getFeaturedBundleConsumedCartIndices,
   getSpotlightPairProducts,
   isFeaturedArtistBundleActive,
+  isFeaturedBundleSpotlightPrintsPurchasable,
 } from './experience-featured-bundle'
 
 function mockProduct(
@@ -101,6 +102,35 @@ describe('getSpotlightPairProducts', () => {
     const p2 = mockProduct('gid://shopify/Product/20')
     const pair = getSpotlightPairProducts({ productIds: ['10', '20'] }, [p1, p2], [])
     expect(pair).not.toBeNull()
+  })
+})
+
+describe('isFeaturedBundleSpotlightPrintsPurchasable', () => {
+  const pAvail = mockProduct('gid://shopify/Product/1')
+  const pUnavail = mockProduct('gid://shopify/Product/2', { available: false })
+
+  it('is true when both are availableForSale', () => {
+    expect(
+      isFeaturedBundleSpotlightPrintsPurchasable(pAvail, pAvail, {})
+    ).toBe(true)
+  })
+
+  it('is false when either is not for sale and no early-access context', () => {
+    expect(
+      isFeaturedBundleSpotlightPrintsPurchasable(pAvail, pUnavail, {})
+    ).toBe(false)
+  })
+
+  it('is true when unlisted spotlight even if storefront says not for sale', () => {
+    expect(
+      isFeaturedBundleSpotlightPrintsPurchasable(pUnavail, pUnavail, { spotlightUnlisted: true })
+    ).toBe(true)
+  })
+
+  it('is true when early-access token is present in URL', () => {
+    expect(
+      isFeaturedBundleSpotlightPrintsPurchasable(pAvail, pUnavail, { earlyAccessTokenInUrl: true })
+    ).toBe(true)
   })
 })
 

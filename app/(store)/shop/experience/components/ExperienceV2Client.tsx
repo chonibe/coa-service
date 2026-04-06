@@ -55,6 +55,7 @@ import {
   computeFeaturedBundleRegularSubtotalUsd,
   getSpotlightPairProducts,
   isFeaturedArtistBundleEligible,
+  isFeaturedBundleSpotlightPrintsPurchasable,
 } from '@/lib/shop/experience-featured-bundle'
 import { computeFeaturedBundleEffectiveUsd } from '@/lib/shop/shop-discount-flags'
 import {
@@ -720,7 +721,12 @@ export function ExperienceV2Client({
   const featuredBundleFilterOffer = useMemo((): FeaturedBundleFilterOffer | null => {
     if (!featuredBundleDiscount.enabled || !spotlightData || !spotlightPairProducts) return null
     const [p1, p2] = spotlightPairProducts
-    const bothForSale = p1.availableForSale && p2.availableForSale
+    const earlyAccessTokenInUrl = Boolean(searchParams.get('token')?.trim())
+    const forceUnlistedUrl = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())
+    const bundlePrintsPurchasable = isFeaturedBundleSpotlightPrintsPurchasable(p1, p2, {
+      spotlightUnlisted: Boolean(spotlightData.unlisted || forceUnlistedUrl),
+      earlyAccessTokenInUrl,
+    })
     const lampPricesNatural: number[] = []
     for (let k = 1; k <= 1; k++) {
       const start = (k - 1) * ARTWORKS_PER_FREE_LAMP
@@ -746,7 +752,7 @@ export function ExperienceV2Client({
       bundleUsd,
       compareAtUsd: compareAt,
       onApply: handleApplyFeaturedBundle,
-      disabled: bundleInCart || !bothForSale,
+      disabled: bundleInCart || !bundlePrintsPurchasable,
     }
   }, [
     featuredBundleDiscount,
@@ -759,6 +765,7 @@ export function ExperienceV2Client({
     allProducts,
     handleApplyFeaturedBundle,
     lampVolumeDiscountEnabled,
+    searchParams,
   ])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
@@ -957,11 +964,6 @@ export function ExperienceV2Client({
   useEffect(() => {
     if (!detailProduct) {
       setDetailProductFull(null)
-      setDetailProductLoading(false)
-      return
-    }
-    if (detailProduct.id === lamp.id) {
-      setDetailProductFull(detailProduct)
       setDetailProductLoading(false)
       return
     }
