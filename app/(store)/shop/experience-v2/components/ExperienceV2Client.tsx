@@ -1302,6 +1302,15 @@ export function ExperienceV2Client({
         featuredBundleOffer={featuredBundleFilterOffer}
         filterPanelLamp={filterPanelLampOffer}
         artistCatalogForFilters={artistCatalogForFilters}
+        pickerLamp={lamp}
+        lampQuantity={lampQuantity}
+        lampPriceUsd={lampPrice}
+        onPickerAddLamp={() => handleLampQuantityChange(1)}
+        lampPickerDetailOpen={detailProduct?.id === lamp.id}
+        onOpenLampPickerDetail={() => setDetailProduct(lamp)}
+        onCloseLampPickerDetail={() => {
+          setDetailProduct((p) => (p?.id === lamp.id ? null : p))
+        }}
       />
       )}
 

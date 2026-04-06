@@ -12,6 +12,7 @@ import {
   ArtistSpotlightBanner,
   type SpotlightData,
 } from '../../experience-v2/components/ArtistSpotlightBanner'
+import { LampSelectorPromoBanner } from '../../experience-v2/components/LampSelectorPromoBanner'
 import {
   FilterPanel,
   hasActiveFilters,
@@ -380,6 +381,14 @@ interface ArtworkPickerSheetProps {
   filterPanelLamp?: FilterPanelLampOffer | null
   /** Full vendor list from collection-vendors API (all pages); overrides artist derivation from products */
   artistCatalogForFilters?: [string, number][] | null
+  /** When `lampQuantity === 0`, show lamp promo instead of artist spotlight (requires lamp + handlers). */
+  pickerLamp?: ShopifyProduct | null
+  lampQuantity?: number
+  lampPriceUsd?: number
+  onPickerAddLamp?: () => void
+  lampPickerDetailOpen?: boolean
+  onOpenLampPickerDetail?: () => void
+  onCloseLampPickerDetail?: () => void
 }
 
 export function ArtworkPickerSheet({
@@ -387,7 +396,7 @@ export function ArtworkPickerSheet({
   onClose,
   products,
   selectedArtworks,
-  lampPreviewOrder,
+  lampPreviewOrder: _lampPreviewOrder,
   onToggleSelect,
   onLoadMore,
   hasMore,
@@ -408,6 +417,14 @@ export function ArtworkPickerSheet({
   streetEditionByProductId = {},
   featuredBundleOffer,
   artistCatalogForFilters = null,
+  filterPanelLamp,
+  pickerLamp = null,
+  lampQuantity: pickerLampQuantity,
+  lampPriceUsd: pickerLampPriceUsd,
+  onPickerAddLamp,
+  lampPickerDetailOpen = false,
+  onOpenLampPickerDetail,
+  onCloseLampPickerDetail,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -457,6 +474,20 @@ export function ArtworkPickerSheet({
           spotlightData &&
           filters?.artists?.some((a) => experienceVendorsLooselyEqual(a, spotlightData.vendorName))
         )
+
+  const showLampPromoInPicker =
+    pickerLampQuantity === 0 &&
+    !!pickerLamp &&
+    !!onPickerAddLamp &&
+    !!onOpenLampPickerDetail &&
+    !!onCloseLampPickerDetail
+
+  const pickerLampUnitPrice =
+    typeof pickerLampPriceUsd === 'number'
+      ? pickerLampPriceUsd
+      : pickerLamp
+        ? parseFloat(pickerLamp.priceRange?.minVariantPrice?.amount ?? '0')
+        : 0
 
   const activeFilterCount = useMemo(() => {
     if (!filters) return 0
@@ -653,8 +684,20 @@ export function ArtworkPickerSheet({
               className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1.5 py-3 md:px-5 md:py-4"
             >
               <div className="md:mx-auto md:w-full md:max-w-[min(65vh,520px)]">
-              {/* Artist spotlight at top */}
-              {spotlightData && onSpotlightSelect && (
+              {/* Lamp promo when cart has no lamp; otherwise artist spotlight */}
+              {showLampPromoInPicker && pickerLamp ? (
+                <div className="mb-3">
+                  <LampSelectorPromoBanner
+                    lamp={pickerLamp}
+                    priceUsd={pickerLampUnitPrice}
+                    detailOpen={lampPickerDetailOpen}
+                    onOpenDetail={onOpenLampPickerDetail}
+                    onCloseDetail={onCloseLampPickerDetail}
+                    onAddLamp={onPickerAddLamp}
+                    showBadge
+                  />
+                </div>
+              ) : spotlightData && onSpotlightSelect ? (
                 <div className="mb-3">
                   <ArtistSpotlightBanner
                     spotlight={{ ...spotlightData, gifUrl: undefined }}
@@ -665,7 +708,7 @@ export function ArtworkPickerSheet({
                     featuredBundleOffer={featuredBundleOffer ?? undefined}
                   />
                 </div>
-              )}
+              ) : null}
 
               <div
                 style={{
@@ -785,7 +828,8 @@ export function ArtworkPickerSheet({
                 })}
               </div>
 
-              {spotlightData &&
+              {!showLampPromoInPicker &&
+                spotlightData &&
                 onSpotlightSelect &&
                 spotlightAccordionExpanded &&
                 products.length > 0 && (

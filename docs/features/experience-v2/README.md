@@ -100,7 +100,7 @@ Top bar component showing artwork name and artist for the last clicked artwork i
 Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 
 - Full-screen bottom sheet with drag handle
-- **Artist spotlight banner** at top (from `/api/shop/artist-spotlight`) — expand to filter by artist
+- **Top promo:** When **`lampQuantity === 0`**, [`LampSelectorPromoBanner`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx) replaces the artist spotlight — shows lamp image, title, price, **“Start your Bundle with a Street Lamp”** (adds lamp), and a tappable header that opens [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx) (bottom sheet on mobile, side panel on desktop). When the lamp is in the cart, the **artist spotlight banner** returns (from `/api/shop/artist-spotlight`) — expand to filter by artist
 - **Bar with Filter + Season 1/2** — same as V1 Configurator
 - **FilterPanel** — artists, tags, price range, sort, in-stock, star rating (reused from V1). **`productsForFilterPanel`** is the **union of Season 1 + Season 2** (deduped by Shopify product id) for tags/fallback. **Artist checklist** prefers **`artistCatalog`** from [`GET /api/shop/experience/collection-vendors`](../../../app/api/shop/experience/collection-vendors/route.ts), which **paginates both collections** with minimal Storefront fields so every vendor appears even when the SSR bundle only loads the first page of products (e.g. `first: 24` per season).
 - Virtualized **rows grouped by artist (vendor)** — two artworks per row when an artist has a pair; **vertical artist name** in the center spine (same layout as the former “both selected” merge). Odd count: one **centered** half-width card for that artist. Row building: [`experience-artwork-rows.ts`](../../../lib/shop/experience-artwork-rows.ts)
@@ -115,7 +115,9 @@ Slide-up artwork selector using **same card design** as V1 ArtworkStrip:
 - **Load more** — infinite scroll fetches `/api/shop/experience/collection-products` per season; when the list has no next page, a **Browse Season 1 / Season 2** button at the bottom switches the other collection (`onSeasonChange`; no extra caption)
 - Theme-aware styling
 
-**Implementation:** [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx)
+**Implementation:** [`ArtworkPickerSheet.tsx`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) · [`LampSelectorPromoBanner.tsx`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx)
+
+**Tests:** [`LampSelectorPromoBanner.test.tsx`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.test.tsx)
 
 ### ArtworkCarouselBar
 
@@ -201,7 +203,7 @@ When the current **artist spotlight** from [`/api/shop/artist-spotlight`](../../
                                       ▼
                          ┌─────────────────────────┐
                          │   ArtworkPickerSheet    │
-                         │  ArtistSpotlightBanner  │
+                         │  Lamp promo or spotlight│
                          │  Filter + Season 1/2   │
                          │  (toggle → adds to cart)│
                          └─────────────────────────┘
@@ -220,7 +222,7 @@ When the current **artist spotlight** from [`/api/shop/artist-spotlight`](../../
 |--------|-------------------------|----------------------------|
 | Spline position | Split view with selector | Full viewport |
 | Artwork selection | Inline cards with Add button | Slide-up sheet (same cards; + badge on unselected tiles, no row Add button) |
-| Artist spotlight | Yes (above ArtworkStrip) | Yes (above grid in picker) |
+| Artist spotlight | Yes (above ArtworkStrip); lamp promo when no lamp in cart in picker | Yes (above grid in picker); lamp promo when no lamp in cart |
 | Seasons (1/2) | Yes (tabs in bar) | Yes (tabs in picker bar) |
 | Filters | Yes (FilterPanel) | Yes (FilterPanel in picker) |
 | Load more | Yes (per season) | Yes (per season) |
@@ -289,3 +291,4 @@ npm run dev
 - Updated: 2026-04-06 — **Featured artist bundle ($159)**: [`experience-featured-bundle.ts`](../../../lib/shop/experience-featured-bundle.ts), seed + pricing in both experience clients + Configurator; [`OrderBar`](../../../app/(store)/shop/experience-v2/components/OrderBar.tsx) + context checkout overrides; [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) inline card + filter CTA + spotlight banner; legacy [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) forwards `featuredBundleOffer`.
 - Updated: 2026-04-06 — **Spotlight API + bundle CTA visibility**: [`artist-spotlight/route.ts`](../../../app/api/shop/artist-spotlight/route.ts) `trySeason2LatestSpotlight` and `tryShopifySpotlight` now include `products` (like collection spotlight) so clients can resolve the two-print pair and show the Filters bundle block without waiting for pagination. Filter CTA stays visible but **disabled** when either print is not `availableForSale`.
 - Updated: 2026-04-06 — **Bundle CTA placement**: Same offer as Filters — [`ArtistSpotlightBanner`](../../../app/(store)/shop/experience-v2/components/ArtistSpotlightBanner.tsx) (collapsed row + expanded card in picker / Configurator grid). On the main experience, the **lamp + two print** preview and tap target live in [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) as one centered card **above** the horizontal strip, **above** the sticky **“Choose your first artwork”** row ([`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) no longer duplicates the bundle promo).
+- Updated: 2026-04-06 — **Lamp promo in selector**: When **`lampQuantity === 0`**, [`LampSelectorPromoBanner`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.tsx) replaces the artist spotlight in [`ArtworkPickerSheet`](../../../app/(store)/shop/experience/components/ArtworkPickerSheet.tsx) and above the strip in onboarding [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) (when the lamp paywall is not active). Header opens [`ArtworkDetail`](../../../app/(store)/shop/experience-v2/components/ArtworkDetail.tsx); CTA adds the lamp. **Tests:** [`LampSelectorPromoBanner.test.tsx`](../../../app/(store)/shop/experience-v2/components/LampSelectorPromoBanner.test.tsx).

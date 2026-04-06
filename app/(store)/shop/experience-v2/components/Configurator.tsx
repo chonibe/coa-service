@@ -78,6 +78,7 @@ import { getAdPreset, resolvePresetProducts } from '@/lib/experience/ad-presets'
 import { spotlightOverridesForProduct } from '@/lib/shop/experience-spotlight-match'
 
 import { ArtistSpotlightBanner } from './ArtistSpotlightBanner'
+import { LampSelectorPromoBanner } from './LampSelectorPromoBanner'
 import { ArtworkDetail } from './ArtworkDetail'
 import {
   FilterPanel,
@@ -2170,17 +2171,33 @@ export function Configurator({
             <div
               style={showLampPaywall && gridBlurred ? { filter: 'blur(3px)', transition: 'filter 0.35s ease-out', pointerEvents: 'none' } : { filter: 'none', transition: 'filter 0.35s ease-out' }}
             >
-          {spotlightData && !showLampPaywall && (!adPreset || showAllArtworks) ? (
-            <div className="w-full">
-              <ArtistSpotlightBanner
-                spotlight={{ ...spotlightData, gifUrl: undefined }}
-                spotlightProducts={spotlightProducts}
-                onSelect={handleSpotlightSelect}
-                showBadge
-                expanded={spotlightExpanded}
-                featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
-              />
-            </div>
+          {!showLampPaywall && (!adPreset || showAllArtworks) ? (
+            lampQuantity === 0 ? (
+              <div className="w-full mb-3">
+                <LampSelectorPromoBanner
+                  lamp={lamp}
+                  priceUsd={lampPrice}
+                  detailOpen={detailProduct?.id === lamp.id}
+                  onOpenDetail={() => setDetailProduct(lamp)}
+                  onCloseDetail={() => {
+                    setDetailProduct((p) => (p?.id === lamp.id ? null : p))
+                  }}
+                  onAddLamp={() => handleLampQuantityChange(1)}
+                  showBadge
+                />
+              </div>
+            ) : spotlightData ? (
+              <div className="w-full">
+                <ArtistSpotlightBanner
+                  spotlight={{ ...spotlightData, gifUrl: undefined }}
+                  spotlightProducts={spotlightProducts}
+                  onSelect={handleSpotlightSelect}
+                  showBadge
+                  expanded={spotlightExpanded}
+                  featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
+                />
+              </div>
+            ) : null
           ) : null}
           {/* Street lamp — hidden; now in top toolbar only */}
           <div className="hidden">
