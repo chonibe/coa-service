@@ -132,8 +132,8 @@ function StickyThumb({
 }
 
 /**
- * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows thumbnails (unless `suppressCartThumbnails`), checkout, and optional add FAB.
- * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB + checkout remain.
+ * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (add-artwork FAB + cart thumbnails unless `suppressCartThumbnails`) and a **full-width checkout button below**.
+ * When `suppressCartThumbnails` (carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays on the top row above checkout.
  * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable — not in the carousel strip.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
@@ -197,9 +197,7 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const checkoutPillClass = cn(
-    'relative z-[3] flex items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98] md:px-8',
-    'min-w-[12rem] sm:min-w-[14rem]',
-    suppressCartThumbnails ? 'flex-1' : 'shrink-0',
+    'relative z-[3] flex w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98] md:px-8',
     'bg-[#047AFF] text-white hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]',
     journeyNext === 'open_checkout' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
@@ -268,24 +266,28 @@ export function ExperienceCheckoutStickyBar({
             </button>
           ) : null
         ) : (
-          <>
-            <div className="flex w-full min-w-0 items-center gap-3">
-              {onOpenPicker ? (
-                <button
-                  type="button"
-                  onClick={onOpenPicker}
-                  className={cn(openPickerFabClass, 'relative z-[3]')}
-                  aria-label="Add artwork to collection"
-                  title="Add artwork"
-                >
-                  <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
-                </button>
-              ) : null}
-              {!suppressCartThumbnails ? (
-                <>
-                  {/* Thumbnails hug the checkout button (right). Same slots on all breakpoints — lamp tiles only when lampQuantity > 0. */}
-                  <div className="flex min-w-0 flex-1 justify-end">
-                    <div className="flex max-w-full min-w-0 items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
+          <div
+            className={cn(
+              'flex w-full min-w-0 flex-col',
+              onOpenPicker || !suppressCartThumbnails ? 'gap-3' : 'gap-0'
+            )}
+          >
+            {onOpenPicker || !suppressCartThumbnails ? (
+              <div className="flex w-full min-w-0 items-center gap-3">
+                {onOpenPicker ? (
+                  <button
+                    type="button"
+                    onClick={onOpenPicker}
+                    className={cn(openPickerFabClass, 'relative z-[3] shrink-0')}
+                    aria-label="Add artwork to collection"
+                    title="Add artwork"
+                  >
+                    <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                  </button>
+                ) : null}
+                {!suppressCartThumbnails ? (
+                  <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+                    <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
                       {visibleSlots.map((slot, index) => (
                         <Fragment key={slot.key}>
                           {index > 0 && <PlusSep theme={theme} />}
@@ -315,25 +317,25 @@ export function ExperienceCheckoutStickyBar({
                       )}
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="min-w-0 flex-1" aria-hidden />
-              )}
-              <button
-                type="button"
-                onClick={openOrderBar}
-                className={checkoutPillClass}
-                aria-label={`Open checkout, total ${finalTotal.toFixed(2)} dollars`}
-              >
-                <span className="whitespace-nowrap">
-                  Checkout · ${formatPriceCompact(finalTotal)}
-                </span>
-                <span aria-hidden className="text-base leading-none">
-                  →
-                </span>
-              </button>
-            </div>
-          </>
+                ) : onOpenPicker ? (
+                  <div className="min-w-0 flex-1" aria-hidden />
+                ) : null}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={openOrderBar}
+              className={checkoutPillClass}
+              aria-label={`Open checkout, total ${finalTotal.toFixed(2)} dollars`}
+            >
+              <span className="whitespace-nowrap">
+                Checkout · ${formatPriceCompact(finalTotal)}
+              </span>
+              <span aria-hidden className="text-base leading-none">
+                →
+              </span>
+            </button>
+          </div>
         )}
       </div>
     </div>

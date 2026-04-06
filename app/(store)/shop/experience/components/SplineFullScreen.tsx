@@ -842,13 +842,13 @@ export function SplineFullScreen({
         )}
       </div>
 
-      {/* Docked back-to-top — left, compact; lifted above carousel strip (+ add artwork row) */}
+      {/* Docked back-to-top — left, compact; lifted above sticky bar (thumbnails row + full-width checkout) */}
       {hasGallery && backToTopDocked && (
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0 z-[19] flex justify-start pl-4 pr-4 md:pl-6 md:pr-6"
           style={{
             paddingBottom:
-              'calc(4.75rem + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
+              'calc(8rem + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
           }}
         >
           <button
