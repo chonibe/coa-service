@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: fix(checkout): auto-open payment when address complete; gate Place order on method (2026-04-06)
+
+**Ref:** `d32241e60`
+
+### Summary
+Experience **OrderBar** **mounts Stripe and expands payment** when the drawer opens with a **complete shipping address** (same as the first “Place order” tap). The checkout button stays **disabled** with **“Select payment method”** until a **wallet or card** is usable; removed “tap Place order” copy for the empty-payment state. **`paymentMethodReady`** in **`resolveExperienceNextAction`** keeps journey pulses on **add payment** until a method exists.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/experience-v2/components/OrderBar.tsx](app/(store)/shop/experience-v2/components/OrderBar.tsx)
+- [x] [lib/shop/experience-journey-next-action.ts](lib/shop/experience-journey-next-action.ts)
+- [x] [lib/shop/experience-journey-next-action.test.ts](lib/shop/experience-journey-next-action.test.ts)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(seo): experience pages use artist metadata, not “Experience V2” (2026-04-06)
 
 **Ref:** _(see `git log -1 --oneline` — message contains `fix(seo): experience pages use artist metadata`)_
