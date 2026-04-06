@@ -12,6 +12,7 @@ import {
   applyFilters,
   DEFAULT_FILTERS,
   type FeaturedBundleFilterOffer,
+  type FilterPanelLampOffer,
   type FilterState,
 } from '../../experience-v2/components/FilterPanel'
 import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
@@ -179,8 +180,6 @@ export function ExperienceV2Client({
   const [loadingMore, setLoadingMore] = useState(false)
 
   const [initialCart] = useState(() => loadExperienceCart())
-  const initialCartHadArtworksRef = useRef(initialCart.cartOrder.length > 0)
-  const featuredBundleSeededRef = useRef(false)
   const [cartOrder, setCartOrder] = useState<string[]>(() => initialCart.cartOrder)
   const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>(() => initialCart.lampPreviewOrder)
   const [lampQuantity, setLampQuantity] = useState(() => initialCart.lampQuantity)
@@ -531,20 +530,15 @@ export function ExperienceV2Client({
     [spotlightData, spotlightProductsFromApi, allProducts]
   )
 
-  /** One-time seed: empty saved cart → first two spotlight prints + lamp preview (featured bundle). */
+  /** Empty artwork cart: show the two spotlight prints on the lamp preview (no auto-add to cart). */
   useEffect(() => {
-    if (initialCartHadArtworksRef.current) return
-    if (featuredBundleSeededRef.current) return
-    if (!spotlightData?.productIds?.length) return
+    if (cartOrder.length > 0) return
     const pair = getSpotlightPairProducts(spotlightData, spotlightProductsFromApi, allProducts)
     if (!pair) return
     const [p1, p2] = pair
     if (!p1.availableForSale || !p2.availableForSale) return
-    featuredBundleSeededRef.current = true
-    setCartOrder([p1.id, p2.id])
     setLampPreviewOrder([p1.id, p2.id])
-    setActiveCarouselIndex(0)
-  }, [spotlightData, spotlightProductsFromApi, allProducts])
+  }, [cartOrder.length, spotlightData, spotlightProductsFromApi, allProducts])
 
   const spotlightPlaceholders = useMemo(() => {
     if (!spotlightData || cartOrder.length > 0) return []
@@ -779,6 +773,12 @@ export function ExperienceV2Client({
   const handleLampQuantityChange = useCallback((n: number) => {
     setLampQuantity(Math.max(0, n))
   }, [])
+
+  const filterPanelLampOffer = useMemo((): FilterPanelLampOffer => ({
+    product: lamp,
+    quantity: lampQuantity,
+    onAdd: () => handleLampQuantityChange(1),
+  }), [lamp, lampQuantity, handleLampQuantityChange])
 
   const getSideToShowForProduct = useCallback((order: string[], productId: string): 'A' | 'B' => {
     const productIndex = order.indexOf(productId)
@@ -1491,6 +1491,7 @@ export function ExperienceV2Client({
         spotlightBannerExpanded={spotlightExpanded}
         streetEditionByProductId={streetEditionByProductId}
         featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
+        filterPanelLamp={filterPanelLampOffer}
         artistCatalogForFilters={artistCatalogForFilters}
       />
       )}
@@ -1591,7 +1592,6 @@ export function ExperienceV2Client({
         orderSubtotal={orderTotal}
         stripMode={carouselStripMode}
         onOpenPicker={handleOpenPicker}
-        featuredBundleVendorName={featuredArtistBundleActive ? spotlightData?.vendorName : undefined}
       />
 
       <OrderBar

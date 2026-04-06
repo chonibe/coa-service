@@ -333,7 +333,7 @@ export function ArtworkCarouselBar({
                   onClick={onOpenPicker}
                   className={emptyCollectionCtaClass}
                 >
-                  <span>Choose your first artwork</span>
+                  <span>Create your own bundle</span>
                   <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
                 </button>
               </div>

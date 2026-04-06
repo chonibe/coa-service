@@ -85,6 +85,7 @@ import {
   hasActiveFilters,
   DEFAULT_FILTERS,
   type FeaturedBundleFilterOffer,
+  type FilterPanelLampOffer,
   type FilterState,
 } from './FilterPanel'
 import { useExperienceOrder } from '../ExperienceOrderContext'
@@ -909,6 +910,12 @@ export function Configurator({
       return next
     })
   }, [])
+
+  const filterPanelLampOffer = useMemo((): FilterPanelLampOffer => ({
+    product: lamp,
+    quantity: lampQuantity,
+    onAdd: () => handleLampQuantityChange(1),
+  }), [lamp, lampQuantity, handleLampQuantityChange])
 
   /** Lamp card: on ads use session skip only (card shows every new session, skip hides for current session). Else use persisted skip. */
   const showLampPaywall = lampQuantity === 0 && (adPreset ? !sessionLampPaywallSkipped : !lampPaywallSkipped)
@@ -2530,7 +2537,7 @@ export function Configurator({
         isOpen={filterOpen}
         onClose={() => setFilterOpen(false)}
         cartOrder={cartOrder}
-        featuredBundleOffer={featuredBundleFilterOffer ?? undefined}
+        filterPanelLamp={filterPanelLampOffer}
         artistCatalog={artistCatalogForFilters}
       />
 

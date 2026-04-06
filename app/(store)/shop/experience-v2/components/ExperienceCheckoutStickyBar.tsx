@@ -21,12 +21,10 @@ export interface ExperienceCheckoutStickyBarProps {
   selectedArtworks: ShopifyProduct[]
   /** Lamp + artworks subtotal before promo (same basis as OrderBar). */
   orderSubtotal: number
-  /** Opens the artwork picker; **empty collection** row uses it for “Choose your first artwork”; **≥1 artwork** uses centered FAB. */
+  /** Opens the artwork picker; **empty collection** row uses it for “Create your own bundle”; **≥1 artwork** uses centered FAB. */
   onOpenPicker?: () => void
-  /** When `collection` and there are no artworks yet, the bar shows the primary “choose artwork” CTA (not in watchlist empty state). */
+  /** When `collection` and there are no artworks yet, the bar shows the primary CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
-  /** When set, show “Featured artist bundle” label with this artist name */
-  featuredBundleVendorName?: string
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -95,7 +93,7 @@ function StickyThumb({
 }
 
 /**
- * Sticky bottom bar: **empty collection** shows “Choose your first artwork”; **≥1 artwork** shows thumbnails, checkout, and optional centered add FAB.
+ * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows thumbnails, checkout, and optional centered add FAB.
  * Featured bundle promo (lamp + two prints) lives in [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) when the collection strip is empty.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
@@ -106,7 +104,6 @@ export function ExperienceCheckoutStickyBar({
   orderSubtotal,
   onOpenPicker,
   stripMode = 'collection',
-  featuredBundleVendorName,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -140,7 +137,7 @@ export function ExperienceCheckoutStickyBar({
 
   const summaryLabel = useMemo(() => {
     if (!hasArtworks && stripMode === 'collection') {
-      return 'Choose artwork to add to your collection'
+      return 'Create your own bundle — open artwork picker'
     }
     const parts: string[] = []
     if (lampQuantity > 0) {
@@ -180,24 +177,14 @@ export function ExperienceCheckoutStickyBar({
               type="button"
               onClick={onOpenPicker}
               className={cn(chooseFirstArtworkClass, 'w-full')}
-              aria-label="Choose your first artwork"
+              aria-label="Create your own bundle"
             >
-              <span className="min-w-0 truncate">Choose your first artwork</span>
+              <span className="min-w-0 truncate">Create your own bundle</span>
               <ChevronRight className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
             </button>
           ) : null
         ) : (
           <>
-            {featuredBundleVendorName ? (
-              <p
-                className={cn(
-                  'mb-2 text-center text-xs font-semibold uppercase tracking-wide',
-                  theme === 'light' ? 'text-amber-800' : 'text-[#FFBA94]'
-                )}
-              >
-                Featured artist bundle · {featuredBundleVendorName}
-              </p>
-            ) : null}
             <div className="flex w-full min-w-0 items-center gap-3">
               {onOpenPicker ? (
                 <button
@@ -212,7 +199,6 @@ export function ExperienceCheckoutStickyBar({
               ) : null}
               {/* Thumbnails hug the checkout button (right); extra space stays left of this block. */}
               <div className="flex min-w-0 flex-1 justify-end md:hidden">
-                {/* Mobile: lamp + artworks — full strip when featured bundle (2 prints), else lamp + count */}
                 <div className="flex min-w-0 max-w-full items-center justify-end gap-1.5">
                   <div className="relative shrink-0">
                     <StickyThumb product={lamp} isLamp theme={theme} />
@@ -225,7 +211,7 @@ export function ExperienceCheckoutStickyBar({
                       </span>
                     ) : null}
                   </div>
-                  {featuredBundleVendorName && selectedArtworks.length >= 1 ? (
+                  {selectedArtworks.length >= 1 ? (
                     <>
                       {selectedArtworks.slice(0, 2).map((p) => (
                         <Fragment key={p.id}>

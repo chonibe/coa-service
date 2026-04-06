@@ -16,6 +16,7 @@ import {
   FilterPanel,
   hasActiveFilters,
   type FeaturedBundleFilterOffer,
+  type FilterPanelLampOffer,
   type FilterState,
 } from '../../experience-v2/components/FilterPanel'
 import { cn } from '@/lib/utils'
@@ -373,8 +374,10 @@ interface ArtworkPickerSheetProps {
   spotlightBannerExpanded?: boolean
   /** Numeric Shopify product id → Street Collector ladder copy */
   streetEditionByProductId?: Record<string, StreetEditionStatesRow>
-  /** Featured artist bundle CTA in filters (legacy /experience picker) */
+  /** Featured artist bundle CTA on spotlight banner (not in filter sheet) */
   featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  /** Street Lamp row in filter sheet */
+  filterPanelLamp?: FilterPanelLampOffer | null
   /** Full vendor list from collection-vendors API (all pages); overrides artist derivation from products */
   artistCatalogForFilters?: [string, number][] | null
 }
@@ -889,7 +892,7 @@ export function ArtworkPickerSheet({
                 isOpen={filterOpen}
                 onClose={onFilterClose}
                 cartOrder={cartOrder}
-                featuredBundleOffer={featuredBundleOffer ?? undefined}
+                filterPanelLamp={filterPanelLamp ?? undefined}
                 artistCatalog={artistCatalogForFilters}
               />
             )}

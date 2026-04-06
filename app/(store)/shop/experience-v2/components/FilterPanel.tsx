@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, SlidersHorizontal } from 'lucide-react'
+import { Plus, X, SlidersHorizontal } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
@@ -28,13 +30,20 @@ export const DEFAULT_FILTERS: FilterState = {
   minStarRating: null,
 }
 
-/** Optional CTA in the filter sheet: featured artist lamp + 2-print bundle. */
+/** Optional CTA in the filter sheet: featured artist lamp + 2-print bundle (carousel / spotlight banner). */
 export interface FeaturedBundleFilterOffer {
   vendorName: string
   bundleUsd: number
   compareAtUsd: number
   onApply: () => void
   disabled?: boolean
+}
+
+/** Street Lamp row in the filter sheet (replaces bundle block above Artist list). */
+export interface FilterPanelLampOffer {
+  product: ShopifyProduct
+  quantity: number
+  onAdd: () => void
 }
 
 export function hasActiveFilters(f: FilterState): boolean {
@@ -59,8 +68,8 @@ interface FilterPanelProps {
   cartOrder?: string[]
   /** When provided, called instead of global open-wishlist event (e.g. to open WishlistSwiperSheet in experience) */
   onOpenWishlist?: () => void
-  /** Featured artist bundle (lamp + 2 spotlight prints) — shown above Artist list when set */
-  featuredBundleOffer?: FeaturedBundleFilterOffer | null
+  /** Street Lamp product row with Add — shown above Artist list when set */
+  filterPanelLamp?: FilterPanelLampOffer | null
   /**
    * Full-season vendor catalog from `/api/shop/experience/collection-vendors` (paginated server-side).
    * When set, artist checklist uses this instead of deriving from `products` (avoids missing artists when only the first product page is loaded).
@@ -110,7 +119,7 @@ export function FilterPanel({
   wishlistCount = 0,
   cartOrder = [],
   onOpenWishlist,
-  featuredBundleOffer,
+  filterPanelLamp = null,
   artistCatalog = null,
 }: FilterPanelProps) {
   const filterPanelOpenLogged = useRef(false)
@@ -245,33 +254,62 @@ export function FilterPanel({
                 </div>
               </section>
 
-              {featuredBundleOffer ? (
-                <section className="rounded-xl border border-amber-200/80 bg-amber-50/90 p-3 dark:border-[#FFBA94]/35 dark:bg-[#2a2420]/90">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-900 dark:text-[#FFBA94] mb-2">
-                    Featured artist bundle
+              {filterPanelLamp ? (
+                <section className="rounded-xl border border-neutral-200/90 bg-neutral-50/90 p-3 dark:border-white/15 dark:bg-[#201c1c]/90">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-[#c4a0a0]">
+                    Street Lamp
                   </h4>
-                  <button
-                    type="button"
-                    disabled={featuredBundleOffer.disabled}
-                    onClick={() => {
-                      featuredBundleOffer.onApply()
-                      onClose()
-                    }}
-                    className={cn(
-                      'w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors',
-                      featuredBundleOffer.disabled
-                        ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
-                        : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
-                    )}
-                  >
-                    Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
-                  </button>
-                  <p className="mt-2 text-xs text-neutral-600 dark:text-[#c4a0a0] leading-snug">
-                    <span className="line-through tabular-nums text-neutral-500 dark:text-[#b89090]">
-                      ${formatPriceCompact(featuredBundleOffer.compareAtUsd)}
-                    </span>{' '}
-                    <span className="text-neutral-500 dark:text-[#b89090]">regular</span> for lamp + 2 prints
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg bg-neutral-200 dark:bg-[#2c2828]">
+                      {(() => {
+                        const raw =
+                          filterPanelLamp.product.featuredImage?.url ??
+                          filterPanelLamp.product.images?.edges?.[0]?.node?.url
+                        const src = raw ? (getShopifyImageUrl(raw, 200) ?? raw) : null
+                        return src ? (
+                          <Image
+                            src={src}
+                            alt={filterPanelLamp.product.title}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                            unoptimized
+                          />
+                        ) : null
+                      })()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8]">
+                        {filterPanelLamp.product.title}
+                      </p>
+                      <p className="mt-0.5 text-xs tabular-nums text-neutral-600 dark:text-[#b89090]">
+                        $
+                        {formatPriceCompact(
+                          parseFloat(filterPanelLamp.product.priceRange?.minVariantPrice?.amount ?? '0')
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={filterPanelLamp.quantity >= 1}
+                      onClick={() => filterPanelLamp.onAdd()}
+                      className={cn(
+                        'flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
+                        filterPanelLamp.quantity >= 1
+                          ? 'cursor-default bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
+                          : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                      )}
+                    >
+                      {filterPanelLamp.quantity >= 1 ? (
+                        'In order'
+                      ) : (
+                        <>
+                          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                          Add
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </section>
               ) : null}
 

@@ -1296,6 +1296,7 @@ export function ExperienceV2Client({
         spotlightBannerExpanded={spotlightExpanded}
         streetEditionByProductId={streetEditionByProductId}
         featuredBundleOffer={featuredBundleFilterOffer}
+        filterPanelLamp={filterPanelLampOffer}
         artistCatalogForFilters={artistCatalogForFilters}
       />
       )}
@@ -1396,7 +1397,6 @@ export function ExperienceV2Client({
         orderSubtotal={orderTotal}
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
-        featuredBundleVendorName={featuredArtistBundleActive ? spotlightData?.vendorName : undefined}
       />
 
       <OrderBar
