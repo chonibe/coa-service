@@ -1,5 +1,7 @@
 # Commit context: Artwork carousel strip — remove black overlays (2026-04-06)
 
+**Commit:** `56caae2e1` — `fix(ui): remove black overlays from experience artwork carousel strip`
+
 ## Checklist
 
 - [x] [ArtworkCarouselBar.tsx](../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) — Remove full-tile `bg-black/20` on add-lamp + spotlight placeholder tiles.
