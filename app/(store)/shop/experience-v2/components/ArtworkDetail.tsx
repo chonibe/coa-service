@@ -17,6 +17,7 @@ import {
   getProductEditionSize,
 } from '@/lib/shop/edition-stages'
 import { EditionWatchWithNarrative } from './EditionWatchWithNarrative'
+import { LampDescriptionSection, LampIncludesSpecsPanel } from './LampIncludesSpecsPanel'
 
 interface ArtistData {
   name: string
@@ -124,141 +125,33 @@ function ArtworkArtistDetailGallery({
   )
 }
 
-/** Lamp / bundle (productIncludes): no accordions — description, included items, and specs as stacked sections. */
+/** Lamp / bundle (desktop / inline column): description + unified includes/specs panel (scrolls with column). */
 function LampFlatDetailsSections({
   description,
   productDetailsLabel,
   productIncludes,
   productSpecs,
-  layout,
 }: {
   description: string
   productDetailsLabel: string
   productIncludes?: ArtworkDetailProps['productIncludes']
   productSpecs?: ArtworkDetailProps['productSpecs']
-  layout: 'mobile' | 'desktop'
 }) {
-  const wrap =
-    layout === 'mobile'
-      ? 'px-4 space-y-5 pt-5 pb-3 border-t border-neutral-100 dark:border-white/10'
-      : 'space-y-5 pt-1'
-  const hasAny =
-    description.trim() ||
-    (productIncludes && productIncludes.length > 0) ||
-    (productSpecs && productSpecs.length > 0)
-  if (!hasAny) return null
-
-  const includeIconMap = {
-    lamp: Lamp,
-    ruler: Ruler,
-    cable: Cable,
-    plug: Plug,
-    book: BookOpen,
-    magnet: Magnet,
-    package: Package,
-    gift: Gift,
-    bag: ShoppingBag,
-  } as const
-
-  const specIconMap = {
-    ruler: Ruler,
-    scale: Scale,
-    box: Box,
-    sun: Sun,
-    battery: Battery,
-    zap: Zap,
-  } as const
-
-  const afterDesc = Boolean(description.trim())
+  const hasDesc = Boolean(description.trim())
+  const hasPanel = Boolean(productIncludes?.length) || Boolean(productSpecs?.length)
+  if (!hasDesc && !hasPanel) return null
 
   return (
-    <div className={wrap}>
-      {description.trim() ? (
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
-              <ImageIcon className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-            </div>
-            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">{productDetailsLabel}</h3>
-          </div>
-          <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
-        </section>
-      ) : null}
-
-      {productIncludes && productIncludes.length > 0 ? (
-        <section
-          className={cn(
-            afterDesc && 'pt-5 mt-5 border-t border-neutral-100 dark:border-white/10'
-          )}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
-              <Package className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-            </div>
-            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">What&apos;s included</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {productIncludes.map((item, i) => {
-              const Icon = includeIconMap[item.icon]
-              return (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] text-xs font-medium"
-                >
-                  <Icon className="w-3.5 h-3.5 text-neutral-500 dark:text-[#c4a0a0] flex-shrink-0" />
-                  {item.label}
-                </span>
-              )
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {productSpecs && productSpecs.length > 0 ? (
-        <section
-          className={cn(
-            (afterDesc || (productIncludes && productIncludes.length > 0)) &&
-              'pt-5 mt-5 border-t border-neutral-100 dark:border-white/10'
-          )}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center flex-shrink-0">
-              <List className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
-            </div>
-            <h3 className="text-sm font-semibold text-neutral-800 dark:text-[#d4b8b8]">Specifications</h3>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {productSpecs.map((spec, i) => {
-              const SpecIcon = spec.icon ? specIconMap[spec.icon] : List
-              const isSingleValue = spec.items.length === 1
-              return (
-                <div
-                  key={i}
-                  className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-3"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
-                    <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-[#FFBA94] uppercase tracking-wider">
-                      {spec.title}
-                    </h4>
-                  </div>
-                  {isSingleValue ? (
-                    <p className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-snug">{spec.items[0]}</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {spec.items.map((item, j) => (
-                        <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
-                          <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-[#5c0000] mt-1.5 flex-shrink-0" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </section>
+    <div className="space-y-5 pt-1">
+      <LampDescriptionSection
+        description={description}
+        productDetailsLabel={productDetailsLabel}
+        layout="desktop"
+      />
+      {hasPanel ? (
+        <div className={cn(hasDesc && 'pt-1')}>
+          <LampIncludesSpecsPanel variant="inline" productIncludes={productIncludes} productSpecs={productSpecs} />
+        </div>
       ) : null}
     </div>
   )
@@ -716,7 +609,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               productDetailsLabel={productDetailsLabel}
               productIncludes={productIncludes}
               productSpecs={productSpecs}
-              layout="desktop"
             />
           ) : null}
           {showArtworkArtistGallery ? (
@@ -1095,7 +987,6 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                       productDetailsLabel={productDetailsLabel}
                       productIncludes={productIncludes}
                       productSpecs={productSpecs}
-                      layout="desktop"
                     />
                   ) : (
                     <>
@@ -1422,11 +1313,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
 
             {isLampOrBundleProduct ? (
-              <LampFlatDetailsSections
+              <LampDescriptionSection
                 description={description}
                 productDetailsLabel={productDetailsLabel}
-                productIncludes={productIncludes}
-                productSpecs={productSpecs}
                 layout="mobile"
               />
             ) : null}
@@ -1783,6 +1672,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   )}
                 </div>
               </div>
+              {isLampOrBundleProduct ? (
+                <LampIncludesSpecsPanel variant="sticky" productIncludes={productIncludes} productSpecs={productSpecs} />
+              ) : null}
               {isLampOrBundleProduct && !hideScarcityBar && (
                 <ScarcityBadge
                   quantityAvailable={quantityAvailable}
