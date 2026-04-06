@@ -296,8 +296,12 @@ export interface ShopifyVideo {
 export interface ShopifyExternalVideo {
   id: string
   mediaContentType: 'EXTERNAL_VIDEO'
-  host: 'YOUTUBE' | 'VIMEO'
-  embeddedUrl: string
+  /** YouTube, Vimeo, etc. */
+  host: string
+  /** Iframe embed URL (preferred; Storefront API). */
+  embedUrl?: string | null
+  /** @deprecated Use `embedUrl`; kept for older API responses. */
+  embeddedUrl?: string | null
   previewImage: ShopifyImage | null
 }
 
@@ -472,6 +476,7 @@ const PRODUCT_FRAGMENT = `
           ... on ExternalVideo {
             id
             host
+            embedUrl
             embeddedUrl
             previewImage {
               url

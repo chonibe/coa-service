@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: fix(shop): product video — Storefront `embedUrl`, webm, HLS fatal fallback (2026-04-06)
+
+**Ref:** `325cc1d6e`
+
+### Summary
+**External** product video often failed because only deprecated **`embeddedUrl`** was used; Storefront **`embedUrl`** is now queried and preferred in **[`buildProductCarouselSlides`](lib/shop/product-carousel-slides.ts)**. Native **webm** progressive sources supported; **[`ProductStandaloneVideoEmbed`](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)** uses a stable **key** on progressive `<video>`, **`preload="auto"`**, and **fatal hls.js** → direct **`src`** fallback. **Test:** [`lib/shop/product-carousel-slides.test.ts`](lib/shop/product-carousel-slides.test.ts).
+
+### Implementation Checklist
+
+- [x] [lib/shopify/storefront-client.ts](lib/shopify/storefront-client.ts)
+- [x] [lib/shop/product-carousel-slides.ts](lib/shop/product-carousel-slides.ts)
+- [x] [lib/shop/product-carousel-slides.test.ts](lib/shop/product-carousel-slides.test.ts)
+- [x] [app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx](app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(experience): carousel mini Spline — strip centering, transparent canvas, larger tile, + add (2026-04-06)
 
 **Ref:** `edcbcca25`

@@ -13,13 +13,15 @@ export type ProductCarouselSlide =
 
 function isMp4LikeSource(s: ShopifyVideoSource): boolean {
   const f = (s.format || '').toLowerCase()
-  if (f === 'mov') return true
+  if (f === 'mov' || f === 'webm') return true
   return (
     /mp4/i.test(s.mimeType || '') ||
     /mp4/i.test(s.format || '') ||
     /\.mp4(\?|$)/i.test(s.url) ||
     /\.mov(\?|$)/i.test(s.url) ||
-    /quicktime/i.test(s.mimeType || '')
+    /\.webm(\?|$)/i.test(s.url) ||
+    /quicktime/i.test(s.mimeType || '') ||
+    /webm/i.test(s.mimeType || '')
   )
 }
 
@@ -43,7 +45,8 @@ function isDefinitelyShopifyHls(s: ShopifyVideoSource): boolean {
 export function shopifyProgressiveVideoSources(sources: ShopifyVideoSource[]): ShopifyVideoSource[] {
   const formatRank = (s: ShopifyVideoSource) => {
     const f = (s.format || '').toLowerCase()
-    if (f === 'mp4') return 2
+    if (f === 'mp4') return 3
+    if (f === 'webm') return 2
     if (f === 'mov') return 1
     return 0
   }
@@ -51,7 +54,7 @@ export function shopifyProgressiveVideoSources(sources: ShopifyVideoSource[]): S
     .filter((s) => !isDefinitelyShopifyHls(s))
     .filter((s) => {
       const f = (s.format || '').toLowerCase()
-      if (f === 'mp4' || f === 'mov') return true
+      if (f === 'mp4' || f === 'mov' || f === 'webm') return true
       return isMp4LikeSource(s)
     })
     .sort((a, b) => {
@@ -74,6 +77,7 @@ export function shopifyVideoSourceTypeAttr(s: ShopifyVideoSource): string | unde
   const f = (s.format || '').toLowerCase()
   if (f === 'mp4') return 'video/mp4'
   if (f === 'mov') return 'video/quicktime'
+  if (f === 'webm') return 'video/webm'
   return undefined
 }
 
@@ -169,14 +173,18 @@ export function buildProductCarouselSlides(product: ShopifyProduct): ProductCaro
         }
         continue
       }
-      if (node.mediaContentType === 'EXTERNAL_VIDEO' && 'embeddedUrl' in node && node.embeddedUrl) {
-        out.push({
-          type: 'externalVideo',
-          id: node.id,
-          embedUrl: getExternalEmbedUrlForCarousel(node.embeddedUrl),
-          poster: node.previewImage ?? null,
-          alt: node.previewImage?.altText || title,
-        })
+      if (node.mediaContentType === 'EXTERNAL_VIDEO') {
+        const ev = node
+        const raw = ev.embedUrl?.trim() || ev.embeddedUrl?.trim() || ''
+        if (raw) {
+          out.push({
+            type: 'externalVideo',
+            id: node.id,
+            embedUrl: getExternalEmbedUrlForCarousel(raw),
+            poster: node.previewImage ?? null,
+            alt: node.previewImage?.altText || title,
+          })
+        }
         continue
       }
       if (
@@ -206,4 +214,18 @@ export function buildProductCarouselSlides(product: ShopifyProduct): ProductCaro
 
 export function carouselSlideIsNonImage(slide: ProductCarouselSlide | undefined): boolean {
   return Boolean(slide && slide.type !== 'image')
+}
+
+/** Split Shopify carousel slides so video (native + external embed) can live outside the image swipe carousel. */
+export function splitProductCarouselMediaSlides(slides: ProductCarouselSlide[]): {
+  videoSlides: ProductCarouselSlide[]
+  imageSlides: ProductCarouselSlide[]
+} {
+  const videoSlides: ProductCarouselSlide[] = []
+  const imageSlides: ProductCarouselSlide[] = []
+  for (const s of slides) {
+    if (s.type === 'image') imageSlides.push(s)
+    else videoSlides.push(s)
+  }
+  return { videoSlides, imageSlides }
 }

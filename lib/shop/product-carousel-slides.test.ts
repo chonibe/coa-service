@@ -89,6 +89,34 @@ describe('buildProductCarouselSlides', () => {
     expect(slides[1]).toMatchObject({ type: 'image', id: 'm1' })
   })
 
+  it('builds external video from embedUrl when embeddedUrl is absent (Storefront API)', () => {
+    const product = {
+      title: 'Clip',
+      media: {
+        edges: [
+          {
+            node: {
+              id: 'ev1',
+              mediaContentType: 'EXTERNAL_VIDEO' as const,
+              host: 'YOUTUBE',
+              embedUrl: 'https://www.youtube.com/embed/abc123',
+              embeddedUrl: null,
+              previewImage: { url: 'https://poster.jpg', altText: 'thumb' },
+            },
+          },
+        ],
+      },
+    } as unknown as ShopifyProduct
+
+    const slides = buildProductCarouselSlides(product)
+    expect(slides).toHaveLength(1)
+    expect(slides[0]).toMatchObject({
+      type: 'externalVideo',
+      id: 'ev1',
+    })
+    expect((slides[0] as { type: 'externalVideo' }).embedUrl).toContain('youtube.com/embed')
+  })
+
   it('falls back to images when media is empty', () => {
     const product = {
       title: 'Print',
