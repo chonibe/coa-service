@@ -2,7 +2,7 @@
 
 ## Commit: fix(admin): Polaris Switch checked state + shop discounts On/Off labels (2026-04-06)
 
-**Ref:** `TBD`
+**Ref:** `b565c3a76`
 
 ### Summary
 **[`PolarisSwitch`](components/polaris/polaris-switch.tsx)** uses **`peer` / `peer-checked`** for on-state styling (replaces label **`has-[:checked]`**). **[`/admin/shop/discounts`](app/admin/shop/discounts/page.tsx)** shows **On/Off**; only the saving row’s switch is disabled during PATCH.
