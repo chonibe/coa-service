@@ -46,6 +46,7 @@ Immersive **Explore the artists** directory at `/shop/explore-artists`, with a s
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.6 | 2026-04-06 | **saturn_png** paired to Shopify collection `686811218306` (handle `saturn-png`) in [`vendor_collections`](../../../../supabase/migrations/20260406120000_vendor_collection_saturn_png.sql) so artist profile APIs resolve collection description and products via `getCollectionById`. Apply migration on Supabase when deploying. |
 | 1.1.5 | 2026-04-03 | Optional Instagram **Business Discovery** in `GET /api/shop/artists/[slug]` when caller id + token set (`INSTAGRAM_BUSINESS_DISCOVERY_IG_USER_ID` **or** `INSTAGRAM_BUSINESS_ID`; `INSTAGRAM_ACCESS_TOKEN` **or** `INSTAGRAM_MANUAL_ACCESS_TOKEN`). Fills grid if `instagram_showcase` empty. See [`artist-profile-content-spec.md`](../artist-profile-content-spec.md) §7. |
 | 1.1.4 | 2026-04-03 | Instagram tab: **native** grid from `custom.instagram_showcase` image URLs only (no iframe); optional per-tile `link`; empty state + profile CTA when no images. See [`artist-profile-content-spec.md`](../artist-profile-content-spec.md) §7. |
 | 1.1.3 | 2026-04-03 | ~~Iframe embed~~ (removed in 1.1.4). |
