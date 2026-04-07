@@ -2,22 +2,18 @@
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
-import { HomeIcon, CreditCardIcon, XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
-import { Package, Shield, RotateCcw, Lock, Minus, Plus } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
+import { Package, Shield, RotateCcw, Lock, Minus, Plus, Loader2 } from 'lucide-react'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
-import { trackBeginCheckout, trackAddPaymentInfo } from '@/lib/google-analytics'
-import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
+import { trackBeginCheckout } from '@/lib/google-analytics'
+import { captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
-import { CheckoutProvider, useCheckout } from '@/lib/shop/CheckoutContext'
-import { CheckoutPiiPrefill } from '@/components/shop/checkout/CheckoutPiiPrefill'
-import { ExperienceQuizPrefill } from '@/components/shop/checkout/ExperienceQuizPrefill'
-import { AddressModal } from '@/components/shop/checkout/AddressModal'
+import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
-import { Checkbox, Label } from '@/components/ui'
 import {
   experienceArtworkUnitUsd,
   normalizeExperienceProductKey,
@@ -31,23 +27,8 @@ import {
 import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
 import {
   EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
-  EXPERIENCE_JOURNEY_PAYMENT_TEXT_HIGHLIGHT_CLASS,
   resolveExperienceNextAction,
 } from '@/lib/shop/experience-journey-next-action'
-
-// Lazy-load PaymentStep (Stripe React SDK + hCaptcha + Google Pay) only when the
-// payment section is expanded by the user — keeps them off the initial experience bundle.
-const PaymentStep = dynamic(
-  () => import('@/components/shop/checkout/PaymentStep').then((m) => ({ default: m.PaymentStep })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-8">
-        <div className="w-5 h-5 border-2 border-neutral-300 border-t-[#047AFF] rounded-full animate-spin" />
-      </div>
-    ),
-  }
-)
 
 /** Compact ± controls — globals.css gives all buttons min 44×44; qty-stepper-compact opts out */
 const qtyStepperBtnClass =
@@ -169,36 +150,15 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [addressModalOpen, setAddressModalOpen] = useState(false)
-  const [paymentSectionExpanded, setPaymentSectionExpanded] = useState(false)
-  const [billingModalOpen, setBillingModalOpen] = useState(false)
-  const [preloadedClientSecret, setPreloadedClientSecret] = useState<string | null>(null)
-  /** True after Place order is clicked (with address). Keeps PaymentStep mounted when section collapsed. Reset when drawer closes. */
-  const [paymentStripeUnlocked, setPaymentStripeUnlocked] = useState(false)
-  const paymentStripeActive = paymentStripeUnlocked
-  const [enteredCardInfo, setEnteredCardInfo] = useState<{ brand: string; last4: string } | null>(null)
-  const { promoDiscount, pickerEngaged, setOrderDrawerOpen } = useExperienceOrder()
-  const checkout = useCheckout()
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const { promoDiscount, promoCode, pickerEngaged, setOrderDrawerOpen } = useExperienceOrder()
+  const { user } = useShopAuthContext()
+  const pathname = usePathname()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
-
-  const firedBeginCheckoutRef = useRef(false)
-  const firedAddPaymentInfoRef = useRef(false)
-  /** One auto-open of Stripe per drawer session when shipping address is already complete */
-  const autoOpenedPaymentForDrawerRef = useRef(false)
 
   useExperienceOpenOrder(() => {
     setDrawerOpen(true)
-    firedBeginCheckoutRef.current = false
-    firedAddPaymentInfoRef.current = false
   })
-
-  useEffect(() => {
-    if (!drawerOpen) {
-      setPaymentStripeUnlocked(false)
-      setPreloadedClientSecret(null)
-      autoOpenedPaymentForDrawerRef.current = false
-    }
-  }, [drawerOpen])
 
   useEffect(() => {
     setOrderDrawerOpen(drawerOpen)
@@ -285,51 +245,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
 
-  // E-commerce: track begin_checkout when order drawer opens with items
-  useEffect(() => {
-    if (!drawerOpen) {
-      firedBeginCheckoutRef.current = false
-      return
-    }
-    if (itemCount === 0) return
-    if (firedBeginCheckoutRef.current) return
-    firedBeginCheckoutRef.current = true
-    const artworkLineItems: ReturnType<typeof storefrontProductToItem>[] = []
-    let ai = 0
-    while (ai < selectedArtworks.length) {
-      const p = selectedArtworks[ai]
-      const unit = artworkUnitUsd(p, ai)
-      let aj = ai + 1
-      while (aj < selectedArtworks.length) {
-        const p2 = selectedArtworks[aj]
-        if (p2.id !== p.id) break
-        const u2 = artworkUnitUsd(p2, aj)
-        if (Math.round(u2 * 100) !== Math.round(unit * 100)) break
-        aj++
-      }
-      const qty = aj - ai
-      const pAdj =
-        unit !== storefrontVariantUsd(p)
-          ? ({
-              ...p,
-              priceRange: {
-                minVariantPrice: { amount: String(unit), currencyCode: 'USD' },
-                maxVariantPrice: { amount: String(unit), currencyCode: 'USD' },
-              },
-            } as ShopifyProduct)
-          : p
-      artworkLineItems.push(storefrontProductToItem(pAdj, p.variants?.edges?.[0]?.node, qty))
-      ai = aj
-    }
-    const items =
-      lampQuantity > 0
-        ? [storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity), ...artworkLineItems]
-        : artworkLineItems
-    trackBeginCheckout(items, total, 'USD', {
-      em: checkout.address?.email || undefined,
-    })
-  }, [drawerOpen, itemCount, lampQuantity, lamp, selectedArtworks, total, artworkUnitUsd])
-
   const buildLineItems = useCallback(() => {
     const items: Array<{
       productId: string
@@ -337,6 +252,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       variantGid: string
       handle: string
       title: string
+      variantTitle?: string
       price: number
       quantity: number
       image?: string
@@ -350,6 +266,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           variantGid: lamp.variants?.edges?.[0]?.node?.id ?? '',
           handle: lamp.handle,
           title: lamp.title,
+          variantTitle: lamp.variants?.edges?.[0]?.node?.title ?? undefined,
           price,
           quantity: 1,
           image: lamp.featuredImage?.url ?? undefined,
@@ -380,6 +297,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         variantGid: art.variants?.edges?.[0]?.node?.id ?? '',
         handle: art.handle,
         title: art.title,
+        variantTitle: art.variants?.edges?.[0]?.node?.title ?? undefined,
         price: unit,
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
@@ -389,75 +307,107 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     return items
   }, [lamp, lampQuantity, lampPrices, selectedArtworks, artworkUnitUsd])
 
-  /* Preload checkout session when cart drawer opens – payment dialog loads instantly */
-  const preloadKeyRef = React.useRef<string>('')
-  React.useEffect(() => {
-    const key = JSON.stringify({
-      items: buildLineItems().map((i) => i.variantId + ':' + i.quantity + ':' + i.price),
-      address: checkout.address
-        ? `${checkout.address.country}|${checkout.address.postalCode}|${checkout.address.addressLine1}`
-        : '',
-    })
-    if (preloadKeyRef.current && preloadKeyRef.current !== key) {
-      setPreloadedClientSecret(null)
+  const buildGaProductItems = useCallback((): ReturnType<typeof storefrontProductToItem>[] => {
+    const artworkLineItems: ReturnType<typeof storefrontProductToItem>[] = []
+    let ai = 0
+    while (ai < selectedArtworks.length) {
+      const p = selectedArtworks[ai]
+      const unit = artworkUnitUsd(p, ai)
+      let aj = ai + 1
+      while (aj < selectedArtworks.length) {
+        const p2 = selectedArtworks[aj]
+        if (p2.id !== p.id) break
+        const u2 = artworkUnitUsd(p2, aj)
+        if (Math.round(u2 * 100) !== Math.round(unit * 100)) break
+        aj++
+      }
+      const qty = aj - ai
+      const pAdj =
+        unit !== storefrontVariantUsd(p)
+          ? ({
+              ...p,
+              priceRange: {
+                minVariantPrice: { amount: String(unit), currencyCode: 'USD' },
+                maxVariantPrice: { amount: String(unit), currencyCode: 'USD' },
+              },
+            } as ShopifyProduct)
+          : p
+      artworkLineItems.push(storefrontProductToItem(pAdj, p.variants?.edges?.[0]?.node, qty))
+      ai = aj
     }
-    preloadKeyRef.current = key
-  })
-  React.useEffect(() => {
-    if (!drawerOpen || itemCount === 0 || !allAvailable) return
-    // Only preload Stripe after the user opens payment (avoids Link/email verification on drawer open)
-    if (!paymentStripeActive) return
-    // Don't preload until we have address with email — ensures PayPal orders get customer details
-    if (!checkout.address?.email?.trim()) return
-    const items = buildLineItems()
-    if (items.length === 0) return
+    return lampQuantity > 0
+      ? [storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity), ...artworkLineItems]
+      : artworkLineItems
+  }, [lamp, lampQuantity, selectedArtworks, artworkUnitUsd])
 
-    const shippingAddress = checkout.address
-      ? {
-          email: checkout.address.email,
-          fullName: checkout.address.fullName,
-          country: checkout.address.country,
-          addressLine1: checkout.address.addressLine1,
-          addressLine2: checkout.address.addressLine2,
-          city: checkout.address.city,
-          state: checkout.address.state,
-          postalCode: checkout.address.postalCode,
-          phoneNumber: checkout.address.phoneNumber,
-        }
-      : {
-          email: '',
-          fullName: '',
-          country: '',
-          addressLine1: '',
-          addressLine2: '',
-          city: '',
-          state: '',
-          postalCode: '',
-          phoneNumber: '',
-        }
-
-    let cancelled = false
-    fetch('/api/checkout/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items,
-        customerEmail: checkout.address?.email,
-        shippingAddress,
-      }),
-    })
-      .then(async (r) => {
-        if (cancelled) return
-        const data = await r.json()
-        if (!r.ok) return
-        if (data.clientSecret) setPreloadedClientSecret(data.clientSecret)
+  const handleContinueToHostedCheckout = useCallback(async () => {
+    setError(null)
+    if (itemCount === 0 || !allAvailable) return
+    setIsCheckingOut(true)
+    try {
+      const lineItems = buildLineItems().map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        variantGid: item.variantGid,
+        handle: item.handle,
+        title: item.title,
+        variantTitle: item.variantTitle,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      }))
+      const cancelBase =
+        typeof window !== 'undefined' && pathname
+          ? `${window.location.origin}${pathname.split('?')[0]}`
+          : ''
+      const response = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: lineItems,
+          creditsToUse: 0,
+          shippingRequired: true,
+          customerEmail: user?.email || undefined,
+          promoCode: promoCode?.trim() || undefined,
+          cancelUrl: cancelBase ? `${cancelBase}?cancelled=true` : undefined,
+        }),
       })
-      .catch(() => {})
-
-    return () => {
-      cancelled = true
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout')
+      }
+      const productItems = buildGaProductItems()
+      if (productItems.length > 0) {
+        trackBeginCheckout(productItems, total, 'USD', {
+          em: user?.email || undefined,
+        })
+      }
+      if (data.type === 'credit_only' || data.type === 'zero_dollar') {
+        window.location.href = data.completeUrl
+        return
+      }
+      if (data.url) {
+        window.location.href = data.url
+        return
+      }
+      throw new Error('No checkout URL returned')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong.'
+      setError(message)
+      setIsCheckingOut(false)
+      captureCheckoutError({ error_message: message, source: 'experience_order_bar' })
+      tagSessionForReplay('checkout-error')
     }
-  }, [drawerOpen, itemCount, allAvailable, buildLineItems, checkout.address, paymentStripeActive])
+  }, [
+    allAvailable,
+    buildGaProductItems,
+    buildLineItems,
+    itemCount,
+    pathname,
+    promoCode,
+    total,
+    user?.email,
+  ])
 
   const handleTestZeroOrder = useCallback(async () => {
     setError(null)
@@ -496,107 +446,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   useImperativeHandle(ref, () => ({ testZeroOrder: handleTestZeroOrder }), [handleTestZeroOrder])
 
-  const handleAddressSave = (addr: typeof checkout.address) => {
-    checkout.setAddress(addr)
-    setAddressModalOpen(false)
-    if (addr) {
-      captureAddShippingInfo([], undefined, addr.country)
-      captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved', context: 'experience' })
-    }
-  }
-
-  const handlePaymentSuccess = (redirectUrl: string) => {
-    if (!redirectUrl || typeof redirectUrl !== 'string') {
-      setError('Redirect URL was not received. Please try again.')
-      return
-    }
-    try {
-      fetch('/api/debug/checkout-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stage: 'redirect',
-          hasRedirectUrl: true,
-          message: 'navigating to PayPal',
-        }),
-      }).catch(() => {})
-    } catch {
-      /* ignore */
-    }
-    window.location.href = redirectUrl
-  }
-
   const handleClose = () => {
     setDrawerOpen(false)
   }
-
-  const hasAddress = checkout.isAddressComplete()
-
-  /** Wallet / card ready — not merely "payment section expanded" */
-  const hasUsablePaymentMethod = React.useMemo(() => {
-    const dt = checkout.paymentMethodDisplayType
-    if (!dt) return false
-    if (dt === 'google_pay' || dt === 'paypal') return true
-    if (dt === 'card' || dt === 'link') {
-      return !!(checkout.savedCard || enteredCardInfo)
-    }
-    return false
-  }, [checkout.paymentMethodDisplayType, checkout.savedCard, enteredCardInfo])
-
-  // Same as tapping Place order once with a complete address: mount Stripe + expand payment (no extra tap)
-  useEffect(() => {
-    if (!drawerOpen) return
-    if (!hasAddress || itemCount === 0 || !allAvailable) return
-    if (autoOpenedPaymentForDrawerRef.current) return
-    autoOpenedPaymentForDrawerRef.current = true
-    setPaymentStripeUnlocked(true)
-    setPaymentSectionExpanded(true)
-  }, [drawerOpen, hasAddress, itemCount, allAvailable])
-
-  const paymentFormRef = React.useRef<HTMLFormElement | null>(null)
-  const handlePlaceOrderClick = () => {
-    if (!hasAddress) {
-      setAddressModalOpen(true)
-      return
-    }
-    setPaymentStripeUnlocked(true)
-    if (!paymentSectionExpanded) {
-      setPaymentSectionExpanded(true)
-      return
-    }
-    if (!hasUsablePaymentMethod) return
-    if (paymentFormRef.current) {
-      paymentFormRef.current.requestSubmit()
-    } else {
-      setPaymentSectionExpanded(true)
-    }
-  }
-
-  const paymentMethodLabel = React.useMemo(() => {
-    if (checkout.savedCard && (checkout.paymentMethod === 'card' || checkout.paymentMethod === 'link')) {
-      const brand = checkout.savedCard.brand.charAt(0).toUpperCase() + checkout.savedCard.brand.slice(1)
-      return `${brand} ending in ${checkout.savedCard.last4}`
-    }
-    const displayType = checkout.paymentMethodDisplayType ?? 'google_pay'
-    if ((displayType === 'card' || displayType === 'link') && enteredCardInfo) {
-      const brand = enteredCardInfo.brand.charAt(0).toUpperCase() + enteredCardInfo.brand.slice(1)
-      return `${brand} ending in ${enteredCardInfo.last4}`
-    }
-    switch (displayType) {
-      case 'google_pay':
-        return 'Google Pay'
-      case 'paypal':
-        return 'PayPal account'
-      case 'link':
-        return 'Link'
-      case 'card':
-        return 'Card'
-      default:
-        return 'Payment'
-    }
-  }, [checkout.savedCard, checkout.paymentMethod, checkout.paymentMethodDisplayType, enteredCardInfo])
-
-  const hasPaymentSelection = paymentSectionExpanded || !!checkout.paymentMethodDisplayType
 
   const journeyNextAction = React.useMemo(
     () =>
@@ -605,80 +457,16 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         artworkCount: selectedArtworks.length,
         pickerEngaged,
         orderDrawerOpen: drawerOpen,
-        hasAddress,
-        hasPaymentSelection,
-        paymentSectionExpanded,
-        paymentStripeUnlocked,
-        paymentMethodReady: hasUsablePaymentMethod,
+        hasAddress: false,
+        hasPaymentSelection: false,
+        paymentSectionExpanded: false,
+        paymentStripeUnlocked: false,
+        stripeHostedInDrawer: true,
       }),
-    [
-      lampQuantity,
-      selectedArtworks.length,
-      pickerEngaged,
-      drawerOpen,
-      hasAddress,
-      hasPaymentSelection,
-      paymentSectionExpanded,
-      paymentStripeUnlocked,
-      hasUsablePaymentMethod,
-    ]
+    [lampQuantity, selectedArtworks.length, pickerEngaged, drawerOpen]
   )
 
   const journeyHighlight = EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
-
-  /* ─── Summary rows (Address, Payment, Promo) ─── */
-  const addressRow = (
-    <button
-      type="button"
-      onClick={() => setAddressModalOpen(true)}
-      data-testid="add-address-button"
-      className={cn(
-        'flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow',
-        journeyNextAction === 'add_address' && journeyHighlight
-      )}
-    >
-      <span className="flex items-center gap-3">
-        <HomeIcon className={cn('w-5 h-5 shrink-0', !hasAddress ? 'text-[#047AFF]' : 'text-neutral-500')} />
-        <span data-testid="add-address-button-text" className={hasAddress ? 'text-neutral-900 dark:text-[#f0e8e8]' : 'text-[#047AFF] dark:text-[#60A5FA] font-medium'}>
-          {hasAddress ? `${checkout.address!.fullName}, ${checkout.address!.city}, ${checkout.address!.country}` : 'Add Address'}
-        </span>
-      </span>
-      {hasAddress && (
-        <span className="text-neutral-500 dark:text-experience-highlight/80 hover:text-neutral-700 dark:hover:text-[#FFBA94]">Change</span>
-      )}
-    </button>
-  )
-
-  const paymentRow = (
-    <button
-      type="button"
-      onClick={() => setPaymentSectionExpanded((p) => !p)}
-      data-testid="add-payment-method-button"
-      className="flex w-full items-center justify-between gap-2 py-2.5 text-left rounded-xl transition-shadow"
-    >
-      <span className="flex items-center gap-3">
-        <CreditCardIcon className={cn('w-5 h-5 shrink-0', !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-500 dark:text-[#c4a0a0]')} />
-        <span
-          data-testid="add-payment-method-button-text"
-          className={cn(
-            journeyNextAction === 'add_payment'
-              ? EXPERIENCE_JOURNEY_PAYMENT_TEXT_HIGHLIGHT_CLASS
-              : cn(
-                  'font-medium',
-                  !hasPaymentSelection ? 'text-[#047AFF] dark:text-[#60A5FA]' : 'text-neutral-900 dark:text-[#f0e8e8]'
-                )
-          )}
-        >
-          {hasPaymentSelection ? paymentMethodLabel : 'Add payment method'}
-        </span>
-      </span>
-      {(paymentSectionExpanded || hasPaymentSelection) && (
-        <span className="text-neutral-400 dark:text-[#b89090] hover:text-neutral-600 dark:hover:text-[#d4b8b8] transition-colors">
-          {paymentSectionExpanded ? 'Done' : 'Change'}
-        </span>
-      )}
-    </button>
-  )
 
   /* ─── Order summary & cart ─── */
   const lampOriginalTotal = lampQuantity * lampPrice
@@ -840,32 +628,27 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     </div>
   )
 
-  const getCheckoutButtonVariant = (): 'google_pay' | 'paypal' | 'default' => {
-    const displayType = checkout.paymentMethodDisplayType
-    if (displayType === 'google_pay') return 'google_pay'
-    if (displayType === 'paypal')
-      return 'paypal'
-    return 'default'
-  }
-
   const finalTotal = Math.max(0, total - promoDiscount)
-  const checkoutButtonDisabled = itemCount === 0 || !allAvailable || !hasUsablePaymentMethod
-  const placeOrderButtonLabel =
-    hasAddress && itemCount > 0 && allAvailable && !hasUsablePaymentMethod ? (
-      <span>Select payment method</span>
-    ) : null
+  const checkoutButtonDisabled = itemCount === 0 || !allAvailable || isCheckingOut
   const placeOrderButton = (
     <CheckoutButton
-      variant={getCheckoutButtonVariant()}
+      variant="default"
       amount={finalTotal}
       disabled={checkoutButtonDisabled}
-      onClick={handlePlaceOrderClick}
+      onClick={handleContinueToHostedCheckout}
       className={cn(
         'text-sm relative',
         journeyNextAction === 'place_order' && journeyHighlight
       )}
     >
-      {placeOrderButtonLabel}
+      {isCheckingOut ? (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin shrink-0" aria-hidden />
+          Redirecting…
+        </>
+      ) : (
+        'Continue to secure checkout'
+      )}
     </CheckoutButton>
   )
 
@@ -904,171 +687,12 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         {/* Single checkout screen - Top (compressed), divider, Items section — min-h-0 enables scroll */}
         <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal scrollbar-prominent">
           <div className="px-6 pb-6">
-            {/* Top: Checkout title, Address, Payment — compressed */}
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-3">Checkout</h3>
-              {addressRow}
-              {paymentRow}
-              {/* Stripe mounts only after Place order is clicked — avoids Link verification on drawer load */}
-              {itemCount > 0 && allAvailable && (
-                <div
-                  className={cn(
-                    'overflow-hidden transition-[max-height] duration-200 ease-out flex flex-col',
-                    paymentSectionExpanded ? 'max-h-[70vh]' : 'max-h-0'
-                  )}
-                  aria-hidden={!paymentSectionExpanded}
-                >
-                  <div className="pt-3 space-y-4 border-t border-neutral-200 dark:border-white/10 mt-2 overflow-y-auto min-h-0 max-h-[70vh] scrollbar-prominent">
-                    {paymentStripeActive ? (
-                    <PaymentStep
-                      compact
-                      formId="checkout-payment-form"
-                      formRef={paymentFormRef}
-                      items={buildLineItems()}
-                      subtotal={lampTotal + artworksTotal}
-                      discount={lampSavings}
-                      shipping={0}
-                      total={total}
-                      itemCount={itemCount}
-                      customerEmail={checkout.address?.email}
-                      shippingAddress={
-                        checkout.address
-                          ? {
-                              email: checkout.address.email,
-                              fullName: checkout.address.fullName,
-                              country: checkout.address.country,
-                              addressLine1: checkout.address.addressLine1,
-                              addressLine2: checkout.address.addressLine2,
-                              city: checkout.address.city,
-                              state: checkout.address.state,
-                              postalCode: checkout.address.postalCode,
-                              phoneNumber: checkout.address.phoneNumber,
-                            }
-                          : {
-                              email: '',
-                              fullName: '',
-                              country: '',
-                              addressLine1: '',
-                              addressLine2: '',
-                              city: '',
-                              state: '',
-                              postalCode: '',
-                              phoneNumber: '',
-                            }
-                      }
-                      onSuccess={handlePaymentSuccess}
-                      onError={(msg) => {
-                        setError(msg)
-                        captureFunnelEvent(FunnelEvents.payment_error, { error_message: msg, source: 'experience_order_bar' })
-                        tagSessionForReplay('payment-error')
-                      }}
-                      onPaymentMethodChange={(type, cardInfo) => {
-                        const displayType = type === 'google_pay' ? 'google_pay' : type === 'paypal' || type === 'external_paypal' ? 'paypal' : type === 'link' ? 'link' : 'card'
-                        if (type === 'google_pay' && checkout.paymentMethodDisplayType && checkout.paymentMethodDisplayType !== 'google_pay') return
-                        const method: 'link' | 'paypal' | 'card' = displayType === 'google_pay' || displayType === 'link' ? 'link' : displayType === 'paypal' ? 'paypal' : 'card'
-                        checkout.setPaymentMethod(method)
-                        checkout.setPaymentMethodDisplayType(displayType)
-                        if (displayType !== 'card' && displayType !== 'link') {
-                          checkout.setSavedCard(null)
-                          setEnteredCardInfo(null)
-                        } else if (cardInfo) {
-                          setEnteredCardInfo(cardInfo)
-                        } else {
-                          setEnteredCardInfo(null)
-                        }
-                        // E-commerce: track add_payment_info once per checkout session
-                        if (!firedAddPaymentInfoRef.current && selectedArtworks.length + lampQuantity > 0) {
-                          firedAddPaymentInfoRef.current = true
-                          const artworkGa: ReturnType<typeof storefrontProductToItem>[] = []
-                          let gai = 0
-                          while (gai < selectedArtworks.length) {
-                            const gp = selectedArtworks[gai]
-                            let gaj = gai + 1
-                            while (gaj < selectedArtworks.length && selectedArtworks[gaj].id === gp.id) gaj++
-                            const gqty = gaj - gai
-                            const gUnit = experienceArtworkUnitUsd(gp, priceMaps)
-                            const gpAdj =
-                              gUnit !== storefrontVariantUsd(gp)
-                                ? ({
-                                    ...gp,
-                                    priceRange: {
-                                      minVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
-                                      maxVariantPrice: { amount: String(gUnit), currencyCode: 'USD' },
-                                    },
-                                  } as ShopifyProduct)
-                                : gp
-                            artworkGa.push(
-                              storefrontProductToItem(gpAdj, gp.variants?.edges?.[0]?.node, gqty)
-                            )
-                            gai = gaj
-                          }
-                          const items =
-                            lampQuantity > 0
-                              ? [
-                                  storefrontProductToItem(lamp, lamp.variants?.edges?.[0]?.node, lampQuantity),
-                                  ...artworkGa,
-                                ]
-                              : artworkGa
-                          trackAddPaymentInfo(displayType, items, total, 'USD', {
-                            em: checkout.address?.email || undefined,
-                          })
-                        }
-                      }}
-                      preloadedClientSecret={preloadedClientSecret}
-                    />
-                    ) : (
-                      <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] py-2">
-                        Add your payment details below.
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1" aria-hidden />
-                      <button
-                        type="button"
-                        onClick={() => setPaymentSectionExpanded(false)}
-                        data-testid="payment-done-button"
-                        className={cn(
-                          'text-sm text-[#047AFF] dark:text-[#60A5FA] hover:text-[#0366d6] dark:hover:text-[#93C5FD] rounded-lg px-2 py-1.5 min-h-[44px] min-w-[44px]',
-                          journeyNextAction === 'payment_done' ? 'font-semibold' : 'font-medium'
-                        )}
-                      >
-                        Done
-                      </button>
-                    </div>
-                    <div className="border-t border-neutral-200 dark:border-white/10 pt-4 mt-2">
-                      <h3 className="text-sm font-medium text-neutral-950 dark:text-[#FFBA94] mb-3">Billing address</h3>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="same-as-address-exp"
-                          checked={checkout.sameAsShipping}
-                          onCheckedChange={(c) => {
-                            checkout.setSameAsShipping(!!c)
-                            if (c) checkout.setBillingAddress(null)
-                          }}
-                        />
-                        <Label htmlFor="same-as-address-exp" className="text-sm text-neutral-700 dark:text-[#d4b8b8] cursor-pointer">
-                          Same as Address
-                        </Label>
-                      </div>
-                      {!checkout.sameAsShipping && (
-                        <div className="mt-3">
-                          <button
-                            type="button"
-                            onClick={() => setBillingModalOpen(true)}
-                            className="w-full rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-left text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50"
-                          >
-                            {checkout.billingAddress
-                              ? `${checkout.billingAddress.addressLine1}, ${checkout.billingAddress.city}`
-                              : 'Add billing address'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-2">Checkout</h3>
+              <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] mb-4">
+                Shipping address and payment are completed securely on the next step (Stripe).
+              </p>
             </div>
-            {/* Divider + Items section: order summary */}
             <div className="border-t border-neutral-200 dark:border-white/10 pt-5">
               {orderSummary}
             </div>
@@ -1098,35 +722,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           </div>
         </div>
       </div>
-
-      <AddressModal
-        open={addressModalOpen}
-        onOpenChange={setAddressModalOpen}
-        initialAddress={checkout.address}
-        onSave={handleAddressSave}
-        billingAddress={!checkout.sameAsShipping ? checkout.billingAddress : null}
-      />
-
-      <AddressModal
-        open={billingModalOpen}
-        onOpenChange={setBillingModalOpen}
-        initialAddress={checkout.sameAsShipping ? undefined : (checkout.billingAddress ?? undefined)}
-        onSave={(addr) => {
-          checkout.setBillingAddress(addr)
-          setBillingModalOpen(false)
-        }}
-        addressType="billing"
-      />
     </div>
   )
 })
 
-export const OrderBar = forwardRef<OrderBarRef, OrderBarProps>(function OrderBar(props, ref) {
-  return (
-    <CheckoutProvider storageKey="sc-experience-checkout">
-      <CheckoutPiiPrefill />
-      <ExperienceQuizPrefill />
-      <OrderBarInner {...props} ref={ref} />
-    </CheckoutProvider>
-  )
-})
+export const OrderBar = OrderBarInner

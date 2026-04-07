@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Gift, Loader2, ChevronRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
-import { GiftCardCheckoutDrawer } from './components/GiftCardCheckoutDrawer'
 import { GiftCardPreview } from './components/GiftCardPreview'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,8 @@ const MIN_CENTS = 10 // $0.10 (for testing)
 const MAX_CENTS = 50000
 
 export default function GiftCardsPage() {
+  const searchParams = useSearchParams()
+  const cancelled = searchParams.get('cancelled') === 'true'
   const { user, isAuthenticated } = useShopAuthContext()
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
@@ -36,9 +38,6 @@ export default function GiftCardsPage() {
   const [senderName, setSenderName] = useState('')
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [checkoutDrawerOpen, setCheckoutDrawerOpen] = useState(false)
-  const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null)
-  const [checkoutLineLabel, setCheckoutLineLabel] = useState('')
 
   const customCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : 0
   const amountCents = selectedAmount ?? (customCents >= MIN_CENTS ? customCents : 0)
@@ -85,22 +84,16 @@ export default function GiftCardsPage() {
         throw new Error(data.error || 'Failed to create checkout')
       }
 
-      if (data.clientSecret) {
-        setCheckoutLineLabel(`Gift Card - $${(amountCents / 100).toFixed(2)}`)
-        setCheckoutClientSecret(data.clientSecret)
-        setCheckoutDrawerOpen(true)
-      } else {
-        throw new Error('No checkout session returned')
+      if (data.url) {
+        window.location.href = data.url
+        return
       }
+      throw new Error('No checkout URL returned')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsCheckingOut(false)
     }
-  }
-
-  const handleCheckoutSuccess = (redirectUrl: string) => {
-    window.location.href = redirectUrl
   }
 
   const amountDollars = (amountCents / 100).toFixed(2)
@@ -119,6 +112,12 @@ export default function GiftCardsPage() {
             Who&apos;s the lucky recipient?
           </p>
         </div>
+
+        {cancelled && (
+          <div className="mb-6 max-w-2xl mx-auto p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-900 dark:text-amber-200">
+            Checkout was cancelled. Your gift card details are still here if you want to try again.
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 max-w-2xl mx-auto p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
@@ -319,22 +318,6 @@ export default function GiftCardsPage() {
             </div>
           </div>
         </div>
-
-        {checkoutClientSecret && (
-          <GiftCardCheckoutDrawer
-            open={checkoutDrawerOpen}
-            onClose={() => {
-              setCheckoutDrawerOpen(false)
-              setCheckoutClientSecret(null)
-            }}
-            clientSecret={checkoutClientSecret}
-            amountCents={amountCents}
-            lineItemLabel={checkoutLineLabel}
-            customerEmail={isAuthenticated && user?.email ? user.email : undefined}
-            onSuccess={handleCheckoutSuccess}
-            onError={(msg) => setError(msg)}
-          />
-        )}
 
         <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-[#201c1c]/50">
           <h3 className="font-semibold text-neutral-900 dark:text-[#f0e8e8] mb-2">How it works</h3>

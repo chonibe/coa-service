@@ -28,7 +28,7 @@ interface CreateGiftCardCheckoutRequest {
 /**
  * POST /api/gift-cards/create-checkout
  *
- * Creates a Stripe Checkout Session for gift card purchase (redirect flow).
+ * Creates a Stripe-hosted Checkout Session for gift card purchase (redirect via `url`).
  * On payment success, webhook provisions Stripe coupon + promotion code and emails the code.
  */
 const GIFT_CARD_RATE_LIMIT = 10 // requests per minute per IP
@@ -122,7 +122,6 @@ export async function POST(request: NextRequest) {
     const lineItemDesc = 'Digital gift card redeemable at checkout. Code will be emailed after purchase.'
 
     const session = await stripe.checkout.sessions.create({
-      ui_mode: 'custom',
       mode: 'payment',
       payment_method_types: ['card', 'link', 'paypal'],
       line_items: [
@@ -143,7 +142,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata,
-      return_url: `${baseUrl}/shop/gift-cards/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/shop/gift-cards/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/shop/gift-cards?cancelled=true`,
       allow_promotion_codes: false,
       billing_address_collection: 'auto',
       payment_intent_data: {
@@ -156,8 +156,13 @@ export async function POST(request: NextRequest) {
           : {}),
     })
 
+    if (!session.url) {
+      console.error('[gift-cards/create-checkout] Missing session.url for hosted Checkout')
+      return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
+    }
+
     return NextResponse.json({
-      clientSecret: session.client_secret,
+      url: session.url,
       sessionId: session.id,
     })
   } catch (err: unknown) {

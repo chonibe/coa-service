@@ -47,6 +47,20 @@ describe('resolveExperienceNextAction', () => {
     ).toBe('open_checkout')
   })
 
+  it('returns place_order when drawer open with artworks and stripeHostedInDrawer (hosted Checkout)', () => {
+    expect(
+      resolveExperienceNextAction(
+        base({
+          pickerEngaged: true,
+          lampQuantity: 1,
+          artworkCount: 1,
+          orderDrawerOpen: true,
+          stripeHostedInDrawer: true,
+        })
+      )
+    ).toBe('place_order')
+  })
+
   it('returns add_address when drawer open without address', () => {
     expect(
       resolveExperienceNextAction(

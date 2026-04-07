@@ -31,6 +31,11 @@ export interface ExperienceJourneyNextActionInput {
    * Controls `add_payment` vs `place_order` when the section is open but no method is chosen yet.
    */
   paymentMethodReady?: boolean
+  /**
+   * When true (experience OrderBar with Stripe hosted Checkout), skip in-drawer address/payment substeps:
+   * drawer open with artworks → pulse `place_order` only.
+   */
+  stripeHostedInDrawer?: boolean
 }
 
 /**
@@ -62,6 +67,7 @@ export function resolveExperienceNextAction(
     paymentSectionExpanded,
     paymentStripeUnlocked,
     paymentMethodReady,
+    stripeHostedInDrawer,
   } = input
 
   const paymentReady =
@@ -78,6 +84,9 @@ export function resolveExperienceNextAction(
   }
   if (!orderDrawerOpen && artworkCount >= 1) {
     return 'open_checkout'
+  }
+  if (stripeHostedInDrawer && orderDrawerOpen && artworkCount >= 1) {
+    return 'place_order'
   }
   if (orderDrawerOpen && !hasAddress) {
     return 'add_address'
