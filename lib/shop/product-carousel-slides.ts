@@ -6,6 +6,29 @@ import type {
   ShopifyVideoSource,
 } from '@/lib/shopify/storefront-client'
 
+/** Fixed intro clip for Street Lamp product detail carousel (Shopify CDN). */
+export const STREET_LAMP_DETAIL_VIDEO_MP4 =
+  'https://cdn.shopify.com/videos/c/o/v/31c5dad6392e4b9ca171bd093c1f1074.mp4'
+
+const STREET_LAMP_INTRO_VIDEO_SOURCE: ShopifyVideoSource = {
+  url: STREET_LAMP_DETAIL_VIDEO_MP4,
+  mimeType: 'video/mp4',
+  format: 'mp4',
+  width: 1920,
+  height: 1080,
+}
+
+/** First carousel slide for experience lamp detail: muted autoplay loop (rendered in {@link ProductDetailCarousel}). */
+export function buildStreetLampIntroCarouselSlide(productTitle: string): ProductCarouselSlide {
+  return {
+    type: 'video',
+    id: 'street-lamp-detail-intro',
+    sources: [STREET_LAMP_INTRO_VIDEO_SOURCE],
+    poster: null,
+    alt: `${productTitle.trim() || 'Street Lamp'} preview`,
+  }
+}
+
 export type ProductCarouselSlide =
   | { type: 'image'; id: string; image: ShopifyImage }
   | { type: 'video'; id: string; sources: ShopifyVideoSource[]; poster: ShopifyImage | null; alt: string }
@@ -36,6 +59,15 @@ function isHlsLikeSource(s: ShopifyVideoSource): boolean {
 function isDefinitelyShopifyHls(s: ShopifyVideoSource): boolean {
   const f = (s.format || '').toLowerCase()
   return f === 'm3u8' || /\.m3u8(\?|$)/i.test(s.url)
+}
+
+/** MOV/QuickTime often fails in Chrome/Firefox `<video>`; prefer MP4/WebM when Shopify ships both. */
+function isMovLikeSource(s: ShopifyVideoSource): boolean {
+  const f = (s.format || '').toLowerCase()
+  if (f === 'mov') return true
+  if (/\.mov(\?|$)/i.test(s.url)) return true
+  if (/quicktime/i.test(s.mimeType || '')) return true
+  return false
 }
 
 /**
@@ -100,9 +132,11 @@ export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): strin
   if (!sources?.length) return null
   const progressive = shopifyProgressiveVideoSources(sources)
   if (progressive.length > 0) {
-    const best = progressive.reduce(
+    const webFriendly = progressive.filter((s) => !isMovLikeSource(s))
+    const pool = webFriendly.length > 0 ? webFriendly : progressive
+    const best = pool.reduce(
       (a, b) => ((b.height || 0) > (a.height || 0) ? b : a),
-      progressive[0]
+      pool[0]
     )
     return best.url
   }

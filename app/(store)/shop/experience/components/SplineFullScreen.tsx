@@ -29,7 +29,10 @@ import {
 import { ArtworkAccordions } from './ArtworkAccordions'
 import { FeaturedArtistBundleSection } from './FeaturedArtistBundleSection'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
-import { ArtistCollectionVideoEmbed } from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
+import {
+  ArtistCollectionVideoEmbed,
+  ShopifyInlineVideo,
+} from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
   if (ref == null) return
@@ -878,14 +881,14 @@ export function SplineFullScreen({
                       />
                     </div>
                   ) : (
-                    <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(92vw,720px)] mx-auto">
+                    <div className="relative mx-auto aspect-video w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black shadow-none ring-0 md:max-w-[min(92vw,720px)]">
                       {(() => {
                         const playback = shopifyVideoPlaybackUrl(item.sources)
                         if (!playback) {
                           return (
                             <p
                               className={cn(
-                                'rounded-xl px-4 py-8 text-center text-sm',
+                                'flex min-h-[120px] items-center justify-center rounded-xl px-4 py-8 text-center text-sm',
                                 theme === 'light' ? 'bg-neutral-200 text-neutral-600' : 'bg-white/10 text-white/70'
                               )}
                             >
@@ -894,7 +897,12 @@ export function SplineFullScreen({
                           )
                         }
                         return (
-                          <ArtistCollectionVideoEmbed url={playback} title={embedTitle} className="shadow-none ring-0" />
+                          <ShopifyInlineVideo
+                            sources={item.sources}
+                            posterUrl={item.posterUrl}
+                            ariaLabel={embedTitle}
+                            className="h-full w-full object-contain"
+                          />
                         )
                       })()}
                     </div>

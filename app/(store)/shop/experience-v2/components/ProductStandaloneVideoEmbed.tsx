@@ -53,7 +53,7 @@ function HomeStyleProgressiveVideo({
       poster={poster}
       controls
       playsInline
-      preload="none"
+      preload={deferLoadMs <= 0 ? 'metadata' : 'none'}
       aria-label={ariaLabel}
     >
       {videoLoadStarted && <source src={url} type={mime} />}
@@ -193,6 +193,45 @@ function vimeoEmbedUrl(raw: string): string | null {
 }
 
 /**
+ * Shopify native video for inline `<video>`: full `sources` (HLS via hls.js / Safari, progressive MP4/MOV/WebM).
+ * Prefer this over passing a single URL into {@link ArtistCollectionVideoEmbed} so reel / PDP match playback behavior.
+ */
+export function ShopifyInlineVideo({
+  sources,
+  posterUrl,
+  ariaLabel,
+  className,
+}: {
+  sources: ShopifyVideo['sources']
+  posterUrl?: string | null
+  ariaLabel: string
+  className?: string
+}) {
+  const playbackUrl = shopifyVideoPlaybackUrl(sources)
+  if (!playbackUrl) return null
+  if (isPlaybackUrlHls(playbackUrl)) {
+    return (
+      <HlsOrSingleUrlVideo
+        sources={sources}
+        poster={posterUrl ?? undefined}
+        ariaLabel={ariaLabel}
+        className={className}
+      />
+    )
+  }
+  return (
+    <HomeStyleProgressiveVideo
+      url={playbackUrl}
+      sources={sources}
+      poster={posterUrl ?? undefined}
+      ariaLabel={ariaLabel}
+      deferLoadMs={0}
+      className={className}
+    />
+  )
+}
+
+/**
  * Collection metafield `custom.video`: YouTube/Vimeo → iframe; Shopify/direct file → &lt;video&gt; (incl. HLS when needed).
  */
 export function ArtistCollectionVideoEmbed({
@@ -256,17 +295,11 @@ export function ArtistCollectionVideoEmbed({
         className
       )}
     >
-      {isPlaybackUrlHls(trimmed) ? (
-        <HlsOrSingleUrlVideo sources={syntheticSources} ariaLabel={title} className="h-full w-full object-contain" />
-      ) : (
-        <HomeStyleProgressiveVideo
-          url={trimmed}
-          sources={syntheticSources}
-          ariaLabel={title}
-          deferLoadMs={0}
-          className="h-full w-full object-contain"
-        />
-      )}
+      <ShopifyInlineVideo
+        sources={syntheticSources}
+        ariaLabel={title}
+        className="h-full w-full object-contain"
+      />
     </div>
   )
 }
@@ -297,22 +330,12 @@ export function ProductStandaloneVideoEmbed({
               key={`${slide.id}-${playbackUrl}`}
               className="overflow-hidden rounded-xl bg-black shadow-inner ring-1 ring-black/10 dark:ring-white/10"
             >
-              {isPlaybackUrlHls(playbackUrl) ? (
-                <HlsOrSingleUrlVideo
-                  sources={slide.sources}
-                  poster={slide.poster?.url ?? undefined}
-                  ariaLabel={label}
-                  className="mx-auto block"
-                />
-              ) : (
-                <HomeStyleProgressiveVideo
-                  url={playbackUrl}
-                  sources={slide.sources}
-                  poster={slide.poster?.url ?? undefined}
-                  ariaLabel={label}
-                  className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
-                />
-              )}
+              <ShopifyInlineVideo
+                sources={slide.sources}
+                posterUrl={slide.poster?.url}
+                ariaLabel={label}
+                className="mx-auto block w-full max-h-[min(50dvh,460px)] object-contain"
+              />
             </div>
           )
         }
