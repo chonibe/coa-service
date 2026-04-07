@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 import Image from 'next/image'
 import { Eye } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
@@ -57,6 +57,11 @@ export interface FeaturedArtistBundleSectionProps {
   selectedProductId?: string | null
   /** Product IDs on the lamp preview — prints show the eye badge (carousel parity). */
   lampPreviewProductIds?: string[]
+  /**
+   * Vertical reel (`overflow-y-auto`). When set, wheel/trackpad over this card scrolls the reel unless the event is
+   * clearly horizontal on the thumb strip — same contract as [`ArtworkCarouselBar`](./ArtworkCarouselBar.tsx).
+   */
+  experienceReelRef?: RefObject<HTMLDivElement | null> | MutableRefObject<HTMLDivElement | null> | null
 }
 
 /** Featured artist bundle block: horizontal strip (scroll + snap + drag), pricing, primary Add to cart. */
@@ -67,9 +72,12 @@ export function FeaturedArtistBundleSection({
   onStripItemPress,
   selectedProductId = null,
   lampPreviewProductIds = [],
+  experienceReelRef = null,
 }: FeaturedArtistBundleSectionProps) {
   const disabled = offer.disabled === true
   const scrollRef = useRef<HTMLDivElement>(null)
+  /** Whole card (title + strip + CTA): wheel target for forwarding vertical scroll to the reel. */
+  const bundleWheelHostRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
   const [isDesktop, setIsDesktop] = useState(false)
   const isDraggingRef = useRef(false)
@@ -126,6 +134,48 @@ export function FeaturedArtistBundleSection({
     }
   }, [isDesktop])
 
+  // Vertical wheel over the bundle card scrolls the main reel; horizontal wheel on the thumb strip scrolls the strip only.
+  useEffect(() => {
+    const host = bundleWheelHostRef.current
+    const strip = scrollRef.current
+    if (!host || !experienceReelRef) return
+
+    const wheelDeltaY = (e: WheelEvent, scrollEl: HTMLElement) => {
+      let dy = e.deltaY
+      if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) dy *= 16
+      if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) dy *= scrollEl.clientHeight
+      return dy
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      if (!host.contains(e.target as Node)) return
+      const reel = experienceReelRef.current
+      if (!reel) return
+
+      const dy = wheelDeltaY(e, reel)
+      const dx = e.deltaX
+      const onStrip = strip?.contains(e.target as Node) ?? false
+
+      if (onStrip && Math.abs(dx) > Math.abs(dy)) {
+        return
+      }
+
+      if (dy === 0) return
+
+      const max = reel.scrollHeight - reel.clientHeight
+      if (max <= 0) return
+      const st = reel.scrollTop
+      if (dy < 0 && st <= 0) return
+      if (dy > 0 && st >= max - 1) return
+      reel.scrollTop += dy
+      e.preventDefault()
+    }
+
+    host.addEventListener('wheel', onWheel, { passive: false })
+    return () => host.removeEventListener('wheel', onWheel)
+  }, [experienceReelRef])
+
   const scrollSelectedIntoView = useCallback(() => {
     if (!selectedProductId || !scrollRef.current) return
     const i = items.findIndex((p) => p.id === selectedProductId)
@@ -146,6 +196,7 @@ export function FeaturedArtistBundleSection({
       aria-labelledby="experience-featured-bundle-title"
     >
       <div
+        ref={bundleWheelHostRef}
         className={cn(
           'mx-auto w-full max-w-md rounded-2xl border px-4 py-4 shadow-lg sm:px-5 sm:py-5',
           theme === 'light'
@@ -170,7 +221,7 @@ export function FeaturedArtistBundleSection({
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              'touch-pan-x flex max-w-full min-w-0 items-end justify-start gap-1 overflow-x-auto overscroll-x-contain pb-1 sm:gap-2 md:gap-3',
+              'touch-pan-x flex max-w-full min-w-0 items-end justify-start gap-1 overflow-x-auto overscroll-x-contain overscroll-y-auto pb-1 sm:gap-2 md:gap-3',
               'snap-x snap-proximity scrollbar-hide',
               isDesktop && items.length > 1 && 'cursor-grab select-none active:cursor-grabbing'
             )}
@@ -208,7 +259,7 @@ export function FeaturedArtistBundleSection({
                         aria-current={isSelected ? 'true' : undefined}
                         className={cn(
                           bundleThumbFrameClass,
-                          'cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
+                          'cursor-pointer border-0 bg-transparent p-0 text-left',
                           'transition-transform duration-200 active:scale-[0.98]',
                           'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]',
                           isSelected &&

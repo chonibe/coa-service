@@ -816,6 +816,7 @@ export function SplineFullScreen({
               onStripItemPress={onBundleStripItemPress}
               selectedProductId={bundleStripSelectedProductId}
               lampPreviewProductIds={bundleStripLampPreviewProductIds}
+              experienceReelRef={scrollRef}
             />
           ) : null}
         </div>
