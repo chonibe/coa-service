@@ -1,5 +1,7 @@
 # Commit context: Experience sticky bar — thumbnails above checkout (2026-04-06)
 
+**Commit:** `6065e32cb` — `fix(ui): stack cart thumbnails above checkout in experience sticky bar`
+
 ## Checklist
 
 - [x] [ExperienceCheckoutStickyBar.tsx](../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) — Stack layout: top row = add FAB + horizontal thumbnail strip; second row = full-width checkout pill (`w-full`).

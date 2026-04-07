@@ -118,7 +118,7 @@ export function ExperienceSlideoutMenu() {
                   role="status"
                   aria-live="polite"
                 >
-                  Lamp added to Cart
+                  Lamp added to your collection
                 </span>
               )}
               <ExperienceCartChip variant="light" />

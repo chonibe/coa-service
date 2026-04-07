@@ -85,7 +85,11 @@ export function ExperienceCartChip({
       type="button"
       onClick={openOrderBar}
       data-testid="photo-styler-cta-button"
-      aria-label={formattedPrice ? `View cart – ${formattedPrice} (${itemCount} items)` : `View cart (${itemCount} items)`}
+      aria-label={
+        formattedPrice
+          ? `View your collection – ${formattedPrice} (${itemCount} items)`
+          : `View your collection (${itemCount} items)`
+      }
       className={cn(
         'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-[#047AFF] hover:bg-[#0366d6] text-white self-center shrink-0 !min-h-0',
         className

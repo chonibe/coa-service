@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, us
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
-import { Package, Shield, RotateCcw, Lock, Minus, Plus, Loader2 } from 'lucide-react'
+import { Package, Shield, RotateCcw, Lock, Minus, Plus, Loader2, ChevronRight } from 'lucide-react'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
@@ -270,6 +270,8 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           price,
           quantity: 1,
           image: lamp.featuredImage?.url ?? undefined,
+          /** Hosted checkout must not replace per-lamp tier / volume prices with DB ladder. */
+          priceBasis: 'client',
         })
       }
     }
@@ -291,6 +293,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         continue
       }
       const qty = wj - wi
+      const runUsesBundlePrice =
+        bundlePricedArtworkIndices != null &&
+        Array.from({ length: wj - wi }, (_, d) => wi + d).some((idx) =>
+          bundlePricedArtworkIndices.has(idx)
+        )
       items.push({
         productId: art.id.replace('gid://shopify/Product/', ''),
         variantId: getVariantId(art),
@@ -301,11 +308,12 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         price: unit,
         quantity: qty,
         image: art.featuredImage?.url ?? undefined,
+        ...(runUsesBundlePrice ? { priceBasis: 'client' as const } : {}),
       })
       wi = wj
     }
     return items
-  }, [lamp, lampQuantity, lampPrices, selectedArtworks, artworkUnitUsd])
+  }, [lamp, lampQuantity, lampPrices, selectedArtworks, artworkUnitUsd, bundlePricedArtworkIndices])
 
   const buildGaProductItems = useCallback((): ReturnType<typeof storefrontProductToItem>[] => {
     const artworkLineItems: ReturnType<typeof storefrontProductToItem>[] = []
@@ -355,6 +363,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         price: item.price,
         quantity: item.quantity,
         image: item.image,
+        ...(item.priceBasis === 'client' ? { priceBasis: 'client' as const } : {}),
       }))
       const cancelBase =
         typeof window !== 'undefined' && pathname
@@ -362,6 +371,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           : ''
       const response = await fetch('/api/checkout/create', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: lineItems,
@@ -647,7 +657,10 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           Redirecting…
         </>
       ) : (
-        'Continue to secure checkout'
+        <>
+          Continue to Secure Checkout
+          <ChevronRight className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+        </>
       )}
     </CheckoutButton>
   )
@@ -688,10 +701,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal scrollbar-prominent">
           <div className="px-6 pb-6">
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-2">Checkout</h3>
-              <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] mb-4">
-                Shipping address and payment are completed securely on the next step (Stripe).
-              </p>
+              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-4">Your Collection</h3>
             </div>
             <div className="border-t border-neutral-200 dark:border-white/10 pt-5">
               {orderSummary}

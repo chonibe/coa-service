@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { getUserContext } from '@/lib/rbac'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 import { getEarlyAccessCouponCookie } from '@/lib/early-access'
-import { applyStreetLadderUsdToLineItems } from '@/lib/shop/street-ladder-line-pricing'
+import { resolveCheckoutLineUsdItems } from '@/lib/shop/street-ladder-line-pricing'
 import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
+import { fetchActiveStreetReserveLocksUsdByUserId } from '@/lib/shop/fetch-street-reserve-locks-server'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -26,6 +28,7 @@ interface CartLineItem {
   price: number
   quantity: number
   image?: string
+  priceBasis?: 'client'
 }
 
 interface CreateCheckoutSessionRequest {
@@ -75,6 +78,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = createClient()
+    const ctx = await getUserContext(supabase)
     const cookieStore = await cookies()
     const affiliateRef = cookieStore.get(AFFILIATE_REF_COOKIE)?.value
     const affiliateVendorId = await resolveRefToVendorId(affiliateRef, supabase)
@@ -93,7 +97,14 @@ export async function POST(request: NextRequest) {
       .map((i) => normalizeShopifyProductId(i.productId))
       .filter((x): x is string => !!x)
     const ladderUsd = await fetchStreetLadderUsdByNumericProductIds(supabase, ladderIds)
-    const checkoutItems = applyStreetLadderUsdToLineItems(items, ladderUsd)
+    let lockedUsd: Record<string, number> = {}
+    if (ctx?.userId) {
+      lockedUsd = await fetchActiveStreetReserveLocksUsdByUserId(supabase, ctx.userId)
+    }
+    const checkoutItems = resolveCheckoutLineUsdItems(items, {
+      ladderUsdByNumericProductId: ladderUsd,
+      lockedUsdByNumericProductId: lockedUsd,
+    })
 
     const totalCents = checkoutItems.reduce(
       (sum, item) => sum + Math.round(item.price * 100) * item.quantity,

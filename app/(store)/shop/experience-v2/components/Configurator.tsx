@@ -2067,7 +2067,9 @@ export function Configurator({
               isNewDrop={!!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
               isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
               hideScarcityBar={detailProduct.id === lamp.id}
-              addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
+              addToOrderLabel={
+                detailProduct.id === lamp.id ? 'Add lamp to your collection' : 'Add to your collection'
+              }
               journeyCtaPulse={
                 experienceJourneySurfaceNext === 'add_lamp' &&
                 detailProduct.id === lamp.id &&
@@ -2642,7 +2644,9 @@ export function Configurator({
           isEarlyAccess={!!spotlightData?.unlisted && !!spotlightData && (spotlightData.productIds.includes(detailProduct.id) || spotlightData.productIds.includes(detailProduct.id.replace(/^gid:\/\/shopify\/Product\//i, '') || detailProduct.id))}
           productBadges={undefined}
           hideScarcityBar={detailProduct.id === lamp.id}
-          addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
+          addToOrderLabel={
+            detailProduct.id === lamp.id ? 'Add lamp to your collection' : 'Add to your collection'
+          }
           journeyCtaPulse={
             experienceJourneySurfaceNext === 'add_lamp' &&
             detailProduct.id === lamp.id &&

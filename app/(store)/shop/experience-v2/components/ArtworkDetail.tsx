@@ -99,7 +99,7 @@ interface ArtworkDetailProps {
   productIncludes?: { label: string; icon: 'lamp' | 'ruler' | 'cable' | 'plug' | 'book' | 'magnet' | 'package' | 'gift' | 'bag' }[]
   /** Optional specifications sections with icon (e.g. Dimensions, Weight, Materials) */
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
-  /** Override add button label (e.g. "Add lamp to cart" for lamp product) */
+  /** Override add button label (e.g. "Add lamp to your collection" for lamp product) */
   addToOrderLabel?: string
   /** When true, show "Collected" badge (user owns this from past orders) */
   isCollected?: boolean
@@ -213,7 +213,7 @@ function LampFlatDetailsSections({
   )
 }
 
-export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to cart', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null, journeyCtaPulse = false }: ArtworkDetailProps) {
+export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, isLoadingDetails = false, productBadges, productIncludes, productSpecs, hideScarcityBar, isMobile = true, addToOrderLabel = 'Add to your collection', isCollected = false, isNewDrop = false, isEarlyAccess = false, inline = false, hideCta = false, artistSlugOverride, spotlightDataOverride, streetEdition = null, journeyCtaPulse = false }: ArtworkDetailProps) {
   const carouselSlides = useMemo(() => buildProductCarouselSlides(product), [product])
   const { videoSlides, imageSlides } = useMemo(
     () => splitProductCarouselMediaSlides(carouselSlides),
@@ -790,7 +790,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           )}
           {!hideCta && (
             <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
-              {isSelected ? <><Check className="w-4 h-4" />Added to cart — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
+              {isSelected ? <><Check className="w-4 h-4" />Added to your collection — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
             </button>
           )}
         </div>
@@ -1240,7 +1240,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         {isSelected ? (
                           <>
                             <Check className="w-4 h-4" />
-                            Added to cart — Tap to remove
+                            Added to your collection — Tap to remove
                           </>
                         ) : isSoldOut ? (
                           'Sold Out'
@@ -1736,7 +1736,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {isSelected ? (
                     <>
                       <Check className="w-4 h-4" />
-                      Added to cart &mdash; Tap to remove
+                      Added to your collection &mdash; Tap to remove
                     </>
                   ) : isSoldOut ? (
                     'Sold Out'

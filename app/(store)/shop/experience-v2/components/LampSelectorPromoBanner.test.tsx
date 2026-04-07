@@ -50,7 +50,7 @@ describe('LampSelectorPromoBanner', () => {
         onAddLamp={onAddLamp}
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: /add lamp to cart/i }))
+    fireEvent.click(screen.getByRole('button', { name: /add lamp to your collection/i }))
     expect(onAddLamp).toHaveBeenCalledTimes(1)
   })
 

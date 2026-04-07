@@ -5,8 +5,9 @@ import { getUserContext, isCollector, hasPermission } from '@/lib/rbac'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
 import { getEarlyAccessCouponCookie } from '@/lib/early-access'
-import { applyStreetLadderUsdToLineItems } from '@/lib/shop/street-ladder-line-pricing'
+import { resolveCheckoutLineUsdItems } from '@/lib/shop/street-ladder-line-pricing'
 import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-street-ladder-prices-server'
+import { fetchActiveStreetReserveLocksUsdByUserId } from '@/lib/shop/fetch-street-reserve-locks-server'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
@@ -26,6 +27,8 @@ interface CartLineItem {
   quantity: number
   image?: string
   artistName?: string
+  /** Experience: keep request unit price (lamp volume tiers, featured bundle, per-lamp lines). */
+  priceBasis?: 'client'
 }
 
 interface ShippingAddressInput {
@@ -119,9 +122,16 @@ export async function POST(request: NextRequest) {
       .map((i) => normalizeShopifyProductId(i.productId))
       .filter((x): x is string => !!x)
     const ladderUsd = await fetchStreetLadderUsdByNumericProductIds(supabase, ladderProductIds)
-    const checkoutItems = applyStreetLadderUsdToLineItems(items, ladderUsd)
+    let lockedUsd: Record<string, number> = {}
+    if (ctx?.userId) {
+      lockedUsd = await fetchActiveStreetReserveLocksUsdByUserId(supabase, ctx.userId)
+    }
+    const checkoutItems = resolveCheckoutLineUsdItems(items, {
+      ladderUsdByNumericProductId: ladderUsd,
+      lockedUsdByNumericProductId: lockedUsd,
+    })
 
-    // Calculate cart totals (Street ladder overrides Shopify list price when product is in DB)
+    // Calculate cart totals (locks → client-priced lines → ladder → request price)
     const subtotalCents = checkoutItems.reduce(
       (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
       0

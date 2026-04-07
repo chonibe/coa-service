@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, SlidersHorizontal } from 'lucide-react'
-import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
-import { cn, formatPriceCompact } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
 
@@ -64,7 +64,7 @@ interface FilterPanelProps {
   isOpen: boolean
   onClose: () => void
   wishlistCount?: number
-  /** Cart order (product IDs) for "Sort by added to cart" */
+  /** Cart order (product IDs) for "In your collection" sort */
   cartOrder?: string[]
   /** When provided, called instead of global open-wishlist event (e.g. to open WishlistSwiperSheet in experience) */
   onOpenWishlist?: () => void
@@ -90,7 +90,7 @@ const SORT_OPTIONS: Array<{ value: FilterState['sortBy']; label: string }> = [
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest' },
-  { value: 'added-to-cart', label: 'Added to cart' },
+  { value: 'added-to-cart', label: 'In your collection' },
 ]
 
 function applyFilterAndTrack(
@@ -282,12 +282,13 @@ export function FilterPanel({
                       <p className="truncate text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8]">
                         {filterPanelLamp.product.title}
                       </p>
-                      <p className="mt-0.5 text-xs tabular-nums text-neutral-600 dark:text-[#b89090]">
-                        $
-                        {formatPriceCompact(
-                          parseFloat(filterPanelLamp.product.priceRange?.minVariantPrice?.amount ?? '0')
-                        )}
-                      </p>
+                      {filterPanelLamp.product.priceRange?.minVariantPrice ? (
+                        <p className="mt-0.5 text-xs tabular-nums text-neutral-600 dark:text-[#b89090]">
+                          <span dir="ltr" className="inline-block">
+                            {formatPrice(filterPanelLamp.product.priceRange.minVariantPrice)}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
                     <button
                       type="button"

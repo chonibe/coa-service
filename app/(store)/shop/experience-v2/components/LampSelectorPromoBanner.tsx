@@ -18,7 +18,7 @@ export interface LampSelectorPromoBannerProps {
   onAddLamp: () => void
   /** When true, show the short “how it works” line above the product title. */
   showBadge?: boolean
-  /** Journey: pulse + shine on “Add lamp to cart” */
+  /** Journey: pulse + shine on “Add lamp to your collection” */
   highlightAddCta?: boolean
 }
 
@@ -128,7 +128,7 @@ export function LampSelectorPromoBanner({
               onAddLamp()
             }}
             aria-label={
-              priceLabel ? `Add lamp to cart, ${priceLabel}` : 'Add lamp to cart'
+              priceLabel ? `Add lamp to your collection, ${priceLabel}` : 'Add lamp to your collection'
             }
             className={cn(
               'relative w-full rounded-lg px-3 py-2.5 text-center text-xs font-semibold transition-colors sm:text-sm',
@@ -137,7 +137,7 @@ export function LampSelectorPromoBanner({
               highlightAddCta && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
             )}
           >
-            {priceLabel ? `Add lamp to cart — ${priceLabel}` : 'Add lamp to cart'}
+            {priceLabel ? `Add lamp to your collection — ${priceLabel}` : 'Add lamp to your collection'}
           </button>
         </div>
       </div>

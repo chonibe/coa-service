@@ -60,13 +60,15 @@ export function LampDescriptionSection({
 }: {
   description: string
   productDetailsLabel: string
-  layout: 'mobile' | 'desktop'
+  layout: 'mobile' | 'desktop' | 'embedded'
 }) {
   if (!description.trim()) return null
   const wrap =
     layout === 'mobile'
       ? 'px-4 pt-5 pb-3 border-t border-neutral-100 dark:border-white/10'
-      : undefined
+      : layout === 'embedded'
+        ? 'px-4 py-3'
+        : undefined
   const inner = (
     <section>
       <div className="flex items-center gap-2 mb-2">
@@ -78,7 +80,7 @@ export function LampDescriptionSection({
       <p className="text-sm text-neutral-600 dark:text-[#c4a0a0] leading-relaxed">{description}</p>
     </section>
   )
-  if (layout === 'mobile') {
+  if (layout === 'mobile' || layout === 'embedded') {
     return <div className={wrap}>{inner}</div>
   }
   return inner
@@ -88,6 +90,7 @@ export function LampDescriptionSection({
  * Single panel: What's included + Specifications.
  * - sticky: nested scroll under mobile sheet title (1-col specs, compact).
  * - inline: desktop / slideout scroll column (2-col specs from sm).
+ * - embedded: same body as inline, no outer card/scroll — sits inside a parent surface (e.g. unified lamp media card).
  */
 export function LampIncludesSpecsPanel({
   productIncludes,
@@ -97,7 +100,7 @@ export function LampIncludesSpecsPanel({
 }: {
   productIncludes?: LampIncludeItem[]
   productSpecs?: LampSpecItem[]
-  variant: 'sticky' | 'inline'
+  variant: 'sticky' | 'inline' | 'embedded'
   className?: string
 }) {
   const hasIncludes = Boolean(productIncludes && productIncludes.length > 0)
@@ -105,8 +108,11 @@ export function LampIncludesSpecsPanel({
   if (!hasIncludes && !hasSpecs) return null
 
   const specGridClass =
-    variant === 'sticky' ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2'
-  const specCardPad = variant === 'sticky' ? 'px-3 py-2.5' : 'px-4 py-3'
+    variant === 'sticky' || variant === 'embedded'
+      ? 'grid grid-cols-1 gap-2'
+      : 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+  const specCardPad =
+    variant === 'sticky' || variant === 'embedded' ? 'px-3 py-2.5' : 'px-4 py-3'
   const zoneLabelClass =
     'text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-[#FFBA94]'
 
@@ -197,6 +203,12 @@ export function LampIncludesSpecsPanel({
           {body}
         </div>
       </div>
+    )
+  }
+
+  if (variant === 'embedded') {
+    return (
+      <div className={cn('w-full min-w-0 px-3 py-3 text-left', className)}>{body}</div>
     )
   }
 
