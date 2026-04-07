@@ -894,8 +894,8 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 }
 
 /**
- * Collection “+” (carousel strip + sticky checkout FAB): soft prize-like glow that breathes up/down in intensity.
- * No transform — keeps Tailwind `active:scale-*` press feedback. See ArtworkCarouselBar, ExperienceCheckoutStickyBar.
+ * Collection “+” on the carousel strip only (not sticky checkout FAB): soft prize-like glow breathing in intensity.
+ * No transform on the button — keeps Tailwind `active:scale-*` press feedback. See ArtworkCarouselBar.
  */
 @keyframes experience-collection-plus-prize-pulse {
   0%,

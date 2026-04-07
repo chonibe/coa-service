@@ -250,7 +250,6 @@ export function ExperienceCheckoutStickyBar({
 
   const openPickerFabClass = cn(
     'relative flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border text-white shadow-md transition-all active:scale-95 sm:h-[3.25rem] sm:w-[3.25rem]',
-    'animate-experience-collection-plus-prize-pulse',
     theme === 'light'
       ? 'border-violet-600 bg-violet-600 shadow-violet-600/35 hover:border-violet-700 hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600'
       : 'border-violet-500 bg-violet-600 shadow-black/40 hover:border-violet-400 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400',
@@ -375,17 +374,15 @@ export function ExperienceCheckoutStickyBar({
                 {onOpenPicker ? (
                   <div className="relative z-[3] flex shrink-0 flex-col items-center gap-0">
                     <CollectionArcLabel theme={theme} variant="fab" className="pointer-events-none" />
-                    <div className="animate-experience-collection-plus-prize-float">
-                      <button
-                        type="button"
-                        onClick={onOpenPicker}
-                        className={openPickerFabClass}
-                        aria-label="Add artwork to collection"
-                        title="Add artwork"
-                      >
-                        <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={onOpenPicker}
+                      className={openPickerFabClass}
+                      aria-label="Add artwork to collection"
+                      title="Add artwork"
+                    >
+                      <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                    </button>
                   </div>
                 ) : null}
               </div>
