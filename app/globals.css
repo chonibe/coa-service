@@ -893,6 +893,49 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation-delay: var(--journey-card-tilt-delay, 0s);
 }
 
+/**
+ * Collection “+” (carousel strip + sticky checkout FAB): soft prize-like glow that breathes up/down in intensity.
+ * No transform — keeps Tailwind `active:scale-*` press feedback. See ArtworkCarouselBar, ExperienceCheckoutStickyBar.
+ */
+@keyframes experience-collection-plus-prize-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      0 6px 22px rgba(124, 58, 237, 0.32),
+      0 0 14px rgba(167, 139, 250, 0.22),
+      0 4px 14px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    filter: brightness(1.1);
+    box-shadow:
+      0 10px 32px rgba(109, 40, 217, 0.52),
+      0 0 28px rgba(196, 181, 253, 0.48),
+      0 6px 20px rgba(0, 0, 0, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+}
+
+.animate-experience-collection-plus-prize-pulse {
+  animation: experience-collection-plus-prize-pulse 2.35s ease-in-out infinite alternate;
+}
+
+@keyframes experience-collection-plus-prize-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+.animate-experience-collection-plus-prize-float {
+  display: inline-flex;
+  animation: experience-collection-plus-prize-float 2.35s ease-in-out infinite alternate;
+}
+
 /** Collection strip: mini lamp / Spline thumb — continuous Y spin (no hover; see ArtworkCarouselBar). */
 @keyframes experience-carousel-mini-turntable-spin {
   from {
@@ -911,6 +954,10 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 
 @media (prefers-reduced-motion: reduce) {
   .experience-carousel-mini-turntable {
+    animation: none;
+  }
+  .animate-experience-collection-plus-prize-pulse,
+  .animate-experience-collection-plus-prize-float {
     animation: none;
   }
 }

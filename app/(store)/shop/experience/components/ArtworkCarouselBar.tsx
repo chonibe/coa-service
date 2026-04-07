@@ -283,6 +283,7 @@ export function ArtworkCarouselBar({
 
   const pickerPlusWithJourney = cn(
     pickerPlusButtonClass,
+    'animate-experience-collection-plus-prize-pulse',
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
@@ -659,15 +660,17 @@ export function ArtworkCarouselBar({
                   <div className="flex min-h-[1.25rem] items-end justify-center" aria-hidden>
                     <CollectionArcLabel theme={theme} variant="strip" />
                   </div>
-                  <button
-                    type="button"
-                    onClick={onOpenPicker}
-                    className={pickerPlusWithJourney}
-                    aria-label="Add artwork to collection"
-                    title="Add artwork to collection"
-                  >
-                    <Plus className="w-5 h-5" strokeWidth={2.25} />
-                  </button>
+                  <div className="animate-experience-collection-plus-prize-float">
+                    <button
+                      type="button"
+                      onClick={onOpenPicker}
+                      className={pickerPlusWithJourney}
+                      aria-label="Add artwork to collection"
+                      title="Add artwork to collection"
+                    >
+                      <Plus className="w-5 h-5" strokeWidth={2.25} />
+                    </button>
+                  </div>
                 </div>
               )}
               {/* Spacer so last tile (+) can scroll fully into view past snap/edge clipping */}

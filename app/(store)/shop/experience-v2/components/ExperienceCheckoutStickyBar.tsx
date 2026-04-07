@@ -32,13 +32,11 @@ export interface ExperienceCheckoutStickyBarProps {
   /** When `collection` and there are no artworks yet, the bar shows the primary CTA (not in watchlist empty state). */
   stripMode?: 'collection' | 'watchlist'
   /**
-   * When the artwork carousel strip is visible (above the Spline in the main column), hide the thumbnail strip —
-   * it duplicates the carousel. Keep add-artwork FAB + checkout. When false (user scrolled past the Spline section), show full summary.
+   * When true, hide the cart thumbnail row (add-artwork FAB + checkout stay). Used only when a separate strip duplicates thumbs; shells normally pass **`false`** so thumbnails are always visible.
    */
   suppressCartThumbnails?: boolean
   /**
-   * Mobile: tapping a lamp or artwork thumbnail selects that item on the main Spline preview (same as the carousel strip).
-   * When set, it takes priority over `onViewLampDetail` for lamp tiles so the primary tap syncs the 3D preview.
+   * When set, tapping a lamp or artwork thumbnail selects that item on the main Spline preview. Takes priority over `onViewLampDetail` for lamp tiles so the primary tap syncs the 3D preview.
    */
   onSelectThumbnailForSpline?: (product: ShopifyProduct) => void
   /** Product id currently shown as selected on the lamp preview (e.g. active carousel tile). */
@@ -101,7 +99,7 @@ function StickyThumb({
   theme: 'light' | 'dark'
   /** When set (lamp slots only), opens product detail sheet. Ignored when `onSplinePreviewPress` is set. */
   onDetailPress?: () => void
-  /** Mobile: select this item on the Spline / carousel preview. */
+  /** Select this item on the Spline preview (sticky thumbnail tap). */
   onSplinePreviewPress?: () => void
   isSplinePreviewSelected?: boolean
 }) {
@@ -191,9 +189,9 @@ function StickyThumb({
 }
 
 /**
- * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (cart thumbnails unless `suppressCartThumbnails`, **add-artwork + on the right**) and a **full-width checkout button below**.
- * When `suppressCartThumbnails` (desktop: carousel strip visible above the Spline), thumbnails are omitted so the bar does not duplicate the carousel; FAB (if provided) stays **right-aligned** on the top row above checkout. On **mobile** the carousel strip is not shown — callers should pass **`false`** so cart thumbnails stay visible.
- * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable — not in the carousel strip.
+ * Sticky bottom bar: **empty collection** shows “Create your own bundle”; **≥1 artwork** shows a top row (cart thumbnails unless `suppressCartThumbnails`, **add-artwork FAB on the right**) and a **full-width checkout button below**.
+ * Experience shells pass **`suppressCartThumbnails={false}`** so checkout thumbnails are the single collection strip at all breakpoints; optional **`onSelectThumbnailForSpline`** syncs taps to the main Spline preview.
+ * Featured bundle promo (lamp + two prints) lives under the Spline in the reel ([`SplineFullScreen`](../../experience/components/SplineFullScreen.tsx)) when applicable.
  * Opens the OrderBar drawer via `openOrderBar` (same as header cart).
  */
 export function ExperienceCheckoutStickyBar({
@@ -252,6 +250,7 @@ export function ExperienceCheckoutStickyBar({
 
   const openPickerFabClass = cn(
     'relative flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-full border text-white shadow-md transition-all active:scale-95 sm:h-[3.25rem] sm:w-[3.25rem]',
+    'animate-experience-collection-plus-prize-pulse',
     theme === 'light'
       ? 'border-violet-600 bg-violet-600 shadow-violet-600/35 hover:border-violet-700 hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600'
       : 'border-violet-500 bg-violet-600 shadow-black/40 hover:border-violet-400 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400',
@@ -376,15 +375,17 @@ export function ExperienceCheckoutStickyBar({
                 {onOpenPicker ? (
                   <div className="relative z-[3] flex shrink-0 flex-col items-center gap-0">
                     <CollectionArcLabel theme={theme} variant="fab" className="pointer-events-none" />
-                    <button
-                      type="button"
-                      onClick={onOpenPicker}
-                      className={openPickerFabClass}
-                      aria-label="Add artwork to collection"
-                      title="Add artwork"
-                    >
-                      <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
-                    </button>
+                    <div className="animate-experience-collection-plus-prize-float">
+                      <button
+                        type="button"
+                        onClick={onOpenPicker}
+                        className={openPickerFabClass}
+                        aria-label="Add artwork to collection"
+                        title="Add artwork"
+                      >
+                        <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
+                      </button>
+                    </div>
                   </div>
                 ) : null}
               </div>

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Experience V2 is a redesigned artwork selection flow with a cleaner, more immersive interface. The **collection carousel strip** is a **normal-flow section above** the main Spline reel (shared column with the volume-discount row when shown), artwork selection happens in an Instagram-style slide-up sheet, and a **purple +** opens the picker from the strip (when not duplicated by the sticky checkout row) or from the sticky bar FAB.
+Experience V2 is a redesigned artwork selection flow with a cleaner, more immersive interface. The main shell **does not mount** the top [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) strip — **checkout thumbnails** on [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) are the only collection strip (same as mobile). Artwork selection happens in an Instagram-style slide-up sheet; a **purple +** FAB on the sticky bar opens the picker.
 
 This version reuses the same Spline 3D configuration, cart integration, contexts, and header/menu from Experience V1 while providing a streamlined selection flow.
 
@@ -35,13 +35,14 @@ experience-v2/
     ├── SplineFullScreen.tsx    # Full-viewport Spline 3D wrapper (exact V1 config)
     ├── ArtworkInfoBar.tsx      # Top bar: artwork name + artist, switch between 2 lamp sides
     ├── ArtworkPickerSheet.tsx  # Instagram-style slide-up selector (ArtworkStrip cards)
-    ├── ArtworkCarouselBar.tsx  # Carousel strip: in-flow above Spline; `reserveCheckoutBar` hides duplicate strip + when sticky bar shows add CTAs
-    ├── ExperienceCheckoutStickyBar.tsx  # Fixed checkout CTA when cart has artworks
+    ├── ExperienceCheckoutStickyBar.tsx  # Fixed checkout CTA + cart thumbnails (only horizontal strip)
     ├── ExperienceOrderLampIcon.tsx      # Lamp silhouette (same glyph as OrderBar cart line)
     ├── ArtworkDetail.tsx       # Product sheet / inline panel (scarcity, edition narrative, CTA)
     ├── HorizontalTwoSlideGallery.tsx  # Shared 2-panel translate gallery (Experience accordions + detail sheet)
     └── EditionBadge.tsx        # Gallery-style edition stage copy (see lib/shop/edition-stages.ts)
 ```
+
+**Shared from Experience V1 folder:** [`ArtworkCarouselBar.tsx`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) — legacy strip component; **not** rendered by [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx).
 
 **Shared lib:** [`edition-stages.ts`](../../../lib/shop/edition-stages.ts) — stage thresholds, template interpolation, email strings.
 
@@ -72,7 +73,7 @@ Integrates with:
 - `ExperienceOrderContext` for header cart chip and OrderBar
 - `ArtworkDetail` drawer for artwork info
 - `OrderBar` for checkout
-- `ExperienceCheckoutStickyBar` — fixed bottom bar: **empty collection** (`stripMode === 'collection'`, no artworks yet) shows only **“Choose your first artwork”** (blue CTA, opens picker; no checkout on this row — use header cart if needed). **≥1 artwork:** thumbnails in cart order at **all breakpoints** — **one tile per `lampQuantity`** (0 = no lamp tile) **+** each selected artwork, `+` separators between tiles, overflow `+N`. **Checkout · $total →** and **centered overlay** glass add FAB (`onOpenPicker`). Thumbnails match [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) **`aspect-[14/20]`** / **`rounded-[15px]`**. **Below `md`**, the **artwork carousel strip is hidden** — only this bar’s thumbnails (and FAB) serve the strip; **`onSelectThumbnailForSpline`** selects on the main Spline like desktop strip taps. **`Desktop`**: when the carousel is visible above the reel, **`suppressCartThumbnails`** hides duplicate thumbs; **lamp** tile can open lamp detail via **`onViewLampDetail`** when spline selection is not active. **Watchlist** with zero artworks does **not** render this bar (legacy: empty-watchlist copy was only in the carousel — use header to switch modes on small screens). [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) sets `reserveCheckoutBar` when the sticky bar is present (empty collection or ≥1 artwork) so the strip clears the bar; carousel **choose** CTA and strip **+** stay off when reserved
+- `ExperienceCheckoutStickyBar` — fixed bottom bar: **empty collection** (`stripMode === 'collection'`, no artworks yet) shows only **“Choose your first artwork”** (blue CTA, opens picker; no checkout on this row — use header cart if needed). **≥1 artwork:** thumbnails in cart order at **all breakpoints** — **one tile per `lampQuantity`** (0 = no lamp tile) **+** each selected artwork, `+` separators between tiles, overflow `+N`. **Checkout · $total →** and **centered overlay** glass add FAB (`onOpenPicker`). Thumbnails use the same portrait spec as the legacy [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) tiles (**`aspect-[14/20]`** / **`rounded-[15px]`**). **`onSelectThumbnailForSpline`** selects on the main Spline (desktop and mobile). **`suppressCartThumbnails`** stays **`false`** in shells so thumbnails are never hidden in favor of a top strip. **Lamp** tile can open lamp detail via **`onViewLampDetail`** when spline selection is not wired. **Watchlist** with zero artworks does **not** render this bar (legacy: empty-watchlist copy was only in the old carousel — use header to switch modes on small screens).
 
 **Implementation:** [`components/ExperienceV2Client.tsx`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx)
 
@@ -336,3 +337,4 @@ npm run dev
 - Updated: 2026-04-06 — **Carousel strip mini lamp**: [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) uses **`items-center`** on the strip; mini lamp tile **`w-16` / `sm:w-[4.5rem]`** with **transparent** tile fill; **[`CarouselStripLampSpline`](../../../app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)** sets **`cameraFeedMode`** on [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx). **`clearWebglTransparent`** clears **both** WebGL2 color draw buffers (Spline resets buffer **1** to opaque black otherwise).
 - Updated: 2026-04-06 — **Mobile reel below lamp**: [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) uses **`max-md:min-h-[min(64svh,680px)]`** on the Spline block when the artwork accordion follows, **`max-md:pb-4`** under the 3D viewport, so content below the lamp sits **a bit lower** with a **hint** above the fold; desktop keeps **`min-h-[72svh]`** (no extra pb).
 - Updated: 2026-04-06 — **Carousel above Spline (all breakpoints)**: Both [`ExperienceV2Client`](../../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx) shells use a **`flex-col`** stack — **volume discount** (v2 when shown) → **[`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx)** → **[`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx)** (`relative` + **`flex-1`**). Strip is **not** bottom-`absolute`; **picker +** uses **violet** styling; [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) add FAB matches **purple/violet**.
+- Updated: 2026-04-08 — **Collection + pulse**: [`globals.css`](../../../app/globals.css) **`animate-experience-collection-plus-prize-pulse`** (violet glow + brightness) and **`animate-experience-collection-plus-prize-float`** (subtle vertical motion) on the strip [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) **+** and [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx) picker FAB; disabled when **`prefers-reduced-motion: reduce`**.
