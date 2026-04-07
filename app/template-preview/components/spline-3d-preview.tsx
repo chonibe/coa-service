@@ -173,9 +173,9 @@ interface Spline3DPreviewProps {
   pointLightPosition?: { x?: number; y?: number; z?: number }
   /** Override point light distance (0 = infinite). */
   pointLightDistance?: number
-  /** When true, apply subtle rotation (slow spin or cursor-follow when interactive). */
+  /** When true, apply idle yaw sway and/or cursor-follow when interactive. */
   animate?: boolean
-  /** When false, disables idle turntable drift when pointer is not interacting. */
+  /** When false, disables idle ±15° yaw oscillation when pointer is not interacting. */
   idleSpinEnabled?: boolean
   /** When true with animate, rotation follows cursor for interactivity. */
   interactive?: boolean
@@ -2588,8 +2588,9 @@ export function Spline3DPreview({
     /* Drag sensitivity: higher = more spin per pointer travel; lerp = how fast the lamp catches the cursor. */
     const maxYaw = 0.82
     const maxPitch = 0.12
-    const turntableSpeed = 0.003
-    const sidewaysTurntableSpeed = 0.001
+    /** Idle “sitting” motion: gentle yaw oscillation (±deg) instead of endless turntable drift. */
+    const idleSwingRad = (15 * Math.PI) / 180
+    const idleSwingPeriodSec = 9
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!container || !interactive) return
@@ -2701,11 +2702,11 @@ export function Spline3DPreview({
           rafId = requestAnimationFrame(tick)
           return
         }
-        // Adjust spin direction with rotated view so motion feels consistent.
+        // Smooth ±15° yaw rock around settled front pose (one full cycle per idleSwingPeriodSec).
+        const tSec = performance.now() / 1000
+        const phase = (tSec * 2 * Math.PI) / idleSwingPeriodSec
         const spinDirection = turns >= 2 ? -1 : 1
-        const activeTurntableSpeed = turns % 2 === 1 ? sidewaysTurntableSpeed : turntableSpeed
-        baseYawRef.current += activeTurntableSpeed * spinDirection
-        rot.y = baseYawRef.current
+        rot.y = baseYawRef.current + idleSwingRad * Math.sin(phase * spinDirection)
       }
       rafId = requestAnimationFrame(tick)
     }
