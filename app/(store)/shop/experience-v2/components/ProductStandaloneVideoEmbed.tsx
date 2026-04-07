@@ -128,8 +128,13 @@ function ReelVideoUnavailable({ message }: { message: string }) {
   )
 }
 
-/** Matches `components/sections/VideoPlayer.tsx`: defer src, `preload="none"`, `onLoadedData` + muted `play()`, force-mute on `volumechange`. No IntersectionObserver. */
+/**
+ * Reel clip below the fold: `preload="none"` alone often never buffers until the user interacts.
+ * Match {@link HomeStyleProgressiveVideo} + {@link HlsOrSingleUrlVideo} `reelMutedAutoplay`: in-view
+ * `load()` nudge + `canplay` + IntersectionObserver (never auto-pause — avoids fighting controls).
+ */
 const REEL_GALLERY_DEFER_MS = 250
+const REEL_IN_VIEW_THRESHOLDS = [0, 0.08, 0.15, 0.35] as const
 
 function ReelGalleryProgressiveVideo({
   sources,
@@ -197,6 +202,36 @@ function ReelGalleryProgressiveVideo({
     return () => el.removeEventListener('volumechange', forceMute)
   }, [videoLoadStarted, playbackUrl])
 
+  useEffect(() => {
+    if (!videoLoadStarted || !playbackUrl) return
+    const el = videoRef.current
+    if (!el) return
+
+    const nudgeLoadAndPlay = () => {
+      if (el.readyState < HTMLMediaElement.HAVE_METADATA) el.load()
+      tryMutedAutoplay(el)
+    }
+
+    const onCanPlay = () => tryMutedAutoplay(el)
+    el.addEventListener('canplay', onCanPlay)
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && e.intersectionRatio >= 0.08) nudgeLoadAndPlay()
+        }
+      },
+      { threshold: [...REEL_IN_VIEW_THRESHOLDS] }
+    )
+    io.observe(el)
+    nudgeLoadAndPlay()
+
+    return () => {
+      io.disconnect()
+      el.removeEventListener('canplay', onCanPlay)
+    }
+  }, [videoLoadStarted, playbackUrl, tryMutedAutoplay])
+
   if (!candidateUrls.length || !playbackUrl) {
     return (
       <ReelVideoUnavailable message="Video couldn’t load. Check your connection or try another browser." />
@@ -215,7 +250,7 @@ function ReelGalleryProgressiveVideo({
       className={cn('bg-black', className)}
       src={videoLoadStarted ? playbackUrl : undefined}
       poster={posterUrl ?? undefined}
-      preload="none"
+      preload={videoLoadStarted ? 'auto' : 'none'}
       autoPlay
       loop
       muted
@@ -356,6 +391,31 @@ function ReelGalleryHlsVideo({
     return () => el.removeEventListener('volumechange', forceMute)
   }, [url])
 
+  useEffect(() => {
+    if (!url || fatalError) return
+    const el = videoRef.current
+    if (!el) return
+
+    const onCanPlay = () => tryMutedAutoplay(el)
+    el.addEventListener('canplay', onCanPlay)
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && e.intersectionRatio >= 0.08) tryMutedAutoplay(el)
+        }
+      },
+      { threshold: [...REEL_IN_VIEW_THRESHOLDS] }
+    )
+    io.observe(el)
+    tryMutedAutoplay(el)
+
+    return () => {
+      io.disconnect()
+      el.removeEventListener('canplay', onCanPlay)
+    }
+  }, [url, fatalError, tryMutedAutoplay])
+
   if (!url) return null
 
   if (fatalError) {
@@ -369,7 +429,7 @@ function ReelGalleryHlsVideo({
       ref={videoRef}
       className={cn('bg-black', className)}
       poster={poster}
-      preload="metadata"
+      preload="auto"
       autoPlay
       loop
       muted
@@ -390,8 +450,7 @@ function ReelGalleryHlsVideo({
 }
 
 /**
- * Experience vertical reel only: mirrors `VideoPlayer` loading/playback (defer, `onLoadedData`, muted autoplay).
- * Use instead of `ShopifyInlineVideo` there so stacking and scroll observers do not fight native controls.
+ * Experience vertical reel only: defer `src` like `VideoPlayer`, then same in-view nudge as {@link ShopifyInlineVideo} `reelMutedAutoplay`.
  */
 export function ExperienceReelGalleryVideo({
   sources,

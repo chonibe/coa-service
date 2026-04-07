@@ -896,7 +896,7 @@ export function SplineFullScreen({
                             </p>
                           ) : (
                             <ExperienceReelGalleryVideo
-                              key={item.id}
+                              key={reelGalleryItemKey(item, idx)}
                               sources={item.sources}
                               playbackUrl={playback}
                               posterUrl={item.posterUrl}
