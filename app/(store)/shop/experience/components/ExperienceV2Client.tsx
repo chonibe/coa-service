@@ -567,6 +567,26 @@ export function ExperienceV2Client({
     [spotlightData, spotlightProductsFromApi, allProducts]
   )
 
+  const bundlePreviewStripProducts = useMemo(() => {
+    if (!spotlightPairProducts) return null
+    const max = 8
+    const seen = new Set<string>()
+    const out: ShopifyProduct[] = []
+    const add = (p: ShopifyProduct) => {
+      if (seen.has(p.id)) return
+      seen.add(p.id)
+      if (out.length < max) out.push(p)
+    }
+    add(lamp)
+    add(spotlightPairProducts[0])
+    add(spotlightPairProducts[1])
+    for (const p of spotlightProducts) {
+      if (out.length >= max) break
+      add(p)
+    }
+    return out
+  }, [lamp, spotlightPairProducts, spotlightProducts])
+
   /** Empty artwork cart: show the two spotlight prints on the lamp preview (no auto-add to cart). */
   useEffect(() => {
     if (cartOrder.length > 0) return
@@ -1200,6 +1220,44 @@ export function ExperienceV2Client({
     [activeStripProducts, handleLampSelect, lamp.id, carouselStripMode]
   )
 
+  const handleBundleStripItemPress = useCallback(
+    (index: number, product: ShopifyProduct) => {
+      const isLampSlot = index === 0 || product.id === lamp.id
+      if (isLampSlot) {
+        if (lampQuantity === 0) {
+          handleFeaturedBundleThumbAddLamp()
+        } else {
+          const idx = activeStripProducts.findIndex((p) => p.id === lamp.id)
+          scrollToSplineRef.current = true
+          setPreviewSlideIndex(0)
+          if (idx >= 0) {
+            setActiveCarouselIndex(idx)
+            setDisplayedProduct(lamp)
+          } else {
+            setDisplayedProduct(lamp)
+          }
+        }
+        return
+      }
+      if (product.availableForSale === false) return
+      if (!cartOrder.includes(product.id)) {
+        handleFeaturedBundleThumbAddArtwork(product)
+        return
+      }
+      const idx = activeStripProducts.findIndex((p) => p.id === product.id)
+      if (idx >= 0) handleTapCarouselItem(idx)
+    },
+    [
+      lamp,
+      lampQuantity,
+      cartOrder,
+      activeStripProducts,
+      handleFeaturedBundleThumbAddLamp,
+      handleFeaturedBundleThumbAddArtwork,
+      handleTapCarouselItem,
+    ]
+  )
+
   const handleStickyThumbnailSplineSelect = useCallback(
     (product: ShopifyProduct) => {
       const idx = activeStripProducts.findIndex((p) => p.id === product.id)
@@ -1545,8 +1603,10 @@ export function ExperienceV2Client({
         featuredBundleOffer={featuredBundleFilterOffer}
         bundlePreviewLamp={lamp}
         bundlePreviewArtworks={spotlightPairProducts ?? null}
-        onFeaturedBundleThumbnailAddLamp={handleFeaturedBundleThumbAddLamp}
-        onFeaturedBundleThumbnailAddArtwork={handleFeaturedBundleThumbAddArtwork}
+        bundlePreviewStripProducts={bundlePreviewStripProducts}
+        bundleStripSelectedProductId={displayedProduct?.id ?? null}
+        bundleStripLampPreviewProductIds={lampPreviewOrder}
+        onBundleStripItemPress={handleBundleStripItemPress}
       />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[50] w-full">

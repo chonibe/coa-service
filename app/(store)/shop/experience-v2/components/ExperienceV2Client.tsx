@@ -487,6 +487,27 @@ export function ExperienceV2Client({
     [spotlightData, spotlightProductsFromApi, allProducts]
   )
 
+  /** Featured bundle strip: lamp first, bundle pair, then more spotlight prints (horizontal scroll when long). */
+  const bundlePreviewStripProducts = useMemo(() => {
+    if (!spotlightPairProducts) return null
+    const max = 8
+    const seen = new Set<string>()
+    const out: ShopifyProduct[] = []
+    const add = (p: ShopifyProduct) => {
+      if (seen.has(p.id)) return
+      seen.add(p.id)
+      if (out.length < max) out.push(p)
+    }
+    add(lamp)
+    add(spotlightPairProducts[0])
+    add(spotlightPairProducts[1])
+    for (const p of spotlightProducts) {
+      if (out.length >= max) break
+      add(p)
+    }
+    return out
+  }, [lamp, spotlightPairProducts, spotlightProducts])
+
   /** Empty artwork cart: show the two spotlight prints on the lamp preview (no auto-add to cart). */
   useEffect(() => {
     if (cartOrder.length > 0) return
@@ -1116,6 +1137,55 @@ export function ExperienceV2Client({
     handleLampSelect(product)
   }, [carouselArtworks, handleLampSelect, lamp])
 
+  const handleBundleStripItemPress = useCallback(
+    (index: number, product: ShopifyProduct) => {
+      const isLampSlot = index === 0 || product.id === lamp.id
+      if (isLampSlot) {
+        if (lampQuantity === 0) {
+          handleFeaturedBundleThumbAddLamp()
+        } else {
+          const idx = carouselSlotIndexForProductId(cartOrder, lamp.id)
+          if (idx >= 0) {
+            captureFunnelEvent(FunnelEvents.experience_carousel_navigated, {
+              index: idx,
+              product_id: lamp.id,
+              is_lamp_slot: true,
+              device_type: getDeviceType(),
+            })
+            setActiveCarouselIndex(idx)
+          }
+          scrollToSplineRef.current = true
+          setPreviewSlideIndex(0)
+          setDisplayedProduct(lamp)
+        }
+        return
+      }
+      if (product.availableForSale === false) return
+      if (!cartOrder.includes(product.id)) {
+        handleFeaturedBundleThumbAddArtwork(product)
+        return
+      }
+      const idx = carouselSlotIndexForProductId(cartOrder, product.id)
+      if (idx >= 0) {
+        captureFunnelEvent(FunnelEvents.experience_carousel_navigated, {
+          index: idx,
+          product_id: product.id,
+          is_lamp_slot: false,
+          device_type: getDeviceType(),
+        })
+        handleTapCarouselItem(idx)
+      }
+    },
+    [
+      lamp,
+      lampQuantity,
+      cartOrder,
+      handleFeaturedBundleThumbAddLamp,
+      handleFeaturedBundleThumbAddArtwork,
+      handleTapCarouselItem,
+    ]
+  )
+
   const handleStickyThumbnailSplineSelect = useCallback(
     (product: ShopifyProduct) => {
       const idx = carouselSlotIndexForProductId(cartOrder, product.id)
@@ -1432,8 +1502,10 @@ export function ExperienceV2Client({
         featuredBundleOffer={featuredBundleFilterOffer}
         bundlePreviewLamp={lamp}
         bundlePreviewArtworks={spotlightPairProducts ?? null}
-        onFeaturedBundleThumbnailAddLamp={handleFeaturedBundleThumbAddLamp}
-        onFeaturedBundleThumbnailAddArtwork={handleFeaturedBundleThumbAddArtwork}
+        bundlePreviewStripProducts={bundlePreviewStripProducts}
+        bundleStripSelectedProductId={displayedProduct?.id ?? null}
+        bundleStripLampPreviewProductIds={lampPreviewOrder}
+        onBundleStripItemPress={handleBundleStripItemPress}
       />
 
       {/* Float above the reel (no flex reservation) so transparent strip shows the 3D viewport behind it */}

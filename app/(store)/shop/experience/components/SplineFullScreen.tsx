@@ -125,10 +125,16 @@ interface SplineFullScreenProps {
   featuredBundleOffer?: FeaturedBundleFilterOffer | null
   bundlePreviewLamp?: ShopifyProduct | null
   bundlePreviewArtworks?: ShopifyProduct[] | null
-  /** Featured bundle card: tap lamp thumbnail to add Street Lamp to cart */
-  onFeaturedBundleThumbnailAddLamp?: () => void
-  /** Featured bundle card: tap print thumbnail to add that artwork (add-only) */
-  onFeaturedBundleThumbnailAddArtwork?: (product: ShopifyProduct) => void
+  /**
+   * Ordered strip under the bundle card: `[lamp, …prints]`. When omitted, falls back to lamp + two bundle preview prints.
+   */
+  bundlePreviewStripProducts?: ShopifyProduct[] | null
+  /** Highlights the active tile (carousel / detail selection). */
+  bundleStripSelectedProductId?: string | null
+  /** IDs on the lamp preview — prints show the eye badge. */
+  bundleStripLampPreviewProductIds?: string[]
+  /** Tap a strip tile: add lamp/artwork or sync carousel like the main artwork strip. */
+  onBundleStripItemPress?: (index: number, product: ShopifyProduct) => void
 }
 
 export function SplineFullScreen({
@@ -160,8 +166,10 @@ export function SplineFullScreen({
   featuredBundleOffer = null,
   bundlePreviewLamp = null,
   bundlePreviewArtworks = null,
-  onFeaturedBundleThumbnailAddLamp,
-  onFeaturedBundleThumbnailAddArtwork,
+  bundlePreviewStripProducts = null,
+  bundleStripSelectedProductId = null,
+  bundleStripLampPreviewProductIds = [],
+  onBundleStripItemPress,
 }: SplineFullScreenProps) {
   const { theme } = useExperienceTheme()
   const featuredBundleDataReady =
@@ -171,6 +179,12 @@ export function SplineFullScreen({
     bundlePreviewArtworks.length === 2
   /** Render when lamp + pair + offer exist; CTA uses `offer.disabled` when not actionable. */
   const showFeaturedBundleSection = featuredBundleDataReady
+  const featuredBundleStripProducts: ShopifyProduct[] =
+    bundlePreviewStripProducts && bundlePreviewStripProducts.length > 0
+      ? bundlePreviewStripProducts
+      : bundlePreviewLamp && bundlePreviewArtworks?.length === 2
+        ? [bundlePreviewLamp, bundlePreviewArtworks[0]!, bundlePreviewArtworks[1]!]
+        : []
   const [previewQuarterTurns, setPreviewQuarterTurns] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
   /** True when Spline + top thumb column have scrolled mostly out of the reel — show a docked Back to top FAB. */
@@ -297,6 +311,8 @@ export function SplineFullScreen({
   const lastReportedSectionRef = useRef(currentSlide)
   const scrollRafRef = useRef<number | null>(null)
   const lastProgrammaticSectionRef = useRef<number | null>(null)
+  /** Last slide index we used for scroll-into-view; avoids re-snapping when only `sectionCount` / layout changes. */
+  const prevSlideForScrollSyncRef = useRef<number | null>(null)
   /** While > Date.now(), ignore midpoint-based slide sync (avoids fighting smooth scrollIntoView from thumbnails). */
   const ignoreSlideSyncUntilRef = useRef(0)
   const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -461,8 +477,16 @@ export function SplineFullScreen({
     if (!scrollRef.current || sectionCount <= 1) return
     if (lastProgrammaticSectionRef.current === currentSlide) {
       lastProgrammaticSectionRef.current = null
+      prevSlideForScrollSyncRef.current = currentSlide
       return
     }
+    const prevSlide = prevSlideForScrollSyncRef.current
+    prevSlideForScrollSyncRef.current = currentSlide
+    // Effect also runs when `sectionCount` changes (e.g. gallery images resolve). Same `currentSlide` must not
+    // trigger scrollIntoView — that felt like sections "locking" while the user was freely scrolling.
+    const slideIndexChanged = prevSlide !== null && prevSlide !== currentSlide
+    if (!slideIndexChanged) return
+
     const el = scrollRef.current
     const target = sectionRefs.current[currentSlide]
     if (!target) return
@@ -779,14 +803,19 @@ export function SplineFullScreen({
           </ComponentErrorBoundary>
           )}
           </div>
-          {showFeaturedBundleSection && featuredBundleOffer && bundlePreviewLamp && bundlePreviewArtworks ? (
+          {showFeaturedBundleSection &&
+          featuredBundleOffer &&
+          bundlePreviewLamp &&
+          bundlePreviewArtworks &&
+          featuredBundleStripProducts.length > 0 &&
+          onBundleStripItemPress ? (
             <FeaturedArtistBundleSection
               theme={theme}
               offer={featuredBundleOffer}
-              lamp={bundlePreviewLamp}
-              artworks={[bundlePreviewArtworks[0]!, bundlePreviewArtworks[1]!]}
-              onThumbnailAddLamp={onFeaturedBundleThumbnailAddLamp}
-              onThumbnailAddArtwork={onFeaturedBundleThumbnailAddArtwork}
+              stripProducts={featuredBundleStripProducts}
+              onStripItemPress={onBundleStripItemPress}
+              selectedProductId={bundleStripSelectedProductId}
+              lampPreviewProductIds={bundleStripLampPreviewProductIds}
             />
           ) : null}
         </div>

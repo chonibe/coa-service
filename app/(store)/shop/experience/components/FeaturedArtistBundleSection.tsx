@@ -1,11 +1,16 @@
 'use client'
 
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { Eye } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { ExperienceOrderLampIcon } from '../../experience-v2/components/ExperienceOrderLampIcon'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
+
+/** Match carousel strip density; bundle tiles stay smaller (w-14 / sm:w-24). */
+const MAX_BUNDLE_STRIP_ITEMS = 8
 
 function BundlePlusSep({ theme }: { theme: 'light' | 'dark' }) {
   return (
@@ -24,111 +29,116 @@ function BundlePlusSep({ theme }: { theme: 'light' | 'dark' }) {
 const bundleThumbFrameClass =
   'relative aspect-[14/20] w-14 shrink-0 overflow-hidden rounded-[10px] shadow-md ring-1 ring-inset ring-black/10 dark:ring-white/15 sm:w-24 sm:rounded-[15px]'
 
-function BundlePortraitThumb({
-  product,
-  theme,
-  isLamp,
-  priority,
-  onPress,
-}: {
-  product: ShopifyProduct
-  theme: 'light' | 'dark'
-  isLamp?: boolean
-  priority?: boolean
-  /** When set, thumb is a button that adds this item to the cart */
-  onPress?: () => void
-}) {
-  const imageUrl = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url
-  const label = (product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')).trim()
-  const inner = (
-    <>
-      {imageUrl ? (
-        <Image
-          src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
-          alt=""
-          fill
-          unoptimized
-          className={cn('object-cover', onPress && 'pointer-events-none')}
-          sizes="(max-width: 640px) 56px, 96px"
-          priority={priority}
-          loading={priority ? 'eager' : 'lazy'}
-        />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-800">
-          {isLamp ? (
-            <ExperienceOrderLampIcon
-              className={cn(
-                'h-6 w-6 sm:h-10 sm:w-10',
-                theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]'
-              )}
-              aria-hidden
-            />
-          ) : (
-            <span
-              className={cn(
-                'text-[10px] sm:text-xs',
-                theme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
-              )}
-            >
-              —
-            </span>
-          )}
-        </span>
-      )}
-    </>
-  )
-
-  if (onPress) {
-    return (
-      <button
-        type="button"
-        onClick={onPress}
-        title={label}
-        aria-label={`Add ${label} to cart`}
-        className={cn(
-          bundleThumbFrameClass,
-          'cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
-          'transition-transform duration-200 active:scale-[0.98]',
-          'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
-        )}
-      >
-        {inner}
-      </button>
-    )
-  }
-
+function LampPreviewEyeBadge({ theme }: { theme: 'light' | 'dark' }) {
   return (
-    <div className={bundleThumbFrameClass} title={label}>
-      {inner}
-    </div>
+    <span
+      role="img"
+      aria-label="Shown on lamp preview"
+      className={cn(
+        'pointer-events-none flex h-4 w-4 shrink-0 items-center justify-center rounded-full border shadow-md backdrop-blur-sm sm:h-[1.125rem] sm:w-[1.125rem]',
+        theme === 'light'
+          ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+          : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
+      )}
+    >
+      <Eye className="h-2 w-2 sm:h-2.5 sm:w-2.5" strokeWidth={2.5} aria-hidden />
+    </span>
   )
 }
 
 export interface FeaturedArtistBundleSectionProps {
   theme: 'light' | 'dark'
   offer: FeaturedBundleFilterOffer
-  lamp: ShopifyProduct
-  artworks: [ShopifyProduct, ShopifyProduct]
-  /** Lamp thumbnail: ensure Street Lamp is in the cart (same as filter panel add lamp). */
-  onThumbnailAddLamp?: () => void
-  /** Print thumbnails: add that artwork if not already in cart. */
-  onThumbnailAddArtwork?: (product: ShopifyProduct) => void
+  /** First item is always the Street Lamp; remaining entries are bundle / spotlight prints (max {@link MAX_BUNDLE_STRIP_ITEMS}). */
+  stripProducts: ShopifyProduct[]
+  /** Single tap handler: index 0 = lamp, rest = prints (add or carousel-select — parent decides). */
+  onStripItemPress: (index: number, product: ShopifyProduct) => void
+  /** Highlights the active tile (same idea as carousel `aria-current`). */
+  selectedProductId?: string | null
+  /** Product IDs on the lamp preview — prints show the eye badge (carousel parity). */
+  lampPreviewProductIds?: string[]
 }
 
-/** Featured artist bundle block: thumbnails, pricing, primary Add to cart (under Spline in the reel). */
+/** Featured artist bundle block: horizontal strip (scroll + snap + drag), pricing, primary Add to cart. */
 export function FeaturedArtistBundleSection({
   theme,
   offer,
-  lamp,
-  artworks,
-  onThumbnailAddLamp,
-  onThumbnailAddArtwork,
+  stripProducts,
+  onStripItemPress,
+  selectedProductId = null,
+  lampPreviewProductIds = [],
 }: FeaturedArtistBundleSectionProps) {
   const disabled = offer.disabled === true
-  const lampAddable = !disabled && Boolean(onThumbnailAddLamp) && lamp.availableForSale !== false
-  /** Match lamp: allow when availability unknown (some bundle payloads omit the flag). */
-  const printAddable = (p: ShopifyProduct) =>
-    !disabled && Boolean(onThumbnailAddArtwork) && p.availableForSale !== false
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [isDesktop, setIsDesktop] = useState(false)
+  const isDraggingRef = useRef(false)
+  const didDragRef = useRef(false)
+  const startXRef = useRef(0)
+  const scrollLeftRef = useRef(0)
+
+  const items = stripProducts.slice(0, MAX_BUNDLE_STRIP_ITEMS)
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isDesktop || !scrollRef.current) return
+    isDraggingRef.current = true
+    didDragRef.current = false
+    startXRef.current = e.pageX
+    scrollLeftRef.current = scrollRef.current.scrollLeft
+  }
+
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (didDragRef.current) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+  }
+
+  useEffect(() => {
+    if (!isDesktop) return
+    const onMouseUp = () => {
+      if (isDraggingRef.current) {
+        setTimeout(() => {
+          didDragRef.current = false
+        }, 0)
+      }
+      isDraggingRef.current = false
+    }
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || !scrollRef.current) return
+      if (Math.abs(e.pageX - startXRef.current) > 5) didDragRef.current = true
+      e.preventDefault()
+      const walk = (e.pageX - startXRef.current) * 1.2
+      scrollRef.current.scrollLeft = scrollLeftRef.current - walk
+    }
+    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mousemove', onMouseMove, { passive: false })
+    return () => {
+      document.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('mousemove', onMouseMove)
+    }
+  }, [isDesktop])
+
+  const scrollSelectedIntoView = useCallback(() => {
+    if (!selectedProductId || !scrollRef.current) return
+    const i = items.findIndex((p) => p.id === selectedProductId)
+    if (i < 0) return
+    const el = itemRefs.current[i]
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+  }, [items, selectedProductId])
+
+  useEffect(() => {
+    scrollSelectedIntoView()
+  }, [scrollSelectedIntoView])
+
+  const lampPreviewSet = new Set(lampPreviewProductIds)
 
   return (
     <section
@@ -152,37 +162,123 @@ export function FeaturedArtistBundleSection({
         >
           Featured artist bundle
         </h2>
-        <div className="flex w-full min-w-0 items-end justify-center gap-1 sm:gap-2 md:gap-3">
-          <BundlePortraitThumb
-            product={lamp}
-            theme={theme}
-            isLamp
-            priority
-            onPress={lampAddable ? onThumbnailAddLamp : undefined}
-          />
-          <BundlePlusSep theme={theme} />
-          <BundlePortraitThumb
-            product={artworks[0]}
-            theme={theme}
-            priority
-            onPress={
-              printAddable(artworks[0]) && onThumbnailAddArtwork
-                ? () => onThumbnailAddArtwork(artworks[0])
-                : undefined
-            }
-          />
-          <BundlePlusSep theme={theme} />
-          <BundlePortraitThumb
-            product={artworks[1]}
-            theme={theme}
-            priority
-            onPress={
-              printAddable(artworks[1]) && onThumbnailAddArtwork
-                ? () => onThumbnailAddArtwork(artworks[1])
-                : undefined
-            }
-          />
+
+        <div className="flex w-full min-w-0 justify-center">
+          <div
+            ref={scrollRef}
+            data-featured-bundle-strip
+            onMouseDown={handleMouseDown}
+            onClickCapture={handleClickCapture}
+            className={cn(
+              'touch-pan-x flex max-w-full min-w-0 items-end justify-start gap-1 overflow-x-auto overscroll-x-contain pb-1 sm:gap-2 md:gap-3',
+              'snap-x snap-proximity scrollbar-hide',
+              isDesktop && items.length > 1 && 'cursor-grab select-none active:cursor-grabbing'
+            )}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}
+          >
+            {items.map((product, index) => {
+              const isLamp = index === 0
+              const imageUrl = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url
+              const label = (product.title ?? (isLamp ? 'Street Lamp' : 'Artwork')).trim()
+              const addable =
+                !disabled &&
+                (isLamp ? product.availableForSale !== false : product.availableForSale !== false)
+              const isSelected = selectedProductId != null && product.id === selectedProductId
+              const showEye = !isLamp && lampPreviewSet.has(product.id)
+
+              return (
+                <div key={`${product.id}-${index}`} className="flex shrink-0 items-end gap-1 sm:gap-2 md:gap-3">
+                  {index > 0 ? <BundlePlusSep theme={theme} /> : null}
+                  <div
+                    ref={(el) => {
+                      itemRefs.current[index] = el
+                    }}
+                    data-bundle-strip-item
+                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                  >
+                    <div className="flex h-4 w-full items-center justify-center sm:h-[1.125rem]">
+                      {showEye ? <LampPreviewEyeBadge theme={theme} /> : <span className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" aria-hidden />}
+                    </div>
+                    {addable ? (
+                      <button
+                        type="button"
+                        onClick={() => onStripItemPress(index, product)}
+                        title={label}
+                        aria-label={isLamp ? `Select ${label}` : `Select artwork: ${label}`}
+                        aria-current={isSelected ? 'true' : undefined}
+                        className={cn(
+                          bundleThumbFrameClass,
+                          'cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
+                          'transition-transform duration-200 active:scale-[0.98]',
+                          'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]',
+                          isSelected &&
+                            'ring-2 ring-[#047AFF] ring-offset-2 ring-offset-transparent dark:ring-[#60A5FA]'
+                        )}
+                      >
+                        {imageUrl ? (
+                          <Image
+                            src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
+                            alt=""
+                            fill
+                            unoptimized
+                            className="pointer-events-none object-cover"
+                            sizes="(max-width: 640px) 56px, 96px"
+                            priority={index < 3}
+                            loading={index < 3 ? 'eager' : 'lazy'}
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-800">
+                            {isLamp ? (
+                              <ExperienceOrderLampIcon
+                                className={cn(
+                                  'h-6 w-6 sm:h-10 sm:w-10',
+                                  theme === 'light' ? 'text-neutral-500' : 'text-[#b89090]'
+                                )}
+                                aria-hidden
+                              />
+                            ) : (
+                              <span
+                                className={cn(
+                                  'text-[10px] sm:text-xs',
+                                  theme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                                )}
+                              >
+                                —
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <div
+                        className={cn(
+                          bundleThumbFrameClass,
+                          'opacity-50',
+                          isSelected && 'ring-2 ring-neutral-400 ring-offset-2 ring-offset-transparent'
+                        )}
+                        title={label}
+                      >
+                        {imageUrl ? (
+                          <Image
+                            src={getShopifyImageUrl(imageUrl, 400) ?? imageUrl}
+                            alt=""
+                            fill
+                            unoptimized
+                            className="object-cover"
+                            sizes="(max-width: 640px) 56px, 96px"
+                            priority={index < 3}
+                            loading={index < 3 ? 'eager' : 'lazy'}
+                          />
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
+
         <p
           className={cn(
             'mt-3 text-center text-sm font-semibold leading-snug sm:mt-4 sm:text-base',
@@ -216,3 +312,4 @@ export function FeaturedArtistBundleSection({
     </section>
   )
 }
+
