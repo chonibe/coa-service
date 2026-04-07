@@ -18,4 +18,5 @@ Removed the previous limit (8 items) on the featured bundle horizontal strip so 
 
 ## Deployment
 
-- Run `vercel --prod --yes` after merge if required by project workflow.
+- [x] [`app/(store)/shop/gift-cards/page.tsx`](../../app/(store)/shop/gift-cards/page.tsx) — Wrapped `useSearchParams()` usage in `<Suspense>` so `next build` prerender succeeds (required for Vercel production).
+- Production: re-run `vercel --prod --yes` after the gift-cards fix is on the deployed branch.

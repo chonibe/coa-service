@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Gift, Loader2, ChevronRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
@@ -24,7 +24,7 @@ const GIFT_CARD_DESIGNS = [
 const MIN_CENTS = 10 // $0.10 (for testing)
 const MAX_CENTS = 50000
 
-export default function GiftCardsPage() {
+function GiftCardsPageContent() {
   const searchParams = useSearchParams()
   const cancelled = searchParams.get('cancelled') === 'true'
   const { user, isAuthenticated } = useShopAuthContext()
@@ -329,5 +329,19 @@ export default function GiftCardsPage() {
         </div>
       </section>
     </main>
+  )
+}
+
+export default function GiftCardsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
+          <Loader2 className="w-10 h-10 animate-spin text-neutral-400" aria-label="Loading" />
+        </main>
+      }
+    >
+      <GiftCardsPageContent />
+    </Suspense>
   )
 }
