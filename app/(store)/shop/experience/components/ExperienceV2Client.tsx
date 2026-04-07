@@ -569,19 +569,17 @@ export function ExperienceV2Client({
 
   const bundlePreviewStripProducts = useMemo(() => {
     if (!spotlightPairProducts) return null
-    const max = 8
     const seen = new Set<string>()
     const out: ShopifyProduct[] = []
     const add = (p: ShopifyProduct) => {
       if (seen.has(p.id)) return
       seen.add(p.id)
-      if (out.length < max) out.push(p)
+      out.push(p)
     }
     add(lamp)
     add(spotlightPairProducts[0])
     add(spotlightPairProducts[1])
     for (const p of spotlightProducts) {
-      if (out.length >= max) break
       add(p)
     }
     return out

@@ -9,9 +9,6 @@ import { cn, formatPriceCompact } from '@/lib/utils'
 import { ExperienceOrderLampIcon } from '../../experience-v2/components/ExperienceOrderLampIcon'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
 
-/** Match carousel strip density; bundle tiles stay smaller (w-14 / sm:w-24). */
-const MAX_BUNDLE_STRIP_ITEMS = 8
-
 function BundlePlusSep({ theme }: { theme: 'light' | 'dark' }) {
   return (
     <span
@@ -49,7 +46,7 @@ function LampPreviewEyeBadge({ theme }: { theme: 'light' | 'dark' }) {
 export interface FeaturedArtistBundleSectionProps {
   theme: 'light' | 'dark'
   offer: FeaturedBundleFilterOffer
-  /** First item is always the Street Lamp; remaining entries are bundle / spotlight prints (max {@link MAX_BUNDLE_STRIP_ITEMS}). */
+  /** First item is always the Street Lamp; remaining entries are bundle / spotlight prints (full list; strip scrolls horizontally). */
   stripProducts: ShopifyProduct[]
   /** Single tap handler: index 0 = lamp, rest = prints (add or carousel-select — parent decides). */
   onStripItemPress: (index: number, product: ShopifyProduct) => void
@@ -85,7 +82,7 @@ export function FeaturedArtistBundleSection({
   const startXRef = useRef(0)
   const scrollLeftRef = useRef(0)
 
-  const items = stripProducts.slice(0, MAX_BUNDLE_STRIP_ITEMS)
+  const items = stripProducts
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768)
