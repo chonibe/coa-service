@@ -17,7 +17,6 @@ import {
 /** Portrait tiles match [`ArtworkCarouselBar`](../../experience/components/ArtworkCarouselBar.tsx) strip (14×20, 15px radius). */
 const THUMB_WIDTH_PX = 36
 const IMAGE_REQUEST_PX = 280
-const MAX_THUMBS = 5
 
 export interface ExperienceCheckoutStickyBarProps {
   lamp: ShopifyProduct
@@ -276,17 +275,6 @@ export function ExperienceCheckoutStickyBar({
     return out
   }, [lamp, lampQuantity, selectedArtworks])
 
-  const { visibleSlots, overflowCount } = useMemo(() => {
-    if (slots.length <= MAX_THUMBS) {
-      return { visibleSlots: slots, overflowCount: 0 }
-    }
-    const cap = MAX_THUMBS - 1
-    return {
-      visibleSlots: slots.slice(0, cap),
-      overflowCount: slots.length - cap,
-    }
-  }, [slots])
-
   const summaryLabel = useMemo(() => {
     if (!hasArtworks && stripMode === 'collection') {
       return lampQuantity > 0
@@ -298,7 +286,7 @@ export function ExperienceCheckoutStickyBar({
       parts.push(`${lampQuantity} lamp${lampQuantity > 1 ? 's' : ''}`)
     }
     parts.push(`${selectedArtworks.length} artwork${selectedArtworks.length !== 1 ? 's' : ''}`)
-    return `Checkout summary: ${parts.join(', ')}`
+    return `Your collection summary: ${parts.join(', ')}`
   }, [lampQuantity, selectedArtworks.length, hasArtworks, stripMode])
 
   if (!visible) return null
@@ -345,7 +333,7 @@ export function ExperienceCheckoutStickyBar({
                 {!suppressCartThumbnails ? (
                   <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide pt-1">
                     <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
-                      {visibleSlots.map((slot, index) => {
+                      {slots.map((slot, index) => {
                         const showLampPreviewEye =
                           !slot.isLamp &&
                           lampPreviewProductIds.length > 0 &&
@@ -382,23 +370,6 @@ export function ExperienceCheckoutStickyBar({
                           </Fragment>
                         )
                       })}
-                      {overflowCount > 0 && (
-                        <>
-                          <PlusSep theme={theme} />
-                          <div className="flex shrink-0 flex-col items-center gap-0.5">
-                            <div className="h-[15px] w-full shrink-0" aria-hidden />
-                            <div
-                              className={cn(
-                                'flex w-9 aspect-[14/20] shrink-0 items-center justify-center rounded-[15px] text-xs font-bold tabular-nums sm:w-10',
-                                theme === 'light' ? 'text-neutral-600' : 'text-white/80'
-                              )}
-                              title={`${overflowCount} more items`}
-                            >
-                              +{overflowCount}
-                            </div>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </div>
                 ) : null}
@@ -422,10 +393,10 @@ export function ExperienceCheckoutStickyBar({
               type="button"
               onClick={openOrderBar}
               className={checkoutPillClass}
-              aria-label={`Open checkout, total ${finalTotal.toFixed(2)} dollars`}
+              aria-label={`Open your collection, total ${finalTotal.toFixed(2)} dollars`}
             >
               <span className="whitespace-nowrap">
-                Checkout · ${formatPriceCompact(finalTotal)}
+                Your Collection · ${formatPriceCompact(finalTotal)}
               </span>
               <span aria-hidden className="text-base leading-none">
                 →
