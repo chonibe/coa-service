@@ -31,7 +31,7 @@ import { FeaturedArtistBundleSection } from './FeaturedArtistBundleSection'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
 import {
   ArtistCollectionVideoEmbed,
-  ExperienceReelGalleryVideo,
+  ShopifyInlineVideo,
 } from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
@@ -895,11 +895,10 @@ export function SplineFullScreen({
                               Video unavailable for this product.
                             </p>
                           ) : (
-                            <ExperienceReelGalleryVideo
+                            <ShopifyInlineVideo
                               key={reelGalleryItemKey(item, idx)}
                               sources={item.sources}
-                              playbackUrl={playback}
-                              posterUrl={item.posterUrl}
+                              posterUrl={item.posterUrl ?? undefined}
                               ariaLabel={embedTitle}
                               className="block h-auto w-full max-h-[min(85dvh,920px)] object-contain align-middle"
                             />
