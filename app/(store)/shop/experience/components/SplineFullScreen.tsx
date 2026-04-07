@@ -19,7 +19,6 @@ import {
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
-import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
 import {
   type ExperienceReelGalleryItem,
   reelGalleryItemKey,
@@ -27,10 +26,7 @@ import {
 import { ArtworkAccordions } from './ArtworkAccordions'
 import { FeaturedArtistBundleSection } from './FeaturedArtistBundleSection'
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
-import {
-  ArtistCollectionVideoEmbed,
-  ShopifyInlineVideo,
-} from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
+import { ArtistCollectionVideoEmbed } from '@/app/(store)/shop/experience-v2/components/ProductStandaloneVideoEmbed'
 
 function assignRef<T>(ref: Ref<T | null> | undefined, value: T | null) {
   if (ref == null) return
@@ -85,11 +81,9 @@ interface SplineFullScreenProps {
   rotateTrigger: number
   resetTrigger?: number
   onFrontSideSettled?: (side: 'A' | 'B') => void
-  /** Count of artworks assigned to lamp preview (0–2). When `collectionArtworkCount` is omitted, idle turntable is off if at least one preview slot is filled. */
+  /** Count of artworks assigned to lamp preview (0–2). Passed through for strip parity / callers; does not gate 3D idle motion. */
   lampPreviewCount?: number
-  /**
-   * Artworks in the experience collection/cart (not the lamp). When `0`, the lamp uses idle turntable; when `≥1`, idle spin follows the legacy `lampPreviewCount` rule. Cursor/touch orbit is always off on the 3D preview.
-   */
+  /** Artworks in the experience collection/cart (not the lamp). Caller context only; does not gate 3D idle motion. */
   collectionArtworkCount?: number
   pickerOpen?: boolean
   className?: string
@@ -150,8 +144,8 @@ export function SplineFullScreen({
   rotateTrigger,
   resetTrigger = 0,
   onFrontSideSettled,
-  lampPreviewCount = 0,
-  collectionArtworkCount,
+  lampPreviewCount: _lampPreviewCount = 0,
+  collectionArtworkCount: _collectionArtworkCount,
   pickerOpen = false,
   className,
   topBarContent,
@@ -724,7 +718,7 @@ export function SplineFullScreen({
           </div>
         )}
 
-        {/* Gallery: one scroll section per item after the hero (index 0) — video first when present, then photos */}
+        {/* Gallery: one scroll section per item after the hero — images + optional external embed (native file video omitted from reel). */}
         {galleryImages.length > 1 &&
           galleryImages.slice(1).map((item, idx) => {
             const sectionIndex = galleryBaseSectionIndex + idx
@@ -764,36 +758,7 @@ export function SplineFullScreen({
                         className="shadow-none ring-0"
                       />
                     </div>
-                  ) : (
-                    (() => {
-                      const playback = shopifyVideoPlaybackUrl(item.sources)
-                      return (
-                        <div
-                          data-reel-wheel-forward
-                          className="relative mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black md:max-w-[min(92vw,720px)]"
-                        >
-                          {!playback ? (
-                            <p
-                              className={cn(
-                                'flex min-h-[120px] items-center justify-center rounded-xl px-4 py-8 text-center text-sm',
-                                theme === 'light' ? 'bg-neutral-200 text-neutral-600' : 'bg-white/10 text-white/70'
-                              )}
-                            >
-                              Video unavailable for this product.
-                            </p>
-                          ) : (
-                            <ShopifyInlineVideo
-                              key={reelGalleryItemKey(item, idx)}
-                              sources={item.sources}
-                              posterUrl={item.posterUrl ?? undefined}
-                              ariaLabel={embedTitle}
-                              className="block h-auto w-full max-h-[min(85dvh,920px)] object-contain align-middle"
-                            />
-                          )}
-                        </div>
-                      )
-                    })()
-                  )}
+                  ) : null}
                 </div>
               </div>
             )

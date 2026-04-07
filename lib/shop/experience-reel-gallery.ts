@@ -91,7 +91,8 @@ function slideToReelItem(slide: ProductCarouselSlide): ExperienceReelGalleryItem
 }
 
 /**
- * Build reel thumbnails + vertical gallery: [hero image, first Shopify video (if any), …remaining images].
+ * Build reel thumbnails + vertical gallery: [hero image, optional external embed, …remaining images].
+ * **Native Shopify `VIDEO` file** is omitted here (unreliable in-reel playback); it still shows in the product detail slideout via `ProductStandaloneVideoEmbed`.
  * Index 0 stays the details hero; `slice(1)` is what scrolls in SplineFullScreen.
  */
 export function buildExperienceReelGalleryItems(
@@ -100,15 +101,20 @@ export function buildExperienceReelGalleryItems(
   if (!product) return []
   const ordered = getOrderedProductImages(product)
 
-  /** Video-only (or no image rows) but Shopify media includes a clip — use poster as hero so reel has 2+ rows. */
+  /** Video-only (or no image rows) but Shopify media includes a clip. */
   if (ordered.length === 0) {
     const slides = buildProductCarouselSlides(product)
     const firstVideoSlide = slides.find((s) => s.type === 'video' || s.type === 'externalVideo')
     if (!firstVideoSlide) return []
     const videoItem = slideToReelItem(firstVideoSlide)
     if (!videoItem || videoItem.kind === 'image') return []
-    const posterUrl =
-      videoItem.kind === 'video' || videoItem.kind === 'externalVideo' ? videoItem.posterUrl : null
+    /** Native file video: poster-only hero if available; else empty reel list. */
+    if (videoItem.kind === 'video') {
+      const posterUrl = videoItem.posterUrl
+      if (!posterUrl) return []
+      return [{ kind: 'image', url: posterUrl, altText: videoItem.altText ?? null }]
+    }
+    const posterUrl = videoItem.posterUrl
     if (!posterUrl) return [videoItem]
     return [
       { kind: 'image', url: posterUrl, altText: videoItem.altText ?? null },
@@ -130,12 +136,17 @@ export function buildExperienceReelGalleryItems(
     return ordered.map((o) => ({ kind: 'image' as const, url: o.url, altText: o.altText }))
   }
 
-  const posterKey =
-    videoItem.kind === 'video' || videoItem.kind === 'externalVideo'
-      ? videoItem.posterUrl
-        ? urlKey(videoItem.posterUrl)
-        : null
-      : null
+  /** Native Shopify video: do not add a reel row — photos only after hero. */
+  if (videoItem.kind === 'video') {
+    const posterKey = videoItem.posterUrl ? urlKey(videoItem.posterUrl) : null
+    const restFiltered = posterKey ? rest.filter((r) => urlKey(r.url) !== posterKey) : rest
+    return [
+      { kind: 'image', url: hero.url, altText: hero.altText },
+      ...restFiltered.map((o) => ({ kind: 'image' as const, url: o.url, altText: o.altText })),
+    ]
+  }
+
+  const posterKey = videoItem.posterUrl ? urlKey(videoItem.posterUrl) : null
   const restFiltered = posterKey ? rest.filter((r) => urlKey(r.url) !== posterKey) : rest
 
   return [
