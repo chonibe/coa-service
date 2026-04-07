@@ -32,7 +32,9 @@ const Spline3DPreview = dynamic(loadSpline3DPreview, {
 export interface CarouselStripLampSplineProps {
   image1: string | null
   image2: string | null
+  /** Caller parity with main reel; does not gate idle yaw sway. */
   lampPreviewCount: number
+  /** Caller parity with main reel; does not gate idle yaw sway. */
   collectionArtworkCount: number
   resetTrigger: number
   rotateToSide: 'A' | 'B' | null
@@ -48,8 +50,8 @@ export interface CarouselStripLampSplineProps {
 export function CarouselStripLampSpline({
   image1,
   image2,
-  lampPreviewCount,
-  collectionArtworkCount,
+  lampPreviewCount: _lampPreviewCount,
+  collectionArtworkCount: _collectionArtworkCount,
   resetTrigger,
   rotateToSide,
   rotateTrigger,
@@ -98,12 +100,6 @@ export function CarouselStripLampSpline({
   }, [])
 
   const lampVariant = theme === 'light' ? 'light' : 'dark'
-  const idleSpinEnabled =
-    typeof collectionArtworkCount === 'number'
-      ? collectionArtworkCount === 0
-        ? true
-        : lampPreviewCount < 1
-      : lampPreviewCount < 1
 
   const facadeSrc = image1 ?? image2 ?? SPLINE_FACADE_SRC
 
@@ -138,7 +134,7 @@ export function CarouselStripLampSpline({
           parentScrollMode="isolate"
           animate
           interactive={false}
-          idleSpinEnabled={idleSpinEnabled}
+          idleSpinEnabled
           cameraFeedMode
           cameraFeedCssBackdrop={theme === 'light' ? '#F5F5F5' : '#171515'}
           className="relative h-full w-full min-h-0 min-w-0"

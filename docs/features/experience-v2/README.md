@@ -80,7 +80,7 @@ Integrates with:
 
 Wrapper around `Spline3DPreview` using **exact same configuration** as Experience V1:
 
-- **No cursor/touch orbit** on the lamp (`interactive={false}` in [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx)); idle yaw sway (when no artwork on lamp) and UI rotation only. The v2 shell’s [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) also leaves `interactive` off.
+- **No cursor/touch orbit** on the lamp (`interactive={false}` in [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx)); idle yaw sway (with or without artwork on the lamp) and UI rotation only. The v2 shell’s [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) also leaves `interactive` off.
 - **Featured artist bundle**: [`FeaturedArtistBundleSection`](../../../app/(store)/shop/experience/components/FeaturedArtistBundleSection.tsx) below the 3D preview when the server has a **non-null offer** and **lamp + two resolved spotlight prints**; the **Add to cart** button respects **`offer.disabled`** when the trio is already in cart or prints are not purchasable.
 - Same object IDs: `side1ObjectId="2de1e7d2-4b53-4738-a749-be197641fa9a"`, `side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"`
 - Same texture settings: `swapLampSides`, `flipForSide="B"`, `flipForSideB="horizontal"`
@@ -193,7 +193,7 @@ When the current **artist spotlight** from [`/api/shop/artist-spotlight`](../../
 
 - `experience-v2/layout.tsx` does not preload `scene.splinecode` in HTML anymore.
 - `SplineFullScreen` keeps the facade-first behavior and only mounts Spline after idle/tap.
-- **Idle yaw sway** (~±15° oscillation around the settled pose) on the lamp model is enabled only when **no** artwork is on the lamp preview (`lampPreviewOrder` empty). As soon as one artwork is placed, `idleSpinEnabled` is false so the scene stays steady ([`SplineFullScreen.tsx`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) via `lampPreviewCount`). Implemented in [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx).
+- **Idle yaw sway** (~±15° oscillation around the settled pose) runs whenever the main Spline is animating, including when artworks are on the lamp ([`SplineFullScreen.tsx`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx), [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx)). The strip mini Spline ([`CarouselStripLampSpline`](../../../app/(store)/shop/experience/components/CarouselStripLampSpline.tsx)) matches.
 - `ExperienceV2Client` now reads `sc-experience-cart-v2` once at mount instead of parsing localStorage on every render.
 
 ## Data Flow

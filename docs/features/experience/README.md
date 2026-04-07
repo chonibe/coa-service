@@ -50,7 +50,7 @@ When the Spline 3D model captured touch for rotation, users couldn't scroll the 
 
 ### Spline: no pointer orbit on lamp (2026-04-06)
 
-The 3D lamp preview **does not** follow the cursor or react to horizontal drag/touch for orbit. [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) passes **`interactive={false}`** to [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx); [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) omits **`interactive`** (same default). **Idle yaw sway** (~±15°, slow sine) when `idleSpinEnabled` is on, plus **UI-driven rotation** (side A/B, quarter turns).
+The 3D lamp preview **does not** follow the cursor or react to horizontal drag/touch for orbit. [`SplineFullScreen`](../../../app/(store)/shop/experience/components/SplineFullScreen.tsx) passes **`interactive={false}`** to [`Spline3DPreview`](../../../app/template-preview/components/spline-3d-preview.tsx); [`Configurator`](../../../app/(store)/shop/experience-v2/components/Configurator.tsx) omits **`interactive`** (same default). **Idle yaw sway** (~±15°, slow sine) is on for the main reel and strip mini Spline whenever `animate` is enabled (including with artworks on the lamp); pass **`idleSpinEnabled={false}`** only to freeze. Plus **UI-driven rotation** (side A/B, quarter turns).
 
 **Files changed**:
 - [`app/template-preview/components/spline-3d-preview.tsx`](../../../app/template-preview/components/spline-3d-preview.tsx) — canvas pointer-events disabled, orbit controls disabled, gesture detection on container, wheel forwarding for sibling scroll regions

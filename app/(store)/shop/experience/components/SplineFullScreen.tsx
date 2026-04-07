@@ -647,13 +647,7 @@ export function SplineFullScreen({
               reelScrollContainerRef={scrollRef}
               animate
               interactive={false}
-              idleSpinEnabled={
-                typeof collectionArtworkCount === 'number'
-                  ? collectionArtworkCount === 0
-                    ? true
-                    : lampPreviewCount < 1
-                  : lampPreviewCount < 1
-              }
+              idleSpinEnabled
               className="relative w-full h-full min-h-0 min-w-0"
               swapLampSides
               flipForSide="B"

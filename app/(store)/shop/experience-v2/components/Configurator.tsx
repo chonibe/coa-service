@@ -1506,7 +1506,6 @@ export function Configurator({
               side2ObjectId="2e33392b-21d8-441d-87b0-11527f3a8b70"
               minimal
               animate
-              idleSpinEnabled={lampPreviewOrder.length === 0}
               className="relative w-full h-full"
               onPanelsFound={setPanelStatus}
               swapLampSides

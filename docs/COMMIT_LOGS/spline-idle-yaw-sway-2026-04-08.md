@@ -13,5 +13,5 @@ Replaced continuous **turntable drift** on the main Spline lamp with a **smooth 
 
 ## Notes
 
-- **`idleSpinEnabled={false}`** still freezes at `baseYawRef` (e.g. with artwork on lamp).
+- **`idleSpinEnabled={false}`** still freezes at `baseYawRef` (callers can opt out of sway).
 - **`frontLockUntilRef`** still holds exact front pose briefly after side settle before sway resumes.
