@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
-import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+import { shopifyMimeTypeForPlaybackUrl, shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
 
 /** Same defer + `preload` pattern as `components/sections/VideoPlayer.tsx` for Shopify file URLs. */
 function HomeStyleProgressiveVideo({
@@ -85,6 +85,231 @@ function HomeStyleProgressiveVideo({
 
 function isPlaybackUrlHls(url: string): boolean {
   return /\.m3u8(\?|$)/i.test(url) || (url.includes('m3u8') && !/\.mp4(\?|$)/i.test(url))
+}
+
+/** Matches `components/sections/VideoPlayer.tsx`: defer src, `preload="none"`, `onLoadedData` + muted `play()`, force-mute on `volumechange`. No IntersectionObserver. */
+const REEL_GALLERY_DEFER_MS = 250
+
+function ReelGalleryProgressiveVideo({
+  sources,
+  playbackUrl,
+  posterUrl,
+  ariaLabel,
+  className,
+}: {
+  sources: ShopifyVideo['sources']
+  playbackUrl: string
+  posterUrl?: string | null
+  ariaLabel: string
+  className?: string
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const sourceType = shopifyMimeTypeForPlaybackUrl(sources, playbackUrl)
+
+  const [videoLoadStarted, setVideoLoadStarted] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setVideoLoadStarted(true)
+      videoRef.current?.load?.()
+    }, REEL_GALLERY_DEFER_MS)
+    return () => clearTimeout(t)
+  }, [playbackUrl])
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el || !videoLoadStarted) return
+    el.muted = true
+    const forceMute = () => {
+      el.muted = true
+    }
+    el.addEventListener('volumechange', forceMute)
+    return () => el.removeEventListener('volumechange', forceMute)
+  }, [videoLoadStarted])
+
+  return (
+    <video
+      ref={videoRef}
+      className={cn('bg-black', className)}
+      src={videoLoadStarted ? playbackUrl : undefined}
+      poster={posterUrl ?? undefined}
+      preload="none"
+      autoPlay
+      loop
+      muted
+      playsInline
+      controls
+      disablePictureInPicture
+      controlsList="nodownload nofullscreen noremoteplayback"
+      aria-label={ariaLabel}
+      onLoadedData={(e) => {
+        const el = e.currentTarget
+        el.muted = true
+        void el.play().catch(() => {})
+      }}
+    >
+      {videoLoadStarted && <source src={playbackUrl} type={sourceType} />}
+    </video>
+  )
+}
+
+/** HLS for reel: same attach logic as {@link HlsOrSingleUrlVideo} but home-style play (no IO). */
+function ReelGalleryHlsVideo({
+  playbackUrl,
+  poster,
+  ariaLabel,
+  className,
+}: {
+  playbackUrl: string
+  poster?: string
+  ariaLabel: string
+  className?: string
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const hlsRef = useRef<{ destroy: () => void } | null>(null)
+  const url = playbackUrl
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el || !url) return
+
+    let cancelled = false
+    hlsRef.current?.destroy()
+    hlsRef.current = null
+
+    const isM3u8 =
+      /\.m3u8(\?|$)/i.test(url) || (url.includes('m3u8') && !/\.mp4(\?|$)/i.test(url))
+    const nativeHls =
+      el.canPlayType('application/vnd.apple.mpegurl') !== '' ||
+      el.canPlayType('application/x-mpegURL') !== ''
+
+    if (isM3u8 && nativeHls) {
+      el.src = url
+      el.load()
+    } else if (isM3u8) {
+      void import('hls.js').then(({ default: Hls }) => {
+        if (cancelled || videoRef.current !== el) return
+        if (!Hls.isSupported()) {
+          el.src = url
+          el.load()
+          return
+        }
+        const hls = new Hls({
+          capLevelToPlayerSize: true,
+          startLevel: -1,
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = false
+          },
+        })
+        hlsRef.current = hls
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (!data.fatal || cancelled || videoRef.current !== el) return
+          try {
+            hls.destroy()
+          } catch {
+            /* ignore */
+          }
+          hlsRef.current = null
+          el.src = url
+          el.load()
+        })
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (!cancelled && videoRef.current === el) {
+            el.muted = true
+            void el.play().catch(() => {})
+          }
+        })
+        hls.loadSource(url)
+        hls.attachMedia(el)
+      })
+    } else {
+      el.src = url
+      el.load()
+    }
+
+    return () => {
+      cancelled = true
+      hlsRef.current?.destroy()
+      hlsRef.current = null
+      el.pause()
+      el.removeAttribute('src')
+      while (el.firstChild) el.removeChild(el.firstChild)
+      el.load()
+    }
+  }, [url])
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    el.muted = true
+    const forceMute = () => {
+      el.muted = true
+    }
+    el.addEventListener('volumechange', forceMute)
+    return () => el.removeEventListener('volumechange', forceMute)
+  }, [url])
+
+  if (!url) return null
+
+  return (
+    <video
+      ref={videoRef}
+      className={cn('bg-black', className)}
+      poster={poster}
+      preload="metadata"
+      autoPlay
+      loop
+      muted
+      playsInline
+      controls
+      disablePictureInPicture
+      controlsList="nodownload nofullscreen noremoteplayback"
+      aria-label={ariaLabel}
+      onLoadedData={(e) => {
+        const el = e.currentTarget
+        el.muted = true
+        void el.play().catch(() => {})
+      }}
+    />
+  )
+}
+
+/**
+ * Experience vertical reel only: mirrors `VideoPlayer` loading/playback (defer, `onLoadedData`, muted autoplay).
+ * Use instead of `ShopifyInlineVideo` there so stacking and scroll observers do not fight native controls.
+ */
+export function ExperienceReelGalleryVideo({
+  sources,
+  posterUrl,
+  ariaLabel,
+  className,
+}: {
+  sources: ShopifyVideo['sources']
+  posterUrl?: string | null
+  ariaLabel: string
+  className?: string
+}) {
+  const playbackUrl = shopifyVideoPlaybackUrl(sources)
+  if (!playbackUrl) return null
+  if (isPlaybackUrlHls(playbackUrl)) {
+    return (
+      <ReelGalleryHlsVideo
+        playbackUrl={playbackUrl}
+        poster={posterUrl ?? undefined}
+        ariaLabel={ariaLabel}
+        className={className}
+      />
+    )
+  }
+  return (
+    <ReelGalleryProgressiveVideo
+      sources={sources}
+      playbackUrl={playbackUrl}
+      posterUrl={posterUrl}
+      ariaLabel={ariaLabel}
+      className={className}
+    />
+  )
 }
 
 function HlsOrSingleUrlVideo({
