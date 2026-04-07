@@ -8,8 +8,6 @@ import { ArrowUp, RotateCw } from 'lucide-react'
 /** Static facade (87 KB) as LCP candidate; Spline 6.7MB scene mounts via requestIdleCallback. */
 const SPLINE_FACADE_SRC = '/internal.webp'
 
-/** Once per tab session — reel scroll hint past Spline / carousel hide (see scroll nudge effect in this file). */
-const EXPERIENCE_REEL_SCROLL_HINT_KEY = 'sc-experience-reel-scroll-hint-v2'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -325,161 +323,44 @@ export function SplineFullScreen({
   const ignoreSlideSyncUntilRef = useRef(0)
   const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // One-time reel scroll: down past the Spline block (artwork carousel hides) then back — first visit / tab session only.
+  /**
+   * `<video controls>` and embedded iframes often consume wheel (e.g. volume) so the reel does not scroll.
+   * Capture on the scroll container and apply delta to `scrollTop` only when the event target is under
+   * `[data-reel-wheel-forward]` — rest of the reel keeps native scrolling.
+   */
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      sessionStorage.setItem(EXPERIENCE_REEL_SCROLL_HINT_KEY, '1')
-      return
+    const scrollEl = scrollRef.current
+    if (!scrollEl) return
+
+    const wheelDeltaY = (e: WheelEvent, el: HTMLElement) => {
+      let dy = e.deltaY
+      if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) dy *= 16
+      if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) dy *= el.clientHeight
+      return dy
     }
 
-    let cancelled = false
-    let intervalId: ReturnType<typeof setInterval> | null = null
-    let timeoutIds: ReturnType<typeof setTimeout>[] = []
-    let pollAttempts = 0
-    let rafChainPending = false
-    /** ~12s max wait for layout + Spline section height */
-    const MAX_POLL_ATTEMPTS = 85
-    const MIN_SCROLLABLE = 16
+    const onWheelCapture = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      const t = e.target
+      if (!(t instanceof Node) || !scrollEl.contains(t)) return
+      const el = t instanceof Element ? t : t.parentElement
+      if (!el?.closest('[data-reel-wheel-forward]')) return
 
-    const clearTimers = () => {
-      if (intervalId !== null) {
-        clearInterval(intervalId)
-        intervalId = null
-      }
-      timeoutIds.forEach(clearTimeout)
-      timeoutIds = []
+      const dy = wheelDeltaY(e, scrollEl)
+      if (dy === 0) return
+      const max = scrollEl.scrollHeight - scrollEl.clientHeight
+      if (max <= 0) return
+      const st = scrollEl.scrollTop
+      if (dy < 0 && st <= 0) return
+      if (dy > 0 && st >= max - 1) return
+      scrollEl.scrollTop += dy
+      e.preventDefault()
+      e.stopPropagation()
     }
 
-    const animateScroll = (
-      scrollEl: HTMLDivElement,
-      from: number,
-      to: number,
-      durationMs: number,
-      done: () => void
-    ) => {
-      const t0 = performance.now()
-      const step = (now: number) => {
-        if (cancelled) return
-        const u = Math.min(1, (now - t0) / durationMs)
-        const eased = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2
-        scrollEl.scrollTop = from + (to - from) * eased
-        if (u < 1) requestAnimationFrame(step)
-        else done()
-      }
-      requestAnimationFrame(step)
-    }
-
-    /** Content Y of spline section bottom; scrollTop >= this clears hero from view (matches carousel `splineInView` off). */
-    const splineBottomScrollTop = (scrollEl: HTMLDivElement, spline: HTMLDivElement): number => {
-      const portTop = scrollEl.getBoundingClientRect().top
-      const splineTopInContent =
-        spline.getBoundingClientRect().top - portTop + scrollEl.scrollTop
-      return splineTopInContent + spline.offsetHeight
-    }
-
-    const runNudge = (scrollEl: HTMLDivElement): boolean => {
-      if (cancelled || sessionStorage.getItem(EXPERIENCE_REEL_SCROLL_HINT_KEY)) return false
-      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight
-      if (maxScroll < MIN_SCROLLABLE) return false
-
-      const spline = sectionRefs.current[splineSectionIndex]
-      const start = scrollEl.scrollTop
-
-      let target = maxScroll
-      if (spline && spline.offsetHeight >= 64) {
-        const pastSpline = splineBottomScrollTop(scrollEl, spline)
-        target = Math.min(maxScroll, Math.max(start + MIN_SCROLLABLE, pastSpline))
-      }
-
-      // If we still barely move (e.g. flex layout), use a strong “past the fold” scroll
-      if (target <= start + 24 && maxScroll > 40) {
-        target = Math.min(
-          maxScroll,
-          start + Math.max(Math.floor(scrollEl.clientHeight * 0.58), 120)
-        )
-      }
-
-      if (target <= start + 8) {
-        target = maxScroll
-      }
-      if (target <= start + 8) return false
-
-      sessionStorage.setItem(EXPERIENCE_REEL_SCROLL_HINT_KEY, '1')
-
-      // Longer guard: carousel animation + two scroll tweens
-      ignoreSlideSyncUntilRef.current = Date.now() + 5200
-      lastReportedSectionRef.current = splineSectionIndex
-      lastProgrammaticSectionRef.current = splineSectionIndex
-
-      const leadMs = splineReady ? 380 : 720
-      const downMs = 1050
-      const pauseMs = 380
-      const upMs = 950
-
-      const t = window.setTimeout(() => {
-        if (cancelled) return
-        animateScroll(scrollEl, start, target, downMs, () => {
-          if (cancelled) return
-          const t2 = window.setTimeout(() => {
-            if (cancelled) return
-            animateScroll(scrollEl, scrollEl.scrollTop, start, upMs, () => {
-              lastReportedSectionRef.current = splineSectionIndex
-              lastProgrammaticSectionRef.current = splineSectionIndex
-            })
-          }, pauseMs)
-          timeoutIds.push(t2)
-        })
-      }, leadMs)
-      timeoutIds.push(t)
-      return true
-    }
-
-    const trySchedule = () => {
-      const el = scrollRef.current
-      if (!el || cancelled) return
-      const maxScroll = el.scrollHeight - el.clientHeight
-      if (maxScroll < MIN_SCROLLABLE) {
-        pollAttempts += 1
-        if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
-        return
-      }
-      const spline = sectionRefs.current[splineSectionIndex]
-      if (!spline) {
-        pollAttempts += 1
-        if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
-        return
-      }
-      // Wait briefly for Spline / hero layout; then run anyway (fold fallback inside runNudge)
-      if (spline.offsetHeight < 48 && pollAttempts < 35) {
-        pollAttempts += 1
-        return
-      }
-      if (rafChainPending) return
-      rafChainPending = true
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          rafChainPending = false
-          if (cancelled) return
-          const started = runNudge(el)
-          if (started) clearTimers()
-          else {
-            pollAttempts += 1
-            if (pollAttempts >= MAX_POLL_ATTEMPTS) clearTimers()
-          }
-        })
-      })
-    }
-
-    intervalId = window.setInterval(trySchedule, 160)
-    trySchedule()
-
-    return () => {
-      cancelled = true
-      clearTimers()
-    }
-  }, [splineReady, sectionCount, splineSectionIndex, hasAccordion, displayedProduct?.id, galleryImages.length, editionLeadBeforeSpline])
+    scrollEl.addEventListener('wheel', onWheelCapture, { passive: false, capture: true })
+    return () => scrollEl.removeEventListener('wheel', onWheelCapture, true)
+  }, [sectionCount, galleryImages.length, hasGallery])
 
   // Scroll reel only when parent bumps `reelAlignNonce` (thumbnail / jump / cart), never when `currentSlide`
   // updates from `onSlideChange` during free vertical scrolling — that was snapping the viewport to each image.
@@ -873,7 +754,10 @@ export function SplineFullScreen({
                       />
                     </div>
                   ) : item.kind === 'externalVideo' ? (
-                    <div className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(92vw,720px)] mx-auto">
+                    <div
+                      data-reel-wheel-forward
+                      className="relative w-full max-w-[min(92vw,360px)] md:max-w-[min(92vw,720px)] mx-auto"
+                    >
                       <ArtistCollectionVideoEmbed
                         url={item.embedUrl}
                         title={embedTitle}
@@ -884,7 +768,10 @@ export function SplineFullScreen({
                     (() => {
                       const playback = shopifyVideoPlaybackUrl(item.sources)
                       return (
-                        <div className="relative mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black md:max-w-[min(92vw,720px)]">
+                        <div
+                          data-reel-wheel-forward
+                          className="relative mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black md:max-w-[min(92vw,720px)]"
+                        >
                           {!playback ? (
                             <p
                               className={cn(
