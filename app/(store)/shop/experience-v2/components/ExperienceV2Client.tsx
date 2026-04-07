@@ -24,11 +24,6 @@ const SplineFullScreen = dynamic(
   { ssr: false }
 )
 
-const ArtworkCarouselBar = dynamic(
-  () => import('../../experience/components/ArtworkCarouselBar').then((m) => ({ default: m.ArtworkCarouselBar })),
-  { ssr: false }
-)
-
 const ArtworkInfoBar = dynamic(
   () => import('../../experience/components/ArtworkInfoBar').then((m) => ({ default: m.ArtworkInfoBar })),
   { ssr: false }
@@ -822,45 +817,6 @@ export function ExperienceV2Client({
     })
   }, [getSideToShowForProduct])
 
-  /** Carousel trash: remove every line for that product (deduped tile). */
-  const handleRemoveCarouselSlot = useCallback(
-    (carouselIndex: number) => {
-      const product = carouselArtworks[carouselIndex]
-      if (!product) return
-      const removedId = product.id
-      setCartOrder((prev) => {
-        const filtered = prev.filter((id) => id !== removedId)
-        if (filtered.length === 0) {
-          setResetTrigger((t) => t + 1)
-          setRotateToSide(null)
-          setActiveCarouselIndex(-1)
-          setLampPreviewOrder([])
-          return filtered
-        }
-        setLampPreviewOrder((prevLamp) => {
-          const next = prevLamp.filter((id) => id !== removedId)
-          if (next.length === 0) {
-            setRotateToSide(null)
-            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
-            return []
-          }
-          if (next.length < prevLamp.length) {
-            const remainingId = next[0]
-            const sideToShow = getSideToShowForProduct(next, remainingId)
-            setRotateTrigger((t) => t + 1)
-            setRotateToSide(sideToShow)
-            setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, remainingId))
-          } else {
-            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
-          }
-          return next
-        })
-        return filtered
-      })
-    },
-    [carouselArtworks, getSideToShowForProduct]
-  )
-
   const handleAdjustArtworkQuantity = useCallback(
     (runStartIndex: number, delta: 1 | -1) => {
       if (delta === -1) {
@@ -1398,11 +1354,6 @@ export function ExperienceV2Client({
     return streetEditionByProductId[k] ?? null
   }, [detailProduct, lamp.id, streetEditionByProductId])
 
-  const handleJumpToSpline = useCallback(() => {
-    bumpReelAlign()
-    setPreviewSlideIndex(0)
-  }, [bumpReelAlign])
-
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
       <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
@@ -1577,35 +1528,6 @@ export function ExperienceV2Client({
             </div>
           </div>
         )}
-
-        <div className="hidden w-full shrink-0 bg-transparent text-transparent md:block">
-      <ArtworkCarouselBar
-        splineInView={splineInView}
-        experienceReelRef={experienceReelRef}
-        selectedArtworks={carouselArtworks}
-        reserveCheckoutBar
-        activeIndex={activeCarouselIndex}
-        lampPreviewOrder={lampPreviewOrder}
-        onTapItem={handleTapCarouselItem}
-        onRemoveItem={handleRemoveCarouselSlot}
-        onOpenPicker={handleOpenPicker}
-        onJumpToSpline={handleJumpToSpline}
-        lampQuantity={lampQuantity}
-        stripLampProduct={lamp}
-        onAddLampFromCarouselStrip={() => handleLampQuantityChange(1)}
-        onRemoveLampFromCarouselStrip={() => handleLampQuantityChange(0)}
-        miniSplineLampPreview={{
-          image1,
-          image2,
-          lampPreviewCount: lampPreviewOrder.length,
-          collectionArtworkCount: selectedArtworks.length,
-          resetTrigger,
-          rotateToSide,
-          rotateTrigger,
-          onFrontSideSettled: handleFrontSideSettled,
-        }}
-      />
-        </div>
       </div>
 
       </div>
@@ -1753,8 +1675,8 @@ export function ExperienceV2Client({
         stripMode="collection"
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
-        suppressCartThumbnails={!isMobile && splineInView}
-        onSelectThumbnailForSpline={isMobile ? handleStickyThumbnailSplineSelect : undefined}
+        suppressCartThumbnails={false}
+        onSelectThumbnailForSpline={handleStickyThumbnailSplineSelect}
         previewSelectedProductId={
           activeCarouselIndex >= 0
             ? (carouselArtworks[activeCarouselIndex]?.id ?? null)

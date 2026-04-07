@@ -17,7 +17,6 @@ import {
 } from '../../experience-v2/components/FilterPanel'
 import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { SplineFullScreen } from './SplineFullScreen'
-import { ArtworkCarouselBar } from './ArtworkCarouselBar'
 import { ArtworkInfoBar } from './ArtworkInfoBar'
 const ArtworkDetail = dynamic(
   () => import('../../experience-v2/components/ArtworkDetail').then((m) => ({ default: m.ArtworkDetail })),
@@ -602,12 +601,6 @@ export function ExperienceV2Client({
     setLampPreviewOrder([p1.id, p2.id])
   }, [cartOrder.length, spotlightData, spotlightProductsFromApi, allProducts])
 
-  const spotlightPlaceholders = useMemo(() => {
-    if (!spotlightData || cartOrder.length > 0) return []
-    const source = spotlightProductsFromApi.length > 0 ? spotlightProductsFromApi : spotlightProducts
-    return source.slice(0, 2)
-  }, [spotlightData, cartOrder.length, spotlightProductsFromApi, spotlightProducts])
-
   const spotlightFallbackImageUrl = useMemo(() => {
     const first = spotlightProductsFromApi[0] ?? spotlightProducts[0] ?? productsSeason2[0]
     if (!first) return null
@@ -892,67 +885,6 @@ export function ExperienceV2Client({
       return filtered
     })
   }, [getSideToShowForProduct])
-
-  const handleRemoveCarouselSlot = useCallback(
-    (carouselIndex: number) => {
-      const product = carouselArtworks[carouselIndex]
-      if (!product) return
-      const removedId = product.id
-      setCartOrder((prev) => {
-        const filtered = prev.filter((id) => id !== removedId)
-        if (filtered.length === 0) {
-          setResetTrigger((t) => t + 1)
-          setRotateToSide(null)
-          setActiveCarouselIndex(-1)
-          setLampPreviewOrder([])
-          return filtered
-        }
-        setLampPreviewOrder((prevLamp) => {
-          const next = prevLamp.filter((id) => id !== removedId)
-          if (next.length === 0) {
-            setRotateToSide(null)
-            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
-            return []
-          }
-          if (next.length < prevLamp.length) {
-            const remainingId = next[0]
-            const sideToShow = getSideToShowForProduct(next, remainingId)
-            setRotateTrigger((t) => t + 1)
-            setRotateToSide(sideToShow)
-            setActiveCarouselIndex(carouselSlotIndexForProductId(filtered, remainingId))
-          } else {
-            setActiveCarouselIndex((c) => clampCarouselIndex(c, filtered))
-          }
-          return next
-        })
-        return filtered
-      })
-    },
-    [carouselArtworks, getSideToShowForProduct]
-  )
-
-  const handleCarouselBarRemove = useCallback(
-    async (carouselIndex: number) => {
-      if (carouselStripMode === 'watchlist') {
-        const product = watchlistDisplayProducts[carouselIndex]
-        if (!product) return
-        try {
-          const r = await fetch('/api/shop/watchlist', {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ shopify_product_id: product.id }),
-          })
-          if (r.ok) await refreshWatchlist()
-        } catch {
-          // ignore
-        }
-        return
-      }
-      handleRemoveCarouselSlot(carouselIndex)
-    },
-    [carouselStripMode, watchlistDisplayProducts, refreshWatchlist, handleRemoveCarouselSlot]
-  )
 
   const handleAdjustArtworkQuantity = useCallback(
     (runStartIndex: number, delta: 1 | -1) => {
@@ -1464,7 +1396,6 @@ export function ExperienceV2Client({
   const hasAccordion = !!displayedProduct
   const hasGallery = galleryImages.length > 1
   const editionLeadBeforeSpline = !!(displayedProduct && displayedProduct.id !== lamp.id)
-  const reelSplineSlideIndex = editionLeadBeforeSpline ? 1 : 0
   const gallerySlideOffsetReel = editionLeadBeforeSpline ? 3 : hasAccordion ? 2 : 1
   const sectionCount =
     (editionLeadBeforeSpline ? 3 : hasAccordion ? 2 : 1) +
@@ -1495,11 +1426,6 @@ export function ExperienceV2Client({
     if (!k) return null
     return streetEditionByProductId[k] ?? null
   }, [detailProduct, lamp.id, streetEditionByProductId])
-
-  const handleJumpToSpline = useCallback(() => {
-    bumpReelAlign()
-    setPreviewSlideIndex(reelSplineSlideIndex)
-  }, [reelSplineSlideIndex, bumpReelAlign])
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
@@ -1609,51 +1535,6 @@ export function ExperienceV2Client({
         bundleStripLampPreviewProductIds={lampPreviewOrder}
         onBundleStripItemPress={handleBundleStripItemPress}
       />
-
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[50] w-full">
-        <div className="hidden w-full shrink-0 bg-transparent text-transparent md:block">
-      <ArtworkCarouselBar
-        splineInView={splineInView}
-        experienceReelRef={experienceReelRef}
-        selectedArtworks={activeStripProducts}
-        reserveCheckoutBar={
-          selectedArtworks.length >= 1 ||
-          (carouselStripMode === 'collection' && selectedArtworks.length === 0)
-        }
-        stripMode={carouselStripMode}
-        onSwitchToCollection={
-          isAuthenticated
-            ? () => {
-                setCarouselStripMode('collection')
-                setActiveCarouselIndex(-1)
-              }
-            : undefined
-        }
-        spotlightPlaceholders={spotlightPlaceholders}
-        activeIndex={activeCarouselIndex}
-        lampPreviewOrder={lampPreviewOrder}
-        onTapItem={handleTapCarouselItem}
-        onRemoveItem={(i) => void handleCarouselBarRemove(i)}
-        onOpenPicker={handleOpenPicker}
-        onAddProduct={handleToggleSelect}
-        onJumpToSpline={handleJumpToSpline}
-        lampQuantity={lampQuantity}
-        stripLampProduct={lamp}
-        onAddLampFromCarouselStrip={() => handleLampQuantityChange(1)}
-        onRemoveLampFromCarouselStrip={() => handleLampQuantityChange(0)}
-        miniSplineLampPreview={{
-          image1,
-          image2,
-          lampPreviewCount: lampPreviewOrder.length,
-          collectionArtworkCount: selectedArtworks.length,
-          resetTrigger,
-          rotateToSide,
-          rotateTrigger,
-          onFrontSideSettled: handleFrontSideSettled,
-        }}
-      />
-        </div>
-      </div>
 
       </div>
 
@@ -1793,8 +1674,8 @@ export function ExperienceV2Client({
         stripMode={carouselStripMode}
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
-        suppressCartThumbnails={!isMobile && splineInView}
-        onSelectThumbnailForSpline={isMobile ? handleStickyThumbnailSplineSelect : undefined}
+        suppressCartThumbnails={false}
+        onSelectThumbnailForSpline={handleStickyThumbnailSplineSelect}
         previewSelectedProductId={
           activeCarouselIndex >= 0
             ? (activeStripProducts[activeCarouselIndex]?.id ?? null)
