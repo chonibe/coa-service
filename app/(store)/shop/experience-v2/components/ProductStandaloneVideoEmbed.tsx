@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
@@ -87,6 +87,43 @@ function isPlaybackUrlHls(url: string): boolean {
   return /\.m3u8(\?|$)/i.test(url) || (url.includes('m3u8') && !/\.mp4(\?|$)/i.test(url))
 }
 
+/** DevTools-friendly diagnostics (plan: instrument-video). */
+function logReelVideoMediaError(el: HTMLVideoElement, context: string, playbackUrl: string): void {
+  const err = el.error
+  console.warn(`[ExperienceReelGalleryVideo:${context}]`, {
+    playbackUrl,
+    mediaErrorCode: err?.code,
+    mediaErrorMessage: err?.message,
+    networkState: el.networkState,
+    readyState: el.readyState,
+  })
+}
+
+function warnReelPlayFailed(context: string, playbackUrl: string, reason: unknown): void {
+  console.warn(`[ExperienceReelGalleryVideo:${context}] muted play() failed`, { playbackUrl, reason })
+}
+
+function browserSupportsQuickTimeInVideoTag(): boolean {
+  if (typeof document === 'undefined') return true
+  return document.createElement('video').canPlayType('video/quicktime') !== ''
+}
+
+function isLikelyQuickTimeFileUrl(url: string): boolean {
+  const lower = url.toLowerCase()
+  return /\.mov(\?|$)/i.test(url) || lower.includes('quicktime') || /format=mov\b/i.test(lower)
+}
+
+function ReelVideoUnavailable({ message }: { message: string }) {
+  return (
+    <p
+      role="alert"
+      className="flex min-h-[120px] items-center justify-center rounded-xl bg-neutral-900/90 px-4 py-8 text-center text-sm text-neutral-300"
+    >
+      {message}
+    </p>
+  )
+}
+
 /** Matches `components/sections/VideoPlayer.tsx`: defer src, `preload="none"`, `onLoadedData` + muted `play()`, force-mute on `volumechange`. No IntersectionObserver. */
 const REEL_GALLERY_DEFER_MS = 250
 
@@ -107,8 +144,18 @@ function ReelGalleryProgressiveVideo({
   const sourceType = shopifyMimeTypeForPlaybackUrl(sources, playbackUrl)
 
   const [videoLoadStarted, setVideoLoadStarted] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+
+  const tryMutedAutoplay = useCallback(
+    (el: HTMLVideoElement) => {
+      el.muted = true
+      void el.play().catch((err) => warnReelPlayFailed('progressive', playbackUrl, err))
+    },
+    [playbackUrl]
+  )
 
   useEffect(() => {
+    setLoadError(false)
     const t = setTimeout(() => {
       setVideoLoadStarted(true)
       videoRef.current?.load?.()
@@ -127,6 +174,12 @@ function ReelGalleryProgressiveVideo({
     return () => el.removeEventListener('volumechange', forceMute)
   }, [videoLoadStarted])
 
+  if (loadError) {
+    return (
+      <ReelVideoUnavailable message="Video couldn’t load. Check your connection or try another browser." />
+    )
+  }
+
   return (
     <video
       ref={videoRef}
@@ -140,12 +193,14 @@ function ReelGalleryProgressiveVideo({
       playsInline
       controls
       disablePictureInPicture
+      disableRemotePlayback
       controlsList="nodownload nofullscreen noremoteplayback"
       aria-label={ariaLabel}
-      onLoadedData={(e) => {
-        const el = e.currentTarget
-        el.muted = true
-        void el.play().catch(() => {})
+      onLoadedData={(e) => tryMutedAutoplay(e.currentTarget)}
+      onCanPlay={(e) => tryMutedAutoplay(e.currentTarget)}
+      onError={(e) => {
+        logReelVideoMediaError(e.currentTarget, 'progressive', playbackUrl)
+        setLoadError(true)
       }}
     >
       {videoLoadStarted && <source src={playbackUrl} type={sourceType} />}
@@ -168,6 +223,19 @@ function ReelGalleryHlsVideo({
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<{ destroy: () => void } | null>(null)
   const url = playbackUrl
+  const [fatalError, setFatalError] = useState(false)
+
+  const tryMutedAutoplay = useCallback(
+    (el: HTMLVideoElement) => {
+      el.muted = true
+      void el.play().catch((err) => warnReelPlayFailed('hls', url, err))
+    },
+    [url]
+  )
+
+  useEffect(() => {
+    setFatalError(false)
+  }, [url])
 
   useEffect(() => {
     const el = videoRef.current
@@ -190,8 +258,10 @@ function ReelGalleryHlsVideo({
       void import('hls.js').then(({ default: Hls }) => {
         if (cancelled || videoRef.current !== el) return
         if (!Hls.isSupported()) {
-          el.src = url
-          el.load()
+          console.warn('[ExperienceReelGalleryVideo:hls] hls.js unsupported; not assigning m3u8 to <video> (would fail in Chrome)', {
+            playbackUrl: url,
+          })
+          setFatalError(true)
           return
         }
         const hls = new Hls({
@@ -210,13 +280,17 @@ function ReelGalleryHlsVideo({
             /* ignore */
           }
           hlsRef.current = null
-          el.src = url
-          el.load()
+          console.warn('[ExperienceReelGalleryVideo:hls] fatal HLS error; not falling back to native m3u8 src', {
+            playbackUrl: url,
+            type: data.type,
+            details: data.details,
+          })
+          setFatalError(true)
         })
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           if (!cancelled && videoRef.current === el) {
             el.muted = true
-            void el.play().catch(() => {})
+            void el.play().catch((err) => warnReelPlayFailed('hls-manifest', url, err))
           }
         })
         hls.loadSource(url)
@@ -251,6 +325,12 @@ function ReelGalleryHlsVideo({
 
   if (!url) return null
 
+  if (fatalError) {
+    return (
+      <ReelVideoUnavailable message="This stream couldn’t play here. Try Safari, refresh, or check your connection." />
+    )
+  }
+
   return (
     <video
       ref={videoRef}
@@ -263,12 +343,14 @@ function ReelGalleryHlsVideo({
       playsInline
       controls
       disablePictureInPicture
+      disableRemotePlayback
       controlsList="nodownload nofullscreen noremoteplayback"
       aria-label={ariaLabel}
-      onLoadedData={(e) => {
-        const el = e.currentTarget
-        el.muted = true
-        void el.play().catch(() => {})
+      onLoadedData={(e) => tryMutedAutoplay(e.currentTarget)}
+      onCanPlay={(e) => tryMutedAutoplay(e.currentTarget)}
+      onError={(e) => {
+        logReelVideoMediaError(e.currentTarget, 'hls', url)
+        setFatalError(true)
       }}
     />
   )
@@ -299,6 +381,11 @@ export function ExperienceReelGalleryVideo({
         ariaLabel={ariaLabel}
         className={className}
       />
+    )
+  }
+  if (isLikelyQuickTimeFileUrl(playbackUrl) && !browserSupportsQuickTimeInVideoTag()) {
+    return (
+      <ReelVideoUnavailable message="This video format isn’t supported in this browser. Try Safari or another device." />
     )
   }
   return (
