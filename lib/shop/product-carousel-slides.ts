@@ -125,22 +125,30 @@ export function pickVideoSourceUrl(sources: ShopifyVideo['sources']): string | n
 }
 
 /**
- * Same idea as PDP `ProductGallery` native video: pick **one** progressive file by **tallest height**
- * (not width-sorted `<source>` lists). If there is no MP4/MOV/WebM, fall back to HLS / `pickVideoSourceUrl`.
+ * Storefront `Video.sources` entry used for playback (same rules as {@link shopifyVideoPlaybackUrl}).
+ * Use for intrinsic width/height → CSS `aspect-ratio` in the experience reel.
  */
-export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): string | null {
+export function shopifyPlaybackVideoSource(sources: ShopifyVideo['sources']): ShopifyVideoSource | null {
   if (!sources?.length) return null
   const progressive = shopifyProgressiveVideoSources(sources)
   if (progressive.length > 0) {
     const webFriendly = progressive.filter((s) => !isMovLikeSource(s))
     const pool = webFriendly.length > 0 ? webFriendly : progressive
-    const best = pool.reduce(
-      (a, b) => ((b.height || 0) > (a.height || 0) ? b : a),
-      pool[0]
-    )
-    return best.url
+    return pool.reduce((a, b) => ((b.height || 0) > (a.height || 0) ? b : a), pool[0])
   }
-  return pickVideoSourceUrl(sources)
+  const url = pickVideoSourceUrl(sources)
+  if (!url) return null
+  const exact = sources.find((s) => s.url === url)
+  if (exact) return exact
+  return [...sources].sort((a, b) => (b.width || 0) - (a.width || 0))[0] ?? null
+}
+
+/**
+ * Same idea as PDP `ProductGallery` native video: pick **one** progressive file by **tallest height**
+ * (not width-sorted `<source>` lists). If there is no MP4/MOV/WebM, fall back to HLS / `pickVideoSourceUrl`.
+ */
+export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): string | null {
+  return shopifyPlaybackVideoSource(sources)?.url ?? null
 }
 
 /** MIME for a Shopify CDN file URL when Storefront did not send `mimeType` (home `VideoPlayer` uses the same idea for `<source type>`). */

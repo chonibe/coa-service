@@ -18,6 +18,7 @@ function HomeStyleProgressiveVideo({
   ariaLabel,
   className,
   deferLoadMs = 250,
+  reelMutedAutoplay = false,
 }: {
   url: string
   sources: ShopifyVideo['sources']
@@ -26,6 +27,8 @@ function HomeStyleProgressiveVideo({
   className?: string
   /** Match hero `VideoPlayer` poster-first behavior; use `0` to attach `src` immediately. */
   deferLoadMs?: number
+  /** Experience reel: muted autoplay + loop (browser policy); pause when scrolled away. */
+  reelMutedAutoplay?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoLoadStarted, setVideoLoadStarted] = useState(deferLoadMs <= 0)
@@ -43,6 +46,29 @@ function HomeStyleProgressiveVideo({
     return () => clearTimeout(t)
   }, [deferLoadMs, url])
 
+  useEffect(() => {
+    if (!reelMutedAutoplay || !videoLoadStarted) return
+    const el = videoRef.current
+    if (!el) return
+    const tryPlay = () => void el.play().catch(() => {})
+    el.addEventListener('canplay', tryPlay)
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) tryPlay()
+          else el.pause()
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -8% 0px' }
+    )
+    io.observe(el)
+    tryPlay()
+    return () => {
+      io.disconnect()
+      el.removeEventListener('canplay', tryPlay)
+    }
+  }, [reelMutedAutoplay, videoLoadStarted, url])
+
   const mime = shopifyMimeTypeForPlaybackUrl(sources, url)
 
   return (
@@ -53,6 +79,9 @@ function HomeStyleProgressiveVideo({
       poster={poster}
       controls
       playsInline
+      muted={reelMutedAutoplay}
+      autoPlay={reelMutedAutoplay}
+      loop={reelMutedAutoplay}
       preload={deferLoadMs <= 0 ? 'metadata' : 'none'}
       aria-label={ariaLabel}
     >
@@ -70,11 +99,13 @@ function HlsOrSingleUrlVideo({
   poster,
   ariaLabel,
   className,
+  reelMutedAutoplay = false,
 }: {
   sources: ShopifyVideoSource[]
   poster?: string
   ariaLabel: string
   className?: string
+  reelMutedAutoplay?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<{ destroy: () => void } | null>(null)
@@ -124,6 +155,11 @@ function HlsOrSingleUrlVideo({
           el.src = url
           el.load()
         })
+        if (reelMutedAutoplay) {
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (!cancelled && videoRef.current === el) void el.play().catch(() => {})
+          })
+        }
         hls.loadSource(url)
         hls.attachMedia(el)
       })
@@ -141,7 +177,29 @@ function HlsOrSingleUrlVideo({
       while (el.firstChild) el.removeChild(el.firstChild)
       el.load()
     }
-  }, [url])
+  }, [url, reelMutedAutoplay])
+
+  useEffect(() => {
+    if (!reelMutedAutoplay) return
+    const el = videoRef.current
+    if (!el) return
+    const tryPlay = () => void el.play().catch(() => {})
+    el.addEventListener('canplay', tryPlay)
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) tryPlay()
+          else el.pause()
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -8% 0px' }
+    )
+    io.observe(el)
+    return () => {
+      io.disconnect()
+      el.removeEventListener('canplay', tryPlay)
+    }
+  }, [reelMutedAutoplay, url])
 
   if (!url) return null
 
@@ -151,6 +209,9 @@ function HlsOrSingleUrlVideo({
       className={cn('w-full max-h-[min(50dvh,460px)] bg-black object-contain', className)}
       controls
       playsInline
+      muted={reelMutedAutoplay}
+      autoPlay={reelMutedAutoplay}
+      loop={reelMutedAutoplay}
       preload="metadata"
       poster={poster}
       aria-label={ariaLabel}
@@ -201,14 +262,18 @@ export function ShopifyInlineVideo({
   posterUrl,
   ariaLabel,
   className,
+  variant = 'default',
 }: {
   sources: ShopifyVideo['sources']
   posterUrl?: string | null
   ariaLabel: string
   className?: string
+  /** `reelMutedAutoplay`: experience vertical reel — muted loop autoplay + in-view play. */
+  variant?: 'default' | 'reelMutedAutoplay'
 }) {
   const playbackUrl = shopifyVideoPlaybackUrl(sources)
   if (!playbackUrl) return null
+  const reelMutedAutoplay = variant === 'reelMutedAutoplay'
   if (isPlaybackUrlHls(playbackUrl)) {
     return (
       <HlsOrSingleUrlVideo
@@ -216,6 +281,7 @@ export function ShopifyInlineVideo({
         poster={posterUrl ?? undefined}
         ariaLabel={ariaLabel}
         className={className}
+        reelMutedAutoplay={reelMutedAutoplay}
       />
     )
   }
@@ -227,6 +293,7 @@ export function ShopifyInlineVideo({
       ariaLabel={ariaLabel}
       deferLoadMs={0}
       className={className}
+      reelMutedAutoplay={reelMutedAutoplay}
     />
   )
 }

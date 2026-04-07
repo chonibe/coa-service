@@ -1,6 +1,14 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, type MutableRefObject, type Ref } from 'react'
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  type CSSProperties,
+  type MutableRefObject,
+  type Ref,
+} from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { ArrowUp, RotateCw } from 'lucide-react'
@@ -21,7 +29,7 @@ import {
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
-import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+import { shopifyPlaybackVideoSource, shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
 import {
   type ExperienceReelGalleryItem,
   reelGalleryItemKey,
@@ -881,11 +889,26 @@ export function SplineFullScreen({
                       />
                     </div>
                   ) : (
-                    <div className="relative mx-auto aspect-video w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black shadow-none ring-0 md:max-w-[min(92vw,720px)]">
-                      {(() => {
-                        const playback = shopifyVideoPlaybackUrl(item.sources)
-                        if (!playback) {
-                          return (
+                    (() => {
+                      const playback = shopifyVideoPlaybackUrl(item.sources)
+                      const meta = shopifyPlaybackVideoSource(item.sources)
+                      const hasDims =
+                        meta != null && meta.width > 0 && meta.height > 0
+                      const boxStyle: CSSProperties | undefined = hasDims
+                        ? {
+                            aspectRatio: `${meta.width} / ${meta.height}`,
+                            maxHeight: 'min(85dvh, 920px)',
+                          }
+                        : undefined
+                      return (
+                        <div
+                          className={cn(
+                            'relative mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black shadow-none ring-0 md:max-w-[min(92vw,720px)]',
+                            !boxStyle && 'aspect-video max-h-[min(85dvh,920px)]'
+                          )}
+                          style={boxStyle}
+                        >
+                          {!playback ? (
                             <p
                               className={cn(
                                 'flex min-h-[120px] items-center justify-center rounded-xl px-4 py-8 text-center text-sm',
@@ -894,18 +917,18 @@ export function SplineFullScreen({
                             >
                               Video unavailable for this product.
                             </p>
-                          )
-                        }
-                        return (
-                          <ShopifyInlineVideo
-                            sources={item.sources}
-                            posterUrl={item.posterUrl}
-                            ariaLabel={embedTitle}
-                            className="h-full w-full object-contain"
-                          />
-                        )
-                      })()}
-                    </div>
+                          ) : (
+                            <ShopifyInlineVideo
+                              sources={item.sources}
+                              posterUrl={item.posterUrl}
+                              ariaLabel={embedTitle}
+                              variant="reelMutedAutoplay"
+                              className="h-full w-full max-h-[min(85dvh,920px)] object-contain"
+                            />
+                          )}
+                        </div>
+                      )
+                    })()
                   )}
                 </div>
               </div>

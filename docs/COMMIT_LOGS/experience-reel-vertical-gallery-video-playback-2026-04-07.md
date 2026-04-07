@@ -15,3 +15,9 @@ Native Shopify video in the vertical gallery used `ArtistCollectionVideoEmbed` w
 ## Verify
 
 Reel gallery video: tap play; HLS (m3u8) and MP4 should work; external YouTube/Vimeo unchanged (iframe).
+
+## Follow-up (same feature)
+
+- Reel native video: **`variant="reelMutedAutoplay"`** — `muted` + `autoPlay` + `loop`, `IntersectionObserver` play/pause when ~20% visible; HLS uses `MANIFEST_PARSED` to start playback.
+- Aspect box: **`shopifyPlaybackVideoSource`** width/height → CSS `aspect-ratio` + `maxHeight: min(85dvh, 920px)`; fallback `aspect-video` if Storefront omits dimensions.
+- **`shopifyPlaybackVideoSource`**: URL match fallback to widest source when `pickVideoSourceUrl` string ≠ any `sources[].url`.
