@@ -182,6 +182,8 @@ export function ExperienceV2Client({
   const [displayedProduct, setDisplayedProduct] = useState<ShopifyProduct | null>(null)
   const [displayedIndex, setDisplayedIndex] = useState(0)
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
+  /** Bumped only for explicit reel alignment (thumbnails, jump to spline). Not when the user scrolls the vertical gallery. */
+  const [reelAlignNonce, setReelAlignNonce] = useState(0)
   const [splineInView, setSplineInView] = useState(true)
   const cartCountWhenPickerOpenedRef = useRef<number>(0)
   const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
@@ -203,7 +205,13 @@ export function ExperienceV2Client({
   }, [lamp.handle])
   const abAssignedRef = useRef(false)
   const lastDetailPreviewIdRef = useRef<string | null>(null)
-  const scrollToSplineRef = useRef(false)
+  const bumpReelAlign = useCallback(() => {
+    setReelAlignNonce((n) => n + 1)
+  }, [])
+
+  const onReelSlideFromScroll = useCallback((index: number) => {
+    setPreviewSlideIndex(index)
+  }, [])
 
   const artworkDetailProduct = useMemo(
     () => (detailProduct ? resolveArtworkDetailProduct(detailProduct, detailProductFull) : null),
@@ -1034,7 +1042,7 @@ export function ExperienceV2Client({
 
         const nextCart = [...prev, product.id]
         setLastAddedProductId(product.id)
-        scrollToSplineRef.current = true
+        bumpReelAlign()
         setPreviewSlideIndex(0)
         setDisplayedProduct(product)
         const variant = product.variants?.edges?.[0]?.node
@@ -1063,7 +1071,7 @@ export function ExperienceV2Client({
         return nextCart
       })
     },
-    [getSideToShowForProduct]
+    [getSideToShowForProduct, bumpReelAlign]
   )
 
   const handleFeaturedBundleThumbAddLamp = useCallback(() => {
@@ -1080,7 +1088,7 @@ export function ExperienceV2Client({
         if (prev.includes(product.id)) return prev
         const nextCart = [...prev, product.id]
         setLastAddedProductId(product.id)
-        scrollToSplineRef.current = true
+        bumpReelAlign()
         setPreviewSlideIndex(0)
         setDisplayedProduct(product)
         const variant = product.variants?.edges?.[0]?.node
@@ -1112,7 +1120,7 @@ export function ExperienceV2Client({
       setFilterOpen(false)
       triggerPriceBump()
     },
-    [getSideToShowForProduct, handleSpotlightSelect, triggerPriceBump]
+    [getSideToShowForProduct, handleSpotlightSelect, triggerPriceBump, bumpReelAlign]
   )
 
   const handleTapCarouselItem = useCallback((index: number) => {
@@ -1124,7 +1132,7 @@ export function ExperienceV2Client({
       is_lamp_slot: product.id === lamp.id,
       device_type: getDeviceType(),
     })
-    scrollToSplineRef.current = true
+    bumpReelAlign()
     setPreviewSlideIndex(0)
     setActiveCarouselIndex(index)
     if (product.id === lamp.id) {
@@ -1133,7 +1141,7 @@ export function ExperienceV2Client({
     }
     // Toggle lamp preview: off-lamp → assign to a side; on-lamp → remove so that side shows base Spline mesh
     handleLampSelect(product)
-  }, [carouselArtworks, handleLampSelect, lamp])
+  }, [carouselArtworks, handleLampSelect, lamp, bumpReelAlign])
 
   const handleBundleStripItemPress = useCallback(
     (index: number, product: ShopifyProduct) => {
@@ -1152,7 +1160,7 @@ export function ExperienceV2Client({
             })
             setActiveCarouselIndex(idx)
           }
-          scrollToSplineRef.current = true
+          bumpReelAlign()
           setPreviewSlideIndex(0)
           setDisplayedProduct(lamp)
         }
@@ -1181,6 +1189,7 @@ export function ExperienceV2Client({
       handleFeaturedBundleThumbAddLamp,
       handleFeaturedBundleThumbAddArtwork,
       handleTapCarouselItem,
+      bumpReelAlign,
     ]
   )
 
@@ -1198,23 +1207,28 @@ export function ExperienceV2Client({
 
   const experienceReelRef = useRef<HTMLDivElement | null>(null)
   const handleSwitchToSide = useCallback((side: 'A' | 'B') => {
-    scrollToSplineRef.current = true
+    bumpReelAlign()
     setRotateToSide(side)
     setRotateTrigger((t) => t + 1)
     setPreviewSlideIndex(0)
-  }, [])
+  }, [bumpReelAlign])
 
   const handleGalleryImagesChange = useCallback(
     (images: import('@/lib/shop/experience-reel-gallery').ExperienceReelGalleryItem[]) => {
       setGalleryImages(images)
+      bumpReelAlign()
       setPreviewSlideIndex(0)
     },
-    []
+    [bumpReelAlign]
   )
 
-  const handleGoToSlide = useCallback((index: number) => {
-    setPreviewSlideIndex(index)
-  }, [])
+  const handleGoToSlide = useCallback(
+    (index: number) => {
+      bumpReelAlign()
+      setPreviewSlideIndex(index)
+    },
+    [bumpReelAlign]
+  )
 
   const handleOpenPicker = useCallback(() => {
     setPickerEngaged(true)
@@ -1255,8 +1269,9 @@ export function ExperienceV2Client({
   const handleViewDetail = useCallback((product: ShopifyProduct) => {
     setDetailProduct(product)
     // Reel: 0 = Spline, 1 = details accordion (ArtworkInfoBar detailSlide when editionLeadBeforeSpline is false)
+    bumpReelAlign()
     setPreviewSlideIndex(1)
-  }, [])
+  }, [bumpReelAlign])
 
   const isInCart = useCallback((productId: string) => cartOrder.includes(productId), [cartOrder])
   const { theme } = useExperienceTheme()
@@ -1356,23 +1371,13 @@ export function ExperienceV2Client({
   const sectionCount =
     1 + (hasAccordion ? 1 : 0) + (hasGallery ? galleryImages.length - 1 : 0)
   const gallerySectionIndex = hasAccordion ? 2 : 1
-  const prevDisplayedIdRef = useRef<string | null>(null)
   useEffect(() => {
-    const currentId = displayedProduct?.id ?? null
-    const prevId = prevDisplayedIdRef.current
-    prevDisplayedIdRef.current = currentId
-
-    const scrollToSpline = scrollToSplineRef.current
-    scrollToSplineRef.current = false
-
-    setPreviewSlideIndex((prev) => {
-      const max = Math.max(0, sectionCount - 1)
-      if (prev > max) return max
-      // When user taps 1|2 or carousel item, scroll to Spline
-      if (scrollToSpline) return 0
-      return prev
-    })
-  }, [displayedProduct?.id, galleryImages.length, sectionCount])
+    const max = Math.max(0, sectionCount - 1)
+    if (previewSlideIndex > max) {
+      bumpReelAlign()
+      setPreviewSlideIndex(max)
+    }
+  }, [displayedProduct?.id, galleryImages.length, sectionCount, previewSlideIndex, bumpReelAlign])
 
   const displayedStreetEditionRow = useMemo(() => {
     if (!displayedProduct || displayedProduct.id === lamp.id) return null
@@ -1394,9 +1399,9 @@ export function ExperienceV2Client({
   }, [detailProduct, lamp.id, streetEditionByProductId])
 
   const handleJumpToSpline = useCallback(() => {
-    scrollToSplineRef.current = true
+    bumpReelAlign()
     setPreviewSlideIndex(0)
-  }, [])
+  }, [bumpReelAlign])
 
   return (
     <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
@@ -1492,7 +1497,8 @@ export function ExperienceV2Client({
             : undefined
         }
         currentSlide={previewSlideIndex}
-        onSlideChange={setPreviewSlideIndex}
+        reelAlignNonce={reelAlignNonce}
+        onSlideChange={onReelSlideFromScroll}
         onSplineInView={setSplineInView}
         experienceReelRef={experienceReelRef}
         streetEditionRow={displayedStreetEditionRow}
@@ -1665,7 +1671,9 @@ export function ExperienceV2Client({
           isLoadingDetails={detailProductLoading}
           isMobile={isMobile}
           hideScarcityBar={detailProduct.id === lamp.id}
-          addToOrderLabel={detailProduct.id === lamp.id ? 'Add lamp to cart' : 'Add to cart'}
+          addToOrderLabel={
+            detailProduct.id === lamp.id ? 'Add lamp to your collection' : 'Add to your collection'
+          }
           productIncludes={
             detailProduct.id === lamp.id
               ? [

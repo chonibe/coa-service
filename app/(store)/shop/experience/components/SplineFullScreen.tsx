@@ -103,6 +103,11 @@ interface SplineFullScreenProps {
   productSpecs?: { title: string; icon?: 'ruler' | 'scale' | 'box' | 'sun' | 'battery' | 'zap'; items: string[] }[]
   /** Current slide index: 0 = Spline, 1+ = gallery images. Accordion is not a slide. */
   currentSlide?: number
+  /**
+   * Increment when the parent wants the reel to scroll so `currentSlide` aligns (thumbnail tap, jump to spline, etc.).
+   * Must not increment when `currentSlide` updates only from {@link onSlideChange} (vertical scroll) — that caused gallery “locking”.
+   */
+  reelAlignNonce?: number
   /** Called when user swipes to a different slide */
   onSlideChange?: (index: number) => void
   /** Called when Spline section enters/leaves view (for carousel visibility) */
@@ -154,6 +159,7 @@ export function SplineFullScreen({
   productIncludes,
   productSpecs,
   currentSlide = 0,
+  reelAlignNonce = 0,
   onSlideChange,
   onSplineInView,
   spotlightFallbackImageUrl = null,
@@ -311,8 +317,7 @@ export function SplineFullScreen({
   const lastReportedSectionRef = useRef(currentSlide)
   const scrollRafRef = useRef<number | null>(null)
   const lastProgrammaticSectionRef = useRef<number | null>(null)
-  /** Last slide index we used for scroll-into-view; avoids re-snapping when only `sectionCount` / layout changes. */
-  const prevSlideForScrollSyncRef = useRef<number | null>(null)
+  const lastReelAlignNonceRef = useRef(0)
   /** While > Date.now(), ignore midpoint-based slide sync (avoids fighting smooth scrollIntoView from thumbnails). */
   const ignoreSlideSyncUntilRef = useRef(0)
   const programmaticScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -473,20 +478,12 @@ export function SplineFullScreen({
     }
   }, [splineReady, sectionCount, splineSectionIndex, hasAccordion, displayedProduct?.id, galleryImages.length, editionLeadBeforeSpline])
 
+  // Scroll reel only when parent bumps `reelAlignNonce` (thumbnail / jump / cart), never when `currentSlide`
+  // updates from `onSlideChange` during free vertical scrolling — that was snapping the viewport to each image.
   useEffect(() => {
+    if (reelAlignNonce === lastReelAlignNonceRef.current) return
+    lastReelAlignNonceRef.current = reelAlignNonce
     if (!scrollRef.current || sectionCount <= 1) return
-    if (lastProgrammaticSectionRef.current === currentSlide) {
-      lastProgrammaticSectionRef.current = null
-      prevSlideForScrollSyncRef.current = currentSlide
-      return
-    }
-    const prevSlide = prevSlideForScrollSyncRef.current
-    prevSlideForScrollSyncRef.current = currentSlide
-    // Effect also runs when `sectionCount` changes (e.g. gallery images resolve). Same `currentSlide` must not
-    // trigger scrollIntoView — that felt like sections "locking" while the user was freely scrolling.
-    const slideIndexChanged = prevSlide !== null && prevSlide !== currentSlide
-    if (!slideIndexChanged) return
-
     const el = scrollRef.current
     const target = sectionRefs.current[currentSlide]
     if (!target) return
@@ -519,7 +516,7 @@ export function SplineFullScreen({
         programmaticScrollTimeoutRef.current = null
       }
     }
-  }, [currentSlide, sectionCount])
+  }, [reelAlignNonce, currentSlide, sectionCount])
 
   const handleScroll = useCallback(() => {
     if (!onSlideChange || sectionCount <= 1) return
@@ -544,7 +541,6 @@ export function SplineFullScreen({
       }
       if (best === lastReportedSectionRef.current) return
       lastReportedSectionRef.current = best
-      lastProgrammaticSectionRef.current = best
       onSlideChange(best)
     })
   }, [onSlideChange, sectionCount])
