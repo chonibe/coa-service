@@ -151,6 +151,28 @@ export function shopifyVideoPlaybackUrl(sources: ShopifyVideo['sources']): strin
   return shopifyPlaybackVideoSource(sources)?.url ?? null
 }
 
+/**
+ * Progressive file URLs to try in order (tallest height first). Same pool as {@link shopifyPlaybackVideoSource}
+ * (prefers non-MOV when Shopify lists both). Use when the first URL fails decode or network in strict browsers.
+ */
+export function shopifyProgressivePlaybackCandidateUrls(sources: ShopifyVideo['sources']): string[] {
+  if (!sources?.length) return []
+  const progressive = shopifyProgressiveVideoSources(sources)
+  if (!progressive.length) return []
+  const webFriendly = progressive.filter((s) => !isMovLikeSource(s))
+  const pool = webFriendly.length > 0 ? webFriendly : progressive
+  const sorted = [...pool].sort((a, b) => (b.height || 0) - (a.height || 0))
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const s of sorted) {
+    const u = s.url
+    if (!u || seen.has(u)) continue
+    seen.add(u)
+    out.push(u)
+  }
+  return out
+}
+
 /** MIME for a Shopify CDN file URL when Storefront did not send `mimeType` (home `VideoPlayer` uses the same idea for `<source type>`). */
 export function shopifyProgressiveVideoMimeTypeFromUrl(url: string): string {
   const path = url.split(/[?#]/)[0]?.toLowerCase() ?? ''

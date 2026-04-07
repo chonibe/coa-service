@@ -1,10 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
-import { shopifyMimeTypeForPlaybackUrl, shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
+import {
+  shopifyHlsPlaylistUrl,
+  shopifyProgressivePlaybackCandidateUrls,
+  shopifyVideoPlaybackUrl,
+} from '@/lib/shop/product-carousel-slides'
 
 /** Same defer + `preload` pattern as `components/sections/VideoPlayer.tsx` for Shopify file URLs. */
 function HomeStyleProgressiveVideo({
@@ -129,22 +133,36 @@ const REEL_GALLERY_DEFER_MS = 250
 
 function ReelGalleryProgressiveVideo({
   sources,
-  playbackUrl,
   posterUrl,
   ariaLabel,
   className,
+  onAllCandidatesFailed,
 }: {
   sources: ShopifyVideo['sources']
-  playbackUrl: string
   posterUrl?: string | null
   ariaLabel: string
   className?: string
+  /** Fired when every progressive URL in {@link shopifyProgressivePlaybackCandidateUrls} has errored. */
+  onAllCandidatesFailed?: () => void
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const sourceType = shopifyMimeTypeForPlaybackUrl(sources, playbackUrl)
+  const candidateUrls = useMemo(() => shopifyProgressivePlaybackCandidateUrls(sources), [sources])
+  const candidateKey = candidateUrls.join('\u0000')
+
+  const [attemptIndex, setAttemptIndex] = useState(0)
+  const playbackUrl = candidateUrls[attemptIndex] ?? ''
 
   const [videoLoadStarted, setVideoLoadStarted] = useState(false)
   const [loadError, setLoadError] = useState(false)
+
+  useEffect(() => {
+    setAttemptIndex(0)
+    setLoadError(false)
+  }, [candidateKey])
+
+  useEffect(() => {
+    if (candidateUrls.length === 0) onAllCandidatesFailed?.()
+  }, [candidateUrls.length, onAllCandidatesFailed])
 
   const tryMutedAutoplay = useCallback(
     (el: HTMLVideoElement) => {
@@ -155,13 +173,18 @@ function ReelGalleryProgressiveVideo({
   )
 
   useEffect(() => {
-    setLoadError(false)
+    if (attemptIndex > 0) {
+      setVideoLoadStarted(true)
+      const id = requestAnimationFrame(() => videoRef.current?.load())
+      return () => cancelAnimationFrame(id)
+    }
+    setVideoLoadStarted(false)
     const t = setTimeout(() => {
       setVideoLoadStarted(true)
       videoRef.current?.load?.()
     }, REEL_GALLERY_DEFER_MS)
     return () => clearTimeout(t)
-  }, [playbackUrl])
+  }, [playbackUrl, attemptIndex])
 
   useEffect(() => {
     const el = videoRef.current
@@ -172,7 +195,13 @@ function ReelGalleryProgressiveVideo({
     }
     el.addEventListener('volumechange', forceMute)
     return () => el.removeEventListener('volumechange', forceMute)
-  }, [videoLoadStarted])
+  }, [videoLoadStarted, playbackUrl])
+
+  if (!candidateUrls.length || !playbackUrl) {
+    return (
+      <ReelVideoUnavailable message="Video couldn’t load. Check your connection or try another browser." />
+    )
+  }
 
   if (loadError) {
     return (
@@ -200,11 +229,15 @@ function ReelGalleryProgressiveVideo({
       onCanPlay={(e) => tryMutedAutoplay(e.currentTarget)}
       onError={(e) => {
         logReelVideoMediaError(e.currentTarget, 'progressive', playbackUrl)
+        const next = attemptIndex + 1
+        if (next < candidateUrls.length) {
+          setAttemptIndex(next)
+          return
+        }
+        onAllCandidatesFailed?.()
         setLoadError(true)
       }}
-    >
-      {videoLoadStarted && <source src={playbackUrl} type={sourceType} />}
-    </video>
+    />
   )
 }
 
@@ -362,39 +395,63 @@ function ReelGalleryHlsVideo({
  */
 export function ExperienceReelGalleryVideo({
   sources,
+  /** Resolved once by the parent (e.g. reel row) with {@link shopifyVideoPlaybackUrl} — keeps one source of truth and pairs with `key` for a clean player mount. */
+  playbackUrl: playbackUrlProp,
   posterUrl,
   ariaLabel,
   className,
 }: {
   sources: ShopifyVideo['sources']
+  playbackUrl?: string | null
   posterUrl?: string | null
   ariaLabel: string
   className?: string
 }) {
-  const playbackUrl = shopifyVideoPlaybackUrl(sources)
-  if (!playbackUrl) return null
-  if (isPlaybackUrlHls(playbackUrl)) {
+  const resolvedUrl = (playbackUrlProp ?? shopifyVideoPlaybackUrl(sources))?.trim() || null
+  const hlsPlaylistUrl = shopifyHlsPlaylistUrl(sources)
+  const [progressiveExhausted, setProgressiveExhausted] = useState(false)
+
+  const onProgressiveCandidatesExhausted = useCallback(() => {
+    if (hlsPlaylistUrl) setProgressiveExhausted(true)
+  }, [hlsPlaylistUrl])
+
+  if (!resolvedUrl) return null
+
+  if (isPlaybackUrlHls(resolvedUrl)) {
     return (
       <ReelGalleryHlsVideo
-        playbackUrl={playbackUrl}
+        playbackUrl={resolvedUrl}
         poster={posterUrl ?? undefined}
         ariaLabel={ariaLabel}
         className={className}
       />
     )
   }
-  if (isLikelyQuickTimeFileUrl(playbackUrl) && !browserSupportsQuickTimeInVideoTag()) {
+
+  if (progressiveExhausted && hlsPlaylistUrl) {
+    return (
+      <ReelGalleryHlsVideo
+        playbackUrl={hlsPlaylistUrl}
+        poster={posterUrl ?? undefined}
+        ariaLabel={ariaLabel}
+        className={className}
+      />
+    )
+  }
+
+  if (isLikelyQuickTimeFileUrl(resolvedUrl) && !browserSupportsQuickTimeInVideoTag()) {
     return (
       <ReelVideoUnavailable message="This video format isn’t supported in this browser. Try Safari or another device." />
     )
   }
+
   return (
     <ReelGalleryProgressiveVideo
       sources={sources}
-      playbackUrl={playbackUrl}
       posterUrl={posterUrl}
       ariaLabel={ariaLabel}
       className={className}
+      onAllCandidatesFailed={onProgressiveCandidatesExhausted}
     />
   )
 }

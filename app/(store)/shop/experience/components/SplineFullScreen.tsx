@@ -896,7 +896,9 @@ export function SplineFullScreen({
                             </p>
                           ) : (
                             <ExperienceReelGalleryVideo
+                              key={item.id}
                               sources={item.sources}
+                              playbackUrl={playback}
                               posterUrl={item.posterUrl}
                               ariaLabel={embedTitle}
                               className="block h-auto w-full max-h-[min(85dvh,920px)] object-contain align-middle"

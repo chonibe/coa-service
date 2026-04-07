@@ -5,6 +5,7 @@ import {
   carouselSlideIsNonImage,
   pickVideoSourceUrl,
   shopifyMimeTypeForPlaybackUrl,
+  shopifyProgressivePlaybackCandidateUrls,
   shopifyProgressiveVideoMimeTypeFromUrl,
   shopifyProgressiveVideoSources,
   shopifyVideoPlaybackUrl,
@@ -87,6 +88,36 @@ describe('shopifyVideoPlaybackUrl', () => {
       },
     ])
     expect(url).toBe('https://cdn/master.m3u8')
+  })
+})
+
+describe('shopifyProgressivePlaybackCandidateUrls', () => {
+  it('orders by height descending and prefers non-MOV when both exist', () => {
+    expect(
+      shopifyProgressivePlaybackCandidateUrls([
+        {
+          url: 'https://cdn/tall.mov',
+          format: 'mov',
+          mimeType: 'video/quicktime',
+          width: 1080,
+          height: 1920,
+        },
+        {
+          url: 'https://cdn/short.mp4',
+          format: 'mp4',
+          mimeType: 'video/mp4',
+          width: 720,
+          height: 1280,
+        },
+        {
+          url: 'https://cdn/tall.mp4',
+          format: 'mp4',
+          mimeType: 'video/mp4',
+          width: 1080,
+          height: 1920,
+        },
+      ])
+    ).toEqual(['https://cdn/tall.mp4', 'https://cdn/short.mp4'])
   })
 })
 
