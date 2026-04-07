@@ -903,8 +903,9 @@ export function SplineFullScreen({
                       return (
                         <div
                           className={cn(
-                            'relative mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black shadow-none ring-0 md:max-w-[min(92vw,720px)]',
-                            !boxStyle && 'aspect-video max-h-[min(85dvh,920px)]'
+                            'relative z-[15] mx-auto w-full max-w-[min(92vw,360px)] overflow-hidden rounded-xl bg-black shadow-none ring-0 md:max-w-[min(92vw,720px)]',
+                            !boxStyle && 'aspect-video max-h-[min(85dvh,920px)]',
+                            'pointer-events-auto'
                           )}
                           style={boxStyle}
                         >

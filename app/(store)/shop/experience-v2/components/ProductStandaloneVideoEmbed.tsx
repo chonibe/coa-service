@@ -4,16 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import type { ShopifyVideo, ShopifyVideoSource } from '@/lib/shopify/storefront-client'
 import { cn } from '@/lib/utils'
 import type { ProductCarouselSlide } from '@/lib/shop/product-carousel-slides'
-import {
-  pickVideoSourceUrl,
-  shopifyMimeTypeForPlaybackUrl,
-  shopifyVideoPlaybackUrl,
-} from '@/lib/shop/product-carousel-slides'
+import { shopifyVideoPlaybackUrl } from '@/lib/shop/product-carousel-slides'
 
-/** Same defer + `preload="none"` + typed `<source>` pattern as `components/sections/VideoPlayer.tsx` for Shopify file URLs. */
+/** Same defer + `preload` pattern as `components/sections/VideoPlayer.tsx` for Shopify file URLs. */
 function HomeStyleProgressiveVideo({
   url,
-  sources,
   poster,
   ariaLabel,
   className,
@@ -21,13 +16,12 @@ function HomeStyleProgressiveVideo({
   reelMutedAutoplay = false,
 }: {
   url: string
-  sources: ShopifyVideo['sources']
   poster?: string
   ariaLabel: string
   className?: string
   /** Match hero `VideoPlayer` poster-first behavior; use `0` to attach `src` immediately. */
   deferLoadMs?: number
-  /** Experience reel: muted autoplay + loop (browser policy); pause when scrolled away. */
+  /** Experience reel: muted + loop; programmatic play when visible (no `pause()` fight). */
   reelMutedAutoplay?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -52,14 +46,18 @@ function HomeStyleProgressiveVideo({
     if (!el) return
     const tryPlay = () => void el.play().catch(() => {})
     el.addEventListener('canplay', tryPlay)
+    /**
+     * Do not `pause()` when `isIntersecting` is false with a high threshold: the video can be
+     * on-screen but below the ratio (e.g. 15% visible), which fights `play()` and leaves controls stuck at 0:00.
+     * Only nudge playback when a meaningful portion is visible; never auto-pause (user / page scroll handles it).
+     */
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting) tryPlay()
-          else el.pause()
+          if (e.isIntersecting && e.intersectionRatio >= 0.08) tryPlay()
         }
       },
-      { threshold: 0.2, rootMargin: '0px 0px -8% 0px' }
+      { threshold: [0, 0.08, 0.15, 0.35] }
     )
     io.observe(el)
     tryPlay()
@@ -68,8 +66,6 @@ function HomeStyleProgressiveVideo({
       el.removeEventListener('canplay', tryPlay)
     }
   }, [reelMutedAutoplay, videoLoadStarted, url])
-
-  const mime = shopifyMimeTypeForPlaybackUrl(sources, url)
 
   return (
     <video
@@ -80,13 +76,10 @@ function HomeStyleProgressiveVideo({
       controls
       playsInline
       muted={reelMutedAutoplay}
-      autoPlay={reelMutedAutoplay}
       loop={reelMutedAutoplay}
-      preload={deferLoadMs <= 0 ? 'metadata' : 'none'}
+      preload={deferLoadMs <= 0 ? (reelMutedAutoplay ? 'auto' : 'metadata') : 'none'}
       aria-label={ariaLabel}
-    >
-      {videoLoadStarted && <source src={url} type={mime} />}
-    </video>
+    />
   )
 }
 
@@ -95,21 +88,24 @@ function isPlaybackUrlHls(url: string): boolean {
 }
 
 function HlsOrSingleUrlVideo({
-  sources,
+  sources: _sources,
   poster,
   ariaLabel,
   className,
   reelMutedAutoplay = false,
+  /** Must match the URL chosen by {@link shopifyVideoPlaybackUrl} (same branch as parent). */
+  playbackUrl,
 }: {
   sources: ShopifyVideoSource[]
   poster?: string
   ariaLabel: string
   className?: string
   reelMutedAutoplay?: boolean
+  playbackUrl: string
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<{ destroy: () => void } | null>(null)
-  const url = pickVideoSourceUrl(sources as ShopifyVideo['sources'])
+  const url = playbackUrl
 
   useEffect(() => {
     const el = videoRef.current
@@ -188,11 +184,10 @@ function HlsOrSingleUrlVideo({
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting) tryPlay()
-          else el.pause()
+          if (e.isIntersecting && e.intersectionRatio >= 0.08) tryPlay()
         }
       },
-      { threshold: 0.2, rootMargin: '0px 0px -8% 0px' }
+      { threshold: [0, 0.08, 0.15, 0.35] }
     )
     io.observe(el)
     return () => {
@@ -210,9 +205,8 @@ function HlsOrSingleUrlVideo({
       controls
       playsInline
       muted={reelMutedAutoplay}
-      autoPlay={reelMutedAutoplay}
       loop={reelMutedAutoplay}
-      preload="metadata"
+      preload={reelMutedAutoplay ? 'auto' : 'metadata'}
       poster={poster}
       aria-label={ariaLabel}
     />
@@ -278,6 +272,7 @@ export function ShopifyInlineVideo({
     return (
       <HlsOrSingleUrlVideo
         sources={sources}
+        playbackUrl={playbackUrl}
         poster={posterUrl ?? undefined}
         ariaLabel={ariaLabel}
         className={className}
@@ -288,7 +283,6 @@ export function ShopifyInlineVideo({
   return (
     <HomeStyleProgressiveVideo
       url={playbackUrl}
-      sources={sources}
       poster={posterUrl ?? undefined}
       ariaLabel={ariaLabel}
       deferLoadMs={0}
