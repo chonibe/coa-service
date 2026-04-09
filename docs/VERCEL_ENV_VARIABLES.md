@@ -26,8 +26,9 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
   - Must match the secret used in cron job configuration
 
 ### 5. Shopify (If using Shopify integration)
-- `SHOPIFY_ACCESS_TOKEN` - Shopify Admin API access token
+- `SHOPIFY_ACCESS_TOKEN` - Shopify Admin API access token (needs `read_orders` and `write_orders` for invoice pay + `orderMarkAsPaid`)
 - `SHOPIFY_SHOP` - Your Shopify shop domain (e.g., `your-shop.myshopify.com`)
+- `SHOPIFY_INVOICE_PAY_SHOP_SEGMENT` - **Optional** — first path segment in Shopify invoice URLs (e.g. `65979252963`). If set, only matching `/segment/order_payment/...` links are accepted; omit to allow any numeric segment for a single-store setup.
 
 ### 5b. Shopify Storefront API (Required for Shop/Experience pages)
 - `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` - **REQUIRED for product data** - Storefront API access token (not Admin API)

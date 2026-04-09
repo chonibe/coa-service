@@ -12,6 +12,7 @@ import { enhanceFbp, enhanceFbc } from "@/lib/meta-parameter-builder-server"
 import { sendTikTokEvent } from "@/lib/tiktok-events-server"
 import { addUserToAudience } from "@/lib/meta-custom-audiences-server"
 import { capturePostHogServerEvent } from "@/lib/posthog-server"
+import { orderMarkAsPaid } from "@/lib/shopify/order-invoice-stripe"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-03-31.basil",
@@ -158,6 +159,71 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Shopify invoice / payment-collection URL paid via Stripe Checkout (see app/[shopKey]/order_payment/[orderId]/route.ts).
+ * Marks the existing order paid in Shopify; does not create a new draft order.
+ */
+async function handleShopifyInvoiceCheckoutCompleted(supabase: any, session: Stripe.Checkout.Session) {
+  const orderGid = session.metadata?.shopify_order_gid?.trim()
+  const orderIdNum = session.metadata?.shopify_order_id?.trim()
+  const expectedCents = parseInt(session.metadata?.invoice_outstanding_cents || "", 10)
+
+  if (!orderGid || !orderIdNum || !Number.isFinite(expectedCents) || expectedCents <= 0) {
+    console.error("[stripe/webhook] shopify_order_invoice: missing or invalid metadata", session.id)
+    return
+  }
+
+  if (session.amount_total == null || session.amount_total !== expectedCents) {
+    console.error(
+      "[stripe/webhook] shopify_order_invoice: amount mismatch",
+      session.amount_total,
+      expectedCents,
+      session.id
+    )
+    return
+  }
+
+  const { data: dupSession } = await supabase
+    .from("stripe_purchases")
+    .select("id")
+    .eq("stripe_session_id", session.id)
+    .maybeSingle()
+  if (dupSession) {
+    console.log("[stripe/webhook] shopify_order_invoice: session already recorded", session.id)
+    return
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : (session.payment_intent as Stripe.PaymentIntent | null)?.id ?? null
+
+  const markResult = await orderMarkAsPaid(orderGid)
+  if (!markResult.ok) {
+    console.error("[stripe/webhook] orderMarkAsPaid failed:", markResult.error)
+    throw new Error(markResult.error || "orderMarkAsPaid failed")
+  }
+
+  await supabase.from("stripe_purchases").insert({
+    stripe_session_id: session.id,
+    stripe_payment_intent: paymentIntentId,
+    shopify_draft_order_id: null,
+    shopify_order_id: orderIdNum,
+    customer_email:
+      session.customer_details?.email ||
+      session.customer_email ||
+      session.metadata?.collector_identifier ||
+      null,
+    amount_total: session.amount_total,
+    currency: session.currency,
+    status: "completed",
+    metadata: session.metadata,
+    created_at: new Date().toISOString(),
+  })
+
+  console.log("[stripe/webhook] shopify_order_invoice fulfilled for Shopify order", orderIdNum)
+}
+
+/**
  * Handle checkout session completed - create Shopify draft order or provision gift card
  */
 async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.Session) {
@@ -166,6 +232,11 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
 
     if (source === 'gift_card_purchase') {
       await handleGiftCardPurchase(supabase, session)
+      return
+    }
+
+    if (source === "shopify_order_invoice") {
+      await handleShopifyInvoiceCheckoutCompleted(supabase, session)
       return
     }
 
