@@ -82,7 +82,6 @@ export async function GET(
     success_url: successUrl,
     cancel_url: cancelUrl,
     payment_method_types: ['card', 'paypal', 'link'],
-    customer_email: eligibility.email || undefined,
     line_items: [
       {
         price_data: {
@@ -103,7 +102,6 @@ export async function GET(
       shopify_order_name: eligibility.name,
       invoice_outstanding_cents: String(eligibility.outstandingCents),
       invoice_currency: eligibility.currencyCode,
-      collector_identifier: eligibility.email || '',
     },
     billing_address_collection: 'required',
   }

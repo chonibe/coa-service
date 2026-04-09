@@ -45,7 +45,6 @@ export interface OrderInvoicePayEligibility {
   orderGid: string
   numericOrderId: string
   name: string
-  email: string | null
   canMarkAsPaid: boolean
   displayFinancialStatus: string
   outstandingCents: number
@@ -60,18 +59,18 @@ export async function getOrderInvoicePayEligibility(
     order: {
       id: string
       name: string
-      email: string | null
       canMarkAsPaid: boolean
       displayFinancialStatus: string
       totalOutstandingSet: { shopMoney: { amount: string; currencyCode: string } }
     } | null
   }>({
+    // Do not request order.email or customer fields: Basic Shopify plans block PII unless the
+    // app is approved for protected customer data (Plus/Advanced or explicit approval).
     query: `#graphql
       query OrderInvoicePay($id: ID!) {
         order(id: $id) {
           id
           name
-          email
           canMarkAsPaid
           displayFinancialStatus
           totalOutstandingSet {
@@ -98,7 +97,6 @@ export async function getOrderInvoicePayEligibility(
     orderGid: order.id,
     numericOrderId,
     name: order.name,
-    email: order.email,
     canMarkAsPaid: order.canMarkAsPaid,
     displayFinancialStatus: order.displayFinancialStatus,
     outstandingCents,

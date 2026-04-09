@@ -22,7 +22,8 @@ When a request **reaches this app** (on Vercel), the following happen:
    When the storefront **primary domain** points at this Next.js app (e.g. `www.thestreetcollector.com`), Shopify’s emailed invoice links hit this app instead of Shopify’s checkout host.  
    **Implementation:** [`app/[shopKey]/order_payment/[orderId]/route.ts`](../app/[shopKey]/order_payment/[orderId]/route.ts) validates the link against the myshopify host, reads the order’s outstanding balance via Admin GraphQL, then redirects to **Stripe Checkout**. On success, [`app/api/stripe/webhook/route.ts`](../app/api/stripe/webhook/route.ts) runs Shopify’s **`orderMarkAsPaid`** mutation so the existing order is marked paid (no duplicate draft order).  
    Optional env: **`SHOPIFY_INVOICE_PAY_SHOP_SEGMENT`** — if set, only that first path segment (e.g. `65979252963`) is accepted.  
-   Requires: `SHOPIFY_SHOP`, `SHOPIFY_ACCESS_TOKEN` (with permissions for `read_orders` / `write_orders`), `STRIPE_SECRET_KEY`, and `NEXT_PUBLIC_SITE_URL` or `NEXT_PUBLIC_APP_URL` for success/cancel URLs.
+   Requires: `SHOPIFY_SHOP`, `SHOPIFY_ACCESS_TOKEN` (with permissions for `read_orders` / `write_orders`), `STRIPE_SECRET_KEY`, and `NEXT_PUBLIC_SITE_URL` or `NEXT_PUBLIC_APP_URL` for success/cancel URLs.  
+   **PII:** The eligibility query intentionally does **not** read `order.email` (or customer fields). On Basic plans, those require Shopify **protected customer data** approval; checkout still works—Stripe simply won’t pre-fill email.
 
 6. **thestreetlamp.com → thestreetcollector.com**  
    If the request host is `thestreetlamp.com` or `www.thestreetlamp.com`, middleware redirects (308) to `https://www.thestreetcollector.com` with the same path and query. So links like `https://www.thestreetlamp.com/products/year-of-the-snake?fbclid=...` end up on the canonical site and get the product/artist cookie and landing behaviour.

@@ -12,6 +12,10 @@
 
 Shopify payment links like `/{segment}/order_payment/{orderId}?secret=…` were hitting the custom domain served by this Next.js app, matching no route, and **`app/not-found.tsx`** redirected users to `/`. This flow now sends customers to Stripe for the outstanding balance and marks the existing Shopify order paid after webhook confirmation.
 
+## Follow-up (same day)
+
+- [x] **[lib/shopify/order-invoice-stripe.ts](../../lib/shopify/order-invoice-stripe.ts)** — Removed `order.email` from Admin GraphQL query; Basic Shopify rejects customer PII fields without protected-customer-data approval (`invoice_error=lookup`).
+
 ## Testing
 
 - [ ] Manual: open a real invoice URL on production (after deploy) and complete a test card payment; confirm Shopify order financial status updates and `stripe_purchases` contains the session.
