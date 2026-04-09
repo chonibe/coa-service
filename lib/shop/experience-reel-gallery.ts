@@ -162,3 +162,30 @@ export function reelGalleryItemKey(item: ExperienceReelGalleryItem, index: numbe
   if (item.kind === 'video') return `${item.id}-${item.sources.map((s) => s.url).join('|')}`
   return `${item.id}-${item.embedUrl}`
 }
+
+const GALLERY_SIG_SEP = '\x1e'
+
+/**
+ * Content signature for the ordered reel gallery (not reference identity).
+ * Used to avoid programmatic reel `scrollIntoView` when only the same items are re-built
+ * (e.g. after full product fetch) or when new items are a strict tail extension (more photos).
+ */
+export function reelGalleryItemsSignature(images: ExperienceReelGalleryItem[]): string {
+  return images.map((item, i) => reelGalleryItemKey(item, i)).join(GALLERY_SIG_SEP)
+}
+
+function keysFromGallerySignature(sig: string): string[] {
+  return sig === '' ? [] : sig.split(GALLERY_SIG_SEP)
+}
+
+/** True when `next` is `prev` with only extra items appended (same order for shared prefix). */
+export function isReelGalleryStrictTailExtension(
+  prevSignature: string,
+  nextSignature: string
+): boolean {
+  if (prevSignature === nextSignature) return false
+  const a = keysFromGallerySignature(prevSignature)
+  const b = keysFromGallerySignature(nextSignature)
+  if (a.length === 0 || b.length <= a.length) return false
+  return a.every((k, i) => k === b[i])
+}

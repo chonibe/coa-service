@@ -46,6 +46,11 @@ import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
 import type { StreetEditionStatesRow } from '@/lib/shop/street-edition-states'
 import { fetchStreetEditionStatesMap } from '@/lib/shop/fetch-street-edition-states-client'
+import {
+  isReelGalleryStrictTailExtension,
+  reelGalleryItemsSignature,
+  type ExperienceReelGalleryItem,
+} from '@/lib/shop/experience-reel-gallery'
 import { Heart } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
@@ -198,9 +203,7 @@ export function ExperienceV2Client({
   const [detailProductLoading, setDetailProductLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
-  const [galleryImages, setGalleryImages] = useState<
-    import('@/lib/shop/experience-reel-gallery').ExperienceReelGalleryItem[]
-  >([])
+  const [galleryImages, setGalleryImages] = useState<ExperienceReelGalleryItem[]>([])
   const [displayedProduct, setDisplayedProduct] = useState<ShopifyProduct | null>(null)
   const [displayedIndex, setDisplayedIndex] = useState(0)
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
@@ -228,6 +231,10 @@ export function ExperienceV2Client({
   const bumpReelAlign = useCallback(() => {
     setReelAlignNonce((n) => n + 1)
   }, [])
+  /** Last gallery content signature from ArtworkInfoBar — avoid reel scrollIntoView on cache-only refreshes. */
+  const lastGallerySigRef = useRef<string | null>(null)
+  const previewSlideIndexRef = useRef(previewSlideIndex)
+  previewSlideIndexRef.current = previewSlideIndex
   const onReelSlideFromScroll = useCallback((index: number) => {
     setPreviewSlideIndex(index)
   }, [])
@@ -1217,12 +1224,17 @@ export function ExperienceV2Client({
   }, [bumpReelAlign])
 
   const handleGalleryImagesChange = useCallback(
-    (images: import('@/lib/shop/experience-reel-gallery').ExperienceReelGalleryItem[]) => {
+    (images: ExperienceReelGalleryItem[]) => {
+      const nextSig = reelGalleryItemsSignature(images)
+      const prevSig = lastGallerySigRef.current
+      lastGallerySigRef.current = nextSig
       setGalleryImages(images)
+      if (prevSig === null) return
+      if (prevSig === nextSig) return
+      if (isReelGalleryStrictTailExtension(prevSig, nextSig)) return
+
       bumpReelAlign()
-      setPreviewSlideIndex(
-        displayedProduct && displayedProduct.id !== lamp.id ? 1 : 0
-      )
+      setPreviewSlideIndex(displayedProduct && displayedProduct.id !== lamp.id ? 1 : 0)
     },
     [displayedProduct, lamp.id, bumpReelAlign]
   )
@@ -1402,11 +1414,12 @@ export function ExperienceV2Client({
     (hasGallery ? galleryImages.length - 1 : 0)
   useEffect(() => {
     const max = Math.max(0, sectionCount - 1)
-    if (previewSlideIndex > max) {
+    const idx = previewSlideIndexRef.current
+    if (idx > max) {
       bumpReelAlign()
       setPreviewSlideIndex(max)
     }
-  }, [displayedProduct?.id, galleryImages.length, sectionCount, previewSlideIndex, bumpReelAlign])
+  }, [displayedProduct?.id, galleryImages.length, sectionCount, bumpReelAlign])
 
   const displayedStreetEditionRow = useMemo(() => {
     if (!displayedProduct || displayedProduct.id === lamp.id) return null
