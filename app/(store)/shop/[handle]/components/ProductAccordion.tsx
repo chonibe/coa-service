@@ -173,8 +173,7 @@ export const streetLampAccordionItems: AccordionItem[] = [
       <p>
         To be considered eligible for a return, a return claim must be submitted within 14 days from the date you received your order. 
         Street Collector will accept returns in good and unused condition. The cost of the return shipping will be at your own expense.
-        <br /><br />
-        Should you require a faster shipping timeline, please select our Express shipping option.
+        Estimated delivery windows are shown at checkout.
       </p>
     ),
   },

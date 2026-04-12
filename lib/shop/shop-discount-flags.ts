@@ -61,7 +61,7 @@ export const SHOP_DISCOUNT_REGISTRY: ShopDiscountRegistryEntry[] = [
     id: 'shippingFreeOver70',
     label: 'Tiered standard shipping (Stripe Checkout)',
     description:
-      'When on, standard shipping is free when merchandise subtotal is $70 or more; below $70, standard shipping is $10. Express shipping remains $15. When off, standard shipping is always free ($0) with the same express option.',
+      'When on, standard shipping is free when merchandise subtotal is $70 or more; below $70, standard shipping is $10. When off, standard shipping is always free ($0). Stripe Checkout offers standard shipping only.',
     defaultEnabled: DEFAULT_SHOP_DISCOUNT_FLAGS.shippingFreeOver70,
   },
 ]

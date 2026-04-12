@@ -10,8 +10,6 @@ export const STANDARD_SHIPPING_UNDER_THRESHOLD_USD = 10
 
 export const STANDARD_SHIPPING_UNDER_THRESHOLD_CENTS = 1000
 
-const EXPRESS_SHIPPING_CENTS = 1500
-
 const STANDARD_DELIVERY_ESTIMATE: NonNullable<
   Stripe.Checkout.SessionCreateParams.ShippingOption['shipping_rate_data']['delivery_estimate']
 > = {
@@ -19,28 +17,10 @@ const STANDARD_DELIVERY_ESTIMATE: NonNullable<
   maximum: { unit: 'business_day', value: 10 },
 }
 
-const EXPRESS_DELIVERY_ESTIMATE: NonNullable<
-  Stripe.Checkout.SessionCreateParams.ShippingOption['shipping_rate_data']['delivery_estimate']
-> = {
-  minimum: { unit: 'business_day', value: 2 },
-  maximum: { unit: 'business_day', value: 5 },
-}
-
-function expressOption(): Stripe.Checkout.SessionCreateParams.ShippingOption {
-  return {
-    shipping_rate_data: {
-      type: 'fixed_amount',
-      fixed_amount: { amount: EXPRESS_SHIPPING_CENTS, currency: 'usd' },
-      display_name: 'Express shipping',
-      delivery_estimate: EXPRESS_DELIVERY_ESTIMATE,
-    },
-  }
-}
-
 /**
- * Stripe Checkout shipping rates for headless checkout.
- * When `shippingFreeOver70` is false: free standard ($0) + express ($15).
- * When true: standard is $10 below $70 subtotal, free at/above $70; express unchanged.
+ * Stripe Checkout shipping rates for headless checkout (standard only; no express tier).
+ * When `shippingFreeOver70` is false: free standard ($0).
+ * When true: standard is $10 below $70 subtotal, free at/above $70.
  */
 export function buildStripeCheckoutShippingOptions(
   subtotalCents: number,
@@ -79,5 +59,5 @@ export function buildStripeCheckoutShippingOptions(
     }
   }
 
-  return [standard, expressOption()]
+  return [standard]
 }

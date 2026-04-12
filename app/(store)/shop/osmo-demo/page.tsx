@@ -13,7 +13,6 @@ import { Container, SectionWrapper } from '@/components/impact'
 import { ButtonRotate } from '@/components/impact'
 import { FlickCards } from '@/components/shop/FlickCards'
 import { AccordionFAQ } from '@/components/sections/AccordionFAQ'
-import { ModalSystem } from '@/components/sections/ModalSystem'
 import { CircularCarousel } from '@/components/shop/CircularCarousel'
 import { getCollection } from '@/lib/shopify/storefront-client'
 import { homepageContent } from '@/content/homepage'
@@ -73,7 +72,7 @@ export default async function OsmoDemoPage() {
         {
           id: 'ship-3',
           question: 'Do you offer express shipping?',
-          answer: 'Yes, express shipping options are available at checkout for faster delivery.',
+          answer: 'We currently offer standard shipping at checkout. Delivery estimates are shown before you pay.',
         },
       ],
     },
@@ -121,7 +120,7 @@ export default async function OsmoDemoPage() {
               Osmo-Inspired Components
             </h1>
             <p className="text-xl text-[#1a1a1a]/70 mb-8">
-              Interactive GSAP-powered components inspired by Osmo's design system
+              Interactive GSAP-powered components inspired by Osmo&apos;s design system
             </p>
 
             {/* Button Showcase */}
@@ -222,7 +221,7 @@ export default async function OsmoDemoPage() {
               <div className="p-6 bg-white rounded-xl shadow-sm">
                 <h3 className="font-semibold text-xl mb-2">3. CircularCarousel</h3>
                 <p className="text-[#1a1a1a]/70">
-                  Product carousel with cards arranged in a semi-circle. Drag to rotate, cards fan out like a clock face showing 10, 12, 2 o'clock positions.
+                  Product carousel with cards arranged in a semi-circle. Drag to rotate, cards fan out like a clock face showing 10, 12, and 2 o&apos;clock positions.
                 </p>
               </div>
 
