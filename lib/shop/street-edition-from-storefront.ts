@@ -8,7 +8,7 @@ import {
 
 function parseEditionSizeMetafield(product: ShopifyProduct): number | null {
   const m = product.metafields?.find(
-    (f) => f.namespace === 'custom' && f.key === 'edition_size'
+    (f) => f != null && f.namespace === 'custom' && f.key === 'edition_size'
   )
   if (!m?.value) return null
   const n = parseInt(String(m.value).replace(/\D/g, ''), 10)

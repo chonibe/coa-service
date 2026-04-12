@@ -29,7 +29,9 @@ type ListArtist = {
 }
 
 function editionLabel(product: ShopifyProduct): string | undefined {
-  const row = product.metafields?.find((m) => m.namespace === 'custom' && m.key === 'edition_size')
+  const row = product.metafields?.find(
+    (m) => m != null && m.namespace === 'custom' && m.key === 'edition_size'
+  )
   return row?.value?.trim()
 }
 
