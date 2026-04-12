@@ -55,6 +55,17 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
   ) => {
     const unitPrice = getDisplayUnitPrice ?? ((i: CartItem) => i.price)
     const checkout = useCheckout()
+
+    const shippingOutreachOrderSummary = React.useMemo(
+      () =>
+        items
+          .map((i) => {
+            const variant = i.variantTitle ? ` (${i.variantTitle})` : ''
+            return `${i.quantity}× ${i.title}${variant}`
+          })
+          .join('\n'),
+      [items]
+    )
     const [isCheckingOut, setIsCheckingOut] = React.useState(false)
     const [checkoutError, setCheckoutError] = React.useState<string | null>(null)
 
@@ -290,6 +301,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                   variant="drawer"
                   itemCount={items.length}
                   hideTitle
+                  shippingOutreachOrderSummary={shippingOutreachOrderSummary}
                 >
                   <p className="text-xs text-[#1a1a1a]/50 py-2">
                     Shipping and taxes calculated at checkout

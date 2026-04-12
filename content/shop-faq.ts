@@ -30,7 +30,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Countries We Ship To',
         answer:
-          'We currently ship to: North America (United States, Canada, Mexico), United Kingdom, Europe (Austria, Belgium, Denmark, Finland, France, Germany, Ireland, Italy, Luxembourg, Netherlands, Portugal, Spain, Sweden, Norway, Switzerland, Poland, Czech Republic, Slovakia, Hungary, Romania, Bulgaria, Croatia, Slovenia, Estonia, Latvia, Lithuania, Greece, Cyprus, Malta, Ukraine, Russia), Asia (Japan, South Korea, Hong Kong, Taiwan, Singapore, Malaysia, Thailand, Vietnam, Israel, United Arab Emirates), and Oceania (Australia, New Zealand).',
+          'We currently ship to: North America (United States, Canada, Mexico), United Kingdom, Europe (Austria, Belgium, Denmark, Finland, France, Germany, Ireland, Italy, Luxembourg, Netherlands, Portugal, Spain, Sweden, Norway, Switzerland, Poland, Czech Republic, Slovakia, Hungary, Romania, Bulgaria, Croatia, Slovenia, Estonia, Latvia, Lithuania, Greece, Cyprus, Malta, Ukraine, Russia), Asia (Japan, South Korea, Hong Kong, Taiwan, Singapore, Malaysia, Thailand, Vietnam, India, Israel, United Arab Emirates), and Oceania (Australia, New Zealand). If your country is not shown at checkout, use the “Don\'t see your country?” link on the address step to email us your order details and we will try to arrange shipping.',
       },
       {
         question: 'Shopping From a Different Country',

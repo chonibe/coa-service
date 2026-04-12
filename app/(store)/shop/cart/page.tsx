@@ -6,7 +6,7 @@
  * Shows cart items with credit slider for members to apply credits.
  */
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -73,6 +73,17 @@ function CartContentInner() {
   }, [])
   const availableCredits = user?.creditBalance ?? 0
   const maxCreditsForCart = Math.min(availableCredits, subtotal * 10) // 10 credits per $1
+
+  const shippingOutreachOrderSummary = useMemo(
+    () =>
+      items
+        .map((i) => {
+          const variant = i.variantTitle ? ` (${i.variantTitle})` : ''
+          return `${i.quantity}× ${i.title}${variant}`
+        })
+        .join('\n'),
+    [items]
+  )
 
   const handleCheckout = async () => {
     setError(null)
@@ -280,6 +291,7 @@ function CartContentInner() {
               error={error}
               variant="page"
               itemCount={items.reduce((sum, i) => sum + i.quantity, 0)}
+              shippingOutreachOrderSummary={shippingOutreachOrderSummary}
             >
               {/* Credit Slider */}
               {availableCredits > 0 && (

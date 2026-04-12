@@ -14,6 +14,7 @@ import { PAYPAL_LOGO_URL } from './PaymentButtonAssets'
 import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
+import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
 import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo, setUserProperty } from '@/lib/posthog'
 import { EARLY_ACCESS_CART_REFRESH_EVENT } from '@/lib/early-access-constants'
 import {
@@ -87,6 +88,8 @@ export interface CheckoutLayoutProps {
   topSection?: React.ReactNode
   /** When true, hide Discount line in summary (discount already shown in topSection) */
   suppressDiscountInSummary?: boolean
+  /** Prefilled order lines for “country not listed” outreach email in the address modal */
+  shippingOutreachOrderSummary?: string
 }
 
 export function CheckoutLayout({
@@ -106,6 +109,7 @@ export function CheckoutLayout({
   hideTitle = false,
   topSection,
   suppressDiscountInSummary = false,
+  shippingOutreachOrderSummary,
 }: CheckoutLayoutProps) {
   const countryOptions = useShippingCountries()
   const checkout = useCheckout()
@@ -211,6 +215,13 @@ export function CheckoutLayout({
           )}
         </div>
       </button>
+
+      <ShippingCountryNotListedLink
+        customerEmail={address?.email}
+        orderSummary={shippingOutreachOrderSummary}
+        className="mt-0.5 -mb-1 text-neutral-600 dark:text-[#b89090]"
+        linkClassName="dark:text-[#60A5FA] dark:hover:text-[#93C5FD]"
+      />
 
       {/* Payment method — icon + label; show saved card "(Visa) ending in 1122" when available */}
       <button
@@ -345,6 +356,7 @@ export function CheckoutLayout({
           }}
           billingAddress={!sameAsShipping ? billingAddress : null}
           highlightField={getMissingAddressField()}
+          orderSummaryForShippingOutreach={shippingOutreachOrderSummary}
         />
       )}
       {openSection === 'payment' && (

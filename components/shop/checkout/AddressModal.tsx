@@ -27,6 +27,7 @@ import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 import { useSaveAddressToAccount } from '@/lib/shop/useSaveAddressToAccount'
 import { useSavedAddresses } from '@/lib/shop/useSavedAddresses'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
+import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
 import { GooglePlacesAddressInput } from './GooglePlacesAddressInput'
 import { useMobile } from '@/hooks/use-mobile'
 
@@ -87,6 +88,8 @@ export interface AddressModalProps {
   addressType?: 'shipping' | 'billing'
   /** Field to highlight/focus when modal opens (e.g., 'email', 'postalCode') */
   highlightField?: MissingField
+  /** Prefilled cart / order lines for “country not listed” outreach email */
+  orderSummaryForShippingOutreach?: string
 }
 
 const emptyAddress: CheckoutAddress = {
@@ -180,6 +183,7 @@ export function AddressModal({
   billingAddress,
   addressType = 'shipping',
   highlightField,
+  orderSummaryForShippingOutreach,
 }: AddressModalProps) {
   const { theme } = useExperienceTheme()
   const countryOptions = useShippingCountries()
@@ -845,6 +849,13 @@ export function AddressModal({
                   · Change
                 </span>
               </button>
+
+              <ShippingCountryNotListedLink
+                variant={isDark ? 'dark' : 'default'}
+                customerEmail={form.email}
+                orderSummary={orderSummaryForShippingOutreach}
+                className="mb-3"
+              />
 
               {/* Divider */}
               <div className="flex items-center gap-3 mb-4">

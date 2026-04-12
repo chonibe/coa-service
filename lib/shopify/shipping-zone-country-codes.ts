@@ -34,6 +34,7 @@ export const STORE_SHIP_TO_COUNTRIES: ShopifyShippingCountry[] = [
   { code: 'HU', name: 'Hungary' },
   { code: 'IE', name: 'Ireland' },
   { code: 'IL', name: 'Israel' },
+  { code: 'IN', name: 'India' },
   { code: 'IT', name: 'Italy' },
   { code: 'JP', name: 'Japan' },
   { code: 'LV', name: 'Latvia' },

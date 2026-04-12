@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { XMarkIcon, TicketIcon } from '@heroicons/react/24/solid'
@@ -14,6 +14,7 @@ import { captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
+import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
 import {
   experienceArtworkUnitUsd,
   normalizeExperienceProductKey,
@@ -314,6 +315,17 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     }
     return items
   }, [lamp, lampQuantity, lampPrices, selectedArtworks, artworkUnitUsd, bundlePricedArtworkIndices])
+
+  const shippingOutreachOrderSummary = useMemo(
+    () =>
+      buildLineItems()
+        .map((item) => {
+          const variant = item.variantTitle ? ` (${item.variantTitle})` : ''
+          return `${item.quantity}× ${item.title}${variant}`
+        })
+        .join('\n'),
+    [buildLineItems]
+  )
 
   const buildGaProductItems = useCallback((): ReturnType<typeof storefrontProductToItem>[] => {
     const artworkLineItems: ReturnType<typeof storefrontProductToItem>[] = []
@@ -709,6 +721,12 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
             {error && <p className="mt-2 text-center text-red-500 dark:text-red-400">{error}</p>}
             <div className="mt-8">
               {placeOrderButton}
+              <ShippingCountryNotListedLink
+                variant="dark"
+                customerEmail={user?.email ?? undefined}
+                orderSummary={shippingOutreachOrderSummary}
+                className="mt-3"
+              />
               {/* Trust chips under Place Order - 2 per row, centered, icons aligned */}
               <div className="mt-10 grid grid-cols-2 gap-2.5 w-fit mx-auto">
               <span className="inline-flex items-center gap-1 text-[11px] leading-tight bg-neutral-100 dark:bg-[#201c1c] text-neutral-600 dark:text-[#c4a0a0] px-3 py-1.5 rounded-lg [&>svg]:size-[1.1em] [&>svg]:shrink-0 shrink-0">

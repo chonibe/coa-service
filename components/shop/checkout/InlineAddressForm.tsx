@@ -20,6 +20,7 @@ import { getStatesForCountry } from '@/lib/data/states'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
 import { useSaveAddressToAccount } from '@/lib/shop/useSaveAddressToAccount'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
+import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
 
 export interface InlineAddressFormProps {
   initialAddress?: CheckoutAddress | null
@@ -30,6 +31,8 @@ export interface InlineAddressFormProps {
   compact?: boolean
   /** When provided, saves address to user account (e.g. at checkout). Requires auth. */
   persistAs?: 'shipping' | 'billing'
+  /** Prefilled order lines for “country not listed” outreach email */
+  orderSummaryForShippingOutreach?: string
 }
 
 const emptyAddress: CheckoutAddress = {
@@ -67,6 +70,7 @@ export function InlineAddressForm({
   submitLabel = 'Continue to Payment',
   compact = false,
   persistAs,
+  orderSummaryForShippingOutreach,
 }: InlineAddressFormProps) {
   const countryOptions = useShippingCountries()
   const { saveShippingAddress, saveBillingAddress } = useSaveAddressToAccount()
@@ -210,6 +214,11 @@ export function InlineAddressForm({
             ))}
           </SelectContent>
         </Select>
+        <ShippingCountryNotListedLink
+          customerEmail={form.email}
+          orderSummary={orderSummaryForShippingOutreach}
+          className="mt-1.5"
+        />
       </div>
 
       <div>

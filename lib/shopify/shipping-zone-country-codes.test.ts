@@ -42,10 +42,10 @@ describe('parseShippingZonesToCountries', () => {
 })
 
 describe('STORE_SHIP_TO_COUNTRIES', () => {
-  it('has 47 policy countries with unique codes', () => {
-    expect(STORE_SHIP_TO_COUNTRIES).toHaveLength(47)
+  it('has 48 policy countries with unique codes', () => {
+    expect(STORE_SHIP_TO_COUNTRIES).toHaveLength(48)
     const codes = new Set(STORE_SHIP_TO_COUNTRIES.map((c) => c.code))
-    expect(codes.size).toBe(47)
+    expect(codes.size).toBe(48)
   })
 })
 
@@ -65,6 +65,6 @@ describe('resolveShipToCountriesForDisplay', () => {
   it('drops Shopify-only codes not in canonical list', () => {
     const rows = resolveShipToCountriesForDisplay([{ code: 'BR', name: 'Brazil' }])
     expect(rows.some((r) => r.code === 'BR')).toBe(false)
-    expect(rows).toHaveLength(47)
+    expect(rows).toHaveLength(48)
   })
 })
