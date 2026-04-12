@@ -1,4 +1,5 @@
 import {
+  mergeShippingCountryCodesForStripe,
   parseShippingZonesToCountries,
   resolveShipToCountriesForDisplay,
   STORE_SHIP_TO_COUNTRIES,
@@ -62,9 +63,18 @@ describe('resolveShipToCountriesForDisplay', () => {
     expect(vn?.name).toBe('Vietnam')
   })
 
-  it('drops Shopify-only codes not in canonical list', () => {
+  it('appends Shopify-only codes after canonical rows', () => {
     const rows = resolveShipToCountriesForDisplay([{ code: 'BR', name: 'Brazil' }])
-    expect(rows.some((r) => r.code === 'BR')).toBe(false)
-    expect(rows).toHaveLength(48)
+    expect(rows.some((r) => r.code === 'BR')).toBe(true)
+    expect(rows).toHaveLength(49)
+  })
+})
+
+describe('mergeShippingCountryCodesForStripe', () => {
+  it('unions canonical with Shopify zone countries', () => {
+    const merged = mergeShippingCountryCodesForStripe([{ code: 'BR', name: 'Brazil' }, { code: 'US', name: 'United States' }])
+    expect(merged.includes('BR')).toBe(true)
+    expect(merged.includes('US')).toBe(true)
+    expect(merged.length).toBeGreaterThanOrEqual(STORE_SHIP_TO_COUNTRIES.length)
   })
 })

@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import {
   buildProductCarouselSlides,

@@ -72,14 +72,32 @@ export const STRIPE_CHECKOUT_SHIPPING_COUNTRY_CODES_FALLBACK: string[] = STORE_S
 ).sort((a, b) => a.localeCompare(b))
 
 /**
- * Returns the canonical ship-to rows, using Shopify zone labels when the code exists in both.
+ * Returns canonical ship-to rows plus any extra countries present only in Shopify zones,
+ * with Shopify labels when available (sorted by name).
  */
 export function resolveShipToCountriesForDisplay(shopifyCountries: ShopifyShippingCountry[]): ShopifyShippingCountry[] {
   const shopifyByCode = new Map(shopifyCountries.map((c) => [c.code.toUpperCase(), c.name]))
-  return STORE_SHIP_TO_COUNTRIES.map(({ code, name }) => ({
+  const canonicalCodes = new Set(STORE_SHIP_TO_COUNTRIES.map((c) => c.code.toUpperCase()))
+  const rows: ShopifyShippingCountry[] = STORE_SHIP_TO_COUNTRIES.map(({ code, name }) => ({
     code,
     name: shopifyByCode.get(code.toUpperCase()) ?? name,
-  })).sort((a, b) => a.name.localeCompare(b.name))
+  }))
+  for (const c of shopifyCountries) {
+    const code = c.code.toUpperCase()
+    if (!canonicalCodes.has(code)) {
+      rows.push({ code, name: c.name })
+    }
+  }
+  return rows.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** Union canonical ship-to ISO codes with Shopify zone codes (for Stripe `allowed_countries`). */
+export function mergeShippingCountryCodesForStripe(shopifyCountries: ShopifyShippingCountry[]): string[] {
+  const codes = new Set(STRIPE_CHECKOUT_SHIPPING_COUNTRY_CODES_FALLBACK)
+  for (const c of shopifyCountries) {
+    if (c.code?.trim()) codes.add(c.code.trim().toUpperCase())
+  }
+  return Array.from(codes).sort((a, b) => a.localeCompare(b))
 }
 
 /** Parse Admin REST `shipping_zones.json` body into unique countries (sorted by name). */
@@ -147,18 +165,28 @@ export async function fetchShopifyShippingZoneCountries(): Promise<FetchShopifyS
 }
 
 /**
- * ISO codes for Stripe `shipping_address_collection.allowed_countries` — exactly {@link STORE_SHIP_TO_COUNTRIES}.
+ * ISO codes for Stripe `shipping_address_collection.allowed_countries`:
+ * **canonical** {@link STORE_SHIP_TO_COUNTRIES} **plus** any countries returned from Shopify shipping zones
+ * (so Stripe matches Admin zones; Stripe may still omit unsupported codes in the UI).
  */
 export async function getStripeCheckoutAllowedShippingCountryCodes(
   logPrefix = '[stripe-checkout]'
 ): Promise<string[]> {
   const { countries, error } = await fetchShopifyShippingZoneCountries()
   if (error === 'not_configured') {
-    console.warn(`${logPrefix} Shopify not configured; Stripe ship-to uses canonical list (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
+    console.warn(`${logPrefix} Shopify not configured; Stripe ship-to uses canonical list only (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
   } else if (error === 'shopify_unreachable') {
-    console.warn(`${logPrefix} Shopify shipping zones unreachable; Stripe ship-to uses canonical list (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
+    console.warn(`${logPrefix} Shopify shipping zones unreachable; Stripe ship-to uses canonical list only (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
   } else if (countries.length === 0) {
-    console.warn(`${logPrefix} Shopify shipping zones empty; Stripe ship-to uses canonical list (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
+    console.warn(`${logPrefix} Shopify shipping zones empty; Stripe ship-to uses canonical list only (${STORE_SHIP_TO_COUNTRIES.length} countries).`)
   }
-  return [...STRIPE_CHECKOUT_SHIPPING_COUNTRY_CODES_FALLBACK]
+
+  const merged = mergeShippingCountryCodesForStripe(error ? [] : countries)
+  if (process.env.NODE_ENV === 'development') {
+    console.info(
+      `${logPrefix} Stripe shipping_address_collection.allowed_countries count=${merged.length}` +
+        (error ? ' (canonical only)' : ` (canonical + Shopify zones, Shopify rows=${countries.length})`)
+    )
+  }
+  return merged
 }
