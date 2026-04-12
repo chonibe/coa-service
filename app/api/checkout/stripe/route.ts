@@ -7,6 +7,7 @@ import { fetchStreetLadderUsdByNumericProductIds } from '@/lib/shop/resolve-stre
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
+import { getStripeCheckoutAllowedShippingCountryCodes } from '@/lib/shopify/shipping-zone-country-codes'
 
 /**
  * Stripe Checkout API
@@ -99,7 +100,10 @@ export async function POST(request: NextRequest) {
       0
     )
     const shopDiscountSettings = await getShopDiscountSettings()
-    
+    const stripeAllowedShippingCountries = shippingAddressCollection
+      ? await getStripeCheckoutAllowedShippingCountryCodes('[checkout/stripe]')
+      : []
+
     // Build Stripe line items
     const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = pricedLineItems.map((item) => ({
       price_data: {
@@ -142,12 +146,7 @@ export async function POST(request: NextRequest) {
       ...(customerEmail && { customer_email: customerEmail }),
       ...(shippingAddressCollection && {
         shipping_address_collection: {
-          allowed_countries: [
-            'US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE',
-            'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'IE', 'PT', 'GR', 'PL',
-            'CZ', 'HU', 'RO', 'BG', 'HR', 'SK', 'SI', 'LT', 'LV', 'EE',
-            'LU', 'MT', 'CY', 'NZ', 'SG', 'HK', 'JP', 'KR', 'IL', 'AE',
-          ],
+          allowed_countries: stripeAllowedShippingCountries,
         },
         shipping_options: buildStripeCheckoutShippingOptions(
           subtotalCents,

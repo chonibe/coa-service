@@ -11,6 +11,7 @@ import { fetchActiveStreetReserveLocksUsdByUserId } from '@/lib/shop/fetch-stree
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 import { buildStripeCheckoutShippingOptions } from '@/lib/shop/stripe-checkout-shipping'
+import { getStripeCheckoutAllowedShippingCountryCodes } from '@/lib/shopify/shipping-zone-country-codes'
 import Stripe from 'stripe'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
@@ -317,6 +318,9 @@ export async function POST(request: NextRequest) {
       paymentMethodPreference ? [paymentMethodPreference] : ['card', 'paypal', 'link']
 
     const shopDiscountSettings = await getShopDiscountSettings()
+    const stripeAllowedShippingCountries = shippingRequired
+      ? await getStripeCheckoutAllowedShippingCountryCodes('[checkout/create]')
+      : []
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
@@ -341,7 +345,7 @@ export async function POST(request: NextRequest) {
       ...(email && !stripeCustomerId && { customer_email: email }),
       ...(shippingRequired && {
         shipping_address_collection: {
-          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'JP'],
+          allowed_countries: stripeAllowedShippingCountries,
         },
         shipping_options: buildStripeCheckoutShippingOptions(
           subtotalCents,
