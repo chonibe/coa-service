@@ -12,6 +12,7 @@ Defines **`STORE_SHIP_TO_COUNTRIES`** (47 ISO codes) to match shipping policy / 
 - [x] [`lib/shopify/shipping-zone-country-codes.test.ts`](../../lib/shopify/shipping-zone-country-codes.test.ts) — count 47, resolve/label behavior, Shopify-only codes dropped.
 - [x] [`app/api/shopify/shipping-countries/route.ts`](../../app/api/shopify/shipping-countries/route.ts) — resolved list; degraded 200 on zone fetch failure.
 - [x] [`lib/data/countries.ts`](../../lib/data/countries.ts) — `COUNTRY_OPTIONS` from store list; dial codes for UA, RU, TW, TH, MY, VN, etc.
+- [x] [`app/api/checkout/create/route.ts`](../../app/api/checkout/create/route.ts) and [`app/api/checkout/stripe/route.ts`](../../app/api/checkout/stripe/route.ts) — `getStripeCheckoutAllowedShippingCountryCodes` for `allowed_countries`.
 
 ## Verification
 
