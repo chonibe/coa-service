@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Ruler } from 'lucide-react'
+import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Ruler, Palette } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
@@ -44,6 +44,8 @@ export interface ShopSlideoutMenuProps {
   showThemeToggle?: boolean
   /** Experience: open Street Lamp product detail (includes/specs slideout); menu closes first */
   onSpecifications?: () => void
+  /** Experience: open artwork collection picker; menu closes first (shown under Specifications when set) */
+  onChooseYourArt?: () => void
 }
 
 /**
@@ -82,6 +84,7 @@ export function ShopSlideoutMenu({
   showPromoCodes = false,
   showThemeToggle = false,
   onSpecifications,
+  onChooseYourArt,
 }: ShopSlideoutMenuProps) {
   const [authOpen, setAuthOpen] = useState(false)
   const { theme: experienceTheme, setTheme: setExperienceTheme } = useExperienceTheme()
@@ -250,6 +253,21 @@ export function ShopSlideoutMenu({
                 <span className="flex items-center gap-4">
                   <Ruler size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
                   <span className="text-neutral-900 dark:text-white font-medium">Specifications</span>
+                </span>
+              </button>
+            )}
+            {onChooseYourArt && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onChooseYourArt()
+                }}
+                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10"
+              >
+                <span className="flex items-center gap-4">
+                  <Palette size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                  <span className="text-neutral-900 dark:text-white font-medium">Choose your Art</span>
                 </span>
               </button>
             )}

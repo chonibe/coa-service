@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
-import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
+import { useExperienceOpenArtPicker, useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import {
@@ -1261,6 +1261,8 @@ export function ExperienceV2Client({
     }
     setIsPickerOpen(true)
   }, [cartOrder.length, spotlightData?.vendorName, spotlightArtistVendorForFilter])
+
+  useExperienceOpenArtPicker(handleOpenPicker)
 
   const handleClosePicker = useCallback(() => {
     if (cartOrder.length > cartCountWhenPickerOpenedRef.current) {

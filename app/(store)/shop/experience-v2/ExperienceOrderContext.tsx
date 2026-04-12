@@ -9,6 +9,7 @@ export interface OrderBarRefLike {
 }
 
 const EXPERIENCE_OPEN_ORDER = 'experience-open-order'
+const EXPERIENCE_OPEN_ART_PICKER = 'experience-open-art-picker'
 
 export interface ExperienceOrderState {
   total: number
@@ -55,6 +56,8 @@ export interface OrderBarContextProps {
 interface ExperienceOrderContextValue extends ExperienceOrderState {
   setOrderSummary: (state: ExperienceOrderState) => void
   openOrderBar: () => void
+  /** Dispatches a window event consumed by ExperienceV2Client to open the artwork collection picker. */
+  openArtworkPicker: () => void
   /** Full OrderBar props – set by Configurator, or empty defaults when on quiz */
   orderBarProps: OrderBarContextProps | null
   setOrderBarProps: (props: OrderBarContextProps) => void
@@ -92,6 +95,11 @@ const defaultValue: ExperienceOrderContextValue = {
   openOrderBar: () => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent(EXPERIENCE_OPEN_ORDER))
+    }
+  },
+  openArtworkPicker: () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(EXPERIENCE_OPEN_ART_PICKER))
     }
   },
   orderBarProps: null,
@@ -158,6 +166,11 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
       window.dispatchEvent(new CustomEvent(EXPERIENCE_OPEN_ORDER))
     }
   }, [])
+  const openArtworkPicker = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(EXPERIENCE_OPEN_ART_PICKER))
+    }
+  }, [])
   const setOrderBarProps = useCallback((props: OrderBarContextProps) => {
     setOrderBarPropsState(props)
   }, [])
@@ -169,6 +182,7 @@ export function ExperienceOrderProvider({ children }: { children: ReactNode }) {
     ...state,
     setOrderSummary,
     openOrderBar,
+    openArtworkPicker,
     orderBarProps,
     setOrderBarProps,
     orderBarRef,
@@ -206,5 +220,13 @@ export function useExperienceOpenOrder(callback: () => void) {
     const handler = () => callback()
     window.addEventListener(EXPERIENCE_OPEN_ORDER, handler)
     return () => window.removeEventListener(EXPERIENCE_OPEN_ORDER, handler)
+  }, [callback])
+}
+
+export function useExperienceOpenArtPicker(callback: () => void) {
+  React.useEffect(() => {
+    const handler = () => callback()
+    window.addEventListener(EXPERIENCE_OPEN_ART_PICKER, handler)
+    return () => window.removeEventListener(EXPERIENCE_OPEN_ART_PICKER, handler)
   }, [callback])
 }
