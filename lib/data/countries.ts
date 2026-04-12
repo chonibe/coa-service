@@ -1,57 +1,16 @@
 /**
- * Country list for address forms and dropdowns
- * Curated list of common shipping countries (Stripe Checkout allowed countries)
+ * Country list for address forms and dropdowns.
+ * Shop shipping aligns with {@link STORE_SHIP_TO_COUNTRIES} in `lib/shopify/shipping-zone-country-codes.ts`.
  */
+
+import { STORE_SHIP_TO_COUNTRIES } from '@/lib/shopify/shipping-zone-country-codes'
 
 export interface CountryOption {
   code: string
   name: string
 }
 
-export const COUNTRY_OPTIONS: CountryOption[] = [
-  { code: 'US', name: 'United States' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'SE', name: 'Sweden' },
-  { code: 'NO', name: 'Norway' },
-  { code: 'DK', name: 'Denmark' },
-  { code: 'FI', name: 'Finland' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'GR', name: 'Greece' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'CZ', name: 'Czech Republic' },
-  { code: 'HU', name: 'Hungary' },
-  { code: 'RO', name: 'Romania' },
-  { code: 'BG', name: 'Bulgaria' },
-  { code: 'HR', name: 'Croatia' },
-  { code: 'SK', name: 'Slovakia' },
-  { code: 'SI', name: 'Slovenia' },
-  { code: 'LT', name: 'Lithuania' },
-  { code: 'LV', name: 'Latvia' },
-  { code: 'EE', name: 'Estonia' },
-  { code: 'LU', name: 'Luxembourg' },
-  { code: 'MT', name: 'Malta' },
-  { code: 'CY', name: 'Cyprus' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'HK', name: 'Hong Kong' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'KR', name: 'South Korea' },
-  { code: 'IL', name: 'Israel' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'BR', name: 'Brazil' },
-]
+export const COUNTRY_OPTIONS: CountryOption[] = [...STORE_SHIP_TO_COUNTRIES]
 
 export const COUNTRY_PHONE_CODES: Record<string, string> = {
   US: '+1',
@@ -67,9 +26,42 @@ export const COUNTRY_PHONE_CODES: Record<string, string> = {
   JP: '+81',
   KR: '+82',
   MX: '+52',
-  BR: '+55',
   IN: '+91',
   CN: '+86',
+  UA: '+380',
+  RU: '+7',
+  TW: '+886',
+  TH: '+66',
+  MY: '+60',
+  VN: '+84',
+  PL: '+48',
+  PT: '+351',
+  GR: '+30',
+  SE: '+46',
+  NO: '+47',
+  DK: '+45',
+  FI: '+358',
+  IE: '+353',
+  AT: '+43',
+  CH: '+41',
+  BE: '+32',
+  CZ: '+420',
+  HU: '+36',
+  RO: '+40',
+  BG: '+359',
+  HR: '+385',
+  SK: '+421',
+  SI: '+386',
+  LT: '+370',
+  LV: '+371',
+  EE: '+372',
+  LU: '+352',
+  CY: '+357',
+  MT: '+356',
+  NZ: '+64',
+  SG: '+65',
+  HK: '+852',
+  AE: '+971',
 }
 
 /** Unique dial codes for phone country selector */
@@ -86,9 +78,14 @@ export const PHONE_DIAL_OPTIONS = [
   { dial: '+81', label: '+81' },
   { dial: '+82', label: '+82' },
   { dial: '+52', label: '+52' },
-  { dial: '+55', label: '+55' },
   { dial: '+91', label: '+91' },
   { dial: '+86', label: '+86' },
+  { dial: '+380', label: '+380' },
+  { dial: '+7', label: '+7' },
+  { dial: '+886', label: '+886' },
+  { dial: '+66', label: '+66' },
+  { dial: '+60', label: '+60' },
+  { dial: '+84', label: '+84' },
 ]
 
 export function getPhoneCodeForCountry(countryCode: string): string {
@@ -109,7 +106,12 @@ export const PHONE_CODE_TO_COUNTRY: Record<string, string> = {
   '+81': 'JP',
   '+82': 'KR',
   '+52': 'MX',
-  '+55': 'BR',
   '+91': 'IN',
   '+86': 'CN',
+  '+380': 'UA',
+  '+7': 'RU',
+  '+886': 'TW',
+  '+66': 'TH',
+  '+60': 'MY',
+  '+84': 'VN',
 }
