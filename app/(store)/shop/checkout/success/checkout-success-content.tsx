@@ -25,7 +25,7 @@ import {
  * Shows:
  * - Order summary
  * - Credits earned from purchase
- * - Claim CTA (if guest) or View Collection (if authenticated)
+ * - Sign in CTA (if guest) and Continue Shopping
  * 
  * @see app/api/stripe/webhook/route.ts - Post-purchase bridge
  * @see lib/auth/claim-token.ts - Claim tokens
@@ -488,13 +488,7 @@ export function CheckoutSuccessContent() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {isAuthenticated ? (
-              <Link href="/collector/dashboard">
-                <Button variant="primary" size="lg">
-                  View My Collection
-                </Button>
-              </Link>
-            ) : (
+            {!isAuthenticated && (
               <Link href={`/shop/account`}>
                 <Button variant="primary" size="lg">
                   Sign in
@@ -502,7 +496,7 @@ export function CheckoutSuccessContent() {
               </Link>
             )}
             <Link href="/shop/experience">
-              <Button variant="outline" size="lg">
+              <Button variant={isAuthenticated ? 'primary' : 'outline'} size="lg">
                 Continue Shopping
               </Button>
             </Link>

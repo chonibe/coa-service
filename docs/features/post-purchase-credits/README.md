@@ -1,7 +1,7 @@
 # Track C: Post-Purchase + Credits
 
-**Version:** 1.1.0  
-**Last Updated:** 2026-03-01  
+**Version:** 1.1.1  
+**Last Updated:** 2026-04-14  
 **Status:** Implemented  
 **Plan Reference:** `platform_integration_streams_48a1af4f.plan.md` — Track C
 
@@ -14,6 +14,10 @@ Track C bridges the gap between purchase and collector identity, syncs wishlists
 | C1 | Post-Purchase Bridge | Every purchase creates/links a collector identity | 3-4 |
 | C2 | Server-Synced Wishlist | Persist wishlists server-side for cross-device sync | 2-3 |
 | C3 | Credits Economy Expansion | Make credits visible and spendable throughout the shop | 3-4 |
+
+### Changelog
+
+- **1.1.1 (2026-04-14):** Checkout success no longer shows “View My Collection”; signed-in users get a primary **Continue Shopping** CTA only. Guests still see **Sign in** plus **Continue Shopping**.
 
 ---
 
@@ -53,12 +57,12 @@ Functions:
 - `buildClaimUrl(email, purchaseId)` — Full claim URL for emails
 
 #### 3. Checkout Success Page
-**File:** [`app/shop/checkout/success/checkout-success-content.tsx`](../../../app/shop/checkout/success/checkout-success-content.tsx)
+**File:** [`app/(store)/shop/checkout/success/checkout-success-content.tsx`](../../../app/(store)/shop/checkout/success/checkout-success-content.tsx)
 
 Enhanced with:
 - **Credits earned banner** showing credits earned from the purchase
-- **Claim CTA** for guest users (not authenticated): "Claim Your Collection" with sign-up link
-- **View Collection** for authenticated users
+- **Sign in** CTA for guest users (not authenticated) via `/shop/account`
+- **Continue Shopping** for all users (no dashboard link on this page)
 
 #### 4. Welcome / Claim Page
 **Files:**
