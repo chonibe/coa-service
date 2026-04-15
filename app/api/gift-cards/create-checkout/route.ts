@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
       cancel_url: `${baseUrl}/shop/gift-cards?cancelled=true`,
       allow_promotion_codes: false,
       billing_address_collection: 'auto',
+      phone_number_collection: { enabled: true },
       payment_intent_data: {
         setup_future_usage: 'off_session',
       },

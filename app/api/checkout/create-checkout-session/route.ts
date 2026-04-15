@@ -223,6 +223,7 @@ export async function POST(request: NextRequest) {
         ? { discounts }
         : { allow_promotion_codes: true }),
       billing_address_collection: 'auto',
+      phone_number_collection: { enabled: true },
       payment_intent_data: {
         setup_future_usage: 'off_session',
       },

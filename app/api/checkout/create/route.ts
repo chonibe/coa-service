@@ -353,6 +353,7 @@ export async function POST(request: NextRequest) {
         ),
       }),
       billing_address_collection: 'required',
+      phone_number_collection: { enabled: true },
       ...(discounts?.length ? { discounts } : { allow_promotion_codes: true }),
     }
 

@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
+      phone_number_collection: { enabled: true },
       metadata: {
         checkout_kind: 'street_reserve',
       },

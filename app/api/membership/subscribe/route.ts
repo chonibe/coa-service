@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
+      phone_number_collection: { enabled: true },
       metadata: {
         type: 'membership_subscription',
         tier_id: tierId,

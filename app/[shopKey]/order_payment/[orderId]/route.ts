@@ -104,6 +104,7 @@ export async function GET(
       invoice_currency: eligibility.currencyCode,
     },
     billing_address_collection: 'required',
+    phone_number_collection: { enabled: true },
   }
 
   let session: Stripe.Checkout.Session
