@@ -1,6 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+
+// Local-storage autosave for the artwork creation form. We keep this scoped
+// per submission (`new` for unsaved drafts, `<id>` for in-flight edits) so
+// concurrent tabs don't trample each other. Hydration restores the snapshot
+// on next mount and we offer a one-click discard to start fresh.
+const AUTOSAVE_PREFIX = "vendor_artwork_draft_v1:"
+const AUTOSAVE_DEBOUNCE_MS = 800
+const AUTOSAVE_TTL_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
+
+interface AutosaveSnapshot {
+  savedAt: number
+  formData: Record<string, unknown>
+}
 
 
 
@@ -23,7 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle, Button, Label, Input, Textare
 interface ShopifyStyleFormProps {
   initialData?: ProductSubmissionData
   submissionId?: string
-  onComplete: () => void
+  onComplete: (result?: { submissionId: string; status: string; isDraft: boolean }) => void
   onCancel: () => void
 }
 
@@ -42,23 +55,123 @@ export function ShopifyStyleArtworkForm({
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
 
-  const [formData, setFormData] = useState<ProductSubmissionData>({
-    title: initialData?.title || "",
-    description: initialData?.description || "",
-    product_type: initialData?.product_type || "Art Prints",
-    vendor: "",
-    handle: initialData?.handle || "",
-    tags: initialData?.tags || [],
-    variants: initialData?.variants || [
-      {
-        price: "",
-        sku: "",
-        requires_shipping: true,
-      },
-    ],
-    images: initialData?.images || [],
-    metafields: initialData?.metafields || [],
+  const autosaveKey = `${AUTOSAVE_PREFIX}${submissionId || "new"}`
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const hydratedFromAutosaveRef = useRef(false)
+  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle")
+  const [autosaveAt, setAutosaveAt] = useState<number | null>(null)
+  const [autosaveRestoredAt, setAutosaveRestoredAt] = useState<number | null>(null)
+
+  const [formData, setFormData] = useState<ProductSubmissionData>(() => {
+    const base: ProductSubmissionData = {
+      title: initialData?.title || "",
+      description: initialData?.description || "",
+      product_type: initialData?.product_type || "Art Prints",
+      vendor: "",
+      handle: initialData?.handle || "",
+      tags: initialData?.tags || [],
+      variants: initialData?.variants || [
+        {
+          price: "",
+          sku: "",
+          requires_shipping: true,
+        },
+      ],
+      images: initialData?.images || [],
+      metafields: initialData?.metafields || [],
+    }
+
+    if (typeof window === "undefined") return base
+    try {
+      const raw = window.localStorage.getItem(`${AUTOSAVE_PREFIX}${submissionId || "new"}`)
+      if (!raw) return base
+      const snap = JSON.parse(raw) as AutosaveSnapshot
+      if (!snap?.formData || typeof snap.savedAt !== "number") return base
+      if (Date.now() - snap.savedAt > AUTOSAVE_TTL_MS) {
+        window.localStorage.removeItem(`${AUTOSAVE_PREFIX}${submissionId || "new"}`)
+        return base
+      }
+      // Only restore for the new-artwork flow. Edits should always trust the
+      // server-authoritative initialData; otherwise an old autosave could
+      // silently revert recent server-side admin moderation changes.
+      if (submissionId) return base
+      hydratedFromAutosaveRef.current = true
+      return { ...base, ...(snap.formData as ProductSubmissionData) }
+    } catch {
+      return base
+    }
   })
+
+  useEffect(() => {
+    if (hydratedFromAutosaveRef.current) {
+      try {
+        const raw = window.localStorage.getItem(autosaveKey)
+        if (raw) {
+          const snap = JSON.parse(raw) as AutosaveSnapshot
+          setAutosaveRestoredAt(snap.savedAt)
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [autosaveKey])
+
+  // Debounced autosave. We snapshot only the user-controlled form payload —
+  // not transient UI state — so restoring is deterministic.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    // Skip the very first paint to avoid persisting the empty initial state.
+    if (autosaveStatus === "idle" && !formData.title && (formData.variants[0]?.price || "") === "") {
+      return
+    }
+    setAutosaveStatus("saving")
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      try {
+        const snap: AutosaveSnapshot = { savedAt: Date.now(), formData: formData as unknown as Record<string, unknown> }
+        window.localStorage.setItem(autosaveKey, JSON.stringify(snap))
+        setAutosaveAt(snap.savedAt)
+        setAutosaveStatus("saved")
+      } catch {
+        setAutosaveStatus("idle")
+      }
+    }, AUTOSAVE_DEBOUNCE_MS)
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [formData, autosaveKey])
+
+  const clearAutosave = () => {
+    try {
+      window.localStorage.removeItem(autosaveKey)
+    } catch {
+      // ignore
+    }
+    setAutosaveAt(null)
+    setAutosaveStatus("idle")
+    setAutosaveRestoredAt(null)
+  }
+
+  const discardRestoredDraft = () => {
+    clearAutosave()
+    setFormData({
+      title: initialData?.title || "",
+      description: initialData?.description || "",
+      product_type: initialData?.product_type || "Art Prints",
+      vendor: formData.vendor,
+      handle: initialData?.handle || "",
+      tags: initialData?.tags || [],
+      variants: initialData?.variants || [
+        {
+          price: "",
+          sku: "",
+          requires_shipping: true,
+        },
+      ],
+      images: initialData?.images || [],
+      metafields: initialData?.metafields || [],
+    })
+  }
 
   // Fetch field configuration
   useEffect(() => {
@@ -153,6 +266,10 @@ export function ShopifyStyleArtworkForm({
         throw new Error(errorData.error || "Failed to submit artwork")
       }
 
+      const responseData = await response.json().catch(() => ({} as any))
+      const newSubmissionId: string | undefined =
+        responseData?.submission_id || responseData?.id || submissionId
+
       toast({
         title: "Success",
         description: isDraft
@@ -160,7 +277,14 @@ export function ShopifyStyleArtworkForm({
           : "Artwork submitted for review successfully",
       })
 
-      onComplete()
+      // Server now owns this draft — drop the local snapshot so re-entering
+      // the form pulls the canonical record instead of an offline draft.
+      clearAutosave()
+      onComplete(
+        newSubmissionId
+          ? { submissionId: newSubmissionId, status: responseData?.status || (isDraft ? "draft" : "pending"), isDraft }
+          : undefined
+      )
     } catch (error: any) {
       console.error("Error submitting artwork:", error)
       toast({
@@ -181,13 +305,54 @@ export function ShopifyStyleArtworkForm({
     )
   }
 
+  const formatAutosaveTime = (ts: number | null) => {
+    if (!ts) return null
+    const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000))
+    if (diffSec < 5) return "just now"
+    if (diffSec < 60) return `${diffSec}s ago`
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin}m ago`
+    const d = new Date(ts)
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
+      {autosaveRestoredAt && !submissionId && (
+        <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-blue-700">
+          <Info className="h-4 w-4" />
+          <AlertTitle className="text-sm font-semibold">Restored unsaved draft</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-3 text-xs">
+            <span>
+              We loaded the draft you started{" "}
+              <span className="font-medium">{formatAutosaveTime(autosaveRestoredAt) || "earlier"}</span>{" "}
+              in this browser. Your work was waiting for you.
+            </span>
+            <button
+              type="button"
+              onClick={discardRestoredDraft}
+              className="shrink-0 underline underline-offset-2 hover:text-blue-700"
+            >
+              Discard and start fresh
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 py-4 border-b">
-        <h1 className="text-2xl font-semibold">
-          {submissionId ? "Edit Artwork" : "Add Artwork"}
-        </h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-semibold">
+            {submissionId ? "Edit Artwork" : "Add Artwork"}
+          </h1>
+          {!submissionId && autosaveStatus !== "idle" && (
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {autosaveStatus === "saving"
+                ? "Saving draft locally…"
+                : `Draft autosaved ${formatAutosaveTime(autosaveAt) || ""}`}
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isSubmitting || isSavingDraft}>
             Cancel

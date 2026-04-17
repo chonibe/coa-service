@@ -5,7 +5,7 @@ import { useState } from "react"
 
 
 
-import { FileText, Download, Upload, Link as LinkIcon, CheckCircle2 } from "lucide-react"
+import { FileText, Download, Upload, Link as LinkIcon, CheckCircle2, Info } from "lucide-react"
 import type { ProductSubmissionData } from "@/types/product-submission"
 
 import { Label, Input, Button, Alert, AlertDescription } from "@/components/ui"
@@ -105,6 +105,16 @@ export function PrintFilesStep({ formData, setFormData }: PrintFilesStepProps) {
           Upload high-resolution PDF files for production printing. These files are used for actual printing, not for customer preview.
         </p>
       </div>
+
+      <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-blue-700">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs leading-relaxed">
+          <span className="font-semibold">Print specs:</span> 300 DPI minimum at final
+          print size, CMYK color profile, 3mm bleed on every edge, embedded fonts and
+          flattened layers. The bigger the long edge, the better — we&apos;ll downscale
+          for the website automatically.
+        </AlertDescription>
+      </Alert>
 
       {/* PDF Upload - Central and Clean */}
       <div className="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">

@@ -15,7 +15,15 @@ import { ShopifyStyleArtworkForm } from "@/app/vendor/dashboard/products/create/
 export default function CreateArtworkPage() {
   const router = useRouter()
 
-  const handleComplete = () => {
+  const handleComplete = (result?: { submissionId: string; status: string; isDraft: boolean }) => {
+    // The artwork experience editor only resolves on a published Shopify
+    // product, so routing fresh submissions there would 404 until admin
+    // approval. Drop back to Studio with a focus query so the artist can
+    // see their new pending row at the top of the grid.
+    if (result?.submissionId) {
+      router.push(`/vendor/studio?focus=${result.submissionId}`)
+      return
+    }
     router.push("/vendor/studio")
   }
 

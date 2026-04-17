@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
@@ -39,7 +40,7 @@ interface ArtworkSubmission {
   createdAt: string
 }
 
-type FilterStatus = 'all' | 'draft' | 'pending' | 'published' | 'approved'
+type FilterStatus = 'all' | 'draft' | 'pending' | 'approved' | 'published' | 'rejected'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -50,6 +51,9 @@ const statusColors: Record<string, string> = {
 }
 
 export default function VendorStudioPage() {
+  const searchParams = useSearchParams()
+  const focusId = searchParams?.get('focus') || null
+  const focusRef = useRef<HTMLDivElement | null>(null)
   const [submissions, setSubmissions] = useState<ArtworkSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
@@ -83,15 +87,32 @@ export default function VendorStudioPage() {
     fetchSubmissions()
   }, [])
 
+  // Scroll the freshly-submitted artwork into view + flash a ring around it.
+  // The fade timer + element existence are both guarded so an unrelated
+  // ?focus= query doesn't leave us in a mounted-but-no-target state.
+  useEffect(() => {
+    if (!focusId || loading) return
+    const node = focusRef.current
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [focusId, loading, submissions])
+
   const filtered = filterStatus === 'all'
     ? submissions
     : submissions.filter((s) => s.status === filterStatus)
 
-  const filters: { value: FilterStatus; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'published', label: 'Published' },
+  const counts = submissions.reduce<Record<string, number>>((acc, s) => {
+    acc[s.status] = (acc[s.status] || 0) + 1
+    return acc
+  }, {})
+
+  const filters: { value: FilterStatus; label: string; count?: number }[] = [
+    { value: 'all', label: 'All', count: submissions.length },
+    { value: 'draft', label: 'Draft', count: counts.draft || 0 },
+    { value: 'pending', label: 'Pending', count: counts.pending || 0 },
+    { value: 'approved', label: 'Approved', count: counts.approved || 0 },
+    { value: 'published', label: 'Published', count: counts.published || 0 },
+    { value: 'rejected', label: 'Rejected', count: counts.rejected || 0 },
   ]
 
   return (
@@ -102,20 +123,34 @@ export default function VendorStudioPage() {
         {/* Filter pills */}
         <div className="flex items-center justify-between">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {filters.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilterStatus(f.value)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold font-body shrink-0 transition-all',
-                  filterStatus === f.value
-                    ? 'bg-[#390000] text-[#ffba94]'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
+            {filters.map((f) => {
+              const isActive = filterStatus === f.value
+              const showCount = f.count !== undefined && f.count > 0
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => setFilterStatus(f.value)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-semibold font-body shrink-0 transition-all inline-flex items-center gap-1.5',
+                    isActive
+                      ? 'bg-[#390000] text-[#ffba94]'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  )}
+                >
+                  <span>{f.label}</span>
+                  {showCount && (
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 rounded-full text-[10px] tabular-nums',
+                        isActive ? 'bg-[#ffba94]/20 text-[#ffba94]' : 'bg-white text-gray-500'
+                      )}
+                    >
+                      {f.count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {/* Create button */}
@@ -168,8 +203,16 @@ export default function VendorStudioPage() {
                 ? `/vendor/studio/artworks/${artwork.productId}/experience`
                 : `/vendor/studio/artworks/${artwork.id}/edit`
               const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
+              const isFocused = focusId === artwork.id
               return (
-                <div key={artwork.id} className="group relative">
+                <div
+                  key={artwork.id}
+                  ref={isFocused ? focusRef : undefined}
+                  className={cn(
+                    'group relative transition-all',
+                    isFocused && 'ring-2 ring-impact-primary rounded-impact-block-xs ring-offset-2 ring-offset-white'
+                  )}
+                >
                   <Link href={experienceHref} aria-label={`Edit experience for ${artwork.title}`}>
                     <div className="relative aspect-[4/5] bg-gray-100 rounded-impact-block-xs overflow-hidden">
                       {artwork.imageUrl ? (

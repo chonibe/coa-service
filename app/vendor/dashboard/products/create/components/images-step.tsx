@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 
 
 
-import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical, Video, Film } from "lucide-react"
+import { Plus, Trash2, Image as ImageIcon, Upload, X, GripVertical, Video, Film, AlertTriangle } from "lucide-react"
 
 import { ImageMaskEditor } from "./image-mask-editor"
 import type { ProductSubmissionData, ProductImage } from "@/types/product-submission"
@@ -18,16 +18,63 @@ interface ImagesStepProps {
   onMaskSavedStatusChange?: (isSaved: boolean) => void // Callback to notify parent of mask saved status
 }
 
+// Resolution heuristics for the artwork preview image.
+// We surface non-blocking warnings so artists can re-upload before
+// publishing, but never reject a file outright (artists curate, we hint).
+const MIN_LONG_EDGE_PX = 2000
+const MIN_SHORT_EDGE_PX = 1500
+const RECOMMENDED_LONG_EDGE_PX = 3000
+
+interface ImageWarning {
+  id: string
+  fileName: string
+  message: string
+}
+
+async function inspectImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  if (!file.type.startsWith("image/")) return null
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new window.Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    img.src = url
+  })
+}
+
+function buildResolutionWarning(file: File, width: number, height: number): string | null {
+  const longEdge = Math.max(width, height)
+  const shortEdge = Math.min(width, height)
+  if (longEdge < MIN_LONG_EDGE_PX || shortEdge < MIN_SHORT_EDGE_PX) {
+    return `${width}\u00d7${height}px is below our recommended minimum (${MIN_LONG_EDGE_PX}px on the long edge). Prints and zoom may look soft.`
+  }
+  if (longEdge < RECOMMENDED_LONG_EDGE_PX) {
+    return `${width}\u00d7${height}px is acceptable, but ${RECOMMENDED_LONG_EDGE_PX}px on the long edge is recommended for best print quality.`
+  }
+  return null
+}
+
 export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: ImagesStepProps) {
   const [uploading, setUploading] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [showImageLibrary, setShowImageLibrary] = useState(false)
   const [loadingImages, setLoadingImages] = useState(false)
   const [maskSaved, setMaskSaved] = useState(false)
+  const [warnings, setWarnings] = useState<ImageWarning[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragOverIndex = useRef<number | null>(null)
 
   const images = formData.images || []
+
+  const dismissWarning = (id: string) => {
+    setWarnings((prev) => prev.filter((w) => w.id !== id))
+  }
 
   const handleFileUpload = async (file: File) => {
     // Validate file type - support images and videos
@@ -48,6 +95,25 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
     if (file.size > maxSize) {
       alert(`${isImage ? 'Image' : 'Video'} file is too large. Maximum size is ${maxSizeLabel}. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
       return
+    }
+
+    // Inspect dimensions for image uploads. Surface a non-blocking warning
+    // if the file is below print/zoom recommendations. Videos skip this.
+    if (isImage) {
+      const dims = await inspectImageDimensions(file)
+      if (dims) {
+        const msg = buildResolutionWarning(file, dims.width, dims.height)
+        if (msg) {
+          setWarnings((prev) => [
+            ...prev,
+            {
+              id: `${file.name}-${Date.now()}`,
+              fileName: file.name,
+              message: msg,
+            },
+          ])
+        }
+      }
     }
 
     setUploading(true)
@@ -364,6 +430,32 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
         />
       </div>
 
+      {warnings.length > 0 && (
+        <div className="space-y-2">
+          {warnings.map((w) => (
+            <Alert
+              key={w.id}
+              className="border-amber-200 bg-amber-50 text-amber-900 [&>svg]:text-amber-700"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="flex items-start justify-between gap-3">
+                <span className="text-xs leading-relaxed">
+                  <span className="font-semibold">{w.fileName}</span> — {w.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => dismissWarning(w.id)}
+                  className="text-amber-700 hover:text-amber-900 shrink-0"
+                  aria-label="Dismiss warning"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </AlertDescription>
+            </Alert>
+          ))}
+        </div>
+      )}
+
       {/* Image Grid - Shopify Style */}
       {images.length > 0 && (
         <div className="space-y-4">
@@ -374,7 +466,7 @@ export function ImagesStep({ formData, setFormData, onMaskSavedStatusChange }: I
                 <div>
                   <Label className="text-base font-semibold">Artwork Image</Label>
                   <p className="text-xs text-muted-foreground">
-                    Position your image within the mask frame. Click "Save Masked Image" when you're ready to apply the mask.
+                    Position your image within the mask frame. Click &ldquo;Save Masked Image&rdquo; when you&apos;re ready to apply the mask.
                   </p>
                 </div>
                 <Button
