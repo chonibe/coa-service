@@ -27,12 +27,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    // Fetch all series for this vendor
-    const { data: series, error: seriesError } = await supabase
+    // The Studio "Archived" tab needs to read inactive series too. We
+    // expose this via an explicit query param so existing collector and
+    // unlock paths (which never pass the flag) keep their tight filter.
+    const url = new URL(request.url)
+    const includeArchived = url.searchParams.get("include_archived") === "true"
+    const archivedOnly = url.searchParams.get("archived_only") === "true"
+
+    let query = supabase
       .from("artwork_series")
       .select("*")
       .eq("vendor_id", vendor.id)
-      .eq("is_active", true)
+
+    if (archivedOnly) {
+      query = query.eq("is_active", false).not("archived_at", "is", null)
+    } else if (!includeArchived) {
+      query = query.eq("is_active", true)
+    }
+
+    const { data: series, error: seriesError } = await query
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false })
 
