@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ContentCard } from '@/components/app-shell'
 import Link from 'next/link'
-import { ChevronRight, Eye, Settings, CreditCard, FileText, ExternalLink } from 'lucide-react'
+import { ChevronRight, Eye, Settings, Pencil, LogOut, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -15,28 +15,28 @@ import { cn } from '@/lib/utils'
 
 const profileLinks = [
   {
-    label: 'Public Preview',
-    description: 'See how collectors see your profile',
+    label: 'Edit public profile',
+    description: 'Bio, photo, links — how collectors see you',
+    href: '/vendor/dashboard/profile?return=/vendor/profile',
+    icon: Pencil,
+  },
+  {
+    label: 'Public preview',
+    description: 'See what your page looks like to collectors',
     href: '/vendor/profile/public-preview',
     icon: Eye,
   },
   {
-    label: 'Account Settings',
-    description: 'Contact info, payment, tax details',
+    label: 'Account settings',
+    description: 'Contact, payouts, tax and compliance',
     href: '/vendor/profile/settings',
     icon: Settings,
   },
   {
-    label: 'Payment Settings',
-    description: 'PayPal, payout preferences',
-    href: '/vendor/profile/settings',
-    icon: CreditCard,
-  },
-  {
-    label: 'Tax Information',
-    description: 'Tax ID and compliance',
-    href: '/vendor/profile/settings',
-    icon: FileText,
+    label: 'Sign out',
+    description: 'End your session on this device',
+    href: '/vendor/signout',
+    icon: LogOut,
   },
 ]
 

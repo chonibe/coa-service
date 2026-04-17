@@ -907,8 +907,20 @@ export default function VendorProfilePage() {
     window.open(link, "_blank", "noopener,noreferrer")
   }
 
+  const returnHref = searchParams.get("return")
+
   return (
     <div className="container mx-auto py-8 max-w-7xl space-y-6">
+      {returnHref && (
+        <div className="-mt-4 mb-2">
+          <a
+            href={returnHref}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1a1a1a]/70 hover:text-[#1a1a1a] underline underline-offset-4"
+          >
+            ← Back to my portal
+          </a>
+        </div>
+      )}
       {/* Profile Completion Announcement Bar */}
       {getCompletionPercentage() < 100 && (() => {
         const missingSteps = [];

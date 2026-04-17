@@ -134,10 +134,31 @@ export default function VendorStudioPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-sm text-gray-400 font-body">
-              {filterStatus === 'all' ? 'No artworks yet. Create your first artwork!' : `No ${filterStatus} artworks.`}
-            </p>
+          <div className="py-16 px-4 text-center max-w-md mx-auto">
+            {filterStatus === 'all' ? (
+              <>
+                <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-3">
+                  Your studio is empty
+                </p>
+                <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em] mb-3">
+                  Add your first piece.
+                </h3>
+                <p className="font-body text-sm text-[#1a1a1a]/60 leading-relaxed mb-6">
+                  When you publish an artwork, it appears here with its status and current listing.
+                  You can keep drafts private until you&apos;re ready to share.
+                </p>
+                <Link
+                  href="/vendor/dashboard/products/create"
+                  className="inline-flex items-center gap-1.5 font-body text-sm font-medium text-[#1a1a1a] underline underline-offset-4"
+                >
+                  <Plus className="w-4 h-4" /> Add an artwork
+                </Link>
+              </>
+            ) : (
+              <p className="font-body text-sm text-[#1a1a1a]/60">
+                Nothing marked {filterStatus} right now.
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">

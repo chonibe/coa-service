@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 
 
 import { MessageSquare, Search, Plus, Loader2 } from "lucide-react"
-import { SidebarLayout } from "../../components/sidebar-layout"
 import { MessageThread } from "@/components/vendor/message-thread"
 import { EmptyState } from "@/components/vendor/empty-state"
 import { LoadingSkeleton } from "@/components/vendor/loading-skeleton"
@@ -111,23 +110,20 @@ export default function MessagesPage() {
 
   if (selectedThreadId) {
     return (
-      <SidebarLayout>
-        <div className="p-6">
-          <MessageThread
-            threadId={selectedThreadId}
-            onBack={() => {
-              setSelectedThreadId(null)
-              fetchThreads()
-            }}
-          />
-        </div>
-      </SidebarLayout>
+      <div className="p-6">
+        <MessageThread
+          threadId={selectedThreadId}
+          onBack={() => {
+            setSelectedThreadId(null)
+            fetchThreads()
+          }}
+        />
+      </div>
     )
   }
 
   return (
-    <SidebarLayout>
-      <div className="space-y-4">
+    <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-muted-foreground text-lg">Your conversations with customers and our team</p>
@@ -227,7 +223,6 @@ export default function MessagesPage() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </SidebarLayout>
+    </div>
   )
 }

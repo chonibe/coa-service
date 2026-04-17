@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { shopifyFetch, safeJsonParse } from "@/lib/shopify-api"
@@ -12,11 +13,65 @@ const HISTORICAL_PRICE = 40.00
 const HISTORICAL_PAYOUT = 10.00
 const OCTOBER_2025 = new Date('2025-10-01')
 const RECENT_ACTIVITY_LIMIT = 5
-const CHART_WINDOW = 30
 
-export async function GET() {
+type RangeWindow = {
+  from: Date | null
+  to: Date | null
+  chartWindow: number
+}
+
+function resolveRangeWindow(range: string | null, fromParam: string | null, toParam: string | null): RangeWindow {
+  const now = new Date()
+  const to = toParam ? new Date(toParam) : now
+  if (fromParam) {
+    return {
+      from: new Date(fromParam),
+      to,
+      chartWindow: Math.max(30, Math.ceil((to.getTime() - new Date(fromParam).getTime()) / 86400000)),
+    }
+  }
+
+  switch (range) {
+    case "7d": {
+      const from = new Date(to)
+      from.setDate(from.getDate() - 7)
+      return { from, to, chartWindow: 7 }
+    }
+    case "90d": {
+      const from = new Date(to)
+      from.setDate(from.getDate() - 90)
+      return { from, to, chartWindow: 90 }
+    }
+    case "ytd": {
+      const from = new Date(to.getFullYear(), 0, 1)
+      return { from, to, chartWindow: 365 }
+    }
+    case "all":
+      return { from: null, to, chartWindow: 90 }
+    case "30d":
+    default: {
+      const from = new Date(to)
+      from.setDate(from.getDate() - 30)
+      return { from, to, chartWindow: 30 }
+    }
+  }
+}
+
+function shiftRangeBackwards(window: RangeWindow): RangeWindow {
+  if (!window.from || !window.to) {
+    return { from: null, to: null, chartWindow: window.chartWindow }
+  }
+  const span = window.to.getTime() - window.from.getTime()
+  return {
+    from: new Date(window.from.getTime() - span),
+    to: new Date(window.from.getTime()),
+    chartWindow: window.chartWindow,
+  }
+}
+
+export async function GET(request: NextRequest) {
   const supabase = createClient()
-  
+
   try {
     const cookieStore = cookies()
     const access = await getVendorOrAdminAccess(cookieStore)
@@ -41,12 +96,20 @@ export async function GET() {
       })
     }
 
+    const { searchParams } = request.nextUrl
+    const range = searchParams.get("range")
+    const fromParam = searchParams.get("from")
+    const toParam = searchParams.get("to")
+    const compare = searchParams.get("compare") === "true"
+
+    const currentWindow = resolveRangeWindow(range, fromParam, toParam)
+
     const [{ products }, lineItemsResult] = await Promise.all([
       fetchProductsByVendor(vendorName),
       supabase
         .from("order_line_items_v2")
         .select("id, product_id, price, quantity, created_at, status, vendor_name, fulfillment_status")
-      .eq("vendor_name", vendorName)
+        .eq("vendor_name", vendorName)
         .eq("status", "active"),
     ])
 
@@ -71,7 +134,15 @@ export async function GET() {
       }
     }
 
-    const stats = buildFinancialSummary(lineItems, payoutSettings)
+    const currentItems = filterLineItemsByWindow(lineItems, currentWindow)
+    const stats = buildFinancialSummary(currentItems, payoutSettings, currentWindow.chartWindow)
+
+    let previous: ReturnType<typeof buildFinancialSummary> | null = null
+    if (compare) {
+      const previousWindow = shiftRangeBackwards(currentWindow)
+      const previousItems = filterLineItemsByWindow(lineItems, previousWindow)
+      previous = buildFinancialSummary(previousItems, payoutSettings, previousWindow.chartWindow)
+    }
 
     // Get unified balance from collector ledger (single source of truth)
     let totalPayout = stats.totalPayout // Fallback to calculated value
@@ -115,6 +186,16 @@ export async function GET() {
       currency: stats.currency,
       salesByDate: stats.salesByDate,
       recentActivity: stats.recentActivity,
+      range: range ?? "30d",
+      from: currentWindow.from?.toISOString() ?? null,
+      to: currentWindow.to?.toISOString() ?? null,
+      previous: previous
+        ? {
+            totalSales: previous.totalSales,
+            totalRevenue: previous.totalRevenue,
+            totalPayout: previous.totalPayout,
+          }
+        : null,
     })
   } catch (error) {
     console.error("Unexpected error in vendor stats API:", error)
@@ -340,6 +421,21 @@ const normaliseDateKey = (value: unknown): string => {
   return date.toISOString().split("T")[0]
 }
 
+const filterLineItemsByWindow = <T extends { created_at?: string | null }>(
+  lineItems: T[],
+  window: { from: Date | null; to: Date | null },
+): T[] => {
+  if (!window.from && !window.to) return lineItems
+  const fromTs = window.from ? window.from.getTime() : Number.NEGATIVE_INFINITY
+  const toTs = window.to ? window.to.getTime() : Number.POSITIVE_INFINITY
+  return lineItems.filter((item) => {
+    if (!item.created_at) return false
+    const ts = new Date(item.created_at).getTime()
+    if (Number.isNaN(ts)) return false
+    return ts >= fromTs && ts <= toTs
+  })
+}
+
 const buildFinancialSummary = (
   lineItems: Array<{
     id?: string
@@ -353,6 +449,7 @@ const buildFinancialSummary = (
     payout_amount: number | string | null
     is_percentage: boolean | null
   }>,
+  chartWindow: number = 30,
 ) => {
   const payoutMap = new Map(
     payoutSettings.map((setting) => [
@@ -448,7 +545,7 @@ const buildFinancialSummary = (
       revenue: Number(stats.revenue.toFixed(2)),
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(-CHART_WINDOW)
+    .slice(-chartWindow)
 
   const activity = recentActivity
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

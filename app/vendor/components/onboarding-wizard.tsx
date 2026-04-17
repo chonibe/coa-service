@@ -641,43 +641,33 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     switch (currentStep) {
       case 0: // Welcome step
         return (
-          <div className="space-y-6 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center animate-pulse">
-                <Sparkles className="h-16 w-16 text-primary" />
-              </div>
-            </div>
-
+          <div className="space-y-8 max-w-xl">
             <div>
-              <h3 className="text-2xl font-bold mb-2">Welcome to the Vendor Portal!</h3>
-              <p className="text-gray-600 text-lg">
-                Let's set up your vendor profile in just a few minutes
+              <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-3">
+                Step 1 of {steps.length}
+              </p>
+              <h3 className="font-heading text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-3">
+                Let&apos;s set up your artist portal.
+              </h3>
+              <p className="font-body text-[#1a1a1a]/70 leading-relaxed">
+                A few short steps so we can pay you for your work and route orders to the right place.
+                Everything is saved as you go — you can step away and come back.
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
-              <h4 className="font-semibold text-blue-900 mb-3 text-left">What you'll need:</h4>
-              <ul className="list-disc pl-5 text-blue-800 space-y-2 text-left">
-                <li>Your contact information</li>
-                <li>Business address</li>
+            <div className="border-l-2 border-[#1a1a1a]/10 pl-5 space-y-2">
+              <p className="font-body text-sm font-medium text-[#1a1a1a]">What you&apos;ll need</p>
+              <ul className="font-body text-sm text-[#1a1a1a]/70 space-y-1.5">
+                <li>Your contact details</li>
+                <li>Business or studio address</li>
                 <li>PayPal email for payouts</li>
                 <li>Tax identification information</li>
               </ul>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-[#1a1a1a]/60">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">Estimated time: 5-7 minutes</span>
-            </div>
-
-            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-              <h4 className="font-semibold text-green-900 mb-2">Benefits of completing:</h4>
-              <ul className="list-disc pl-5 text-green-800 space-y-1 text-left text-sm">
-                <li>Receive payments faster</li>
-                <li>Stay tax compliant</li>
-                <li>Get important notifications</li>
-                <li>Access all vendor features</li>
-              </ul>
+              <span className="font-body text-sm">Takes about 5 minutes.</span>
             </div>
           </div>
         )
@@ -1146,42 +1136,40 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
 
       case 7: // Complete
         return (
-          <div className="space-y-6 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center animate-bounce">
-                  <CheckCircle className="h-16 w-16 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
-                  <Sparkles className="h-5 w-5 text-yellow-900" />
-                </div>
-              </div>
-            </div>
-
+          <div className="space-y-8 max-w-xl">
             <div>
-              <h3 className="text-2xl font-bold mb-2">Profile Setup Complete! 🎉</h3>
-              <p className="text-gray-600 text-lg">
-              Thank you for completing your vendor profile. You're now ready to start selling your products.
-            </p>
+              <div className="flex items-center gap-3 mb-4 text-[#1a1a1a]">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-[#1a1a1a]/20">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50">
+                  Profile complete
+                </p>
+              </div>
+              <h3 className="font-heading text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-3">
+                You&apos;re all set.
+              </h3>
+              <p className="font-body text-[#1a1a1a]/70 leading-relaxed">
+                Your artist portal is ready. We&apos;ll use the details you shared to route orders and send your payouts.
+              </p>
             </div>
 
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
-              <h4 className="font-semibold text-green-900 mb-3">What's Next:</h4>
-              <ul className="list-disc pl-5 text-green-800 space-y-2 text-left">
-                <li>Explore your vendor dashboard</li>
-                <li>Check your product listings</li>
-                <li>Review your payment settings</li>
-                <li>Start uploading your products</li>
+            <div className="border-l-2 border-[#1a1a1a]/10 pl-5 space-y-2">
+              <p className="font-body text-sm font-medium text-[#1a1a1a]">What&apos;s next</p>
+              <ul className="font-body text-sm text-[#1a1a1a]/70 space-y-1.5">
+                <li>Take a look at your home to see recent orders</li>
+                <li>Review sales and pending payouts in Insights</li>
+                <li>Keep your profile up to date as things change</li>
               </ul>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button onClick={onComplete} size="lg" className="gap-2">
-                Go to Dashboard <ArrowRight className="h-4 w-4" />
+                Go to my portal <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="lg" onClick={() => window.location.href = "/vendor/dashboard/profile"}>
-                Review Profile
-            </Button>
+              <Button variant="outline" size="lg" onClick={() => window.location.href = "/vendor/profile/settings"}>
+                Review profile
+              </Button>
             </div>
           </div>
         )
@@ -1192,27 +1180,15 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 md:p-8">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 dark:bg-blue-900/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
+    <div className="min-h-screen bg-white flex items-start justify-center py-10 px-4 md:py-16">
       <TooltipProvider>
-        <Card className="w-full max-w-4xl shadow-2xl border-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl relative z-10">
-          {/* Decorative gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
-          
-          {/* Glow effect */}
-          <div className="absolute -top-1 -right-1 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl animate-pulse" />
-          
-          <CardHeader className="border-b border-slate-200/50 dark:border-slate-800/50 relative z-10">
+        <Card className="w-full max-w-3xl border border-[#1a1a1a]/10 shadow-none bg-white">
+          <CardHeader className="border-b border-[#1a1a1a]/10 pb-6">
             <StepIndicator />
             <AutoSaveIndicator />
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <CardTitle className="font-heading text-2xl text-[#1a1a1a] tracking-[-0.02em]">
                   {steps[currentStep].title}
                 </CardTitle>
                 <CardDescription className="mt-1">{steps[currentStep].description}</CardDescription>
@@ -1220,9 +1196,9 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
             </div>
           </CardHeader>
 
-          <CardContent className="pt-6 relative z-10">
+          <CardContent className="pt-6">
             {error && (
-              <Alert variant="destructive" className="mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+              <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
@@ -1234,35 +1210,32 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-between border-t border-slate-200/50 dark:border-slate-800/50 pt-6 relative z-10">
+          <CardFooter className="flex justify-between border-t border-[#1a1a1a]/10 pt-6">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0 || currentStep === steps.length - 1}
-              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
             >
               <ChevronLeft className="mr-2 h-4 w-4" /> Back
             </Button>
 
             {currentStep < steps.length - 2 ? (
-              <Button 
-                onClick={handleNext} 
+              <Button
+                onClick={handleNext}
                 size="lg"
                 disabled={currentStep === 6 && !formData.terms_accepted}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >
                 Next <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : currentStep === steps.length - 2 ? (
-              <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting} 
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
                   </>
                 ) : (
                   <>

@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
 import {
   Bell,
-  BellOff,
   Check,
   DollarSign,
   ShieldCheck,
@@ -139,11 +138,15 @@ export default function VendorNotificationsPage() {
             ))}
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-16">
-            <BellOff className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-400 font-body">No notifications</p>
-            <p className="text-xs text-gray-400 font-body mt-1">
-              Sales alerts, authentication events, and system updates will appear here.
+          <div className="py-16 px-4 text-center max-w-md mx-auto">
+            <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-3">
+              All caught up
+            </p>
+            <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em] mb-3">
+              Nothing new.
+            </h3>
+            <p className="font-body text-sm text-[#1a1a1a]/60 leading-relaxed">
+              Sales alerts, authentication events, and system updates will appear here as they happen.
             </p>
           </div>
         ) : (

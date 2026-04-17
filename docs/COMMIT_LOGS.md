@@ -1,3 +1,31 @@
+## Commit: Artist launch revamp — welcome, login, onboarding, app-shell (2026-04-17)
+
+### Summary
+End-to-end overhaul of the artist arc — public `/for-artists` welcome + apply
+form + `artist_applications` Supabase table, editorial `/login`,
+`/reset-password` (new), `/vendor/welcome` first-login gate, calm onboarding
+wizard, rebuilt `/vendor/home` (greeting + payout hero + metric strip + spark +
+recent activity) and `/vendor/insights` (range, chart, table, CSV), polished
+empty states across Studio / Inbox / Profile, `SlimHeader` search/bell gated
+per-role, and shell consolidation: `SidebarLayout` scoped to
+`/vendor/dashboard/*` only, `app/vendor/layout.tsx` becomes auth-only, and
+`ImpersonationBanner` moved inside AppShell. Eleven silent bugs fixed.
+
+Full detail: [`docs/COMMIT_LOGS/artist-launch-revamp-2026-04-17.md`](./COMMIT_LOGS/artist-launch-revamp-2026-04-17.md).
+
+### ✅ Implementation Checklist (summary)
+
+- [x] Phase 0 — data + redirect bug fixes
+- [x] Phase 1 — `/for-artists` welcome + apply form + API + migration
+- [x] Phase 2 — `/login` restyled to Impact
+- [x] Phase 3 — `/vendor/welcome` + calm wizard + redirects on `/vendor/home`
+- [x] Phase 4 — rebuilt `/vendor/home` and `/vendor/insights`
+- [x] Phase 5 — Studio / Inbox / Profile polish
+- [x] Phase 6 — shell consolidation (no more double chrome)
+- [x] Phase 7 — docs + log + manual test plan at [`tests/artist-launch.md`](../tests/artist-launch.md)
+
+---
+
 ## Commit: Shop — resolve artwork detail product + gallery loading (2026-04-06)
 
 ### Summary

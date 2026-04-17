@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ContentCard, ContentCardHeader } from '@/components/app-shell'
-import { ChevronRight, User, Mail, CreditCard, FileText, Bell, Shield, LogOut } from 'lucide-react'
+import { ChevronRight, User, Mail, CreditCard, FileText, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -45,15 +45,8 @@ const settingsSections = [
     ],
   },
   {
-    title: 'Notifications',
-    items: [
-      { label: 'Notification Preferences', description: 'Sales, payouts, messages', icon: Bell, href: '#' },
-    ],
-  },
-  {
     title: 'Account',
     items: [
-      { label: 'Privacy & Security', description: 'Password, 2FA settings', icon: Shield, href: '#' },
       { label: 'Sign Out', description: 'Sign out of your account', icon: LogOut, href: '/vendor/signout', destructive: true },
     ],
   },

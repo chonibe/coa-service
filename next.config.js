@@ -147,6 +147,12 @@ const nextConfig = {
         destination: "/",
         permanent: false,
       },
+      // Artist portal public welcome: /join-vendor is the old SaaS page; /for-artists is the new editorial one
+      {
+        source: "/join-vendor",
+        destination: "/for-artists",
+        permanent: true,
+      },
     ]
   },
   // Webpack configuration for web components support

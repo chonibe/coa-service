@@ -64,15 +64,16 @@ export default function VendorPayoutsPage() {
   useEffect(() => {
     async function fetchPayoutData() {
       try {
-        // Fetch balance
+        // Fetch balance (API returns { success, balance: { available_balance, pending_balance, held_balance } })
         const balRes = await fetch('/api/vendors/balance', { credentials: 'include' })
         if (balRes.ok) {
           const balJson = await balRes.json()
+          const b = balJson.balance || balJson
           setBalance({
-            available: balJson.available || balJson.balance?.available || 0,
-            pending: balJson.pending || balJson.balance?.pending || 0,
-            held: balJson.held || balJson.balance?.held || 0,
-            currency: balJson.currency || 'USD',
+            available: Number(b.available_balance ?? b.available ?? 0),
+            pending: Number(b.pending_balance ?? b.pending ?? 0),
+            held: Number(b.held_balance ?? b.held ?? 0),
+            currency: b.currency || 'USD',
           })
         }
       } catch (err) {

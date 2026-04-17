@@ -104,9 +104,23 @@
 - Surface vendor status (pending/disabled) messaging directly on the login screen.
 
 ## Version & Change Log
-- **Version**: 1.1.0
-- **Last Updated**: 2025-11-11
+- **Version**: 1.2.0
+- **Last Updated**: 2026-04-17
 - **Change Log**:
+  - 2026-04-17: Artist launch revamp. `/login` restyled to the Impact / editorial
+    design system (no SaaS gradients or glassmorphism), hidden Shopify button
+    removed, all error copy routed through the `SUPPORT_EMAIL` constant in
+    [`lib/constants/support.ts`](../../../lib/constants/support.ts). Legacy
+    `/vendor/login` route now preserves incoming search params (so error
+    messages survive) and forces `intent=vendor`. `/auth/callback` redirects
+    session-missing errors directly to `/login?error=session_missing&intent=vendor`
+    instead of the old `/vendor/login` dead end. Post-login and post-onboarding
+    both terminate at `/vendor/home`. A dedicated `/vendor/signout` route
+    clears the Supabase session, the cached vendor name, and returns the user
+    to `/login`. Missing `/reset-password` page was created so forgot-password
+    emails no longer 404. See
+    `docs/COMMIT_LOGS/artist-launch-revamp-2026-04-17.md` for the full
+    implementation checklist.
   - 2025-11-11: Documented enhanced login UI, access request CTA, status-based redirects, centralized vendor middleware enforcement, vendor impersonation banner, and dedicated pending/denied pages.
 
 ## Verification Checklist

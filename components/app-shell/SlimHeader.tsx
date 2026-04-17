@@ -19,6 +19,10 @@ const LOGO_LIGHT = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Logo_
 export interface SlimHeaderProps {
   /** Show the cart icon (typically for collectors) */
   showCart?: boolean
+  /** Show the search icon */
+  showSearch?: boolean
+  /** Show the notifications bell */
+  showNotifications?: boolean
   /** Cart item count */
   cartCount?: number
   /** Notification count */
@@ -40,6 +44,8 @@ export interface SlimHeaderProps {
 
 export function SlimHeader({
   showCart = true,
+  showSearch = true,
+  showNotifications = true,
   cartCount = 0,
   notificationCount = 0,
   creditBalance = null,
@@ -129,21 +135,24 @@ export function SlimHeader({
           )}
 
           {/* Search */}
-          <button
-            onClick={onSearchClick}
-            className={cn(
-              'flex items-center justify-center',
-              'w-10 h-10 rounded-full',
-              'text-app-chrome-text',
-              'hover:bg-white/10 active:bg-white/15',
-              'transition-colors duration-200'
-            )}
-            aria-label="Search"
-          >
-            <Search className="w-5 h-5" />
-          </button>
+          {showSearch && (
+            <button
+              onClick={onSearchClick}
+              className={cn(
+                'flex items-center justify-center',
+                'w-10 h-10 rounded-full',
+                'text-app-chrome-text',
+                'hover:bg-white/10 active:bg-white/15',
+                'transition-colors duration-200'
+              )}
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          )}
 
           {/* Notifications */}
+          {showNotifications && (
           <button
             onClick={onNotificationClick}
             className={cn(
@@ -171,6 +180,7 @@ export function SlimHeader({
               </span>
             )}
           </button>
+          )}
 
           {/* Cart (optional) */}
           {showCart && (

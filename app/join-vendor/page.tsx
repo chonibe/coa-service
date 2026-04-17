@@ -99,7 +99,7 @@ export default function JoinVendorPage() {
 
   const handleGoogleLogin = () => {
     setGoogleLoading(true)
-    router.push("/api/auth/google/start?redirect=/vendor/dashboard")
+    router.push("/api/auth/google/start?redirect=/vendor/home")
   }
 
   return (

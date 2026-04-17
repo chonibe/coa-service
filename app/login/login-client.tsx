@@ -1,22 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
-import { Separator } from "@/components/ui"
 import { Logo } from "@/components/logo"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Button, Alert, AlertDescription, AlertTitle } from "@/components/ui"
-import {
-  AlertCircle,
-  Loader2,
-  LifeBuoy,
-  ArrowUpRight,
-  Sparkles,
-  Shield,
-  Zap,
-  CheckCircle2,
-} from "lucide-react"
+import { Container, SectionWrapper, Button } from "@/components/impact"
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { SUPPORT_EMAIL, supportMailto } from "@/lib/constants/support"
 
 interface AuthStatusResponse {
   authenticated: boolean
@@ -26,32 +17,56 @@ interface AuthStatusResponse {
   vendor: { id: number; vendor_name: string } | null
 }
 
-const NOT_REGISTERED_ERROR = "You are not registered. Contact support@thestreetcollector.com."
+type LoginType = "vendor" | "collector"
 
-const SUPPORT_EMAIL = "support@thestreetcollector.com"
-const MAILTO_SUBJECT = encodeURIComponent("Street Collector Vendor Access Request")
-const MAILTO_BODY = encodeURIComponent(
-  [
-    "Hi Street Collector Team,",
-    "",
-    "I'd like to request access to the vendor portal.",
-    "",
-    "Business / Vendor Name:",
-    "Primary Contact Name:",
-    "Preferred Contact Email:",
-    "",
-    "Thanks!",
-  ].join("\n"),
-)
+const NOT_REGISTERED_ERROR = `You're not registered yet. Write to ${SUPPORT_EMAIL} and we'll get you set up.`
+
+/**
+ * Accept a redirect value only if it is a same-origin relative URL. We allow
+ * path + query + hash (needed for NFC scan round-trips like
+ * `/collector/artwork/[id]?scan=pending`) but reject protocol-relative URLs
+ * (`//evil.com`) and absolute URLs.
+ */
+function isSafeRedirect(value: string | null | undefined): value is string {
+  if (!value) return false
+  if (!value.startsWith("/")) return false
+  if (value.startsWith("//")) return false
+  if (value.startsWith("/\\")) return false
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(value)) return false
+  return true
+}
+
+function resolveErrorMessage(code: string | null): string | null {
+  switch (code) {
+    case null:
+    case "":
+      return null
+    case "not_registered":
+      return NOT_REGISTERED_ERROR
+    case "otp_expired":
+      return "This sign-in link has expired. Head back and request a new one."
+    case "signup_failed":
+      return `We couldn't create your account. Try again in a moment or write to ${SUPPORT_EMAIL}.`
+    case "no_collector_profile":
+      return `Access denied. Sign up first or write to ${SUPPORT_EMAIL}.`
+    case "session_missing":
+      return `Your session didn't come through. Try again, and if it keeps happening, email ${SUPPORT_EMAIL}.`
+    case "missing_code":
+      return "Google didn't return a sign-in code. Please try again."
+    default:
+      return `We ran into a sign-in issue (${code}). Try again or write to ${SUPPORT_EMAIL}.`
+  }
+}
 
 export default function LoginClient() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [formError, setFormError] = useState<string | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [loginType, setLoginType] = useState<"vendor" | "collector">("collector")
+  const [successMessage] = useState<string | null>(null)
+  const [loginType, setLoginType] = useState<LoginType>("collector")
+
   useEffect(() => {
     const intent = searchParams.get("intent")
     if (intent === "vendor" || intent === "collector") setLoginType(intent)
@@ -59,26 +74,13 @@ export default function LoginClient() {
 
   useEffect(() => {
     const errorParam = searchParams.get("error")
-    if (errorParam === "not_registered") {
-      setFormError(NOT_REGISTERED_ERROR)
-    } else if (errorParam === "otp_expired") {
-      setFormError("This sign-in link has expired or is invalid. Please sign in again to get a new link.")
-    } else if (errorParam === "signup_failed") {
-      setFormError("Unable to create your account. Please try again or contact support@thestreetcollector.com.")
-    } else if (errorParam === "no_collector_profile") {
-      setFormError("Access denied. Please sign up first or contact support@thestreetcollector.com.")
-    } else if (errorParam) {
-      setFormError(`Authentication error: ${errorParam}`)
-    }
+    setFormError(resolveErrorMessage(errorParam))
   }, [searchParams])
 
   useEffect(() => {
     if (typeof window === "undefined") return
-
     const hash = window.location.hash
-    if (!hash || !hash.includes("access_token")) {
-      return
-    }
+    if (!hash || !hash.includes("access_token")) return
 
     const params = new URLSearchParams(hash.replace(/^#/, ""))
     params.set("from", "hash")
@@ -114,68 +116,58 @@ export default function LoginClient() {
           throw new Error("Unable to check session")
         }
 
-        const data = (await response.json()) as AuthStatusResponse & { requireAccountSelection?: boolean }
+        const data = (await response.json()) as AuthStatusResponse & {
+          requireAccountSelection?: boolean
+          hasCollectorSession?: boolean
+          adminHasCollectorAccess?: boolean
+          adminHasVendorAccess?: boolean
+        }
 
         if (hasRedirected.current) {
           setCheckingSession(false)
           return
         }
 
-        // When account selection is required (e.g. after logout), never auto-redirect.
-        // User must explicitly choose Collector/Vendor and sign in again.
         if (data.requireAccountSelection === true) {
-          console.log(`[login-client] requireAccountSelection=true — staying on login, no auto-redirect`)
           setCheckingSession(false)
           return
         }
 
-        // Priority: admin > vendor > collector (multi-role users go to the correct dashboard)
         if (data.isAdmin && data.hasAdminSession) {
-          const hasMultipleRoles = (data as any).adminHasCollectorAccess || (data as any).adminHasVendorAccess
-          if (hasMultipleRoles) {
-            console.log(`[login-client] Admin with multiple roles - redirecting to role selection`)
-            hasRedirected.current = true
-            window.location.replace("/auth/select-role")
-            return
-          }
-          console.log(`[login-client] Redirecting to admin dashboard: isAdmin=true, hasAdminSession=true`)
+          const hasMultipleRoles = data.adminHasCollectorAccess || data.adminHasVendorAccess
           hasRedirected.current = true
-          window.location.replace("/admin/dashboard")
+          window.location.replace(hasMultipleRoles ? "/auth/select-role" : "/admin/dashboard")
           return
         }
 
         if (data.isAdmin && !data.hasAdminSession) {
-          console.log(`[login-client] Admin user but no admin session cookie - staying on login page`)
           setCheckingSession(false)
           return
         }
 
-        const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
-        const vendorHome = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
-        const collectorHome = appShellEnabled ? '/collector/home' : '/collector/dashboard'
+        const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== "false"
+        const vendorHome = appShellEnabled ? "/vendor/home" : "/vendor/dashboard"
+        const collectorHome = appShellEnabled ? "/collector/home" : "/collector/dashboard"
         const redirectParam = searchParams.get("redirect")
         const intentParam = searchParams.get("intent")
-        const wantsCollector = intentParam === "collector" || (redirectParam && /^\/shop\//.test(redirectParam))
+        const wantsCollector =
+          intentParam === "collector" || (redirectParam && /^\/shop\//.test(redirectParam))
 
-        // If user explicitly wants collector (e.g. from My Orders /shop/account), respect that over vendor
-        if (wantsCollector && (data as any).hasCollectorSession) {
-          const target = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : collectorHome
-          console.log(`[login-client] Redirecting to collector (intent): ${target}`)
+        if (wantsCollector && data.hasCollectorSession) {
+          const target = isSafeRedirect(redirectParam) ? redirectParam : collectorHome
           hasRedirected.current = true
           window.location.replace(target)
           return
         }
 
         if (data.vendorSession || data.vendor) {
-          console.log(`[login-client] Redirecting to vendor: ${vendorHome}`)
           hasRedirected.current = true
           window.location.replace(vendorHome)
           return
         }
 
-        if ((data as any).hasCollectorSession) {
-          const target = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : collectorHome
-          console.log(`[login-client] Redirecting to collector: ${target}`)
+        if (data.hasCollectorSession) {
+          const target = isSafeRedirect(redirectParam) ? redirectParam : collectorHome
           hasRedirected.current = true
           window.location.replace(target)
           return
@@ -194,31 +186,30 @@ export default function LoginClient() {
     return () => {
       abortController.abort()
     }
-  }, [])
+  }, [searchParams])
 
   const handleGoogleLogin = () => {
     setFormError(null)
-    setSuccessMessage(null)
     setGoogleLoading(true)
 
     const isAdminLogin = searchParams.get("admin") === "true"
     const redirectParam = searchParams.get("redirect")
-    const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== 'false'
-    const vendorRedirect = appShellEnabled ? '/vendor/home' : '/vendor/dashboard'
-    const defaultCollectorRedirect = '/experience'
-    const collectorRedirect = redirectParam && /^\/[a-zA-Z0-9/_-]*$/.test(redirectParam) ? redirectParam : defaultCollectorRedirect
+    const appShellEnabled = process.env.NEXT_PUBLIC_APP_SHELL_ENABLED !== "false"
+    const vendorRedirect = appShellEnabled ? "/vendor/home" : "/vendor/dashboard"
+    const defaultCollectorRedirect = "/experience"
+    const collectorRedirect = isSafeRedirect(redirectParam)
+      ? redirectParam
+      : defaultCollectorRedirect
     let endpoint: string
 
-    // Route to role-specific OAuth endpoints so scopes match the selected role.
     if (isAdminLogin) {
-      // Admin: main endpoint with admin=true to request Gmail scopes for CRM/email sending
       endpoint = `/api/auth/google/start?admin=true&redirect=/admin/dashboard`
     } else if (loginType === "vendor") {
-      // Vendor: main endpoint with vendor redirect (no Gmail scopes)
       endpoint = `/api/auth/google/start?redirect=${encodeURIComponent(vendorRedirect)}`
     } else {
-      // Collector: dedicated endpoint that never requests Gmail scopes
-      endpoint = `/api/auth/collector/google/start?redirect=${encodeURIComponent(collectorRedirect)}`
+      endpoint = `/api/auth/collector/google/start?redirect=${encodeURIComponent(
+        collectorRedirect,
+      )}`
     }
 
     window.location.href = endpoint
@@ -226,121 +217,110 @@ export default function LoginClient() {
 
   if (checkingSession) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Checking existing session" />
-            <Sparkles className="h-4 w-4 absolute -top-1 -right-1 text-primary animate-pulse" />
-          </div>
-          <p className="text-sm text-muted-foreground animate-pulse">Checking session...</p>
+      <main className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3 text-[#1a1a1a]/70">
+          <Loader2 className="h-5 w-5 animate-spin" aria-label="Checking existing session" />
+          <p className="font-body text-sm">Checking your session…</p>
         </div>
       </main>
     )
   }
 
+  const vendorCopy = loginType === "vendor"
+  const headingCopy = vendorCopy ? "Sign in to your artist portal." : "Sign in to your collection."
+  const subCopy = vendorCopy
+    ? "Manage your editions, track sales, and request payouts."
+    : "Access your art collection, saved pieces, and collector perks."
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 dark:bg-blue-900/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl relative z-10">
-        <CardHeader className="space-y-4 text-center pb-6">
-          <div className="flex justify-center">
-            <Logo 
-              className="h-16 w-auto object-contain"
-              alt="Street Lamp Logo"
-            />
-            <div className="relative hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur-lg opacity-50 animate-pulse" />
-              <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
+    <main className="min-h-screen bg-white">
+      <SectionWrapper spacing="md" background="default">
+        <Container maxWidth="narrow" paddingX="gutter">
+          <div className="mx-auto max-w-md">
+            <div className="flex justify-center mb-10">
+              <Logo className="h-10 w-auto object-contain" alt="The Street Collector" />
             </div>
-          </div>
-          <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Welcome Back
-            </CardTitle>
-            <CardDescription className="text-base">
-              {loginType === "collector" 
-                ? "Sign in to access your art collection and exclusive content"
-                : "Sign in with your Google account to access your Street Collector dashboard"}
-            </CardDescription>
-          </div>
-        </CardHeader>
 
-        <CardContent className="space-y-6">
-          {successMessage && (
-            <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-green-800 dark:text-green-200">Success!</AlertTitle>
-              <AlertDescription className="text-green-700 dark:text-green-300">{successMessage}</AlertDescription>
-            </Alert>
-          )}
+            <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-[#1a1a1a] tracking-[-0.02em] text-center mb-3">
+              {headingCopy}
+            </h1>
+            <p className="font-body text-[#1a1a1a]/70 text-center mb-8">{subCopy}</p>
 
-          {formError && (
-            <Alert variant="destructive" className="animate-in slide-in-from-top-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Sign-in issue</AlertTitle>
-              <AlertDescription>{formError}</AlertDescription>
-            </Alert>
-          )}
-
-          {googleLoading && !formError && !successMessage && (
-            <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              <AlertTitle className="text-blue-800 dark:text-blue-200">Redirecting to Google</AlertTitle>
-              <AlertDescription className="text-blue-700 dark:text-blue-300">
-                Please complete the sign-in flow in the new window.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-4">
-            {/* Login Type Selector */}
-            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+            {/* Role selector */}
+            <div
+              role="tablist"
+              aria-label="Choose account type"
+              className="grid grid-cols-2 gap-1 p-1 mb-8 rounded-full border border-[#1a1a1a]/10 bg-[#FAFAF7]"
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={!vendorCopy}
                 onClick={() => setLoginType("collector")}
-                className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
-                  loginType === "collector"
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`py-2.5 rounded-full text-sm font-body font-medium transition-colors ${
+                  !vendorCopy
+                    ? "bg-white text-[#1a1a1a] shadow-sm"
+                    : "text-[#1a1a1a]/60 hover:text-[#1a1a1a]"
                 }`}
               >
                 Collector
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={vendorCopy}
                 onClick={() => setLoginType("vendor")}
-                className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
-                  loginType === "vendor"
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`py-2.5 rounded-full text-sm font-body font-medium transition-colors ${
+                  vendorCopy
+                    ? "bg-white text-[#1a1a1a] shadow-sm"
+                    : "text-[#1a1a1a]/60 hover:text-[#1a1a1a]"
                 }`}
               >
-                Vendor
+                Artist
               </button>
             </div>
+
+            {successMessage && (
+              <div
+                role="status"
+                className="flex items-start gap-3 rounded-xl bg-[#00a341]/10 border border-[#00a341]/30 p-4 mb-6"
+              >
+                <CheckCircle2 className="h-5 w-5 text-[#00a341] shrink-0" />
+                <p className="font-body text-sm text-[#00a341]">{successMessage}</p>
+              </div>
+            )}
+
+            {formError && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-xl bg-[#f83a3a]/10 border border-[#f83a3a]/30 p-4 mb-6"
+              >
+                <AlertCircle className="h-5 w-5 text-[#f83a3a] shrink-0" />
+                <div>
+                  <p className="font-body text-sm font-medium text-[#f83a3a]">
+                    Sign-in issue
+                  </p>
+                  <p className="font-body text-sm text-[#1a1a1a]/80 mt-0.5">{formError}</p>
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleGoogleLogin}
               disabled={googleLoading}
-              className="w-full h-14 text-base font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              variant="primary"
               size="lg"
+              className="w-full"
               aria-label="Continue with Google"
             >
               {googleLoading ? (
                 <>
-                  <Loader2 className="h-6 w-6 mr-3 animate-spin" />
-                  <span>Connecting to Google...</span>
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  <span>Connecting to Google…</span>
                 </>
               ) : (
                 <>
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       fill="currentColor"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -363,67 +343,59 @@ export default function LoginClient() {
               )}
             </Button>
 
-            <Button
-              asChild
-              disabled={googleLoading}
-              className="hidden w-full h-14 text-base font-medium bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white border-2 border-slate-900 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              size="lg"
-              aria-label="Continue with Google via Shopify"
-            >
-              <Link href="/api/auth/shopify/google/start">
-                <Shield className="h-5 w-5 mr-3" />
-                <span>Continue with Google (Shopify)</span>
-              </Link>
-            </Button>
+            <p className="font-body text-xs text-[#1a1a1a]/50 text-center mt-4">
+              Secure sign-in powered by Google.
+            </p>
 
-            <div className="text-center space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Secure authentication powered by Google and Shopify
-              </p>
-              {process.env.NODE_ENV === 'development' && (
-                <p className="text-xs">
-                  <Link
-                    href={`/api/dev/mock-login?email=streets@streets.com&redirect=${encodeURIComponent(searchParams.get('redirect') ?? '/shop/account')}`}
-                    className="text-amber-600 dark:text-amber-500 hover:underline"
+            <div className="mt-10 pt-8 border-t border-[#1a1a1a]/10 space-y-4 text-center">
+              {vendorCopy ? (
+                <>
+                  <p className="font-body text-sm text-[#1a1a1a]/70">
+                    Not an artist on our portal yet?{" "}
+                    <Link href="/for-artists" className="underline underline-offset-4 text-[#1a1a1a]">
+                      See how to apply
+                    </Link>
+                    .
+                  </p>
+                  <p className="font-body text-xs text-[#1a1a1a]/50">
+                    Need help signing in?{" "}
+                    <a
+                      href={supportMailto("Artist portal sign-in help")}
+                      className="underline underline-offset-4"
+                    >
+                      Write to {SUPPORT_EMAIL}
+                    </a>
+                    .
+                  </p>
+                </>
+              ) : (
+                <p className="font-body text-sm text-[#1a1a1a]/70">
+                  Collectors: sign in with the same Google account you used to purchase. Trouble?{" "}
+                  <a
+                    href={supportMailto("Collector sign-in help")}
+                    className="underline underline-offset-4"
                   >
-                    Dev: View as mock user (streets@streets.com)
+                    {SUPPORT_EMAIL}
+                  </a>
+                </p>
+              )}
+
+              {process.env.NODE_ENV === "development" && (
+                <p className="font-body text-xs text-amber-700">
+                  <Link
+                    href={`/api/dev/mock-login?email=streets@streets.com&redirect=${encodeURIComponent(
+                      searchParams.get("redirect") ?? "/shop/account",
+                    )}`}
+                    className="underline underline-offset-4"
+                  >
+                    Dev: mock login as streets@streets.com
                   </Link>
                 </p>
               )}
             </div>
           </div>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-4 pt-6">
-          <Separator />
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex items-center gap-2 font-medium text-foreground">
-              <LifeBuoy className="h-4 w-4 text-blue-600" />
-              Need vendor access?
-            </div>
-            <p className="text-muted-foreground">
-              If your organisation has not been onboarded yet, request access and our team will provision your vendor space.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm" className="flex-1 min-w-[140px]">
-                <Link
-                  href={`mailto:${SUPPORT_EMAIL}?subject=${MAILTO_SUBJECT}&body=${MAILTO_BODY}`}
-                  aria-label="Request vendor access via email"
-                >
-                  <Zap className="h-3 w-3 mr-2" />
-                  Request Access
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm" className="flex-1 min-w-[140px]">
-                <Link href={`mailto:${SUPPORT_EMAIL}`} className="flex items-center gap-1" aria-label="Contact support">
-                  Contact Support
-                  <ArrowUpRight className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </CardFooter>
-      </Card>
+        </Container>
+      </SectionWrapper>
     </main>
   )
 }

@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 
 
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Search, HelpCircle, Mail, BookOpen, Video, Keyboard, MessageSquare } from "lucide-react"
 import { EmptyState } from "@/components/vendor/empty-state"
-import { SidebarLayout } from "../../components/sidebar-layout"
 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Button, Badge } from "@/components/ui"
@@ -133,10 +133,9 @@ export default function HelpPage() {
   const categories = Array.from(new Set([...helpArticles.map((a) => a.category), ...faqs.map((f) => f.category)]))
 
   return (
-    <SidebarLayout>
-      <div className="space-y-4">
-        <div>
-          <p className="text-muted-foreground text-lg">Need help? We're here for you - find answers and learn how everything works</p>
+    <div className="space-y-4">
+      <div>
+        <p className="text-muted-foreground text-lg">Need help? We&apos;re here for you - find answers and learn how everything works</p>
         </div>
 
         {/* Search */}
@@ -179,7 +178,7 @@ export default function HelpPage() {
             <CardHeader>
               <Mail className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Contact Support</CardTitle>
-              <CardDescription>Reach out to us - we're here to help</CardDescription>
+              <CardDescription>Reach out to us - we&apos;re here to help</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -187,7 +186,7 @@ export default function HelpPage() {
                 className="w-full border shadow-sm" 
                 asChild
               >
-                <a href="/vendor/dashboard/messages">Send Message</a>
+                <Link href="/vendor/dashboard/messages">Send Message</Link>
               </Button>
             </CardContent>
           </Card>
@@ -213,7 +212,7 @@ export default function HelpPage() {
             <CardHeader>
               <Video className="h-8 w-8 mb-2" />
               <CardTitle className="text-lg">Video Tutorials</CardTitle>
-              <CardDescription>Learn by watching - we'll walk you through it</CardDescription>
+              <CardDescription>Learn by watching - we&apos;ll walk you through it</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -337,7 +336,6 @@ export default function HelpPage() {
           </CardContent>
         </Card>
       </div>
-    </SidebarLayout>
   )
 }
 

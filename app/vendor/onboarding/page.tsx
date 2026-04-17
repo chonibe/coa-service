@@ -51,16 +51,16 @@ export default function VendorOnboardingPage() {
       title: "Profile completed!",
       description: "Your vendor profile has been successfully set up.",
     })
-    router.push("/vendor/dashboard")
+    router.push("/vendor/home")
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
-        <Card className="p-8 flex flex-col items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0 shadow-2xl">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-          <p className="text-lg font-medium">Loading your profile...</p>
-        </Card>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-[#1a1a1a]/70">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p className="font-body text-sm">Loading your profile…</p>
+        </div>
       </div>
     )
   }

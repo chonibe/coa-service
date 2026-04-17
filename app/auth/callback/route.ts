@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js"
 import { createClient as createRouteClient } from "@/lib/supabase-server"
 import { buildVendorSessionCookie, clearVendorSessionCookie, VENDOR_SESSION_COOKIE_NAME } from "@/lib/vendor-session"
 import {
-  linkSupabaseUserToVendor,
   isAdminEmail,
   POST_LOGIN_REDIRECT_COOKIE,
   PENDING_VENDOR_EMAIL_COOKIE,
@@ -1296,7 +1295,7 @@ export async function GET(request: NextRequest) {
       const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value
       const errorUrl = loginIntent === 'collector'
         ? `/login?error=session_missing&redirect=%2Fshop%2Faccount&intent=collector`
-        : '/vendor/login?error=session_missing'
+        : '/login?error=session_missing&intent=vendor'
       response.headers.set("Location", new URL(errorUrl, origin).toString())
       return response
     }
@@ -1307,7 +1306,7 @@ export async function GET(request: NextRequest) {
     const loginIntent = cookieStore.get(LOGIN_INTENT_COOKIE)?.value
     const fallbackUrl = loginIntent === 'collector'
       ? `/login?error=missing_code&redirect=%2Fshop%2Faccount&intent=collector`
-      : '/login?error=missing_code'
+      : '/login?error=missing_code&intent=vendor'
     return NextResponse.redirect(new URL(fallbackUrl, origin), { status: 307 })
   }
 

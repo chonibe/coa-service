@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
-import { ContentCard } from '@/components/app-shell'
-import { MessageCircle, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -112,13 +111,17 @@ export default function VendorInboxPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <MessageCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-400 font-body">
-              {searchQuery ? 'No conversations match your search' : 'No messages yet'}
+          <div className="py-16 px-4 text-center max-w-md mx-auto">
+            <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-3">
+              {searchQuery ? 'No matches' : 'Your inbox'}
             </p>
-            <p className="text-xs text-gray-400 font-body mt-1">
-              When collectors message you, conversations will appear here.
+            <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em] mb-3">
+              {searchQuery ? 'Nothing matches that search.' : 'No messages yet.'}
+            </h3>
+            <p className="font-body text-sm text-[#1a1a1a]/60 leading-relaxed">
+              {searchQuery
+                ? 'Try a different name or clear the search to see every conversation.'
+                : 'When a collector reaches out about one of your pieces, their conversation will appear here.'}
             </p>
           </div>
         ) : (

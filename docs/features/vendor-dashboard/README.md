@@ -60,6 +60,16 @@
 - Dedicated tests for drag/drop ordering and refresh guards.
 
 ### Change Log
+- 2026-04-17: Artist launch revamp. Legacy `/vendor/dashboard` landing page now
+  redirects to `/vendor/home` (app-shell). `SidebarLayout` chrome is scoped to
+  `/vendor/dashboard/*` only; the outer `app/vendor/layout.tsx` is now
+  auth-only so app-shell routes under `/vendor/(app)/*` are no longer
+  double-wrapped. `ImpersonationBanner` is mounted inside the AppShell so
+  admin impersonation context remains visible across both chromes. The legacy
+  profile editor at `/vendor/dashboard/profile` now shows a "Back to my
+  portal" link when opened with `?return=/vendor/profile`. See
+  `docs/COMMIT_LOGS/artist-launch-revamp-2026-04-17.md` for the full
+  implementation checklist.
 - 2025-12-11: Added sidebar collapse/unread badges, USD analytics/payouts, time-range-aware dashboard, banking retry, payouts visibility-aware refresh, profile dirty guard, available artworks search/pagination, and documentation updates.
 # Vendor Dashboard Hardening
 

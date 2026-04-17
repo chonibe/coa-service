@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import { AppShell, vendorTabs } from '@/components/app-shell'
 import { CreateActionSheet } from '@/components/app-shell'
 import { Image as ImageIcon, Layers as LayersIcon, Upload as UploadIcon } from 'lucide-react'
+import { ImpersonationBanner } from '@/app/vendor/components/impersonation-banner'
+import { ComponentErrorBoundary } from '@/components/error-boundaries'
 
 // ============================================================================
 // Vendor App Layout
@@ -39,10 +41,16 @@ export default function VendorAppLayout({
       tabs={vendorTabs}
       headerProps={{
         showCart: false,
+        // We don't have a global vendor search yet; hide until wired.
+        showSearch: false,
         logoHref: '/vendor/home',
+        onNotificationClick: () => router.push('/vendor/inbox/notifications'),
       }}
       onCreatePress={() => setCreateSheetOpen(true)}
     >
+      <ComponentErrorBoundary componentName="ImpersonationBanner" fallbackMode="silent">
+        <ImpersonationBanner />
+      </ComponentErrorBoundary>
       {children}
 
       <CreateActionSheet
