@@ -9,9 +9,12 @@
 --
 -- Idempotent. Safe to re-run.
 
+-- NB: `vendors.id` is an INTEGER on this project (legacy from the
+-- original Shopify sync schema). We keep the PK of this table as UUID
+-- for tamper-resistant ids in URLs, but FK must match the int vendors.id.
 CREATE TABLE IF NOT EXISTS vendor_tax_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+  vendor_id INTEGER NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
   doc_type TEXT NOT NULL CHECK (doc_type IN ('w9', 'w8ben', 'other')),
   tax_year INTEGER,
   storage_bucket TEXT NOT NULL DEFAULT 'vendor-tax-documents',

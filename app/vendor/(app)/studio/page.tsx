@@ -210,9 +210,12 @@ export default function VendorStudioPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map((artwork) => {
-              const experienceHref = artwork.productId
-                ? `/vendor/studio/artworks/${artwork.productId}/experience`
-                : `/vendor/studio/artworks/${artwork.id}/edit`
+              // The artwork-pages API accepts BOTH the Shopify product_id and
+              // the draft submission UUID (see app/api/vendor/artwork-pages/[productId]/route.ts).
+              // Always send artists to the block editor — never fall back to
+              // the bare /edit (details) page when productId is missing.
+              const editorId = artwork.productId || artwork.id
+              const experienceHref = `/vendor/studio/artworks/${editorId}/experience`
               const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
               const isFocused = focusId === artwork.id
               return (

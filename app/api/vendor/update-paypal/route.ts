@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient()
   
   try {

@@ -1,16 +1,13 @@
-"use client"
-
-import MediaLibraryPage from "@/app/vendor/dashboard/media-library/page"
+import { redirect } from "next/navigation"
 
 /**
- * /vendor/studio/media/upload — AppShell-native media uploader.
- * Re-renders the legacy media library component inside the AppShell shell so
- * we never route outside /vendor/(app). The legacy /vendor/dashboard/media-library
- * route is now a server-side redirect to /vendor/studio/media.
+ * /vendor/studio/media/upload
  *
- * TODO: relocate the media library component to components/vendor/media-library
- * as part of the Phase 1.5 cleanup pass (see docs/COMMIT_LOGS/v1-retirement-*).
+ * The inline upload affordance now lives on /vendor/studio/media itself
+ * (hidden file input + progress rail). Any stale deep link or bookmark
+ * to this page redirects to the canonical media surface so artists are
+ * never bounced into the v1 media library.
  */
-export default function MediaUploadPage() {
-  return <MediaLibraryPage />
+export default function VendorStudioMediaUploadRedirect() {
+  redirect("/vendor/studio/media")
 }
