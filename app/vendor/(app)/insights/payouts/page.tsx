@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { SubTabBar, type SubTab, ContentCard, ContentCardHeader } from '@/components/app-shell'
 import { PayoutMetricsCards } from '@/components/payouts/payout-metrics-cards'
@@ -51,6 +51,7 @@ const insightsTabs: SubTab[] = [
   { id: 'overview', label: 'Overview', href: '/vendor/insights' },
   { id: 'payouts', label: 'Payouts', href: '/vendor/insights/payouts' },
   { id: 'collectors', label: 'Collectors', href: '/vendor/insights/collectors' },
+  { id: 'taxes', label: 'Taxes', href: '/vendor/insights/taxes' },
 ]
 
 // Fallback only; the authoritative value is fetched from /api/vendor/payouts/config.
@@ -1094,24 +1095,68 @@ function HistoryTab({
   retryPayout: (id: string) => void
   retryingId: string | null
 }) {
+  // Phase 5.5 — mobile-friendly filter stack. On mobile we collapse the
+  // three selects into a "Filters" toggle with active-count chip so the
+  // search bar doesn't get pushed below the fold. Desktop keeps the
+  // horizontal row that power users expect.
+  const activeFilterCount =
+    (statusFilter !== 'all' ? 1 : 0) +
+    (dateFilter !== 'all' ? 1 : 0) +
+    (sortOption !== 'date-desc' ? 1 : 0)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
+
   return (
     <>
       <ContentCard padding="md">
-        <div className="flex flex-col md:flex-row md:items-center gap-2">
+        {/* Top row: search + actions (always visible). */}
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by reference, invoice, or amount"
+              placeholder="Search payouts"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-200 text-sm font-body focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen((v) => !v)}
+            className="md:hidden inline-flex items-center gap-1 px-3 py-2 rounded-md border border-gray-200 text-sm font-body font-medium text-[#1a1a1a] hover:bg-gray-50 shrink-0"
+            aria-expanded={mobileFiltersOpen}
+            aria-label="Show filters"
+          >
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#1a1a1a] text-white text-[10px] font-bold tabular-nums">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border border-gray-200 text-sm font-body font-medium text-[#1a1a1a] hover:bg-gray-50 shrink-0"
+            aria-label="Export CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+        </div>
+
+        {/* Filter row — always visible on md+, mobile toggled via sheet. */}
+        <div
+          className={cn(
+            'gap-2 mt-2',
+            mobileFiltersOpen ? 'grid grid-cols-1 sm:grid-cols-3' : 'hidden',
+            'md:flex md:flex-row md:items-center md:mt-2',
+          )}
+        >
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white"
+            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white w-full md:w-auto"
             aria-label="Filter by status"
           >
             <option value="all">All statuses</option>
@@ -1125,7 +1170,7 @@ function HistoryTab({
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white"
+            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white w-full md:w-auto"
             aria-label="Filter by date"
           >
             <option value="all">All time</option>
@@ -1137,7 +1182,7 @@ function HistoryTab({
           <select
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value as SortOption)}
-            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white"
+            className="rounded-md border border-gray-200 px-2 py-2 text-sm font-body bg-white w-full md:w-auto"
             aria-label="Sort"
           >
             <option value="date-desc">Newest first</option>
@@ -1145,14 +1190,6 @@ function HistoryTab({
             <option value="amount-desc">Largest first</option>
             <option value="amount-asc">Smallest first</option>
           </select>
-          <button
-            type="button"
-            onClick={exportCsv}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border border-gray-200 text-sm font-body font-medium text-[#1a1a1a] hover:bg-gray-50"
-          >
-            <Download className="w-4 h-4" />
-            CSV
-          </button>
         </div>
       </ContentCard>
 

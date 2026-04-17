@@ -6,7 +6,7 @@ import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Pencil, Eye, Sparkles } from 'lucide-react'
+import { Plus, Pencil, Eye, Sparkles, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -26,6 +26,7 @@ const studioTabs: SubTab[] = [
   { id: 'artworks', label: 'Artworks', href: '/vendor/studio' },
   { id: 'series', label: 'Series', href: '/vendor/studio/series' },
   { id: 'media', label: 'Media', href: '/vendor/studio/media' },
+  { id: 'nfc', label: 'NFC', href: '/vendor/studio/nfc' },
 ]
 
 interface ArtworkSubmission {
@@ -153,13 +154,23 @@ export default function VendorStudioPage() {
             })}
           </div>
 
-          {/* Create button */}
-          <Link
-            href="/vendor/studio/artworks/new"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-impact-primary text-white text-xs font-bold shrink-0"
-          >
-            <Plus className="w-3 h-3" /> New
-          </Link>
+          {/* Create actions: single + bulk. Kept as two separate pills so the
+             * happy path (one artwork at a time) stays one click away. */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Link
+              href="/vendor/studio/artworks/bulk"
+              className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-[#1a1a1a]/15 text-[#1a1a1a] text-xs font-bold hover:border-[#1a1a1a]/40"
+              title="Upload multiple artworks via CSV"
+            >
+              <Upload className="w-3 h-3" /> Bulk
+            </Link>
+            <Link
+              href="/vendor/studio/artworks/new"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-impact-primary text-white text-xs font-bold"
+            >
+              <Plus className="w-3 h-3" /> New
+            </Link>
+          </div>
         </div>
 
         {/* Artworks grid */}

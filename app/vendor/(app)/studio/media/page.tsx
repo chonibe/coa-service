@@ -20,6 +20,7 @@ const studioTabs: SubTab[] = [
   { id: 'artworks', label: 'Artworks', href: '/vendor/studio' },
   { id: 'series', label: 'Series', href: '/vendor/studio/series' },
   { id: 'media', label: 'Media', href: '/vendor/studio/media' },
+  { id: 'nfc', label: 'NFC', href: '/vendor/studio/nfc' },
 ]
 
 interface MediaItem {

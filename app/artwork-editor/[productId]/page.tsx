@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera, ChevronsUp, ChevronsDown } from "lucide-react"
+import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera, ChevronsUp, ChevronsDown, Smartphone, Monitor, MoreHorizontal, Copy as CopyIcon, Layers, Lock, Unlock, CheckCircle2, ExternalLink } from "lucide-react"
 import { Button, Alert, AlertDescription } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { BlockSelectorPills } from "@/app/artwork-editor/[productId]/components/BlockSelectorPills"
@@ -54,6 +54,15 @@ export default function StandaloneArtworkEditor() {
   const [isMobile, setIsMobile] = useState(false)
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set())
   const [isReorderMode, setIsReorderMode] = useState(false)
+  // Phase 3 toolbar extensions: preview-device split, more-menu (copy-from
+  // / apply-template), master publish. Kept as small local state so we
+  // don't drag the whole editor into a reducer just for UI affordances.
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [copyFromOpen, setCopyFromOpen] = useState(false)
+  const [copyCandidates, setCopyCandidates] = useState<Array<{ id: string; title: string; imageUrl: string | null }>>([])
+  const [copyLoading, setCopyLoading] = useState(false)
+  const [isBulkPublishing, setIsBulkPublishing] = useState(false)
 
   // Mobile detection
   useEffect(() => {
@@ -301,7 +310,25 @@ export default function StandaloneArtworkEditor() {
       )
 
       setLastSaved(new Date())
-      toast({ title: "Saved", description: "All changes saved successfully" })
+      // Phase 3.4 — preview toast: give artists a one-tap jump into the
+      // collector-facing view so they don't have to hunt for it after
+      // every save. We attach device=<mode> so the new preview page can
+      // respect the toolbar toggle.
+      const previewHref = `/preview/artwork/${productId}?device=${previewDevice}`
+      toast({
+        title: "Saved",
+        description: "Changes are live to collectors with access.",
+        action: (
+          <a
+            href={previewHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-bold underline underline-offset-2"
+          >
+            Preview <ExternalLink className="w-3 h-3" />
+          </a>
+        ) as any,
+      })
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" })
     } finally {
@@ -310,7 +337,119 @@ export default function StandaloneArtworkEditor() {
   }
 
   const handlePreview = () => {
-    window.open(`/preview/artwork/${productId}`, "_blank")
+    window.open(`/preview/artwork/${productId}?device=${previewDevice}`, "_blank")
+  }
+
+  // Phase 3.10 — master publish toggle. Bulk-flip every block's
+  // is_published so the artist can take the whole experience dark (e.g.
+  // to stage a launch) or relight it in one action rather than clicking
+  // through N blocks.
+  const handleBulkPublish = async (publish: boolean) => {
+    if (contentBlocks.length === 0) return
+    setIsBulkPublishing(true)
+    setMoreMenuOpen(false)
+    try {
+      await Promise.all(
+        contentBlocks.map((b) =>
+          fetch(`/api/vendor/artwork-pages/${productId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ blockId: b.id, is_published: publish }),
+          }),
+        ),
+      )
+      setContentBlocks((prev) => prev.map((b) => ({ ...b, is_published: publish })))
+      toast({
+        title: publish ? "All blocks published" : "All blocks hidden",
+        description: publish
+          ? "Collectors with access can see the full experience."
+          : "Collectors will see a placeholder until you re-publish.",
+      })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    } finally {
+      setIsBulkPublishing(false)
+    }
+  }
+
+  const handleApplyTemplate = async () => {
+    setMoreMenuOpen(false)
+    try {
+      const res = await fetch(`/api/vendor/artwork-pages/${productId}/apply-template`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || "Failed to apply template")
+      toast({
+        title: "Template applied",
+        description: "We seeded a full set of starter blocks. Edit what you need.",
+      })
+      // Refetch blocks so the UI picks up the new rows without a reload.
+      const blocksRes = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        credentials: "include",
+      })
+      if (blocksRes.ok) {
+        const data = await blocksRes.json()
+        if (Array.isArray(data.contentBlocks)) setContentBlocks(data.contentBlocks)
+      }
+    } catch (err: any) {
+      toast({ title: "Could not apply template", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const openCopyFromDialog = async () => {
+    setMoreMenuOpen(false)
+    setCopyFromOpen(true)
+    setCopyLoading(true)
+    try {
+      const res = await fetch("/api/vendor/products/submissions?status=published", {
+        credentials: "include",
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const subs = Array.isArray(data.submissions) ? data.submissions : []
+        setCopyCandidates(
+          subs
+            .filter((s: any) => (s.shopify_product_id || s.productId) && (s.shopify_product_id || s.productId) !== productId)
+            .map((s: any) => ({
+              id: String(s.shopify_product_id || s.productId || s.id),
+              title: s.product_data?.title || s.title || "Untitled",
+              imageUrl: s.product_data?.images?.[0]?.src || null,
+            })),
+        )
+      }
+    } catch (err) {
+      console.error("[CopyFrom] candidate fetch failed", err)
+    } finally {
+      setCopyLoading(false)
+    }
+  }
+
+  const handleCopyFrom = async (sourceProductId: string) => {
+    setCopyFromOpen(false)
+    try {
+      const res = await fetch(`/api/vendor/artwork-pages/${productId}/copy-from`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceProductId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || "Copy failed")
+      toast({ title: "Copied", description: "Blocks copied. Edit what's specific to this piece." })
+      const blocksRes = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        credentials: "include",
+      })
+      if (blocksRes.ok) {
+        const data = await blocksRes.json()
+        if (Array.isArray(data.contentBlocks)) setContentBlocks(data.contentBlocks)
+      }
+    } catch (err: any) {
+      toast({ title: "Could not copy", description: err.message, variant: "destructive" })
+    }
   }
 
   const collapseAll = () => {
@@ -396,11 +535,35 @@ export default function StandaloneArtworkEditor() {
             <h1 className="text-gray-900 font-bold text-base truncate max-w-[240px]">
               {product.name}
             </h1>
-            {lastSaved && (
-              <p className="text-xs text-gray-500">
-                Saved {lastSaved.toLocaleTimeString()}
-              </p>
-            )}
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {/* Phase 3.8 — access-gate chip. Tells the artist at a glance
+                  how many blocks are visible to collectors right now versus
+                  gated behind NFC/unlocks. "Hidden" counts unpublished
+                  blocks; "Live" counts published ones. */}
+              {contentBlocks.length > 0 && (() => {
+                const published = contentBlocks.filter((b) => b.is_published).length
+                const hidden = contentBlocks.length - published
+                const dark = published === 0
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      dark
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    }`}
+                    title={dark ? "All blocks hidden — collectors will see a placeholder." : "Collectors with access can see published blocks."}
+                  >
+                    {dark ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                    {published} live · {hidden} hidden
+                  </span>
+                )
+              })()}
+              {lastSaved && (
+                <p className="text-xs text-gray-500">
+                  Saved {lastSaved.toLocaleTimeString()}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -443,14 +606,101 @@ export default function StandaloneArtworkEditor() {
               Exit Reorder
             </Button>
           )}
+          {/* Phase 3.7 — desktop/mobile preview device toggle. We persist
+              the mode in local state and append ?device=<mode> so the
+              preview page can render at the right viewport. */}
+          <div className="hidden md:inline-flex rounded-md border border-gray-200 p-0.5 bg-white">
+            <button
+              type="button"
+              onClick={() => setPreviewDevice('desktop')}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
+                previewDevice === 'desktop'
+                  ? 'bg-[#1a1a1a] text-white'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
+              title="Desktop preview"
+              aria-label="Desktop preview"
+            >
+              <Monitor className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewDevice('mobile')}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
+                previewDevice === 'mobile'
+                  ? 'bg-[#1a1a1a] text-white'
+                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+              }`}
+              title="Mobile preview"
+              aria-label="Mobile preview"
+            >
+              <Smartphone className="w-3 h-3" />
+            </button>
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePreview}
-            title="Preview"
+            title={`Preview (${previewDevice})`}
           >
             <Eye className="w-5 h-5" />
           </Button>
+          {/* Phase 3.6 — More menu: copy from another artwork, apply default
+              template, master publish toggle. Parked behind a single chip
+              so the toolbar stays calm. */}
+          <div className="relative" data-editor-more-menu>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMoreMenuOpen((v) => !v)}
+              title="More actions"
+              aria-label="More actions"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </Button>
+            {moreMenuOpen && (
+              <div
+                className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-30 py-1 text-sm font-body"
+                onMouseLeave={() => setMoreMenuOpen(false)}
+              >
+                <button
+                  type="button"
+                  onClick={openCopyFromDialog}
+                  className="flex items-center gap-2 px-3 py-2 text-[#1a1a1a] hover:bg-gray-50 w-full text-left"
+                >
+                  <CopyIcon className="w-3.5 h-3.5" /> Copy from another artwork
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyTemplate}
+                  className="flex items-center gap-2 px-3 py-2 text-[#1a1a1a] hover:bg-gray-50 w-full text-left"
+                >
+                  <Layers className="w-3.5 h-3.5" /> Apply starter template
+                </button>
+                {contentBlocks.length > 0 && (
+                  <>
+                    <div className="my-1 border-t border-gray-100" />
+                    <button
+                      type="button"
+                      onClick={() => handleBulkPublish(true)}
+                      disabled={isBulkPublishing}
+                      className="flex items-center gap-2 px-3 py-2 text-emerald-700 hover:bg-emerald-50 w-full text-left disabled:opacity-50"
+                    >
+                      <Unlock className="w-3.5 h-3.5" /> Publish all blocks
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkPublish(false)}
+                      disabled={isBulkPublishing}
+                      className="flex items-center gap-2 px-3 py-2 text-amber-700 hover:bg-amber-50 w-full text-left disabled:opacity-50"
+                    >
+                      <Lock className="w-3.5 h-3.5" /> Hide all blocks
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <Button
             onClick={handleSave}
             disabled={isSaving}
@@ -468,6 +718,67 @@ export default function StandaloneArtworkEditor() {
           </Button>
         </div>
       </header>
+
+      {/* Phase 3.6 — Copy-from dialog. Keeps the chooser out of the
+          toolbar so the happy path (pick → copy) is one dedicated
+          surface. */}
+      {copyFromOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCopyFromOpen(false)
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex items-start justify-between px-5 pt-5 pb-3 border-b">
+              <div>
+                <p className="font-body text-[11px] tracking-[0.2em] uppercase text-[#1a1a1a]/50">
+                  Copy blocks from
+                </p>
+                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] mt-0.5">
+                  Pick a source artwork
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCopyFromOpen(false)}
+                className="p-1 -mr-1 rounded-full hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-3 space-y-1">
+              {copyLoading ? (
+                <div className="py-6 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                </div>
+              ) : copyCandidates.length === 0 ? (
+                <p className="text-xs text-[#1a1a1a]/60 font-body px-2 py-6 text-center">
+                  No other published artworks to copy from yet.
+                </p>
+              ) : (
+                copyCandidates.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleCopyFrom(c.id)}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-md hover:bg-gray-50 text-left"
+                  >
+                    <div className="relative w-10 h-10 rounded bg-gray-100 overflow-hidden shrink-0">
+                      {c.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.imageUrl} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <span className="text-sm font-body text-[#1a1a1a] truncate">{c.title}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">

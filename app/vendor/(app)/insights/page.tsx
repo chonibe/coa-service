@@ -48,6 +48,7 @@ const insightsTabs: SubTab[] = [
   { id: 'overview', label: 'Sales', href: '/vendor/insights' },
   { id: 'payouts', label: 'Payouts', href: '/vendor/insights/payouts' },
   { id: 'collectors', label: 'Collectors', href: '/vendor/insights/collectors' },
+  { id: 'taxes', label: 'Taxes', href: '/vendor/insights/taxes' },
 ]
 
 interface SalesRow {
