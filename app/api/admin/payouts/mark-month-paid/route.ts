@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter out refunded items (only include null or 'none')
-    let filteredItems = (allItems || []).filter(
+    const filteredItems = (allItems || []).filter(
       (item: any) => !item.refund_status || item.refund_status === 'none'
     )
 
@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
         payoutReference ||
         `PAY-${year}-${String(month).padStart(2, "0")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`
 
+      const nowIso = new Date().toISOString()
       const { data: newPayout, error: payoutError } = await supabase
         .from("vendor_payouts")
         .insert({
@@ -216,7 +217,8 @@ export async function POST(request: NextRequest) {
           amount: totalAmount,
           currency: "USD",
           status: "paid",
-          payout_date: new Date().toISOString(),
+          payout_date: nowIso,
+          processed_at: nowIso,
           reference,
           product_count: unpaidLineItems.length,
           payment_method: "manual",

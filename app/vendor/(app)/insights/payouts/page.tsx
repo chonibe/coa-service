@@ -17,7 +17,10 @@ import {
   FileText,
   Info,
   Loader2,
+  RefreshCw,
   Search,
+  X,
+  XCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/ui/use-toast'
@@ -122,7 +125,7 @@ interface Readiness {
   missingItems?: string[]
 }
 
-type StatusFilter = 'all' | 'requested' | 'processing' | 'completed' | 'rejected' | 'failed'
+type StatusFilter = 'all' | 'requested' | 'processing' | 'completed' | 'rejected' | 'failed' | 'canceled'
 type DateFilter = 'all' | '30d' | '90d' | '1y' | 'this-year'
 type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'
 
@@ -133,6 +136,7 @@ const statusStyles: Record<string, string> = {
   paid: 'bg-green-50 text-green-700 border-green-200',
   rejected: 'bg-red-50 text-red-600 border-red-200',
   failed: 'bg-red-50 text-red-600 border-red-200',
+  canceled: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 const statusLabel: Record<string, string> = {
@@ -142,6 +146,11 @@ const statusLabel: Record<string, string> = {
   paid: 'Paid',
   rejected: 'Rejected',
   failed: 'Failed',
+  canceled: 'Canceled',
+}
+
+function isPaidStatus(status: string) {
+  return status === 'completed' || status === 'paid'
 }
 
 export default function VendorPayoutsPage() {
@@ -329,6 +338,67 @@ export default function VendorPayoutsPage() {
     }
   }
 
+  const [cancelingId, setCancelingId] = useState<string | null>(null)
+  const cancelPayout = async (payoutId: string) => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        'Cancel this payout request? The amount will be returned to your available balance.'
+      )
+      if (!confirmed) return
+    }
+    setCancelingId(payoutId)
+    try {
+      const res = await fetch(`/api/vendor/payouts/${payoutId}/cancel`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Canceled from payouts page' }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error || 'Cancel failed')
+      toast({
+        title: 'Payout canceled',
+        description: json?.message || 'Your balance has been restored.',
+      })
+      await fetchAll()
+    } catch (err: any) {
+      toast({
+        title: 'Could not cancel',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setCancelingId(null)
+    }
+  }
+
+  const [retryingId, setRetryingId] = useState<string | null>(null)
+  const retryPayout = async (payoutId: string) => {
+    setRetryingId(payoutId)
+    try {
+      const res = await fetch(`/api/vendor/payouts/${payoutId}/retry`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error || 'Retry failed')
+      toast({
+        title: 'Payout re-queued',
+        description: json?.message || 'An admin will review it again.',
+      })
+      await fetchAll()
+      setActiveTab('pending')
+    } catch (err: any) {
+      toast({
+        title: 'Could not retry',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setRetryingId(null)
+    }
+  }
+
   const downloadInvoice = async (payoutId: string) => {
     try {
       const res = await fetch(`/api/vendors/payouts/${payoutId}/invoice`, { credentials: 'include' })
@@ -495,6 +565,7 @@ export default function VendorPayoutsPage() {
           <OverviewTab
             loading={loading}
             balance={balance}
+            config={config}
             formatCurrency={formatCurrency}
             hasPrereqGap={hasPrereqGap}
             missingItems={missingItems}
@@ -515,6 +586,9 @@ export default function VendorPayoutsPage() {
             formatCurrency={formatCurrency}
             copyReference={copyReference}
             loading={loading}
+            config={config}
+            cancelPayout={cancelPayout}
+            cancelingId={cancelingId}
           />
         )}
 
@@ -536,6 +610,8 @@ export default function VendorPayoutsPage() {
             togglePayout={togglePayout}
             copyReference={copyReference}
             downloadInvoice={downloadInvoice}
+            retryPayout={retryPayout}
+            retryingId={retryingId}
           />
         )}
       </div>
@@ -550,6 +626,7 @@ export default function VendorPayoutsPage() {
 function OverviewTab({
   loading,
   balance,
+  config,
   formatCurrency,
   hasPrereqGap,
   missingItems,
@@ -564,6 +641,7 @@ function OverviewTab({
 }: {
   loading: boolean
   balance: Balance
+  config: PayoutsConfig
   formatCurrency: (n: number) => string
   hasPrereqGap: boolean
   missingItems: string[]
@@ -577,6 +655,11 @@ function OverviewTab({
   handleRequestPayment: () => void
 }) {
   const isReady = Boolean(readiness?.isReady)
+  const [etaMinDays, etaMaxDays] = config.processingWindowDays
+  const etaCopy =
+    etaMinDays === etaMaxDays
+      ? `typically processed within ${etaMinDays} business day${etaMinDays === 1 ? '' : 's'}`
+      : `typically processed within ${etaMinDays}\u2013${etaMaxDays} business days`
 
   return (
     <>
@@ -624,7 +707,7 @@ function OverviewTab({
                 You&apos;re ready to request a payment
               </p>
               <p className="font-body text-xs text-green-800 mt-1">
-                Available balance: {formatCurrency(balance.available)} — typically processed within 1–3 business days.
+                Available balance: {formatCurrency(balance.available)} — {etaCopy}.
               </p>
             </div>
           </div>
@@ -658,7 +741,12 @@ function OverviewTab({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div
+          className={cn(
+            'grid gap-3',
+            balance.held > 0 ? 'grid-cols-3' : 'grid-cols-2'
+          )}
+        >
           <ContentCard padding="sm">
             <div className="text-center">
               <p className="text-[10px] text-gray-500 font-body uppercase tracking-wide">Available</p>
@@ -671,12 +759,14 @@ function OverviewTab({
               <p className="text-lg font-bold text-amber-600 font-body">{formatCurrency(balance.pending)}</p>
             </div>
           </ContentCard>
-          <ContentCard padding="sm">
-            <div className="text-center">
-              <p className="text-[10px] text-gray-500 font-body uppercase tracking-wide">Held</p>
-              <p className="text-lg font-bold text-gray-600 font-body">{formatCurrency(balance.held)}</p>
-            </div>
-          </ContentCard>
+          {balance.held > 0 && (
+            <ContentCard padding="sm">
+              <div className="text-center">
+                <p className="text-[10px] text-gray-500 font-body uppercase tracking-wide">Held</p>
+                <p className="text-lg font-bold text-gray-600 font-body">{formatCurrency(balance.held)}</p>
+              </div>
+            </ContentCard>
+          )}
         </div>
       )}
 
@@ -758,12 +848,24 @@ function PendingTab({
   formatCurrency,
   copyReference,
   loading,
+  config,
+  cancelPayout,
+  cancelingId,
 }: {
   pendingPayouts: Payout[]
   formatCurrency: (n: number) => string
   copyReference: (ref: string) => void
   loading: boolean
+  config: PayoutsConfig
+  cancelPayout: (id: string) => void
+  cancelingId: string | null
 }) {
+  const [etaMinDays, etaMaxDays] = config.processingWindowDays
+  const etaLabel =
+    etaMinDays === etaMaxDays
+      ? `${etaMinDays} business day${etaMinDays === 1 ? '' : 's'}`
+      : `${etaMinDays}\u2013${etaMaxDays} business days`
+
   if (loading) {
     return (
       <ContentCard padding="md">
@@ -791,54 +893,114 @@ function PendingTab({
 
   return (
     <div className="space-y-3">
-      {pendingPayouts.map((p) => (
-        <ContentCard key={p.id} padding="md">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50">
-                Requested
-              </p>
-              <p className="font-heading text-2xl font-semibold text-[#1a1a1a] mt-1">
-                {formatCurrency(p.amount)}
-              </p>
-              <p className="font-body text-xs text-[#1a1a1a]/60 mt-1">
-                {p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                {p.reference && (
-                  <>
-                    {' · '}
-                    <button
-                      type="button"
-                      onClick={() => p.reference && copyReference(p.reference)}
-                      className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-[#1a1a1a]"
-                    >
-                      {p.reference}
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </>
+      {pendingPayouts.map((p) => {
+        const isCanceling = cancelingId === p.id
+        const isCancellable = p.status === 'requested'
+        return (
+          <ContentCard key={p.id} padding="md">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50">
+                  Requested
+                </p>
+                <p className="font-heading text-2xl font-semibold text-[#1a1a1a] mt-1">
+                  {formatCurrency(p.amount)}
+                </p>
+                <p className="font-body text-xs text-[#1a1a1a]/60 mt-1">
+                  {p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                  {p.reference && (
+                    <>
+                      {' · '}
+                      <button
+                        type="button"
+                        onClick={() => p.reference && copyReference(p.reference)}
+                        className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-[#1a1a1a]"
+                      >
+                        {p.reference}
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold font-body border',
+                  statusStyles[p.status] || 'bg-gray-50 text-gray-700 border-gray-200'
                 )}
-              </p>
+              >
+                {p.status === 'processing' ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Clock className="w-3 h-3" />
+                )}
+                {statusLabel[p.status] || p.status}
+              </span>
             </div>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold font-body border',
-                statusStyles[p.status] || 'bg-gray-50 text-gray-700 border-gray-200'
-              )}
-            >
-              {p.status === 'processing' ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Clock className="w-3 h-3" />
-              )}
-              {statusLabel[p.status] || p.status}
-            </span>
-          </div>
 
-          <Timeline status={p.status} />
-          <p className="font-body text-[11px] text-[#1a1a1a]/50 mt-3">
-            Payments are typically processed within 1–3 business days after admin review.
-          </p>
-        </ContentCard>
-      ))}
+            <Timeline status={p.status} />
+
+            {/* Line-item disclosure: tell the artist exactly what's locked in this request. */}
+            {p.items && p.items.length > 0 && (
+              <details className="mt-4 group">
+                <summary className="cursor-pointer list-none flex items-center justify-between font-body text-xs text-[#1a1a1a]/70 hover:text-[#1a1a1a]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                    {p.items.length} item{p.items.length === 1 ? '' : 's'} included
+                  </span>
+                  <span className="text-[#1a1a1a]/50">
+                    {formatCurrency(
+                      p.items.reduce((sum, it) => sum + (Number(it.amount) || 0), 0)
+                    )}
+                  </span>
+                </summary>
+                <ul className="mt-2 ml-3 pl-3 border-l border-[#1a1a1a]/10 space-y-1.5">
+                  {p.items.map((it, i) => (
+                    <li key={i} className="flex items-center justify-between font-body text-xs">
+                      <span className="text-[#1a1a1a]/70 truncate mr-2">
+                        {it.item_name}
+                        {it.date && (
+                          <span className="text-[#1a1a1a]/40">
+                            {' · '}
+                            {new Date(it.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-[#1a1a1a] tabular-nums">
+                        {formatCurrency(Number(it.amount) || 0)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <p className="font-body text-[11px] text-[#1a1a1a]/50">
+                Payments are typically processed within {etaLabel} after admin review.
+              </p>
+              {isCancellable && (
+                <button
+                  type="button"
+                  onClick={() => cancelPayout(p.id)}
+                  disabled={isCanceling}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-200 text-red-700 hover:bg-red-50 text-[11px] font-bold font-body disabled:opacity-50 shrink-0"
+                >
+                  {isCanceling ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <X className="w-3 h-3" />
+                  )}
+                  {isCanceling ? 'Canceling…' : 'Cancel request'}
+                </button>
+              )}
+            </div>
+          </ContentCard>
+        )
+      })}
     </div>
   )
 }
@@ -910,6 +1072,8 @@ function HistoryTab({
   togglePayout,
   copyReference,
   downloadInvoice,
+  retryPayout,
+  retryingId,
 }: {
   loading: boolean
   historyByMonth: { month: string; monthKey: string; payouts: Payout[]; total: number }[]
@@ -927,6 +1091,8 @@ function HistoryTab({
   togglePayout: (id: string) => void
   copyReference: (ref: string) => void
   downloadInvoice: (id: string) => void
+  retryPayout: (id: string) => void
+  retryingId: string | null
 }) {
   return (
     <>
@@ -954,6 +1120,7 @@ function HistoryTab({
             <option value="completed">Paid</option>
             <option value="rejected">Rejected</option>
             <option value="failed">Failed</option>
+            <option value="canceled">Canceled</option>
           </select>
           <select
             value={dateFilter}
@@ -1019,6 +1186,12 @@ function HistoryTab({
               <ul className="divide-y divide-[#1a1a1a]/10">
                 {group.payouts.map((p) => {
                   const expanded = expandedPayouts.has(p.id)
+                  const invoiceAvailable = isPaidStatus(p.status)
+                  const isFailed = p.status === 'failed'
+                  const isRetrying = retryingId === p.id
+                  const hasReason =
+                    (p.status === 'rejected' && p.rejectionReason) ||
+                    (p.status === 'failed' && p.failureReason)
                   return (
                     <li key={p.id} className="py-3">
                       <div className="flex items-center justify-between gap-3">
@@ -1068,15 +1241,17 @@ function HistoryTab({
                               <Copy className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => downloadInvoice(p.id)}
-                            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500"
-                            title="Download invoice"
-                            aria-label="Download invoice"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                          </button>
+                          {invoiceAvailable && (
+                            <button
+                              type="button"
+                              onClick={() => downloadInvoice(p.id)}
+                              className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500"
+                              title="Download invoice"
+                              aria-label="Download invoice"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => togglePayout(p.id)}
@@ -1087,6 +1262,38 @@ function HistoryTab({
                           </button>
                         </div>
                       </div>
+
+                      {hasReason && (
+                        <div className="mt-2 ml-3 pl-3 border-l-2 border-red-200 bg-red-50/40 rounded-r p-2">
+                          <p className="font-body text-[11px] font-semibold text-red-700 uppercase tracking-wide">
+                            {p.status === 'rejected' ? 'Why it was rejected' : 'Why it failed'}
+                          </p>
+                          <p className="font-body text-xs text-red-800 mt-0.5">
+                            {p.status === 'rejected' ? p.rejectionReason : p.failureReason}
+                          </p>
+                          {p.status === 'rejected' && (
+                            <p className="font-body text-[11px] text-red-700/70 mt-1">
+                              Your balance was restored — you can request a new payout from Overview.
+                            </p>
+                          )}
+                          {isFailed && (
+                            <button
+                              type="button"
+                              onClick={() => retryPayout(p.id)}
+                              disabled={isRetrying}
+                              className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold font-body hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {isRetrying ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              {isRetrying ? 'Retrying…' : 'Retry payout'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {expanded && p.items && p.items.length > 0 && (
                         <ul className="mt-3 ml-3 pl-3 border-l border-[#1a1a1a]/10 space-y-1.5">
                           {p.items.map((it, i) => (

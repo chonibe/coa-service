@@ -183,20 +183,22 @@ export async function POST(request: NextRequest) {
     if (createPayoutRecord) {
       const reference = payoutReference || `MANUAL-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`
 
+      const nowIso = new Date().toISOString()
       const { data: payoutData, error: payoutError } = await supabase
         .from("vendor_payouts")
         .insert({
           vendor_name: vendorNameToUse,
           amount: totalAmount,
           status: "completed",
-          payout_date: new Date().toISOString(),
+          payout_date: nowIso,
+          processed_at: nowIso,
           reference,
           product_count: finalLineItemIds.length,
           payment_method: "manual",
           notes: `Manually marked as paid by ${adminEmail}`,
           processed_by: adminEmail,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: nowIso,
+          updated_at: nowIso,
         })
         .select()
         .single()

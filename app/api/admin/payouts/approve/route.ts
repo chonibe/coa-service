@@ -61,14 +61,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "reject") {
-      // Reject the payout request
+      const reasonText = (body.reason || "").toString().trim() || "No reason provided"
+      const nowIso = new Date().toISOString()
+      // Reject the payout request. We persist the human-readable reason in
+      // both `notes` (admin audit trail) and `rejection_reason` (the field the
+      // artist-facing payouts page reads).
       const { error: updateError } = await supabase
         .from("vendor_payouts")
         .update({
           status: "rejected",
-          notes: `Rejected by ${adminEmail} on ${new Date().toISOString()}. ${body.reason || "No reason provided"}`,
+          notes: `Rejected by ${adminEmail} on ${nowIso}. ${reasonText}`,
+          rejection_reason: reasonText,
+          processed_at: nowIso,
           processed_by: adminEmail,
-          updated_at: new Date().toISOString(),
+          updated_at: nowIso,
         })
         .eq("id", payoutId)
 
@@ -174,6 +180,15 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
+      // Stamp processed_at the moment we hand off to PayPal so the artist UI
+      // can render an accurate "processed on" timestamp once the batch lands.
+      if (batchStatus === "SUCCESS") {
+        await supabase
+          .from("vendor_payouts")
+          .update({ processed_at: new Date().toISOString() })
+          .eq("id", payoutId)
+      }
+
       // If status is SUCCESS, send notification
       if (batchStatus === "SUCCESS" && updatedPayout) {
         await notifyPayoutProcessed(payout.vendor_name, {
@@ -204,13 +219,18 @@ export async function POST(request: NextRequest) {
     } catch (paypalError: any) {
       console.error("PayPal payout error:", paypalError)
 
-      // Mark payout as failed
+      // Mark payout as failed and persist the failure reason in the dedicated
+      // column so the artist UI can render it (and offer a Retry button).
+      const failMsg = (paypalError?.message || "PayPal payout failed").toString()
+      const nowIso = new Date().toISOString()
       await supabase
         .from("vendor_payouts")
         .update({
           status: "failed",
-          notes: `PayPal payout failed: ${paypalError.message}. Approved by ${adminEmail}`,
-          updated_at: new Date().toISOString(),
+          notes: `PayPal payout failed: ${failMsg}. Approved by ${adminEmail}`,
+          failure_reason: failMsg,
+          processed_at: nowIso,
+          updated_at: nowIso,
         })
         .eq("id", payoutId)
 
