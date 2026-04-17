@@ -1,2 +1,2 @@
-export { default, metadata, dynamic } from './landing/page'
+export { default, metadata, revalidate } from './landing/page'
 

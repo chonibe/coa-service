@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -15,6 +16,7 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
+import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 
 type TabId = 'overview' | 'works' | 'exhibitions' | 'instagram'
 
@@ -192,8 +194,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <div className={styles.heroGradient} aria-hidden />
             <div className={styles.heroPortrait}>
               {heroImage ? (
-                // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
-                <img src={getProxiedImageUrl(heroImage)} alt={artist.name} decoding="async" />
+                <Image
+                  src={getProxiedImageUrl(heroImage)}
+                  alt={artist.name}
+                  fill
+                  sizes="(max-width: 960px) 100vw, 50vw"
+                  priority
+                  style={{ objectFit: 'cover' }}
+                />
               ) : (
                 <div
                   className="flex h-full w-full items-center justify-center text-7xl"
@@ -439,12 +447,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   <div key={product.id} className={cn(styles.workItem, !product.availableForSale && styles.workSoldOut)}>
                     <Link href={`/shop/${product.handle}`} className={styles.workMedia}>
                       {product.featuredImage?.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           className={styles.workImg}
                           src={getProxiedImageUrl(product.featuredImage.url)}
                           alt={product.featuredImage.altText || product.title}
+                          fill
+                          sizes="(max-width: 600px) 100vw, (max-width: 1100px) 50vw, 33vw"
                           loading="lazy"
+                          style={{ objectFit: 'cover' }}
                         />
                       ) : null}
                       <div className={styles.workOverlay} aria-hidden />
@@ -670,10 +680,17 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 className={styles.relatedCard}
                 onClick={() => router.push(`/shop/artists/${a.slug}`)}
               >
-                <div className={styles.relatedMedia}>
+                <div className={styles.relatedMedia} style={{ position: 'relative' }}>
                   {a.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className={styles.relatedImg} src={getProxiedImageUrl(a.image)} alt={a.name} loading="lazy" />
+                    <Image
+                      className={styles.relatedImg}
+                      src={getProxiedImageUrl(a.image)}
+                      alt={a.name}
+                      fill
+                      sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
+                      loading="lazy"
+                      style={{ objectFit: 'cover' }}
+                    />
                   ) : null}
                 </div>
                 <div className={styles.relatedOverlay} aria-hidden />
@@ -714,6 +731,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
           </div>
         </section>
       </div>
+      <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
     </div>
   )
 }

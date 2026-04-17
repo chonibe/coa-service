@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
 }
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 
 export default async function ExploreArtistsPage() {
   const raw = await getShopArtistsList()
@@ -48,7 +48,14 @@ export default async function ExploreArtistsPage() {
 
   return (
     <div className={`${landingFontVariables} ${landingStyles.page}`}>
-      <ExploreArtistsJsonLd />
+      <ExploreArtistsJsonLd
+        artists={artists.map((a) => ({
+          name: a.name,
+          slug: a.slug,
+          image: a.image,
+          location: a.location,
+        }))}
+      />
       <ExploreArtistsClient artists={artists} experienceUrl={homeV2LandingContent.urls.experience} />
     </div>
   )

@@ -88,7 +88,24 @@ export function ArtistProfileJsonLd({ artist }: Props) {
     .map(productOfferSnippet)
     .filter((x): x is Record<string, unknown> => x != null)
 
-  const graph: Record<string, unknown>[] = [person, faqPage, breadcrumb, ...productNodes]
+  const itemList =
+    productNodes.length > 0
+      ? {
+          '@type': 'ItemList',
+          name: `${artist.name} — works`,
+          numberOfItems: productNodes.length,
+          itemListElement: productNodes.map((p, idx) => ({
+            '@type': 'ListItem',
+            position: idx + 1,
+            url: (p as { url?: string }).url,
+            name: (p as { name?: string }).name,
+          })),
+        }
+      : null
+
+  const graph: Record<string, unknown>[] = [person, faqPage, breadcrumb]
+  if (itemList) graph.push(itemList)
+  graph.push(...productNodes)
 
   return (
     <JsonLd

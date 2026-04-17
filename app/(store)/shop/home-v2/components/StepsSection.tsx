@@ -133,7 +133,7 @@ export function StepsSection() {
           {active.details.map((d) => (
             <div className={styles.stepDetail} key={d.text}>
               <div className={styles.stepDot} aria-hidden />
-              <span style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>
+              <span style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>
                 {d.text}
               </span>
             </div>

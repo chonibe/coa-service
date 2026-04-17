@@ -83,6 +83,8 @@ export const homeV2LandingContent = {
     ctaText: 'Start your collection',
     videoUrl:
       'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
+    videoPosterUrl:
+      'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
     stats: [
       { label: 'Collectors', target: 3000, suffix: '+' },
       { label: 'Artists', target: 100, suffix: '+' },

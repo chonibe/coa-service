@@ -145,15 +145,13 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: saturate(0.85) brightness(0.7);
 }
 
 .heroPortraitOverlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, transparent 30%, rgba(23, 21, 21, 0.7) 100%),
-    linear-gradient(to top, rgba(23, 21, 21, 0.9) 0%, transparent 50%);
+    linear-gradient(to top, rgba(23, 21, 21, 0.85) 0%, rgba(23, 21, 21, 0.15) 45%, transparent 70%);
 }
 
 .heroNumber {
@@ -401,8 +399,8 @@
 }
 
 .storyBody {
-  font-size: 13px;
-  line-height: 1.95;
+  font-size: 14px;
+  line-height: 1.9;
   color: var(--muted);
   margin-bottom: 24px;
 }
@@ -986,7 +984,7 @@
   max-width: 400px;
   margin: 0 0 24px;
   padding: 0 72px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--muted);
 }
@@ -1240,8 +1238,8 @@
 }
 
 .ctaSub {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--muted);
   max-width: 460px;
   margin: 0 auto 40px;
@@ -1301,6 +1299,34 @@
   color: var(--muted);
   padding: 0 72px 24px;
   line-height: 1.6;
+}
+
+/* Wide desktop cap */
+@media (max-width: 1440px) {
+  .inner {
+    max-width: 1280px;
+  }
+  .worksGrid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* Mid-desktop / 13" laptops */
+@media (max-width: 1100px) {
+  .nav,
+  .navScrolled {
+    padding: 20px 32px;
+  }
+  .heroContentCol {
+    padding: 56px 32px;
+  }
+  .overviewStory,
+  .overviewProcess {
+    padding: 56px 32px;
+  }
+  .worksGrid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
 }
 
 @media (max-width: 960px) {
@@ -1382,7 +1408,7 @@
 
 /* SEO / GEO: answer-first lead + visible FAQ (matches JSON-LD) */
 .heroLead {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--muted);
   max-width: 36em;
@@ -1434,7 +1460,7 @@
 
 .faqA {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--muted);
 }

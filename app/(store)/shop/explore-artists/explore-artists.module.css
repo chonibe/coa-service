@@ -142,8 +142,8 @@
 }
 
 .lbStory {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--muted);
   margin-bottom: 24px;
 }
@@ -387,8 +387,8 @@
 }
 
 .heroDesc {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--muted);
   max-width: 440px;
   margin-bottom: 48px;
@@ -734,8 +734,8 @@
 }
 
 .featuredBio {
-  font-size: 13px;
-  line-height: 1.85;
+  font-size: 14px;
+  line-height: 1.8;
   color: var(--muted);
   margin-bottom: 18px;
 }
@@ -889,7 +889,7 @@
 
 .artistCardHook {
   font-family: var(--font-landing-serif), Georgia, serif;
-  font-size: 13px;
+  font-size: 14px;
   font-style: italic;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.4;
@@ -980,8 +980,8 @@
 }
 
 .finalSub {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--muted);
   max-width: 520px;
   margin: 0 auto 48px;
@@ -1039,27 +1039,27 @@
   font-style: normal;
 }
 
-.mapCanvasWrap {
-  position: relative;
-  max-width: 900px;
+.mapCityList {
+  max-width: 860px;
   margin: 0 auto 56px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
 }
 
-.worldMapSvg {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.mapLand {
-  fill: rgba(255, 255, 255, 0.05);
-  stroke: rgba(255, 255, 255, 0.1);
-  stroke-width: 1px;
-}
-
-.mapDot {
-  fill: var(--peach);
-  opacity: 0.9;
+.mapCityChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .mapStats {
@@ -1200,6 +1200,23 @@
 }
 
 /* ── RESPONSIVE ── */
+/* Wide-desktop cap */
+@media (max-width: 1440px) {
+  .hero,
+  .philosophy,
+  .featuredHeader,
+  .featuredArtist,
+  .filterBar,
+  .artistsGrid,
+  .final,
+  .voicesGrid {
+    max-width: 1280px;
+  }
+  .artistsGrid {
+    gap: 20px;
+  }
+}
+
 @media (max-width: 1100px) {
   .artistsGrid {
     grid-template-columns: repeat(3, 1fr);

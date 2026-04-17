@@ -821,7 +821,7 @@
 }
 
 .tImgQuote {
-  font-size: 13px;
+  font-size: 14px;
   font-style: italic;
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.5;
@@ -1071,6 +1071,52 @@
 
 .footer a:hover {
   color: var(--peach);
+}
+
+/* Mid desktop (13"–14" laptops) */
+@media (max-width: 1440px) {
+  .inner,
+  .lampHeader,
+  .sectionHeader,
+  .artistsHeader,
+  .testimonialsSection,
+  .faqSection {
+    max-width: 1280px;
+  }
+  .wallGrid {
+    grid-auto-rows: 170px;
+  }
+  .testimonialsGrid {
+    grid-auto-rows: 260px;
+  }
+}
+
+/* Small-desktop / large tablet (1024–1100) */
+@media (max-width: 1100px) {
+  .nav {
+    padding: 20px 28px;
+  }
+  .heroContent {
+    padding: 60px 28px 72px;
+  }
+  .lampFeature {
+    gap: 24px;
+  }
+  .stepContent {
+    gap: 24px;
+  }
+  .stepTextWrap {
+    padding: 48px 28px;
+  }
+  .wallGrid {
+    grid-auto-rows: 150px;
+  }
+  .testimonialsGrid {
+    grid-auto-rows: 240px;
+  }
+  .finalBg {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 @media (max-width: 960px) {

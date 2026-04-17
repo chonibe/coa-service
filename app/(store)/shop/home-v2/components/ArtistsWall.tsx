@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
@@ -26,8 +27,14 @@ export function ArtistsWall() {
           const span2 = idx === 0 || idx === 3 || idx === 7
           return (
             <div className={`${styles.tile} ${span2 ? styles.tileSpan2 : ''}`} key={`${t.name}-${idx}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- match source HTML behavior */}
-              <img src={t.imageUrl} alt={t.name} loading="lazy" />
+              <Image
+                src={t.imageUrl}
+                alt={t.name}
+                fill
+                sizes="(max-width: 960px) 25vw, (max-width: 1440px) 16vw, 220px"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+              />
               <div className={styles.tileName}>{t.name}</div>
             </div>
           )

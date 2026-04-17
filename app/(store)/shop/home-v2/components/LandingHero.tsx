@@ -68,7 +68,14 @@ export function LandingHero() {
   return (
     <section className={styles.hero} aria-label="Hero">
       <div className={styles.heroMedia} aria-hidden>
-        <video autoPlay muted loop playsInline preload="auto">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={'videoPosterUrl' in hero ? (hero as { videoPosterUrl?: string }).videoPosterUrl : undefined}
+        >
           <source src={hero.videoUrl} type="video/mp4" />
         </video>
       </div>

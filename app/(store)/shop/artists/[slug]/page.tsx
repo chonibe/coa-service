@@ -5,7 +5,26 @@ import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { buildArtistDescription, buildArtistOgTitle, buildArtistTitle } from '@/lib/seo/artist-meta'
 import { getCachedArtistProfile } from '@/lib/shop/cached-shop-data'
 import { ArtistProfileJsonLd } from '@/components/seo/ArtistProfileJsonLd'
+import { streetCollectorContent } from '@/content/street-collector'
 import { ArtistPageClient } from './ArtistPageClient'
+
+export const revalidate = 600
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const collections = streetCollectorContent.featuredArtists?.collections ?? []
+  const seen = new Set<string>()
+  const slugs: string[] = []
+  for (const entry of collections) {
+    const handle = (entry as { handle?: string }).handle
+    if (!handle) continue
+    const slug = handle.toLowerCase().trim()
+    if (!slug || seen.has(slug)) continue
+    seen.add(slug)
+    slugs.push(slug)
+    if (slugs.length >= 40) break
+  }
+  return slugs.map((slug) => ({ slug }))
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>

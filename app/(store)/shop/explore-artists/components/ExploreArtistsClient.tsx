@@ -2,12 +2,15 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import type { ExploreArtistRow } from '@/lib/shop/explore-artists-order'
 import landingStyles from '../../home-v2/landing.module.css'
 import exploreStyles from '../explore-artists.module.css'
 import { useLandingScrollReveal } from '../../home-v2/hooks/useLandingScrollReveal'
+import { exploreArtistsContent } from '@/content/explore-artists'
+import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 
 function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
@@ -34,7 +37,9 @@ type ArtistApiProduct = {
 function useIsFinePointer() {
   const [fine, setFine] = React.useState(false)
   React.useEffect(() => {
-    const mq = window.matchMedia('(pointer: fine)')
+    // Only enable the custom cursor on desktop-class viewports with a
+    // fine pointer. Below 1024px the cursor is noisy and fights hover states.
+    const mq = window.matchMedia('(pointer: fine) and (min-width: 1024px)')
     const apply = () => setFine(mq.matches)
     apply()
     mq.addEventListener('change', apply)
@@ -69,9 +74,26 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
   const featuredCount = Math.min(artists.length, 12)
   const withBioCount = artists.reduce((acc, a) => acc + (a.bio ? 1 : 0), 0)
+  const locatedCities = React.useMemo(() => {
+    const set = new Set<string>()
+    for (const a of artists) {
+      const loc = a.location?.trim()
+      if (loc) set.add(loc)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [artists])
   const [filter, setFilter] = React.useState<FilterKey>('all')
 
   const featured = artists.slice(0, featuredCount)
+
+  const spotlightIndex = React.useMemo(() => {
+    if (featured.length <= 1) return 0
+    const now = new Date()
+    const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1))
+    const diffDays = Math.floor((now.getTime() - start.getTime()) / 86_400_000)
+    const isoWeek = Math.floor(diffDays / 7)
+    return isoWeek % featured.length
+  }, [featured.length])
   const filtered =
     filter === 'featured'
       ? featured
@@ -79,11 +101,17 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
         ? artists.filter((a) => !!a.bio)
         : artists
 
-  const spotlight = featured[0]
+  const spotlight = featured[spotlightIndex] ?? featured[0]
   const spotlightBio = shortBio(spotlight?.bio)
   const spotlightMeta = [spotlight?.location, spotlight?.productCount ? `${spotlight.productCount} works` : null]
     .filter(Boolean)
     .join(' · ')
+  const spotlightPullQuote = React.useMemo(() => {
+    if (!spotlight) return null
+    return (
+      exploreArtistsContent.spotlightPullQuotes.find((q) => q.artistSlug === spotlight.slug) ?? null
+    )
+  }, [spotlight])
 
   const isFinePointer = useIsFinePointer()
   const reducedMotion = usePrefersReducedMotion()
@@ -155,14 +183,65 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     return pool.slice(0, 3)
   }, [artists, lightboxArtist])
 
+  const lightboxRef = React.useRef<HTMLDivElement | null>(null)
+  const pageShellRef = React.useRef<HTMLDivElement | null>(null)
+  const lastTriggerRef = React.useRef<HTMLElement | null>(null)
+
+  const openLightbox = React.useCallback((slug: string) => {
+    lastTriggerRef.current = (document.activeElement as HTMLElement) ?? null
+    setLightboxSlug(slug)
+  }, [])
+
+  const closeLightbox = React.useCallback(() => {
+    setLightboxSlug(null)
+  }, [])
+
   React.useEffect(() => {
-    if (!lightboxSlug) return
+    if (!lightboxSlug) {
+      // Restore focus to the originating element when closing.
+      const el = lastTriggerRef.current
+      if (el && typeof el.focus === 'function') {
+        window.requestAnimationFrame(() => el.focus())
+      }
+      return
+    }
+
+    // Make background inert while the dialog is open (a11y + escape-hatch safety).
+    const shell = pageShellRef.current
+    if (shell) shell.setAttribute('inert', '')
+    document.body.style.overflow = 'hidden'
+
+    // Move focus into the dialog.
+    const dialog = lightboxRef.current
+    const focusables = dialog?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusables?.[0]
+    first?.focus()
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxSlug(null)
+      if (e.key === 'Escape') {
+        closeLightbox()
+        return
+      }
+      if (e.key !== 'Tab' || !focusables || focusables.length === 0) return
+      const firstEl = focusables[0]
+      const lastEl = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault()
+        lastEl.focus()
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault()
+        firstEl.focus()
+      }
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [lightboxSlug])
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      if (shell) shell.removeAttribute('inert')
+      document.body.style.overflow = ''
+    }
+  }, [lightboxSlug, closeLightbox])
 
   return (
     <>
@@ -181,7 +260,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
         </>
       ) : null}
 
-      <div className={exploreStyles.wrap}>
+      <div className={exploreStyles.wrap} ref={pageShellRef}>
         <section ref={heroReveal.ref} className={cn(exploreStyles.hero, heroReveal.className)} aria-label="Hero">
           <div className={exploreStyles.heroBgGradient} aria-hidden />
           <div className={exploreStyles.heroContent}>
@@ -280,19 +359,22 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   In the <em>spotlight.</em>
                 </h2>
               </div>
-              <span className={exploreStyles.featuredRotate}>Rotates monthly</span>
+              <span className={exploreStyles.featuredRotate}>{exploreArtistsContent.featured.rotateLabel}</span>
             </div>
 
             <div className={exploreStyles.featuredArtist}>
               <div className={exploreStyles.featuredMedia}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- proxied CDN */} 
-                <img
-                  className={exploreStyles.featuredMediaImg}
-                  src={spotlight.image ? getProxiedImageUrl(spotlight.image) : ''}
-                  alt={spotlight.name}
-                  loading="eager"
-                  decoding="async"
-                />
+                {spotlight.image ? (
+                  <Image
+                    className={exploreStyles.featuredMediaImg}
+                    src={getProxiedImageUrl(spotlight.image)}
+                    alt={spotlight.name}
+                    fill
+                    sizes="(max-width: 960px) 100vw, 50vw"
+                    priority
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : null}
                 <div className={exploreStyles.featuredMediaOverlay} aria-hidden />
                 <div className={exploreStyles.featuredNumber} aria-hidden>
                   01
@@ -305,15 +387,22 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   Full profile: long-form story, history when we have it, and every edition in the shop—in one place.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
-                <blockquote className={exploreStyles.featuredPullquote}>
-                  “Collecting here sends meaningful revenue to the artist behind the piece—not just a SKU.”
-                </blockquote>
+                {spotlightPullQuote ? (
+                  <blockquote className={exploreStyles.featuredPullquote}>
+                    {spotlightPullQuote.quote}
+                    {spotlightPullQuote.attribution ? (
+                      <footer style={{ marginTop: 8, fontStyle: 'normal', fontSize: 12, opacity: 0.7 }}>
+                        — {spotlightPullQuote.attribution}
+                      </footer>
+                    ) : null}
+                  </blockquote>
+                ) : null}
                 <button
                   type="button"
                   className={exploreStyles.btnFeatured}
-                  onClick={() => setLightboxSlug(spotlight.slug)}
+                  onClick={() => openLightbox(spotlight.slug)}
                 >
-                  Open full profile
+                  {exploreArtistsContent.featured.ctaLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -342,7 +431,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             {filtered.map((artist, idx) => {
               const hook = artist.bio
                 ? `“${shortBio(artist.bio, 72)}”`
-                : 'Open the profile for their story and editions.'
+                : exploreArtistsContent.collection.emptyHook
               return (
                 <article
                   key={artist.slug}
@@ -350,20 +439,22 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                   style={{ ['--stagger' as string]: idx % 10 }}
                 >
                   <div className={exploreStyles.artistCardInner}>
-                    <button
-                      type="button"
+                    <Link
+                      href={`/shop/artists/${artist.slug}`}
+                      prefetch={false}
                       className={exploreStyles.artistCardMediaButton}
-                      onClick={() => setLightboxSlug(artist.slug)}
+                      aria-label={`Open ${artist.name} profile`}
                     >
                       <div className={exploreStyles.artistCardMedia}>
                       {artist.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
-                        <img
+                        <Image
                           className={exploreStyles.artistCardImg}
                           src={getProxiedImageUrl(artist.image)}
                           alt={artist.name}
-                          loading={idx < 10 ? 'eager' : 'lazy'}
-                          decoding="async"
+                          fill
+                          sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                          loading={idx < 6 ? 'eager' : 'lazy'}
+                          style={{ objectFit: 'cover' }}
                         />
                       ) : (
                         <div
@@ -385,7 +476,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                         <div className={exploreStyles.artistCardHook}>{hook}</div>
                       </div>
                       </div>
-                    </button>
+                    </Link>
                     <div className={exploreStyles.artistCardFooter}>
                       <div className={exploreStyles.editionsCount}>
                         <span>{artist.productCount}</span> editions
@@ -393,9 +484,10 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                       <button
                         type="button"
                         className={exploreStyles.cardExploreLink}
-                        onClick={() => setLightboxSlug(artist.slug)}
+                        onClick={() => openLightbox(artist.slug)}
+                        aria-label={`Quick preview: ${artist.name}`}
                       >
-                        Explore
+                        Preview
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
@@ -411,78 +503,42 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
         <section
           ref={mapReveal.ref}
           className={cn(exploreStyles.mapSection, mapReveal.className)}
-          aria-label="World map"
+          aria-label="Where our artists work"
         >
           <div className={cn(landingStyles.landingStagger, exploreStyles.mapEyebrow)} style={{ ['--stagger' as string]: 0 }}>
-            Global Reach
+            Where they work
           </div>
           <h2 className={cn(landingStyles.landingStagger, exploreStyles.mapTitle)} style={{ ['--stagger' as string]: 1 }}>
             Art that crossed an ocean
             <br />
             to land <em>in your Street Lamp.</em>
           </h2>
-          <div className={cn(landingStyles.landingStagger, exploreStyles.mapCanvasWrap)} style={{ ['--stagger' as string]: 2 }}>
-            <svg
-              className={exploreStyles.worldMapSvg}
-              viewBox="0 0 1000 500"
-              xmlns="http://www.w3.org/2000/svg"
-              role="img"
-              aria-label="Artist locations map (stylized)"
+          {locatedCities.length > 0 ? (
+            <div
+              className={cn(landingStyles.landingStagger, exploreStyles.mapCityList)}
+              style={{ ['--stagger' as string]: 2 }}
             >
-              <rect width="1000" height="500" fill="transparent" />
-              {/* Simplified landmasses (matches external HTML) */}
-              <path
-                d="M460 120 L500 115 L530 125 L550 140 L545 160 L520 165 L500 155 L475 160 L455 150 L450 135 Z"
-                className={exploreStyles.mapLand}
-              />
-              <path
-                d="M475 170 L510 165 L530 175 L535 210 L530 250 L510 280 L490 285 L470 270 L455 230 L455 190 Z"
-                className={exploreStyles.mapLand}
-              />
-              <path
-                d="M180 100 L230 95 L250 110 L255 145 L245 175 L230 180 L215 170 L200 140 L185 120 Z"
-                className={exploreStyles.mapLand}
-              />
-              <path
-                d="M200 185 L240 185 L250 210 L245 250 L235 290 L220 310 L205 300 L195 270 L190 230 L195 200 Z"
-                className={exploreStyles.mapLand}
-              />
-              <path
-                d="M560 95 L650 85 L720 95 L740 120 L730 150 L700 160 L660 155 L620 145 L575 135 L555 120 Z"
-                className={exploreStyles.mapLand}
-              />
-              <path
-                d="M720 290 L770 285 L790 300 L785 330 L765 345 L740 340 L720 320 L715 305 Z"
-                className={exploreStyles.mapLand}
-              />
-
-              {/* Accent dots (not exhaustive; aesthetic signal) */}
-              <circle className={exploreStyles.mapDot} cx="492" cy="128" r="4" />
-              <circle className={exploreStyles.mapDot} cx="540" cy="162" r="3.5" />
-              <circle className={exploreStyles.mapDot} cx="220" cy="130" r="3.5" />
-              <circle className={exploreStyles.mapDot} cx="462" cy="145" r="3" />
-              <circle className={exploreStyles.mapDot} cx="196" cy="155" r="3" />
-              <circle className={exploreStyles.mapDot} cx="450" cy="138" r="3" />
-              <circle className={exploreStyles.mapDot} cx="228" cy="295" r="3.5" />
-              <circle className={exploreStyles.mapDot} cx="730" cy="128" r="3.5" />
-              <circle className={exploreStyles.mapDot} cx="487" cy="285" r="3.5" />
-              <circle className={exploreStyles.mapDot} cx="489" cy="132" r="3" />
-              <circle className={exploreStyles.mapDot} cx="607" cy="185" r="3" />
-              <circle className={exploreStyles.mapDot} cx="178" cy="182" r="3" />
-            </svg>
-          </div>
+              {locatedCities.map((city) => (
+                <span key={city} className={exploreStyles.mapCityChip}>
+                  {city}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className={cn(landingStyles.landingStagger, exploreStyles.mapStats)} style={{ ['--stagger' as string]: 3 }}>
             <div className={exploreStyles.mapStat}>
-              <span className={exploreStyles.mapStatN}>{artists.length}+</span>
+              <span className={exploreStyles.mapStatN}>{artists.length}</span>
               <span className={exploreStyles.mapStatL}>Artists</span>
             </div>
+            {locatedCities.length > 0 ? (
+              <div className={exploreStyles.mapStat}>
+                <span className={exploreStyles.mapStatN}>{locatedCities.length}</span>
+                <span className={exploreStyles.mapStatL}>Cities on record</span>
+              </div>
+            ) : null}
             <div className={exploreStyles.mapStat}>
-              <span className={exploreStyles.mapStatN}>40+</span>
-              <span className={exploreStyles.mapStatL}>Countries</span>
-            </div>
-            <div className={exploreStyles.mapStat}>
-              <span className={exploreStyles.mapStatN}>6</span>
-              <span className={exploreStyles.mapStatL}>Continents</span>
+              <span className={exploreStyles.mapStatN}>{withBioCount}</span>
+              <span className={exploreStyles.mapStatL}>With full stories</span>
             </div>
           </div>
         </section>
@@ -512,53 +568,24 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
           </div>
 
           <div className={exploreStyles.voicesGrid}>
-            <article className={cn(landingStyles.landingStagger, exploreStyles.voiceCard)} style={{ ['--stagger' as string]: 0 }}>
-              <div>
-                <div className={exploreStyles.voiceStars} aria-hidden>
-                  ★★★★★
+            {exploreArtistsContent.voices.items.map((voice, idx) => (
+              <article
+                key={`${voice.author}-${idx}`}
+                className={cn(landingStyles.landingStagger, exploreStyles.voiceCard)}
+                style={{ ['--stagger' as string]: idx }}
+              >
+                <div>
+                  <div className={exploreStyles.voiceStars} aria-hidden>
+                    ★★★★★
+                  </div>
+                  <p className={exploreStyles.voiceText}>{voice.quote}</p>
                 </div>
-                <p className={exploreStyles.voiceText}>
-                  “I looked up <em>{spotlight?.name ?? 'the artist'}</em> for an hour after I got my print. Now I follow
-                  the whole journey. It’s not a lamp on my desk — it’s a window into someone’s life.”
-                </p>
-              </div>
-              <div>
-                <div className={exploreStyles.voiceAuthor}>Tobias M.</div>
-                <div className={exploreStyles.voiceLocation}>Amsterdam, Netherlands</div>
-              </div>
-            </article>
-
-            <article className={cn(landingStyles.landingStagger, exploreStyles.voiceCard)} style={{ ['--stagger' as string]: 1 }}>
-              <div>
-                <div className={exploreStyles.voiceStars} aria-hidden>
-                  ★★★★★
+                <div>
+                  <div className={exploreStyles.voiceAuthor}>{voice.author}</div>
+                  <div className={exploreStyles.voiceLocation}>{voice.location}</div>
                 </div>
-                <p className={exploreStyles.voiceText}>
-                  “Knowing it was painted by someone in <em>another city</em> makes it feel different on my Street
-                  Lamp. There’s a person behind this — and that changes everything.”
-                </p>
-              </div>
-              <div>
-                <div className={exploreStyles.voiceAuthor}>Sarah K.</div>
-                <div className={exploreStyles.voiceLocation}>London, UK</div>
-              </div>
-            </article>
-
-            <article className={cn(landingStyles.landingStagger, exploreStyles.voiceCard)} style={{ ['--stagger' as string]: 2 }}>
-              <div>
-                <div className={exploreStyles.voiceStars} aria-hidden>
-                  ★★★★★
-                </div>
-                <p className={exploreStyles.voiceText}>
-                  “I bought the print because the story wrecked me. The image earned its place on my Street Lamp—the
-                  story is what convinced me.”
-                </p>
-              </div>
-              <div>
-                <div className={exploreStyles.voiceAuthor}>Lucas R.</div>
-                <div className={exploreStyles.voiceLocation}>Paris, France</div>
-              </div>
-            </article>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -589,31 +616,33 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
       </div>
 
       <div
+        ref={lightboxRef}
         className={cn(exploreStyles.lightbox, lightboxArtist && exploreStyles.lightboxOpen)}
         role="dialog"
         aria-modal="true"
         aria-label={lightboxArtist ? `Artist details: ${lightboxArtist.name}` : 'Artist details'}
         onClick={(e) => {
-          if (e.target === e.currentTarget) setLightboxSlug(null)
+          if (e.target === e.currentTarget) closeLightbox()
         }}
       >
         {lightboxArtist ? (
           <div className={exploreStyles.lightboxInner}>
             <div className={exploreStyles.lightboxMedia}>
               {lightboxArtist.image ? (
-                // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
-                <img
+                <Image
                   className={exploreStyles.lightboxImg}
                   src={getProxiedImageUrl(lightboxArtist.image)}
                   alt={lightboxArtist.name}
-                  loading="eager"
-                  decoding="async"
+                  fill
+                  sizes="(max-width: 960px) 100vw, 50vw"
+                  priority
+                  style={{ objectFit: 'cover' }}
                 />
               ) : null}
               <div className={exploreStyles.lightboxMediaOverlay} aria-hidden />
             </div>
             <div className={exploreStyles.lightboxContent}>
-              <button type="button" className={exploreStyles.lightboxClose} onClick={() => setLightboxSlug(null)} aria-label="Close">
+              <button type="button" className={exploreStyles.lightboxClose} onClick={closeLightbox} aria-label="Close">
                 ✕
               </button>
 
@@ -658,13 +687,16 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                       <li key={p.id}>
                         <Link href={`/shop/${p.handle}`} className={exploreStyles.lbArtworkCard}>
                           {p.featuredImage?.url ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
-                            <img
-                              src={getProxiedImageUrl(p.featuredImage.url)}
-                              alt={p.featuredImage.altText?.trim() || p.title}
-                              loading="lazy"
-                              decoding="async"
-                            />
+                            <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1' }}>
+                              <Image
+                                src={getProxiedImageUrl(p.featuredImage.url)}
+                                alt={p.featuredImage.altText?.trim() || p.title}
+                                fill
+                                sizes="(max-width: 960px) 33vw, 150px"
+                                loading="lazy"
+                                style={{ objectFit: 'cover' }}
+                              />
+                            </div>
                           ) : (
                             <div className={exploreStyles.lbArtworkPlaceholder} aria-hidden />
                           )}
@@ -685,11 +717,19 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                         key={a.slug}
                         type="button"
                         className={exploreStyles.lbRelatedCard}
-                        onClick={() => setLightboxSlug(a.slug)}
+                        onClick={() => openLightbox(a.slug)}
                       >
                         {a.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- proxied CDN
-                          <img src={getProxiedImageUrl(a.image)} alt={a.name} loading="lazy" decoding="async" />
+                          <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1' }}>
+                            <Image
+                              src={getProxiedImageUrl(a.image)}
+                              alt={a.name}
+                              fill
+                              sizes="(max-width: 960px) 33vw, 150px"
+                              loading="lazy"
+                              style={{ objectFit: 'cover', filter: 'saturate(0.6) brightness(0.7)' }}
+                            />
+                          </div>
                         ) : null}
                         <div className={exploreStyles.lbRelatedName}>{a.name}</div>
                       </button>
@@ -701,6 +741,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
           </div>
         ) : null}
       </div>
+
+      <MobileStickyCta href={experienceUrl} label={exploreArtistsContent.hero.ctaLabel} />
     </>
   )
 }

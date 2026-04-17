@@ -14,6 +14,8 @@ import { GuaranteeSection } from '../components/GuaranteeSection'
 import { FaqSectionLanding } from '../components/FaqSectionLanding'
 import { FinalCta } from '../components/FinalCta'
 import { LandingFooter } from '../components/LandingFooter'
+import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import { JsonLd } from '@/components/seo/JsonLd'
 
 const LANDING_TITLE =
   'Street Collector — Not Just a Lamp. A Living Art Collection.'
@@ -25,12 +27,12 @@ export const metadata: Metadata = {
   title: LANDING_TITLE,
   description: LANDING_DESCRIPTION,
   alternates: {
-    canonical: '/shop/home-v2',
+    canonical: '/shop/home-v2/landing',
   },
   openGraph: {
     title: LANDING_TITLE,
     description: LANDING_DESCRIPTION,
-    url: '/shop/home-v2',
+    url: '/shop/home-v2/landing',
     siteName: 'Street Collector',
     type: 'website',
     images: [
@@ -48,11 +50,55 @@ export const metadata: Metadata = {
   },
 }
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
+
+function buildLandingJsonLd() {
+  const origin = getCanonicalSiteOrigin().toString().replace(/\/$/, '')
+  const pageUrl = `${origin}/shop/home-v2/landing`
+  const faqPage = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: homeV2LandingContent.faq.items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
+  const videoObject = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: 'Street Collector — A Living Art Collection',
+    description: LANDING_DESCRIPTION,
+    thumbnailUrl: [
+      ('videoPosterUrl' in homeV2LandingContent.hero
+        ? (homeV2LandingContent.hero as { videoPosterUrl?: string }).videoPosterUrl
+        : undefined) ?? homeV2LandingContent.urls.openGraphImageUrl,
+    ],
+    contentUrl: homeV2LandingContent.hero.videoUrl,
+    uploadDate: '2024-01-01',
+  }
+  const webPage = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    url: pageUrl,
+    name: LANDING_TITLE,
+    description: LANDING_DESCRIPTION,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Street Collector',
+      url: origin,
+    },
+  }
+  return [webPage, faqPage, videoObject]
+}
 
 export default function HomeV2LandingPage() {
   return (
     <div className={`${styles.page} ${landingFontVariables}`}>
+      <JsonLd id="landing-jsonld" data={buildLandingJsonLd()} />
       <LandingNav />
       <main>
         <LandingHero />
@@ -66,6 +112,10 @@ export default function HomeV2LandingPage() {
         <FinalCta />
       </main>
       <LandingFooter />
+      <MobileStickyCta
+        href={homeV2LandingContent.urls.experience}
+        label={homeV2LandingContent.hero.ctaText}
+      />
     </div>
   )
 }
