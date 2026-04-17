@@ -529,7 +529,14 @@ export async function POST(
       nextOrder = 0
     }
 
-    // Create content block
+    // Create content block.
+    //
+    // Blocks default to `is_published: true` so that as soon as an artist
+    // saves content in the editor it is visible to collectors who have
+    // authenticated their NFC tag. The collector-side API filters on BOTH
+    // `is_published = true` AND `is_active = true`, so the two flags are the
+    // single source of truth for visibility. A vendor can still explicitly
+    // unpublish or deactivate a block via PUT.
     const { data: newBlock, error: insertError } = await supabase
       .from("product_benefits")
       .insert({
@@ -541,8 +548,8 @@ export async function POST(
         content_url: body.content_url || null,
         block_config: body.block_config || {},
         display_order: nextOrder,
-        is_published: false, // New blocks start as drafts
-        is_active: true,
+        is_published: body.is_published ?? true,
+        is_active: body.is_active ?? true,
       })
       .select(`
         *,
@@ -721,6 +728,7 @@ export async function PUT(
     if (body.block_config !== undefined) updateData.block_config = body.block_config
     if (body.display_order !== undefined) updateData.display_order = body.display_order
     if (body.is_published !== undefined) updateData.is_published = body.is_published
+    if (body.is_active !== undefined) updateData.is_active = body.is_active
 
     const { data: updatedBlock, error: updateError } = await supabase
       .from("product_benefits")

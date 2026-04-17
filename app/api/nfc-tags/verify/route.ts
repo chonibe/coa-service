@@ -68,7 +68,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ---- POST /api/nfc-tags/verify (used by NFCPairingWizard) ----
+// ---- POST /api/nfc-tags/verify ----
+// Legacy pairing POST retained for /customer/dashboard + /admin/preview callers.
+// The canonical collector flow is /api/nfc-tags/redirect -> NFCAuthSheet -> /api/nfc-tags/claim.
 export async function POST(request: NextRequest) {
   const supabase = createClient()
 

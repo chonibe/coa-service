@@ -20,10 +20,10 @@ The NFC Authentication system allows collectors to physically verify ownership o
 - [`lib/nfc/token.ts`](../../../lib/nfc/token.ts): Centralized `base64UrlEncode`, `base64UrlDecode`, `getSigningSecret`, `signPayload`, and `validateToken` functions. All NFC routes import from here—no duplication.
 
 ### Components
-- [`components/nfc/nfc-auth-sheet.tsx`](../../../components/nfc/nfc-auth-sheet.tsx): Main multi-step wizard for collectors.
+- [`components/nfc/nfc-auth-sheet.tsx`](../../../components/nfc/nfc-auth-sheet.tsx): **Canonical** multi-step NFC claim sheet. Triggered by `/collector/artwork/[id]` when the page receives `?claim=pending` or `?scan=pending` from `/api/nfc-tags/redirect`.
 - [`components/nfc/nfc-tag-writer.tsx`](../../../components/nfc/nfc-tag-writer.tsx): Write URLs to NFC tags (Web NFC) or copy-URL fallback.
-- [`components/ui/nfc-pairing-wizard.tsx`](../../../components/ui/nfc-pairing-wizard.tsx): Multi-item NFC pairing dialog.
 - [`src/components/NfcTagScanner.tsx`](../../../src/components/NfcTagScanner.tsx): Standalone scanner card component.
+- ~~`components/ui/nfc-pairing-wizard.tsx`~~: **Removed 2026-04** — superseded by `NFCAuthSheet` driven by the canonical `/api/nfc-tags/redirect` flow. Its NDEF-raw-payload assumption was incompatible with the URL-based tag scheme.
 
 ### Hooks
 - [`hooks/use-nfc-scan.ts`](../../../hooks/use-nfc-scan.ts): React hook wrapping the Web NFC API.
@@ -38,25 +38,27 @@ The NFC Authentication system allows collectors to physically verify ownership o
 |---|---|---|
 | `/api/nfc-tags/claim` | POST | Links a physical tag ID to a digital line item. **Requires collector session auth.** Validates ownership. |
 | `/api/nfc-tags/verify` | GET | Look up tag by `?tagId=` — returns claim status. |
-| `/api/nfc-tags/verify` | POST | Accept `{ lineItemId, nfcTagId }` from pairing wizard. Creates tag record if needed. |
+| `/api/nfc-tags/verify` | POST | Legacy pairing handler retained for `/customer/dashboard` and `/admin/preview`. New flows should use `/api/nfc-tags/claim`. |
 | `/api/nfc-tags/sign` | POST | Signs a token for one-time auth flows (10-min TTL). Also returns `permanentUrl` for physical tags. |
-| `/api/nfc-tags/redirect` | GET | Permanent redirect handler. Accepts `?tagId=` or `?token=`. Logs scans to `nfc_tag_scans`. |
+| `/api/nfc-tags/redirect` | GET | **Canonical NFC entry point.** Accepts `?tagId=` or `?token=`, resolves `line_item_id`, logs the scan, and redirects to `/collector/artwork/[lineItemId]` with a state query (`?claim=pending`, `?authenticated=true`, `?preview=true`, or `?scan=pending` via `/login`). |
 | `/api/nfc-tags/get-programming-data` | GET | Returns tag data and permanent URL for NFC writers. |
-| `/auth/nfc/[token]` | GET | One-time token auth route (redirects to artwork page). |
+| `/auth/nfc/[token]` | GET | Thin 308 redirect to `/api/nfc-tags/redirect?token=…` (kept for backward compatibility with older printed links). |
+| `/pages/authenticate` | GET | Thin redirect to `/api/nfc-tags/redirect` (deprecated demo page). |
+| `/nfc/unlock` | GET | Server-side token decode → redirect to `/api/nfc-tags/redirect` (deprecated standalone unlock page). |
 
-### Data Flow
-1. User selects "Authenticate" from their collection.
-2. `NFCAuthSheet` detects device support.
-3. If supported, user is guided through positioning and scanning.
-4. On scan, the tag's serial number is sent to `/api/nfc-tags/claim`.
-5. The backend validates the tag **and collector ownership**, marks the edition as authenticated, and returns a reward.
-6. The UI displays a celebratory success state.
+### Canonical Data Flow (v4)
+All NFC scans converge on **`/api/nfc-tags/redirect` → `/collector/artwork/[lineItemId]`**. The artwork page is the single canonical landing surface; there is no longer a separate unlock page.
 
-### Unlock Page (`/nfc/unlock`)
-- Validates the signed token via `lib/nfc/token.ts`.
-- Fetches the `order_line_items_v2` record to resolve `product_id`.
-- Queries `product_benefits` for active content blocks.
-- Renders text, images, video, and audio using block-type icons.
+1. Physical scan (or admin-signed link) hits `/api/nfc-tags/redirect?tagId=…` or `?token=…`.
+2. Route resolves `line_item_id` (from signed token or `nfc_tags` lookup) and logs the scan.
+3. Route reads the collector session cookie and compares to `orders.shopify_customer_id`.
+4. Route 302s to `/collector/artwork/[lineItemId]` with one of:
+   - `?scan=pending` after `/login?intent=collector&redirect=…` — guest returning signed-in.
+   - `?preview=true` — signed-in non-owner (read-only copy, no claim CTA).
+   - `?authenticated=true` — signed-in owner, already claimed.
+   - `?claim=pending` — signed-in owner, not yet claimed (page auto-opens `NFCAuthSheet`).
+5. `NFCAuthSheet` POSTs to `/api/nfc-tags/claim`, which validates ownership, sets `order_line_items_v2.nfc_claimed_at`, writes audit logs, and returns the reward payload.
+6. UI plays the unlock animation and transitions to the authenticated view on the same page.
 
 ### Database
 - **`nfc_tags`**: Core tag registry (tag_id, status, line_item_id, certificate_url, etc.)
@@ -68,7 +70,19 @@ The NFC Authentication system allows collectors to physically verify ownership o
 - **Collector session authentication**: Claim endpoint verifies `collector_session` cookie or `shopify_customer_id` cookie. Validates the collector owns the order.
 - **Rate limiting**: Covered by the global `/api/*` middleware in `middleware.ts`.
 
-## Testing Steps
+## Testing Steps (v4 canonical flow)
+
+**Scan-state matrix — test all four states land on `/collector/artwork/[lineItemId]` with the expected UI:**
+
+| Scanner state | Expected redirect chain | Expected UI |
+|---|---|---|
+| Guest (no cookies) | `/api/nfc-tags/redirect` → `/login?intent=collector&redirect=/collector/artwork/[id]?scan=pending` → `/collector/artwork/[id]?scan=pending` | After sign-in, page auto-opens `NFCAuthSheet`. |
+| Signed-in non-owner | `/api/nfc-tags/redirect` → `/collector/artwork/[id]?preview=true` | Preview banner, no claim CTA, no locked-preview teaser. |
+| Signed-in owner, not claimed | `/api/nfc-tags/redirect` → `/collector/artwork/[id]?claim=pending` | Page auto-opens `NFCAuthSheet` exactly once. |
+| Signed-in owner, already claimed | `/api/nfc-tags/redirect` → `/collector/artwork/[id]?authenticated=true` | Green "Welcome back" toast + full content. |
+
+**Legacy device tests**
+
 1. **Android (Chrome)**: 
    - Open the dashboard.
    - Click "Authenticate" on a pending artwork.
@@ -111,11 +125,12 @@ The NFC Authentication system allows collectors to physically verify ownership o
 - `supabase/migrations/20260214000000_create_nfc_tag_scans.sql` — missing table migration
 
 ## Versioning
-- **Current Version**: 3.0.0 (NFC Overhaul — security, dedup, writer, exclusive content)
-- **Last Updated**: 2026-02-14
+- **Current Version**: 4.0.0 (Canonical NFC Flow Consolidation)
+- **Last Updated**: 2026-04-17
 
 ## Change Log
 | Version | Date | Changes |
 |---|---|---|
+| 4.0.0 | 2026-04-17 | Consolidated all NFC entry points to `/api/nfc-tags/redirect` → `/collector/artwork/[lineItemId]`. Deprecated `/pages/authenticate` and `/nfc/unlock` to redirects. Converted `/auth/nfc/[token]` to a thin 308. Removed orphan `components/ui/nfc-pairing-wizard.tsx`. Unified `/api/collector/artwork/[id]/nfc-url` to emit the canonical redirect URL. Fixed vendor `product_benefits` defaults (`is_published: true`, `is_active: true`) and allowed `is_active` updates. Added four artwork-page states via search params (`claim=pending`, `authenticated=true`, `preview=true`, `scan=pending`). |
 | 3.0.0 | 2026-02-14 | Full NFC overhaul: fixed runtime bugs (supabase scope, missing columns, missing POST handler, missing imports), security fixes (removed hardcoded secret, added collector auth), extracted shared token utilities, rewrote NFC scan hook with cleanup/write support, created NFC tag writer component, added permanent URLs for physical tags, connected real exclusive content to unlock page, created nfc_tag_scans migration |
 | 2.0.0 | 2026-01-13 | Integrated mobile-first NFC auth with bottom sheets and Ink-O-Gatchi rewards |

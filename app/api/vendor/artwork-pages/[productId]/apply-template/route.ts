@@ -130,7 +130,7 @@ export async function POST(
           id: "temp-5",
           type: "Artwork Voice Note Block",
           title: "Voice Note",
-          description: "Your voice is powerful. A personal message makes collectors feel like they\'re getting a private studio visit.",
+          description: "Your voice is powerful. A personal message makes collectors feel like they're getting a private studio visit.",
           content_url: null,
           config: {},
           display_order: 5,
@@ -233,7 +233,12 @@ export async function POST(
       )
     }
 
-    // Create default template blocks
+    // Create default template blocks.
+    //
+    // Template blocks are inserted with `is_published: true` + `is_active: true`
+    // so they appear on the collector-facing artwork page as soon as the artist
+    // fills them in. The collector API filters on both flags, which are the
+    // single source of truth for visibility.
     const templateBlocks = [
       {
         product_id: productId,
@@ -242,7 +247,7 @@ export async function POST(
         title: "About This Piece",
         description: "Share the inspiration, process, or meaning behind this piece...",
         display_order: 0,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -254,7 +259,7 @@ export async function POST(
         content_url: null,
         block_config: { caption: "" },
         display_order: 1,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -266,7 +271,7 @@ export async function POST(
         content_url: null,
         block_config: {},
         display_order: 2,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -278,7 +283,7 @@ export async function POST(
         content_url: null,
         block_config: {},
         display_order: 3,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -290,7 +295,7 @@ export async function POST(
         content_url: null,
         block_config: {},
         display_order: 4,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -302,7 +307,7 @@ export async function POST(
         content_url: null,
         block_config: {},
         display_order: 5,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -314,7 +319,7 @@ export async function POST(
         content_url: null,
         block_config: { images: [] },
         display_order: 6,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -326,7 +331,7 @@ export async function POST(
         content_url: null,
         block_config: { images: [] },
         display_order: 7,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
       {
@@ -338,7 +343,7 @@ export async function POST(
         content_url: null,
         block_config: {},
         display_order: 8,
-        is_published: false,
+        is_published: true,
         is_active: true,
       },
     ]

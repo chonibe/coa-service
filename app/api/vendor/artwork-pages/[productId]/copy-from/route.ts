@@ -108,7 +108,7 @@ export async function POST(
       content_url: block.content_url,
       block_config: block.block_config,
       display_order: block.display_order,
-      is_published: false, // Start as drafts
+      is_published: true, // Published on copy; artist can unpublish via PUT
       is_active: block.is_active,
     }))
 

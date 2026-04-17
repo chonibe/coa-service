@@ -1,16 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 
 import { Skeleton } from "@/components/ui"
 
 import {
-  Loader2,
   AlertCircle,
   CheckCircle,
-  Lock,
-  Unlock,
   ArrowLeft,
   ExternalLink,
   Image as ImageIcon,
@@ -18,21 +15,14 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { NFCAuthSheet } from "@/components/nfc/nfc-auth-sheet"
-import { formatCurrency } from "@/lib/utils"
 import { useShopifyAnalytics } from "@/hooks/use-analytics"
 import { TextBlock } from "./components/TextBlock"
 import { ImageBlock } from "./components/ImageBlock"
-import { VideoBlock } from "./components/VideoBlock"
-import { AudioBlock } from "./components/AudioBlock"
-import { ArtistSignatureBlock } from "./components/ArtistSignatureBlock"
-import { ArtistBioBlock } from "./components/ArtistBioBlock"
 import { NFCUrlSection } from "./components/NFCUrlSection"
 import LockedContentPreview from "./components/LockedContentPreview"
-import { FrostedOverlay } from "./components/FrostedOverlay"
 import UnlockReveal from "./components/UnlockReveal"
 import { HeroSection } from "./components/HeroSection"
 import { ArtistProfileCard } from "./components/ArtistProfileCard"
-import { LockedOverlay } from "./components/LockedOverlay"
 import { ImmersiveVideoBlock } from "./components/ImmersiveVideoBlock"
 import { ImmersiveAudioBlock } from "./components/ImmersiveAudioBlock"
 import { motion } from "framer-motion"
@@ -137,8 +127,19 @@ interface ContentBlock {
 export default function CollectorArtworkPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const artworkId = params.id as string
   const { trackProductView } = useShopifyAnalytics()
+
+  // Scan/claim state from `/api/nfc-tags/redirect`:
+  //   ?claim=pending       -> just scanned, owner not yet authenticated
+  //   ?authenticated=true  -> just scanned or just finished authenticating
+  //   ?preview=true        -> signed-in but not the owner (read-only)
+  //   ?scan=pending        -> guest completed sign-in after a scan
+  const claimPending = searchParams.get("claim") === "pending"
+  const justAuthenticated = searchParams.get("authenticated") === "true"
+  const previewMode = searchParams.get("preview") === "true"
+  const scanPending = searchParams.get("scan") === "pending"
 
   const [artwork, setArtwork] = useState<ArtworkDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -148,6 +149,7 @@ export default function CollectorArtworkPage() {
   const [authCode, setAuthCode] = useState("")
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [showUnlockReveal, setShowUnlockReveal] = useState(false)
+  const [hasAutoPromptedClaim, setHasAutoPromptedClaim] = useState(false)
   
   // Reels and Story state
   const [slides, setSlides] = useState<Slide[]>([])
@@ -167,6 +169,11 @@ export default function CollectorArtworkPage() {
             throw new Error("Artwork not found. Please check the artwork ID or contact support if you believe this is an error.")
           }
           if (response.status === 403) {
+            if (previewMode) {
+              throw new Error(
+                "This artwork belongs to another collector. Ask them to sign in to unlock the authenticated experience.",
+              )
+            }
             throw new Error("You don't have access to this artwork. Please make sure you're logged in with the correct account.")
           }
           if (response.status === 401) {
@@ -231,6 +238,18 @@ export default function CollectorArtworkPage() {
       fetchArtwork()
     }
   }, [artworkId])
+
+  // When the collector arrived here via `/api/nfc-tags/redirect?...&claim=pending`,
+  // auto-open the NFCAuthSheet once the data has loaded so they can complete
+  // pairing without an extra tap.
+  useEffect(() => {
+    if (hasAutoPromptedClaim) return
+    if (!artwork) return
+    if (!(claimPending || scanPending)) return
+    if (artwork.isAuthenticated) return
+    setIsNfcSheetOpen(true)
+    setHasAutoPromptedClaim(true)
+  }, [artwork, claimPending, scanPending, hasAutoPromptedClaim])
 
   // Fetch slides for Reels viewer
   useEffect(() => {
@@ -498,8 +517,8 @@ export default function CollectorArtworkPage() {
           </motion.div>
         )}
 
-        {/* Locked Content Preview - only show if not authenticated AND has unlockable content */}
-        {!isAuthenticated && hasUnlockableContent && (
+        {/* Owner prompt: not yet authenticated, has content to unlock */}
+        {!isAuthenticated && hasUnlockableContent && !previewMode && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -507,6 +526,21 @@ export default function CollectorArtworkPage() {
           >
             <LockedContentPreview contentBlocks={artwork.lockedContentPreview || []} />
           </motion.div>
+        )}
+
+        {/* Preview-mode banner for signed-in non-owners arriving via NFC scan */}
+        {previewMode && !isAuthenticated && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            You&apos;re viewing a read-only preview of this artwork. The authenticated
+            experience is reserved for the collector who owns this edition.
+          </div>
+        )}
+
+        {/* Post-scan success toast on fresh authentication */}
+        {justAuthenticated && isAuthenticated && (
+          <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+            Welcome back — this edition is paired to your account.
+          </div>
         )}
 
         {/* Artist Profile Card */}
@@ -784,8 +818,8 @@ export default function CollectorArtworkPage() {
         />
       )}
 
-      {/* Sticky Bottom CTA - Mobile First - Only show if not authenticated AND has unlockable content */}
-      {!isAuthenticated && hasUnlockableContent && (
+      {/* Sticky Bottom CTA - Mobile First - Only show if not authenticated and viewer is the owner */}
+      {!isAuthenticated && !previewMode && (
         <div className="fixed bottom-0 left-0 right-0 z-50 
                         bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t
                         p-4 pb-safe-4 md:hidden">
@@ -793,7 +827,7 @@ export default function CollectorArtworkPage() {
             onClick={() => setIsNfcSheetOpen(true)}
             className="w-full h-14 text-lg font-semibold rounded-xl"
           >
-            Unlock Exclusive Content
+            Pair your NFC to verify ownership
           </Button>
           <button
             onClick={() => setIsNfcSheetOpen(true)}

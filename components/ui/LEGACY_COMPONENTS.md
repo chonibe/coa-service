@@ -119,7 +119,7 @@ The following components are already replaced by Polaris wrappers via `component
 These are not basic UI components but feature-specific implementations:
 - `artwork-card.tsx` - Feature component (keep)
 - `certificate-modal.tsx` - Feature component (keep)
-- `nfc-pairing-wizard.tsx` - Feature component (keep)
+- ~~`nfc-pairing-wizard.tsx`~~ - Removed 2026-04. Canonical NFC UI is `components/nfc/nfc-auth-sheet.tsx`, triggered from `/collector/artwork/[id]` via the `/api/nfc-tags/redirect` flow.
 - `sidebar.tsx` - Layout component using Radix (needs migration to Polaris)
 - `pagination.tsx` - Could use Polaris Pagination
 - `use-mobile.tsx` - Hook (keep)
