@@ -139,6 +139,45 @@ Every one of those issues is resolved below.
       [`app/vendor/dashboard/messages/page.tsx`](../../app/vendor/dashboard/messages/page.tsx),
       [`app/vendor/dashboard/help/page.tsx`](../../app/vendor/dashboard/help/page.tsx)
 
+### Phase 7.5 — Restore profile tab, NFC affordances, create flows, and payouts parity
+
+- [x] Swapped Inbox bottom tab for **Profile** (Profile is now the fifth tab;
+      `User` icon); notifications keep living on the header bell —
+      [`components/app-shell/BottomTabBar.tsx`](../../components/app-shell/BottomTabBar.tsx)
+- [x] Retargeted the header bell to `/vendor/inbox` (the full inbox view) —
+      [`app/vendor/(app)/layout.tsx`](../../app/vendor/(app)/layout.tsx)
+- [x] Added a **Quick actions** strip to the Home page (Add artwork, Add
+      series, Edit profile, Request payout) —
+      [`app/vendor/(app)/home/page.tsx`](../../app/vendor/(app)/home/page.tsx)
+- [x] Studio artwork cards now expose persistent **Experience** (NFC / unlock
+      content) and **Edit** chips instead of a hover-only pencil —
+      [`app/vendor/(app)/studio/page.tsx`](../../app/vendor/(app)/studio/page.tsx)
+- [x] Studio > Series renamed the template link to **Edit unlock experience**
+      and added a **Create series** CTA in the empty state —
+      [`app/vendor/(app)/studio/series/page.tsx`](../../app/vendor/(app)/studio/series/page.tsx)
+- [x] Artwork editor gained a **Back to Studio** button and an explicit
+      "Artwork experience · NFC & unlock content" subtitle in the header —
+      [`app/artwork-editor/[productId]/page.tsx`](../../app/artwork-editor/[productId]/page.tsx)
+- [x] Artwork and series create pages now land back inside the AppShell with
+      a **Back to Studio** breadcrumb and corrected cancel targets —
+      [`app/vendor/dashboard/products/create/page.tsx`](../../app/vendor/dashboard/products/create/page.tsx),
+      [`app/vendor/dashboard/series/create/page.tsx`](../../app/vendor/dashboard/series/create/page.tsx)
+- [x] Rebuilt `/vendor/insights/payouts` with three tabs (Overview / Pending /
+      History), prerequisite + $25 minimum announcement bar, balance strip,
+      payout metrics, orders-in-process + ready-to-request accordions,
+      pending request timeline, history filters (search / status / date /
+      sort), month-grouped history, invoice PDF download, and client-side
+      CSV export. Fixes three data-contract bugs: reads `readiness.isReady`
+      (not `readiness` itself), pending months from
+      `pending-items.groupedByMonth` / `unfulfilledGroupedByMonth`, and
+      payout dates from `p.date` (API field) —
+      [`app/vendor/(app)/insights/payouts/page.tsx`](../../app/vendor/(app)/insights/payouts/page.tsx)
+- [x] Retargeted in-app + email payout deep links to
+      `/vendor/insights/payouts` —
+      [`lib/notifications/payout-notifications.ts`](../../lib/notifications/payout-notifications.ts),
+      [`lib/email/templates/payout-pending-reminder.ts`](../../lib/email/templates/payout-pending-reminder.ts),
+      [`lib/email/templates/refund-deduction.ts`](../../lib/email/templates/refund-deduction.ts)
+
 ### Phase 7 — Docs, log, tests
 - [x] New artist onboarding feature doc —
       [`docs/features/artist-onboarding/README.md`](../features/artist-onboarding/README.md)
@@ -197,3 +236,28 @@ end. Key flows:
 7. `/vendor/signout` clears the session and returns to `/login`.
 8. Forgot password → email → `/reset-password` → new password set →
    `/login`.
+9. Vendor bottom tab: Home / Studio / Create / Insights / **Profile**; the
+   header bell opens `/vendor/inbox`.
+10. Home shows a **Quick actions** row (Add artwork / Add series / Edit
+    profile / Request payout) and each link lands on the expected page.
+11. `/vendor/studio` artwork cards show **Experience** and **Edit** chips
+    (no hover required); clicking Experience opens
+    `/artwork-editor/:productId` with a Back-to-Studio affordance.
+12. `/vendor/studio/series` empty state offers a **Create series** button
+    that opens the in-AppShell create form with a **Back to Studio**
+    breadcrumb.
+13. `/vendor/insights/payouts`:
+    - Overview shows an announcement bar driven by payout readiness: prereq
+      gap message when missing PayPal / tax / terms, $25 minimum message
+      when balance is too low, green "ready" banner with Request Payment
+      otherwise.
+    - Orders-in-process and Ready-to-request sections render month groups
+      with `itemCount` and `totalAmount` from the API.
+    - Pending tab lists `status === requested` (and `processing`) payouts
+      with a 3-step Submitted → Admin review → Processing timeline and a
+      copy-reference action.
+    - History tab supports search / status / date / sort filters, exports a
+      CSV, downloads an invoice PDF per payout, and expands into line
+      items.
+14. Payout notification emails and in-app entries deep-link to
+    `/vendor/insights/payouts`.

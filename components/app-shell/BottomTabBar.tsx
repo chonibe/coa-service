@@ -6,12 +6,10 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   Home,
-  Search,
   Compass,
   Grid3X3,
   Plus,
   Bell,
-  Inbox,
   User,
   Palette,
   BarChart3,
@@ -282,10 +280,10 @@ export const vendorTabs: TabItem[] = [
     activeIcon: <BarChart3 className={ICON_SIZE} strokeWidth={2.5} />,
   },
   {
-    id: 'inbox',
-    label: 'Inbox',
-    href: '/vendor/inbox',
-    icon: <Inbox className={ICON_SIZE} />,
-    activeIcon: <Inbox className={ICON_SIZE} strokeWidth={2.5} />,
+    id: 'profile',
+    label: 'Profile',
+    href: '/vendor/profile',
+    icon: <User className={ICON_SIZE} />,
+    activeIcon: <User className={ICON_SIZE} strokeWidth={2.5} />,
   },
 ]

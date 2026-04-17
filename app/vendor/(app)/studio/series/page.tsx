@@ -5,7 +5,7 @@ import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Layers, FileEdit } from 'lucide-react'
+import { Plus, Layers, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -122,10 +122,24 @@ export default function VendorSeriesPage() {
             ))}
           </div>
         ) : seriesList.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16 px-4 max-w-md mx-auto">
             <Layers className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-400 font-body">No series yet</p>
-            <p className="text-xs text-gray-400 font-body mt-1">Create a series to organize your artworks.</p>
+            <p className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-2">
+              No series yet
+            </p>
+            <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em] mb-3">
+              Group your artworks into a series.
+            </h3>
+            <p className="font-body text-sm text-[#1a1a1a]/60 leading-relaxed mb-6">
+              Series hold the unlock experience your collectors receive when they scan the NFC
+              chip — a shared template across every artwork in the collection.
+            </p>
+            <Link
+              href="/vendor/dashboard/series/create"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-impact-primary text-white text-sm font-body font-semibold hover:opacity-85 transition-opacity"
+            >
+              <Plus className="w-4 h-4" /> Create series
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -192,7 +206,7 @@ export default function VendorSeriesPage() {
                         href={`/vendor/dashboard/artwork-pages/series/${series.id}`}
                         className="flex items-center gap-0.5 text-[10px] font-bold text-gray-500 font-body hover:text-impact-primary transition-colors"
                       >
-                        <FileEdit className="w-3 h-3" /> Edit Template
+                        <Sparkles className="w-3 h-3" /> Edit unlock experience
                       </Link>
                     </div>
                   </div>

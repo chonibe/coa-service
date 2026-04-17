@@ -1,6 +1,6 @@
 # Artist Onboarding (Public Welcome → Apply → Login → Onboarding Wizard)
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Last Updated:** 2026-04-17
 
 ## Feature Overview & Purpose
@@ -96,7 +96,36 @@
 - Optional portfolio upload (images) instead of a link-only submission.
 
 ## Change Log
-- 2026-04-17: Initial release. Public welcome page, apply form + API +
-  `artist_applications` table, editorial `/login`, `/reset-password`,
-  `/vendor/welcome` first-login gate, calm wizard chrome, and unified post-auth
-  redirects on `/vendor/home`.
+- 2026-04-17: **v1.1.0** — restored profile/NFC/payout/create affordances
+  in the new AppShell so the onboarding arc actually terminates on a
+  discoverable product surface.
+  - Bottom tab bar now shows Home / Studio / Create / Insights / Profile
+    (Profile replaces Inbox; notifications live behind the header bell at
+    `/vendor/inbox`) —
+    [`components/app-shell/BottomTabBar.tsx`](../../../components/app-shell/BottomTabBar.tsx),
+    [`app/vendor/(app)/layout.tsx`](../../../app/vendor/(app)/layout.tsx).
+  - Home page adds a Quick actions strip: Add artwork, Add series, Edit
+    profile, Request payout —
+    [`app/vendor/(app)/home/page.tsx`](../../../app/vendor/(app)/home/page.tsx).
+  - Studio artwork cards surface persistent **Experience** (NFC / unlock
+    content) and **Edit** chips; series empty state offers a Create
+    series CTA and renames the template link to "Edit unlock experience" —
+    [`app/vendor/(app)/studio/page.tsx`](../../../app/vendor/(app)/studio/page.tsx),
+    [`app/vendor/(app)/studio/series/page.tsx`](../../../app/vendor/(app)/studio/series/page.tsx).
+  - Artwork editor gains a Back-to-Studio affordance and an explicit
+    "Artwork experience · NFC & unlock content" subtitle —
+    [`app/artwork-editor/[productId]/page.tsx`](../../../app/artwork-editor/[productId]/page.tsx).
+  - Artwork + series create pages are wrapped in a Back-to-Studio
+    breadcrumb and their Cancel targets were fixed —
+    [`app/vendor/dashboard/products/create/page.tsx`](../../../app/vendor/dashboard/products/create/page.tsx),
+    [`app/vendor/dashboard/series/create/page.tsx`](../../../app/vendor/dashboard/series/create/page.tsx).
+  - Payouts parity: `/vendor/insights/payouts` now matches the legacy
+    dashboard in capability (Overview / Pending / History, readiness
+    announcement, month groups, filters, CSV, invoice PDF) — see
+    [`docs/features/vendor-payouts/README.md`](../vendor-payouts/README.md)
+    v2.3.0.
+
+- 2026-04-17: **v1.0.0** — Initial release. Public welcome page, apply form
+  + API + `artist_applications` table, editorial `/login`,
+  `/reset-password`, `/vendor/welcome` first-login gate, calm wizard
+  chrome, and unified post-auth redirects on `/vendor/home`.

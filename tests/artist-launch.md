@@ -119,8 +119,8 @@ Related docs:
 - [ ] Search with no matches → "No matches" empty state.
 - [ ] No notifications → "All caught up" empty state (no giant
       `BellOff` icon).
-- [ ] The SlimHeader bell routes to `/vendor/inbox/notifications` when
-      clicked.
+- [ ] The SlimHeader bell routes to `/vendor/inbox` when clicked
+      (the full inbox view — notifications live as a subtab there).
 
 ## 11. Profile (`/vendor/profile`)
 
@@ -145,6 +145,68 @@ Related docs:
       AppShell chrome only. No gradient background, no legacy sidebar.
 - [ ] `/vendor/onboarding` and `/vendor/signout` render their own
       full-page frames with no sidebar and no AppShell.
+
+## 12a. Bottom nav + quick actions
+
+- [ ] Vendor bottom tab bar shows **Home / Studio / Create / Insights /
+      Profile** (Profile replaces Inbox as the fifth tab).
+- [ ] Tapping **Profile** opens `/vendor/profile`.
+- [ ] Tapping the header bell opens `/vendor/inbox`.
+- [ ] Home page renders a **Quick actions** row: Add artwork, Add series,
+      Edit profile, Request payout. Each link opens the correct page
+      (`/vendor/dashboard/products/create`, `/vendor/dashboard/series/create`,
+      `/vendor/profile`, `/vendor/insights/payouts`).
+
+## 12b. Studio affordances (NFC / unlock content)
+
+- [ ] Every artwork card in `/vendor/studio` shows a black **Experience**
+      chip and a grey **Edit** chip (no hover required).
+- [ ] **Experience** opens `/artwork-editor/:productId`; its header shows
+      the "Artwork experience · NFC & unlock content" subtitle and a
+      **Back to Studio** button that returns to `/vendor/studio`.
+- [ ] **Edit** opens `/vendor/dashboard/products/edit/:id`.
+- [ ] `/vendor/studio/series` empty state shows a **Create series** button
+      that opens `/vendor/dashboard/series/create`. The create form has a
+      **Back to Studio** breadcrumb and its Cancel button returns to
+      `/vendor/studio/series`.
+- [ ] `/vendor/dashboard/products/create` shows the same **Back to Studio**
+      breadcrumb and both Complete and Cancel return to `/vendor/studio`.
+- [ ] Each series card's "Edit unlock experience" link opens the series'
+      artwork page editor.
+
+## 12c. Payouts — `/vendor/insights/payouts`
+
+- [ ] Sub-tabs within the page: **Overview / Pending / History**.
+- [ ] **Overview — announcement bar**
+    - [ ] With missing PayPal email / tax / terms, an amber bar explains
+          what is missing and links to Payment settings.
+    - [ ] With all prereqs but available balance < $25, a blue bar
+          explains the $25 minimum.
+    - [ ] With prereqs + balance ≥ $25, a green bar shows "You're ready"
+          and a **Request payment** button; clicking it POSTs to
+          `/api/vendor/payouts/redeem` and advances to the Pending tab.
+- [ ] **Overview — balance strip** shows Available / Pending / Held from
+      `/api/vendors/balance`.
+- [ ] **Overview — Orders in process** lists unfulfilled months from
+      `pending-items.unfulfilledGroupedByMonth` with correct item counts
+      and totals. Expanding a month shows the individual line items.
+- [ ] **Overview — Ready to request** lists fulfilled months from
+      `pending-items.groupedByMonth` with correct totals.
+- [ ] **Pending** lists `status=requested` (and `processing`) payouts
+      with a 3-step Submitted → Admin review → Processing timeline and a
+      copy-to-clipboard reference action.
+- [ ] **History** supports:
+    - [ ] search by reference / invoice / amount,
+    - [ ] filter by status (All / Reviewing / Processing / Paid /
+          Rejected / Failed),
+    - [ ] filter by date (All / 30d / 90d / This year / Last 12 months),
+    - [ ] sort by date / amount,
+    - [ ] **CSV export** of the filtered set,
+    - [ ] **Invoice PDF** download per payout via
+          `/api/vendors/payouts/:id/invoice`,
+    - [ ] expandable rows that reveal per-line-item amounts.
+- [ ] Payout emails (approved / pending reminder / rejected / refund
+      deduction) deep-link to `/vendor/insights/payouts`.
 
 ## 13. Regression sweep
 

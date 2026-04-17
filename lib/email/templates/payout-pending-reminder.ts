@@ -66,7 +66,7 @@ export function generatePayoutPendingReminderEmail(data: PayoutPendingReminderDa
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://coa-service.com'}/vendor/dashboard/payouts" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Payout Details</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://coa-service.com'}/vendor/insights/payouts" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Payout Details</a>
     </div>
     
     <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">

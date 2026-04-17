@@ -358,9 +358,9 @@ export default function StandaloneArtworkEditor() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Failed to load editor"}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push("/vendor/dashboard/products")} className="mt-4">
+        <Button onClick={() => router.push("/vendor/studio")} className="mt-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Artworks
+          Back to Studio
         </Button>
       </div>
     )
@@ -374,7 +374,9 @@ export default function StandaloneArtworkEditor() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/vendor/dashboard/products")}
+            onClick={() => router.push("/vendor/studio")}
+            title="Back to Studio"
+            aria-label="Back to Studio"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -387,8 +389,11 @@ export default function StandaloneArtworkEditor() {
               <Menu className="w-5 h-5" />
             </Button>
           )}
-          <div>
-            <h1 className="text-gray-900 font-bold text-base truncate max-w-[200px]">
+          <div className="min-w-0">
+            <p className="text-[10px] tracking-[0.2em] uppercase text-gray-500 leading-none mb-0.5">
+              Artwork experience · NFC & unlock content
+            </p>
+            <h1 className="text-gray-900 font-bold text-base truncate max-w-[240px]">
               {product.name}
             </h1>
             {lastSaved && (
@@ -913,7 +918,7 @@ function VideoBlockEditor({ block, onUpdate }: { block: ContentBlock; onUpdate: 
 
     // Check for YouTube
     const youtubeMatch = url.match(
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
     )
     if (youtubeMatch) {
       setVideoType("youtube")

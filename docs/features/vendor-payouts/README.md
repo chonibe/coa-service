@@ -422,6 +422,36 @@ This adjustment ensures that historical data matches the current USD-only payout
 
 ## Version History
 
+- **v2.3.0** (2026-04-17): App-Shell Payouts Parity
+  - Rebuilt `/vendor/insights/payouts` to live inside the AppShell with three
+    tabs (Overview / Pending / History) — see
+    [`app/vendor/(app)/insights/payouts/page.tsx`](../../../app/vendor/(app)/insights/payouts/page.tsx).
+  - Overview surfaces a dynamic announcement bar: prerequisite gap copy
+    when PayPal / tax / terms are missing, $25 minimum messaging when the
+    balance is below threshold, and a one-click **Request payment** CTA
+    when ready.
+  - Overview includes a balance strip (Available / Pending / Held), payout
+    metrics cards, orders-in-process (unfulfilled) and ready-to-request
+    (fulfilled) month-grouped accordions, and a commission explainer.
+  - Pending tab shows `status=requested` / `processing` payouts with a
+    Submitted → Admin review → Processing timeline and a copy-reference
+    action.
+  - History tab adds search / status / date / sort filters, month-grouped
+    list, invoice PDF download, expandable per-line-item rows, and a
+    client-side CSV export.
+  - Fixed three data-contract bugs in the new page: reads
+    `readiness.isReady` (not `readiness` itself), consumes
+    `groupedByMonth` / `unfulfilledGroupedByMonth` from
+    `/api/vendor/payouts/pending-items`, and reads payout dates from the
+    API-emitted `p.date` field.
+  - Retargeted all payout in-app + email deep links to
+    `/vendor/insights/payouts` —
+    [`lib/notifications/payout-notifications.ts`](../../../lib/notifications/payout-notifications.ts),
+    [`lib/email/templates/payout-pending-reminder.ts`](../../../lib/email/templates/payout-pending-reminder.ts),
+    [`lib/email/templates/refund-deduction.ts`](../../../lib/email/templates/refund-deduction.ts).
+  - Added a Home **Quick actions** strip that includes a Request-payout
+    shortcut linking directly to this page.
+
 - **v2.2.0** (2026-02-01): Production Readiness Release
   - Added $25 minimum payout threshold
   - Implemented payout readiness prerequisites system

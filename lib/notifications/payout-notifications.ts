@@ -88,7 +88,7 @@ export async function notifyPayoutProcessed(
     'payout_processed',
     'Payout Processed',
     `Your payout of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.amount)} has been processed.`,
-    `/vendor/dashboard/payouts`,
+    `/vendor/insights/payouts`,
     {
       payoutAmount: data.amount,
       reference: data.reference,
@@ -136,7 +136,7 @@ export async function notifyPayoutFailed(
     'payout_failed',
     'Payout Failed',
     `Your payout of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.amount)} failed: ${data.errorMessage}`,
-    `/vendor/dashboard/payouts`,
+    `/vendor/insights/payouts`,
     {
       payoutAmount: data.amount,
       reference: data.reference,
@@ -185,7 +185,7 @@ export async function notifyPayoutPending(
     'payout_pending',
     'Pending Payout Reminder',
     `You have ${data.pendingItems} items pending payout totaling ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.pendingAmount)}.`,
-    `/vendor/dashboard/payouts`,
+    `/vendor/insights/payouts`,
     {
       pendingAmount: data.pendingAmount,
       pendingItems: data.pendingItems,
@@ -199,7 +199,7 @@ export async function notifyPayoutPending(
       amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.pendingAmount),
       pendingItems: data.pendingItems.toString(),
       minimumThreshold: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.minimumThreshold || 100),
-      payoutsUrl: 'https://app.thestreetcollector.com/vendor/dashboard/payouts',
+      payoutsUrl: 'https://app.thestreetcollector.com/vendor/insights/payouts',
     })
     
     await sendEmail({
@@ -234,7 +234,7 @@ export async function notifyRefundDeduction(
     'refund_deduction',
     'Refund Deduction',
     `A ${data.refundType} refund was processed for order ${data.orderName || data.orderId}. ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.deductionAmount)} has been deducted from your payout balance.`,
-    `/vendor/dashboard/payouts`,
+    `/vendor/insights/payouts`,
     {
       orderId: data.orderId,
       refundType: data.refundType,
@@ -251,7 +251,7 @@ export async function notifyRefundDeduction(
       refundType: data.refundType || 'full',
       deductionAmount: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.deductionAmount),
       newBalance: new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency || 'USD' }).format(data.newBalance),
-      payoutsUrl: 'https://app.thestreetcollector.com/vendor/dashboard/payouts',
+      payoutsUrl: 'https://app.thestreetcollector.com/vendor/insights/payouts',
     })
     
     await sendEmail({

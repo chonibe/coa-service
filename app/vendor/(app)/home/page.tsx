@@ -4,7 +4,15 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ContentCard } from '@/components/app-shell'
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react'
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
+  Image as ImageIcon,
+  Layers as LayersIcon,
+  UserCog,
+  Wallet,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -203,7 +211,43 @@ export default function VendorHomePage() {
         )}
       </header>
 
-      {/* 2. Pending payout hero */}
+      {/* 2. Quick actions */}
+      <section aria-labelledby="quick-actions-heading">
+        <h2
+          id="quick-actions-heading"
+          className="font-body text-xs tracking-[0.2em] uppercase text-[#1a1a1a]/50 mb-3"
+        >
+          Quick actions
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <QuickAction
+            href="/vendor/dashboard/products/create"
+            label="Add artwork"
+            sub="New piece"
+            icon={<ImageIcon className="w-5 h-5" />}
+          />
+          <QuickAction
+            href="/vendor/dashboard/series/create"
+            label="Add series"
+            sub="Group works"
+            icon={<LayersIcon className="w-5 h-5" />}
+          />
+          <QuickAction
+            href="/vendor/profile"
+            label="Edit profile"
+            sub="Your public page"
+            icon={<UserCog className="w-5 h-5" />}
+          />
+          <QuickAction
+            href="/vendor/insights/payouts"
+            label="Request payout"
+            sub="Your balance"
+            icon={<Wallet className="w-5 h-5" />}
+          />
+        </div>
+      </section>
+
+      {/* 3. Pending payout hero */}
       <section>
         <ContentCard padding="lg">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -241,7 +285,7 @@ export default function VendorHomePage() {
         </ContentCard>
       </section>
 
-      {/* 3. Metric strip with range switcher */}
+      {/* 4. Metric strip with range switcher */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em]">
@@ -277,7 +321,7 @@ export default function VendorHomePage() {
         )}
       </section>
 
-      {/* 4. Sales spark */}
+      {/* 5. Sales spark */}
       {salesData.salesByDate.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -306,7 +350,7 @@ export default function VendorHomePage() {
         </section>
       )}
 
-      {/* 5. Recent activity */}
+      {/* 6. Recent activity */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.01em]">
@@ -360,6 +404,41 @@ export default function VendorHomePage() {
         </ContentCard>
       </section>
     </div>
+  )
+}
+
+function QuickAction({
+  href,
+  label,
+  sub,
+  icon,
+}: {
+  href: string
+  label: string
+  sub: string
+  icon: React.ReactNode
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'group flex items-center gap-3 rounded-lg border border-[#1a1a1a]/10 bg-white',
+        'px-4 py-3 transition-colors hover:border-[#1a1a1a]/30 hover:bg-[#FAFAF7]'
+      )}
+    >
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-[#1a1a1a]/[0.04] text-[#1a1a1a] group-hover:bg-[#1a1a1a]/[0.08]">
+        {icon}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block font-body text-sm font-medium text-[#1a1a1a] truncate">
+          {label}
+        </span>
+        <span className="block font-body text-[11px] text-[#1a1a1a]/55 truncate">
+          {sub}
+        </span>
+      </span>
+      <ArrowRight className="w-4 h-4 text-[#1a1a1a]/30 group-hover:text-[#1a1a1a]/60 transition-colors" />
+    </Link>
   )
 }
 

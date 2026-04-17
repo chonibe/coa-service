@@ -44,7 +44,7 @@ export default function VendorAppLayout({
         // We don't have a global vendor search yet; hide until wired.
         showSearch: false,
         logoHref: '/vendor/home',
-        onNotificationClick: () => router.push('/vendor/inbox/notifications'),
+        onNotificationClick: () => router.push('/vendor/inbox'),
       }}
       onCreatePress={() => setCreateSheetOpen(true)}
     >

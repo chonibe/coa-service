@@ -5,7 +5,7 @@ import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Pencil, Eye } from 'lucide-react'
+import { Plus, Pencil, Eye, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -161,57 +161,76 @@ export default function VendorStudioPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-            {filtered.map((artwork) => (
-              <div key={artwork.id} className="group relative">
-                <Link
-                  href={artwork.productId ? `/artwork-editor/${artwork.productId}` : `/vendor/dashboard/products/edit/${artwork.id}`}
-                >
-                  <div className="relative aspect-[4/5] bg-gray-100 rounded-impact-block-xs overflow-hidden">
-                    {artwork.imageUrl ? (
-                      <Image
-                        src={artwork.imageUrl}
-                        alt={artwork.title}
-                        fill
-                        className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                        sizes="(max-width: 640px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <Eye className="w-6 h-6" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {filtered.map((artwork) => {
+              const experienceHref = artwork.productId
+                ? `/artwork-editor/${artwork.productId}`
+                : `/vendor/dashboard/products/edit/${artwork.id}`
+              const detailsHref = `/vendor/dashboard/products/edit/${artwork.id}`
+              return (
+                <div key={artwork.id} className="group relative">
+                  <Link href={experienceHref} aria-label={`Edit experience for ${artwork.title}`}>
+                    <div className="relative aspect-[4/5] bg-gray-100 rounded-impact-block-xs overflow-hidden">
+                      {artwork.imageUrl ? (
+                        <Image
+                          src={artwork.imageUrl}
+                          alt={artwork.title}
+                          fill
+                          className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <Eye className="w-6 h-6" />
+                        </div>
+                      )}
+
+                      {/* Status badge */}
+                      <span className={cn(
+                        'absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize',
+                        statusColors[artwork.status] || 'bg-gray-100 text-gray-600'
+                      )}>
+                        {artwork.status}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <div className="mt-2 space-y-1.5">
+                    <div>
+                      <p className="text-[12px] font-body text-gray-900 font-medium truncate">{artwork.title}</p>
+                      <div className="flex items-center gap-2">
+                        {artwork.price != null && (
+                          <p className="text-[11px] font-body text-gray-500">${artwork.price.toFixed(2)}</p>
+                        )}
+                        {artwork.seriesName && (
+                          <p className="text-[11px] font-body text-impact-primary truncate">{artwork.seriesName}</p>
+                        )}
                       </div>
-                    )}
+                    </div>
 
-                    {/* Status badge */}
-                    <span className={cn(
-                      'absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize',
-                      statusColors[artwork.status] || 'bg-gray-100 text-gray-600'
-                    )}>
-                      {artwork.status}
-                    </span>
-
-                    {/* Edit button overlay */}
-                    <Link
-                      href={`/vendor/dashboard/products/edit/${artwork.id}`}
-                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-gray-700" />
-                    </Link>
+                    {/* Persistent Experience + Edit actions */}
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={experienceHref}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
+                        aria-label={`Edit NFC experience for ${artwork.title}`}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Experience
+                      </Link>
+                      <Link
+                        href={detailsHref}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-[10px] font-body font-semibold hover:bg-gray-200 transition-colors"
+                        aria-label={`Edit details for ${artwork.title}`}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
+                      </Link>
+                    </div>
                   </div>
-                </Link>
-
-                <div className="mt-1.5">
-                  <p className="text-[11px] font-body text-gray-900 font-medium truncate">{artwork.title}</p>
-                  {artwork.price != null && (
-                    <p className="text-[10px] font-body text-gray-500">${artwork.price.toFixed(2)}</p>
-                  )}
-                  {artwork.seriesName && (
-                    <p className="text-[10px] font-body text-impact-primary truncate">{artwork.seriesName}</p>
-                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
