@@ -373,7 +373,7 @@ export default function StandaloneArtworkEditor() {
     }
   }
 
-  const handleApplyTemplate = async () => {
+  const handleApplyStarterTemplate = async () => {
     setMoreMenuOpen(false)
     try {
       const res = await fetch(`/api/vendor/artwork-pages/${productId}/apply-template`, {
@@ -672,7 +672,7 @@ export default function StandaloneArtworkEditor() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleApplyTemplate}
+                  onClick={handleApplyStarterTemplate}
                   className="flex items-center gap-2 px-3 py-2 text-[#1a1a1a] hover:bg-gray-50 w-full text-left"
                 >
                   <Layers className="w-3.5 h-3.5" /> Apply starter template
