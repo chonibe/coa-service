@@ -13,7 +13,8 @@ import { ComponentErrorBoundary } from '@/components/error-boundaries'
 //
 // Wraps all vendor app routes with the unified AppShell.
 // Gated by NEXT_PUBLIC_APP_SHELL_ENABLED feature flag.
-// When disabled, redirects to the old /vendor/dashboard.
+// When disabled, redirects to /vendor/legacy (a soft-landing fallback that
+// offers both the new AppShell home and the legacy dashboard).
 // Auth is handled by the parent /vendor/layout.tsx (server component).
 // ============================================================================
 
@@ -30,7 +31,7 @@ export default function VendorAppLayout({
 
   useEffect(() => {
     if (!APP_SHELL_ENABLED) {
-      router.replace('/vendor/dashboard')
+      router.replace('/vendor/legacy')
     }
   }, [router])
 
@@ -64,7 +65,7 @@ export default function VendorAppLayout({
             icon: <ImageIcon className="w-6 h-6" />,
             onClick: () => {
               setCreateSheetOpen(false)
-              router.push('/vendor/dashboard/products/create')
+              router.push('/vendor/studio/artworks/new')
             },
           },
           {
@@ -74,7 +75,7 @@ export default function VendorAppLayout({
             icon: <LayersIcon className="w-6 h-6" />,
             onClick: () => {
               setCreateSheetOpen(false)
-              router.push('/vendor/dashboard/series/create')
+              router.push('/vendor/studio/series/new')
             },
           },
           {
@@ -84,7 +85,7 @@ export default function VendorAppLayout({
             icon: <UploadIcon className="w-6 h-6" />,
             onClick: () => {
               setCreateSheetOpen(false)
-              router.push('/vendor/dashboard/media-library?upload=true')
+              router.push('/vendor/studio/media/upload')
             },
           },
         ]}

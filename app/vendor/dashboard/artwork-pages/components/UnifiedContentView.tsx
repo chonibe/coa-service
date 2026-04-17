@@ -144,7 +144,7 @@ export function UnifiedContentView({
           </div>
 
           <Button variant="ghost" size="sm" className="w-full" asChild>
-            <a href="/vendor/dashboard/profile" target="_blank" rel="noopener noreferrer">
+            <a href="/vendor/profile/edit" target="_blank" rel="noopener noreferrer">
               Edit Profile
               <ExternalLink className="w-3 h-3 ml-2" />
             </a>
@@ -261,7 +261,7 @@ export function UnifiedContentView({
                     <Icon className="w-4 h-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{benefit.title}</p>
-                      <p className="text-xs text-muted-foreground">From "{benefit.seriesName}" series</p>
+                      <p className="text-xs text-muted-foreground">From &ldquo;{benefit.seriesName}&rdquo; series</p>
                     </div>
                     <Badge variant="secondary" className="text-xs">Inherited</Badge>
                   </div>

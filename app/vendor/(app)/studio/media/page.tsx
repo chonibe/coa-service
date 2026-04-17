@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import Link from 'next/link'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
@@ -124,12 +125,12 @@ export default function VendorMediaPage() {
               className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-impact-block-sm text-sm font-body text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-impact-primary/20"
             />
           </div>
-          <a
-            href="/vendor/dashboard/media-library?upload=true"
+          <Link
+            href="/vendor/studio/media/upload"
             className="flex items-center gap-1 px-3 py-2 rounded-impact-block-sm bg-impact-primary text-white text-xs font-bold shrink-0"
           >
             <Upload className="w-3 h-3" /> Upload
-          </a>
+          </Link>
         </div>
 
         {/* Filter pills */}

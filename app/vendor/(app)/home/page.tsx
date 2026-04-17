@@ -221,13 +221,13 @@ export default function VendorHomePage() {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <QuickAction
-            href="/vendor/dashboard/products/create"
+            href="/vendor/studio/artworks/new"
             label="Add artwork"
             sub="New piece"
             icon={<ImageIcon className="w-5 h-5" />}
           />
           <QuickAction
-            href="/vendor/dashboard/series/create"
+            href="/vendor/studio/series/new"
             label="Add series"
             sub="Group works"
             icon={<LayersIcon className="w-5 h-5" />}

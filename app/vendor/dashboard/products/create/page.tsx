@@ -1,33 +1,21 @@
 "use client"
 
-import Link from "next/link"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
-import { ShopifyStyleArtworkForm } from "./components/shopify-style-form"
 
-export default function CreateProductPage() {
+/**
+ * /vendor/dashboard/products/create — retired.
+ * Redirects to the AppShell-native route /vendor/studio/artworks/new.
+ * See docs/COMMIT_LOGS/v1-retirement-*.
+ */
+export default function LegacyCreateProductRedirect() {
   const router = useRouter()
-
-  const handleComplete = () => {
-    router.push("/vendor/studio")
-  }
-
-  const handleCancel = () => {
-    router.push("/vendor/studio")
-  }
-
+  useEffect(() => {
+    router.replace("/vendor/studio/artworks/new")
+  }, [router])
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto mb-4">
-        <Link
-          href="/vendor/studio"
-          className="inline-flex items-center gap-1.5 font-body text-xs tracking-wide text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Studio
-        </Link>
-      </div>
-      <ShopifyStyleArtworkForm onComplete={handleComplete} onCancel={handleCancel} />
+    <div className="px-4 py-10 text-center text-sm text-gray-500 font-body">
+      Opening the new artwork creator…
     </div>
   )
 }

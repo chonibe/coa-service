@@ -17,7 +17,7 @@ const profileLinks = [
   {
     label: 'Edit public profile',
     description: 'Bio, photo, links — how collectors see you',
-    href: '/vendor/dashboard/profile?return=/vendor/profile',
+    href: '/vendor/profile/edit',
     icon: Pencil,
   },
   {

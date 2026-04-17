@@ -233,7 +233,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
         })
         // Navigate back to products page (submissions tab)
         setTimeout(() => {
-          window.location.href = `/vendor/dashboard/products`
+          window.location.href = `/vendor/studio`
         }, 1500)
         return
       }
@@ -385,7 +385,7 @@ export function ProductWizard({ onComplete, onCancel, initialData, submissionId 
                         }}
                         variant="outline"
                       >
-                        I'll do this later
+                        I&apos;ll do this later
                       </Button>
                       <Button
                         onClick={async () => {

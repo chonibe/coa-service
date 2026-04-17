@@ -1,33 +1,20 @@
 "use client"
 
-import Link from "next/link"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
-import { ShopifyStyleSeriesForm } from "../components/ShopifyStyleSeriesForm"
 
-export default function CreateSeriesPage() {
+/**
+ * /vendor/dashboard/series/create — retired.
+ * Redirects to the AppShell-native route /vendor/studio/series/new.
+ */
+export default function LegacyCreateSeriesRedirect() {
   const router = useRouter()
-
-  const handleComplete = (seriesId: string) => {
-    router.push(`/vendor/dashboard/series/${seriesId}`)
-  }
-
-  const handleCancel = () => {
-    router.push("/vendor/studio/series")
-  }
-
+  useEffect(() => {
+    router.replace("/vendor/studio/series/new")
+  }, [router])
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto mb-4">
-        <Link
-          href="/vendor/studio/series"
-          className="inline-flex items-center gap-1.5 font-body text-xs tracking-wide text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Studio
-        </Link>
-      </div>
-      <ShopifyStyleSeriesForm onComplete={handleComplete} onCancel={handleCancel} />
+    <div className="px-4 py-10 text-center text-sm text-gray-500 font-body">
+      Opening the new series creator…
     </div>
   )
 }

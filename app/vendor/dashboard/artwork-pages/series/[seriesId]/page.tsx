@@ -47,10 +47,19 @@ interface SeriesData {
   name: string
 }
 
-export default function SeriesTemplateEditor() {
+/**
+ * SeriesTemplateEditor
+ *
+ * Edits the shared NFC / unlock template for every artwork in a series.
+ * Accepts an optional `seriesId` prop so the same component can be rendered
+ * under either `/vendor/dashboard/artwork-pages/series/[seriesId]` (legacy) or
+ * `/vendor/studio/series/[id]/experience` (AppShell-native), which use
+ * different dynamic param names. Falls back to useParams for legacy routing.
+ */
+export default function SeriesTemplateEditor({ seriesId: propSeriesId }: { seriesId?: string } = {}) {
   const params = useParams()
   const router = useRouter()
-  const seriesId = params.seriesId as string
+  const seriesId = propSeriesId ?? (params?.seriesId as string) ?? (params?.id as string)
   const { toast } = useToast()
 
   const [series, setSeries] = useState<SeriesData | null>(null)
@@ -256,7 +265,7 @@ export default function SeriesTemplateEditor() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Failed to load series template"}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push(`/vendor/dashboard/series/${seriesId}`)} className="mt-4">
+        <Button onClick={() => router.push(`/vendor/studio/series/${seriesId}`)} className="mt-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Series
         </Button>
@@ -272,7 +281,7 @@ export default function SeriesTemplateEditor() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/vendor/dashboard/series/${seriesId}`)}
+            onClick={() => router.push(`/vendor/studio/series/${seriesId}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -313,7 +322,7 @@ export default function SeriesTemplateEditor() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          This template will be inherited by all artworks in the "{series.name}" series. Individual artworks can override this template with their own content.
+          This template will be inherited by all artworks in the &ldquo;{series.name}&rdquo; series. Individual artworks can override this template with their own content.
         </AlertDescription>
       </Alert>
 

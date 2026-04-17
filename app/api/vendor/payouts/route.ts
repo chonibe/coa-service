@@ -2,14 +2,29 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { getVendorFromCookieStore } from "@/lib/vendor-session"
-import { getUsdBalance, calculateUnifiedCollectorBalance } from "@/lib/banking/balance-calculator"
-import { ensureCollectorAccount } from "@/lib/banking/account-manager"
 
+/**
+ * GET /api/vendor/payouts
+ *
+ * Returns the vendor's real payouts. Attaches line items for every status
+ * (including `requested` / `processing`) so the UI can disclose what's locked
+ * in a pending request. Clients read available balance from /api/vendors/balance;
+ * this endpoint never returns a synthetic "pending" row.
+ *
+ * Shape:
+ *   {
+ *     payouts: Array<{
+ *       id, amount, status, date (ISO), display_date (pre-formatted),
+ *       reference, invoice_number, payout_batch_id,
+ *       rejection_reason, failure_reason, processed_at, canceled_at,
+ *       products, items: [...]
+ *     }>
+ *   }
+ */
 export async function GET() {
   const supabase = createClient()
-  
+
   try {
-    // Get vendor name from cookie
     const cookieStore = cookies()
     const vendorName = getVendorFromCookieStore(cookieStore)
 
@@ -17,9 +32,6 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    console.log(`Fetching payouts for vendor: ${vendorName}`)
-
-    // First try to get payouts from the vendor_payouts table
     const { data: payouts, error } = await supabase
       .from("vendor_payouts")
       .select("*")
@@ -27,206 +39,85 @@ export async function GET() {
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("Error fetching vendor payouts:", error)
+      console.error("[payouts] fetch error:", error)
+      return NextResponse.json({ error: "Failed to load payouts" }, { status: 500 })
     }
 
-    // If we have payouts data, format and return it with items
-    if (payouts && payouts.length > 0) {
-      const formattedPayouts = await Promise.all(
-        payouts.map(async (payout) => {
-          // Get payout items with product details and payment reference
-          const { data: payoutItems, error: itemsError } = await supabase
-            .from("vendor_payout_items")
-            .select(`
-              line_item_id,
-              amount,
-              payout_reference,
-              marked_at,
-              marked_by,
-              order_line_items_v2 (
-                name,
-                created_at,
-                product_id
-              )
-            `)
-            .eq("payout_id", payout.id)
-
-          // Get product names
-          const items = await Promise.all(
-            (payoutItems || []).map(async (item: any) => {
-              const lineItem = item.order_line_items_v2
-              if (!lineItem) return null
-
-              // Get product name
-              const { data: product } = await supabase
-                .from("products")
-                .select("name, product_id")
-                .or(`product_id.eq.${lineItem.product_id},id.eq.${lineItem.product_id}`)
-                .maybeSingle()
-
-              return {
-                item_name: product?.name || lineItem.name || `Product ${lineItem.product_id}`,
-                date: lineItem.created_at,
-                amount: item.amount,
-                payout_reference: item.payout_reference || payout.reference,
-                marked_at: item.marked_at,
-                marked_by: item.marked_by,
-                is_paid: true,
-              }
-            })
-          )
-
-          return {
-            id: payout.id,
-            amount: payout.amount,
-            status: payout.status,
-            date: payout.payout_date || payout.created_at,
-            products: payout.product_count || 0,
-            reference: payout.reference,
-            invoice_number: payout.invoice_number,
-            payout_batch_id: payout.payout_batch_id,
-            items: items.filter((item) => item !== null),
-          }
-        })
-      )
-
-      return NextResponse.json({ payouts: formattedPayouts })
+    const rows = payouts || []
+    if (rows.length === 0) {
+      return NextResponse.json({ payouts: [] })
     }
 
-    // If no payouts found, get pending amount from collector ledger (single source of truth)
-    let pendingAmount = 0
-    
-    try {
-      // Get vendor's collector identifier
-      const { data: vendor } = await supabase
-        .from("vendors")
-        .select("id, auth_id, vendor_name")
-        .eq("vendor_name", vendorName)
-        .single()
+    const formatted = await Promise.all(
+      rows.map(async (payout: any) => {
+        const { data: payoutItems } = await supabase
+          .from("vendor_payout_items")
+          .select(`
+            line_item_id,
+            amount,
+            payout_reference,
+            marked_at,
+            marked_by,
+            order_line_items_v2 (
+              name,
+              created_at,
+              product_id
+            )
+          `)
+          .eq("payout_id", payout.id)
 
-      if (vendor) {
-        const collectorIdentifier = vendor.auth_id || vendorName
-        await ensureCollectorAccount(collectorIdentifier, 'vendor', vendor.id)
-        
-        // Get current USD balance from ledger (this is what's available to request)
-        pendingAmount = await getUsdBalance(collectorIdentifier)
-      }
-    } catch (error) {
-      console.error("Error fetching collector balance for payouts:", error)
-      // If ledger lookup fails, fall back to direct calculation method
-      // DISABLED: Custom payout settings - always use 25% of item price
-      const { data: paidItems } = await supabase
-        .from("vendor_payout_items")
-        .select("line_item_id")
-        .not("payout_id", "is", null)
-
-      const paidLineItemIds = new Set((paidItems || []).map((item: any) => item.line_item_id))
-
-      const { data: lineItems } = await supabase
-        .from("order_line_items_v2")
-        .select("*")
-        .eq("vendor_name", vendorName)
-        .eq("fulfillment_status", "fulfilled")
-        .not("line_item_id", "in", `(${Array.from(paidLineItemIds).join(',')})`)
-
-      // Calculate pending amount using 25% of item price for all items
-      const unpaidItems = lineItems || []
-      unpaidItems.forEach((item: any) => {
-        const price = typeof item.price === "string" ? Number.parseFloat(item.price || "0") : item.price || 0
-        pendingAmount += price * 0.25
-      })
-    }
-
-    // Create a mock pending payout with balance from ledger
-    const mockPayouts = [
-      {
-        id: "pending",
-        amount: pendingAmount,
-        status: "pending",
-        date: new Date().toISOString().split("T")[0],
-        products: 0, // We don't track product count in ledger, so set to 0
-        reference: "Available Balance",
-      },
-    ]
-
-    return NextResponse.json({ payouts: mockPayouts })
-  } catch (error) {
-    console.error("Unexpected error in vendor payouts API:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
-
-async function fetchProductsByVendor(vendorName: string) {
-  try {
-    // Build the GraphQL query to fetch products for this vendor
-    const graphqlQuery = `
-      {
-        products(
-          first: 250
-          query: "vendor:${vendorName}"
-        ) {
-          edges {
-            node {
-              id
-              title
-              handle
-              vendor
-              productType
-              totalInventory
-              priceRangeV2 {
-                minVariantPrice {
-                  amount
-                  currencyCode
-                }
-                maxVariantPrice {
-                  amount
-                  currencyCode
-                }
-              }
+        const items = await Promise.all(
+          (payoutItems || []).map(async (item: any) => {
+            const lineItem = item.order_line_items_v2
+            if (!lineItem) return null
+            const { data: product } = await supabase
+              .from("products")
+              .select("name, product_id")
+              .or(`product_id.eq.${lineItem.product_id},id.eq.${lineItem.product_id}`)
+              .maybeSingle()
+            return {
+              item_name: product?.name || lineItem.name || `Product ${lineItem.product_id}`,
+              date: lineItem.created_at,
+              amount: item.amount,
+              payout_reference: item.payout_reference || payout.reference,
+              marked_at: item.marked_at,
+              marked_by: item.marked_by,
+              is_paid: payout.status === "completed" || payout.status === "paid",
             }
-          }
+          })
+        )
+
+        const isoDate: string = payout.payout_date || payout.created_at
+        const displayDate = isoDate
+          ? new Date(isoDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : ""
+
+        return {
+          id: payout.id,
+          amount: Number(payout.amount) || 0,
+          status: payout.status,
+          date: isoDate, // ISO for filtering/sorting
+          display_date: displayDate, // pre-formatted for quick rendering
+          products: payout.product_count || 0,
+          reference: payout.reference,
+          invoice_number: payout.invoice_number,
+          payout_batch_id: payout.payout_batch_id,
+          rejection_reason: payout.rejection_reason || null,
+          failure_reason: payout.failure_reason || null,
+          processed_at: payout.processed_at || null,
+          canceled_at: payout.canceled_at || null,
+          items: items.filter((i) => i !== null),
         }
-      }
-    `
+      })
+    )
 
-    // Make the request to Shopify
-    const response = await fetch(`https://${process.env.SHOPIFY_SHOP}/admin/api/2023-10/graphql.json`, {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN as string,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query: graphqlQuery }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Shopify API error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-
-    if (!data || !data.data || !data.data.products) {
-      throw new Error("Invalid response from Shopify GraphQL API")
-    }
-
-    // Extract products
-    const products = data.data.products.edges.map((edge: any) => {
-      const product = edge.node
-      return {
-        id: product.id.split("/").pop(),
-        title: product.title,
-        handle: product.handle,
-        vendor: product.vendor,
-        productType: product.productType,
-        inventory: product.totalInventory,
-        price: product.priceRangeV2.minVariantPrice.amount,
-        currency: product.priceRangeV2.minVariantPrice.currencyCode,
-      }
-    })
-
-    return { products }
+    return NextResponse.json({ payouts: formatted })
   } catch (error) {
-    console.error("Error fetching products by vendor:", error)
-    throw error
+    console.error("[payouts] unexpected error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

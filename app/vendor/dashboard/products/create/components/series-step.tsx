@@ -142,7 +142,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               <Info className="h-4 w-4" />
               <AlertDescription className="space-y-2">
                 <div>
-                  This artwork is part of the <strong>"{selectedSeries?.name || formData.series_name}"</strong> series.
+                  This artwork is part of the <strong>&ldquo;{selectedSeries?.name || formData.series_name}&rdquo;</strong> series.
                 </div>
                 {selectedSeries?.unlock_type && (
                   <div className="flex items-center gap-2 mt-2">
@@ -195,7 +195,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
         <Info className="h-4 w-4" />
         <AlertDescription>
           To create a new series, visit the{" "}
-          <Link href="/vendor/dashboard/series" className="underline font-medium hover:text-primary">
+          <Link href="/vendor/studio/series" className="underline font-medium hover:text-primary">
             Series Management page
           </Link>
           .
@@ -239,7 +239,7 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
             <Info className="h-4 w-4" />
             <AlertDescription>
               No series available yet.{" "}
-              <Link href="/vendor/dashboard/series" className="underline font-medium hover:text-primary">
+              <Link href="/vendor/studio/series" className="underline font-medium hover:text-primary">
                 Create your first series
               </Link>{" "}
               to get started.

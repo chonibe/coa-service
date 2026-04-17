@@ -98,7 +98,7 @@ export function UnlockRelationshipVisualizer({
               </div>
               {unlock.type === "hidden_series" || unlock.type === "vip_series" ? (
                 <Link
-                  href={`/vendor/dashboard/series/${unlock.id}`}
+                  href={`/vendor/studio/series/${unlock.id}`}
                   className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                 >
                   View Series

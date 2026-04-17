@@ -50,7 +50,8 @@ const insightsTabs: SubTab[] = [
   { id: 'collectors', label: 'Collectors', href: '/vendor/insights/collectors' },
 ]
 
-const MINIMUM_PAYOUT_AMOUNT = 25 // keep in sync with lib/payout-calculator.ts
+// Fallback only; the authoritative value is fetched from /api/vendor/payouts/config.
+const MINIMUM_PAYOUT_AMOUNT_FALLBACK = 25
 
 type LocalTab = 'overview' | 'pending' | 'history'
 
@@ -69,12 +70,24 @@ interface Payout {
   reference?: string | null
   invoiceNumber?: string | null
   products?: number
+  rejectionReason?: string | null
+  failureReason?: string | null
+  processedAt?: string | null
+  canceledAt?: string | null
   items?: Array<{
     item_name: string
     date: string
     amount: number
     payout_reference?: string
   }>
+}
+
+interface PayoutsConfig {
+  minimumPayoutAmount: number
+  defaultPayoutPercentage: number
+  currency: string
+  processingWindowDays: [number, number]
+  paymentProvider: string
 }
 
 interface PendingItem {
@@ -141,6 +154,13 @@ export default function VendorPayoutsPage() {
   const [fulfilledByMonth, setFulfilledByMonth] = useState<GroupedMonth[]>([])
   const [unfulfilledByMonth, setUnfulfilledByMonth] = useState<GroupedMonth[]>([])
   const [readiness, setReadiness] = useState<Readiness | null>(null)
+  const [config, setConfig] = useState<PayoutsConfig>({
+    minimumPayoutAmount: MINIMUM_PAYOUT_AMOUNT_FALLBACK,
+    defaultPayoutPercentage: 25,
+    currency: 'USD',
+    processingWindowDays: [1, 3],
+    paymentProvider: 'paypal',
+  })
 
   const [loading, setLoading] = useState(true)
   const [requesting, setRequesting] = useState(false)
@@ -159,12 +179,26 @@ export default function VendorPayoutsPage() {
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [balRes, payRes, pendRes, readyRes] = await Promise.all([
+      const [balRes, payRes, pendRes, readyRes, cfgRes] = await Promise.all([
         fetch('/api/vendors/balance', { credentials: 'include' }),
         fetch('/api/vendor/payouts', { credentials: 'include' }),
         fetch('/api/vendor/payouts/pending-items', { credentials: 'include' }),
         fetch('/api/vendor/payout-readiness', { credentials: 'include' }),
+        fetch('/api/vendor/payouts/config', { credentials: 'include' }),
       ])
+
+      if (cfgRes.ok) {
+        const cfgJson = await cfgRes.json()
+        setConfig({
+          minimumPayoutAmount: Number(cfgJson.minimumPayoutAmount) || MINIMUM_PAYOUT_AMOUNT_FALLBACK,
+          defaultPayoutPercentage: Number(cfgJson.defaultPayoutPercentage) || 25,
+          currency: cfgJson.currency || 'USD',
+          processingWindowDays: (Array.isArray(cfgJson.processingWindowDays) && cfgJson.processingWindowDays.length === 2)
+            ? cfgJson.processingWindowDays
+            : [1, 3],
+          paymentProvider: cfgJson.paymentProvider || 'paypal',
+        })
+      }
 
       if (balRes.ok) {
         const balJson = await balRes.json()
@@ -184,11 +218,15 @@ export default function VendorPayoutsPage() {
             id: String(p.id),
             amount: Number(p.amount) || 0,
             status: p.status || 'requested',
-            // API returns `date` (formatted field). Keep it as-is.
-            date: p.date || p.payout_date || p.created_at || '',
+            // Prefer display_date (pre-formatted); fall back to ISO date -> local string
+            date: p.display_date || (p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''),
             reference: p.reference ?? null,
             invoiceNumber: p.invoice_number ?? null,
             products: p.products ?? 0,
+            rejectionReason: p.rejection_reason ?? null,
+            failureReason: p.failure_reason ?? null,
+            processedAt: p.processed_at ?? null,
+            canceledAt: p.canceled_at ?? null,
             items: p.items || [],
           }))
         )
@@ -230,7 +268,7 @@ export default function VendorPayoutsPage() {
           title: 'Not ready for payout',
           description:
             'Complete your payment settings and make sure your available balance is at least $' +
-            MINIMUM_PAYOUT_AMOUNT + '.',
+            config.minimumPayoutAmount + '.',
           variant: 'destructive',
         })
         setRequesting(false)
@@ -313,9 +351,9 @@ export default function VendorPayoutsPage() {
     }
   }
 
-  // History: filter + sort
+  // History: filter + sort (only completed/paid/canceled/rejected/failed — never the in-flight requested/processing)
   const historyPayouts = useMemo(() => {
-    let list = payouts.filter((p) => p.id !== 'pending')
+    let list = payouts.filter((p) => p.status !== 'requested' && p.status !== 'processing')
 
     if (statusFilter !== 'all') list = list.filter((p) => p.status === statusFilter)
 
@@ -421,7 +459,7 @@ export default function VendorPayoutsPage() {
       !readiness.prerequisites?.hasTaxCountry ||
       !readiness.prerequisites?.hasAcceptedTerms
     : false
-  const belowMinimum = balance.available < MINIMUM_PAYOUT_AMOUNT
+  const belowMinimum = balance.available < config.minimumPayoutAmount
 
   return (
     <div>
@@ -558,7 +596,7 @@ function OverviewTab({
             </div>
           </div>
           <Link
-            href="/vendor/dashboard/profile?tab=payment"
+            href="/vendor/profile/settings#payment"
             className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-amber-600 text-white text-xs font-bold font-body hover:bg-amber-700 transition-colors shrink-0"
           >
             Open payment settings <ArrowRight className="w-3 h-3" />
@@ -569,11 +607,11 @@ function OverviewTab({
           <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
           <div>
             <p className="font-body text-sm font-semibold text-blue-900">
-              Minimum payout is {formatCurrency(MINIMUM_PAYOUT_AMOUNT)}
+              Minimum payout is {formatCurrency(config.minimumPayoutAmount)}
             </p>
             <p className="font-body text-xs text-blue-800 mt-1">
               You currently have {formatCurrency(balance.available)} available. Once you cross{' '}
-              {formatCurrency(MINIMUM_PAYOUT_AMOUNT)} you can request a payment from here.
+              {formatCurrency(config.minimumPayoutAmount)} you can request a payment from here.
             </p>
           </div>
         </div>

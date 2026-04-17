@@ -26,25 +26,29 @@ interface VendorSettings {
 
 const settingsSections = [
   {
+    id: 'contact',
     title: 'Contact Information',
     items: [
-      { label: 'Edit Profile', description: 'Name, bio, profile image', icon: User, href: '/vendor/dashboard/profile' },
-      { label: 'Email & Contact', description: 'Update email address', icon: Mail, href: '/vendor/dashboard/profile' },
+      { label: 'Edit Profile', description: 'Name, bio, profile image', icon: User, href: '/vendor/profile/edit#contact' },
+      { label: 'Email & Contact', description: 'Update email address', icon: Mail, href: '/vendor/profile/edit#contact' },
     ],
   },
   {
+    id: 'payment',
     title: 'Payment',
     items: [
-      { label: 'PayPal Settings', description: 'Payout email and preferences', icon: CreditCard, href: '/vendor/dashboard/profile' },
+      { label: 'PayPal Settings', description: 'Payout email and preferences', icon: CreditCard, href: '/vendor/profile/edit#payment' },
     ],
   },
   {
+    id: 'tax',
     title: 'Tax & Legal',
     items: [
-      { label: 'Tax Information', description: 'Tax ID and compliance docs', icon: FileText, href: '/vendor/dashboard/profile' },
+      { label: 'Tax Information', description: 'Tax ID and compliance docs', icon: FileText, href: '/vendor/profile/edit#tax' },
     ],
   },
   {
+    id: 'account',
     title: 'Account',
     items: [
       { label: 'Sign Out', description: 'Sign out of your account', icon: LogOut, href: '/vendor/signout', destructive: true },
@@ -108,7 +112,7 @@ export default function VendorSettingsPage() {
 
       {/* Settings sections */}
       {settingsSections.map((section) => (
-        <div key={section.title} className="space-y-2">
+        <div key={section.title} id={section.id} className="space-y-2 scroll-mt-20">
           <h2 className="text-xs font-bold text-gray-500 font-body uppercase tracking-wider px-1">
             {section.title}
           </h2>

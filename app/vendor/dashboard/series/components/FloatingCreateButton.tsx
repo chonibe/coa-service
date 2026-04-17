@@ -18,7 +18,7 @@ export function FloatingCreateButton() {
       <Button
         size="lg"
         className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-        onClick={() => router.push("/vendor/dashboard/products/create")}
+        onClick={() => router.push("/vendor/studio/artworks/new")}
       >
         <Plus className="h-6 w-6" />
       </Button>

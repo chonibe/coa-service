@@ -15,9 +15,10 @@ import { cn } from '@/lib/utils'
 // Render: Visual grid of artwork submissions (thumbnail, title, status badge, price)
 // Filter tabs: All / Draft / Pending / Published
 // Tap artwork: Navigate to /artwork-editor/[productId]
-// Tap edit icon: Navigate to /vendor/dashboard/products/edit/[id]
-// "+" button: Navigate to /vendor/dashboard/products/create
-// Old source: app/vendor/dashboard/products/page.tsx
+// Tap edit icon: Navigate to /vendor/studio/artworks/[id]/edit
+// "+" button: Navigate to /vendor/studio/artworks/new
+// Experience chip: /vendor/studio/artworks/[id]/experience (hands off to /artwork-editor/[id])
+// Original source (for history): app/vendor/dashboard/products/page.tsx
 // ============================================================================
 
 const studioTabs: SubTab[] = [
@@ -119,7 +120,7 @@ export default function VendorStudioPage() {
 
           {/* Create button */}
           <Link
-            href="/vendor/dashboard/products/create"
+            href="/vendor/studio/artworks/new"
             className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-impact-primary text-white text-xs font-bold shrink-0"
           >
             <Plus className="w-3 h-3" /> New
@@ -148,7 +149,7 @@ export default function VendorStudioPage() {
                   You can keep drafts private until you&apos;re ready to share.
                 </p>
                 <Link
-                  href="/vendor/dashboard/products/create"
+                  href="/vendor/studio/artworks/new"
                   className="inline-flex items-center gap-1.5 font-body text-sm font-medium text-[#1a1a1a] underline underline-offset-4"
                 >
                   <Plus className="w-4 h-4" /> Add an artwork
@@ -164,9 +165,9 @@ export default function VendorStudioPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map((artwork) => {
               const experienceHref = artwork.productId
-                ? `/artwork-editor/${artwork.productId}`
-                : `/vendor/dashboard/products/edit/${artwork.id}`
-              const detailsHref = `/vendor/dashboard/products/edit/${artwork.id}`
+                ? `/vendor/studio/artworks/${artwork.productId}/experience`
+                : `/vendor/studio/artworks/${artwork.id}/edit`
+              const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
               return (
                 <div key={artwork.id} className="group relative">
                   <Link href={experienceHref} aria-label={`Edit experience for ${artwork.title}`}>

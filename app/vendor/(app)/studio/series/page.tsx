@@ -13,10 +13,10 @@ import { cn } from '@/lib/utils'
 //
 // API: /api/vendor/series, /api/vendor/series/artworks
 // Render: Series cards with cover art, title, member count, unlock type badge
-// Tap series: Navigate to /vendor/dashboard/series/[id]
-// Edit template: Navigate to /vendor/dashboard/artwork-pages/series/[seriesId]
-// "Create Series": Navigate to /vendor/dashboard/series/create
-// Old source: app/vendor/dashboard/series/page.tsx
+// Tap series: Navigate to /vendor/studio/series/[id]
+// Edit template: Navigate to /vendor/studio/series/[id]/experience
+// "Create Series": Navigate to /vendor/studio/series/new
+// Original source (for history): app/vendor/dashboard/series/page.tsx
 // ============================================================================
 
 const studioTabs: SubTab[] = [
@@ -100,7 +100,7 @@ export default function VendorSeriesPage() {
         {/* Create button */}
         <div className="flex justify-end">
           <Link
-            href="/vendor/dashboard/series/create"
+            href="/vendor/studio/series/new"
             className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-impact-primary text-white text-xs font-bold"
           >
             <Plus className="w-3 h-3" /> Create Series
@@ -135,7 +135,7 @@ export default function VendorSeriesPage() {
               chip — a shared template across every artwork in the collection.
             </p>
             <Link
-              href="/vendor/dashboard/series/create"
+              href="/vendor/studio/series/new"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-impact-primary text-white text-sm font-body font-semibold hover:opacity-85 transition-opacity"
             >
               <Plus className="w-4 h-4" /> Create series
@@ -148,7 +148,7 @@ export default function VendorSeriesPage() {
                 <div className="flex items-start gap-4">
                   {/* Cover art */}
                   <Link
-                    href={`/vendor/dashboard/series/${series.id}`}
+                    href={`/vendor/studio/series/${series.id}`}
                     className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0"
                   >
                     {(series.thumbnailUrl || series.coverUrl) ? (
@@ -168,7 +168,7 @@ export default function VendorSeriesPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <Link href={`/vendor/dashboard/series/${series.id}`}>
+                    <Link href={`/vendor/studio/series/${series.id}`}>
                       <p className="text-sm font-semibold text-gray-900 font-body truncate hover:text-impact-primary transition-colors">
                         {series.name}
                       </p>
@@ -197,13 +197,13 @@ export default function VendorSeriesPage() {
                     {/* Action links */}
                     <div className="flex items-center gap-3 mt-2">
                       <Link
-                        href={`/vendor/dashboard/series/${series.id}`}
+                        href={`/vendor/studio/series/${series.id}`}
                         className="text-[10px] font-bold text-impact-primary font-body"
                       >
                         Edit Series
                       </Link>
                       <Link
-                        href={`/vendor/dashboard/artwork-pages/series/${series.id}`}
+                        href={`/vendor/studio/series/${series.id}/experience`}
                         className="flex items-center gap-0.5 text-[10px] font-bold text-gray-500 font-body hover:text-impact-primary transition-colors"
                       >
                         <Sparkles className="w-3 h-3" /> Edit unlock experience
