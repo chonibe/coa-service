@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { 
   Loader2, 
   AlertCircle, 
@@ -9,7 +9,6 @@ import {
   Lock, 
   Unlock, 
   Sparkles, 
-  Smartphone,
   Grid3x3,
   Check,
   ChevronRight,
@@ -111,22 +110,23 @@ interface ContentBlock {
   block_type?: string
 }
 
+// Audiences the preview can simulate. "paired-prescan" is an owner who
+// has the artwork but has not yet tapped the NFC tag — when we ship
+// per-block visibility rules, blocks marked "after scan" will hide in
+// this mode. For now it renders like paired so artists still get the
+// full picture.
+type Audience = "not-paired" | "paired-prescan" | "paired"
+
 export default function ArtworkPreviewPage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const productId = params.productId as string
-  // Phase 3.7 — device preview. The editor toolbar passes ?device=mobile
-  // to render inside a constrained mobile frame so the artist can gut-
-  // check mobile spacing without leaving the browser. Defaults to
-  // desktop so direct links keep today's behaviour.
-  const deviceParam = searchParams?.get('device')
-  const deviceMode: 'desktop' | 'mobile' = deviceParam === 'mobile' ? 'mobile' : 'desktop'
 
   const [artwork, setArtwork] = useState<ArtworkDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(true)
+  const [audience, setAudience] = useState<Audience>("paired")
+  const isAuthenticated = audience !== "not-paired"
 
   useEffect(() => {
     const fetchArtwork = async () => {
@@ -309,22 +309,8 @@ export default function ArtworkPreviewPage() {
     }
   }
 
-  // Phase 3.7 — mobile preview frame. When device=mobile we render the
-  // preview inside a 375px-wide phone-ish frame so spacing/typography
-  // reads the way it will on an actual handset. Desktop mode keeps the
-  // full-bleed layout.
-  const outerClass =
-    deviceMode === 'mobile'
-      ? 'min-h-screen bg-gray-200 py-6 flex justify-center'
-      : 'min-h-screen bg-gray-100 pb-24'
-  const frameClass =
-    deviceMode === 'mobile'
-      ? 'w-[390px] max-w-full bg-gray-100 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-300 pb-16'
-      : ''
-
   return (
-    <div className={outerClass}>
-    <div className={frameClass}>
+    <div className="min-h-screen bg-gray-100 pb-24">
       {/* Preview Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -345,26 +331,61 @@ export default function ArtworkPreviewPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setIsAuthenticated(!isAuthenticated)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                isAuthenticated
-                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                  : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-              }`}
+            {/* Audience selector — simulate who is viewing this
+                experience. "Not paired" is any stranger; "Paired (pre-
+                scan)" is an owner who has not tapped the NFC tag yet;
+                "Paired" is the fully-unlocked view. */}
+            <div
+              className="inline-flex rounded-full border border-gray-200 bg-white p-0.5 text-[11px] font-bold"
+              role="radiogroup"
+              aria-label="Preview audience"
             >
-              {isAuthenticated ? (
-                <>
-                  <Unlock className="h-4 w-4" />
-                  <span className="hidden sm:inline">Unlocked</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4" />
-                  <span className="hidden sm:inline">Locked</span>
-                </>
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => setAudience("not-paired")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors ${
+                  audience === "not-paired"
+                    ? "bg-amber-100 text-amber-800"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                role="radio"
+                aria-checked={audience === "not-paired"}
+                title="Not paired — not an owner"
+              >
+                <Lock className="h-3 w-3" />
+                <span className="hidden md:inline">Not paired</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAudience("paired-prescan")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors ${
+                  audience === "paired-prescan"
+                    ? "bg-blue-100 text-blue-800"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                role="radio"
+                aria-checked={audience === "paired-prescan"}
+                title="Owner who has not yet tapped the NFC tag"
+              >
+                <Fingerprint className="h-3 w-3" />
+                <span className="hidden md:inline">Pre-scan</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAudience("paired")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full transition-colors ${
+                  audience === "paired"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                role="radio"
+                aria-checked={audience === "paired"}
+                title="Paired and scanned — full experience"
+              >
+                <Unlock className="h-3 w-3" />
+                <span className="hidden md:inline">Paired</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -938,7 +959,7 @@ export default function ArtworkPreviewPage() {
             style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.1)" }}
           >
             <Button
-              onClick={() => setIsAuthenticated(true)}
+              onClick={() => setAudience("paired")}
               className="w-full h-14 text-base font-semibold bg-gray-900 hover:bg-gray-800 text-white rounded-xl"
             >
               <Fingerprint className="h-5 w-5 mr-3" />
@@ -950,7 +971,6 @@ export default function ArtworkPreviewPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
     </div>
   )
 }

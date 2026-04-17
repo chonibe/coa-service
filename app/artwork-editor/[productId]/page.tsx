@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera, ChevronsUp, ChevronsDown, Smartphone, Monitor, MoreHorizontal, Copy as CopyIcon, Layers, Lock, Unlock, CheckCircle2, ExternalLink } from "lucide-react"
+import { ArrowLeft, Save, Eye, Loader2, AlertCircle, Menu, X, ChevronLeft, ChevronRight, Trash2, GripVertical, ChevronUp, ChevronDown, Sparkles, Plus, Camera, ChevronsUp, ChevronsDown, MoreHorizontal, Copy as CopyIcon, Layers, Lock, Unlock, CheckCircle2, ExternalLink, EyeOff } from "lucide-react"
 import { Button, Alert, AlertDescription } from "@/components/ui"
 import { useToast } from "@/components/ui/use-toast"
 import { BlockSelectorPills } from "@/app/artwork-editor/[productId]/components/BlockSelectorPills"
@@ -54,11 +54,12 @@ export default function StandaloneArtworkEditor() {
   const [isMobile, setIsMobile] = useState(false)
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set())
   const [isReorderMode, setIsReorderMode] = useState(false)
-  // Phase 3 toolbar extensions: preview-device split, more-menu (copy-from
-  // / apply-template), master publish. Kept as small local state so we
-  // don't drag the whole editor into a reducer just for UI affordances.
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  // Toolbar extensions: more-menu (copy-from / apply-template) and the
+  // per-block action menu. Preview is a single dedicated "Preview as
+  // collector" pill that opens /preview/artwork/<id> in a new tab — no
+  // device-mode split, the preview page renders the real collector view.
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [blockMenuOpen, setBlockMenuOpen] = useState<number | null>(null)
   const [copyFromOpen, setCopyFromOpen] = useState(false)
   const [copyCandidates, setCopyCandidates] = useState<Array<{ id: string; title: string; imageUrl: string | null }>>([])
   const [copyLoading, setCopyLoading] = useState(false)
@@ -310,14 +311,14 @@ export default function StandaloneArtworkEditor() {
       )
 
       setLastSaved(new Date())
-      // Phase 3.4 — preview toast: give artists a one-tap jump into the
-      // collector-facing view so they don't have to hunt for it after
-      // every save. We attach device=<mode> so the new preview page can
-      // respect the toolbar toggle.
-      const previewHref = `/preview/artwork/${productId}?device=${previewDevice}`
+      const publishedCount = contentBlocks.filter((b) => b.is_published).length
+      const previewHref = `/preview/artwork/${productId}`
       toast({
         title: "Saved",
-        description: "Changes are live to collectors with access.",
+        description:
+          publishedCount === 0
+            ? "Saved as draft. Publish blocks to show them to collectors."
+            : "Changes are live to collectors with access.",
         action: (
           <a
             href={previewHref}
@@ -337,7 +338,64 @@ export default function StandaloneArtworkEditor() {
   }
 
   const handlePreview = () => {
-    window.open(`/preview/artwork/${productId}?device=${previewDevice}`, "_blank")
+    window.open(`/preview/artwork/${productId}`, "_blank", "noopener")
+  }
+
+  const handleToggleBlockPublish = async (blockId: number, next: boolean) => {
+    setBlockMenuOpen(null)
+    setContentBlocks((prev) =>
+      prev.map((b) => (b.id === blockId ? { ...b, is_published: next } : b)),
+    )
+    try {
+      const res = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ blockId, is_published: next }),
+      })
+      if (!res.ok) throw new Error("Failed to update visibility")
+      toast({
+        title: next ? "Block published" : "Block hidden",
+        description: next
+          ? "Visible to collectors with access."
+          : "Hidden from collectors. Publish when ready.",
+      })
+    } catch (err: any) {
+      setContentBlocks((prev) =>
+        prev.map((b) => (b.id === blockId ? { ...b, is_published: !next } : b)),
+      )
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleDuplicateBlock = async (blockId: number) => {
+    setBlockMenuOpen(null)
+    const source = contentBlocks.find((b) => b.id === blockId)
+    if (!source) return
+    try {
+      const res = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          blockType: source.block_type,
+          title: source.title ? `${source.title} (copy)` : "",
+          description: source.description,
+          content_url: source.content_url,
+          block_config: source.block_config,
+          is_published: false,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.message || "Failed to duplicate")
+      if (json.contentBlock) {
+        setContentBlocks((prev) => [...prev, json.contentBlock])
+        setSelectedBlockId(json.contentBlock.id)
+      }
+      toast({ title: "Block duplicated", description: "Duplicated as hidden — review and publish." })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
   }
 
   // Phase 3.10 — master publish toggle. Bulk-flip every block's
@@ -530,19 +588,14 @@ export default function StandaloneArtworkEditor() {
           )}
           <div className="min-w-0">
             <p className="text-[10px] tracking-[0.2em] uppercase text-gray-500 leading-none mb-0.5">
-              Artwork experience · NFC & unlock content
+              Unlock experience · NFC-gated content
             </p>
             <h1 className="text-gray-900 font-bold text-base truncate max-w-[240px]">
               {product.name}
             </h1>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              {/* Phase 3.8 — access-gate chip. Tells the artist at a glance
-                  how many blocks are visible to collectors right now versus
-                  gated behind NFC/unlocks. "Hidden" counts unpublished
-                  blocks; "Live" counts published ones. */}
               {contentBlocks.length > 0 && (() => {
                 const published = contentBlocks.filter((b) => b.is_published).length
-                const hidden = contentBlocks.length - published
                 const dark = published === 0
                 return (
                   <span
@@ -554,7 +607,7 @@ export default function StandaloneArtworkEditor() {
                     title={dark ? "All blocks hidden — collectors will see a placeholder." : "Collectors with access can see published blocks."}
                   >
                     {dark ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                    {published} live · {hidden} hidden
+                    {dark ? "Draft" : `Live · ${published} block${published === 1 ? "" : "s"}`}
                   </span>
                 )
               })()}
@@ -606,45 +659,20 @@ export default function StandaloneArtworkEditor() {
               Exit Reorder
             </Button>
           )}
-          {/* Phase 3.7 — desktop/mobile preview device toggle. We persist
-              the mode in local state and append ?device=<mode> so the
-              preview page can render at the right viewport. */}
-          <div className="hidden md:inline-flex rounded-md border border-gray-200 p-0.5 bg-white">
-            <button
-              type="button"
-              onClick={() => setPreviewDevice('desktop')}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
-                previewDevice === 'desktop'
-                  ? 'bg-[#1a1a1a] text-white'
-                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
-              }`}
-              title="Desktop preview"
-              aria-label="Desktop preview"
-            >
-              <Monitor className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewDevice('mobile')}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
-                previewDevice === 'mobile'
-                  ? 'bg-[#1a1a1a] text-white'
-                  : 'text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
-              }`}
-              title="Mobile preview"
-              aria-label="Mobile preview"
-            >
-              <Smartphone className="w-3 h-3" />
-            </button>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
+          {/* Preview as collector — always visible, labeled pill. Opens
+              /preview/artwork/<id> in a new tab so the artist can flip
+              between editor and live preview without losing state. */}
+          <button
+            type="button"
             onClick={handlePreview}
-            title={`Preview (${previewDevice})`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1a1a1a] text-white text-[11px] font-bold hover:bg-[#1a1a1a]/90 transition-colors"
+            title="Preview as a collector"
           >
-            <Eye className="w-5 h-5" />
-          </Button>
+            <Eye className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Preview as collector</span>
+            <span className="sm:hidden">Preview</span>
+            <ExternalLink className="w-3 h-3 opacity-70" />
+          </button>
           {/* Phase 3.6 — More menu: copy from another artwork, apply default
               template, master publish toggle. Parked behind a single chip
               so the toolbar stays calm. */}
@@ -853,20 +881,39 @@ export default function StandaloneArtworkEditor() {
                 }}
               >
                 {!selectedBlock && contentBlocks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-5 px-4">
                     <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
                       <Sparkles className="w-8 h-8 text-blue-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Create Your Story</h3>
-                      <p className="text-sm text-gray-600 mb-4">Add content that collectors will love</p>
+                      <h3 className="font-semibold text-gray-900 mb-1">Build your unlock experience</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Add the content a collector sees after they tap the NFC tag.
+                      </p>
                       <Button
                         onClick={() => setSidebarOpen(true)}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Your First Block
+                        Add your first block
                       </Button>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                      <button
+                        type="button"
+                        onClick={handleApplyStarterTemplate}
+                        className="inline-flex items-center gap-1 font-bold text-[#1a1a1a] hover:underline"
+                      >
+                        <Layers className="w-3 h-3" /> Apply starter template
+                      </button>
+                      <span className="opacity-40">·</span>
+                      <button
+                        type="button"
+                        onClick={openCopyFromDialog}
+                        className="inline-flex items-center gap-1 font-bold text-[#1a1a1a] hover:underline"
+                      >
+                        <CopyIcon className="w-3 h-3" /> Copy from another
+                      </button>
                     </div>
                   </div>
                 ) : !selectedBlock ? (
@@ -912,32 +959,53 @@ export default function StandaloneArtworkEditor() {
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
                   <div>
                     <Sparkles className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Start Your Artwork Page</h2>
-                    <p className="text-gray-600 mb-6">Choose a template to get started quickly, or add blocks manually from the sidebar.</p>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Build your unlock experience</h2>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Pick a starter to prefill blocks, copy from another artwork, or add blocks
+                      one at a time from the sidebar. Everything you add is hidden until you
+                      publish it.
+                    </p>
                   </div>
 
-                  {/* Template Cards */}
                   <div className="grid grid-cols-3 gap-4 max-w-2xl">
                     <button
                       onClick={() => handleApplyTemplate("minimal")}
                       className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
                     >
                       <h3 className="font-semibold text-gray-900 mb-1">Minimal</h3>
-                      <p className="text-xs text-gray-600">Simple text and image blocks</p>
+                      <p className="text-xs text-gray-600">One text and one image — a calm start.</p>
                     </button>
                     <button
                       onClick={() => handleApplyTemplate("story")}
                       className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
                     >
                       <h3 className="font-semibold text-gray-900 mb-1">Story</h3>
-                      <p className="text-xs text-gray-600">Tell your creative journey</p>
+                      <p className="text-xs text-gray-600">Artist note, soundtrack, and inspiration.</p>
                     </button>
                     <button
                       onClick={() => handleApplyTemplate("gallery")}
                       className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
                     >
                       <h3 className="font-semibold text-gray-900 mb-1">Gallery</h3>
-                      <p className="text-xs text-gray-600">Showcase your process</p>
+                      <p className="text-xs text-gray-600">Process photos and behind-the-scenes.</p>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <button
+                      type="button"
+                      onClick={openCopyFromDialog}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1a1a1a] hover:underline"
+                    >
+                      <CopyIcon className="w-3 h-3" /> Copy from another artwork
+                    </button>
+                    <span className="opacity-40">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setSidebarOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1a1a1a] hover:underline"
+                    >
+                      <Plus className="w-3 h-3" /> Start blank
                     </button>
                   </div>
                 </div>
@@ -971,44 +1039,108 @@ export default function StandaloneArtworkEditor() {
                           <div className="flex items-center gap-2">
                             {!isReorderMode && (
                               <>
-                                {/* Move buttons */}
-                                {index > 0 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleMoveBlock(block.id, "up")
-                                    }}
-                                    title="Move up"
-                                  >
-                                    <ChevronUp className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                {index < contentBlocks.length - 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleMoveBlock(block.id, "down")
-                                    }}
-                                    title="Move down"
-                                  >
-                                    <ChevronDown className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDeleteBlock(block.id)
-                                  }}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                <span
+                                  className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                    block.is_published
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : "bg-amber-50 text-amber-700 border-amber-200"
+                                  }`}
+                                  title={
+                                    block.is_published
+                                      ? "Visible to collectors with access"
+                                      : "Hidden from collectors"
+                                  }
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                  {block.is_published ? (
+                                    <Unlock className="w-3 h-3" />
+                                  ) : (
+                                    <Lock className="w-3 h-3" />
+                                  )}
+                                  {block.is_published ? "Live" : "Hidden"}
+                                </span>
+                                <div className="relative">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setBlockMenuOpen(
+                                        blockMenuOpen === block.id ? null : block.id,
+                                      )
+                                    }}
+                                    title="Block actions"
+                                    aria-label="Block actions"
+                                  >
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                  {blockMenuOpen === block.id && (
+                                    <div
+                                      className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-20 py-1 text-sm font-body"
+                                      onClick={(e) => e.stopPropagation()}
+                                      onMouseLeave={() => setBlockMenuOpen(null)}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleToggleBlockPublish(block.id, !block.is_published)
+                                        }
+                                        className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50"
+                                      >
+                                        {block.is_published ? (
+                                          <>
+                                            <EyeOff className="w-3.5 h-3.5" /> Hide from collectors
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Eye className="w-3.5 h-3.5" /> Publish block
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDuplicateBlock(block.id)}
+                                        className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50"
+                                      >
+                                        <CopyIcon className="w-3.5 h-3.5" /> Duplicate
+                                      </button>
+                                      {index > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleMoveBlock(block.id, "up")
+                                            setBlockMenuOpen(null)
+                                          }}
+                                          className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50"
+                                        >
+                                          <ChevronUp className="w-3.5 h-3.5" /> Move up
+                                        </button>
+                                      )}
+                                      {index < contentBlocks.length - 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleMoveBlock(block.id, "down")
+                                            setBlockMenuOpen(null)
+                                          }}
+                                          className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50"
+                                        >
+                                          <ChevronDown className="w-3.5 h-3.5" /> Move down
+                                        </button>
+                                      )}
+                                      <div className="my-1 border-t border-gray-100" />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setBlockMenuOpen(null)
+                                          handleDeleteBlock(block.id)
+                                        }}
+                                        className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </>
                             )}
                             {isCollapsed ? (

@@ -266,15 +266,15 @@ export default function VendorStudioPage() {
                       </div>
                     </div>
 
-                    {/* Persistent Experience + Edit actions */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Persistent Unlock experience + Edit + Preview actions */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         href={experienceHref}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
-                        aria-label={`Edit NFC experience for ${artwork.title}`}
+                        aria-label={`Edit unlock experience for ${artwork.title}`}
                       >
                         <Sparkles className="w-3 h-3" />
-                        Experience
+                        Unlock
                       </Link>
                       <Link
                         href={detailsHref}
@@ -284,6 +284,17 @@ export default function VendorStudioPage() {
                         <Pencil className="w-3 h-3" />
                         Edit
                       </Link>
+                      <a
+                        href={`/preview/artwork/${editorId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-600 text-[10px] font-body font-semibold hover:bg-gray-100 transition-colors"
+                        aria-label={`Preview ${artwork.title} as a collector (opens in new tab)`}
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </a>
                     </div>
                   </div>
                 </div>
