@@ -120,10 +120,15 @@ export default function CreateSeriesPage() {
         <p className="text-white/60 text-sm font-body">
           Curate your works into a journey.
         </p>
+        <p className="mt-3 text-xs font-body text-white/45">
+          Add a name (required), optional cover and description, choose an unlock style, then use{" "}
+          <span className="font-semibold text-white/70">Create series</span> at the bottom of the form.
+        </p>
       </div>
 
-      {/* Form card */}
-      <div className="mx-4 mb-6 max-w-2xl mx-auto bg-white rounded-t-3xl p-6 md:p-8 space-y-6">
+      {/* Form card — sticky footer keeps primary action visible (no separate “Next”; one step = Create). */}
+      <div className="mx-4 mb-6 max-w-2xl mx-auto flex flex-col rounded-3xl bg-white shadow-sm">
+        <div className="space-y-6 p-6 md:p-8">
         {/* Cover image upload */}
         <div>
           <label className="block text-sm font-semibold font-body text-[#1a1a1a] mb-2">
@@ -195,7 +200,7 @@ export default function CreateSeriesPage() {
 
         {/* Unlock type selector */}
         <div>
-          <p className="text-sm font-semibold font-body text-[#1a1a1a] mb-3">
+          <p className="mb-3 text-sm font-semibold font-body text-[#1a1a1a]">
             How should collectors unlock artworks?
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -252,26 +257,38 @@ export default function CreateSeriesPage() {
           />
         </div>
 
-        {/* Submit */}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitting || !name.trim()}
+        {/* Primary CTA — sticky above vendor bottom tabs on small screens; sticks to viewport on desktop when form is tall */}
+        <div
           className={cn(
-            "w-full h-12 rounded-full bg-impact-primary text-white text-sm font-bold font-body",
-            "hover:opacity-85 transition-opacity flex items-center justify-center gap-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
+            "shrink-0 border-t border-[#1a1a1a]/10 bg-white/95 p-4 backdrop-blur-md md:p-6",
+            "sticky z-20",
+            "bottom-[calc(var(--app-tab-height)+var(--app-safe-bottom)+0.75rem)] md:bottom-0",
           )}
         >
-          {submitting ? (
-            <>
-              <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              Creating…
-            </>
-          ) : (
-            <>Create Series →</>
-          )}
-        </button>
+          <p className="mb-3 text-center text-[11px] font-medium text-[#1a1a1a]/50 md:hidden">
+            This page has one step — when you&apos;re ready, tap below to create the series.
+          </p>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || !name.trim()}
+            className={cn(
+              "flex h-12 w-full items-center justify-center gap-2 rounded-full bg-impact-primary font-body text-sm font-bold text-white",
+              "transition-opacity hover:opacity-90",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+            )}
+          >
+            {submitting ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Creating…
+              </>
+            ) : (
+              <>Create series</>
+            )}
+          </button>
+        </div>
+        </div>
       </div>
     </div>
   )
