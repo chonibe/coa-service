@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Skeleton, Card, CardContent, Badge, Alert, AlertDescription, Button } from "@/components/ui"
-import { Eye, Lock, ArrowRight, Crown, Clock, Pencil, Sparkles } from "lucide-react"
+import { Eye, Lock, ArrowRight, Crown, Clock, Pencil, Sparkles, Image as ImageIcon } from "lucide-react"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,7 @@ export default function SeriesDetailPage() {
   const seriesId = params?.id as string
 
   const [series, setSeries] = useState<ArtworkSeries | null>(null)
+  const [members, setMembers] = useState<ArtworkSeries["members"]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -43,6 +44,7 @@ export default function SeriesDetailPage() {
       }
       const data = await response.json()
       setSeries(data.series)
+      setMembers(data.members || [])
     } catch (err: any) {
       console.error("Error fetching series:", err)
       setError(err.message || "Failed to load series")
@@ -118,7 +120,7 @@ export default function SeriesDetailPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Series
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {!isEditing && (
             <>
               <Link href={`/vendor/studio/series/${seriesId}/experience`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#1a1a1a] text-white text-xs font-semibold font-body hover:opacity-85 transition-opacity">
@@ -147,8 +149,9 @@ export default function SeriesDetailPage() {
             {series.thumbnail_url ? (
               <img src={series.thumbnail_url} alt={series.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="h-24 w-24 text-muted-foreground/50" />
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-muted/50 border-2 border-dashed border-muted-foreground/20">
+                <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+                <p className="text-xs text-muted-foreground/40 font-medium">No cover image</p>
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -175,11 +178,89 @@ export default function SeriesDetailPage() {
             </div>
           </div>
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-3">Artworks in Series</h2>
-            {totalCount === 0 ? (
-              <p className="text-muted-foreground">No artworks in this series yet.</p>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Artworks in Series</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/vendor/studio/artworks/new?series=${seriesId}`)}
+              >
+                + Add artworks
+              </Button>
+            </div>
+
+            {members.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-muted rounded-xl">
+                <ImageIcon className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  No artworks in this series yet.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/vendor/studio/artworks/new?series=${seriesId}`)}
+                >
+                  Add your first artwork
+                </Button>
+              </div>
             ) : (
-              <p className="text-muted-foreground">{totalCount} {totalCount === 1 ? "artwork" : "artworks"} in this series.</p>
+              <div className="space-y-2">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
+                      {member.artwork_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={member.artwork_image}
+                          alt={member.artwork_title || "Artwork"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {member.artwork_title || "Untitled artwork"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {member.is_locked ? (
+                          <span className="flex items-center gap-1 text-amber-600">
+                            <Lock className="h-3 w-3" />
+                            Locked
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <Eye className="h-3 w-3" />
+                            Unlocked
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {member.submission_id && (
+                        <Link
+                          href={`/vendor/studio/artworks/${member.submission_id}/edit`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

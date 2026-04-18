@@ -130,6 +130,10 @@ export default function StandaloneArtworkEditor() {
   }, [selectedBlockId, selectedBlock, contentBlocks, isMobile])
 
   const handleBlockUpdate = async (blockId: number, updates: Partial<ContentBlock>) => {
+    // Build the merged block from updates immediately so the PUT always uses
+    // the latest data — never the stale closure value of contentBlocks.
+    const mergedBlock = { ...updates, id: blockId } as ContentBlock
+
     // Optimistically update UI
     setContentBlocks(prev =>
       prev.map(b => b.id === blockId ? { ...b, ...updates } : b)
@@ -137,18 +141,11 @@ export default function StandaloneArtworkEditor() {
 
     // Auto-save to backend
     try {
-      const block = contentBlocks.find(b => b.id === blockId)
-      if (!block) return
-
       const response = await fetch(`/api/vendor/artwork-pages/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          blockId,
-          ...block,
-          ...updates,
-        }),
+        body: JSON.stringify(mergedBlock),
       })
 
       if (!response.ok) {
@@ -1197,7 +1194,17 @@ function BlockEditor({
   onMove?: (direction: "up" | "down") => void
 }) {
   const handleConfigChange = (newConfig: any) => {
-    onUpdate({ block_config: newConfig })
+    // Artist Note stores its letter text in block_config.content but the collector
+    // reads block.description. Mirror content into description so both sides agree.
+    const isArtistNote =
+      block.block_type === "Artwork Artist Note Block" ||
+      block.block_type === "Artist Note"
+    onUpdate({
+      block_config: newConfig,
+      ...(isArtistNote && newConfig.content !== undefined
+        ? { description: newConfig.content }
+        : {}),
+    })
   }
 
   const blockConfig = block.block_config || {}

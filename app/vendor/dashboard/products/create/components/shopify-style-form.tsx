@@ -15,7 +15,14 @@ interface AutosaveSnapshot {
   formData: Record<string, unknown>
 }
 
+type FormStep = 1 | 2 | 3 | 4
 
+const STEP_LABELS: Record<FormStep, string> = {
+  1: "Details",
+  2: "Media",
+  3: "Pricing",
+  4: "Print Files",
+}
 
 
 
@@ -23,7 +30,7 @@ interface AutosaveSnapshot {
 import { Separator } from "@/components/ui"
 
 
-import { Loader2, Save, X, Plus, Info } from "lucide-react"
+import { Loader2, Save, X, Plus, Info, Check } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { ProductSubmissionData, ProductCreationFields } from "@/types/product-submission"
 import { BasicInfoStep } from "./basic-info-step"
@@ -54,6 +61,8 @@ export function ShopifyStyleArtworkForm({
   const [maskSaved, setMaskSaved] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
+  const [step, setStep] = useState<FormStep>(1)
+  const [stepErrors, setStepErrors] = useState<Partial<Record<FormStep, string>>>({})
 
   const autosaveKey = `${AUTOSAVE_PREFIX}${submissionId || "new"}`
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -214,6 +223,49 @@ export function ShopifyStyleArtworkForm({
     )
   }
 
+  // Per-step validation — returns error messages for the step, or empty array if valid.
+  const validateStep = (s: FormStep): string[] => {
+    switch (s) {
+      case 1:
+        if (!formData.title?.trim()) return ["Artwork title is required"]
+        return []
+      case 2:
+        // Media step: no required fields, but warn if no images added yet.
+        return []
+      case 3:
+        if (!formData.variants[0]?.price || parseFloat(formData.variants[0].price) <= 0)
+          return ["At least one variant with a price above $0 is required"]
+        return []
+      case 4:
+        // Print files are optional.
+        return []
+      default:
+        return []
+    }
+  }
+
+  const handleNextStep = () => {
+    const errors = validateStep(step)
+    if (errors.length > 0) {
+      setStepErrors({ [step]: errors[0] })
+      return
+    }
+    setStepErrors({})
+    if (step < 4) setStep((s) => (s + 1) as FormStep)
+  }
+
+  const handlePrevStep = () => {
+    setStepErrors({})
+    if (step > 1) setStep((s) => (s - 1) as FormStep)
+  }
+
+  const handleStepDotClick = (target: FormStep) => {
+    if (target < step) {
+      setStepErrors({})
+      setStep(target)
+    }
+  }
+
   const handleAddTag = () => {
     const tag = tagInput.trim()
     if (tag && !tags.includes(tag)) {
@@ -353,7 +405,37 @@ export function ShopifyStyleArtworkForm({
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="hidden sm:flex items-center gap-3">
+          {/* Step indicator — desktop only */}
+          <div className="flex items-center gap-1.5 mr-2" role="list" aria-label="Form steps">
+            {([1, 2, 3, 4] as FormStep[]).map((s) => {
+              const isDone = step > s
+              const isActive = step === s
+              const isClickable = s < step
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  aria-current={isActive ? "step" : undefined}
+                  aria-label={`Step ${s}: ${STEP_LABELS[s]}${isDone ? " (completed)" : ""}`}
+                  onClick={() => handleStepDotClick(s)}
+                  disabled={!isClickable}
+                  className={[
+                    "flex items-center justify-center rounded-full w-7 h-7 text-xs font-semibold transition-all",
+                    isActive
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                      : isDone
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                    isClickable ? "cursor-pointer hover:scale-105" : "cursor-default",
+                  ].join(" ")}
+                >
+                  {isDone ? <Check className="h-3.5 w-3.5" /> : s}
+                </button>
+              )
+            })}
+          </div>
+          <div className="h-4 w-px bg-border" />
           <Button variant="outline" onClick={onCancel} disabled={isSubmitting || isSavingDraft}>
             Cancel
           </Button>
@@ -384,60 +466,128 @@ export function ShopifyStyleArtworkForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* On mobile: Series first (after title), then main content */}
-        {/* On desktop: Main content first (2/3 width) */}
-        <div className="lg:col-span-2 lg:order-1 order-2 space-y-6">
-          {/* Title & Description */}
-          <Card>
-            <CardContent className="pt-6">
-              <BasicInfoStep
-                formData={formData}
-                setFormData={setFormData}
-                fieldsConfig={fieldsConfig}
-              />
-            </CardContent>
-          </Card>
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-6">
+        {/* ── Main wizard column ─────────────────────────────────────── */}
+        <div className="lg:col-span-2 space-y-6">
 
-          {/* Media */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Media</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ImagesStep
-                formData={formData}
-                setFormData={setFormData}
-                onMaskSavedStatusChange={setMaskSaved}
-              />
-            </CardContent>
-          </Card>
+          {/* Step label + step error banner */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Step {step} of 4
+              </span>
+              <span className="text-muted-foreground">—</span>
+              <span className="text-sm font-medium">{STEP_LABELS[step]}</span>
+            </div>
+            {/* Mobile step dots */}
+            <div className="flex items-center gap-1 sm:hidden" role="list" aria-label="Form steps">
+              {([1, 2, 3, 4] as FormStep[]).map((s) => {
+                const isDone = step > s
+                const isActive = step === s
+                return (
+                  <div
+                    key={s}
+                    className={[
+                      "w-2 h-2 rounded-full transition-all",
+                      isActive ? "bg-primary w-4" : isDone ? "bg-primary" : "bg-muted",
+                    ].join(" ")}
+                    aria-current={isActive ? "step" : undefined}
+                  />
+                )
+              })}
+            </div>
+          </div>
 
-          {/* Pricing */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VariantsStep formData={formData} setFormData={setFormData} />
-            </CardContent>
-          </Card>
+          {stepErrors[step] && (
+            <Alert variant="destructive" className="border-red-300 bg-red-50 text-red-900 [&>svg]:text-red-600">
+              <AlertDescription className="text-sm">{stepErrors[step]}</AlertDescription>
+            </Alert>
+          )}
 
-          {/* Print Files */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Print Files</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PrintFilesStep formData={formData} setFormData={setFormData} />
-            </CardContent>
-          </Card>
+          {/* Step 1 — Details */}
+          {step === 1 && (
+            <Card>
+              <CardContent className="pt-6">
+                <BasicInfoStep
+                  formData={formData}
+                  setFormData={setFormData}
+                  fieldsConfig={fieldsConfig}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Removed: Series step moved to right sidebar */}
+          {/* Step 2 — Media */}
+          {step === 2 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Media</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ImagesStep
+                  formData={formData}
+                  setFormData={setFormData}
+                  onMaskSavedStatusChange={setMaskSaved}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 3 — Pricing */}
+          {step === 3 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VariantsStep formData={formData} setFormData={setFormData} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 4 — Print Files */}
+          {step === 4 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Print Files</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PrintFilesStep formData={formData} setFormData={setFormData} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Mobile sticky footer */}
+          <div className="lg:hidden sticky bottom-0 bg-background/95 backdrop-blur border-t py-3 flex items-center justify-between gap-3 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevStep}
+              disabled={step === 1}
+            >
+              ← Back
+            </Button>
+            <span className="text-xs text-muted-foreground font-medium sm:hidden">
+              {step} / 4
+            </span>
+            {step < 4 ? (
+              <Button size="sm" onClick={handleNextStep}>
+                Continue →
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => handleSubmit(false)}
+                disabled={isSubmitting || isSavingDraft || !canSubmit()}
+              >
+                Submit
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Right Sidebar - Organization */}
-        <div className="lg:order-2 order-1 space-y-6">
+        {/* ── Right sidebar — always visible on desktop, collapsible on mobile ── */}
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Status</CardTitle>
@@ -449,7 +599,6 @@ export function ShopifyStyleArtworkForm({
             </CardContent>
           </Card>
 
-          {/* Series Selection - Desktop: in sidebar, Mobile: after title */}
           <div className="hidden lg:block">
             <Card>
               <CardHeader>

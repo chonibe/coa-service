@@ -105,6 +105,7 @@ export async function GET(
         "Artwork Process Gallery Block",
         "Artwork Inspiration Block",
         "Artwork Artist Note Block",
+        "Artwork Map Block",
         "Artwork Section Group Block",
       ])
 
@@ -284,7 +285,7 @@ export async function GET(
     }
     
     // Build discovery data
-    let discoveryData: any = {}
+    const discoveryData: any = {}
     
     // Series info for discovery
     if (seriesMember && series) {
