@@ -17,6 +17,8 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 **Note**: Product create flow unchanged — no Hidden Treasures / benefits UI restored on artwork.
 
+**Vercel**: Production deploy completed (2026-04-18); alias `https://app.thestreetcollector.com`.
+
 ---
 
 ## [2026-04-18] fix | Add artwork wizard: Continue visible on desktop
