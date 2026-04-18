@@ -10,9 +10,10 @@ import { Label, Button, Card, CardContent, Alert, AlertDescription } from "@/com
 interface SeriesStepProps {
   formData: ProductSubmissionData
   setFormData: (data: ProductSubmissionData) => void
+  seriesRequired?: boolean
 }
 
-export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
+export function SeriesStep({ formData, setFormData, seriesRequired = false }: SeriesStepProps) {
   const [availableSeries, setAvailableSeries] = useState<Array<{ id: string; name: string; member_count: number; unlock_type?: string }>>([])
   const [loadingSeries, setLoadingSeries] = useState(true)
 
@@ -121,16 +122,17 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
     }
   }
 
-  const selectedSeries = availableSeries.find((s) => s.id === formData.series_id)
-
   // If artwork is assigned to a series
   if (formData.series_id) {
+    const selectedSeries = availableSeries.find((s) => s.id === formData.series_id) || { name: formData.series_name }
     return (
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold mb-2">Series & Unlocks</h3>
           <p className="text-sm text-muted-foreground">
-            This artwork is assigned to a series. Configure unlock settings below.
+            {seriesRequired
+              ? "This artwork belongs to a series."
+              : "This artwork is assigned to a series. Configure unlock settings below."}
           </p>
         </div>
 
@@ -153,14 +155,26 @@ export function SeriesStep({ formData, setFormData }: SeriesStepProps) {
               </AlertDescription>
             </Alert>
 
-            <Button
-              variant="outline"
-              onClick={handleRemoveSeries}
-              className="w-full"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Remove from Series
-            </Button>
+            {seriesRequired ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="h-8 w-8 rounded-full bg-[#1a1a1a] flex items-center justify-center shrink-0">
+                  <Lock className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{selectedSeries?.name || formData.series_name}</p>
+                  <p className="text-xs text-muted-foreground">Series locked &mdash; cannot be changed</p>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleRemoveSeries}
+                className="w-full"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Remove from Series
+              </Button>
+            )}
           </CardContent>
         </Card>
 

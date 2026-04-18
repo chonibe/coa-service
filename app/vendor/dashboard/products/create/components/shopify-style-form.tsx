@@ -45,6 +45,7 @@ interface ShopifyStyleFormProps {
   submissionId?: string
   onComplete: (result?: { submissionId: string; status: string; isDraft: boolean }) => void
   onCancel: () => void
+  seriesRequired?: boolean
 }
 
 export function ShopifyStyleArtworkForm({
@@ -52,6 +53,7 @@ export function ShopifyStyleArtworkForm({
   submissionId,
   onComplete,
   onCancel,
+  seriesRequired = false,
 }: ShopifyStyleFormProps) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -605,7 +607,7 @@ export function ShopifyStyleArtworkForm({
                 <CardTitle>Series (Collection)</CardTitle>
               </CardHeader>
               <CardContent>
-                <SeriesStep formData={formData} setFormData={setFormData} />
+                <SeriesStep formData={formData} setFormData={setFormData} seriesRequired={seriesRequired} />
               </CardContent>
             </Card>
           </div>
