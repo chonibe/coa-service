@@ -4,6 +4,15 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 ---
 
+## [2026-04-18] fix | Add artwork wizard: Continue visible on desktop
+
+**Checklist**
+- [x] [`app/vendor/dashboard/products/create/components/shopify-style-form.tsx`](app/vendor/dashboard/products/create/components/shopify-style-form.tsx) — Removed `lg:hidden` from the sticky step footer so **Back** / **Continue** / final **Submit** show at `lg+`; step indicator `n / 4` always in that bar.
+
+**Vercel**: Production deploy completed (2026-04-18).
+
+---
+
 ## [2026-04-18] feature | Remove per-artwork Hidden Treasures UI; artist delete vs close listing
 
 **Checklist**
