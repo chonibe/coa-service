@@ -559,8 +559,8 @@ export function ShopifyStyleArtworkForm({
             </Card>
           )}
 
-          {/* Mobile sticky footer */}
-          <div className="lg:hidden sticky bottom-0 bg-background/95 backdrop-blur border-t py-3 flex items-center justify-between gap-3 z-10">
+          {/* Step navigation — sticky so Back/Continue stays reachable on long forms (all breakpoints; was lg:hidden, which hid Continue on desktop). */}
+          <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
             <Button
               variant="outline"
               size="sm"
@@ -569,7 +569,7 @@ export function ShopifyStyleArtworkForm({
             >
               ← Back
             </Button>
-            <span className="text-xs text-muted-foreground font-medium sm:hidden">
+            <span className="text-xs font-medium tabular-nums text-muted-foreground">
               {step} / 4
             </span>
             {step < 4 ? (
