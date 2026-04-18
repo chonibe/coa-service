@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Skeleton, Card, CardContent, Badge, Alert, AlertDescription, Button } from "@/components/ui"
-import { Eye, Lock, ArrowRight, Crown, Pencil, Sparkles, Image as ImageIcon } from "lucide-react"
+import { Eye, Lock, ArrowRight, Crown, Pencil, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 import { AlertCircle, ArrowLeft } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -186,76 +187,100 @@ export default function SeriesDetailPage() {
             </div>
 
             {members.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-muted rounded-xl">
-                <ImageIcon className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">
+              <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-muted rounded-xl">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
                   No artworks in this series yet.
                 </p>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => router.push(`/vendor/studio/artworks/new?series=${seriesId}`)}
                 >
-                  Add your first artwork
+                  + Add your first artwork
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
-                      {member.artwork_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={member.artwork_image}
-                          alt={member.artwork_title || "Artwork"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
-                        </div>
-                      )}
+                  <div key={member.id} className="group relative rounded-[10px] overflow-hidden bg-muted aspect-[4/3]">
+                    {/* Cover image */}
+                    {member.artwork_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={member.artwork_image}
+                        alt={member.artwork_title || "Artwork"}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#390000]/10 to-[#390000]/5">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+                      </div>
+                    )}
+
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                    {/* Locked/Unlocked badge — top left */}
+                    <div className="absolute top-2.5 left-2.5 z-10">
+                      <span className={cn(
+                        "flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-sm text-[9px] font-bold",
+                        member.is_locked
+                          ? "bg-amber-100/90 text-amber-700"
+                          : "bg-green-100/90 text-green-700"
+                      )}>
+                        {member.is_locked ? (
+                          <><Lock className="w-2.5 h-2.5" /> Locked</>
+                        ) : (
+                          <><Eye className="w-2.5 h-2.5" /> Unlocked</>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                    {/* Artwork title — bottom left */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                      <p className="font-semibold text-xs text-white drop-shadow-md line-clamp-2">
                         {member.artwork_title || "Untitled artwork"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {member.is_locked ? (
-                          <span className="flex items-center gap-1 text-amber-600">
-                            <Lock className="h-3 w-3" />
-                            Locked
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-green-600">
-                            <Eye className="h-3 w-3" />
-                            Unlocked
-                          </span>
-                        )}
-                      </p>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {member.submission_id && (
-                        <Link
-                          href={`/vendor/studio/artworks/${member.submission_id}/edit`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          Edit
-                        </Link>
-                      )}
-                    </div>
+                    {/* Edit link — bottom right */}
+                    {member.submission_id && (
+                      <Link
+                        href={`/vendor/studio/artworks/${member.submission_id}/edit`}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "absolute bottom-2.5 right-2.5 z-10",
+                          "flex items-center gap-1 px-2.5 py-1 rounded-full",
+                          "bg-impact-primary text-white text-[10px] font-bold",
+                          "hover:opacity-85 transition-opacity",
+                          "opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <Pencil className="w-2.5 h-2.5" /> Edit
+                      </Link>
+                    )}
                   </div>
                 ))}
+
+                {/* "+ Add artwork" card — end of grid */}
+                <button
+                  type="button"
+                  onClick={() => router.push(`/vendor/studio/artworks/new?series=${seriesId}`)}
+                  className={cn(
+                    "aspect-[4/3] rounded-[10px] border-2 border-dashed",
+                    "border-[#1a1a1a]/20 hover:border-[#1a1a1a]/50",
+                    "flex flex-col items-center justify-center gap-2",
+                    "text-[#1a1a1a]/40 hover:text-[#1a1a1a]/70",
+                    "transition-colors cursor-pointer"
+                  )}
+                >
+                  <div className="h-9 w-9 rounded-full border-2 border-current flex items-center justify-center">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <p className="text-xs font-bold font-body">Add artwork</p>
+                </button>
               </div>
             )}
           </CardContent>
