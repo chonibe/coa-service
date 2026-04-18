@@ -47,8 +47,14 @@ export async function GET(request: NextRequest) {
       .order("submitted_at", { ascending: false })
 
     // Filter by status if provided
-    if (status && ["pending", "approved", "rejected", "published"].includes(status)) {
-      query = query.eq("status", status as "pending" | "approved" | "rejected" | "published")
+    if (
+      status &&
+      ["pending", "approved", "rejected", "published", "draft", "closed"].includes(status)
+    ) {
+      query = query.eq(
+        "status",
+        status as "pending" | "approved" | "rejected" | "published" | "draft" | "closed",
+      )
     }
 
     const { data: submissions, error } = await query
@@ -71,7 +77,7 @@ export async function GET(request: NextRequest) {
       .filter((id: any) => id !== null && id !== undefined) as string[]
 
     // Fetch edition sizes from products table
-    let editionSizeMap = new Map<string, number | null>()
+    const editionSizeMap = new Map<string, number | null>()
     if (shopifyProductIds.length > 0) {
       const { data: productEditions } = await supabase
         .from("products")
@@ -94,7 +100,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Count sold items (fulfilled/active line items) for each product
-    let soldCountMap = new Map<string, number>()
+    const soldCountMap = new Map<string, number>()
     if (shopifyProductIds.length > 0) {
       const { data: soldCounts } = await supabase
         .from("order_line_items_v2")
@@ -128,6 +134,8 @@ export async function GET(request: NextRequest) {
       const soldCount = shopifyProductId ? soldCountMap.get(shopifyProductId) ?? 0 : 0
 
       // Remove the nested members array from the response
+      // Strip nested join payload; not part of the public submission shape.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- omit from spread
       const { artwork_series_members, ...submissionData } = submission
       return {
         ...submissionData,

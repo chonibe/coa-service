@@ -4,6 +4,22 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 ---
 
+## [2026-04-18] feature | Remove per-artwork Hidden Treasures UI; artist delete vs close listing
+
+**Checklist**
+- [x] [`app/vendor/dashboard/products/create/components/series-step.tsx`](app/vendor/dashboard/products/create/components/series-step.tsx) — Removed Hidden Treasures / per-artwork benefits UI from the series step; rely on series-level unlock experience instead.
+- [x] `app/vendor/dashboard/products/create/components/benefits*` — Deleted standalone benefits forms and `benefits-management` stack (no remaining imports).
+- [x] [`supabase/migrations/20260418140000_product_submission_status_closed_draft.sql`](supabase/migrations/20260418140000_product_submission_status_closed_draft.sql) — Adds enum values `draft` and `closed` (idempotent `DO $$ … EXCEPTION duplicate_object`).
+- [x] [`app/api/vendor/products/submissions/[id]/close/route.ts`](app/api/vendor/products/submissions/[id]/close/route.ts) — `POST` sets `status` to `closed` for `published` / `approved` (artist-initiated only).
+- [x] [`app/api/vendor/products/submissions/[id]/route.ts`](app/api/vendor/products/submissions/[id]/route.ts) — `PUT` blocked when `closed`; `DELETE` allowed when no active sales and not already closed.
+- [x] [`app/api/vendor/products/submissions/route.ts`](app/api/vendor/products/submissions/route.ts) — List filter accepts `draft` and `closed`; lint fixes (`const` maps, omit join field).
+- [x] [`app/vendor/(app)/studio/page.tsx`](app/vendor/(app)/studio/page.tsx) — Delete when unsold; **Close listing** for any published/approved (artist choice); closed cards do not deep-link into edit; filter tab for closed.
+- [x] [`app/vendor/(app)/studio/artworks/[id]/edit/page.tsx`](app/vendor/(app)/studio/artworks/[id]/edit/page.tsx) — Clearer message when submission is `closed`.
+
+**Deploy / DB**: Apply the migration to Supabase before relying on `closed` / `draft` in production. Closing is DB-only (no Shopify unpublish in this change).
+
+---
+
 ## [2026-04-18] deploy | Studio: series cover upload, images, series deep-link, series-only benefits, block editor route
 
 **Checklist**

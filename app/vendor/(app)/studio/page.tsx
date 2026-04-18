@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
-import { ContentCard } from '@/components/app-shell'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Plus, Pencil, Eye, Sparkles, Upload } from 'lucide-react'
+import { Plus, Pencil, Eye, Sparkles, Upload, MoreVertical, Trash2, Ban } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 // ============================================================================
 // Vendor Studio - Artworks — Phase 2.2
@@ -37,10 +37,11 @@ interface ArtworkSubmission {
   shopifyProductId: string | null
   seriesName?: string | null
   seriesId?: string | null
+  soldCount: number
   createdAt: string
 }
 
-type FilterStatus = 'all' | 'draft' | 'pending' | 'approved' | 'published' | 'rejected'
+type FilterStatus = 'all' | 'draft' | 'pending' | 'approved' | 'published' | 'rejected' | 'closed'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -48,6 +49,7 @@ const statusColors: Record<string, string> = {
   approved: 'bg-blue-100 text-blue-700',
   published: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-600',
+  closed: 'bg-slate-200 text-slate-700',
 }
 
 export default function VendorStudioPage() {
@@ -57,36 +59,50 @@ export default function VendorStudioPage() {
   const [submissions, setSubmissions] = useState<ArtworkSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const loadSubmissions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/vendor/products/submissions', { credentials: 'include' })
+      if (res.ok) {
+        const json = await res.json()
+        setSubmissions(
+          (json.submissions || json.products || []).map((s: any) => ({
+            id: s.id,
+            title: s.title || s.name,
+            status: s.status || 'draft',
+            price: s.price || s.variants?.[0]?.price || null,
+            imageUrl: s.image_url || s.images?.[0]?.src || s.imageUrl || null,
+            productId: s.product_id || s.shopify_product_id || s.shopifyProductId || null,
+            shopifyProductId: s.shopify_product_id || s.shopifyProductId || null,
+            seriesName: s.series_name || s.seriesName || s.series_metadata?.series_name || null,
+            seriesId: s.series_metadata?.series_id || s.series_id || null,
+            soldCount: typeof s.sold_count === 'number' ? s.sold_count : 0,
+            createdAt: s.created_at || s.createdAt || '',
+          }))
+        )
+      }
+    } catch (err) {
+      console.error('[Studio] Failed to fetch submissions:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    async function fetchSubmissions() {
-      try {
-        const res = await fetch('/api/vendor/products/submissions', { credentials: 'include' })
-        if (res.ok) {
-          const json = await res.json()
-          setSubmissions(
-            (json.submissions || json.products || []).map((s: any) => ({
-              id: s.id,
-              title: s.title || s.name,
-              status: s.status || 'draft',
-              price: s.price || s.variants?.[0]?.price || null,
-              imageUrl: s.image_url || s.images?.[0]?.src || s.imageUrl || null,
-              productId: s.product_id || s.shopify_product_id || s.shopifyProductId || null,
-              shopifyProductId: s.shopify_product_id || s.shopifyProductId || null,
-              seriesName: s.series_name || s.seriesName || s.series_metadata?.series_name || null,
-              seriesId: s.series_metadata?.series_id || s.series_id || null,
-              createdAt: s.created_at || s.createdAt || '',
-            }))
-          )
-        }
-      } catch (err) {
-        console.error('[Studio] Failed to fetch submissions:', err)
-      } finally {
-        setLoading(false)
-      }
+    void loadSubmissions()
+  }, [loadSubmissions])
+
+  useEffect(() => {
+    if (!menuOpenId) return
+    const close = (e: MouseEvent) => {
+      const el = e.target as HTMLElement
+      if (!el.closest('[data-artwork-menu]')) setMenuOpenId(null)
     }
-    fetchSubmissions()
-  }, [])
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [menuOpenId])
 
   // Scroll the freshly-submitted artwork into view + flash a ring around it.
   // The fade timer + element existence are both guarded so an unrelated
@@ -114,7 +130,55 @@ export default function VendorStudioPage() {
     { value: 'approved', label: 'Approved', count: counts.approved || 0 },
     { value: 'published', label: 'Published', count: counts.published || 0 },
     { value: 'rejected', label: 'Rejected', count: counts.rejected || 0 },
+    { value: 'closed', label: 'Closed', count: counts.closed || 0 },
   ]
+
+  const handleDelete = async (artwork: ArtworkSubmission) => {
+    if (artwork.soldCount > 0) {
+      toast({
+        title: 'Cannot delete',
+        description: 'Artworks with sales cannot be deleted. Use Close listing instead.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (!window.confirm(`Delete “${artwork.title}”? This cannot be undone.`)) return
+    try {
+      const res = await fetch(`/api/vendor/products/submissions/${artwork.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.message || json.error || 'Delete failed')
+      toast({ title: 'Deleted', description: 'Artwork removed from your studio.' })
+      setMenuOpenId(null)
+      await loadSubmissions()
+    } catch (e: any) {
+      toast({ title: 'Could not delete', description: e.message, variant: 'destructive' })
+    }
+  }
+
+  const handleCloseListing = async (artwork: ArtworkSubmission) => {
+    if (
+      !window.confirm(
+        `Close listing for “${artwork.title}”? It will show as closed in your studio. You can remove unsold work with Delete instead; sold work can only be closed, not deleted.`,
+      )
+    )
+      return
+    try {
+      const res = await fetch(`/api/vendor/products/submissions/${artwork.id}/close`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.message || json.error || 'Request failed')
+      toast({ title: 'Listing closed', description: 'Marked as closed in your studio.' })
+      setMenuOpenId(null)
+      await loadSubmissions()
+    } catch (e: any) {
+      toast({ title: 'Could not close', description: e.message, variant: 'destructive' })
+    }
+  }
 
   return (
     <div>
@@ -210,26 +274,17 @@ export default function VendorStudioPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map((artwork) => {
-              // The artwork-pages API accepts BOTH the Shopify product_id and
-              // the draft submission UUID (see app/api/vendor/artwork-pages/[productId]/route.ts).
-              // Always send artists to the block editor — never fall back to
-              // the bare /edit (details) page when productId is missing.
               const editorId = artwork.productId || artwork.id
               const seriesExperienceHref = artwork.seriesId
                 ? `/vendor/studio/series/${artwork.seriesId}/experience/editor`
                 : '/vendor/studio/series'
               const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
               const isFocused = focusId === artwork.id
-              return (
-                <div
-                  key={artwork.id}
-                  ref={isFocused ? focusRef : undefined}
-                  className={cn(
-                    'group relative transition-all',
-                    isFocused && 'ring-2 ring-impact-primary rounded-impact-block-xs ring-offset-2 ring-offset-white'
-                  )}
-                >
-                  <Link href={detailsHref} aria-label={`Open ${artwork.title} details`}>
+              const isClosed = artwork.status === 'closed'
+              const canDelete = !isClosed && artwork.soldCount === 0
+              const canClose =
+                !isClosed && (artwork.status === 'published' || artwork.status === 'approved')
+              const thumb = (
                     <div className="relative aspect-[4/5] bg-gray-100 rounded-impact-block-xs overflow-hidden">
                       {artwork.imageUrl ? (
                         <Image
@@ -253,7 +308,25 @@ export default function VendorStudioPage() {
                         {artwork.status}
                       </span>
                     </div>
-                  </Link>
+              )
+              return (
+                <div
+                  key={artwork.id}
+                  ref={isFocused ? focusRef : undefined}
+                  className={cn(
+                    'group relative transition-all',
+                    isFocused && 'ring-2 ring-impact-primary rounded-impact-block-xs ring-offset-2 ring-offset-white'
+                  )}
+                >
+                  {isClosed ? (
+                    <div className="block cursor-default" aria-label={`${artwork.title} (closed listing)`}>
+                      {thumb}
+                    </div>
+                  ) : (
+                    <Link href={detailsHref} aria-label={`Open ${artwork.title} details`}>
+                      {thumb}
+                    </Link>
+                  )}
 
                   <div className="mt-2 space-y-1.5">
                     <div>
@@ -268,39 +341,81 @@ export default function VendorStudioPage() {
                       </div>
                     </div>
 
-                    {/* Persistent Unlock experience + Edit + Preview actions */}
+                    {/* Unlock / edit / preview — hidden when listing is closed */}
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Link
-                        href={seriesExperienceHref}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
-                        aria-label={
-                          artwork.seriesId
-                            ? `Edit series unlock experience for ${artwork.title}`
-                            : `Pick a series to edit unlock experience (${artwork.title})`
-                        }
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Unlock
-                      </Link>
-                      <Link
-                        href={detailsHref}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-[10px] font-body font-semibold hover:bg-gray-200 transition-colors"
-                        aria-label={`Edit details for ${artwork.title}`}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        Edit
-                      </Link>
-                      <a
-                        href={`/preview/artwork/${editorId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-600 text-[10px] font-body font-semibold hover:bg-gray-100 transition-colors"
-                        aria-label={`Preview ${artwork.title} as a collector (opens in new tab)`}
-                      >
-                        <Eye className="w-3 h-3" />
-                        Preview
-                      </a>
+                      {!isClosed && (
+                        <>
+                          <Link
+                            href={seriesExperienceHref}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
+                            aria-label={
+                              artwork.seriesId
+                                ? `Edit series unlock experience for ${artwork.title}`
+                                : `Pick a series to edit unlock experience (${artwork.title})`
+                            }
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Unlock
+                          </Link>
+                          <Link
+                            href={detailsHref}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-[10px] font-body font-semibold hover:bg-gray-200 transition-colors"
+                            aria-label={`Edit details for ${artwork.title}`}
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit
+                          </Link>
+                          <a
+                            href={`/preview/artwork/${editorId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-600 text-[10px] font-body font-semibold hover:bg-gray-100 transition-colors"
+                            aria-label={`Preview ${artwork.title} as a collector (opens in new tab)`}
+                          >
+                            <Eye className="w-3 h-3" />
+                            Preview
+                          </a>
+                        </>
+                      )}
+                      {(canDelete || canClose) && (
+                        <div className="relative shrink-0" data-artwork-menu>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setMenuOpenId(menuOpenId === artwork.id ? null : artwork.id)
+                            }
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50"
+                            aria-label={`More actions for ${artwork.title}`}
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                          {menuOpenId === artwork.id && (
+                            <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-30 py-1 text-left">
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDelete(artwork)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete artwork
+                                </button>
+                              )}
+                              {canClose && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleCloseListing(artwork)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                  Close listing
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

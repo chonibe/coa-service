@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Loader2, Info, X, Crown, Lock, ArrowRight } from "lucide-react"
 import type { ProductSubmissionData } from "@/types/product-submission"
-import { BenefitsManagement } from "./benefits-management"
 import { Label, Button, Card, CardContent, Alert, AlertDescription } from "@/components/ui"
 
 interface SeriesStepProps {
@@ -177,18 +176,6 @@ export function SeriesStep({ formData, setFormData, seriesRequired = false }: Se
             )}
           </CardContent>
         </Card>
-
-        {/* Benefits Management / Hidden Treasures */}
-        <Card>
-          <CardContent className="pt-6">
-            <BenefitsManagement
-              benefits={formData.benefits || []}
-              onBenefitsChange={(benefits) => setFormData({ ...formData, benefits })}
-              seriesId={formData.series_id}
-              seriesLevelOnly={!!formData.series_id}
-            />
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -259,18 +246,6 @@ export function SeriesStep({ formData, setFormData, seriesRequired = false }: Se
             </AlertDescription>
           </Alert>
         )}
-
-        {/* Per-artwork hidden treasures removed — use series + NFC unlock experience */}
-        <Alert className="mt-6">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Unlock content and NFC blocks are configured per series. Select a series above, then use{" "}
-            <Link href="/vendor/studio/series" className="underline font-medium hover:text-primary">
-              Series → Unlock experience
-            </Link>{" "}
-            for the block editor.
-          </AlertDescription>
-        </Alert>
       </div>
     </div>
   )

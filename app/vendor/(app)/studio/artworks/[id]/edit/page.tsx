@@ -47,8 +47,12 @@ export default function EditArtworkPage() {
             data.submission.status !== "rejected" &&
             data.submission.status !== "draft"
           ) {
+            const hint =
+              data.submission.status === "closed"
+                ? " This listing was closed by you and cannot be edited here."
+                : ""
             setError(
-              `Cannot edit submission with status: ${data.submission.status}. Only pending, draft, or rejected submissions can be edited.`,
+              `Cannot edit submission with status: ${data.submission.status}. Only pending, draft, or rejected submissions can be edited.${hint}`,
             )
             setLoading(false)
             return

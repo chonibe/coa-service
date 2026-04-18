@@ -185,12 +185,23 @@ export async function PUT(
       )
     }
 
-    // Only allow updates for pending or rejected submissions
-    if (existingSubmission.status !== "pending" && existingSubmission.status !== "rejected") {
+    if (existingSubmission.status === "closed") {
       return NextResponse.json(
         {
           error: "Cannot update submission",
-          message: "You can only update pending or rejected submissions.",
+          message: "This listing is closed. Re-open is not available from the studio yet.",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Only allow full product updates for in-progress submissions
+    const editableStatuses: readonly string[] = ["pending", "rejected", "draft"]
+    if (!editableStatuses.includes(existingSubmission.status)) {
+      return NextResponse.json(
+        {
+          error: "Cannot update submission",
+          message: "You can only edit pending, draft, or rejected submissions.",
         },
         { status: 400 },
       )
@@ -453,18 +464,7 @@ export async function DELETE(
       )
     }
 
-    // Only allow deletion for pending or rejected submissions
-    if (submission.status !== "pending" && submission.status !== "rejected") {
-      return NextResponse.json(
-        {
-          error: "Cannot delete submission",
-          message: "You can only delete pending or rejected submissions. Contact admin to reject/unpublish approved or published submissions.",
-        },
-        { status: 400 },
-      )
-    }
-
-    // Check if artwork has any sales - if it does, prevent deletion
+    // Check if artwork has any sales — sold work cannot be deleted; artist should close the listing instead
     if (submission.shopify_product_id) {
       const { count: salesCount, error: salesError } = await supabase
         .from("order_line_items_v2")
@@ -484,14 +484,22 @@ export async function DELETE(
         return NextResponse.json(
           {
             error: "Cannot delete artwork",
-            message: "This artwork cannot be deleted because it has sold at least one item. Artworks with sales cannot be deleted.",
+            message:
+              "This artwork has sales and cannot be deleted. Close the listing instead: Studio → artwork menu → Close listing.",
           },
           { status: 400 },
         )
       }
     }
 
-    // Delete the submission
+    if (submission.status === "closed") {
+      return NextResponse.json(
+        { error: "Cannot delete", message: "This listing is already closed." },
+        { status: 400 },
+      )
+    }
+
+    // Delete the submission (no sales; any non-closed status)
     const { error: deleteError } = await supabase
       .from("vendor_product_submissions")
       .delete()
