@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast'
 // Render: Visual grid of artwork submissions (thumbnail, title, status badge, price)
 // Filter tabs: All / Draft / Pending / Published
 // Tap artwork: Navigate to edit details (/vendor/studio/artworks/[id]/edit)
-// Unlock chip: Series block editor when seriesId known, else series list
+// Unlock chip: Per-artwork block editor (submission → /artwork-editor/:productId)
 // Original source (for history): app/vendor/dashboard/products/page.tsx
 // ============================================================================
 
@@ -275,9 +275,7 @@ export default function VendorStudioPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map((artwork) => {
               const editorId = artwork.productId || artwork.id
-              const seriesExperienceHref = artwork.seriesId
-                ? `/vendor/studio/series/${artwork.seriesId}/experience/editor`
-                : '/vendor/studio/series'
+              const experienceHref = `/vendor/studio/artworks/${artwork.id}/experience`
               const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
               const isFocused = focusId === artwork.id
               const isClosed = artwork.status === 'closed'
@@ -346,13 +344,9 @@ export default function VendorStudioPage() {
                       {!isClosed && (
                         <>
                           <Link
-                            href={seriesExperienceHref}
+                            href={experienceHref}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
-                            aria-label={
-                              artwork.seriesId
-                                ? `Edit series unlock experience for ${artwork.title}`
-                                : `Pick a series to edit unlock experience (${artwork.title})`
-                            }
+                            aria-label={`Edit unlock experience and blocks for ${artwork.title}`}
                           >
                             <Sparkles className="w-3 h-3" />
                             Unlock

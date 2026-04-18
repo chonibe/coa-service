@@ -245,9 +245,9 @@ export default function VendorNfcPage() {
                         <td className="px-3 py-2 text-[#1a1a1a]">
                           {tag.productId ? (
                             <Link
-                              href="/vendor/studio/series"
+                              href={`/artwork-editor/${tag.productId}`}
                               className="inline-flex items-center gap-1 hover:underline"
-                              title="Edit series unlock experience (NFC content is per series)"
+                              title="Edit this artwork’s unlock experience (blocks, soundtrack, map, preview)"
                             >
                               {tag.artworkName || 'Untitled'}
                               <ExternalLink className="w-2.5 h-2.5 opacity-40" />

@@ -50,11 +50,9 @@ interface SeriesData {
 /**
  * SeriesTemplateEditor
  *
- * Edits the shared NFC / unlock template for every artwork in a series.
- * Accepts an optional `seriesId` prop so the same component can be rendered
- * under either `/vendor/dashboard/artwork-pages/series/[seriesId]` (legacy) or
- * `/vendor/studio/series/[id]/experience` (AppShell-native), which use
- * different dynamic param names. Falls back to useParams for legacy routing.
+ * Legacy series-wide block template (dashboard route only). Studio AppShell
+ * routes artists to per-artwork `/artwork-editor/[productId]` instead; this
+ * component remains for `/vendor/dashboard/artwork-pages/series/[seriesId]`.
  */
 export default function SeriesTemplateEditor({ seriesId: propSeriesId }: { seriesId?: string } = {}) {
   const params = useParams()

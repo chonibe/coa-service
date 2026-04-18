@@ -227,11 +227,11 @@ function SeriesMenuDropdown({
           <Layers className="w-3.5 h-3.5" /> Edit details
         </Link>
         <Link
-          href={`/vendor/studio/series/${series.id}/experience/editor`}
+          href="/vendor/studio"
           onClick={onClose}
           className="flex items-center gap-2 px-3 py-2 text-[#1a1a1a] hover:bg-gray-50"
         >
-          <Sparkles className="w-3.5 h-3.5" /> Edit unlock experience
+          <Sparkles className="w-3.5 h-3.5" /> Unlock on artworks
         </Link>
         <a
           href={`/collector/series/${series.id}`}
@@ -435,7 +435,7 @@ export default function VendorSeriesPage() {
               Create your first series
             </h3>
             <p className="font-body text-sm text-[#1a1a1a]/60 leading-relaxed mb-8">
-              Group your artworks into a curated collection. Each series holds the unlock experience your collectors receive when they scan the NFC chip.
+              Group your artworks into a curated collection. Unlock pages (soundtrack, map, galleries, and preview) are edited per artwork from Studio → Artworks → Unlock.
             </p>
             <Link
               href="/vendor/studio/series/new"

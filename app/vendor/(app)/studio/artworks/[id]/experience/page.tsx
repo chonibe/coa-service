@@ -1,121 +1,113 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
 /**
  * /vendor/studio/artworks/[id]/experience
  *
- * NFC unlock blocks are edited per series (shared template), not per artwork.
- * This page explains that and routes artists to the series block editor when possible.
+ * Opens the full block editor (soundtrack, location map, galleries, preview, etc.)
+ * for this artwork’s Shopify product. `id` is the vendor submission UUID.
  */
-export default function ArtworkExperienceLanding() {
+export default function ArtworkExperienceEntryPage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const submissionOrProductId = params?.id as string
-  const seriesFromQuery = searchParams.get("series")
+  const submissionId = params?.id as string
 
-  const [seriesId, setSeriesId] = useState<string | null>(seriesFromQuery)
-  const [loading, setLoading] = useState(true)
+  const [phase, setPhase] = useState<"loading" | "needs_product" | "error">("loading")
+  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (seriesFromQuery) {
-      setSeriesId(seriesFromQuery)
-      setLoading(false)
+    if (!submissionId) {
+      setPhase("error")
+      setMessage("Missing artwork id.")
       return
     }
+
     let cancelled = false
-    const load = async () => {
+
+    const run = async () => {
       try {
-        const res = await fetch(`/api/vendor/products/submissions/${submissionOrProductId}`, {
+        const res = await fetch(`/api/vendor/products/submissions/${submissionId}`, {
           credentials: "include",
         })
-        if (!res.ok) throw new Error("not submission")
+        if (!res.ok) {
+          if (!cancelled) {
+            setPhase("error")
+            setMessage("We could not load this artwork. Return to Studio and try again.")
+          }
+          return
+        }
         const data = await res.json()
-        const sid = data.submission?.series_id as string | undefined
-        if (!cancelled && sid) setSeriesId(sid)
+        const pid = data.submission?.shopify_product_id as string | number | null | undefined
+        if (pid !== null && pid !== undefined && String(pid).length > 0) {
+          router.replace(`/artwork-editor/${String(pid)}`)
+          return
+        }
+        if (!cancelled) {
+          setPhase("needs_product")
+        }
       } catch {
-        // id may be a Shopify product id — no cheap series lookup here
-      } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setPhase("error")
+          setMessage("Something went wrong loading this artwork.")
+        }
       }
     }
-    if (submissionOrProductId) void load()
-    else setLoading(false)
+
+    void run()
     return () => {
       cancelled = true
     }
-  }, [submissionOrProductId, seriesFromQuery])
+  }, [submissionId, router])
 
-  const editorHref = seriesId
-    ? `/vendor/studio/series/${seriesId}/experience/editor`
-    : "/vendor/studio/series"
+  if (phase === "loading") {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground font-body">Opening experience editor…</p>
+      </div>
+    )
+  }
+
+  if (phase === "needs_product") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-10">
+        <Link
+          href="/vendor/studio"
+          className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground font-body hover:text-foreground"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Studio
+        </Link>
+        <h1 className="font-heading text-xl font-semibold text-foreground">Publish first</h1>
+        <p className="mt-2 text-sm text-muted-foreground font-body leading-relaxed">
+          The unlock experience editor (blocks, soundtrack, map, preview) is available after this artwork is
+          linked to a live product. Finish listing details and submit for review, then open{" "}
+          <span className="font-medium text-foreground">Unlock</span> again from Studio.
+        </p>
+        <Link
+          href={`/vendor/studio/artworks/${submissionId}/edit`}
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[#1a1a1a] px-5 py-2.5 text-sm font-semibold text-white font-body hover:opacity-90"
+        >
+          Continue to artwork details
+        </Link>
+      </div>
+    )
+  }
 
   return (
-    <div className="px-4 pt-4 pb-10 max-w-xl mx-auto">
+    <div className="mx-auto max-w-md px-4 py-10">
       <Link
         href="/vendor/studio"
-        className="inline-flex items-center gap-1 text-xs text-gray-500 font-body hover:text-gray-900 transition-colors mb-3"
+        className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground font-body hover:text-foreground"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Studio
       </Link>
-
-      <div className="space-y-1 mb-6">
-        <p className="text-[10px] tracking-[0.2em] uppercase text-gray-500">Unlock experience</p>
-        <h1 className="text-xl font-heading font-semibold text-gray-900 tracking-tight">
-          Series-wide NFC unlock
-        </h1>
-        <p className="text-sm text-gray-600 font-body">
-          Collectors see one unlock experience for the whole series. Add and publish blocks from the
-          series editor — not per individual artwork.
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <button
-          type="button"
-          onClick={() => router.push(editorHref)}
-          disabled={loading}
-          className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 disabled:opacity-60"
-        >
-          <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 font-body">Open series block editor</p>
-            <p className="text-xs text-gray-500 font-body">
-              {loading ? (
-                <span className="inline-flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Looking up series…
-                </span>
-              ) : seriesId ? (
-                "Edit blocks for this artwork’s series."
-              ) : (
-                "We could not detect a series from this link. Open Series to pick yours."
-              )}
-            </p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-        </button>
-
-        <Link
-          href="/vendor/studio/series"
-          className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 font-body">All series</p>
-            <p className="text-xs text-gray-500 font-body">Choose a series, then Unlock experience.</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-        </Link>
-      </div>
+      <p className="text-sm text-muted-foreground font-body">{message || "Something went wrong."}</p>
     </div>
   )
 }

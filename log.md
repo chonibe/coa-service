@@ -4,6 +4,21 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 ---
 
+## [2026-04-18] feature | Restore per-artwork unlock editor; retire series studio block editor
+
+**Checklist**
+- [x] [`app/vendor/(app)/studio/artworks/[id]/experience/page.tsx`](app/vendor/(app)/studio/artworks/[id]/experience/page.tsx) — Resolves submission → `shopify_product_id`, then `router.replace` to [`/artwork-editor/[productId]`](app/artwork-editor/[productId]/page.tsx) (blocks, soundtrack, map, preview). If not published yet, “Publish first” + link to edit.
+- [x] [`app/vendor/(app)/studio/page.tsx`](app/vendor/(app)/studio/page.tsx) — **Unlock** → per-artwork experience route (no series template editor).
+- [x] [`app/vendor/(app)/studio/nfc/page.tsx`](app/vendor/(app)/studio/nfc/page.tsx) — Artwork name links to `/artwork-editor/{productId}` when programmed.
+- [x] [`app/vendor/(app)/studio/series/[id]/experience/page.tsx`](app/vendor/(app)/studio/series/[id]/experience/page.tsx) — Replaced with guidance pointing to Studio → Artworks → Unlock.
+- [x] [`app/vendor/(app)/studio/series/[id]/experience/editor/page.tsx`](app/vendor/(app)/studio/series/[id]/experience/editor/page.tsx) — Redirects to the guidance page (no `SeriesTemplateEditor` in AppShell).
+- [x] [`app/vendor/(app)/studio/series/page.tsx`](app/vendor/(app)/studio/series/page.tsx) + [`series/[id]/page.tsx`](app/vendor/(app)/studio/series/[id]/page.tsx) — Menu / header: “Unlock on artworks” → `/vendor/studio`; empty-state copy updated.
+- [x] [`app/vendor/dashboard/artwork-pages/series/[seriesId]/page.tsx`](app/vendor/dashboard/artwork-pages/series/[seriesId]/page.tsx) — Comment: legacy dashboard-only series editor.
+
+**Note**: Product create flow unchanged — no Hidden Treasures / benefits UI restored on artwork.
+
+---
+
 ## [2026-04-18] fix | Add artwork wizard: Continue visible on desktop
 
 **Checklist**

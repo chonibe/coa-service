@@ -119,9 +119,12 @@ export default function SeriesDetailPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {!isEditing && (
             <>
-              <Link href={`/vendor/studio/series/${seriesId}/experience/editor`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#1a1a1a] text-white text-xs font-semibold font-body hover:opacity-85 transition-opacity">
+              <Link
+                href="/vendor/studio"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#1a1a1a] px-3 py-2 text-xs font-semibold text-white font-body transition-opacity hover:opacity-85"
+              >
                 <Sparkles className="h-3.5 w-3.5" />
-                Edit unlock experience
+                Unlock on artworks
               </Link>
               <Button onClick={() => setIsEditing(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
