@@ -30,6 +30,8 @@ interface BenefitsManagementProps {
   onBenefitsChange: (benefits: ProductBenefit[]) => void
   seriesId?: string | null
   isEditing?: boolean
+  /** When true, benefits apply to the whole series only (no per-artwork toggle). */
+  seriesLevelOnly?: boolean
 }
 
 export function BenefitsManagement({
@@ -37,6 +39,7 @@ export function BenefitsManagement({
   onBenefitsChange,
   seriesId,
   isEditing = false,
+  seriesLevelOnly = false,
 }: BenefitsManagementProps) {
   const [benefitTypes, setBenefitTypes] = useState<any[]>([])
   const [availableSeries, setAvailableSeries] = useState<Array<{ id: string; name: string }>>([])
@@ -167,7 +170,7 @@ export function BenefitsManagement({
       accessCode: "",
       startsAt: "",
       expiresAt: "",
-      isSeriesLevel: false,
+      isSeriesLevel: Boolean(seriesLevelOnly && seriesId),
       hiddenSeriesId: null,
     })
     setShowDescription(false)
@@ -199,7 +202,7 @@ export function BenefitsManagement({
       accessCode: benefit.access_code || "",
       startsAt: formatDateForInput(benefit.starts_at),
       expiresAt: formatDateForInput(benefit.expires_at),
-      isSeriesLevel: benefit.is_series_level || false,
+      isSeriesLevel: seriesLevelOnly ? !!seriesId : !!benefit.is_series_level,
       hiddenSeriesId: (benefit as any).hidden_series_id || null,
       vipArtworkId: (benefit as any).vip_artwork_id || null,
       vipSeriesId: (benefit as any).vip_series_id || null,
@@ -248,7 +251,7 @@ export function BenefitsManagement({
       access_code: formData.accessCode.trim() || undefined,
       starts_at: formData.startsAt || null,
       expires_at: formData.expiresAt || null,
-      is_series_level: formData.isSeriesLevel && !!seriesId,
+      is_series_level: Boolean(seriesId) && (seriesLevelOnly || formData.isSeriesLevel),
       ...(formData.hiddenSeriesId && { hidden_series_id: formData.hiddenSeriesId }),
       ...(formData.vipArtworkId && { vip_artwork_id: formData.vipArtworkId }),
       ...(formData.vipSeriesId && { vip_series_id: formData.vipSeriesId }),
@@ -437,8 +440,16 @@ export function BenefitsManagement({
                   {getTypeSpecificForm()}
                 </motion.div>
 
-                {/* Series Level Toggle - If series exists */}
-                {seriesId && (
+                {/* Series-wide only when series exists and per-artwork mode is disabled */}
+                {seriesId && seriesLevelOnly && (
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <p className="text-sm font-semibold">Applies to the whole series</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      NFC unlock content is managed at the series level. This treasure applies to every artwork in the series.
+                    </p>
+                  </div>
+                )}
+                {seriesId && !seriesLevelOnly && (
                   <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
                     <div className="space-y-0.5">
                       <Label htmlFor="series-level" className="text-sm font-semibold">
@@ -497,7 +508,8 @@ export function BenefitsManagement({
           <h4 className="text-sm font-semibold">Hidden Treasures</h4>
           <p className="text-xs text-muted-foreground">
             Share exclusive content, knowledge, or access with collectors
-            {seriesId && " — apply to artwork or series"}
+            {seriesId && !seriesLevelOnly && " — apply to artwork or series"}
+            {seriesId && seriesLevelOnly && " — series-wide only"}
           </p>
         </div>
         <Button

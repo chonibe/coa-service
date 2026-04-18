@@ -57,27 +57,44 @@ export default function CreateArtworkPage() {
 
   useEffect(() => {
     const fetchSeries = async () => {
+      let preselectedName: string | null = null
       try {
         const res = await fetch("/api/vendor/series?include_archived=true", { credentials: "include" })
         if (res.ok) {
           const json = await res.json()
           const active = (json.series || []).filter((s: any) => !s.archived_at && s.is_active !== false)
-          setSeriesList(active.map((s: any) => ({
+          const mapped = active.map((s: any) => ({
             id: s.id,
             name: s.name || s.title,
             thumbnailUrl: s.thumbnail_url || s.thumbnailUrl || s.cover_url || null,
             unlockType: s.unlock_type || s.unlockType || "any_purchase",
             memberCount: s.member_count || s.memberCount || 0,
-          })))
+          }))
+          setSeriesList(mapped)
+          if (preselectedSeriesId) {
+            const match = mapped.find((s) => s.id === preselectedSeriesId)
+            if (match) {
+              preselectedName = match.name
+            } else {
+              const one = await fetch(`/api/vendor/series/${preselectedSeriesId}`, { credentials: "include" })
+              if (one.ok) {
+                const data = await one.json()
+                preselectedName = (data.series?.name as string | undefined) || null
+              }
+            }
+          }
         }
       } catch (err) {
         console.error("[SeriesPicker] Failed to fetch series:", err)
       } finally {
+        if (preselectedSeriesId) {
+          setSelectedSeriesName(preselectedName || "Series")
+        }
         setLoading(false)
       }
     }
     void fetchSeries()
-  }, [])
+  }, [preselectedSeriesId])
 
   const handleSeriesSelect = (series: SeriesOption) => {
     setSelectedSeriesId(series.id)
@@ -87,6 +104,10 @@ export default function CreateArtworkPage() {
 
   const handleCancel = () => {
     if (step === "form") {
+      if (preselectedSeriesId) {
+        router.push(`/vendor/studio/series/${preselectedSeriesId}`)
+        return
+      }
       setStep("pick")
       setSelectedSeriesId(null)
       setSelectedSeriesName(null)

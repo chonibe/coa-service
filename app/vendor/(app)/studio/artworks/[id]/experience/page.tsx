@@ -1,78 +1,58 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  ChevronRight,
-  ExternalLink,
-  Eye,
-  Fingerprint,
-  Loader2,
-  PenTool,
-} from "lucide-react"
+import { ArrowLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
 
 /**
  * /vendor/studio/artworks/[id]/experience
  *
- * AppShell landing page for the NFC / unlock experience. It used to hard-
- * redirect into /artwork-editor/[id]; now it's a small hub with two clear
- * actions so artists understand what they're about to do and have a
- * preview path that doesn't force them to open the editor first.
+ * NFC unlock blocks are edited per series (shared template), not per artwork.
+ * This page explains that and routes artists to the series block editor when possible.
  */
 export default function ArtworkExperienceLanding() {
   const params = useParams()
   const router = useRouter()
-  const productId = params?.id as string
+  const searchParams = useSearchParams()
+  const submissionOrProductId = params?.id as string
+  const seriesFromQuery = searchParams.get("series")
 
-  const [counts, setCounts] = useState<{ total: number; published: number } | null>(null)
+  const [seriesId, setSeriesId] = useState<string | null>(seriesFromQuery)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (seriesFromQuery) {
+      setSeriesId(seriesFromQuery)
+      setLoading(false)
+      return
+    }
     let cancelled = false
     const load = async () => {
       try {
-        const res = await fetch(`/api/vendor/artwork-pages/${productId}`, {
+        const res = await fetch(`/api/vendor/products/submissions/${submissionOrProductId}`, {
           credentials: "include",
         })
-        if (!res.ok) throw new Error("fetch failed")
+        if (!res.ok) throw new Error("not submission")
         const data = await res.json()
-        if (cancelled) return
-        const blocks: Array<{ is_published?: boolean }> = Array.isArray(data.contentBlocks)
-          ? data.contentBlocks
-          : []
-        setCounts({
-          total: blocks.length,
-          published: blocks.filter((b) => b.is_published).length,
-        })
+        const sid = data.submission?.series_id as string | undefined
+        if (!cancelled && sid) setSeriesId(sid)
       } catch {
-        if (!cancelled) setCounts({ total: 0, published: 0 })
+        // id may be a Shopify product id — no cheap series lookup here
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
-    if (productId) load()
+    if (submissionOrProductId) void load()
+    else setLoading(false)
     return () => {
       cancelled = true
     }
-  }, [productId])
+  }, [submissionOrProductId, seriesFromQuery])
 
-  const openEditor = () => router.push(`/artwork-editor/${productId}`)
-  const openPreview = () =>
-    window.open(`/preview/artwork/${productId}`, "_blank", "noopener")
-
-  const status = (() => {
-    if (!counts) return { label: "Loading…", tone: "text-gray-500" }
-    if (counts.total === 0)
-      return { label: "No blocks yet", tone: "text-gray-500" }
-    if (counts.published === 0)
-      return { label: `Draft · ${counts.total} block${counts.total === 1 ? "" : "s"}`, tone: "text-amber-700" }
-    return {
-      label: `Live · ${counts.published}/${counts.total} published`,
-      tone: "text-emerald-700",
-    }
-  })()
+  const editorHref = seriesId
+    ? `/vendor/studio/series/${seriesId}/experience/editor`
+    : "/vendor/studio/series"
 
   return (
     <div className="px-4 pt-4 pb-10 max-w-xl mx-auto">
@@ -85,81 +65,56 @@ export default function ArtworkExperienceLanding() {
       </Link>
 
       <div className="space-y-1 mb-6">
-        <p className="text-[10px] tracking-[0.2em] uppercase text-gray-500">
-          Unlock experience
-        </p>
+        <p className="text-[10px] tracking-[0.2em] uppercase text-gray-500">Unlock experience</p>
         <h1 className="text-xl font-heading font-semibold text-gray-900 tracking-tight">
-          NFC-gated content for this artwork
+          Series-wide NFC unlock
         </h1>
         <p className="text-sm text-gray-600 font-body">
-          Add blocks that unlock for a collector after they tap the NFC tag on their
-          piece — voice notes, process photos, soundtracks, and more.
+          Collectors see one unlock experience for the whole series. Add and publish blocks from the
+          series editor — not per individual artwork.
         </p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <button
           type="button"
-          onClick={openEditor}
-          className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100"
+          onClick={() => router.push(editorHref)}
+          disabled={loading}
+          className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 disabled:opacity-60"
         >
           <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0">
-            <PenTool className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 font-body">
-              Open block editor
-            </p>
+            <p className="text-sm font-semibold text-gray-900 font-body">Open series block editor</p>
             <p className="text-xs text-gray-500 font-body">
-              Add, reorder, and publish blocks.{" "}
-              <span className={status.tone}>
-                {loading ? (
-                  <Loader2 className="inline w-3 h-3 animate-spin" />
-                ) : (
-                  status.label
-                )}
-              </span>
+              {loading ? (
+                <span className="inline-flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Looking up series…
+                </span>
+              ) : seriesId ? (
+                "Edit blocks for this artwork’s series."
+              ) : (
+                "We could not detect a series from this link. Open Series to pick yours."
+              )}
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
         </button>
 
-        <button
-          type="button"
-          onClick={openPreview}
+        <Link
+          href="/vendor/studio/series"
           className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-            <Eye className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 font-body inline-flex items-center gap-1">
-              Preview as collector
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </p>
-            <p className="text-xs text-gray-500 font-body">
-              Opens in a new tab. Try Not paired / Pre-scan / Paired to see each view.
-            </p>
+            <p className="text-sm font-semibold text-gray-900 font-body">All series</p>
+            <p className="text-xs text-gray-500 font-body">Choose a series, then Unlock experience.</p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-        </button>
-      </div>
-
-      <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
-        <div className="flex items-start gap-2">
-          <Fingerprint className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-          <div className="text-xs text-gray-600 font-body space-y-1">
-            <p>
-              <span className="font-semibold text-gray-900">How collectors see this:</span>{" "}
-              blocks stay hidden until you publish them. Each published block then
-              appears for anyone who has the artwork paired to their account.
-            </p>
-            <p>
-              You can publish the whole experience from the editor, or publish one
-              block at a time &mdash; useful when you&apos;re drip-feeding new content.
-            </p>
-          </div>
-        </div>
+        </Link>
       </div>
     </div>
   )

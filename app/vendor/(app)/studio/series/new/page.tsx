@@ -58,14 +58,14 @@ export default function CreateSeriesPage() {
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch("/api/vendor/media/upload", {
+      const res = await fetch("/api/vendor/media-library/upload", {
         method: "POST",
         credentials: "include",
         body: formData,
       })
-      if (!res.ok) throw new Error("Upload failed")
-      const { url } = await res.json()
-      setCoverUrl(url)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || json.message || "Upload failed")
+      setCoverUrl(json.file?.url || json.url)
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" })
     } finally {

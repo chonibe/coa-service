@@ -185,6 +185,7 @@ export function SeriesStep({ formData, setFormData, seriesRequired = false }: Se
               benefits={formData.benefits || []}
               onBenefitsChange={(benefits) => setFormData({ ...formData, benefits })}
               seriesId={formData.series_id}
+              seriesLevelOnly={!!formData.series_id}
             />
           </CardContent>
         </Card>
@@ -259,15 +260,17 @@ export function SeriesStep({ formData, setFormData, seriesRequired = false }: Se
           </Alert>
         )}
 
-        {/* Benefits Management for standalone artwork */}
-        <Card className="mt-6">
-          <CardContent className="pt-6">
-            <BenefitsManagement
-              benefits={formData.benefits || []}
-              onBenefitsChange={(benefits) => setFormData({ ...formData, benefits })}
-            />
-          </CardContent>
-        </Card>
+        {/* Per-artwork hidden treasures removed — use series + NFC unlock experience */}
+        <Alert className="mt-6">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Unlock content and NFC blocks are configured per series. Select a series above, then use{" "}
+            <Link href="/vendor/studio/series" className="underline font-medium hover:text-primary">
+              Series → Unlock experience
+            </Link>{" "}
+            for the block editor.
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   )

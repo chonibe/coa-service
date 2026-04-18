@@ -227,7 +227,7 @@ function SeriesMenuDropdown({
           <Layers className="w-3.5 h-3.5" /> Edit details
         </Link>
         <Link
-          href={`/vendor/studio/series/${series.id}/experience`}
+          href={`/vendor/studio/series/${series.id}/experience/editor`}
           onClick={onClose}
           className="flex items-center gap-2 px-3 py-2 text-[#1a1a1a] hover:bg-gray-50"
         >

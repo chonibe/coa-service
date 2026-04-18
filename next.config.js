@@ -28,6 +28,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'cdn.shopify.com', pathname: '/**' },
       { protocol: 'https', hostname: '**.shopify.com', pathname: '/**' },
       { protocol: 'https', hostname: 'thestreetcollector.com', pathname: '/**' },
+      // Supabase Storage (media library, series covers, submission images)
+      { protocol: 'https', hostname: '**.supabase.co', pathname: '/**' },
     ],
   },
   async headers() {

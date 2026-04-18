@@ -15,10 +15,8 @@ import { cn } from '@/lib/utils'
 // API: /api/vendor/products/submissions, /api/vendor/series
 // Render: Visual grid of artwork submissions (thumbnail, title, status badge, price)
 // Filter tabs: All / Draft / Pending / Published
-// Tap artwork: Navigate to /artwork-editor/[productId]
-// Tap edit icon: Navigate to /vendor/studio/artworks/[id]/edit
-// "+" button: Navigate to /vendor/studio/artworks/new
-// Experience chip: /vendor/studio/artworks/[id]/experience (hands off to /artwork-editor/[id])
+// Tap artwork: Navigate to edit details (/vendor/studio/artworks/[id]/edit)
+// Unlock chip: Series block editor when seriesId known, else series list
 // Original source (for history): app/vendor/dashboard/products/page.tsx
 // ============================================================================
 
@@ -38,6 +36,7 @@ interface ArtworkSubmission {
   productId: string | null
   shopifyProductId: string | null
   seriesName?: string | null
+  seriesId?: string | null
   createdAt: string
 }
 
@@ -74,7 +73,8 @@ export default function VendorStudioPage() {
               imageUrl: s.image_url || s.images?.[0]?.src || s.imageUrl || null,
               productId: s.product_id || s.shopify_product_id || s.shopifyProductId || null,
               shopifyProductId: s.shopify_product_id || s.shopifyProductId || null,
-              seriesName: s.series_name || s.seriesName || null,
+              seriesName: s.series_name || s.seriesName || s.series_metadata?.series_name || null,
+              seriesId: s.series_metadata?.series_id || s.series_id || null,
               createdAt: s.created_at || s.createdAt || '',
             }))
           )
@@ -215,7 +215,9 @@ export default function VendorStudioPage() {
               // Always send artists to the block editor — never fall back to
               // the bare /edit (details) page when productId is missing.
               const editorId = artwork.productId || artwork.id
-              const experienceHref = `/vendor/studio/artworks/${editorId}/experience`
+              const seriesExperienceHref = artwork.seriesId
+                ? `/vendor/studio/series/${artwork.seriesId}/experience/editor`
+                : '/vendor/studio/series'
               const detailsHref = `/vendor/studio/artworks/${artwork.id}/edit`
               const isFocused = focusId === artwork.id
               return (
@@ -227,7 +229,7 @@ export default function VendorStudioPage() {
                     isFocused && 'ring-2 ring-impact-primary rounded-impact-block-xs ring-offset-2 ring-offset-white'
                   )}
                 >
-                  <Link href={experienceHref} aria-label={`Edit experience for ${artwork.title}`}>
+                  <Link href={detailsHref} aria-label={`Open ${artwork.title} details`}>
                     <div className="relative aspect-[4/5] bg-gray-100 rounded-impact-block-xs overflow-hidden">
                       {artwork.imageUrl ? (
                         <Image
@@ -269,9 +271,13 @@ export default function VendorStudioPage() {
                     {/* Persistent Unlock experience + Edit + Preview actions */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
-                        href={experienceHref}
+                        href={seriesExperienceHref}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#1a1a1a] text-white text-[10px] font-body font-semibold hover:opacity-85 transition-opacity"
-                        aria-label={`Edit unlock experience for ${artwork.title}`}
+                        aria-label={
+                          artwork.seriesId
+                            ? `Edit series unlock experience for ${artwork.title}`
+                            : `Pick a series to edit unlock experience (${artwork.title})`
+                        }
                       >
                         <Sparkles className="w-3 h-3" />
                         Unlock

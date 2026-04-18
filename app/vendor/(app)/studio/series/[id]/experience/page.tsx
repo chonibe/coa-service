@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Sparkles, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui"
-import { ExternalLink } from "lucide-react"
 
 interface SeriesExperienceLandingProps {
   seriesId: string
@@ -20,7 +19,6 @@ export default function SeriesExperiencePage() {
 function SeriesExperienceLanding({ seriesId }: SeriesExperienceLandingProps) {
   const [loading, setLoading] = useState(true)
   const [seriesName, setSeriesName] = useState("")
-  const [blockCount, setBlockCount] = useState(0)
 
   useEffect(() => {
     if (!seriesId) return
@@ -90,16 +88,11 @@ function SeriesExperienceLanding({ seriesId }: SeriesExperienceLandingProps) {
               <p className="text-sm text-muted-foreground mb-4">
                 Add and arrange the content blocks collectors unlock when they complete the series.
               </p>
-              <a
-                href={`/vendor/dashboard/artwork-pages/series/${seriesId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href={`/vendor/studio/series/${seriesId}/experience/editor`}>
                 <Button size="sm" className="bg-[#1a1a1a] hover:bg-[#1a1a1a]/90">
-                  Open editor
-                  <ExternalLink className="ml-1.5 h-3.5 w-3.5 opacity-70" />
+                  Open block editor
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

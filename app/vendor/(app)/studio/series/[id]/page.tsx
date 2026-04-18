@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation"
 import { Skeleton, Card, CardContent, Badge, Alert, AlertDescription, Button } from "@/components/ui"
 import { Eye, Lock, ArrowRight, Crown, Pencil, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 import { AlertCircle, ArrowLeft } from "lucide-react"
-import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import type { ArtworkSeries } from "@/types/artwork-series"
@@ -120,7 +119,7 @@ export default function SeriesDetailPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {!isEditing && (
             <>
-              <Link href={`/vendor/studio/series/${seriesId}/experience`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#1a1a1a] text-white text-xs font-semibold font-body hover:opacity-85 transition-opacity">
+              <Link href={`/vendor/studio/series/${seriesId}/experience/editor`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#1a1a1a] text-white text-xs font-semibold font-body hover:opacity-85 transition-opacity">
                 <Sparkles className="h-3.5 w-3.5" />
                 Edit unlock experience
               </Link>
