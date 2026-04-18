@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Lock, ArrowRight, Crown, Radio, FolderOpen, Book, ChevronDown, ChevronUp, Clock } from "lucide-react"
+import { Check, Crown, FolderOpen, Book, ChevronDown, ChevronUp } from "lucide-react"
 import type { UnlockType } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
@@ -14,22 +14,21 @@ interface UnlockTypeCardsProps {
 }
 
 // Organized unlock types with recommendations
-const recommendedType = {
-  value: "any_purchase" as UnlockType,
-  label: "Open Collection",
-  description: "All artworks available immediately",
-  bestFor: "Single releases, standalone pieces",
-  icon: FolderOpen,
-  color: "from-blue-500 to-cyan-500",
-  bgColor: "bg-blue-50 dark:bg-blue-950/20",
-  borderColor: "border-blue-200 dark:border-blue-800",
-}
-
-const journeyTypes = [
+const recommendedTypes = [
+  {
+    value: "any_purchase" as UnlockType,
+    label: "Open Collection",
+    description: "All artworks unlock immediately",
+    bestFor: "Single releases, standalone pieces",
+    icon: FolderOpen,
+    color: "from-blue-500 to-cyan-500",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+  },
   {
     value: "sequential" as UnlockType,
-    label: "Sequential",
-    description: "Unlock in order",
+    label: "Finish the Set",
+    description: "Each purchase unlocks next in order",
     bestFor: "Story arcs, album releases",
     icon: Book,
     color: "from-purple-500 to-pink-500",
@@ -40,31 +39,21 @@ const journeyTypes = [
 
 const advancedTypes = [
   {
-    value: "threshold" as UnlockType,
-    label: "Threshold",
-    description: "Unlock after collecting N pieces",
-    bestFor: "Collection milestones, tier rewards",
+    value: "vip" as UnlockType,
+    label: "VIP Unlocks",
+    description: "Unlock exclusive pieces after owning all earlier works",
+    bestFor: "Collector milestones, tier rewards",
     icon: Crown,
     color: "from-orange-500 to-red-500",
     bgColor: "bg-orange-50 dark:bg-orange-950/20",
     borderColor: "border-orange-200 dark:border-orange-800",
-  },
-  {
-    value: "nfc" as UnlockType,
-    label: "NFC-Only",
-    description: "Physical authentication required",
-    bestFor: "Physical art, limited editions",
-    icon: Radio,
-    color: "from-indigo-500 to-blue-500",
-    bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
-    borderColor: "border-indigo-200 dark:border-indigo-800",
   },
 ]
 
 export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const renderCard = (type: typeof recommendedType | typeof journeyTypes[0] | typeof advancedTypes[0], isFeatured = false) => {
+  const renderCard = (type: typeof recommendedTypes[0], isFeatured = false) => {
     const Icon = type.icon
     const isSelected = value === type.value
 
@@ -124,7 +113,7 @@ export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Recommended */}
+      {/* Recommended — side by side */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-1 w-1 rounded-full bg-primary" />
@@ -132,19 +121,8 @@ export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
             Recommended for Most Artists
           </p>
         </div>
-        {renderCard(recommendedType, true)}
-      </div>
-
-      {/* Create Collector Journeys */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-1 w-1 rounded-full bg-primary" />
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Create Collector Journeys
-          </p>
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {journeyTypes.map((type) => renderCard(type))}
+          {recommendedTypes.map((type) => renderCard(type))}
         </div>
       </div>
 
@@ -160,7 +138,7 @@ export function UnlockTypeCards({ value, onChange }: UnlockTypeCardsProps) {
             <div className="h-1 w-1 rounded-full bg-muted-foreground" />
             <p className="text-sm font-semibold text-muted-foreground">Advanced Options</p>
             <span className="text-xs text-muted-foreground/60">
-              (Threshold, NFC-only)
+              (VIP Unlocks)
             </span>
           </div>
           {showAdvanced ? (

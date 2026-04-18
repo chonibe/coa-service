@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Skeleton, Card, CardContent, Badge, Alert, AlertDescription, Button } from "@/components/ui"
-import { Eye, Lock, ArrowRight, Crown, Clock, Pencil, Sparkles, Image as ImageIcon } from "lucide-react"
+import { Eye, Lock, ArrowRight, Crown, Pencil, Sparkles, Image as ImageIcon } from "lucide-react"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -88,9 +88,7 @@ export default function SeriesDetailPage() {
     switch (type) {
       case "any_purchase": return "Open Collection"
       case "sequential": return "Finish the Set"
-      case "threshold": return "VIP Unlocks"
-      case "time_based": return "Time-Based"
-      case "vip": return "VIP"
+      case "vip": return "VIP Unlocks"
       default: return type
     }
   }
@@ -98,8 +96,6 @@ export default function SeriesDetailPage() {
   const unlockTypeConfig: Record<string, { gradient: string; borderColor: string; icon: typeof Lock; badgeColor: string; badgeBg: string }> = {
     any_purchase: { gradient: "from-blue-500/30 to-cyan-500/30", borderColor: "border-blue-400/50", icon: Lock, badgeColor: "text-blue-600", badgeBg: "bg-blue-100" },
     sequential: { gradient: "from-purple-500/30 to-pink-500/30", borderColor: "border-purple-400/50", icon: ArrowRight, badgeColor: "text-purple-600", badgeBg: "bg-purple-100" },
-    threshold: { gradient: "from-orange-500/30 to-red-500/30", borderColor: "border-orange-400/50", icon: Crown, badgeColor: "text-orange-600", badgeBg: "bg-orange-100" },
-    time_based: { gradient: "from-green-500/30 to-emerald-500/30", borderColor: "border-green-400/50", icon: Clock, badgeColor: "text-green-600", badgeBg: "bg-green-100" },
     vip: { gradient: "from-orange-500/30 to-red-500/30", borderColor: "border-orange-400/50", icon: Crown, badgeColor: "text-orange-600", badgeBg: "bg-orange-100" },
   }
 
