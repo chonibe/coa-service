@@ -18,6 +18,8 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 **Deploy / DB**: Apply the migration to Supabase before relying on `closed` / `draft` in production. Closing is DB-only (no Shopify unpublish in this change).
 
+**Vercel**: Production deploy completed (2026-04-18); alias `https://app.thestreetcollector.com`.
+
 ---
 
 ## [2026-04-18] deploy | Studio: series cover upload, images, series deep-link, series-only benefits, block editor route
