@@ -1,5 +1,28 @@
 # Commit Log
 
+## Commit: docs(wiki,gtm): niche battle plan, GSC runbook, EVENTS_MAP alignment (2026-04-19)
+
+### Summary
+Adds **wiki-first GTM/SEO artifacts**: [`wiki/concepts/positioning-wedge.md`](wiki/concepts/positioning-wedge.md), [`wiki/concepts/gtm-battle-plan.md`](wiki/concepts/gtm-battle-plan.md), [`wiki/syntheses/competitive-intelligence-templates.md`](wiki/syntheses/competitive-intelligence-templates.md), [`wiki/syntheses/tier-artist-priority-rubric.md`](wiki/syntheses/tier-artist-priority-rubric.md), [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md). **Docs mirror:** [`docs/features/street-collector/NICHE_BATTLE_PLAN.md`](docs/features/street-collector/NICHE_BATTLE_PLAN.md). **[`wiki/index.md`](wiki/index.md)** expanded (concepts, sources, syntheses); **[`wiki/log.md`](wiki/log.md)** entry **[2026-04-19]**. **[`docs/features/street-collector/SEO-shop.md`](docs/features/street-collector/SEO-shop.md)** Related + **changelog 1.2.0** link to battle plan. **[`docs/features/analytics/EVENTS_MAP.md`](docs/features/analytics/EVENTS_MAP.md)**: `item_list_name` **`artist_profile`**, corrected `app/(store)/shop/` paths, stage notes.
+
+### Implementation Checklist
+
+- [x] [wiki/concepts/positioning-wedge.md](wiki/concepts/positioning-wedge.md)
+- [x] [wiki/concepts/gtm-battle-plan.md](wiki/concepts/gtm-battle-plan.md)
+- [x] [wiki/syntheses/competitive-intelligence-templates.md](wiki/syntheses/competitive-intelligence-templates.md)
+- [x] [wiki/syntheses/tier-artist-priority-rubric.md](wiki/syntheses/tier-artist-priority-rubric.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [wiki/index.md](wiki/index.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/features/analytics/EVENTS_MAP.md](docs/features/analytics/EVENTS_MAP.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+**Manual / ongoing:** run GSC export and fill competitive templates per runbook; coordinated drops and pillar articles are process work outside this commit.
+
+---
+
 ## Commit: fix(seo): root metadata, blog index, noindex app shells, sitemap canonical/ISR (2026-04-19)
 
 ### Summary

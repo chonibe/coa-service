@@ -121,13 +121,14 @@ See `hooks/use-posthog-feature-flag.ts` for the `usePostHogFeatureFlag` and `use
 
 `view_item` and `add_to_cart` include **`item_list_name`** (stage) so you can segment by where the user saw or added the artwork:
 
-| Stage        | Where |
-|-------------|--------|
+| Stage / `item_list_name` | Where |
+|--------------------------|--------|
 | `home`      | Home page grid |
 | `products`  | Shop products grid |
-| `artist`    | Artist profile page |
+| `artist_profile` | Artist profile page quick-add (`/shop/artists/[slug]`) — see [`ArtistProfilePageClient.tsx`](../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx) |
 | `pdp`       | Product detail page (view or add) |
-| `experience`| Experience configurator (preview or add to order) |
+| `experience` | Legacy experience configurator paths |
+| `experience-v2` | Experience v2 shell |
 
 In PostHog or GA4, filter or break down by `item_list_name` to see which artworks are selected or added at each stage.
 
@@ -146,11 +147,11 @@ In PostHog or GA4, filter or break down by `item_list_name` to see which artwork
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
 | `/shop` (home) | `page_view` | **Tracked** | Global. |
-| `/shop` (home) | `view_item` (product card click to PDP) | **Tracked** | [`HomeProductCard`](../../app/shop/home/HomeProductCard.tsx) — `trackViewItem` on card click via `onCardClick`. |
-| `/shop` (home) | `add_to_cart` (quick add) | **Tracked** | [`HomeProductCard`](../../app/shop/home/HomeProductCard.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
+| `/shop` (home) | `view_item` (product card click to PDP) | **Tracked** | [`HomeProductCard`](../../app/(store)/shop/home/HomeProductCard.tsx) — `trackViewItem` on card click via `onCardClick`. |
+| `/shop` (home) | `add_to_cart` (quick add) | **Tracked** | [`HomeProductCard`](../../app/(store)/shop/home/HomeProductCard.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
 | `/shop/products` | `page_view` | **Tracked** | Global. |
-| `/shop/products` | `view_item` (grid cards click to PDP) | **Tracked** | [`ProductCardItem`](../../app/shop/components/ProductCardItem.tsx) — `trackViewItem` on card click. |
-| `/shop/products` | `add_to_cart` (quick add) | **Tracked** | [`ProductCardItem`](../../app/shop/components/ProductCardItem.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
+| `/shop/products` | `view_item` (grid cards click to PDP) | **Tracked** | [`ProductCardItem`](../../app/(store)/shop/components/ProductCardItem.tsx) — `trackViewItem` on card click. |
+| `/shop/products` | `add_to_cart` (quick add) | **Tracked** | [`ProductCardItem`](../../app/(store)/shop/components/ProductCardItem.tsx) — `trackAddToCart(storefrontProductToItem(...))` after `cart.addItem`. |
 | `/shop/products` | `search` (if search UI exists) | **Not tracked** | No search bar on products page; collection/sort only. |
 
 ---
@@ -160,7 +161,7 @@ In PostHog or GA4, filter or break down by `item_list_name` to see which artwork
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
 | `/shop/[handle]` | `page_view` | **Tracked** | Global. |
-| `/shop/[handle]` | `view_item` | **Tracked** | [`app/shop/[handle]/page.tsx`](../../app/shop/[handle]/page.tsx) — `trackViewItem(storefrontProductToItem(product, selectedVariant))` in useEffect when product loads. |
+| `/shop/[handle]` | `view_item` | **Tracked** | [`app/shop/[handle]/page.tsx`](../../app/(store)/shop/[handle]/page.tsx) — `trackViewItem(storefrontProductToItem(product, selectedVariant))` in useEffect when product loads. |
 | `/shop/[handle]` | `add_to_cart` | **Tracked** | Same page — `trackAddToCart(storefrontProductToItem(...))` in `handleAddToCart` after `cart.addItem`. |
 
 ---
@@ -170,8 +171,8 @@ In PostHog or GA4, filter or break down by `item_list_name` to see which artwork
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
 | `/shop/cart` | `page_view` | **Tracked** | Global. |
-| `/shop/cart` | `begin_checkout` | **Tracked** | [`app/shop/cart/page.tsx`](../../app/shop/cart/page.tsx) — `trackBeginCheckout(cartItemsToProductItems(items), subtotal)` in `handleCheckout`. |
-| Experience checkout (OrderBar) | `add_payment_info` | **Tracked** | [`OrderBar`](../../app/shop/experience/components/OrderBar.tsx) — `trackAddPaymentInfo(...)` in `onPaymentMethodChange`. |
+| `/shop/cart` | `begin_checkout` | **Tracked** | [`app/shop/cart/page.tsx`](../../app/(store)/shop/cart/page.tsx) — `trackBeginCheckout(cartItemsToProductItems(items), subtotal)` in `handleCheckout`. |
+| Experience checkout (OrderBar) | `add_payment_info` | **Tracked** | [`OrderBar`](../../app/(store)/shop/experience/components/OrderBar.tsx) — `trackAddPaymentInfo(...)` in `onPaymentMethodChange`. |
 | `/shop/checkout/success` | `page_view` | **Tracked** | Global. |
 | `/shop/checkout/success` | `purchase` | **Not tracked** (here) | Purchase is tracked on [`/track/[token]`](../../app/track/[token]/page.tsx) when user lands with order token. |
 
@@ -181,10 +182,10 @@ In PostHog or GA4, filter or break down by `item_list_name` to see which artwork
 
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
-| `/shop/artists` | `page_view` | **Tracked** | Global. |
+| `/shop/artists` | `page_view` | **Tracked** | Global (redirect may send to explore-artists — see `next.config.js`). |
 | `/shop/artists/[slug]` | `page_view` | **Tracked** | Global. |
-| `/shop/artists/[slug]` | `add_to_cart` (artist’s products) | **Tracked** | [`app/shop/artists/[slug]/page.tsx`](../../app/shop/artists/[slug]/page.tsx) — `trackAddToCart(storefrontProductToItem(...))` in `onQuickAdd`. |
-| `/shop/artists/[slug]` | `view_item` (card click to PDP) | **Tracked** | [`VinylProductCard`](../../components/shop/VinylProductCard.tsx) — `trackViewItem` on card click. |
+| `/shop/artists/[slug]` | `add_to_cart` (artist’s products) | **Tracked** | [`ArtistProfilePageClient.tsx`](../../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx) — `trackAddToCart(..., item_list_name: 'artist_profile')`. |
+| `/shop/artists/[slug]` | `view_item` (card click to PDP) | **Tracked** | [`VinylProductCard`](../../components/shop/VinylProductCard.tsx) — `trackViewItem` on card click (passes `trackStage` when provided). |
 
 ---
 
@@ -193,16 +194,16 @@ In PostHog or GA4, filter or break down by `item_list_name` to see which artwork
 | Route / component | Event | Status | Implementation |
 |-------------------|--------|--------|----------------|
 | `/shop/experience` | `page_view` | **Tracked** | Global. |
-| `/shop/experience` (Intro quiz) | Custom (e.g. `quiz_start` / `quiz_complete`) | **Not tracked** | [`app/shop/experience/components/IntroQuiz.tsx`](../../app/shop/experience/components/IntroQuiz.tsx) — optional for funnel. |
-| Configurator – artwork strip | `view_item` (preview / detail) | **Tracked** | [`Configurator`](../../app/shop/experience/components/Configurator.tsx) — `trackViewItem(storefrontProductToItem(previewed))` in `useEffect` when `previewed` changes. |
+| `/shop/experience` (Intro quiz) | Custom (e.g. `quiz_start` / `quiz_complete`) | **Not tracked** | [`app/shop/experience/components/IntroQuiz.tsx`](../../app/(store)/shop/experience/components/IntroQuiz.tsx) — optional for funnel. |
+| Configurator – artwork strip | `view_item` (preview / detail) | **Tracked** | [`Configurator`](../../app/(store)/shop/experience/components/Configurator.tsx) — `trackViewItem(storefrontProductToItem(previewed))` in `useEffect` when `previewed` changes. |
 | Configurator – artwork strip | `add_to_cart` (add to order) | **Tracked** | Configurator `handleAddToCart` — `trackAddToCart(storefrontProductToItem(product))` when adding. |
 | Configurator – search | `search` | **Tracked** | Configurator search input — `trackSearch(searchQuery)` on Enter. |
 | Configurator – filter | Custom (e.g. `filter_apply`) | **Not tracked** | FilterPanel / filters — optional. |
-| Order bar – open drawer | `begin_checkout` | **Tracked** | [`OrderBar`](../../app/shop/experience/components/OrderBar.tsx) — `trackBeginCheckout(...)` when drawer opens with items. |
+| Order bar – open drawer | `begin_checkout` | **Tracked** | [`OrderBar`](../../app/(store)/shop/experience/components/OrderBar.tsx) — `trackBeginCheckout(...)` when drawer opens with items. |
 | Order bar – payment | `add_payment_info` | **Tracked** | OrderBar — `trackAddPaymentInfo(...)` in `onPaymentMethodChange`. |
 | Configurator – lamp paywall | `experience_lamp_paywall_add_to_cart` | **Tracked** | Configurator — when user clicks "Add Street Lamp" on paywall (`trackEnhancedEvent`, params: `source: 'configurator'`). |
 | Configurator – lamp paywall | `experience_lamp_paywall_skip` | **Tracked** | Configurator — when user clicks "Skip — browse artworks without lamp" (`trackEnhancedEvent`, params: `source: 'configurator'`). |
-| Experience – A/B test | `experience_ab_assigned` | **Tracked** | [`ExperienceClient`](../../../app/shop/experience/components/ExperienceClient.tsx) — when visitor is assigned to variant `onboarding` or `skip` (50/50). Params: `variant`, `test: 'experience_onboarding'`. User property `experience_ab_variant` is also set for segmenting all subsequent events. |
+| Experience – A/B test | `experience_ab_assigned` | **Tracked** | [`ExperienceClient`](../../../app/(store)/shop/experience/components/ExperienceClient.tsx) — when visitor is assigned to variant `onboarding` or `skip` (50/50). Params: `variant`, `test: 'experience_onboarding'`. User property `experience_ab_variant` is also set for segmenting all subsequent events. |
 | Experience → success | `purchase` | **Not tracked** (on success page) | Same as shop: purchase tracked on `/track/[token]` when user has order token. |
 
 ---
@@ -229,7 +230,7 @@ All of these use the root layout, so they get **`page_view`** automatically from
 | `/shop/artists/[slug]?ref=...` | `page_view` | **Tracked** | Artist page when arrived via affiliate link; ref is in URL. Global. |
 | `/shop/experience?artist=...` | `page_view` | **Tracked** | Experience with artist pre-filter (e.g. affiliate). Global. |
 | `/r/[slug]` | (no view) | **Redirect** | Short affiliate link; server redirects to `/shop/artists/[slug]?ref=...` so no HTML is rendered — GA sees the destination page_view only. |
-| Affiliate landing | `affiliate_landing` | **Tracked** | Fired once when user lands with `?ref=` on [`/shop/artists/[slug]`](../../app/shop/artists/[slug]/page.tsx) or with `?artist=` on experience ([`ExperienceClient`](../../app/shop/experience/components/ExperienceClient.tsx)). Params: `affiliate_ref`/`affiliate_slug`, `page` (`artist` | `experience`), optional `artist_slug`. |
+| Affiliate landing | `affiliate_landing` | **Tracked** | Fired once when user lands with `?ref=` on [`/shop/artists/[slug]`](../../app/(store)/shop/artists/[slug]/page.tsx) or with `?artist=` on experience ([`ExperienceClient`](../../app/(store)/shop/experience/components/ExperienceClient.tsx)). Params: `affiliate_ref`/`affiliate_slug`, `page` (`artist` | `experience`), optional `artist_slug`. |
 
 ---
 
