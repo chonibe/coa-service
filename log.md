@@ -12,7 +12,7 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 - [x] [`app/api/vendor/artwork-pages/[productId]/reorder/route.ts`](app/api/vendor/artwork-pages/[productId]/reorder/route.ts) — Accepts `blockOrders` (editor payload) or `updates`; fixes submission reorder id matching.
 - [x] [`docs/features/artwork-editor/README.md`](docs/features/artwork-editor/README.md) — Reorder and PUT contract notes for submissions.
 
-**Vercel**: Run `vercel --prod --yes` after merge.
+**Vercel**: Production deploy completed (2026-04-19); alias `https://app.thestreetcollector.com`.
 
 ---
 
