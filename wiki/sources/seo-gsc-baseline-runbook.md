@@ -44,12 +44,17 @@ Requires Google Cloud project with **Search Console API** enabled and OAuth clie
 2. In Google Cloud → Credentials → your OAuth Web client → **Authorized redirect URIs**, add: `http://127.0.0.1:3333/oauth2callback`
 3. Run `npm run gsc:oauth`, complete the browser consent, then add `GSC_OAUTH_REFRESH_TOKEN` and `GSC_SITE_URL` to `.env.local`.
 4. `npm run gsc:report` — JSON with queries and **position**; `npm run gsc:report -- --sites` lists verified properties.
+5. Bulk CSV pack: `npm run gsc:export-all` → writes under `docs/dev/gsc-exports/<timestamp>/` (gitignored).
+6. URL Inspection batch (quota): `npm run gsc:inspect` — default URLs in `config/gsc-default-urls.txt`.
+7. Sitemaps: `npm run gsc:sitemaps -- list` · `npm run gsc:sitemaps -- submit https://www.thestreetcollector.com/sitemap.xml`
+
+**Full command reference:** [`docs/features/street-collector/GSC_API.md`](../../docs/features/street-collector/GSC_API.md).
 
 **Troubleshooting:** If the browser shows **ERR_CONNECTION_REFUSED** on `127.0.0.1`, the CLI server was closed before Google redirected — run `npm run gsc:oauth` again and **leave the terminal open**. Or paste the redirect URL from the address bar (contains `?code=`):  
 `npm run gsc:oauth -- --url='FULL_URL'`  
 See `scripts/gsc-oauth-token.mjs` header comments.
 
-Scripts: `scripts/gsc-oauth-token.mjs`, `scripts/gsc-search-analytics.mjs`.
+Scripts live under `scripts/gsc-*.mjs` — see **GSC_API** doc above.
 
 ## Related
 

@@ -12,7 +12,8 @@ Operational summary for owning the **artist prints + illuminated display + colle
 | **Positioning one-pager** | [`wiki/concepts/positioning-wedge.md`](../../../wiki/concepts/positioning-wedge.md) |
 | **Tier rubric** | [`wiki/syntheses/tier-artist-priority-rubric.md`](../../../wiki/syntheses/tier-artist-priority-rubric.md) |
 | **Competitive templates** | [`wiki/syntheses/competitive-intelligence-templates.md`](../../../wiki/syntheses/competitive-intelligence-templates.md) |
-| **GSC runbook** | [`wiki/sources/seo-gsc-baseline-runbook.md`](../../../wiki/sources/seo-gsc-baseline-runbook.md) (includes optional API: `npm run gsc:oauth`, `npm run gsc:report`) |
+| **GSC runbook** | [`wiki/sources/seo-gsc-baseline-runbook.md`](../../../wiki/sources/seo-gsc-baseline-runbook.md) |
+| **GSC API (CLI reference)** | [`GSC_API.md`](GSC_API.md) — oauth, analytics CSV, `gsc:export-all`, `gsc:inspect`, `gsc:sitemaps` |
 | **GSC fill-in template** | [`wiki/sources/gsc-baseline-fill-in-template.md`](../../../wiki/sources/gsc-baseline-fill-in-template.md) |
 | **Hero-drop playbook** | [`wiki/sources/hero-drop-playbook.md`](../../../wiki/sources/hero-drop-playbook.md) |
 | **Pillar articles (Shopify HTML)** | [`pillar-articles-shopify-draft.md`](pillar-articles-shopify-draft.md) |
@@ -37,6 +38,7 @@ Artist profile quick-add ecommerce events use **`item_list_name: 'artist_profile
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.1.2 | 2026-04-19 | Full GSC CLI toolkit — see [`GSC_API.md`](GSC_API.md). |
 | 1.1.1 | 2026-04-19 | GSC API: `gsc:oauth` / `gsc:report` scripts; runbook section. |
 | 1.1.0 | 2026-04-19 | GSC fill-in template, hero-drop playbook (wiki); four pillar article HTML drafts for Shopify. |
 | 1.0.0 | 2026-04-19 | Initial doc — mirrors wiki battle plan stack. |

@@ -63,3 +63,6 @@ secrets/
 # Packed Claude .skill bundles (regenerate with npm run skills:pack)
 /artifacts/
 .skills-hub-data/
+
+# Local Google Search Console CSV export batches (npm run gsc:export-all)
+docs/dev/gsc-exports/

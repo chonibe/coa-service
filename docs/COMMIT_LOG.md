@@ -1,5 +1,30 @@
 # Commit Log
 
+## Commit: feat(scripts): Google Search Console toolkit — CSV, export pack, inspection, sitemaps (2026-04-19)
+
+### Summary
+**`gsc-lib.mjs`**, extended **`gsc:report`** (CSV, `--output`, `--start-row`, `country` / `device` dimensions), **`gsc:export-all`**, **`gsc:sitemaps`**, **`gsc:inspect`**, **`config/gsc-default-urls.txt`**, **[`GSC_API.md`](docs/features/street-collector/GSC_API.md)**, related doc/wikilinks, **`docs/dev/gsc-exports/`** in **`.gitignore`**.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-lib.mjs](scripts/gsc-lib.mjs)
+- [x] [scripts/gsc-search-analytics.mjs](scripts/gsc-search-analytics.mjs)
+- [x] [scripts/gsc-sitemaps.mjs](scripts/gsc-sitemaps.mjs)
+- [x] [scripts/gsc-url-inspection.mjs](scripts/gsc-url-inspection.mjs)
+- [x] [scripts/gsc-export-all.mjs](scripts/gsc-export-all.mjs)
+- [x] [config/gsc-default-urls.txt](config/gsc-default-urls.txt)
+- [x] [docs/features/street-collector/GSC_API.md](docs/features/street-collector/GSC_API.md)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [package.json](package.json)
+- [x] [.gitignore](.gitignore)
+- [x] [.env.example](.env.example)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(scripts): GSC OAuth — keep terminal open; --code / --url recovery (2026-04-19)
 
 ### Summary

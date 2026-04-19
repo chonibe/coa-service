@@ -1,71 +1,54 @@
 #!/usr/bin/env node
 /**
- * Query Search Console search analytics (queries/pages + average position).
+ * Search Console search analytics (queries, pages, position, country, device, etc.)
  *
- * Env:
- *   GSC_OAUTH_CLIENT_SECRETS_PATH — path to client_secret JSON (same as oauth script)
- *   GSC_OAUTH_REFRESH_TOKEN — from gsc-oauth-token.mjs
- *   GSC_SITE_URL — must match the property in Search Console exactly, e.g.
- *     https://www.thestreetcollector.com/
- *     or sc-domain:thestreetcollector.com
+ * Env: GSC_OAUTH_*, GSC_SITE_URL (see .env.example)
  *
- * Usage:
- *   node scripts/gsc-search-analytics.mjs
- *   node scripts/gsc-search-analytics.mjs --sites
- *   node scripts/gsc-search-analytics.mjs --dimensions query,page --days 90 --limit 50
+ * Examples:
+ *   npm run gsc:report
+ *   npm run gsc:report -- --sites
+ *   npm run gsc:report -- --dimensions query,page --days 90 --limit 100
+ *   npm run gsc:report -- --format csv --output ./out.csv --dimensions page --days 28
+ *   npm run gsc:report -- --dimensions country --days 28
+ *   npm run gsc:report -- --dimensions device --days 28 --start-row 25000
  */
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { google } from "googleapis";
-import dotenv from "dotenv";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, "..");
-dotenv.config({ path: path.join(REPO_ROOT, ".env.local") });
-dotenv.config();
+import {
+  createSearchConsoleClient,
+  requireSiteUrl,
+  searchAnalyticsRowsToCsv,
+} from "./gsc-lib.mjs";
 
 function parseArgs() {
   const argv = process.argv.slice(2);
-  const out = { sitesOnly: false, days: 28, limit: 25, dimensions: ["query"] };
+  const out = {
+    sitesOnly: false,
+    days: 28,
+    limit: 2500,
+    dimensions: ["query"],
+    format: "json",
+    output: null,
+    startRow: 0,
+  };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--sites") out.sitesOnly = true;
-    else if (argv[i] === "--days" && argv[i + 1]) {
-      out.days = Number(argv[++i]);
-    } else if (argv[i] === "--limit" && argv[i + 1]) {
-      out.limit = Number(argv[++i]);
-    } else if (argv[i] === "--dimensions" && argv[i + 1]) {
-      out.dimensions = argv[++i].split(",").map((s) => s.trim());
-    }
+    const a = argv[i];
+    if (a === "--sites") out.sitesOnly = true;
+    else if (a === "--days" && argv[i + 1]) out.days = Number(argv[++i]);
+    else if (a === "--limit" && argv[i + 1]) out.limit = Number(argv[++i]);
+    else if (a === "--dimensions" && argv[i + 1]) {
+      out.dimensions = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (a === "--format" && argv[i + 1])
+      out.format = String(argv[++i]).toLowerCase();
+    else if (a === "--output" && argv[i + 1]) out.output = argv[++i];
+    else if (a === "--start-row" && argv[i + 1])
+      out.startRow = Number(argv[++i]);
   }
   return out;
 }
 
-function loadOAuthClient() {
-  const secretsPath = process.env.GSC_OAUTH_CLIENT_SECRETS_PATH;
-  const refreshToken = process.env.GSC_OAUTH_REFRESH_TOKEN;
-  if (!secretsPath || !fs.existsSync(secretsPath)) {
-    throw new Error("Set GSC_OAUTH_CLIENT_SECRETS_PATH to your client_secret JSON path.");
-  }
-  if (!refreshToken) {
-    throw new Error(
-      "Set GSC_OAUTH_REFRESH_TOKEN (run node scripts/gsc-oauth-token.mjs once)."
-    );
-  }
-  const raw = JSON.parse(fs.readFileSync(secretsPath, "utf8"));
-  const web = raw.web || raw.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-    web.client_id,
-    web.client_secret
-  );
-  oAuth2Client.setCredentials({ refresh_token: refreshToken });
-  return oAuth2Client;
-}
-
 async function main() {
   const opts = parseArgs();
-  const auth = loadOAuthClient();
-  const sc = google.searchconsole({ version: "v1", auth });
+  const { sc } = createSearchConsoleClient();
 
   if (opts.sitesOnly) {
     const { data } = await sc.sites.list({});
@@ -73,12 +56,7 @@ async function main() {
     return;
   }
 
-  const siteUrl = process.env.GSC_SITE_URL;
-  if (!siteUrl) {
-    throw new Error(
-      'Set GSC_SITE_URL to your exact Search Console property, e.g. https://www.thestreetcollector.com/ or sc-domain:thestreetcollector.com'
-    );
-  }
+  const siteUrl = requireSiteUrl();
 
   const end = new Date();
   const start = new Date();
@@ -86,17 +64,32 @@ async function main() {
   const startDate = start.toISOString().slice(0, 10);
   const endDate = end.toISOString().slice(0, 10);
 
+  const body = {
+    startDate,
+    endDate,
+    dimensions: opts.dimensions,
+    rowLimit: Math.min(Math.max(opts.limit, 1), 25000),
+  };
+  if (opts.startRow > 0) body.startRow = opts.startRow;
+
   const { data } = await sc.searchanalytics.query({
     siteUrl,
-    requestBody: {
-      startDate,
-      endDate,
-      dimensions: opts.dimensions,
-      rowLimit: opts.limit,
-    },
+    requestBody: body,
   });
 
   const rows = data.rows || [];
+
+  if (opts.format === "csv") {
+    const csv = searchAnalyticsRowsToCsv(rows, opts.dimensions);
+    if (opts.output) {
+      fs.writeFileSync(opts.output, csv, "utf8");
+      console.error(`Wrote ${opts.output} (${rows.length} rows)`);
+    } else {
+      process.stdout.write(csv);
+    }
+    return;
+  }
+
   console.log(
     JSON.stringify(
       {

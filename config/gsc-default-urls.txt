@@ -1,0 +1,7 @@
+# Default URLs for `npm run gsc:inspect` (one per line). Edit or use --file / GSC_URL_INSPECTION_FILE.
+# Lines starting with # are ignored.
+
+https://www.thestreetcollector.com/
+https://www.thestreetcollector.com/shop/street-collector
+https://www.thestreetcollector.com/shop/explore-artists
+https://www.thestreetcollector.com/shop/blog

@@ -36,6 +36,7 @@ Technical and on-page SEO for storefront routes: server-rendered metadata for ar
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.2.1 | 2026-04-19 | Related: [`GSC_API.md`](GSC_API.md) — Search Console CLI (analytics CSV, export pack, URL Inspection, sitemaps). |
 | 1.2.0 | 2026-04-19 | Link to [`NICHE_BATTLE_PLAN.md`](NICHE_BATTLE_PLAN.md) (GTM/SEO battle plan; canonical detail in `wiki/concepts/gtm-battle-plan.md`). |
 | 1.1.0 | 2026-04-19 | Root default metadata aligned with Street Collector; blog index layout metadata; `noindex` on admin/vendor/collector/auth shells; sitemap ISR + canonical hub (`/shop/street-collector` only, no duplicate `/`); product `lastModified` from Shopify `updatedAt`; Storefront `ProductCardFields` includes `updatedAt`. |
 | 1.0.0 | 2026-04-04 | Initial shop SEO stack: robots, sitemap, llms.txt, server metadata, JSON-LD, FAQ alignment, GEO answer-first blocks, explore-artists hub copy, `/shop/artists` → explore redirect. |
@@ -49,5 +50,6 @@ Technical and on-page SEO for storefront routes: server-rendered metadata for ar
 ## Related
 
 - Niche GTM / SEO battle plan (wiki-backed): [`NICHE_BATTLE_PLAN.md`](NICHE_BATTLE_PLAN.md)
+- Search Console API (local CLI — exports, inspection, sitemaps): [`GSC_API.md`](GSC_API.md)
 - Explore artists feature: [`explore-artists/README.md`](explore-artists/README.md)
 - Artist content specs: [`artist-profile-content-spec.md`](artist-profile-content-spec.md)

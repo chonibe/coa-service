@@ -4,6 +4,12 @@ Append-only. Most recent entry at top.
 
 ---
 
+## [2026-04-19] ingest | GSC API toolkit — CSV, export pack, sitemaps, URL Inspection
+
+Added [`gsc-lib.mjs`](../scripts/gsc-lib.mjs) (shared auth/CSV), extended `gsc:report` (`--format csv`, country/device dimensions), `gsc:export-all`, `gsc:sitemaps`, `gsc:inspect` + [`config/gsc-default-urls.txt`](../config/gsc-default-urls.txt). Doc: [`docs/features/street-collector/GSC_API.md`](../docs/features/street-collector/GSC_API.md). `docs/dev/gsc-exports/` gitignored.
+
+---
+
 ## [2026-04-19] ingest | Search Console API scripts (OAuth + JSON report)
 
 Repo scripts `scripts/gsc-oauth-token.mjs`, `scripts/gsc-search-analytics.mjs`; **`npm run gsc:oauth`** / **`gsc:report`**; documented in [[seo-gsc-baseline-runbook]] and `.env.example`.
