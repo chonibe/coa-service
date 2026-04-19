@@ -4,6 +4,12 @@ Append-only. Most recent entry at top.
 
 ---
 
+## [2026-04-19] ingest | GSC template, hero-drop playbook, pillar HTML drafts
+
+Added [[gsc-baseline-fill-in-template]], [[hero-drop-playbook]]; Shopify-ready pillar copy in [`docs/features/street-collector/pillar-articles-shopify-draft.md`](../docs/features/street-collector/pillar-articles-shopify-draft.md). Updated [[seo-gsc-baseline-runbook]], [[gtm-battle-plan]], [`index.md`](index.md).
+
+---
+
 ## [2026-04-19] ingest | GTM / SEO battle plan wiki + docs
 
 Added **positioning wedge**, **GTM battle plan** concept notes, **competitive intelligence** and **tier prioritisation** syntheses, **GSC baseline runbook** source; expanded [`index.md`](index.md) Concepts catalog (22 notes) and Syntheses (4); mirror doc [`docs/features/street-collector/NICHE_BATTLE_PLAN.md`](../docs/features/street-collector/NICHE_BATTLE_PLAN.md). Aligned [`docs/features/analytics/EVENTS_MAP.md`](../docs/features/analytics/EVENTS_MAP.md) `item_list_name` **`artist_profile`** and `app/(store)/shop/` paths.

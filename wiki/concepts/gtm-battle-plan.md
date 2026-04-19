@@ -22,21 +22,23 @@ Canonical **strategy note** for the prints + lighting + collectibles wedge. Keep
 - Syntheses: [[2026-04-14-street-collector-artists]], [[2026-04-14-platform-architecture-overview]]
 - Competitive templates: [[competitive-intelligence-templates]]
 - Tier rubric: [[tier-artist-priority-rubric]]
+- GSC log: [[gsc-baseline-fill-in-template]]
+- Drops: [[hero-drop-playbook]]
 
 ## 90-day cadence (checklist)
 
 ### Days 1–30 — Baseline
 
 - [ ] Lock copy with [[positioning-wedge]]
-- [ ] Google Search Console: export top pages/queries for `/shop/artists/` and PDPs — see [[seo-gsc-baseline-runbook]]
+- [ ] Google Search Console: export top pages/queries for `/shop/artists/` and PDPs — see [[seo-gsc-baseline-runbook]]; log data in [[gsc-baseline-fill-in-template]]
 - [ ] Fill [[competitive-intelligence-templates]] (competitor tiers + first SERP snapshot)
 - [ ] Build Tier A/B using [[tier-artist-priority-rubric]] + GSC
 - [ ] Align analytics: `item_list_name` **`artist_profile`** on artist profile quick-add — see repo `docs/features/analytics/EVENTS_MAP.md`
 
 ### Days 31–60 — Surge
 
-- [ ] **Hero drops (3–5):** coordinated social + email + `?ref=` / UTMs + canonical `/shop/artists/{slug}`
-- [ ] **Pillar guides (2–4):** editions, COA, illuminated collection — internal links to shop hubs
+- [ ] **Hero drops (3–5):** use [[hero-drop-playbook]] (UTMs, calendar, email starter)
+- [ ] **Pillar guides (2–4):** publish from `docs/features/street-collector/pillar-articles-shopify-draft.md` (Shopify HTML) or adapt
 
 ### Days 61–90 — Compound
 
@@ -49,9 +51,9 @@ These require humans + tools outside the repo:
 
 | Task | Owner | Evidence |
 |------|--------|------------|
-| GSC baseline export | Marketing | Spreadsheet + date |
-| Hero drops | Marketing + artists | Calendar + links |
-| Pillar articles | Content | Published URLs |
+| GSC baseline export | Marketing | Rows in [[gsc-baseline-fill-in-template]] |
+| Hero drops | Marketing + artists | [[hero-drop-playbook]] checklist |
+| Pillar articles | Content | Shopify drafts → published URLs |
 | SERP snapshots | SEO | Dated rows in templates |
 
 ## Repo pointers (implementation)
@@ -59,3 +61,4 @@ These require humans + tools outside the repo:
 - Shop SEO stack: `docs/features/street-collector/SEO-shop.md`
 - Artist metadata: `lib/seo/artist-meta.ts`
 - Optional mirror for non-Obsidian readers: `docs/features/street-collector/NICHE_BATTLE_PLAN.md`
+- Pillar article HTML for Shopify: `docs/features/street-collector/pillar-articles-shopify-draft.md`

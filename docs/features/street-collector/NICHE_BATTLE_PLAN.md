@@ -13,6 +13,9 @@ Operational summary for owning the **artist prints + illuminated display + colle
 | **Tier rubric** | [`wiki/syntheses/tier-artist-priority-rubric.md`](../../../wiki/syntheses/tier-artist-priority-rubric.md) |
 | **Competitive templates** | [`wiki/syntheses/competitive-intelligence-templates.md`](../../../wiki/syntheses/competitive-intelligence-templates.md) |
 | **GSC runbook** | [`wiki/sources/seo-gsc-baseline-runbook.md`](../../../wiki/sources/seo-gsc-baseline-runbook.md) |
+| **GSC fill-in template** | [`wiki/sources/gsc-baseline-fill-in-template.md`](../../../wiki/sources/gsc-baseline-fill-in-template.md) |
+| **Hero-drop playbook** | [`wiki/sources/hero-drop-playbook.md`](../../../wiki/sources/hero-drop-playbook.md) |
+| **Pillar articles (Shopify HTML)** | [`pillar-articles-shopify-draft.md`](pillar-articles-shopify-draft.md) |
 | **Technical SEO** | [`SEO-shop.md`](SEO-shop.md) |
 
 ## Snapshot (strategy)
@@ -34,4 +37,5 @@ Artist profile quick-add ecommerce events use **`item_list_name: 'artist_profile
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 1.1.0 | 2026-04-19 | GSC fill-in template, hero-drop playbook (wiki); four pillar article HTML drafts for Shopify. |
 | 1.0.0 | 2026-04-19 | Initial doc — mirrors wiki battle plan stack. |

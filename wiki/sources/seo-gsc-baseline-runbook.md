@@ -38,6 +38,7 @@ Merge with [[tier-artist-priority-rubric]]:
 
 ## Related
 
+- [[gsc-baseline-fill-in-template]] — paste exports into tables
 - [[analytics-tracking]]
 - [[gtm-battle-plan]]
 - [[competitive-intelligence-templates]]

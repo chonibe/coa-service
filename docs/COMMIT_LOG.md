@@ -1,5 +1,24 @@
 # Commit Log
 
+## Commit: docs(wiki,gtm): GSC fill-in template, hero-drop playbook, pillar Shopify drafts (2026-04-19)
+
+### Summary
+Completes **operational** GTM/SEO artifacts: [`wiki/sources/gsc-baseline-fill-in-template.md`](wiki/sources/gsc-baseline-fill-in-template.md) (pages / queries / Tier tables), [`wiki/sources/hero-drop-playbook.md`](wiki/sources/hero-drop-playbook.md) (UTMs, 5-slot calendar, email starter, canonical URLs), [`docs/features/street-collector/pillar-articles-shopify-draft.md`](docs/features/street-collector/pillar-articles-shopify-draft.md) — four Shopify HTML drafts (editions, COA, display/lighting, collecting online) with links to `thestreetcollector.com` shop paths. Updated [`wiki/concepts/gtm-battle-plan.md`](wiki/concepts/gtm-battle-plan.md), [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md), [`wiki/index.md`](wiki/index.md), [`wiki/log.md`](wiki/log.md), [`docs/features/street-collector/NICHE_BATTLE_PLAN.md`](docs/features/street-collector/NICHE_BATTLE_PLAN.md) (v1.1.0).
+
+### Implementation Checklist
+
+- [x] [wiki/sources/gsc-baseline-fill-in-template.md](wiki/sources/gsc-baseline-fill-in-template.md)
+- [x] [wiki/sources/hero-drop-playbook.md](wiki/sources/hero-drop-playbook.md)
+- [x] [docs/features/street-collector/pillar-articles-shopify-draft.md](docs/features/street-collector/pillar-articles-shopify-draft.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [wiki/concepts/gtm-battle-plan.md](wiki/concepts/gtm-battle-plan.md)
+- [x] [wiki/index.md](wiki/index.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: docs(wiki,gtm): niche battle plan, GSC runbook, EVENTS_MAP alignment (2026-04-19)
 
 ### Summary

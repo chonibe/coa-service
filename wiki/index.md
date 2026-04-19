@@ -8,6 +8,8 @@ Content catalog for The Street Collector second brain. Updated after every opera
 
 - [[2026-04-14-artist-research-data]] — Structured research dataset: bios, exhibitions, press for 84 Street Collector artists
 - [[seo-gsc-baseline-runbook]] — Google Search Console baseline export steps (organic / Tier A URLs)
+- [[gsc-baseline-fill-in-template]] — Paste GSC exports (pages, queries, Tier A/B)
+- [[hero-drop-playbook]] — UTM rules, 5-slot calendar, email starter for artist drops
 
 ---
 
