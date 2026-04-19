@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-time OAuth2 for Google Search Console API (read-only).
+ * One-time OAuth2 for Google Search Console API (default: read-only).
  *
  * Prereqs:
  * 1. Google Cloud: enable "Google Search Console API" for the project.
@@ -32,7 +32,10 @@ dotenv.config();
 
 const PORT = Number(process.env.GSC_OAUTH_PORT || 3333);
 const REDIRECT = `http://127.0.0.1:${PORT}/oauth2callback`;
-const SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
+/** Read-only (default). Full `webmasters` scope required for `npm run gsc:sitemaps -- submit`. */
+const SCOPE =
+  process.env.GSC_OAUTH_SCOPE?.trim() ||
+  "https://www.googleapis.com/auth/webmasters.readonly";
 
 function parseManualCode() {
   const args = process.argv.slice(2);
@@ -161,6 +164,7 @@ if (manualCode) {
   });
 
   server.listen(PORT, "127.0.0.1", () => {
+    console.log("\nOAuth scope:", SCOPE);
     console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("  LOCAL SERVER IS RUNNING — do not close this terminal yet.");
     console.log("  After Google signs you in, it will redirect to:");

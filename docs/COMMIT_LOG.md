@@ -1,5 +1,21 @@
 # Commit Log
 
+## Commit: feat(seo): GSC property setup doc, sitemap blog URLs, optional full webmasters OAuth (2026-04-19)
+
+### Summary
+**[`GSC_PROPERTY_SETUP.md`](docs/features/street-collector/GSC_PROPERTY_SETUP.md)** — Search Console checklist (sitemap, verification, UI, API). **Sitemap** now includes **`/shop/blog`**, **blog article** URLs from Storefront, and documents **www** vs **app** canonical alignment. **`gsc-oauth-token.mjs`** supports **`GSC_OAUTH_SCOPE`** for **`gsc:sitemaps submit`** (read-only default caused Insufficient Permission). **[`GSC_API.md`](docs/features/street-collector/GSC_API.md)** and **[`.env.example`](.env.example)** updated.
+
+### Implementation Checklist
+
+- [x] [app/sitemap.ts](app/sitemap.ts)
+- [x] [docs/features/street-collector/GSC_PROPERTY_SETUP.md](docs/features/street-collector/GSC_PROPERTY_SETUP.md)
+- [x] [docs/features/street-collector/GSC_API.md](docs/features/street-collector/GSC_API.md)
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [.env.example](.env.example)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(scripts): Google Search Console toolkit — CSV, export pack, inspection, sitemaps (2026-04-19)
 
 ### Summary

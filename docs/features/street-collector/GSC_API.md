@@ -2,6 +2,8 @@
 
 Programmatic access to Search Console using OAuth (same verified property as the UI). **Does not change rankings** — use for measurement, prioritization, and hygiene.
 
+**Property setup (sitemap, verification, UI checklist):** [`GSC_PROPERTY_SETUP.md`](./GSC_PROPERTY_SETUP.md).
+
 ## Implementation files
 
 | File | Purpose |
@@ -19,7 +21,7 @@ Env vars: see [`.env.example`](../../../.env.example) (`GSC_*`). Wiki runbook: [
 ## Setup (once)
 
 1. Google Cloud: enable **Search Console API**; OAuth Web client + redirect `http://127.0.0.1:3333/oauth2callback`.
-2. `.env.local`: `GSC_OAUTH_CLIENT_SECRETS_PATH`, `GSC_OAUTH_REFRESH_TOKEN` (`npm run gsc:oauth`), `GSC_SITE_URL` (run `npm run gsc:report -- --sites` for the exact string — domain properties use `sc-domain:…`).
+2. `.env.local`: `GSC_OAUTH_CLIENT_SECRETS_PATH`, `GSC_OAUTH_REFRESH_TOKEN` (`npm run gsc:oauth`), `GSC_SITE_URL` (run `npm run gsc:report -- --sites` for the exact string — domain properties use `sc-domain:…`). Optional `GSC_OAUTH_SCOPE=https://www.googleapis.com/auth/webmasters` if you need **`gsc:sitemaps submit`** (default OAuth is read-only).
 
 ## Commands
 
