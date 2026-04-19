@@ -1,5 +1,18 @@
 # Commit Log
 
+## Commit: fix(scripts): GSC OAuth — keep terminal open; --code / --url recovery (2026-04-19)
+
+### Summary
+**`ERR_CONNECTION_REFUSED` on** `127.0.0.1:3333` **= local OAuth server not running** (terminal closed before redirect). Script now prints a clear **do not close** banner; supports **`npm run gsc:oauth -- --url='...?code=...'`** (or `--code=`) to complete exchange if the user still has the redirect URL. [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md) — troubleshooting line.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(scripts): Google Search Console OAuth + search analytics CLI (2026-04-19)
 
 ### Summary
