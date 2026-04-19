@@ -143,9 +143,14 @@ export async function GET(
         ].includes(b.type)
       )
       
-      // Map to content block format
+      // Map to content block format — preserve stored `id` so PUT/DELETE/reorder match `product_data.benefits`.
       contentBlocks = artworkBlocks.map((block: any, index: number) => ({
-        id: -index - 1, // Negative IDs for submission blocks (-1, -2, -3, etc.)
+        id:
+          typeof block.id === "number"
+            ? block.id
+            : typeof block.id === "string" && block.id.length > 0
+              ? block.id
+              : -(index + 1),
         benefit_type_id: 0, // Will be resolved by block_type
         title: block.title || "",
         description: block.description || null,
@@ -465,9 +470,15 @@ export async function POST(
       return NextResponse.json({
         success: true,
         contentBlock: {
-          ...newBlock,
+          id: newBlock.id,
+          benefit_type_id: 0,
+          title: newBlock.title,
+          description: newBlock.description,
+          content_url: newBlock.content_url,
+          block_config: newBlock.config,
+          display_order: newBlock.display_order,
+          is_published: true,
           block_type: body.blockType,
-          is_published: true, // Submissions don't have draft state
         },
       })
     }
@@ -671,8 +682,12 @@ export async function PUT(
       const productData = submission.product_data as any
       const benefits = productData?.benefits || []
       
-      // Find and update the block
-      const blockIndex = benefits.findIndex((b: any) => b.id === body.blockId)
+      // Find and update the block (editor auto-save sends `id`; explicit saves send `blockId`)
+      const targetId = body.blockId ?? body.id
+      const blockIndex = benefits.findIndex((b: any) => {
+        if (targetId === undefined || targetId === null) return false
+        return b.id === targetId || String(b.id) === String(targetId)
+      })
       if (blockIndex === -1) {
         return NextResponse.json({ error: "Block not found" }, { status: 404 })
       }
@@ -708,9 +723,15 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         contentBlock: {
-          ...updatedBlock,
+          id: updatedBlock.id,
+          benefit_type_id: 0,
+          title: updatedBlock.title,
+          description: updatedBlock.description,
+          content_url: updatedBlock.content_url,
+          block_config: updatedBlock.config ?? {},
+          display_order: updatedBlock.display_order,
+          is_published: true,
           block_type: updatedBlock.type,
-          is_published: true, // Submissions don't have draft state
         },
       })
     }
@@ -860,8 +881,16 @@ export async function DELETE(
       const productData = submission.product_data as any
       const benefits = productData?.benefits || []
       
-      // Filter out the block
-      const updatedBenefits = benefits.filter((b: any) => b.id !== blockId)
+      // Filter out the block (query param is always a string; stored ids may be number)
+      const matchesParam = (bid: unknown) => {
+        if (bid === undefined || bid === null) return false
+        if (bid === blockId) return true
+        if (typeof bid === "number" && blockId !== null && !Number.isNaN(Number(blockId))) {
+          return bid === Number(blockId)
+        }
+        return String(bid) === String(blockId)
+      }
+      const updatedBenefits = benefits.filter((b: any) => !matchesParam(b.id))
       
       if (updatedBenefits.length === benefits.length) {
         return NextResponse.json({ error: "Block not found" }, { status: 404 })

@@ -4,6 +4,18 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 ---
 
+## [2026-04-19] feature | Unlock experience editor before publish (draft submissions)
+
+**Checklist**
+- [x] [`app/vendor/(app)/studio/artworks/[id]/experience/page.tsx`](app/vendor/(app)/studio/artworks/[id]/experience/page.tsx) — If `shopify_product_id` exists, open `/artwork-editor/{shopify_product_id}`; otherwise open `/artwork-editor/{submissionId}` so blocks in `product_data.benefits` are editable while still draft. Closed submissions still blocked.
+- [x] [`app/api/vendor/artwork-pages/[productId]/route.ts`](app/api/vendor/artwork-pages/[productId]/route.ts) — GET preserves stored benefit `id`s for submission blocks; PUT accepts `id` or `blockId`; DELETE matches string query param to numeric/string ids; POST submission response returns normalized `contentBlock` with `block_config`.
+- [x] [`app/api/vendor/artwork-pages/[productId]/reorder/route.ts`](app/api/vendor/artwork-pages/[productId]/reorder/route.ts) — Accepts `blockOrders` (editor payload) or `updates`; fixes submission reorder id matching.
+- [x] [`docs/features/artwork-editor/README.md`](docs/features/artwork-editor/README.md) — Reorder and PUT contract notes for submissions.
+
+**Vercel**: Run `vercel --prod --yes` after merge.
+
+---
+
 ## [2026-04-18] feature | Restore per-artwork unlock editor; retire series studio block editor
 
 **Checklist**

@@ -55,14 +55,14 @@ is_active: body.is_active ?? true,
 Required: `benefit_type_name` (must match one of the rows above).
 
 ### `PUT /api/vendor/artwork-pages/[productId]`
-Updates a block. All fields are optional — only provided fields are patched. Both `is_published` and `is_active` can be toggled independently.
+Updates a block. All fields are optional — only provided fields are patched. Both `is_published` and `is_active` can be toggled independently. For **submission** UUIDs, the target block is keyed by **`blockId` or `id`** (the standalone editor auto-save sends `id`).
 
 ### `DELETE /api/vendor/artwork-pages/[productId]?blockId=<id>`
 Hard-deletes the block.
 
 ### `POST /api/vendor/artwork-pages/[productId]/reorder`
 **File:** [`app/api/vendor/artwork-pages/[productId]/reorder/route.ts`](../../../app/api/vendor/artwork-pages/[productId]/reorder/route.ts)
-Accepts `{ blockIds: number[] }` and rewrites `display_order` in that order.
+Accepts **`{ updates: Array<{ id: number; display_order: number }> }`** or **`{ blockOrders: … }`** (same shape). Rewrites `display_order` per id. For a **submission** UUID, orders are persisted on `vendor_product_submissions.product_data.benefits`.
 
 ### `POST /api/vendor/artwork-pages/[productId]/apply-template`
 **File:** [`app/api/vendor/artwork-pages/[productId]/apply-template/route.ts`](../../../app/api/vendor/artwork-pages/[productId]/apply-template/route.ts)

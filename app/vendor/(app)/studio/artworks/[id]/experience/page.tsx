@@ -8,15 +8,17 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 /**
  * /vendor/studio/artworks/[id]/experience
  *
- * Opens the full block editor (soundtrack, location map, galleries, preview, etc.)
- * for this artwork’s Shopify product. `id` is the vendor submission UUID.
+ * Opens the full block editor (soundtrack, location map, galleries, preview, etc.).
+ * `id` is the vendor submission UUID. If `shopify_product_id` is set, the editor uses
+ * that product id; otherwise the submission UUID is used so unlock blocks can be
+ * edited while still in draft (stored in `product_data.benefits`).
  */
 export default function ArtworkExperienceEntryPage() {
   const params = useParams()
   const router = useRouter()
   const submissionId = params?.id as string
 
-  const [phase, setPhase] = useState<"loading" | "needs_product" | "error">("loading")
+  const [phase, setPhase] = useState<"loading" | "error">("loading")
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -41,14 +43,31 @@ export default function ArtworkExperienceEntryPage() {
           return
         }
         const data = await res.json()
-        const pid = data.submission?.shopify_product_id as string | number | null | undefined
+        const submission = data.submission
+        if (!submission) {
+          if (!cancelled) {
+            setPhase("error")
+            setMessage("Submission data not found.")
+          }
+          return
+        }
+        // If the submission is closed, we cannot edit it.
+        if (submission.status === "closed") {
+          if (!cancelled) {
+            setPhase("error")
+            setMessage("This artwork is closed and cannot be edited.")
+          }
+          return
+        }
+        const pid = submission.shopify_product_id as string | number | null | undefined
+        // Linked to a live Shopify product: edit persisted blocks on the product.
         if (pid !== null && pid !== undefined && String(pid).length > 0) {
           router.replace(`/artwork-editor/${String(pid)}`)
           return
         }
-        if (!cancelled) {
-          setPhase("needs_product")
-        }
+        // Draft / pre-publish: blocks live in submission `product_data` and are edited by submission UUID.
+        router.replace(`/artwork-editor/${submissionId}`)
+        return
       } catch {
         if (!cancelled) {
           setPhase("error")
@@ -68,32 +87,6 @@ export default function ArtworkExperienceEntryPage() {
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 px-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground font-body">Opening experience editor…</p>
-      </div>
-    )
-  }
-
-  if (phase === "needs_product") {
-    return (
-      <div className="mx-auto max-w-md px-4 py-10">
-        <Link
-          href="/vendor/studio"
-          className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground font-body hover:text-foreground"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Studio
-        </Link>
-        <h1 className="font-heading text-xl font-semibold text-foreground">Publish first</h1>
-        <p className="mt-2 text-sm text-muted-foreground font-body leading-relaxed">
-          The unlock experience editor (blocks, soundtrack, map, preview) is available after this artwork is
-          linked to a live product. Finish listing details and submit for review, then open{" "}
-          <span className="font-medium text-foreground">Unlock</span> again from Studio.
-        </p>
-        <Link
-          href={`/vendor/studio/artworks/${submissionId}/edit`}
-          className="mt-6 inline-flex items-center justify-center rounded-full bg-[#1a1a1a] px-5 py-2.5 text-sm font-semibold text-white font-body hover:opacity-90"
-        >
-          Continue to artwork details
-        </Link>
       </div>
     )
   }
