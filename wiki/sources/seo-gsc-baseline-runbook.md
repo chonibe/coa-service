@@ -45,6 +45,10 @@ Requires Google Cloud project with **Search Console API** enabled and OAuth clie
 3. Run `npm run gsc:oauth`, complete the browser consent, then add `GSC_OAUTH_REFRESH_TOKEN` and `GSC_SITE_URL` to `.env.local`.
 4. `npm run gsc:report` — JSON with queries and **position**; `npm run gsc:report -- --sites` lists verified properties.
 
+**Troubleshooting:** If the browser shows **ERR_CONNECTION_REFUSED** on `127.0.0.1`, the CLI server was closed before Google redirected — run `npm run gsc:oauth` again and **leave the terminal open**. Or paste the redirect URL from the address bar (contains `?code=`):  
+`npm run gsc:oauth -- --url='FULL_URL'`  
+See `scripts/gsc-oauth-token.mjs` header comments.
+
 Scripts: `scripts/gsc-oauth-token.mjs`, `scripts/gsc-search-analytics.mjs`.
 
 ## Related
