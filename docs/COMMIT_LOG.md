@@ -1,5 +1,22 @@
 # Commit Log
 
+## Commit: feat(scripts): Google Search Console OAuth + search analytics CLI (2026-04-19)
+
+### Summary
+Adds **`scripts/gsc-oauth-token.mjs`** (loopback OAuth, `webmasters.readonly`) and **`scripts/gsc-search-analytics.mjs`** (queries + average position via Search Console API). **`npm run gsc:oauth`** / **`gsc:report`**; env documented in **`.env.example`**. **`wiki/sources/seo-gsc-baseline-runbook.md`** — optional API section. **`.gitignore`** — `client_secret*.json`, `secrets/`.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [scripts/gsc-search-analytics.mjs](scripts/gsc-search-analytics.mjs)
+- [x] [package.json](package.json) (`gsc:oauth`, `gsc:report`)
+- [x] [.env.example](.env.example)
+- [x] [.gitignore](.gitignore)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: docs(wiki,gtm): GSC fill-in template, hero-drop playbook, pillar Shopify drafts (2026-04-19)
 
 ### Summary

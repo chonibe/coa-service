@@ -44,6 +44,8 @@
     "posthog:audit": "node scripts/posthog-audit.js",
     "setup:google-ads": "node scripts/setup-google-ads-conversions.js",
     "test:google-ads": "node scripts/test-google-ads-conversions.js",
+    "gsc:oauth": "node scripts/gsc-oauth-token.mjs",
+    "gsc:report": "node scripts/gsc-search-analytics.mjs",
     "supabase:redirects": "node -r dotenv/config scripts/add-supabase-redirects.js",
     "supabase:config-push": "supabase config push",
     "supabase:link": "supabase link --project-ref ldmppmnpgdxueebkkpid",

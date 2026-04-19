@@ -36,6 +36,17 @@ Merge with [[tier-artist-priority-rubric]]:
 - **GA4:** Explore — landing page + session medium `organic` — paths `/shop/artists/` and `/shop/*` PDPs.
 - **PostHog:** `$pageview` where path contains `/shop/artists/`; funnels using `view_item` / `add_to_cart` with `item_list_name` (artist profile uses **`artist_profile`** in code).
 
+## Optional — Search Console API (repo scripts)
+
+Requires Google Cloud project with **Search Console API** enabled and OAuth client secrets **not** committed to git.
+
+1. Set `GSC_OAUTH_CLIENT_SECRETS_PATH` to your downloaded `client_secret_….json` (absolute path).
+2. In Google Cloud → Credentials → your OAuth Web client → **Authorized redirect URIs**, add: `http://127.0.0.1:3333/oauth2callback`
+3. Run `npm run gsc:oauth`, complete the browser consent, then add `GSC_OAUTH_REFRESH_TOKEN` and `GSC_SITE_URL` to `.env.local`.
+4. `npm run gsc:report` — JSON with queries and **position**; `npm run gsc:report -- --sites` lists verified properties.
+
+Scripts: `scripts/gsc-oauth-token.mjs`, `scripts/gsc-search-analytics.mjs`.
+
 ## Related
 
 - [[gsc-baseline-fill-in-template]] — paste exports into tables

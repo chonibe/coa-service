@@ -50,6 +50,9 @@ postgresql-installer.exe
 ga-service-account.json
 ga4-*.json
 bfg.jar
+client_secret*.json
+*-client_secret*.json
+secrets/
 
 # mobile NFC writer (separate app with own node_modules)
 /mobile-nfc-writer/

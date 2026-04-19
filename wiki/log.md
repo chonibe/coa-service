@@ -4,6 +4,12 @@ Append-only. Most recent entry at top.
 
 ---
 
+## [2026-04-19] ingest | Search Console API scripts (OAuth + JSON report)
+
+Repo scripts `scripts/gsc-oauth-token.mjs`, `scripts/gsc-search-analytics.mjs`; **`npm run gsc:oauth`** / **`gsc:report`**; documented in [[seo-gsc-baseline-runbook]] and `.env.example`.
+
+---
+
 ## [2026-04-19] ingest | GSC template, hero-drop playbook, pillar HTML drafts
 
 Added [[gsc-baseline-fill-in-template]], [[hero-drop-playbook]]; Shopify-ready pillar copy in [`docs/features/street-collector/pillar-articles-shopify-draft.md`](../docs/features/street-collector/pillar-articles-shopify-draft.md). Updated [[seo-gsc-baseline-runbook]], [[gtm-battle-plan]], [`index.md`](index.md).
