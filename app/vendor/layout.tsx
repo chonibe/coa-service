@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createClient as createServiceClient } from "@/lib/supabase/server"
@@ -8,6 +9,10 @@ import { handleAuthError, isAuthError } from "@/lib/auth-error-handler"
 import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasAnyRole } from "@/lib/auth/unified-session"
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 // Auth-only layout. Chrome (sidebar vs. app shell) is applied by the nested
 // route-group layouts: `app/vendor/(app)/layout.tsx` uses `AppShell`, and

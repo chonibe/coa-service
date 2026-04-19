@@ -1,4 +1,5 @@
 import type React from "react"
+import type { Metadata } from "next"
 import "./globals.css"
 import { Fraunces, Barlow } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,6 +10,7 @@ import { MetaPixel } from "@/components/meta-pixel"
 import { TikTokPixel } from "@/components/tiktok-pixel"
 import { AsyncMaterialSymbolsFont } from "@/components/AsyncMaterialSymbolsFont"
 import { streetCollectorContent } from "@/content/street-collector"
+import { getCanonicalSiteOrigin } from "@/lib/seo/site-url"
 
 const fraunces = Fraunces({ 
   subsets: ["latin"],
@@ -26,10 +28,13 @@ const barlow = Barlow({
 /** Logo icon used for favicon — same as street-collector/header */
 const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683'
 
-export const metadata = {
-  title: "Limited Edition Certificate System",
-  description: "Manage and verify limited edition certificates",
-  generator: 'v0.dev',
+export const metadata: Metadata = {
+  metadataBase: getCanonicalSiteOrigin(),
+  title: {
+    default: "Street Collector — limited edition street art & illuminated display",
+  },
+  description:
+    "Limited edition street art prints, certificates of authenticity, and the Street Collector illuminated art display. Independent artists, small runs, worldwide shipping.",
   icons: {
     icon: getProxiedImageUrl(FAVICON_LOGO_URL),
     apple: getProxiedImageUrl(FAVICON_LOGO_URL),

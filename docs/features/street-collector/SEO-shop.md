@@ -36,10 +36,12 @@ Technical and on-page SEO for storefront routes: server-rendered metadata for ar
 
 | Version | Date | Notes |
 |---------|------|--------|
+| 1.1.0 | 2026-04-19 | Root default metadata aligned with Street Collector; blog index layout metadata; `noindex` on admin/vendor/collector/auth shells; sitemap ISR + canonical hub (`/shop/street-collector` only, no duplicate `/`); product `lastModified` from Shopify `updatedAt`; Storefront `ProductCardFields` includes `updatedAt`. |
 | 1.0.0 | 2026-04-04 | Initial shop SEO stack: robots, sitemap, llms.txt, server metadata, JSON-LD, FAQ alignment, GEO answer-first blocks, explore-artists hub copy, `/shop/artists` → explore redirect. |
 
 ## Known limitations
 
+- Sitemap uses `revalidate = 3600` (hourly ISR); product rows use Shopify `updatedAt` for `lastModified` when present.
 - Sitemap product URLs are capped by paginating Shopify `getProducts` (see `app/sitemap.ts`); raise `maxPages` if the catalog grows beyond the loop.
 - `StreetCollectorBrandJsonLd` emits **Organization** only; on-page FAQs remain in `StreetCollectorFAQ` without duplicate FAQ schema to avoid copy drift.
 

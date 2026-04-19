@@ -1,5 +1,29 @@
 # Commit Log
 
+## Commit: fix(seo): root metadata, blog index, noindex app shells, sitemap canonical/ISR (2026-04-19)
+
+### Summary
+Implements the **SEO audit** plan: **[`app/layout.tsx`](app/layout.tsx)** default `metadata` and `metadataBase` for Street Collector (removed `v0.dev` **generator**). **Blog** [`app/(store)/shop/blog/layout.tsx`](app/(store)/shop/blog/layout.tsx) gets full **title, canonical, OG/Twitter**. **Admin, vendor, collector** layouts and **login** + **signup/forgot-password** layouts set **`robots: noindex, nofollow`**. **[`app/sitemap.ts`](app/sitemap.ts)**: **ISR** `revalidate = 3600`, drop duplicate **`/`** (canonical is **`/shop/street-collector`**, priority 1), product **`lastModified`** from Shopify **`updatedAt`**. **[`lib/shopify/storefront-client.ts`](lib/shopify/storefront-client.ts)**: **`ProductCardFields`** + **`ShopifyProduct.updatedAt`**. Doc: [`docs/features/street-collector/SEO-shop.md`](docs/features/street-collector/SEO-shop.md).
+
+### Implementation Checklist
+
+- [x] [app/layout.tsx](app/layout.tsx)
+- [x] [app/(store)/shop/blog/layout.tsx](app/(store)/shop/blog/layout.tsx)
+- [x] [app/admin/layout.tsx](app/admin/layout.tsx)
+- [x] [app/vendor/layout.tsx](app/vendor/layout.tsx)
+- [x] [app/collector/layout.tsx](app/collector/layout.tsx)
+- [x] [app/login/page.tsx](app/login/page.tsx)
+- [x] [app/signup/layout.tsx](app/signup/layout.tsx)
+- [x] [app/forgot-password/layout.tsx](app/forgot-password/layout.tsx)
+- [x] [app/sitemap.ts](app/sitemap.ts)
+- [x] [lib/shopify/storefront-client.ts](lib/shopify/storefront-client.ts)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+**Post-deploy (manual):** confirm `NEXT_PUBLIC_SITE_URL` in Vercel; [Rich Results Test](https://search.google.com/test/rich-results) on a PDP; Google Search Console URL inspection for `/shop/street-collector` and a product.
+
+---
+
 ## Commit: fix(experience): transparent carousel strip; mini Spline shell-colored backdrop (2026-04-06)
 
 **Ref:** `469c0e651`

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCollectorSession } from "@/lib/collector-session"
@@ -8,6 +9,10 @@ import { getUnifiedSession, isUnifiedAuthEnabled, sessionHasAnyRole } from "@/li
 import { CollectorRoleSwitcherWrapper } from "./components/role-switcher-wrapper"
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 interface CollectorLayoutProps {
   children: ReactNode
