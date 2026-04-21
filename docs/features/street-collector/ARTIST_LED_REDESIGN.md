@@ -10,6 +10,7 @@ Shift the public shop from lamp-first to **collector-first**: drops, artists, an
 |------|------|
 | Collector shell routes (light/dark + fab) | [`app/(store)/layout.tsx`](../../../app/(store)/layout.tsx) |
 | Shell path helper | [`lib/shop/collector-store-shell.ts`](../../../lib/shop/collector-store-shell.ts) |
+| Fixed chrome offset (padding / spacer) | [`lib/shop/collector-store-chrome-layout.ts`](../../../lib/shop/collector-store-chrome-layout.ts) |
 | Top nav (Drops / Artists / Reserve / Lamp) | [`components/shop/CollectorStoreTopChrome.tsx`](../../../components/shop/CollectorStoreTopChrome.tsx) |
 | Homepage | [`app/(store)/shop/street-collector/page.tsx`](../../../app/(store)/shop/street-collector/page.tsx) |
 | Artist roster strip (client) | [`app/(store)/shop/street-collector/CollectorHomeArtistRoster.tsx`](../../../app/(store)/shop/street-collector/CollectorHomeArtistRoster.tsx) |
@@ -45,4 +46,4 @@ See [`.env.example`](../../../.env.example).
 ## Version
 
 - **Last updated:** 2026-04-21  
-- **Doc version:** 1.0.0
+- **Doc version:** 1.0.1 — design polish: shared chrome offset, default trust strip on all collector pages, lamp teaser image, typography (`text-balance` / `text-pretty` / `tabular-nums`), focus rings, slideout theme sync.

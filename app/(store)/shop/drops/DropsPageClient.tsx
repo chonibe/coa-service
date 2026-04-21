@@ -7,6 +7,7 @@ import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
 import { ladderStageBadgeClass, ladderStageShortLabel } from '@/lib/shop/collector-ladder-styles'
 import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { collectorStoreChromePaddingTopClass } from '@/lib/shop/collector-store-chrome-layout'
 import { cn } from '@/lib/utils'
 
 export type DropRow = {
@@ -50,13 +51,13 @@ export function DropsPageClient({ rows }: { rows: DropRow[] }) {
   return (
     <div className="min-h-dvh bg-[#faf6f2] pb-16 text-stone-900 dark:bg-[#171515] dark:text-[#FFBA94]">
       <CollectorStoreTopChrome />
-      <div className="pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(6rem+env(safe-area-inset-top,0px))]" />
+      <div className={collectorStoreChromePaddingTopClass} />
 
       <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6">
-        <h1 className="text-2xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-3xl">
+        <h1 className="text-balance text-2xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-3xl">
           All drops
         </h1>
-        <p className="mt-2 max-w-2xl text-sm text-stone-600 dark:text-[#FFBA94]/75">
+        <p className="mt-2 max-w-2xl text-pretty text-sm text-stone-600 dark:text-[#FFBA94]/75">
           Live limited editions across the roster. Filter by ladder stage or search by artist or title.
         </p>
 
@@ -95,12 +96,12 @@ export function DropsPageClient({ rows }: { rows: DropRow[] }) {
                 className="group rounded-2xl border border-stone-200/90 bg-white/95 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-[#201c1c]/90"
               >
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                  <span className="text-[10px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
                     {r.stageKey === 'archive' ? 'Sold out' : 'Live'}
                   </span>
                   <span
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                      'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
                       ladderStageBadgeClass(r.stageKey)
                     )}
                   >
@@ -120,7 +121,7 @@ export function DropsPageClient({ rows }: { rows: DropRow[] }) {
                 </div>
                 <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">{r.vendor}</p>
                 <p className="font-medium text-stone-900 dark:text-[#FFBA94]">{r.title}</p>
-                <div className="mt-2 flex items-center justify-between text-sm">
+                <div className="mt-2 flex items-center justify-between text-sm tabular-nums">
                   <span className="font-medium">
                     {r.priceUsd != null ? `$${r.priceUsd}` : '—'}
                   </span>

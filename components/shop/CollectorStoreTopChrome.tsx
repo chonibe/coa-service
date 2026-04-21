@@ -8,6 +8,7 @@ import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { cn } from '@/lib/utils'
 import { useLandingAppearance } from '@/app/(store)/shop/street-collector/LandingThemeProvider'
 import { streetLampProductPath } from '@/lib/shop/street-lamp-handle'
+import { streetCollectorContent } from '@/content/street-collector'
 
 const HOME_LOGO_URL =
   'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
@@ -19,8 +20,14 @@ const NAV = [
   { href: streetLampProductPath(), label: 'The Lamp' },
 ] as const
 
+const DEFAULT_TRUST_PROMO = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
+
 export type CollectorStoreTopChromeProps = {
-  /** Thin promo strip above the nav (desktop: full width; mobile: compact). */
+  /**
+   * Thin promo strip above the nav.
+   * Omit or `undefined` to use the default shipping/trust line from `street-collector` content.
+   * Pass `''` to hide the strip (layout height shrinks — use matching spacer on the page).
+   */
   promoLine?: string
   /**
    * When true, only the inner nav row is rendered (parent supplies fixed wrapper + promo).
@@ -35,6 +42,8 @@ export function CollectorStoreTopChrome({
 }: CollectorStoreTopChromeProps) {
   const pathname = usePathname() || ''
   const landingAppearance = useLandingAppearance()
+  const resolvedPromo =
+    promoLine === undefined ? DEFAULT_TRUST_PROMO : promoLine.trim() === '' ? null : promoLine
   const [menuOpen, setMenuOpen] = useState(false)
   const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<{
     open: boolean
@@ -53,9 +62,9 @@ export function CollectorStoreTopChrome({
   }, [menuOpen, SlideoutMenu])
 
   const promoBlock =
-    promoLine != null && promoLine !== '' ? (
+    resolvedPromo != null ? (
       <div
-        className="flex w-full items-center justify-center border-b border-stone-200/90 bg-white/95 px-3 py-1 text-center text-[10px] font-medium leading-tight tracking-wide text-stone-600 dark:border-white/[0.08] dark:bg-[#0f0e0e] dark:text-[#FFBA94]/75 sm:text-[11px] md:text-xs"
+        className="flex w-full items-center justify-center border-b border-stone-200/90 bg-white/95 px-3 py-1.5 text-center text-[10px] font-medium leading-snug text-balance text-stone-600 dark:border-white/[0.08] dark:bg-[#0f0e0e] dark:text-[#FFBA94]/75 sm:text-[11px] md:text-xs"
         style={
           embedded
             ? undefined
@@ -64,7 +73,7 @@ export function CollectorStoreTopChrome({
         role="region"
         aria-label="Shipping, guarantee, and returns"
       >
-        {promoLine}
+        {resolvedPromo}
       </div>
     ) : null
 
@@ -78,7 +87,7 @@ export function CollectorStoreTopChrome({
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:flex-none">
         <Link
           href="/shop/street-collector"
-          className="inline-flex shrink-0 items-center gap-2 rounded-md p-1 -m-1 text-sm font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]"
+          className="-m-1 inline-flex shrink-0 items-center gap-2 rounded-md p-1 text-sm font-medium tracking-tight text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40"
           aria-label="Street Collector home"
         >
           <img
@@ -102,7 +111,7 @@ export function CollectorStoreTopChrome({
           <SlideoutMenu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
-            theme="light"
+            theme={landingAppearance?.appearance === 'dark' ? 'dark' : 'light'}
             authRedirectTo={pathname || '/shop/street-collector'}
             logoHref="/shop/street-collector"
           />
@@ -122,7 +131,7 @@ export function CollectorStoreTopChrome({
                 href={href}
                 prefetch={false}
                 className={cn(
-                  'transition-colors hover:text-stone-900 dark:hover:text-[#FFBA94]',
+                  'rounded-md px-1 py-0.5 transition-colors hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:hover:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40',
                   active && 'font-medium text-stone-900 dark:text-[#FFBA94]'
                 )}
               >
@@ -155,14 +164,14 @@ export function CollectorStoreTopChrome({
         <Link
           href="/shop/account"
           prefetch={false}
-          className="hidden text-sm text-stone-600 hover:text-stone-900 dark:text-[#FFBA94]/70 dark:hover:text-[#FFBA94] sm:inline"
+          className="hidden rounded-md px-1 py-0.5 text-sm text-stone-600 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:text-[#FFBA94]/70 dark:hover:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40 sm:inline"
         >
           Sign in
         </Link>
         <Link
           href="/shop/artists"
           prefetch={false}
-          className="inline-flex items-center justify-center rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-[#FFBA94] dark:text-[#171515] sm:px-4 sm:text-sm"
+          className="inline-flex items-center justify-center rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-[#FFBA94] dark:text-[#171515] dark:focus-visible:ring-[#FFBA94] dark:focus-visible:ring-offset-[#171515] sm:px-4 sm:text-sm"
         >
           Follow artists
         </Link>
@@ -182,7 +191,7 @@ export function CollectorStoreTopChrome({
   return (
     <div
       className="fixed top-0 left-0 right-0 z-[122] flex flex-col"
-      style={promoLine ? undefined : { paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      style={resolvedPromo ? undefined : { paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       {promoBlock}
       {navRow}

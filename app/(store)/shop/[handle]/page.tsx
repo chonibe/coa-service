@@ -36,6 +36,7 @@ import {
 } from './components'
 import { cn } from '@/lib/utils'
 import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { collectorStoreChromeSpacerHeightClass } from '@/lib/shop/collector-store-chrome-layout'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { getStreetLampProductHandle, streetLampProductPath } from '@/lib/shop/street-lamp-handle'
 import { getStreetPricingStageDisplay } from '@/lib/shop/street-collector-pricing-stages'
@@ -418,7 +419,7 @@ export default function ProductPage() {
       {!isStreetLamp ? (
         <>
           <CollectorStoreTopChrome />
-          <div className="h-[calc(5.5rem+env(safe-area-inset-top,0px))] md:h-[calc(6rem+env(safe-area-inset-top,0px))]" />
+          <div className={collectorStoreChromeSpacerHeightClass} />
         </>
       ) : null}
       {/* Sticky Buy Bar */}

@@ -9,6 +9,7 @@ import { streetCollectorContent } from '@/content/street-collector'
 import {
   getCollection,
   getCollectionWithListProducts,
+  getProduct,
   isStorefrontConfigured,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
@@ -27,6 +28,7 @@ import {
   ladderStageShortLabel,
 } from '@/lib/shop/collector-ladder-styles'
 import { getStreetLampProductHandle, streetLampProductPath } from '@/lib/shop/street-lamp-handle'
+import { collectorStoreChromePaddingTopClass } from '@/lib/shop/collector-store-chrome-layout'
 
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
@@ -82,12 +84,13 @@ export default async function StreetCollectorPage() {
   }> = []
 
   let spotlightProducts: ShopifyProduct[] = []
+  let lampTeaserImageUrl: string | undefined
 
   const SEASON_2_HANDLE = '2025-edition'
 
   if (apiConfigured) {
     try {
-      const [featuredArtistsResult, season2Col] = await Promise.all([
+      const [featuredArtistsResult, season2Col, lampProduct] = await Promise.all([
         Promise.all(
           streetCollectorContent.featuredArtists.collections.map(async (artist) => {
             const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
@@ -142,8 +145,10 @@ export default async function StreetCollectorPage() {
           first: 100,
           sortKey: 'MANUAL',
         }).catch(() => null),
+        getProduct(getStreetLampProductHandle()).catch(() => null),
       ])
       featuredArtists = featuredArtistsResult
+      lampTeaserImageUrl = lampProduct?.featuredImage?.url ?? undefined
 
       const existingHandles = new Set(
         featuredArtists.map((a) => a.handle.replace(/-\d+$/, '').toLowerCase())
@@ -242,7 +247,6 @@ export default async function StreetCollectorPage() {
     apiError = 'Shopify Storefront API not configured.'
   }
 
-  const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
   const upcomingIso = nextThursdayUtcNoonIso()
 
   const spotlightIds = spotlightProducts
@@ -264,9 +268,9 @@ export default async function StreetCollectorPage() {
   return (
     <div className="w-full pb-24 text-stone-900 dark:text-[#FFBA94] md:pb-8">
       <StreetCollectorBrandJsonLd />
-      <CollectorStoreTopChrome promoLine={trustPromoLine} />
+      <CollectorStoreTopChrome />
 
-      <div className="pt-[calc(6.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(6.75rem+env(safe-area-inset-top,0px))]" />
+      <div className={collectorStoreChromePaddingTopClass} />
 
       {apiError && process.env.NODE_ENV === 'development' && (
         <div className="border-b border-amber-700/50 bg-amber-900/30 px-4 py-3">
@@ -278,13 +282,13 @@ export default async function StreetCollectorPage() {
 
       <SectionWrapper spacing="md" background="experience" className="!pt-4 !pb-10">
         <Container maxWidth="default" paddingX="gutter">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500 dark:text-[#FFBA94]/65">
+          <p className="mb-3 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/65">
             Limited editions · 85+ artists · New drops weekly
           </p>
-          <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-[2.125rem] md:leading-tight">
+          <h1 className="max-w-xl text-balance font-serif text-3xl font-medium leading-[1.12] tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-5xl md:leading-[1.1]">
             Collect the street artists you love. Before everyone else does.
           </h1>
-          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-stone-600 dark:text-[#FFBA94]/80">
+          <p className="mt-4 max-w-lg text-pretty text-[15px] leading-relaxed text-stone-600 dark:text-[#FFBA94]/80">
             Limited edition prints from artists around the world. Prices only go up. When editions sell out,
             they&apos;re gone. Follow the artists you care about and get first access when they drop.
           </p>
@@ -310,7 +314,9 @@ export default async function StreetCollectorPage() {
       <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
         <Container maxWidth="default" paddingX="gutter">
           <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
-            <h2 className="text-lg font-medium text-stone-900 dark:text-[#FFBA94]">This week&apos;s drops</h2>
+            <h2 className="text-balance text-lg font-medium text-stone-900 dark:text-[#FFBA94]">
+              This week&apos;s drops
+            </h2>
             <Link
               href="/shop/drops"
               className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65 dark:hover:text-[#FFBA94]"
@@ -334,12 +340,12 @@ export default async function StreetCollectorPage() {
                   className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-[#201c1c]/90"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                    <span className="text-[10px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
                       Live now
                     </span>
                     <span
                       className={cn(
-                        'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                        'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
                         ladderStageBadgeClass(stageKey)
                       )}
                     >
@@ -360,9 +366,9 @@ export default async function StreetCollectorPage() {
                   <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">{p.vendor || 'Artist'}</p>
                   <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">{p.title}</p>
                   <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="font-medium">{price != null ? `$${price}` : '—'}</span>
+                    <span className="font-medium tabular-nums">{price != null ? `$${price}` : '—'}</span>
                     {total != null ? (
-                      <span className="text-[11px] text-stone-500 dark:text-[#FFBA94]/65">
+                      <span className="text-[11px] tabular-nums text-stone-500 dark:text-[#FFBA94]/65">
                         {sold} of {total} sold
                       </span>
                     ) : null}
@@ -381,7 +387,7 @@ export default async function StreetCollectorPage() {
               ))}
             <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 dark:border-white/10 dark:bg-[#201c1c]/90">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-[#A32D2D] dark:text-red-300">
+                <span className="text-[10px] font-medium uppercase text-[#A32D2D] dark:text-red-300">
                   Drops Thursday
                 </span>
               </div>
@@ -402,10 +408,10 @@ export default async function StreetCollectorPage() {
       <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
         <Container maxWidth="default" paddingX="gutter">
           <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-5 dark:border-white/10 dark:bg-[#201c1c]/90">
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+            <p className="mb-2 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
               How pricing works
             </p>
-            <p className="mb-4 text-[15px] font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]">
+            <p className="mb-4 text-pretty text-[15px] font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]">
               Prices only go up. Editions are finite. When they&apos;re gone, they&apos;re gone.
             </p>
             <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
@@ -417,14 +423,14 @@ export default async function StreetCollectorPage() {
                     ladderStageColumnClass(step.key)
                   )}
                 >
-                  <div className="text-[9px] font-medium uppercase tracking-wide opacity-90 sm:text-[10px]">
+                  <div className="text-[9px] font-medium uppercase opacity-90 sm:text-[10px]">
                     {ladderStageShortLabel(step.key)}
                   </div>
-                  <div className="mt-1 text-sm font-medium sm:text-base">{step.price}</div>
+                  <div className="mt-1 text-sm font-medium tabular-nums sm:text-base">{step.price}</div>
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
+            <p className="mt-3 text-pretty text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
               Every edition climbs as it sells through. Early collectors pay ground floor. Late collectors may not
               get in at all.
             </p>
@@ -437,13 +443,13 @@ export default async function StreetCollectorPage() {
           <div className="rounded-2xl bg-stone-900 px-5 py-6 text-white sm:px-8 sm:py-8 dark:bg-stone-950 dark:text-[#FFBA94]">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
               <div className="max-w-lg flex-1">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-white/60 dark:text-[#FFBA94]/60">
+                <p className="mb-2 text-[11px] font-medium uppercase text-white/60 dark:text-[#FFBA94]/60">
                   The Reserve · $20/month
                 </p>
-                <h2 className="text-xl font-medium leading-snug tracking-tight text-white dark:text-[#FFBA94] sm:text-2xl">
+                <h2 className="text-balance text-xl font-medium leading-snug tracking-tight text-white dark:text-[#FFBA94] sm:text-2xl">
                   Never miss an artist you love.
                 </h2>
-                <p className="mt-3 text-[13px] leading-relaxed text-white/75 dark:text-[#FFBA94]/80">
+                <p className="mt-3 text-pretty text-[13px] leading-relaxed text-white/75 dark:text-[#FFBA94]/80">
                   Follow any artist on the roster. When they drop, you get 48-hour early access, ground-floor priority,
                   and monthly credit that rolls into your next purchase.
                 </p>
@@ -456,7 +462,7 @@ export default async function StreetCollectorPage() {
                 </Link>
               </div>
               <div className="w-full shrink-0 text-[13px] leading-relaxed text-white/85 dark:text-[#FFBA94]/85 md:w-44">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-white/55 dark:text-[#FFBA94]/55">
+                <p className="mb-2 text-[11px] font-medium uppercase text-white/55 dark:text-[#FFBA94]/55">
                   Members get
                 </p>
                 <ul className="space-y-1">
@@ -475,7 +481,9 @@ export default async function StreetCollectorPage() {
         <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
           <Container maxWidth="default" paddingX="gutter">
             <div className="mb-4 flex items-baseline justify-between gap-4 px-1">
-              <h2 className="text-lg font-medium text-stone-900 dark:text-[#FFBA94]">Follow your artists</h2>
+              <h2 className="text-balance text-lg font-medium text-stone-900 dark:text-[#FFBA94]">
+                Follow your artists
+              </h2>
               <Link
                 href="/shop/artists"
                 className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65"
@@ -491,16 +499,28 @@ export default async function StreetCollectorPage() {
       <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
         <Container maxWidth="default" paddingX="gutter">
           <div className="mx-auto max-w-2xl rounded-2xl border border-stone-200/90 bg-white/90 p-5 dark:border-white/10 dark:bg-[#201c1c]/80">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+            <p className="text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
               The display your collection lives on
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-4">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[10px] text-stone-400 dark:bg-stone-800 dark:text-[#FFBA94]/50">
-                Lamp
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800">
+                {lampTeaserImageUrl ? (
+                  <Image
+                    src={getProxiedImageUrl(lampTeaserImageUrl)}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-stone-400 dark:text-[#FFBA94]/50">
+                    Lamp
+                  </div>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">Street Collector lamp</p>
-                <p className="mt-1 text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
+                <p className="mt-1 text-pretty text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
                   Backlit, swappable prints — the infrastructure that makes your collection visible at home.
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -521,7 +541,7 @@ export default async function StreetCollectorPage() {
       {debraQuote ? (
         <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-12">
           <Container maxWidth="default" paddingX="gutter">
-            <blockquote className="font-serif text-lg leading-relaxed text-stone-800 dark:text-[#FFBA94]/90 sm:text-xl">
+            <blockquote className="text-pretty font-serif text-lg leading-relaxed text-stone-800 dark:text-[#FFBA94]/90 sm:text-xl">
               “{debraQuote}”
             </blockquote>
             <p className="mt-4 text-sm text-stone-500 dark:text-[#FFBA94]/65">— Debra G., Street Collector collector</p>
