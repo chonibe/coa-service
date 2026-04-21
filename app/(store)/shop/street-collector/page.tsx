@@ -1,114 +1,73 @@
 import { Metadata } from 'next'
-import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
-import { StreetCollectorBrandJsonLd } from '@/components/seo/StreetCollectorBrandJsonLd'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import {
-  Container,
-  SectionWrapper,
-} from '@/components/impact'
+import Image from 'next/image'
+import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
+import { StreetCollectorBrandJsonLd } from '@/components/seo/StreetCollectorBrandJsonLd'
+import { Container, SectionWrapper } from '@/components/impact'
 import { streetCollectorContent } from '@/content/street-collector'
 import {
   getCollection,
   getCollectionWithListProducts,
   isStorefrontConfigured,
+  type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { cn } from '@/lib/utils'
-import Image from 'next/image'
-import { ValuePropVideoCard } from './MultiColumnVideoSection'
+import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { CollectorHomeArtistRoster } from './CollectorHomeArtistRoster'
+import { UpcomingDropCountdown } from './UpcomingDropCountdown'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { queryEditionStatesByProductIds } from '@/lib/shop/query-edition-states'
+import {
+  ladderStageBadgeClass,
+  ladderStageColumnClass,
+  ladderStageShortLabel,
+} from '@/lib/shop/collector-ladder-styles'
+import { getStreetLampProductHandle, streetLampProductPath } from '@/lib/shop/street-lamp-handle'
 
-const DesktopTopBar = dynamic(
-  () => import('./DesktopTopBar').then((m) => ({ default: m.DesktopTopBar }))
-)
-
-const MeetTheStreetLamp = dynamic(
-  () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
-  { loading: () => <section className="min-h-[280px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
-)
-const TestimonialCarousel = dynamic(
-  () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
-  { loading: () => <section className="min-h-[200px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
-)
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
   { loading: () => <section className="min-h-[120px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
 )
-const ArtistCarousel = dynamic(
-  () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
-  { loading: () => <section className="min-h-[400px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
-)
-
-/** When false, hides “What happens next” steps, reassurance, and Start your collection. */
-const SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE = false
-
-// 64×64 request for 32px display (2x) to minimize file size
-const HOME_LOGO_URL =
-  'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
-  title: 'What is Street Collector? | Backlit lamp & limited edition street art prints',
+  title: 'Street Collector — limited edition street art drops & artist roster',
   description:
-    'Street Collector pairs a premium illuminated display with swappable limited-edition street art prints from independent artists. Editioned works, Certificate of Authenticity, worldwide shipping.',
+    'Collect the street artists you love before everyone else does. Limited editions, transparent ladder pricing, new drops weekly — plus The Reserve for early access.',
   alternates: { canonical: '/shop/street-collector' },
   openGraph: {
-    title: 'Street Collector — illuminated art & limited edition prints',
+    title: 'Street Collector — drops, artists, and collecting',
     description:
-      'Collect limited edition street art prints and display them in a backlit Street Collector lamp. Small runs, COA, ships worldwide.',
+      'Limited edition prints from independent street artists. Prices climb as editions sell through. Follow artists and shop live drops.',
     url: '/shop/street-collector',
     siteName: 'Street Collector',
     type: 'website',
   },
 }
 
-// Allow revalidation so bfcache can work; page uses Shopify API so short revalidate
 export const revalidate = 60
 
-type TrustBarItem = (typeof streetCollectorContent.trustBar)[number]
-
-const TRUST_BAR_ICON_SRC: Record<TrustBarItem['icon'], string> = {
-  shipping: '/street-collector/trust/shipping.svg',
-  guarantee: '/street-collector/trust/12months.svg',
-  returns: '/street-collector/trust/returns.svg',
+function nextThursdayUtcNoonIso(): string {
+  const now = new Date()
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0))
+  const day = d.getUTCDay()
+  let add = (4 - day + 7) % 7
+  if (add === 0 && now.getTime() > d.getTime()) add = 7
+  d.setUTCDate(d.getUTCDate() + add)
+  return d.toISOString()
 }
 
-function TrustBarItemIcon({
-  item,
-  variant,
-}: {
-  item: TrustBarItem
-  variant: 'compact' | 'featured'
-}) {
-  const wrap =
-    variant === 'compact'
-      ? 'inline-flex shrink-0 items-center justify-center'
-      : 'inline-flex items-center justify-center'
-  const isLargeTrustIcon =
-    item.icon === 'returns' || item.icon === 'shipping' || item.icon === 'guarantee'
-  const iconClass =
-    variant === 'featured'
-      ? 'h-20 w-20'
-      : isLargeTrustIcon
-        ? 'h-20 w-20'
-        : 'h-14 w-14'
-  const dim = variant === 'featured' ? 80 : isLargeTrustIcon ? 80 : 56
-
-  return (
-    <span className={wrap} aria-hidden>
-      {/* eslint-disable-next-line @next/next/no-img-element -- local flat SVG assets */}
-      <img
-        src={TRUST_BAR_ICON_SRC[item.icon]}
-        alt=""
-        className={cn(iconClass, 'object-contain')}
-        width={dim}
-        height={dim}
-      />
-    </span>
-  )
-}
+const HOME_LADDER_DISPLAY = [
+  { key: 'ground_floor' as const, price: '$40' },
+  { key: 'rising' as const, price: '$50' },
+  { key: 'established' as const, price: '$62' },
+  { key: 'final' as const, price: '$75' },
+  { key: 'archive' as const, price: '—' },
+]
 
 export default async function StreetCollectorPage() {
   const apiConfigured = isStorefrontConfigured()
@@ -122,11 +81,12 @@ export default async function StreetCollectorPage() {
     description?: string
   }> = []
 
+  let spotlightProducts: ShopifyProduct[] = []
+
   const SEASON_2_HANDLE = '2025-edition'
 
   if (apiConfigured) {
     try {
-      // Fetch featured artists and season-2 collection in parallel
       const [featuredArtistsResult, season2Col] = await Promise.all([
         Promise.all(
           streetCollectorContent.featuredArtists.collections.map(async (artist) => {
@@ -185,11 +145,20 @@ export default async function StreetCollectorPage() {
       ])
       featuredArtists = featuredArtistsResult
 
-      // Add 2nd edition artists from season-2 collection (vendors not already in list)
       const existingHandles = new Set(
         featuredArtists.map((a) => a.handle.replace(/-\d+$/, '').toLowerCase())
       )
       const season2Products = season2Col?.products?.edges?.map((e) => e.node) ?? []
+      const lampHc = getStreetLampProductHandle().toLowerCase()
+      spotlightProducts = season2Products
+        .filter(
+          (p) =>
+            p.handle &&
+            p.handle.toLowerCase() !== lampHc &&
+            !p.handle.toLowerCase().startsWith('street-lamp')
+        )
+        .slice(0, 2)
+
       const vendorsBySlug = new Map<string, string>()
       for (const p of season2Products) {
         if (p.vendor?.trim()) {
@@ -231,7 +200,6 @@ export default async function StreetCollectorPage() {
           }
         })
       )
-      // Merge: season 2 first, then season 1. Deduplicate by name (prefer richer image+description).
       const HIDDEN_HANDLES = new Set(['khwampa', 'khwampah'])
       const isHidden = (a: { handle: string; name: string }) =>
         HIDDEN_HANDLES.has(a.handle.replace(/-\d+$/, '').toLowerCase()) ||
@@ -258,7 +226,6 @@ export default async function StreetCollectorPage() {
         }
       }
       featuredArtists = Array.from(nameToArtist.values())
-      // Start with Jérôme Masi (Annecy)
       const leadHandle = 'jerome-masi'
       const leadIdx = featuredArtists.findIndex(
         (a) => a.handle.replace(/-\d+$/, '').toLowerCase() === leadHandle
@@ -267,266 +234,318 @@ export default async function StreetCollectorPage() {
         const [lead] = featuredArtists.splice(leadIdx, 1)
         featuredArtists.unshift(lead)
       }
-    } catch (error: any) {
-      console.error('Street Collector page API error:', error.message)
-      apiError = error.message
+    } catch (error: unknown) {
+      console.error('Street Collector page API error:', error instanceof Error ? error.message : error)
+      apiError = error instanceof Error ? error.message : 'Unknown error'
     }
   } else {
     apiError = 'Shopify Storefront API not configured.'
   }
 
   const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
+  const upcomingIso = nextThursdayUtcNoonIso()
+
+  const spotlightIds = spotlightProducts
+    .map((p) => normalizeShopifyProductId(p.id))
+    .filter((x): x is string => Boolean(x))
+    .map((s) => parseInt(s, 10))
+    .filter((n) => Number.isFinite(n))
+
+  const editionRows = spotlightIds.length
+    ? await queryEditionStatesByProductIds(spotlightIds)
+    : []
+  const editionByProductId = new Map(editionRows.map((r) => [r.productId, r]))
+
+  const debraQuote =
+    streetCollectorContent.testimonials.quotes.find((q) => q.author === 'Debra G.')?.content ??
+    streetCollectorContent.testimonials.quotes[0]?.content ??
+    ''
 
   return (
-    <div className="w-full pb-16 text-stone-900 dark:text-[#FFBA94] md:pb-0">
+    <div className="w-full pb-24 text-stone-900 dark:text-[#FFBA94] md:pb-8">
       <StreetCollectorBrandJsonLd />
-      {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
-      <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
-        <div
-          className="flex w-full items-center justify-center border-b border-stone-200/90 bg-white/95 px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-stone-600 dark:border-white/[0.08] dark:bg-[#0f0e0e] dark:text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
-          style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
-          role="region"
-          aria-label="Shipping, guarantee, and returns"
-        >
-          {trustPromoLine}
-        </div>
-        <DesktopTopBar
-          embedded
-          text={streetCollectorContent.hero.cta.text}
-          href={streetCollectorContent.experienceUrl}
-          logoUrl={HOME_LOGO_URL}
-        />
-      </div>
-      <div
-        className="fixed top-0 left-0 right-0 z-[122] border-b border-stone-200/90 bg-white/95 py-1 dark:border-white/[0.08] dark:bg-[#0f0e0e] md:hidden"
-        style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top, 0px))' }}
-        role="region"
-        aria-label="Shipping, guarantee, and returns"
-      >
-        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-stone-600 dark:text-[#FFBA94]/75 sm:text-[11px]">
-          {trustPromoLine}
-        </p>
-      </div>
-      {/* Reserve space under fixed mobile promo (height ≈ promo + safe area) */}
-      <div
-        className="md:hidden shrink-0"
-        style={{ height: 'calc(2.125rem + env(safe-area-inset-top, 0px))' }}
-        aria-hidden
-      />
-      {/* Sticky CTA - always visible on mobile, no scroll logic */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-4 md:hidden"
-        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
-      >
-        <Link
-          href={streetCollectorContent.experienceUrl}
-          prefetch={false}
-          className="flex min-h-[52px] w-full max-w-md items-center justify-center rounded-lg bg-[#047AFF] px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#0366d6] hover:opacity-90"
-        >
-          {streetCollectorContent.hero.cta.text}
-        </Link>
-      </div>
-      {/* API Warning (dev only) */}
+      <CollectorStoreTopChrome promoLine={trustPromoLine} />
+
+      <div className="pt-[calc(6.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(6.75rem+env(safe-area-inset-top,0px))]" />
+
       {apiError && process.env.NODE_ENV === 'development' && (
-        <div className="bg-amber-900/30 border-b border-amber-700/50 px-4 py-3">
+        <div className="border-b border-amber-700/50 bg-amber-900/30 px-4 py-3">
           <Container maxWidth="default" paddingX="gutter">
-            <p className="text-sm text-amber-200">
-              {apiError} Set NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN and SHOPIFY_SHOP.
-            </p>
+            <p className="text-sm text-amber-200">{apiError}</p>
           </Container>
         </div>
       )}
 
-      {/* Mobile: in-flow logo (safe area handled by promo bar + spacer above) */}
-      <div className="flex justify-center px-5 pt-3 pb-2 md:hidden">
-        <Link
-          href="/"
-          aria-label="Street Collector Home"
-          className="inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105"
-        >
-          <Image
-            src={getProxiedImageUrl(HOME_LOGO_URL)}
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 object-contain drop-shadow-md"
-            loading="eager"
-            priority
-          />
-        </Link>
-      </div>
-
-      {/* Meet the Street Lamp — desktop + mobile */}
-      <MeetTheStreetLamp
-        title={streetCollectorContent.meetTheLamp.title}
-        taglineLines={streetCollectorContent.meetTheLamp.taglineLines}
-        stages={streetCollectorContent.meetTheLamp.stages}
-        desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
-        mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
-        poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
-        pricingChips={
-          Array.isArray(streetCollectorContent.meetTheLamp.pricingChips)
-            ? streetCollectorContent.meetTheLamp.pricingChips
-            : undefined
-        }
-        cue={streetCollectorContent.meetTheLamp.cue}
-        cueHref={streetCollectorContent.experienceUrl}
-        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
-      />
-
-      {SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE && (
-        <SectionWrapper spacing="xs" background="experience" className="!py-8 sm:!py-10">
-          <Container maxWidth="default" paddingX="gutter">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="font-serif text-2xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-3xl md:text-4xl">
-                {streetCollectorContent.funnelBridge.title}
-              </h2>
-              <p className="mt-2 text-sm text-stone-600 dark:text-[#FFBA94]/80 sm:text-base">
-                {streetCollectorContent.funnelBridge.subtitle}
-              </p>
-              <ol className="mt-6 space-y-3 text-left text-sm text-stone-700 dark:text-[#FFBA94]/90 sm:text-base">
-                {streetCollectorContent.funnelBridge.steps.map((step, i) => (
-                  <li key={step} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#047AFF]/20 text-xs font-bold text-[#047AFF]">
-                      {i + 1}
-                    </span>
-                    <span className="pt-0.5">{step}</span>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-4 text-xs text-stone-500 dark:text-[#FFBA94]/60 sm:text-sm">
-                {streetCollectorContent.funnelBridge.reassurance}
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-                <Link
-                  href={streetCollectorContent.funnelBridge.cta.url}
-                  prefetch={false}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#047AFF] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6]"
-                >
-                  {streetCollectorContent.funnelBridge.cta.text}
-                </Link>
-              </div>
-            </div>
-          </Container>
-        </SectionWrapper>
-      )}
-
-      {/* Bringing art into everyday life + In Collaboration With — unified section */}
-      {featuredArtists.length > 0 && (
-        <ArtistCarousel
-          className="!pt-8 !pb-10 sm:!pt-9 sm:!pb-12 md:!pt-10 md:!pb-14 lg:!pt-12 xl:!pb-16"
-          disableArtistClicksOnMobile
-          title={streetCollectorContent.featuredArtists.title}
-          titleSize="2xl"
-          titleTag="h2"
-          namePosition="below"
-          headerAlignment="center"
-          titleClassName="font-serif font-medium text-stone-900 dark:text-[#FFBA94]"
-          sectionBackground="experience"
-          arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
-          subtitle={streetCollectorContent.featuredArtists.subtitle}
-          artists={featuredArtists}
-          autoScroll={true}
-          showArrows={true}
-          showLink={false}
-          showInfoSheet={true}
-          showProgressBar={false}
-          cardWidth={280}
-          cardGap={24}
-          fullWidth={true}
-          mobileAvatarStyle
-          footerCue={streetCollectorContent.featuredArtistsCue}
-          footerScarcity={streetCollectorContent.featuredArtistsScarcity}
-          footerCueHref={streetCollectorContent.experienceUrl}
-          valueProps={[]}
-          trailingContent={
-            streetCollectorContent.featuredArtists.afterCarousel ? (
-              <p className="text-center font-body text-lg text-stone-700 dark:text-[#FFBA94]/90 sm:text-xl md:text-2xl">
-                {streetCollectorContent.featuredArtists.afterCarousel}
-              </p>
-            ) : null
-          }
-          leadingContent={
-            <div className="space-y-10 sm:space-y-6">
-              <h2 className="font-body text-center text-3xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-5xl lg:text-6xl">
-                {streetCollectorContent.valuePropsSectionTitle}
-              </h2>
-              <ValuePropVideoCard
-                items={streetCollectorContent.valueProps.map((p) => ({
-                  title: p.title,
-                  description: p.description,
-                  poster: getProxiedImageUrl(p.poster),
-                  video: p.video,
-                }))}
-              />
-            </div>
-          }
-        />
-      )}
-
-      {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
-      <TestimonialCarousel
-        className="!pt-8 !pb-10 sm:!pt-10 sm:!pb-12 md:!pt-12 md:!pb-14"
-        title={streetCollectorContent.testimonials.title}
-        subtitle={streetCollectorContent.testimonials.subtitle}
-        testimonials={streetCollectorContent.testimonials.quotes}
-        backdropImageSrc={streetCollectorContent.testimonials.sectionBackdropImage}
-        fullWidth={true}
-      />
-
-      {/* Trust Bar — Free shipping, Guarantee, Returns */}
-      <SectionWrapper
-        spacing="xs"
-        background="experience"
-        className="!py-8 sm:!py-10 md:!py-12"
-      >
+      <SectionWrapper spacing="md" background="experience" className="!pt-4 !pb-10">
         <Container maxWidth="default" paddingX="gutter">
-          {streetCollectorContent.trustBarTitle ? (
-            <h2 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:mb-12 sm:text-4xl md:mb-14 md:text-5xl">
-              {streetCollectorContent.trustBarTitle}
-            </h2>
-          ) : null}
-          {/* Mobile: stacked rows, no card or dividers */}
-          <div className="mx-auto flex max-w-md flex-col items-center gap-10 md:hidden">
-            {streetCollectorContent.trustBar.map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col items-center gap-3 text-center"
-              >
-                <TrustBarItemIcon item={item} variant="compact" />
-                <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-amber-950/85 dark:text-experience-highlight-muted">
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-          {/* md+: equal-height cards (testimonials-style surface) */}
-          <div className="hidden py-2 md:grid md:grid-cols-3 md:items-stretch md:gap-6 lg:gap-8 md:py-8">
-            {streetCollectorContent.trustBar.map((item) => (
-              <div
-                key={item.label}
-                className="flex h-full w-full flex-col rounded-2xl border border-stone-200/90 bg-white/90 p-6 text-center shadow-sm dark:border-[#ffba94]/10 dark:bg-[#201c1c]/55 dark:shadow-[0_0_0_1px_rgba(255,186,148,0.05)_inset] lg:p-8"
-              >
-                <div className="flex h-28 shrink-0 items-center justify-center lg:h-32">
-                  <TrustBarItemIcon item={item} variant="featured" />
-                </div>
-                <p className="text-base font-bold leading-snug text-amber-950/85 dark:text-experience-highlight-muted lg:text-lg">
-                  {item.label}
-                </p>
-                <p className="mt-2 min-h-0 flex-1 text-base font-normal leading-relaxed text-stone-600 dark:text-experience-highlight-soft/90">
-                  {item.description ?? ''}
-                </p>
-              </div>
-            ))}
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500 dark:text-[#FFBA94]/65">
+            Limited editions · 85+ artists · New drops weekly
+          </p>
+          <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-[2.125rem] md:leading-tight">
+            Collect the street artists you love. Before everyone else does.
+          </h1>
+          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-stone-600 dark:text-[#FFBA94]/80">
+            Limited edition prints from artists around the world. Prices only go up. When editions sell out,
+            they&apos;re gone. Follow the artists you care about and get first access when they drop.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/shop/artists"
+              prefetch={false}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 dark:bg-[#FFBA94] dark:text-[#171515]"
+            >
+              Browse artists
+            </Link>
+            <Link
+              href="/shop/drops"
+              prefetch={false}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-stone-300 bg-transparent px-5 py-2.5 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-50 dark:border-white/20 dark:text-[#FFBA94] dark:hover:bg-white/5"
+            >
+              See upcoming drops
+            </Link>
           </div>
         </Container>
       </SectionWrapper>
 
-      {/* FAQ */}
+      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+            <h2 className="text-lg font-medium text-stone-900 dark:text-[#FFBA94]">This week&apos;s drops</h2>
+            <Link
+              href="/shop/drops"
+              className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65 dark:hover:text-[#FFBA94]"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {spotlightProducts.map((p) => {
+              const pid = normalizeShopifyProductId(p.id) || ''
+              const row = editionByProductId.get(pid)
+              const img = p.featuredImage?.url
+              const sold = row?.editionsSold ?? 0
+              const total = row?.editionTotal
+              const price = row?.priceUsd
+              const stageKey = row?.stageKey ?? 'ground_floor'
+              return (
+                <Link
+                  key={p.id}
+                  href={`/shop/${encodeURIComponent(p.handle)}`}
+                  className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-[#201c1c]/90"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                      Live now
+                    </span>
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                        ladderStageBadgeClass(stageKey)
+                      )}
+                    >
+                      {ladderStageShortLabel(stageKey)}
+                    </span>
+                  </div>
+                  <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800">
+                    {img ? (
+                      <Image
+                        src={getProxiedImageUrl(img)}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="(max-width:768px) 100vw, 33vw"
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">{p.vendor || 'Artist'}</p>
+                  <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">{p.title}</p>
+                  <div className="mt-2 flex items-center justify-between text-sm">
+                    <span className="font-medium">{price != null ? `$${price}` : '—'}</span>
+                    {total != null ? (
+                      <span className="text-[11px] text-stone-500 dark:text-[#FFBA94]/65">
+                        {sold} of {total} sold
+                      </span>
+                    ) : null}
+                  </div>
+                </Link>
+              )
+            })}
+            {spotlightProducts.length < 2 &&
+              [0, 1].slice(spotlightProducts.length).map((i) => (
+                <div
+                  key={`ph-${i}`}
+                  className="rounded-2xl border border-dashed border-stone-200/80 bg-stone-50/50 p-3.5 dark:border-white/10 dark:bg-[#201c1c]/40"
+                >
+                  <p className="text-sm text-stone-500 dark:text-[#FFBA94]/60">More drops loading soon.</p>
+                </div>
+              ))}
+            <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 dark:border-white/10 dark:bg-[#201c1c]/90">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-[#A32D2D] dark:text-red-300">
+                  Drops Thursday
+                </span>
+              </div>
+              <div className="relative mb-2 flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-stone-100 text-xs text-stone-400 dark:bg-stone-800 dark:text-[#FFBA94]/50">
+                Upcoming edition
+              </div>
+              <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">Next on the calendar</p>
+              <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">Ground floor from $40</p>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-xs text-stone-500 dark:text-[#FFBA94]/65">From $40</span>
+                <UpcomingDropCountdown targetIso={upcomingIso} notifyHref="/shop/reserve" />
+              </div>
+            </div>
+          </div>
+        </Container>
+      </SectionWrapper>
+
+      <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-5 dark:border-white/10 dark:bg-[#201c1c]/90">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+              How pricing works
+            </p>
+            <p className="mb-4 text-[15px] font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]">
+              Prices only go up. Editions are finite. When they&apos;re gone, they&apos;re gone.
+            </p>
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+              {HOME_LADDER_DISPLAY.map((step) => (
+                <div
+                  key={step.key}
+                  className={cn(
+                    'rounded-lg px-1 py-2.5 text-center sm:px-2 sm:py-3',
+                    ladderStageColumnClass(step.key)
+                  )}
+                >
+                  <div className="text-[9px] font-medium uppercase tracking-wide opacity-90 sm:text-[10px]">
+                    {ladderStageShortLabel(step.key)}
+                  </div>
+                  <div className="mt-1 text-sm font-medium sm:text-base">{step.price}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
+              Every edition climbs as it sells through. Early collectors pay ground floor. Late collectors may not
+              get in at all.
+            </p>
+          </div>
+        </Container>
+      </SectionWrapper>
+
+      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="rounded-2xl bg-stone-900 px-5 py-6 text-white sm:px-8 sm:py-8 dark:bg-stone-950 dark:text-[#FFBA94]">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="max-w-lg flex-1">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-white/60 dark:text-[#FFBA94]/60">
+                  The Reserve · $20/month
+                </p>
+                <h2 className="text-xl font-medium leading-snug tracking-tight text-white dark:text-[#FFBA94] sm:text-2xl">
+                  Never miss an artist you love.
+                </h2>
+                <p className="mt-3 text-[13px] leading-relaxed text-white/75 dark:text-[#FFBA94]/80">
+                  Follow any artist on the roster. When they drop, you get 48-hour early access, ground-floor priority,
+                  and monthly credit that rolls into your next purchase.
+                </p>
+                <Link
+                  href="/shop/reserve"
+                  prefetch={false}
+                  className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-semibold text-stone-900 dark:bg-[#FFBA94] dark:text-[#171515]"
+                >
+                  Join the Reserve
+                </Link>
+              </div>
+              <div className="w-full shrink-0 text-[13px] leading-relaxed text-white/85 dark:text-[#FFBA94]/85 md:w-44">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-white/55 dark:text-[#FFBA94]/55">
+                  Members get
+                </p>
+                <ul className="space-y-1">
+                  <li>48h early access</li>
+                  <li>Priority allocation</li>
+                  <li>$20/mo drop credit</li>
+                  <li>Ground-floor price lock</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </SectionWrapper>
+
+      {featuredArtists.length > 0 && (
+        <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
+          <Container maxWidth="default" paddingX="gutter">
+            <div className="mb-4 flex items-baseline justify-between gap-4 px-1">
+              <h2 className="text-lg font-medium text-stone-900 dark:text-[#FFBA94]">Follow your artists</h2>
+              <Link
+                href="/shop/artists"
+                className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65"
+              >
+                View roster →
+              </Link>
+            </div>
+            <CollectorHomeArtistRoster artists={featuredArtists} />
+          </Container>
+        </SectionWrapper>
+      )}
+
+      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
+        <Container maxWidth="default" paddingX="gutter">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-stone-200/90 bg-white/90 p-5 dark:border-white/10 dark:bg-[#201c1c]/80">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+              The display your collection lives on
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[10px] text-stone-400 dark:bg-stone-800 dark:text-[#FFBA94]/50">
+                Lamp
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">Street Collector lamp</p>
+                <p className="mt-1 text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
+                  Backlit, swappable prints — the infrastructure that makes your collection visible at home.
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-semibold text-stone-900 dark:text-[#FFBA94]">From $149</span>
+                  <Link
+                    href={streetLampProductPath()}
+                    className="text-xs font-medium text-[#047AFF] underline-offset-2 hover:underline dark:text-sky-400"
+                  >
+                    Shop the lamp →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </SectionWrapper>
+
+      {debraQuote ? (
+        <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-12">
+          <Container maxWidth="default" paddingX="gutter">
+            <blockquote className="font-serif text-lg leading-relaxed text-stone-800 dark:text-[#FFBA94]/90 sm:text-xl">
+              “{debraQuote}”
+            </blockquote>
+            <p className="mt-4 text-sm text-stone-500 dark:text-[#FFBA94]/65">— Debra G., Street Collector collector</p>
+          </Container>
+        </SectionWrapper>
+      ) : null}
+
       <StreetCollectorFAQ
         title={streetCollectorContent.faq.title}
         groups={streetCollectorContent.faq.groups}
       />
+
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-3 md:hidden"
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Link
+          href="/shop/artists"
+          prefetch={false}
+          className="flex min-h-[48px] w-full max-w-md items-center justify-center rounded-lg bg-stone-900 px-5 py-3 text-sm font-semibold text-white dark:bg-[#FFBA94] dark:text-[#171515]"
+        >
+          Browse artists
+        </Link>
+      </div>
     </div>
   )
 }

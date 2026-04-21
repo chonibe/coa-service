@@ -17,6 +17,14 @@ import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { UpcomingDropCountdown } from '@/app/(store)/shop/street-collector/UpcomingDropCountdown'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import {
+  ladderStageBadgeClass,
+  ladderStageShortLabel,
+} from '@/lib/shop/collector-ladder-styles'
+import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
 
 type TabId = 'overview' | 'works' | 'exhibitions' | 'instagram'
 
@@ -73,9 +81,26 @@ function bioParagraphs(bio: string | undefined): string[] {
       }, [])
 }
 
+type EditionStateLite = {
+  stageKey: StreetPricingStageKey
+  priceUsd: number | null
+  editionsSold: number
+  editionTotal: number | null
+}
+
 type Props = {
   artist: ArtistProfileApiResponse
   earlyAccessCoupon?: string | null
+}
+
+function nextThursdayUtcNoonIso(): string {
+  const now = new Date()
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0))
+  const day = d.getUTCDay()
+  let add = (4 - day + 7) % 7
+  if (add === 0 && now.getTime() > d.getTime()) add = 7
+  d.setUTCDate(d.getUTCDate() + add)
+  return d.toISOString()
 }
 
 export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
@@ -83,17 +108,44 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   const cart = useCart()
   const [tab, setTab] = React.useState<TabId>('overview')
   const [workFilter, setWorkFilter] = React.useState<WorkFilter>('all')
-  const [navScrolled, setNavScrolled] = React.useState(false)
   const [related, setRelated] = React.useState<ListArtist[]>([])
+  const [editionByProductId, setEditionByProductId] = React.useState<
+    Record<string, EditionStateLite>
+  >({})
 
   const profile = artist.profile ?? {}
   const stats = artist.stats ?? { editionCount: artist.products.length, remainingCount: 0 }
 
   React.useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 60)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const ids = artist.products
+      .map((p) => normalizeShopifyProductId(p.id))
+      .filter((x): x is string => Boolean(x))
+    if (ids.length === 0) return
+    const q = ids.slice(0, 80).join(',')
+    let cancelled = false
+    fetch(`/api/shop/edition-states?ids=${encodeURIComponent(q)}`)
+      .then((r) => r.json())
+      .then((data: { items?: Array<EditionStateLite & { productId: string }> }) => {
+        if (cancelled) return
+        const items = data.items || []
+        const map: Record<string, EditionStateLite> = {}
+        for (const row of items) {
+          if (row.productId) {
+            map[row.productId] = {
+              stageKey: row.stageKey,
+              priceUsd: row.priceUsd,
+              editionsSold: row.editionsSold,
+              editionTotal: row.editionTotal,
+            }
+          }
+        }
+        setEditionByProductId(map)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [artist.products])
 
   React.useEffect(() => {
     let cancelled = false
@@ -128,6 +180,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
     }
     return list
   }, [artist.products, workFilter])
+
+  const dropHistorySorted = React.useMemo(() => {
+    return [...artist.products].sort((a, b) => {
+      const ta = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+      const tb = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+      return tb - ta
+    })
+  }, [artist.products])
 
   const exhibitionsByYear = React.useMemo(() => {
     const rows = (profile.exhibitions ?? []).filter((r) => Number.isFinite(r.year))
@@ -172,22 +232,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   return (
     <div className={styles.root}>
       <div className={styles.inner}>
-        <nav className={cn(styles.nav, navScrolled && styles.navScrolled)} aria-label="Artist profile">
-          <Link href="/shop/street-collector" className={styles.logo}>
-            Street Collector
-          </Link>
-          <div className={styles.navRight}>
-            <Link href="/shop/explore-artists" className={styles.navBack}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M19 12H5M12 5l-7 7 7 7" />
-              </svg>
-              All Artists
-            </Link>
-            <Link href="/experience" className={styles.navCta}>
-              Collect this work
-            </Link>
-          </div>
-        </nav>
+        <CollectorStoreTopChrome embedded />
 
         <section className={styles.profileHero} aria-label="Artist hero">
           <div className={styles.heroCanvasCol}>
@@ -252,8 +297,33 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </div>
               ) : null}
             </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/shop/account?redirect=/shop/artists"
+                className="inline-flex items-center rounded-md bg-[#171515] px-3 py-2 text-xs font-semibold text-[#FFBA94] dark:bg-[#FFBA94] dark:text-[#171515]"
+              >
+                + Follow {artist.name.split(' ')[0] || artist.name}
+              </Link>
+              <span className="inline-flex items-center rounded-md border border-white/15 px-3 py-2 text-xs text-[#FFBA94]/80">
+                Share
+              </span>
+            </div>
           </div>
         </section>
+
+        <div className="mx-auto mb-6 max-w-5xl rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 dark:border-amber-700/40 dark:bg-amber-950/40">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-amber-900/80 dark:text-amber-200/90">
+                Next drop · calendar
+              </p>
+              <p className="text-sm font-medium text-amber-950 dark:text-amber-50">
+                New edition — ground floor from $40 when it goes live.
+              </p>
+            </div>
+            <UpcomingDropCountdown targetIso={nextThursdayUtcNoonIso()} notifyHref="/shop/reserve" />
+          </div>
+        </div>
 
         <div className={styles.tabsBar} id="artist-tabs" role="tablist" aria-label="Artist sections">
           {(
@@ -443,6 +513,12 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 const price = product.priceRange.minVariantPrice
                 const ed = editionLabel(product)
                 const season = seasonFromTags(product.tags)
+                const pid = normalizeShopifyProductId(product.id) || ''
+                const st = editionByProductId[pid]
+                const pct =
+                  st?.editionTotal && st.editionTotal > 0
+                    ? Math.min(100, Math.round((st.editionsSold / st.editionTotal) * 100))
+                    : 0
                 return (
                   <div key={product.id} className={cn(styles.workItem, !product.availableForSale && styles.workSoldOut)}>
                     <Link href={`/shop/${product.handle}`} className={styles.workMedia}>
@@ -462,7 +538,27 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                       {!product.availableForSale ? <div className={styles.workSold}>Sold Out</div> : null}
                     </Link>
                     <div className={styles.workInfo}>
-                      <div className={styles.workTitle}>{product.title}</div>
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <div className={styles.workTitle}>{product.title}</div>
+                        {st ? (
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide',
+                              ladderStageBadgeClass(st.stageKey)
+                            )}
+                          >
+                            {ladderStageShortLabel(st.stageKey)}
+                          </span>
+                        ) : null}
+                      </div>
+                      {st?.editionTotal ? (
+                        <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      ) : null}
                       <div className={styles.workYear}>{[season].filter(Boolean).join(' · ')}</div>
                       <div className={styles.workFooter}>
                         <span className={cn(styles.workPrice, !product.availableForSale && styles.workPriceSold)}>
@@ -484,6 +580,44 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 )
               })}
             </div>
+            <section className="mt-10 border-t border-white/10 pt-8" aria-labelledby="drop-history-heading">
+              <h3
+                id="drop-history-heading"
+                className="mb-4 text-xs font-medium uppercase tracking-wide text-[#FFBA94]/60"
+              >
+                Drop history
+              </h3>
+              <ul className="space-y-3">
+                {dropHistorySorted.map((p) => {
+                  const pid = normalizeShopifyProductId(p.id) || ''
+                  const st = editionByProductId[pid]
+                  const when = p.updatedAt
+                    ? new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+                    : '—'
+                  const status =
+                    st?.stageKey === 'archive' || !p.availableForSale
+                      ? 'Sold out'
+                      : st
+                        ? `${ladderStageShortLabel(st.stageKey)} · ${st.editionsSold}/${st.editionTotal ?? '—'} sold`
+                        : p.availableForSale
+                          ? 'Available'
+                          : 'Sold out'
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3 text-sm text-[#FFBA94]/90 last:border-0"
+                    >
+                      <span>
+                        <span className="text-[#FFBA94]/55">{when}</span>
+                        {' · '}
+                        {p.title}
+                      </span>
+                      <span className="text-xs text-[#FFBA94]/65">{status}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
             {filteredProducts.length === 0 ? (
               <p className={styles.mutedNote}>Nothing matches this filter—try All Works or another season.</p>
             ) : null}

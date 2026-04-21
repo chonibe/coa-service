@@ -81,6 +81,7 @@ export function streetEditionRowFromStorefrontProduct(
   }
 
   return {
+    stageKey: display.stageKey,
     label: display.label,
     priceUsd: display.priceUsd,
     subcopy: display.subcopy,

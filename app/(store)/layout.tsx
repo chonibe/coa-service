@@ -16,6 +16,7 @@ import {
   LandingThemeProvider,
   LandingAppearanceFab,
 } from './shop/street-collector/LandingThemeProvider'
+import { isCollectorLedStoreShellPath } from '@/lib/shop/collector-store-shell'
 
 /**
  * Store Layout — wraps landing (/) and shop (/shop/*)
@@ -65,16 +66,14 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false)
   useEffect(() => setHasMounted(true), [])
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
-  const isLandingPage = pathname === '/'
-  const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
-  /** `/` and `/shop/street-collector` — shared landing shell with local light/dark toggle */
-  const isStreetCollectorHomeShell = isLandingPage || isStreetCollectorPage
+  /** `/`, street-collector marketing, drops, artists, reserve, and edition PDPs — shared light/dark shell */
+  const isCollectorLedStoreShell = isCollectorLedStoreShellPath(pathname ?? null)
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
-    isStreetCollectorHomeShell || isHomeV2Page
-  /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
-  const showLandingChatIcon = isLandingPage || isStreetCollectorPage
+    isCollectorLedStoreShell || isHomeV2Page
+  /** Chat icon on collector-led shell — not home-v2 (fixed nav + CTA already occupy the top bar). */
+  const showLandingChatIcon = isCollectorLedStoreShell
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
   const cart = useCart()
 
@@ -132,11 +131,11 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
 
   const outerShellClass = cn(
     'flex min-h-screen flex-col',
-    !isStreetCollectorHomeShell && isLandingOrStreetCollector && 'bg-[#171515]'
+    !isCollectorLedStoreShell && isLandingOrStreetCollector && 'bg-[#171515]'
   )
 
   const mainClassName = cn(
-    isStreetCollectorHomeShell
+    isCollectorLedStoreShell
       ? 'flex-none max-md:!pb-0'
       : isLandingOrStreetCollector
         ? 'flex-none bg-[#171515] max-md:!pb-0'
@@ -177,13 +176,13 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}
-        landingDualTone={isStreetCollectorHomeShell}
+        landingDualTone={isCollectorLedStoreShell}
         className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
       />
     </>
   )
 
-  if (isStreetCollectorHomeShell) {
+  if (isCollectorLedStoreShell) {
     return (
       <LandingThemeProvider>
         <LandingAppearanceFab />

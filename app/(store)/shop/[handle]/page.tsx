@@ -6,7 +6,6 @@ import Link from 'next/link'
 import {
   formatPrice,
   isOnSale,
-  getDiscountPercentage,
   type ShopifyProduct,
   type ShopifyProductVariant,
 } from '@/lib/shopify/storefront-client'
@@ -14,10 +13,6 @@ import {
   Container,
   SectionWrapper,
   Button,
-  ProductCard,
-  Stack,
-  Inline,
-  FlexContainer,
 } from '@/components/impact'
 import { ScrollingText } from '@/components/sections'
 import { ScrollReveal } from '@/components/blocks'
@@ -39,6 +34,16 @@ import {
   ProductSeriesInfo,
   EditionInfo,
 } from './components'
+import { cn } from '@/lib/utils'
+import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import { getStreetLampProductHandle, streetLampProductPath } from '@/lib/shop/street-lamp-handle'
+import { getStreetPricingStageDisplay } from '@/lib/shop/street-collector-pricing-stages'
+import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
+import {
+  ladderStageColumnClass,
+  ladderStageShortLabel,
+} from '@/lib/shop/collector-ladder-styles'
 
 // =============================================================================
 // PAGE COMPONENT (Client-side for interactivity)
@@ -63,9 +68,24 @@ export default function ProductPage() {
   const [artistAvatarUrl, setArtistAvatarUrl] = useState<string | null>(null)
   const [moreFromArtist, setMoreFromArtist] = useState<ShopifyProduct[]>([])
   const [ownedProductHandles, setOwnedProductHandles] = useState<string[]>([])
-  
-  
-    // For sticky buy bar
+  const [editionLadderRow, setEditionLadderRow] = useState<{
+    productId: string
+    editionsSold: number
+    editionTotal: number | null
+    season: 1 | 2
+    stageKey: StreetPricingStageKey
+    priceUsd: number | null
+    label: string
+    subcopy: string
+    nextBump:
+      | { kind: 'price_rise'; nextPriceUsd: number; afterSales: number }
+      | { kind: 'edition_end'; afterSales: number }
+      | null
+  } | null>(null)
+  const [watchlistBusy, setWatchlistBusy] = useState(false)
+  const [watchlistHint, setWatchlistHint] = useState<string | null>(null)
+
+  // For sticky buy bar
   const buyButtonRef = useRef<HTMLButtonElement>(null)
 
   // For carousel scrolling
@@ -127,6 +147,38 @@ export default function ProductPage() {
     
     fetchProduct()
   }, [params?.handle])
+
+  useEffect(() => {
+    if (!product) {
+      setEditionLadderRow(null)
+      return
+    }
+    const lamp = getStreetLampProductHandle().toLowerCase()
+    const h = product.handle?.toLowerCase() ?? ''
+    if (h === lamp || h.startsWith('street-lamp')) {
+      setEditionLadderRow(null)
+      return
+    }
+    const id = normalizeShopifyProductId(product.id)
+    if (!id) {
+      setEditionLadderRow(null)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/shop/edition-states?ids=${encodeURIComponent(id)}`)
+      .then((r) => r.json())
+      .then((data: { items?: Array<NonNullable<typeof editionLadderRow>> }) => {
+        if (cancelled) return
+        const row = data.items?.[0] ?? null
+        setEditionLadderRow(row ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setEditionLadderRow(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [product])
 
   // Update selected variant when options change
   useEffect(() => {
@@ -192,6 +244,37 @@ export default function ProductPage() {
     setTimeout(() => {
       setCartButtonState('idle')
     }, 2000)
+  }
+
+  const handleSaveWatchlist = async () => {
+    if (!product || !editionLadderRow) return
+    setWatchlistHint(null)
+    setWatchlistBusy(true)
+    try {
+      const id = normalizeShopifyProductId(product.id)
+      const r = await fetch('/api/shop/watchlist', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopify_product_id: id,
+          stage: 'early',
+          product_title: product.title,
+          product_handle: product.handle,
+          artist_name: product.vendor,
+        }),
+      })
+      const data = await r.json().catch(() => ({}))
+      if (!r.ok) {
+        setWatchlistHint(typeof data.error === 'string' ? data.error : 'Could not save watchlist')
+        return
+      }
+      setWatchlistHint('Saved to watchlist')
+    } catch {
+      setWatchlistHint('Network error')
+    } finally {
+      setWatchlistBusy(false)
+    }
   }
 
   // Carousel scroll handlers
@@ -310,7 +393,10 @@ export default function ProductPage() {
   const onSale = isOnSale(product)
   
   // Determine if this is the Street Lamp product
-  const isStreetLamp = params?.handle === 'street_lamp'
+  const lampHandleLower = getStreetLampProductHandle().toLowerCase()
+  const isStreetLamp =
+    product.handle.toLowerCase() === lampHandleLower ||
+    product.handle.toLowerCase().startsWith('street-lamp')
   
   const seoFaqAccordionItems: AccordionItem[] = buildProductFaqPairs(product).map((f, i) => ({
     id: `seo-faq-${i}`,
@@ -328,7 +414,13 @@ export default function ProductPage() {
     : [...seoFaqAccordionItems, ...artworkAccordionItems]
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-[#171515]">
+      {!isStreetLamp ? (
+        <>
+          <CollectorStoreTopChrome />
+          <div className="h-[calc(5.5rem+env(safe-area-inset-top,0px))] md:h-[calc(6rem+env(safe-area-inset-top,0px))]" />
+        </>
+      ) : null}
       {/* Sticky Buy Bar */}
       <StickyBuyBar
         productTitle={product.title}
@@ -408,6 +500,47 @@ export default function ProductPage() {
                   )}
                 </div>
               </div>
+
+              {!isStreetLamp && editionLadderRow && editionLadderRow.priceUsd != null ? (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-xs text-stone-600 dark:text-[#FFBA94]/75">
+                    {ladderStageShortLabel(editionLadderRow.stageKey)} tier
+                    {(() => {
+                      const gf = getStreetPricingStageDisplay(editionLadderRow.season, 0).priceUsd
+                      return gf != null && gf !== editionLadderRow.priceUsd ? (
+                        <span>{` · was $${gf} at ground floor`}</span>
+                      ) : null
+                    })()}
+                  </p>
+                  {editionLadderRow.editionTotal != null ? (
+                    <p className="mt-1 text-sm text-stone-800 dark:text-[#FFBA94]/90">
+                      {editionLadderRow.editionsSold} / {editionLadderRow.editionTotal} sold
+                      {editionLadderRow.nextBump?.kind === 'price_rise' ? (
+                        <span className="text-stone-600 dark:text-[#FFBA94]/70">{` · next step at ${editionLadderRow.nextBump.afterSales} sold`}</span>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={watchlistBusy}
+                      onClick={() => void handleSaveWatchlist()}
+                      className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-900 hover:bg-white dark:border-white/20 dark:text-[#FFBA94] dark:hover:bg-white/10"
+                    >
+                      {watchlistBusy ? 'Saving…' : '♡ Add to watchlist'}
+                    </button>
+                    <Link
+                      href="/shop/reserve"
+                      className="inline-flex items-center rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white dark:bg-[#FFBA94] dark:text-[#171515]"
+                    >
+                      Join the Reserve
+                    </Link>
+                  </div>
+                  {watchlistHint ? (
+                    <p className="mt-2 text-xs text-stone-600 dark:text-[#FFBA94]/70">{watchlistHint}</p>
+                  ) : null}
+                </div>
+              ) : null}
 
               {/* Stock Status & Shipping Info */}
               <div className="space-y-2 text-sm">
@@ -579,6 +712,77 @@ export default function ProductPage() {
                 </p>
               </div>
 
+              {!isStreetLamp && editionLadderRow ? (
+                <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-white/10 dark:bg-[#201c1c]/90">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                    Where this edition sits on the ladder
+                  </p>
+                  <div className="flex gap-1">
+                    {(
+                      [
+                        'ground_floor',
+                        'rising',
+                        'established',
+                        'final',
+                        'archive',
+                      ] as StreetPricingStageKey[]
+                    ).map((key) => {
+                      const season = editionLadderRow.season
+                      const sold = editionLadderRow.editionsSold
+                      const cur = getStreetPricingStageDisplay(season, sold)
+                      const here = cur.stageKey === key
+                      const step = getStreetPricingStageDisplay(
+                        season,
+                        key === 'ground_floor'
+                          ? 0
+                          : key === 'rising'
+                            ? 30
+                            : key === 'established'
+                              ? 60
+                              : key === 'final'
+                                ? 80
+                                : 90
+                      )
+                      return (
+                        <div
+                          key={key}
+                          className={cn(
+                            'flex min-h-[40px] flex-1 flex-col items-center justify-center rounded-md px-0.5 text-center sm:min-h-[44px]',
+                            ladderStageColumnClass(key),
+                            here && 'ring-2 ring-stone-900 ring-offset-2 dark:ring-[#FFBA94] dark:ring-offset-[#171515]'
+                          )}
+                        >
+                          <span className="text-[8px] font-medium uppercase leading-tight sm:text-[9px]">
+                            {ladderStageShortLabel(key)}
+                            {here ? ' · you' : ''}
+                          </span>
+                          <span className="text-[11px] font-semibold sm:text-xs">
+                            {step.priceUsd != null ? `$${step.priceUsd}` : '—'}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
+                    {editionLadderRow.subcopy}
+                  </p>
+                </div>
+              ) : null}
+
+              {!isStreetLamp ? (
+                <div className="rounded-xl border-l-2 border-stone-900 bg-stone-100/80 px-4 py-3 dark:border-[#FFBA94] dark:bg-white/5">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                    Reserve members
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-stone-800 dark:text-[#FFBA94]/90">
+                    Lock ground-floor pricing while your tier allows, and use monthly drop credit at checkout.{' '}
+                    <Link href="/shop/reserve" className="font-medium text-[#047AFF] underline-offset-2 hover:underline dark:text-sky-400">
+                      Learn about the Reserve
+                    </Link>
+                  </p>
+                </div>
+              ) : null}
+
               {/* Product Accordions */}
               <div className="pt-6 border-t border-[#1a1a1a]/10">
                 <ProductAccordion items={accordionItems} />
@@ -643,13 +847,36 @@ export default function ProductPage() {
         </SectionWrapper>
       )}
 
-      {/* Scrolling Text Banner */}
-      <ScrollingText
-        text="One Lamp, Endless Inspiration"
-        textSize="large"
-        scrollingSpeed={6}
-        textColor="#1a1a1a"
-      />
+      {/* Lamp cross-sell — demoted for edition PDPs */}
+      {!isStreetLamp ? (
+        <SectionWrapper spacing="sm" background="muted">
+          <Container maxWidth="default">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-white/90 p-5 dark:border-white/10 dark:bg-[#201c1c]/80">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-[#FFBA94]/60">
+                  Need a display
+                </p>
+                <p className="mt-1 text-sm text-stone-800 dark:text-[#FFBA94]/90">
+                  Most collectors own a Street Lamp to light their editions. Swap prints in seconds.
+                </p>
+              </div>
+              <Link
+                href={streetLampProductPath()}
+                className="text-sm font-semibold text-[#047AFF] underline-offset-2 hover:underline dark:text-sky-400"
+              >
+                Shop the lamp — from $149
+              </Link>
+            </div>
+          </Container>
+        </SectionWrapper>
+      ) : (
+        <ScrollingText
+          text="One Lamp, Endless Inspiration"
+          textSize="large"
+          scrollingSpeed={6}
+          textColor="#1a1a1a"
+        />
+      )}
 
       {/* You May Also Like - Scrollable Carousel */}
       {relatedProducts.length > 0 && (

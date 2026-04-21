@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-03-31.basil',
 })
 
-const TIERS = new Set<string>(['collector', 'curator', 'patron'])
+const TIERS = new Set<string>(['reserve'])
 
 export async function POST(request: NextRequest) {
   try {

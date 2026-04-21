@@ -1,3 +1,23 @@
+## Commit: Artist-led storefront — collector-first shop + single Reserve tier (2026-04-21)
+
+### Summary
+Collector-first navigation and homepage, `/shop/drops`, artist + artwork PDP ladder integration, demoted lamp cross-sell on edition pages, **$20/mo** Reserve with `STREET_RESERVE_STRIPE_PRICE_RESERVE`, edition-states query refactor, and [`ARTIST_LED_REDESIGN.md`](./features/street-collector/ARTIST_LED_REDESIGN.md).
+
+### ✅ Implementation Checklist
+
+- [x] [`lib/shop/collector-store-shell.ts`](../lib/shop/collector-store-shell.ts) — Shell path detection
+- [x] [`components/shop/CollectorStoreTopChrome.tsx`](../components/shop/CollectorStoreTopChrome.tsx) — Drops / Artists / Reserve / Lamp
+- [x] [`app/(store)/shop/street-collector/page.tsx`](../app/(store)/shop/street-collector/page.tsx) — Homepage
+- [x] [`app/(store)/shop/drops/page.tsx`](../app/(store)/shop/drops/page.tsx) — All drops
+- [x] [`app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx`](../app/(store)/shop/artists/[slug]/ArtistProfilePageClient.tsx) — Artist layout
+- [x] [`app/(store)/shop/[handle]/page.tsx`](../app/(store)/shop/[handle]/page.tsx) — Edition PDP + lamp teaser
+- [x] [`lib/shop/street-reserve-config.ts`](../lib/shop/street-reserve-config.ts) + [`app/api/shop/reserve/subscribe/route.ts`](../app/api/shop/reserve/subscribe/route.ts) + Reserve UI
+- [x] [`.env.example`](../.env.example) — Stripe price + lamp env
+- [x] [`docs/features/street-collector/ARTIST_LED_REDESIGN.md`](./features/street-collector/ARTIST_LED_REDESIGN.md)
+- [x] [`docs/COMMIT_LOGS/artist-led-storefront-2026-04-21.md`](./COMMIT_LOGS/artist-led-storefront-2026-04-21.md) — Full checklist
+
+---
+
 ## Commit: Artist launch revamp — welcome, login, onboarding, app-shell (2026-04-17)
 
 ### Summary
