@@ -10,15 +10,18 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Container, SectionWrapper } from '@/components/impact'
+import exploreStyles from '../explore-artists/explore-artists.module.css'
 
 export interface FAQGroup {
   title: string
-  items: { question: string; answer: string }[]
+  items: ReadonlyArray<{ readonly question: string; readonly answer: string }>
 }
 
 export interface StreetCollectorFAQProps {
   title: string
-  groups: FAQGroup[]
+  groups: ReadonlyArray<FAQGroup>
+  /** When `immersive`, matches `/shop/explore-artists` collector voices section (dark, serif). */
+  layout?: 'marketing' | 'immersive'
 }
 
 const groupIcons: Record<string, React.ElementType> = {
@@ -27,7 +30,61 @@ const groupIcons: Record<string, React.ElementType> = {
   'Shipping & Delivery': Truck,
 }
 
-export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
+export function StreetCollectorFAQ({ title, groups, layout = 'marketing' }: StreetCollectorFAQProps) {
+  if (layout === 'immersive') {
+    return (
+      <section className={exploreStyles.voicesSection} aria-label="Frequently asked questions">
+        <div className={exploreStyles.voicesHeader}>
+          <h2 className={exploreStyles.voicesTitle}>{title}</h2>
+        </div>
+        <div className={exploreStyles.voicesGrid}>
+          {groups.map((group) => {
+            const Icon = groupIcons[group.title] ?? Lamp
+            const groupKey = group.title.trim() || 'faq'
+            return (
+              <div key={groupKey} className={exploreStyles.voiceCard}>
+                {group.title.trim() ? (
+                  <div className="mb-4 flex items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[var(--peach)]"
+                      style={{ borderColor: 'var(--border)', background: 'var(--card2)' }}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    </div>
+                    <h3 className={exploreStyles.featuredMeta}>{group.title}</h3>
+                  </div>
+                ) : null}
+                <Accordion type="single" collapsible className="w-full">
+                  {group.items.map((item, idx) => (
+                    <AccordionItem
+                      key={item.question}
+                      value={`${groupKey}-${idx}`}
+                      className="border-0 py-3 first:pt-0 last:pb-0"
+                    >
+                      <AccordionTrigger
+                        className={cn(
+                          'group flex w-full flex-row items-center justify-between gap-3 py-0 text-left text-[rgba(255,255,255,0.88)] hover:no-underline',
+                          '[&[data-state=open]]:text-[var(--peach)]',
+                          'text-sm sm:text-[15px]',
+                          '[&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0 [&>svg]:text-[var(--muted)]'
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 pr-2 text-left leading-snug">{item.question}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2 pt-1.5 text-left text-xs leading-relaxed text-[var(--muted)] sm:text-sm">
+                        {item.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+    )
+  }
+
   return (
     <SectionWrapper spacing="md" background="experience" className="mb-0 !pt-6 pb-10 sm:!pt-8 md:!pt-10 md:pb-0">
       <Container maxWidth="default" paddingX="gutter">

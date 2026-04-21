@@ -7,6 +7,9 @@ import { cn } from '@/lib/utils'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
 import { collectorStoreChromePaddingTopClass } from '@/lib/shop/collector-store-chrome-layout'
+import { landingFontVariables } from '../home-v2/landing-fonts'
+import landingStyles from '../home-v2/landing.module.css'
+import exploreStyles from '../explore-artists/explore-artists.module.css'
 import type { StreetReserveTierId } from '@/lib/shop/street-reserve-config'
 import { STREET_RESERVE_CHECKOUT_TIER } from '@/lib/shop/street-reserve-config'
 
@@ -81,132 +84,152 @@ function ReserveInner() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#faf6f2] pb-16 text-stone-900 dark:bg-[#171515] dark:text-[#FFBA94]">
+    <div className={cn(landingFontVariables, landingStyles.page, 'min-h-dvh pb-16')}>
       <CollectorStoreTopChrome />
       <div className={collectorStoreChromePaddingTopClass} />
 
-      <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6">
-        {subscribed && (
-          <div
-            className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-100"
-            role="status"
-          >
-            Welcome to The Reserve — your subscription is active or finishing setup.{' '}
-            <Link href="/shop/street-collector" className="font-medium underline underline-offset-2">
-              Back to home
-            </Link>
-          </div>
-        )}
-        {canceled && (
-          <div className="mb-4 rounded-xl border border-stone-200 bg-white/80 px-4 py-3 text-center text-sm text-stone-600 dark:border-white/10 dark:bg-[#201c1c]/80 dark:text-[#FFBA94]/80">
-            Checkout canceled — join when you’re ready.
-          </div>
-        )}
-        {err && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-900 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-100">
-            {err}
-          </div>
-        )}
-
-        <section className="rounded-2xl bg-stone-900 px-6 py-8 text-white dark:bg-stone-950 dark:text-[#FFBA94] sm:px-8 sm:py-10">
-          <p className="mb-2 text-[11px] font-medium uppercase text-white/60 dark:text-[#FFBA94]/60">
-            The Reserve · $20 per month
-          </p>
-          <h1 className="mb-3 max-w-lg text-balance text-3xl font-medium leading-tight tracking-tight sm:text-4xl">
-            Never miss an artist you love.
-          </h1>
-          <p className="mb-6 max-w-lg text-pretty text-[15px] leading-relaxed text-white/80 dark:text-[#FFBA94]/85">
-            The Reserve gives you first access to every drop from the artists you follow — before they go public, at
-            ground-floor pricing, with rolling credit that rolls into whatever you collect next.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              disabled={loading || busy || !isAuthenticated}
-              onClick={() => void startCheckout()}
-              className={cn(
-                'rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-stone-900 transition-opacity',
-                'hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900',
-                'disabled:pointer-events-none disabled:opacity-40',
-                'dark:bg-[#FFBA94] dark:text-[#171515] dark:focus-visible:ring-[#FFBA94]/80 dark:focus-visible:ring-offset-stone-950'
-              )}
-            >
-              {busy ? 'Redirecting…' : isAuthenticated ? 'Join for $20/month' : 'Sign in to join'}
-            </button>
-            <span className="text-xs text-white/55 dark:text-[#FFBA94]/55">Cancel anytime</span>
-          </div>
-          {!isAuthenticated && !loading && (
-            <p className="mt-4 text-sm text-white/70 dark:text-[#FFBA94]/70">
-              <Link href="/shop/account?redirect=/shop/reserve" className="font-medium underline underline-offset-2">
-                Sign in
-              </Link>{' '}
-              to start checkout.
-            </p>
-          )}
-        </section>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4">
-          {BENEFITS.map((b) => (
+      <div className={exploreStyles.wrap}>
+        <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6">
+          {subscribed && (
             <div
-              key={b.n}
-              className="rounded-2xl border border-stone-200/90 bg-white/95 p-5 shadow-sm dark:border-white/10 dark:bg-[#201c1c]/90"
+              className="mb-4 rounded-xl border px-4 py-3 text-center text-sm"
+              style={{
+                borderColor: 'rgba(52, 211, 153, 0.35)',
+                background: 'rgba(6, 78, 59, 0.35)',
+                color: 'rgba(236, 253, 245, 0.95)',
+              }}
+              role="status"
             >
-              <div
-                className={cn(
-                  'mb-3 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold',
-                  b.ring
-                )}
-              >
-                {b.n}
-              </div>
-              <h2 className="mb-1.5 text-balance text-[15px] font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]">
-                {b.title}
-              </h2>
-              <p className="text-pretty text-sm leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">{b.body}</p>
+              Welcome to The Reserve — your subscription is active or finishing setup.{' '}
+              <Link href="/shop/street-collector" className="font-medium underline underline-offset-2">
+                Back to home
+              </Link>
             </div>
-          ))}
+          )}
+          {canceled && (
+            <div
+              className="mb-4 rounded-xl border px-4 py-3 text-center text-sm"
+              style={{ borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--muted)' }}
+            >
+              Checkout canceled — join when you’re ready.
+            </div>
+          )}
+          {err && (
+            <div
+              className="mb-4 rounded-xl border px-4 py-3 text-center text-sm"
+              style={{ borderColor: 'rgba(248, 113, 113, 0.4)', background: 'rgba(127, 29, 29, 0.25)', color: '#fecaca' }}
+            >
+              {err}
+            </div>
+          )}
         </div>
 
-        <section className="mt-8 rounded-2xl border border-stone-200/90 bg-white/95 p-6 dark:border-white/10 dark:bg-[#201c1c]/90">
-          <p className="mb-4 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-            How a month with The Reserve works
-          </p>
-          <div className="flex flex-col gap-4">
-            {TIMELINE.map((row) => (
-              <div key={row.day} className="flex gap-4">
-                <div className="w-14 shrink-0 pt-0.5 text-[11px] text-stone-500 dark:text-[#FFBA94]/65">
-                  {row.day}
+        <section className={exploreStyles.featuredSection} aria-label="The Reserve">
+          <div className={exploreStyles.featuredHeader}>
+            <div>
+              <div className={exploreStyles.eyebrowInline}>Membership</div>
+              <h1 className={exploreStyles.featuredTitle}>
+                The <em>Reserve</em>
+              </h1>
+            </div>
+          </div>
+          <div className="mx-auto max-w-2xl px-6 pb-16 text-center sm:px-10">
+            <p className={exploreStyles.philosophyBody}>
+              Never miss an artist you love. First access to every drop from the artists you follow — before they go
+              public — at ground-floor pricing, with rolling credit toward what you collect next.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <button
+                type="button"
+                disabled={loading || busy || !isAuthenticated}
+                onClick={() => void startCheckout()}
+                className={cn(exploreStyles.btnFeatured, 'border-0 disabled:opacity-40')}
+              >
+                {busy ? 'Redirecting…' : isAuthenticated ? 'Join for $20/month' : 'Sign in to join'}
+              </button>
+              <span className={exploreStyles.featuredRotate}>Cancel anytime</span>
+            </div>
+            {!isAuthenticated && !loading && (
+              <p className="mt-6 text-sm" style={{ color: 'var(--muted)' }}>
+                <Link href="/shop/account?redirect=/shop/reserve" className="font-medium" style={{ color: 'var(--peach)' }}>
+                  Sign in
+                </Link>{' '}
+                to start checkout.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className={exploreStyles.voicesSection} aria-label="Benefits">
+          <div className={exploreStyles.voicesHeader}>
+            <h2 className={exploreStyles.voicesTitle}>
+              What you <em>get</em>
+            </h2>
+          </div>
+          <div className={exploreStyles.voicesGrid}>
+            {BENEFITS.map((b) => (
+              <div key={b.n} className={exploreStyles.voiceCard}>
+                <div>
+                  <div
+                    className={cn(
+                      'mb-4 flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
+                      b.ring
+                    )}
+                  >
+                    {b.n}
+                  </div>
+                  <p className={exploreStyles.featuredHook} style={{ marginBottom: 12 }}>
+                    {b.title}
+                  </p>
+                  <p className={exploreStyles.voiceText}>{b.body}</p>
                 </div>
-                <p className="text-pretty text-[13px] leading-relaxed text-stone-800 dark:text-[#FFBA94]/90">
-                  {row.text}
-                </p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mt-8 rounded-2xl border border-stone-200/90 bg-white/95 p-6 dark:border-white/10 dark:bg-[#201c1c]/90">
-          <p className="mb-4 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-            What it costs, what you save
-          </p>
-          <div className="grid grid-cols-2 gap-3 tabular-nums">
-            <div className="rounded-xl bg-stone-100/90 p-4 dark:bg-white/5">
-              <p className="text-[11px] text-stone-500 dark:text-[#FFBA94]/65">Annual cost</p>
-              <p className="text-2xl font-medium text-stone-900 dark:text-[#FFBA94]">$240</p>
-            </div>
-            <div className="rounded-xl bg-stone-100/90 p-4 dark:bg-white/5">
-              <p className="text-[11px] text-stone-500 dark:text-[#FFBA94]/65">Typical collector saves</p>
-              <p className="text-2xl font-medium text-stone-900 dark:text-[#FFBA94]">~$120 / year</p>
+        <section className={exploreStyles.philosophy} aria-label="Timeline">
+          <div className={exploreStyles.philosophyInner}>
+            <div className={exploreStyles.philosophyEyebrow}>First month</div>
+            <p className={exploreStyles.philosophyQuote}>How a month with The Reserve tends to feel.</p>
+            <div className="mx-auto mt-8 max-w-xl text-left">
+              {TIMELINE.map((row) => (
+                <div key={row.day} className="mb-6 flex gap-4 border-b border-white/5 pb-6 last:mb-0 last:border-0 last:pb-0">
+                  <div className="w-16 shrink-0 pt-1" style={{ color: 'var(--peach)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                    {row.day}
+                  </div>
+                  <p className={exploreStyles.philosophyBody} style={{ margin: 0, textAlign: 'left' }}>
+                    {row.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-          <p className="mt-3 text-pretty text-[11px] leading-relaxed text-stone-500 dark:text-[#FFBA94]/60">
+        </section>
+
+        <section className={exploreStyles.mapSection} aria-label="Pricing">
+          <div className={exploreStyles.mapEyebrow}>Value</div>
+          <h2 className={exploreStyles.mapTitle} style={{ marginBottom: 40 }}>
+            What it costs, <em>what you save</em>
+          </h2>
+          <div className={exploreStyles.mapStats}>
+            <div className={exploreStyles.mapStat}>
+              <span className={exploreStyles.mapStatN}>$240</span>
+              <span className={exploreStyles.mapStatL}>Annual cost</span>
+            </div>
+            <div className={exploreStyles.mapStat}>
+              <span className={exploreStyles.mapStatN}>~$120</span>
+              <span className={exploreStyles.mapStatL}>Typical savings / yr</span>
+            </div>
+          </div>
+          <p className="mx-auto mt-8 max-w-xl text-pretty text-sm" style={{ color: 'var(--muted)' }}>
             Based on collectors buying several editions per year at ground floor rather than rising or established
             pricing. Credit rolls for months so you are not losing what you paid in.
           </p>
         </section>
 
-        <p className="mt-8 text-center text-[11px] leading-relaxed text-stone-500 dark:text-[#FFBA94]/50">
-          Set <code className="rounded bg-stone-200/80 px-1 dark:bg-white/10">STREET_RESERVE_STRIPE_PRICE_RESERVE</code>{' '}
+        <p className="px-6 py-10 text-center text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+          Set <code style={{ background: 'var(--card2)', padding: '2px 6px', borderRadius: 4 }}>STREET_RESERVE_STRIPE_PRICE_RESERVE</code>{' '}
           in the environment to your Stripe recurring price for $20/mo. Legacy tiers (collector/curator/patron) remain
           in the database for existing subscribers.
         </p>
@@ -219,7 +242,10 @@ export function ReservePageClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-[#faf6f2] text-stone-600 dark:bg-[#171515] dark:text-[#FFBA94]/70">
+        <div
+          className={cn(landingFontVariables, landingStyles.page, 'flex min-h-dvh items-center justify-center')}
+          style={{ color: 'var(--muted)' }}
+        >
           Loading…
         </div>
       }

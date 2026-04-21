@@ -35,13 +35,26 @@ export function UpcomingDropCountdown({
   }, [targetIso])
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="rounded-full bg-[#FCEBEB] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#791F1F]">
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <span
+        className="rounded-full px-2 py-0.5 text-[9px] font-medium uppercase"
+        style={{
+          background: 'rgba(255, 186, 148, 0.12)',
+          color: 'var(--peach)',
+          fontFamily: 'var(--font-landing-mono), monospace',
+          letterSpacing: '0.12em',
+        }}
+      >
         {label}
       </span>
       <Link
         href={notifyHref || '/shop/reserve'}
-        className="text-[11px] font-medium text-[#185FA5] dark:text-sky-400"
+        className="text-[9px] font-medium uppercase"
+        style={{
+          color: 'var(--peach)',
+          fontFamily: 'var(--font-landing-mono), monospace',
+          letterSpacing: '0.12em',
+        }}
       >
         Notify me
       </Link>

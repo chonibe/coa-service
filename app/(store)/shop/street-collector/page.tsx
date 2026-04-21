@@ -4,7 +4,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { StreetCollectorBrandJsonLd } from '@/components/seo/StreetCollectorBrandJsonLd'
-import { Container, SectionWrapper } from '@/components/impact'
+import { Container } from '@/components/impact'
+import { landingFontVariables } from '../home-v2/landing-fonts'
+import landingStyles from '../home-v2/landing.module.css'
+import exploreStyles from '../explore-artists/explore-artists.module.css'
+import scStyles from './collector-store.module.css'
 import { streetCollectorContent } from '@/content/street-collector'
 import {
   getCollection,
@@ -75,13 +79,15 @@ export default async function StreetCollectorPage() {
   const apiConfigured = isStorefrontConfigured()
   let apiError: string | null = null
 
-  let featuredArtists: Array<{
+  type FeaturedHomeArtist = {
     handle: string
     name: string
     location?: string
     imageUrl?: string
     description?: string
-  }> = []
+    collectionHref?: string
+  }
+  let featuredArtists: FeaturedHomeArtist[] = []
 
   let spotlightProducts: ShopifyProduct[] = []
   let lampTeaserImageUrl: string | undefined
@@ -93,7 +99,11 @@ export default async function StreetCollectorPage() {
       const [featuredArtistsResult, season2Col, lampProduct] = await Promise.all([
         Promise.all(
           streetCollectorContent.featuredArtists.collections.map(async (artist) => {
-            const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
+            const collectionHref =
+              'collectionHref' in artist && typeof artist.collectionHref === 'string'
+                ? artist.collectionHref
+                : undefined
+            const location = 'location' in artist && typeof artist.location === 'string' ? artist.location : undefined
             try {
               const col = await getCollection(artist.handle, { first: 1 }).catch(() => null)
               const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -119,10 +129,10 @@ export default async function StreetCollectorPage() {
               return {
                 handle: artist.handle,
                 name,
-                location: artist.location,
+                location,
                 imageUrl,
                 description,
-                href: collectionHref,
+                collectionHref,
               }
             } catch {
               const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -133,10 +143,10 @@ export default async function StreetCollectorPage() {
                   .split('-')
                   .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                   .join(' '),
-                location: artist.location,
+                location,
                 imageUrl,
                 description: undefined,
-                href: collectionHref,
+                collectionHref,
               }
             }
           })
@@ -211,7 +221,7 @@ export default async function StreetCollectorPage() {
         HIDDEN_HANDLES.has(a.name.toLowerCase())
       const richness = (a: { imageUrl?: string; description?: string }) =>
         (a.imageUrl ? 1 : 0) + (a.description ? 1 : 0)
-      const nameToArtist = new Map<string, (typeof featuredArtists)[0]>()
+      const nameToArtist = new Map<string, FeaturedHomeArtist>()
       for (const a of season2Artists.filter((a) => a.name && !isHidden({ handle: a.handle, name: a.name }))) {
         const key = a.name.toLowerCase().trim()
         const existing = nameToArtist.get(key)
@@ -223,11 +233,10 @@ export default async function StreetCollectorPage() {
         if (isHidden(a)) continue
         const key = a.name.toLowerCase().trim()
         const existing = nameToArtist.get(key)
-        const aWithHref = 'href' in a ? a : undefined
         if (!existing || richness(a) > richness(existing)) {
           nameToArtist.set(key, a)
-        } else if (aWithHref?.href) {
-          nameToArtist.set(key, { ...existing, href: aWithHref.href })
+        } else if (a.collectionHref) {
+          nameToArtist.set(key, { ...existing, collectionHref: a.collectionHref })
         }
       }
       featuredArtists = Array.from(nameToArtist.values())
@@ -266,7 +275,7 @@ export default async function StreetCollectorPage() {
     ''
 
   return (
-    <div className="w-full pb-24 text-stone-900 dark:text-[#FFBA94] md:pb-8">
+    <div className={cn(landingFontVariables, landingStyles.page, 'pb-24 md:pb-8')}>
       <StreetCollectorBrandJsonLd />
       <CollectorStoreTopChrome />
 
@@ -280,51 +289,47 @@ export default async function StreetCollectorPage() {
         </div>
       )}
 
-      <SectionWrapper spacing="md" background="experience" className="!pt-4 !pb-10">
-        <Container maxWidth="default" paddingX="gutter">
-          <p className="mb-3 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/65">
-            Limited editions · 85+ artists · New drops weekly
-          </p>
-          <h1 className="max-w-xl text-balance font-serif text-3xl font-medium leading-[1.12] tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-5xl md:leading-[1.1]">
-            Collect the street artists you love. Before everyone else does.
-          </h1>
-          <p className="mt-4 max-w-lg text-pretty text-[15px] leading-relaxed text-stone-600 dark:text-[#FFBA94]/80">
-            Limited edition prints from artists around the world. Prices only go up. When editions sell out,
-            they&apos;re gone. Follow the artists you care about and get first access when they drop.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/shop/artists"
-              prefetch={false}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 dark:bg-[#FFBA94] dark:text-[#171515]"
-            >
-              Browse artists
-            </Link>
-            <Link
-              href="/shop/drops"
-              prefetch={false}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-stone-300 bg-transparent px-5 py-2.5 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-50 dark:border-white/20 dark:text-[#FFBA94] dark:hover:bg-white/5"
-            >
-              See upcoming drops
-            </Link>
+      <div className={exploreStyles.wrap}>
+        <section className={cn(exploreStyles.hero, scStyles.heroShop)} aria-label="Street Collector home">
+          <div className={exploreStyles.heroBgGradient} aria-hidden />
+          <div className={exploreStyles.heroContent}>
+            <div className={exploreStyles.heroEyebrow}>Limited editions · 85+ artists · New drops weekly</div>
+            <h1 className={exploreStyles.heroH1}>
+              Collect the artists you love before <em>everyone else.</em>
+            </h1>
+            <p className={exploreStyles.heroDesc}>
+              Limited edition prints from artists around the world. Prices only go up. When editions sell out,
+              they&apos;re gone. Follow the artists you care about and get first access when they drop.
+            </p>
+            <div className={cn(scStyles.heroCtas, 'flex flex-wrap gap-4')}>
+              <Link href="/shop/artists" prefetch={false} className={landingStyles.btnPrimary}>
+                Browse artists
+              </Link>
+              <Link href="/shop/drops" prefetch={false} className={landingStyles.btnOutline}>
+                See upcoming drops
+              </Link>
+            </div>
           </div>
-        </Container>
-      </SectionWrapper>
+        </section>
 
-      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
-            <h2 className="text-balance text-lg font-medium text-stone-900 dark:text-[#FFBA94]">
-              This week&apos;s drops
-            </h2>
+        <section className={exploreStyles.artistsSection} aria-label="This week&apos;s drops">
+          <div className={exploreStyles.artistsHeader}>
+            <div>
+              <div className={exploreStyles.eyebrowInline}>On the calendar</div>
+              <h2 className={exploreStyles.featuredTitle}>
+                This week&apos;s <em>drops</em>
+              </h2>
+            </div>
             <Link
               href="/shop/drops"
-              className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65 dark:hover:text-[#FFBA94]"
+              prefetch={false}
+              className={cn(exploreStyles.artistsHeaderNote, 'transition-colors hover:text-white')}
             >
               View all →
             </Link>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+
+          <div className={scStyles.dropsGrid3}>
             {spotlightProducts.map((p) => {
               const pid = normalizeShopifyProductId(p.id) || ''
               const row = editionByProductId.get(pid)
@@ -334,87 +339,118 @@ export default async function StreetCollectorPage() {
               const price = row?.priceUsd
               const stageKey = row?.stageKey ?? 'ground_floor'
               return (
-                <Link
-                  key={p.id}
-                  href={`/shop/${encodeURIComponent(p.handle)}`}
-                  className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-[#201c1c]/90"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-                      Live now
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
-                        ladderStageBadgeClass(stageKey)
-                      )}
+                <article key={p.id} className={exploreStyles.artistCard}>
+                  <div className={exploreStyles.artistCardInner}>
+                    <Link
+                      href={`/shop/${encodeURIComponent(p.handle)}`}
+                      prefetch={false}
+                      className={exploreStyles.artistCardMediaButton}
+                      aria-label={`Open ${p.title}`}
                     >
-                      {ladderStageShortLabel(stageKey)}
-                    </span>
-                  </div>
-                  <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800">
-                    {img ? (
-                      <Image
-                        src={getProxiedImageUrl(img)}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="(max-width:768px) 100vw, 33vw"
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">{p.vendor || 'Artist'}</p>
-                  <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">{p.title}</p>
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="font-medium tabular-nums">{price != null ? `$${price}` : '—'}</span>
-                    {total != null ? (
-                      <span className="text-[11px] tabular-nums text-stone-500 dark:text-[#FFBA94]/65">
-                        {sold} of {total} sold
+                      <div className={exploreStyles.artistCardMedia}>
+                        {img ? (
+                          <Image
+                            className={exploreStyles.artistCardImg}
+                            src={getProxiedImageUrl(img)}
+                            alt=""
+                            fill
+                            sizes="(max-width:768px) 100vw, 33vw"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center text-4xl"
+                            style={{
+                              background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
+                              color: 'var(--peach)',
+                              fontFamily: 'var(--font-landing-serif), Georgia, serif',
+                            }}
+                            aria-hidden
+                          >
+                            {(p.vendor || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className={exploreStyles.artistCardOverlay} aria-hidden />
+                        <div className={exploreStyles.artistCardInfo}>
+                          <div className={exploreStyles.artistCardName}>{p.vendor || 'Artist'}</div>
+                          <div className={exploreStyles.artistCardCity}>
+                            Live · {ladderStageShortLabel(stageKey)}
+                          </div>
+                          <div className={exploreStyles.artistCardHook}>{p.title}</div>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className={exploreStyles.artistCardFooter}>
+                      <div className={exploreStyles.editionsCount}>
+                        <span className="tabular-nums">{price != null ? `$${price}` : '—'}</span>
+                        {total != null ? (
+                          <span className="tabular-nums">
+                            {sold} / {total} sold
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className={exploreStyles.cardExploreLink} aria-hidden>
+                        Shop
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                       </span>
-                    ) : null}
+                    </div>
                   </div>
-                </Link>
+                </article>
               )
             })}
             {spotlightProducts.length < 2 &&
               [0, 1].slice(spotlightProducts.length).map((i) => (
-                <div
-                  key={`ph-${i}`}
-                  className="rounded-2xl border border-dashed border-stone-200/80 bg-stone-50/50 p-3.5 dark:border-white/10 dark:bg-[#201c1c]/40"
-                >
-                  <p className="text-sm text-stone-500 dark:text-[#FFBA94]/60">More drops loading soon.</p>
-                </div>
+                <article key={`ph-${i}`} className={exploreStyles.artistCard}>
+                  <div className={exploreStyles.artistCardInner}>
+                    <div className={exploreStyles.artistCardMedia}>
+                      <div
+                        className="flex h-full min-h-[200px] w-full items-center justify-center text-sm"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        More drops loading soon.
+                      </div>
+                    </div>
+                  </div>
+                </article>
               ))}
-            <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-3.5 dark:border-white/10 dark:bg-[#201c1c]/90">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium uppercase text-[#A32D2D] dark:text-red-300">
-                  Drops Thursday
-                </span>
+            <article className={exploreStyles.artistCard}>
+              <div className={exploreStyles.artistCardInner}>
+                <div className={exploreStyles.artistCardMedia}>
+                  <div
+                    className="flex h-full min-h-[200px] w-full flex-col items-center justify-center gap-2 px-4 text-center"
+                    style={{ background: 'var(--card2)', color: 'var(--muted)' }}
+                  >
+                    <span className="text-[10px] uppercase tracking-wide text-[#c98a7a]">Drops Thursday</span>
+                    <span className="text-xs">Upcoming edition</span>
+                  </div>
+                  <div className={exploreStyles.artistCardOverlay} aria-hidden />
+                  <div className={exploreStyles.artistCardInfo}>
+                    <div className={exploreStyles.artistCardName}>Next on the calendar</div>
+                    <div className={exploreStyles.artistCardCity}>Ground floor from $40</div>
+                  </div>
+                </div>
+                <div className={exploreStyles.artistCardFooter}>
+                  <div className={exploreStyles.editionsCount}>
+                    <span>From $40</span>
+                  </div>
+                  <div style={{ marginLeft: 'auto' }}>
+                    <UpcomingDropCountdown targetIso={upcomingIso} notifyHref="/shop/reserve" />
+                  </div>
+                </div>
               </div>
-              <div className="relative mb-2 flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-stone-100 text-xs text-stone-400 dark:bg-stone-800 dark:text-[#FFBA94]/50">
-                Upcoming edition
-              </div>
-              <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">Next on the calendar</p>
-              <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">Ground floor from $40</p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-xs text-stone-500 dark:text-[#FFBA94]/65">From $40</span>
-                <UpcomingDropCountdown targetIso={upcomingIso} notifyHref="/shop/reserve" />
-              </div>
-            </div>
+            </article>
           </div>
-        </Container>
-      </SectionWrapper>
+        </section>
 
-      <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="rounded-2xl border border-stone-200/90 bg-white/95 p-5 dark:border-white/10 dark:bg-[#201c1c]/90">
-            <p className="mb-2 text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-              How pricing works
+        <section className={exploreStyles.philosophy} aria-label="How pricing works">
+          <div className={exploreStyles.philosophyInner}>
+            <div className={exploreStyles.philosophyEyebrow}>Ladder pricing</div>
+            <p className={exploreStyles.philosophyQuote}>
+              Prices only go up. Editions are finite. When they&apos;re gone, they&apos;re <em>gone.</em>
             </p>
-            <p className="mb-4 text-pretty text-[15px] font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]">
-              Prices only go up. Editions are finite. When they&apos;re gone, they&apos;re gone.
-            </p>
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+            <div className="mx-auto mt-8 grid max-w-3xl grid-cols-5 gap-1.5 sm:gap-2">
               {HOME_LADDER_DISPLAY.map((step) => (
                 <div
                   key={step.key}
@@ -430,139 +466,118 @@ export default async function StreetCollectorPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-pretty text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
-              Every edition climbs as it sells through. Early collectors pay ground floor. Late collectors may not
-              get in at all.
+            <p className={exploreStyles.philosophyBody}>
+              Every edition climbs as it sells through. Early collectors pay ground floor. Late collectors may not get
+              in at all.
             </p>
           </div>
-        </Container>
-      </SectionWrapper>
+        </section>
 
-      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="rounded-2xl bg-stone-900 px-5 py-6 text-white sm:px-8 sm:py-8 dark:bg-stone-950 dark:text-[#FFBA94]">
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-              <div className="max-w-lg flex-1">
-                <p className="mb-2 text-[11px] font-medium uppercase text-white/60 dark:text-[#FFBA94]/60">
-                  The Reserve · $20/month
-                </p>
-                <h2 className="text-balance text-xl font-medium leading-snug tracking-tight text-white dark:text-[#FFBA94] sm:text-2xl">
-                  Never miss an artist you love.
-                </h2>
-                <p className="mt-3 text-pretty text-[13px] leading-relaxed text-white/75 dark:text-[#FFBA94]/80">
-                  Follow any artist on the roster. When they drop, you get 48-hour early access, ground-floor priority,
-                  and monthly credit that rolls into your next purchase.
-                </p>
-                <Link
-                  href="/shop/reserve"
-                  prefetch={false}
-                  className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-semibold text-stone-900 dark:bg-[#FFBA94] dark:text-[#171515]"
-                >
-                  Join the Reserve
-                </Link>
-              </div>
-              <div className="w-full shrink-0 text-[13px] leading-relaxed text-white/85 dark:text-[#FFBA94]/85 md:w-44">
-                <p className="mb-2 text-[11px] font-medium uppercase text-white/55 dark:text-[#FFBA94]/55">
-                  Members get
-                </p>
-                <ul className="space-y-1">
-                  <li>48h early access</li>
-                  <li>Priority allocation</li>
-                  <li>$20/mo drop credit</li>
-                  <li>Ground-floor price lock</li>
-                </ul>
-              </div>
+        <section className={exploreStyles.featuredSection} aria-label="The Reserve">
+          <div className={exploreStyles.featuredHeader}>
+            <div>
+              <div className={exploreStyles.eyebrowInline}>Membership</div>
+              <h2 className={exploreStyles.featuredTitle}>
+                The <em>Reserve</em>
+              </h2>
             </div>
           </div>
-        </Container>
-      </SectionWrapper>
+          <div className="mx-auto max-w-2xl px-6 pb-20 text-center sm:px-10">
+            <p className={exploreStyles.philosophyBody}>
+              Never miss an artist you love. When they drop, you get 48-hour early access, ground-floor priority, and
+              monthly credit that rolls into your next purchase.
+            </p>
+            <ul
+              className="mx-auto mb-8 mt-6 max-w-md space-y-2 text-left text-sm"
+              style={{ color: 'var(--muted)', fontFamily: 'var(--font-landing-mono), monospace' }}
+            >
+              <li>48h early access</li>
+              <li>Priority allocation</li>
+              <li>$20/mo drop credit</li>
+              <li>Ground-floor price lock</li>
+            </ul>
+            <Link href="/shop/reserve" prefetch={false} className={exploreStyles.btnFeatured}>
+              Join the Reserve
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        </section>
 
-      {featuredArtists.length > 0 && (
-        <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-10">
-          <Container maxWidth="default" paddingX="gutter">
-            <div className="mb-4 flex items-baseline justify-between gap-4 px-1">
-              <h2 className="text-balance text-lg font-medium text-stone-900 dark:text-[#FFBA94]">
-                Follow your artists
-              </h2>
+        {featuredArtists.length > 0 ? (
+          <section className={exploreStyles.artistsSection} aria-label="Follow your artists">
+            <div className={exploreStyles.artistsHeader}>
+              <div>
+                <div className={exploreStyles.eyebrowInline}>Your roster</div>
+                <h2 className={exploreStyles.featuredTitle}>
+                  Follow your <em>artists</em>
+                </h2>
+              </div>
               <Link
                 href="/shop/artists"
-                className="text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-[#FFBA94]/65"
+                prefetch={false}
+                className={cn(exploreStyles.artistsHeaderNote, 'transition-colors hover:text-white')}
               >
-                View roster →
+                View directory →
               </Link>
             </div>
             <CollectorHomeArtistRoster artists={featuredArtists} />
-          </Container>
-        </SectionWrapper>
-      )}
+          </section>
+        ) : null}
 
-      <SectionWrapper spacing="md" background="default" className="!pt-2 !pb-10">
-        <Container maxWidth="default" paddingX="gutter">
-          <div className="mx-auto max-w-2xl rounded-2xl border border-stone-200/90 bg-white/90 p-5 dark:border-white/10 dark:bg-[#201c1c]/80">
-            <p className="text-[11px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-              The display your collection lives on
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-4">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800">
-                {lampTeaserImageUrl ? (
-                  <Image
-                    src={getProxiedImageUrl(lampTeaserImageUrl)}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="80px"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-stone-400 dark:text-[#FFBA94]/50">
-                    Lamp
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-stone-900 dark:text-[#FFBA94]">Street Collector lamp</p>
-                <p className="mt-1 text-pretty text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75">
-                  Backlit, swappable prints — the infrastructure that makes your collection visible at home.
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <span className="text-sm font-semibold text-stone-900 dark:text-[#FFBA94]">From $149</span>
-                  <Link
-                    href={streetLampProductPath()}
-                    className="text-xs font-medium text-[#047AFF] underline-offset-2 hover:underline dark:text-sky-400"
-                  >
-                    Shop the lamp →
-                  </Link>
-                </div>
+        <section className={scStyles.lampRow} aria-label="Street Lamp">
+          <div className={exploreStyles.eyebrowInline}>The display your collection lives on</div>
+          <div className="mt-4 flex flex-wrap items-start gap-6">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden" style={{ background: 'var(--card2)' }}>
+              {lampTeaserImageUrl ? (
+                <Image
+                  src={getProxiedImageUrl(lampTeaserImageUrl)}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className={exploreStyles.featuredName} style={{ fontSize: 22 }}>
+                Street Collector lamp
+              </h3>
+              <p className={exploreStyles.featuredBio}>
+                Backlit, swappable prints — the infrastructure that makes your collection visible at home.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-4">
+                <span className={exploreStyles.statN} style={{ fontSize: 28 }}>
+                  $149
+                </span>
+                <Link href={streetLampProductPath()} prefetch={false} className={exploreStyles.lbCtaOutline}>
+                  Shop the lamp
+                </Link>
               </div>
             </div>
           </div>
-        </Container>
-      </SectionWrapper>
+        </section>
 
-      {debraQuote ? (
-        <SectionWrapper spacing="md" background="experience" className="!pt-2 !pb-12">
-          <Container maxWidth="default" paddingX="gutter">
-            <blockquote className="text-pretty font-serif text-lg leading-relaxed text-stone-800 dark:text-[#FFBA94]/90 sm:text-xl">
-              “{debraQuote}”
-            </blockquote>
-            <p className="mt-4 text-sm text-stone-500 dark:text-[#FFBA94]/65">— Debra G., Street Collector collector</p>
-          </Container>
-        </SectionWrapper>
-      ) : null}
+        {debraQuote ? (
+          <div className={scStyles.testimonialBlock}>
+            <blockquote className={scStyles.pullquote}>“{debraQuote}”</blockquote>
+            <p className={scStyles.attribution}>— Debra G., Street Collector collector</p>
+          </div>
+        ) : null}
 
-      <StreetCollectorFAQ
-        title={streetCollectorContent.faq.title}
-        groups={streetCollectorContent.faq.groups}
-      />
+        <StreetCollectorFAQ
+          title={streetCollectorContent.faq.title}
+          groups={streetCollectorContent.faq.groups}
+          layout="immersive"
+        />
+      </div>
 
       <div
         className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-3 md:hidden"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
       >
-        <Link
-          href="/shop/artists"
-          prefetch={false}
-          className="flex min-h-[48px] w-full max-w-md items-center justify-center rounded-lg bg-stone-900 px-5 py-3 text-sm font-semibold text-white dark:bg-[#FFBA94] dark:text-[#171515]"
-        >
+        <Link href="/shop/artists" prefetch={false} className={cn(landingStyles.btnPrimary, 'w-full max-w-md justify-center')}>
           Browse artists
         </Link>
       </div>

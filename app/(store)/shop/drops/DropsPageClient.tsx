@@ -5,9 +5,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
-import { ladderStageBadgeClass, ladderStageShortLabel } from '@/lib/shop/collector-ladder-styles'
+import { ladderStageShortLabel } from '@/lib/shop/collector-ladder-styles'
 import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
 import { collectorStoreChromePaddingTopClass } from '@/lib/shop/collector-store-chrome-layout'
+import { landingFontVariables } from '../home-v2/landing-fonts'
+import landingStyles from '../home-v2/landing.module.css'
+import exploreStyles from '../explore-artists/explore-artists.module.css'
 import { cn } from '@/lib/utils'
 
 export type DropRow = {
@@ -31,6 +34,12 @@ const STAGES: Array<{ id: 'all' | StreetPricingStageKey; label: string }> = [
   { id: 'archive', label: 'Sold out' },
 ]
 
+const fieldShell = {
+  background: 'var(--card)' as const,
+  color: 'var(--white)' as const,
+  border: '1px solid var(--border)' as const,
+}
+
 export function DropsPageClient({ rows }: { rows: DropRow[] }) {
   const [stage, setStage] = useState<(typeof STAGES)[number]['id']>('all')
   const [q, setQ] = useState('')
@@ -49,92 +58,123 @@ export function DropsPageClient({ rows }: { rows: DropRow[] }) {
   }, [rows, stage, q])
 
   return (
-    <div className="min-h-dvh bg-[#faf6f2] pb-16 text-stone-900 dark:bg-[#171515] dark:text-[#FFBA94]">
+    <div className={cn(landingFontVariables, landingStyles.page, 'min-h-dvh pb-16')}>
       <CollectorStoreTopChrome />
       <div className={collectorStoreChromePaddingTopClass} />
 
-      <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6">
-        <h1 className="text-balance text-2xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-3xl">
-          All drops
-        </h1>
-        <p className="mt-2 max-w-2xl text-pretty text-sm text-stone-600 dark:text-[#FFBA94]/75">
-          Live limited editions across the roster. Filter by ladder stage or search by artist or title.
-        </p>
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="text-sm text-stone-600 dark:text-[#FFBA94]/70">
-            <span className="mr-2">Stage</span>
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value as (typeof STAGES)[number]['id'])}
-              className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm dark:border-white/15 dark:bg-[#201c1c]"
-            >
-              {STAGES.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
-            type="search"
-            placeholder="Search artist or title…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="w-full max-w-xs rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-[#201c1c] sm:w-64"
-          />
-        </div>
-
-        {filtered.length === 0 ? (
-          <p className="mt-10 text-center text-sm text-stone-500 dark:text-[#FFBA94]/65">No editions match.</p>
-        ) : (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((r) => (
-              <Link
-                key={r.handle}
-                href={`/shop/${encodeURIComponent(r.handle)}`}
-                className="group rounded-2xl border border-stone-200/90 bg-white/95 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-[#201c1c]/90"
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-medium uppercase text-stone-500 dark:text-[#FFBA94]/60">
-                    {r.stageKey === 'archive' ? 'Sold out' : 'Live'}
-                  </span>
-                  <span
-                    className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
-                      ladderStageBadgeClass(r.stageKey)
-                    )}
-                  >
-                    {ladderStageShortLabel(r.stageKey)}
-                  </span>
-                </div>
-                <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800">
-                  {r.imageUrl ? (
-                    <Image
-                      src={getProxiedImageUrl(r.imageUrl)}
-                      alt=""
-                      fill
-                      className="object-cover transition-transform group-hover:scale-[1.02]"
-                      sizes="(max-width:768px) 100vw, 33vw"
-                    />
-                  ) : null}
-                </div>
-                <p className="text-xs text-stone-500 dark:text-[#FFBA94]/65">{r.vendor}</p>
-                <p className="font-medium text-stone-900 dark:text-[#FFBA94]">{r.title}</p>
-                <div className="mt-2 flex items-center justify-between text-sm tabular-nums">
-                  <span className="font-medium">
-                    {r.priceUsd != null ? `$${r.priceUsd}` : '—'}
-                  </span>
-                  {r.editionTotal != null ? (
-                    <span className="text-xs text-stone-500 dark:text-[#FFBA94]/65">
-                      {r.editionsSold} / {r.editionTotal} sold
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-            ))}
+      <div className={exploreStyles.wrap}>
+        <section className={exploreStyles.artistsSection} aria-label="All drops">
+          <div className={exploreStyles.artistsHeader}>
+            <div>
+              <div className={exploreStyles.eyebrowInline}>Shop</div>
+              <h1 className={exploreStyles.featuredTitle}>
+                All <em>drops</em>
+              </h1>
+            </div>
+            <p className={exploreStyles.artistsHeaderNote}>
+              Live limited editions across the roster. Filter by ladder stage or search by artist or title.
+            </p>
           </div>
-        )}
+
+          <div
+            className={cn(exploreStyles.filterBar, '!relative !top-0')}
+            style={{ flexWrap: 'wrap', gap: 12, paddingTop: 12, paddingBottom: 12 }}
+          >
+            <label className="flex items-center gap-2 text-[10px] uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+              Stage
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value as (typeof STAGES)[number]['id'])}
+                className="rounded-md px-2 py-1.5 text-[11px] font-medium normal-case tracking-normal"
+                style={fieldShell}
+              >
+                {STAGES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <input
+              type="search"
+              placeholder="Search artist or title…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="min-w-[200px] flex-1 rounded-md px-3 py-2 text-sm sm:max-w-xs"
+              style={fieldShell}
+            />
+          </div>
+
+          {filtered.length === 0 ? (
+            <p className="py-16 text-center text-sm" style={{ color: 'var(--muted)' }}>
+              No editions match.
+            </p>
+          ) : (
+            <div className={exploreStyles.artistsGrid}>
+              {filtered.map((r) => (
+                <article key={r.handle} className={exploreStyles.artistCard}>
+                  <div className={exploreStyles.artistCardInner}>
+                    <Link
+                      href={`/shop/${encodeURIComponent(r.handle)}`}
+                      prefetch={false}
+                      className={exploreStyles.artistCardMediaButton}
+                      aria-label={r.title}
+                    >
+                      <div className={exploreStyles.artistCardMedia}>
+                        {r.imageUrl ? (
+                          <Image
+                            className={exploreStyles.artistCardImg}
+                            src={getProxiedImageUrl(r.imageUrl)}
+                            alt=""
+                            fill
+                            sizes="(max-width:768px) 50vw, 25vw"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center text-3xl"
+                            style={{
+                              background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
+                              color: 'var(--peach)',
+                              fontFamily: 'var(--font-landing-serif), Georgia, serif',
+                            }}
+                            aria-hidden
+                          >
+                            {(r.vendor || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className={exploreStyles.artistCardOverlay} aria-hidden />
+                        <div className={exploreStyles.artistCardInfo}>
+                          <div className={exploreStyles.artistCardName}>{r.vendor || 'Artist'}</div>
+                          <div className={exploreStyles.artistCardCity}>
+                            {r.stageKey === 'archive' ? 'Sold out' : 'Live'} · {ladderStageShortLabel(r.stageKey)}
+                          </div>
+                          <div className={exploreStyles.artistCardHook}>{r.title}</div>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className={exploreStyles.artistCardFooter}>
+                      <div className={exploreStyles.editionsCount}>
+                        <span className="tabular-nums">{r.priceUsd != null ? `$${r.priceUsd}` : '—'}</span>
+                        {r.editionTotal != null ? (
+                          <span className="tabular-nums">
+                            {r.editionsSold} / {r.editionTotal}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className={exploreStyles.cardExploreLink} aria-hidden>
+                        View
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )
