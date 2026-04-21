@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/client'
 import { createClient } from '@/lib/supabase/server'
-
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'info@thestreetlamp.com'
+import { getArtistApplicationNotifyRecipients } from '@/lib/constants/artist-application-notify'
 
 function sanitize(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await sendEmail({
-      to: CONTACT_EMAIL,
+      to: getArtistApplicationNotifyRecipients(),
       subject: `Artist Submission: ${name}`,
       html,
       replyTo: email,

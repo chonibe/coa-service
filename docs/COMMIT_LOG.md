@@ -1,5 +1,25 @@
 # Commit Log
 
+## Commit: feat(admin): artist applications list + default notify to choni@thestreetcollector.com (2026-04-21)
+
+### Summary
+**`/admin/artist-applications`** lists **`artist_applications`** (shop + `/for-artists/apply`) with **`GET /api/admin/artist-applications`**. Sidebar: Products → **Artist applications**. Team email for new applications uses **`getArtistApplicationNotifyRecipients()`** — defaults to **`choni@thestreetcollector.com`**, override with **`ARTIST_APPLICATION_NOTIFY_EMAIL`** (comma-separated). Docs and **`.env.example`** updated.
+
+### Implementation Checklist
+
+- [x] [app/admin/artist-applications/page.tsx](app/admin/artist-applications/page.tsx)
+- [x] [app/api/admin/artist-applications/route.ts](app/api/admin/artist-applications/route.ts)
+- [x] [lib/constants/artist-application-notify.ts](lib/constants/artist-application-notify.ts)
+- [x] [app/api/shop/artist-submissions/route.ts](app/api/shop/artist-submissions/route.ts)
+- [x] [app/api/artists/apply/route.ts](app/api/artists/apply/route.ts)
+- [x] [app/admin/admin-shell.tsx](app/admin/admin-shell.tsx)
+- [x] [.env.example](.env.example)
+- [x] [docs/features/artist-onboarding/README.md](docs/features/artist-onboarding/README.md)
+- [x] [docs/features/shop-footer-pages/README.md](docs/features/shop-footer-pages/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: fix(shop): artist submissions persist to Supabase; email notify best-effort (2026-04-21)
 
 ### Summary

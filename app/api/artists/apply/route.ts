@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { sendEmail } from "@/lib/email/client"
-import { SUPPORT_EMAIL } from "@/lib/constants/support"
-
-const NOTIFY_EMAIL = process.env.CONTACT_EMAIL || SUPPORT_EMAIL
+import { getArtistApplicationNotifyRecipients } from "@/lib/constants/artist-application-notify"
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface ApplyPayload {
@@ -108,7 +106,7 @@ export async function POST(request: NextRequest) {
       </div>
     `
     await sendEmail({
-      to: NOTIFY_EMAIL,
+      to: getArtistApplicationNotifyRecipients(),
       subject: `Artist application: ${name}`,
       html,
       replyTo: email,
