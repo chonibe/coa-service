@@ -26,6 +26,7 @@ import { CollectorHomeArtistRoster } from './CollectorHomeArtistRoster'
 import { UpcomingDropCountdown } from './UpcomingDropCountdown'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { queryEditionStatesByProductIds } from '@/lib/shop/query-edition-states'
+import { mergeEditionStateWithStorefront } from '@/lib/shop/merge-collector-edition-state'
 import {
   ladderStageBadgeClass,
   ladderStageColumnClass,
@@ -333,11 +334,12 @@ export default async function StreetCollectorPage() {
             {spotlightProducts.map((p) => {
               const pid = normalizeShopifyProductId(p.id) || ''
               const row = editionByProductId.get(pid)
+              const merged = mergeEditionStateWithStorefront(p, row)
               const img = p.featuredImage?.url
-              const sold = row?.editionsSold ?? 0
-              const total = row?.editionTotal
-              const price = row?.priceUsd
-              const stageKey = row?.stageKey ?? 'ground_floor'
+              const sold = merged.editionsSold
+              const total = merged.editionTotal
+              const price = merged.priceUsd
+              const stageKey = merged.stageKey
               return (
                 <article key={p.id} className={exploreStyles.artistCard}>
                   <div className={exploreStyles.artistCardInner}>

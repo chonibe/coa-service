@@ -6,6 +6,7 @@ import {
 } from '@/lib/shopify/storefront-client'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import { queryEditionStatesByProductIds } from '@/lib/shop/query-edition-states'
+import { mergeEditionStateWithStorefront } from '@/lib/shop/merge-collector-edition-state'
 import { getStreetLampProductHandle } from '@/lib/shop/street-lamp-handle'
 import { DropsPageClient, type DropRow } from './DropsPageClient'
 
@@ -60,16 +61,17 @@ export default async function DropsPage() {
       rows = products.map((p) => {
         const pid = normalizeShopifyProductId(p.id) || ''
         const st = byId.get(pid)
+        const merged = mergeEditionStateWithStorefront(p, st)
         return {
           handle: p.handle,
           title: p.title,
           vendor: p.vendor ?? undefined,
           imageUrl: p.featuredImage?.url ?? null,
           productId: pid,
-          stageKey: st?.stageKey ?? 'ground_floor',
-          priceUsd: st?.priceUsd ?? null,
-          editionsSold: st?.editionsSold ?? 0,
-          editionTotal: st?.editionTotal ?? null,
+          stageKey: merged.stageKey,
+          priceUsd: merged.priceUsd,
+          editionsSold: merged.editionsSold,
+          editionTotal: merged.editionTotal,
         }
       })
     } catch (e) {

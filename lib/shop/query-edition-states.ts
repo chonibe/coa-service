@@ -29,10 +29,12 @@ export async function queryEditionStatesByProductIds(
   if (unique.length === 0) return []
 
   const supabase = createClient()
+  /** `products.product_id` is TEXT — match with string ids so PostgREST returns rows reliably. */
+  const idStrings = unique.map((id) => String(id))
   const { data: rows, error } = await supabase
     .from('products')
     .select('product_id, edition_counter, edition_size')
-    .in('product_id', unique)
+    .in('product_id', idStrings)
 
   if (error) {
     console.error('[queryEditionStatesByProductIds]', error)
