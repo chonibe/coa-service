@@ -1,5 +1,27 @@
 # Commit Log
 
+## Commit: feat(landing): Street Collector home light mode + local theme toggle (2026-04-21)
+
+### Summary
+**`/`** and **`/shop/street-collector`** use a warm **light** canvas by default, with a **local** light/dark toggle (not the root `ThemeProvider`, which stays forced light). Preference is stored in **`localStorage`** under **`sc-landing-appearance`**. **Desktop:** sun/moon control in **`DesktopTopBar`**. **Mobile:** fixed FAB (below promo bar). **`LandingThemeProvider`** applies **`dark`** on a wrapper so Tailwind **`dark:`** pairs work. **Footer** gains **`landingDualTone`** for matching surfaces; **`SectionWrapper`** **`experience`** background is dual-tone; **ArtistCarousel** / landing sections use **`isStreetExperience`** for chrome. **Deploy was intentionally skipped** pending approval.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/street-collector/LandingThemeProvider.tsx](app/(store)/shop/street-collector/LandingThemeProvider.tsx)
+- [x] [app/(store)/layout.tsx](app/(store)/layout.tsx)
+- [x] [app/(store)/shop/street-collector/DesktopTopBar.tsx](app/(store)/shop/street-collector/DesktopTopBar.tsx)
+- [x] [app/(store)/shop/street-collector/page.tsx](app/(store)/shop/street-collector/page.tsx)
+- [x] [app/(store)/shop/street-collector/MeetTheStreetLamp.tsx](app/(store)/shop/street-collector/MeetTheStreetLamp.tsx)
+- [x] [app/(store)/shop/street-collector/StreetCollectorFAQ.tsx](app/(store)/shop/street-collector/StreetCollectorFAQ.tsx)
+- [x] [app/(store)/shop/street-collector/TestimonialCarousel.tsx](app/(store)/shop/street-collector/TestimonialCarousel.tsx)
+- [x] [app/(store)/shop/street-collector/MultiColumnVideoSection.tsx](app/(store)/shop/street-collector/MultiColumnVideoSection.tsx)
+- [x] [components/impact/Footer.tsx](components/impact/Footer.tsx)
+- [x] [components/impact/SectionWrapper.tsx](components/impact/SectionWrapper.tsx)
+- [x] [components/sections/ArtistCarousel.tsx](components/sections/ArtistCarousel.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(admin): artist applications list + default notify to choni@thestreetcollector.com (2026-04-21)
 
 ### Summary
