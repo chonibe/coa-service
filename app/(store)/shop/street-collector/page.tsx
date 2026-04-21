@@ -26,19 +26,19 @@ const DesktopTopBar = dynamic(
 
 const MeetTheStreetLamp = dynamic(
   () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
-  { loading: () => <section className="min-h-[280px] bg-[#171515]" aria-hidden /> }
+  { loading: () => <section className="min-h-[280px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
 )
 const TestimonialCarousel = dynamic(
   () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
-  { loading: () => <section className="min-h-[200px] bg-[#171515]" aria-hidden /> }
+  { loading: () => <section className="min-h-[200px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
 )
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
-  { loading: () => <section className="min-h-[120px] bg-[#171515]" aria-hidden /> }
+  { loading: () => <section className="min-h-[120px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
 )
 const ArtistCarousel = dynamic(
   () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
-  { loading: () => <section className="min-h-[400px] bg-[#171515]" aria-hidden /> }
+  { loading: () => <section className="min-h-[400px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
 )
 
 /** When false, hides “What happens next” steps, reassurance, and Start your collection. */
@@ -278,12 +278,12 @@ export default async function StreetCollectorPage() {
   const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
 
   return (
-    <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
+    <div className="w-full pb-16 text-stone-900 dark:text-[#FFBA94] md:pb-0">
       <StreetCollectorBrandJsonLd />
       {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
       <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
         <div
-          className="flex w-full items-center justify-center border-b border-white/[0.08] bg-[#0f0e0e] px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
+          className="flex w-full items-center justify-center border-b border-stone-200/90 bg-white/95 px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-stone-600 dark:border-white/[0.08] dark:bg-[#0f0e0e] dark:text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
           style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
           role="region"
           aria-label="Shipping, guarantee, and returns"
@@ -298,12 +298,12 @@ export default async function StreetCollectorPage() {
         />
       </div>
       <div
-        className="fixed top-0 left-0 right-0 z-[122] border-b border-white/[0.08] bg-[#0f0e0e] py-1 md:hidden"
+        className="fixed top-0 left-0 right-0 z-[122] border-b border-stone-200/90 bg-white/95 py-1 dark:border-white/[0.08] dark:bg-[#0f0e0e] md:hidden"
         style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top, 0px))' }}
         role="region"
         aria-label="Shipping, guarantee, and returns"
       >
-        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-[#FFBA94]/75 sm:text-[11px]">
+        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-stone-600 dark:text-[#FFBA94]/75 sm:text-[11px]">
           {trustPromoLine}
         </p>
       </div>
@@ -378,13 +378,13 @@ export default async function StreetCollectorPage() {
         <SectionWrapper spacing="xs" background="experience" className="!py-8 sm:!py-10">
           <Container maxWidth="default" paddingX="gutter">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="font-serif text-2xl font-medium tracking-tight text-[#FFBA94] sm:text-3xl md:text-4xl">
+              <h2 className="font-serif text-2xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-3xl md:text-4xl">
                 {streetCollectorContent.funnelBridge.title}
               </h2>
-              <p className="mt-2 text-sm text-[#FFBA94]/80 sm:text-base">
+              <p className="mt-2 text-sm text-stone-600 dark:text-[#FFBA94]/80 sm:text-base">
                 {streetCollectorContent.funnelBridge.subtitle}
               </p>
-              <ol className="mt-6 space-y-3 text-left text-sm text-[#FFBA94]/90 sm:text-base">
+              <ol className="mt-6 space-y-3 text-left text-sm text-stone-700 dark:text-[#FFBA94]/90 sm:text-base">
                 {streetCollectorContent.funnelBridge.steps.map((step, i) => (
                   <li key={step} className="flex gap-3">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#047AFF]/20 text-xs font-bold text-[#047AFF]">
@@ -394,7 +394,9 @@ export default async function StreetCollectorPage() {
                   </li>
                 ))}
               </ol>
-              <p className="mt-4 text-xs text-[#FFBA94]/60 sm:text-sm">{streetCollectorContent.funnelBridge.reassurance}</p>
+              <p className="mt-4 text-xs text-stone-500 dark:text-[#FFBA94]/60 sm:text-sm">
+                {streetCollectorContent.funnelBridge.reassurance}
+              </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                 <Link
                   href={streetCollectorContent.funnelBridge.cta.url}
@@ -419,7 +421,7 @@ export default async function StreetCollectorPage() {
           titleTag="h2"
           namePosition="below"
           headerAlignment="center"
-          titleClassName="font-serif font-medium text-[#FFBA94]"
+          titleClassName="font-serif font-medium text-stone-900 dark:text-[#FFBA94]"
           sectionBackground="experience"
           arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
           subtitle={streetCollectorContent.featuredArtists.subtitle}
@@ -439,14 +441,14 @@ export default async function StreetCollectorPage() {
           valueProps={[]}
           trailingContent={
             streetCollectorContent.featuredArtists.afterCarousel ? (
-              <p className="text-center font-body text-lg text-[#FFBA94]/90 sm:text-xl md:text-2xl">
+              <p className="text-center font-body text-lg text-stone-700 dark:text-[#FFBA94]/90 sm:text-xl md:text-2xl">
                 {streetCollectorContent.featuredArtists.afterCarousel}
               </p>
             ) : null
           }
           leadingContent={
             <div className="space-y-10 sm:space-y-6">
-              <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center">
+              <h2 className="font-body text-center text-3xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-5xl lg:text-6xl">
                 {streetCollectorContent.valuePropsSectionTitle}
               </h2>
               <ValuePropVideoCard
@@ -480,7 +482,7 @@ export default async function StreetCollectorPage() {
       >
         <Container maxWidth="default" paddingX="gutter">
           {streetCollectorContent.trustBarTitle ? (
-            <h2 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-[#FFBA94] sm:mb-12 sm:text-4xl md:mb-14 md:text-5xl">
+            <h2 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:mb-12 sm:text-4xl md:mb-14 md:text-5xl">
               {streetCollectorContent.trustBarTitle}
             </h2>
           ) : null}
@@ -492,7 +494,7 @@ export default async function StreetCollectorPage() {
                 className="flex flex-col items-center gap-3 text-center"
               >
                 <TrustBarItemIcon item={item} variant="compact" />
-                <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-experience-highlight-muted">
+                <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-amber-950/85 dark:text-experience-highlight-muted">
                   {item.label}
                 </p>
               </div>
@@ -503,15 +505,15 @@ export default async function StreetCollectorPage() {
             {streetCollectorContent.trustBar.map((item) => (
               <div
                 key={item.label}
-                className="flex h-full w-full flex-col rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 p-6 text-center shadow-[0_0_0_1px_rgba(255,186,148,0.05)_inset] lg:p-8"
+                className="flex h-full w-full flex-col rounded-2xl border border-stone-200/90 bg-white/90 p-6 text-center shadow-sm dark:border-[#ffba94]/10 dark:bg-[#201c1c]/55 dark:shadow-[0_0_0_1px_rgba(255,186,148,0.05)_inset] lg:p-8"
               >
                 <div className="flex h-28 shrink-0 items-center justify-center lg:h-32">
                   <TrustBarItemIcon item={item} variant="featured" />
                 </div>
-                <p className="text-base font-bold leading-snug text-experience-highlight-muted lg:text-lg">
+                <p className="text-base font-bold leading-snug text-amber-950/85 dark:text-experience-highlight-muted lg:text-lg">
                   {item.label}
                 </p>
-                <p className="mt-2 min-h-0 flex-1 text-base font-normal leading-relaxed text-experience-highlight-soft/90">
+                <p className="mt-2 min-h-0 flex-1 text-base font-normal leading-relaxed text-stone-600 dark:text-experience-highlight-soft/90">
                   {item.description ?? ''}
                 </p>
               </div>

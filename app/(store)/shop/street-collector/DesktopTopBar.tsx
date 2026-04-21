@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, Moon, Sun } from 'lucide-react'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { useLandingAppearance } from './LandingThemeProvider'
 
 interface DesktopTopBarProps {
   text: string
@@ -17,6 +18,7 @@ interface DesktopTopBarProps {
  * Desktop top bar with logo, menu, and CTA (md+). Always visible — no full-width hero above the fold.
  */
 export function DesktopTopBar({ text, href, logoUrl, embedded = false }: DesktopTopBarProps) {
+  const landingAppearance = useLandingAppearance()
   const [menuOpen, setMenuOpen] = useState(false)
   const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<{
     open: boolean
@@ -75,13 +77,33 @@ export function DesktopTopBar({ text, href, logoUrl, embedded = false }: Desktop
           />
         )}
       </div>
-      <Link
-        href={href}
-        prefetch={false}
-        className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#047AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6] hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
-      >
-        {text}
-      </Link>
+      <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+        {landingAppearance ? (
+          <button
+            type="button"
+            onClick={landingAppearance.toggleAppearance}
+            aria-label={
+              landingAppearance.appearance === 'dark'
+                ? 'Switch to light mode'
+                : 'Switch to dark mode'
+            }
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300/80 bg-white/90 text-neutral-800 transition-colors hover:opacity-90 dark:border-white/15 dark:bg-[#201c1c]/80 dark:text-[#FFBA94]"
+          >
+            {landingAppearance.appearance === 'dark' ? (
+              <Sun className="h-4 w-4" strokeWidth={1.75} />
+            ) : (
+              <Moon className="h-4 w-4" strokeWidth={1.75} />
+            )}
+          </button>
+        ) : null}
+        <Link
+          href={href}
+          prefetch={false}
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#047AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6] hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
+        >
+          {text}
+        </Link>
+      </div>
     </div>
   )
 }

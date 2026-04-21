@@ -44,6 +44,11 @@ export interface FooterProps {
   legalLinks?: FooterLink[]
   showPaymentIcons?: boolean
   className?: string
+  /**
+   * When true, footer supports warm light surfaces with `dark:` burgundy/peach for the
+   * Street Collector home shell (local `.dark` from `LandingThemeProvider`).
+   */
+  landingDualTone?: boolean
 }
 
 const footerLinkClassDesktop =
@@ -137,11 +142,6 @@ function isTermsConditionsSection(section: FooterSection): boolean {
   return t.includes('TERMS') && t.includes('CONDITION')
 }
 
-const termsConditionsLinkClass = cn(
-  footerLinkClassDesktop,
-  'inline py-0.5 underline-offset-[3px] hover:underline'
-)
-
 /** Prefer theme token URLs for Instagram/Facebook when labels match. */
 function resolveSocialHref(label: string, fallback: string): string {
   const key = label.toLowerCase()
@@ -166,9 +166,32 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       legalLinks = [],
       showPaymentIcons = true,
       className,
+      landingDualTone = false,
     },
     ref
   ) => {
+    const linkDesktop = landingDualTone
+      ? 'text-sm text-stone-700 hover:text-stone-950 dark:text-[#ffba94]/70 dark:hover:text-[#ffba94] transition-colors'
+      : footerLinkClassDesktop
+    const linkMobile = landingDualTone
+      ? cn(
+          'inline-flex min-h-11 w-full max-w-xs items-center justify-center rounded-full px-4 text-sm transition-colors',
+          'text-stone-800 hover:text-stone-950 active:bg-stone-200/70',
+          'dark:text-[#ffba94]/85 dark:hover:text-[#ffba94] dark:active:bg-[#ffba94]/5'
+        )
+      : footerLinkClassMobileStack
+    const socialBtn = landingDualTone
+      ? cn(
+          'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors',
+          'border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:bg-stone-50',
+          'dark:border-[#ffba94]/25 dark:bg-[#ffba94]/10 dark:text-[#ffba94] dark:hover:border-[#ffba94]/40 dark:hover:bg-[#ffba94]/15'
+        )
+      : socialIconButtonClass
+    const termsLink = cn(linkDesktop, 'inline py-0.5 underline-offset-[3px] hover:underline')
+    const footerSurface = landingDualTone
+      ? 'bg-[#efe6dc] text-stone-900 dark:bg-[#251212] dark:text-[#ffba94]'
+      : 'bg-[#251212] text-[#ffba94]'
+
     const [email, setEmail] = React.useState('')
     const [loading, setLoading] = React.useState(false)
     const [submitted, setSubmitted] = React.useState(false)
@@ -220,7 +243,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             key={link.href}
             href={link.href}
             {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            className={termsConditionsLinkClass}
+            className={termsLink}
           >
             {link.label}
           </Link>
@@ -257,7 +280,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     <Link
                       href={href}
                       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                      className={footerLinkClassDesktop}
+                      className={linkDesktop}
                     >
                       {link.label}
                     </Link>
@@ -269,7 +292,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   <Link
                     href={href}
                     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className={socialIconButtonClass}
+                    className={socialBtn}
                     aria-label={link.label}
                   >
                     {icon}
@@ -291,7 +314,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   href={link.href}
                   {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   className={
-                    variant === 'desktop' ? footerLinkClassDesktop : footerLinkClassMobileStack
+                    variant === 'desktop' ? linkDesktop : linkMobile
                   }
                 >
                   {link.label}
@@ -307,8 +330,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-[#251212]',
-          'text-[#ffba94]',
+          footerSurface,
           'mt-0 flex-shrink-0 -mt-8 sm:mt-0',
           newsletterEnabled ? 'pt-3 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pb-8 sm:pt-4' : 'pt-12 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pb-8 sm:pt-16',
           className
@@ -318,16 +340,33 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
           {newsletterEnabled && (
             <div
               className={cn(
-                'mx-auto flex max-w-2xl flex-col items-center gap-6 border-b border-[#ffba94]/10 py-6 text-center',
+                'mx-auto flex max-w-2xl flex-col items-center gap-6 border-b py-6 text-center',
+                landingDualTone
+                  ? 'border-stone-300/80 dark:border-[#ffba94]/10'
+                  : 'border-[#ffba94]/10',
                 'sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:text-left'
               )}
             >
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                <h3 className="font-heading text-sm font-semibold uppercase tracking-wider">
+                <h3
+                  className={cn(
+                    'font-heading text-sm font-semibold uppercase tracking-wider',
+                    landingDualTone && 'text-stone-800 dark:text-[#ffba94]'
+                  )}
+                >
                   {newsletterTitle}
                 </h3>
                 {newsletterDescription && (
-                  <p className="hidden text-sm text-[#ffba94]/70 sm:block">{newsletterDescription}</p>
+                  <p
+                    className={cn(
+                      'hidden text-sm sm:block',
+                      landingDualTone
+                        ? 'text-stone-600 dark:text-[#ffba94]/70'
+                        : 'text-[#ffba94]/70'
+                    )}
+                  >
+                    {newsletterDescription}
+                  </p>
                 )}
               </div>
               {submitted ? (
@@ -344,8 +383,10 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     placeholder="E-mail"
                     required
                     className={cn(
-                      'box-border h-10 min-w-0 flex-1 rounded-full border border-[#ffba94]/20 bg-[#ffba94]/10 px-4 text-sm leading-none text-[#ffba94] placeholder:text-[#ffba94]/50',
-                      'transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#ffba94]/50'
+                      'box-border h-10 min-w-0 flex-1 rounded-full border px-4 text-sm leading-none transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2',
+                      landingDualTone
+                        ? 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:ring-[#047AFF]/35 dark:border-[#ffba94]/20 dark:bg-[#ffba94]/10 dark:text-[#ffba94] dark:placeholder:text-[#ffba94]/50 dark:focus:ring-[#ffba94]/50'
+                        : 'border-[#ffba94]/20 bg-[#ffba94]/10 text-[#ffba94] placeholder:text-[#ffba94]/50 focus:ring-[#ffba94]/50'
                     )}
                   />
                   <button
@@ -376,7 +417,14 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
               <div className="flex w-full flex-col items-center sm:hidden">
                 {followUsSection ? (
                   <div className="w-full max-w-sm px-2 pb-12 text-center">
-                    <h3 className="mb-4 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
+                    <h3
+                      className={cn(
+                        'mb-4 font-heading text-xs font-semibold uppercase tracking-wider',
+                        landingDualTone
+                          ? 'text-stone-800 dark:text-[#ffba94]'
+                          : 'text-[#ffba94]'
+                      )}
+                    >
                       {followUsSection.title}
                     </h3>
                     {renderSectionLinks(followUsSection, 'social-icons-row')}
@@ -385,7 +433,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                 {linkSectionsNonTerms.map((section, idx) => (
                   <div
                     key={`m-${section.title}-${idx}`}
-                    className="w-full max-w-sm border-t border-[#ffba94]/20 px-2 py-10 text-center"
+                    className={cn(
+                      'w-full max-w-sm border-t px-2 py-10 text-center',
+                      landingDualTone
+                        ? 'border-stone-200 dark:border-[#ffba94]/20'
+                        : 'border-[#ffba94]/20'
+                    )}
                   >
                     <nav
                       className="flex flex-col items-center"
@@ -393,7 +446,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     >
                       <h3
                         id={`footer-m-${idx}`}
-                        className="mb-3 font-heading text-[11px] font-semibold uppercase tracking-wider text-[#ffba94]"
+                        className={cn(
+                          'mb-3 font-heading text-[11px] font-semibold uppercase tracking-wider',
+                          landingDualTone
+                            ? 'text-stone-800 dark:text-[#ffba94]'
+                            : 'text-[#ffba94]'
+                        )}
                       >
                         {section.title}
                       </h3>
@@ -404,11 +462,32 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     </nav>
                   </div>
                 ))}
-                <div className="flex w-full max-w-sm flex-col items-center border-t border-[#ffba94]/20 px-2 py-10 text-center">
-                  <h3 className="mb-2 font-heading text-xs font-semibold uppercase tracking-wider text-[#ffba94]">
+                <div
+                  className={cn(
+                    'flex w-full max-w-sm flex-col items-center border-t px-2 py-10 text-center',
+                    landingDualTone
+                      ? 'border-stone-200 dark:border-[#ffba94]/20'
+                      : 'border-[#ffba94]/20'
+                  )}
+                >
+                  <h3
+                    className={cn(
+                      'mb-2 font-heading text-xs font-semibold uppercase tracking-wider',
+                      landingDualTone
+                        ? 'text-stone-800 dark:text-[#ffba94]'
+                        : 'text-[#ffba94]'
+                    )}
+                  >
                     Need help?
                   </h3>
-                  <p className="mb-4 text-sm leading-relaxed text-[#ffba94]/75">
+                  <p
+                    className={cn(
+                      'mb-4 text-sm leading-relaxed',
+                      landingDualTone
+                        ? 'text-stone-600 dark:text-[#ffba94]/75'
+                        : 'text-[#ffba94]/75'
+                    )}
+                  >
                     Talk to our real support team every day 7am to midnight EST
                   </p>
                   <button
@@ -425,7 +504,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                 {linkSectionsTerms.map((section, idx) => (
                   <div
                     key={`m-terms-${section.title}-${idx}`}
-                    className="h-[160px] w-full max-w-sm border-t border-[#ffba94]/10 px-2 py-0 text-center"
+                    className={cn(
+                      'h-[160px] w-full max-w-sm border-t px-2 py-0 text-center',
+                      landingDualTone
+                        ? 'border-stone-200/90 dark:border-[#ffba94]/10'
+                        : 'border-[#ffba94]/10'
+                    )}
                   >
                     <nav
                       className="flex flex-col items-center"
@@ -455,7 +539,14 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   <h3 className="font-heading mb-5 text-sm font-semibold uppercase tracking-wider">
                     Need Help?
                   </h3>
-                  <p className="mb-5 text-sm text-[#ffba94]/70">
+                  <p
+                    className={cn(
+                      'mb-5 text-sm',
+                      landingDualTone
+                        ? 'text-stone-600 dark:text-[#ffba94]/70'
+                        : 'text-[#ffba94]/70'
+                    )}
+                  >
                     Talk to our real support team every day 7am to midnight EST
                   </p>
                   <button
@@ -485,7 +576,16 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   {aboutTitle}
                 </h3>
                 {(aboutText || tagline) && (
-                  <p className="text-sm leading-relaxed text-[#ffba94]/70">{aboutText || tagline}</p>
+                  <p
+                    className={cn(
+                      'text-sm leading-relaxed',
+                      landingDualTone
+                        ? 'text-stone-600 dark:text-[#ffba94]/70'
+                        : 'text-[#ffba94]/70'
+                    )}
+                  >
+                    {aboutText || tagline}
+                  </p>
                 )}
               </div>
             )}
@@ -494,17 +594,41 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
           {showPaymentIcons && (
             <div
               className={cn(
-                'border-t border-[#ffba94]/10 pb-2 pt-8 sm:pt-10',
+                'border-t pb-2 pt-8 sm:pt-10',
+                landingDualTone
+                  ? 'border-stone-200/90 dark:border-[#ffba94]/10'
+                  : 'border-[#ffba94]/10',
                 newsletterEnabled ? 'mt-8 sm:mt-10' : 'mt-10 sm:mt-12'
               )}
             >
-              <PaymentIcons className="mx-auto max-w-full justify-center text-[#ffba94]/90 sm:mx-0 sm:justify-start" />
+              <PaymentIcons
+                className={cn(
+                  'mx-auto max-w-full justify-center sm:mx-0 sm:justify-start',
+                  landingDualTone
+                    ? 'text-stone-600 dark:text-[#ffba94]/90'
+                    : 'text-[#ffba94]/90'
+                )}
+              />
             </div>
           )}
 
-          <div className="mt-8 border-t border-[#ffba94]/10 pt-8 sm:mt-10">
+          <div
+            className={cn(
+              'mt-8 border-t pt-8 sm:mt-10',
+              landingDualTone
+                ? 'border-stone-200/90 dark:border-[#ffba94]/10'
+                : 'border-[#ffba94]/10'
+            )}
+          >
             <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left">
-              <p className="text-sm text-[#ffba94]/80 sm:text-xs">
+              <p
+                className={cn(
+                  'text-sm sm:text-xs',
+                  landingDualTone
+                    ? 'text-stone-600 dark:text-[#ffba94]/80'
+                    : 'text-[#ffba94]/80'
+                )}
+              >
                 {copyrightText || `© ${currentYear} Street Collector`}
               </p>
 
@@ -517,7 +641,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="inline-flex min-h-11 items-center text-sm text-[#ffba94]/80 transition-colors hover:text-[#ffba94] sm:min-h-0 sm:text-xs"
+                      className={cn(
+                        'inline-flex min-h-11 items-center text-sm transition-colors sm:min-h-0 sm:text-xs',
+                        landingDualTone
+                          ? 'text-stone-600 hover:text-stone-900 dark:text-[#ffba94]/80 dark:hover:text-[#ffba94]'
+                          : 'text-[#ffba94]/80 hover:text-[#ffba94]'
+                      )}
                     >
                       {link.label}
                     </Link>

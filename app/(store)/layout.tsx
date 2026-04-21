@@ -12,6 +12,10 @@ import { BackBar } from '@/components/shop/navigation/BackBar'
 import { ChatIconScrollReveal } from '@/components/shop/navigation/ChatIconScrollReveal'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import { cn } from '@/lib/utils'
+import {
+  LandingThemeProvider,
+  LandingAppearanceFab,
+} from './shop/street-collector/LandingThemeProvider'
 
 /**
  * Store Layout — wraps landing (/) and shop (/shop/*)
@@ -63,10 +67,12 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
   const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
+  /** `/` and `/shop/street-collector` — shared landing shell with local light/dark toggle */
+  const isStreetCollectorHomeShell = isLandingPage || isStreetCollectorPage
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
-    isLandingPage || isStreetCollectorPage || isHomeV2Page
+    isStreetCollectorHomeShell || isHomeV2Page
   /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
   const showLandingChatIcon = isLandingPage || isStreetCollectorPage
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
@@ -124,13 +130,21 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
     if (!res.ok) throw new Error(data?.error || 'Signup failed')
   }, [])
 
-  return (
-    <div
-      className={cn(
-        'flex min-h-screen flex-col',
-        isLandingOrStreetCollector && 'bg-[#171515]'
-      )}
-    >
+  const outerShellClass = cn(
+    'flex min-h-screen flex-col',
+    !isStreetCollectorHomeShell && isLandingOrStreetCollector && 'bg-[#171515]'
+  )
+
+  const mainClassName = cn(
+    isStreetCollectorHomeShell
+      ? 'flex-none max-md:!pb-0'
+      : isLandingOrStreetCollector
+        ? 'flex-none bg-[#171515] max-md:!pb-0'
+        : 'flex-1'
+  )
+
+  const branch = (
+    <>
       <Suspense fallback={null}>
         <AffiliatePersistence />
       </Suspense>
@@ -151,15 +165,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
           creditsDiscount={cart.creditsDiscount}
         />
       )}
-      <main
-        id="main-content"
-        className={cn(
-          /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
-          isLandingOrStreetCollector
-            ? 'flex-none bg-[#171515] max-md:!pb-0'
-            : 'flex-1'
-        )}
-      >
+      <main id="main-content" className={mainClassName}>
         {children}
       </main>
       <Footer
@@ -171,10 +177,22 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}
+        landingDualTone={isStreetCollectorHomeShell}
         className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
       />
-    </div>
+    </>
   )
+
+  if (isStreetCollectorHomeShell) {
+    return (
+      <LandingThemeProvider>
+        <LandingAppearanceFab />
+        {branch}
+      </LandingThemeProvider>
+    )
+  }
+
+  return <div className={outerShellClass}>{branch}</div>
 }
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {

@@ -18,9 +18,10 @@ export interface MeetTheLampStage {
 const pricingGlassClass = cn(
   'inline-flex max-w-[min(100%,22rem)] items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-center font-semibold',
   'text-[11px] leading-snug sm:px-3.5 sm:py-2 sm:text-sm sm:leading-normal',
-  'text-white',
-  'border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150',
-  'shadow-[0_6px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
+  'border border-stone-300/80 bg-white/85 text-stone-900 backdrop-blur-xl backdrop-saturate-150',
+  'shadow-[0_6px_24px_rgba(61,36,24,0.1),inset_0_1px_0_rgba(255,255,255,0.5)]',
+  'dark:border-white/20 dark:bg-white/10 dark:text-white',
+  'dark:shadow-[0_6px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
 )
 
 function pricingLabelFromChips(chips?: string[]): string | null {
@@ -179,7 +180,7 @@ export function MeetTheStreetLamp({
     const secondaryTaglines = taglinesAreTitle ? lines.slice(2) : showHeading ? lines : []
 
     const titleHeadingClass = cn(
-      'font-serif font-medium tracking-tight text-[#FFBA94]',
+      'font-serif font-medium tracking-tight text-stone-900 dark:text-[#FFBA94]',
       spacing === 'stacked' &&
         'text-center text-[1.65rem] leading-[1.15] sm:text-4xl sm:leading-tight md:text-5xl',
       spacing === 'desktopLeft' &&
@@ -239,7 +240,7 @@ export function MeetTheStreetLamp({
           {secondaryTaglines.map((line, i) => (
             <p
               key={`${i}-${line}`}
-              className="text-[0.95rem] font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl"
+              className="text-[0.95rem] font-normal leading-snug text-stone-700 dark:text-[#FFBA94]/90 sm:text-lg md:text-xl"
             >
               {line}
             </p>
@@ -286,7 +287,7 @@ export function MeetTheStreetLamp({
           </Link>
         ) : null}
         {trustMicroItems && trustMicroItems.length > 0 ? (
-          <p className="max-w-md text-xs leading-relaxed text-[#FFBA94]/75 sm:text-sm">
+          <p className="max-w-md text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/75 sm:text-sm">
             {trustMicroItems.join(' · ')}
           </p>
         ) : null}
@@ -315,7 +316,7 @@ export function MeetTheStreetLamp({
         >
           <h3
             className={cn(
-              'mb-1.5 font-semibold leading-tight text-[#FFBA94] sm:mb-2',
+              'mb-1.5 font-semibold leading-tight text-stone-900 dark:text-[#FFBA94] sm:mb-2',
               opts.variant === 'mobile' && 'text-xl sm:text-2xl',
               opts.variant === 'desktop' && 'text-xl leading-snug lg:text-2xl'
             )}
@@ -324,7 +325,7 @@ export function MeetTheStreetLamp({
           </h3>
           <p
             className={cn(
-              'text-pretty leading-relaxed text-[#FFBA94]/80',
+              'text-pretty leading-relaxed text-stone-600 dark:text-[#FFBA94]/80',
               opts.variant === 'mobile' && 'text-[0.9375rem] sm:text-base',
               opts.variant === 'desktop' && 'text-sm leading-relaxed lg:text-base'
             )}
@@ -334,7 +335,7 @@ export function MeetTheStreetLamp({
         </div>
         <div
           className={cn(
-            'mt-4 w-full max-w-[140px] rounded-full bg-[#FFBA94]/20 sm:mt-5',
+            'mt-4 w-full max-w-[140px] rounded-full bg-stone-300/60 sm:mt-5 dark:bg-[#FFBA94]/20',
             opts.variant === 'mobile' && 'mx-auto',
             opts.variant === 'desktop' && 'max-w-[10rem] md:mt-5 lg:mt-6'
           )}
@@ -342,7 +343,7 @@ export function MeetTheStreetLamp({
           aria-hidden
         >
           <div
-            className="h-full rounded-full bg-[#FFBA94] transition-[width] duration-75 ease-linear"
+            className="h-full rounded-full bg-amber-800/90 transition-[width] duration-75 ease-linear dark:bg-[#FFBA94]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -353,7 +354,7 @@ export function MeetTheStreetLamp({
   return (
     <section
       className={cn(
-        'w-full bg-[#171515] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-5.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
+        'w-full bg-[#faf6f2] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-5.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10 dark:bg-[#171515]',
         className
       )}
     >
@@ -430,7 +431,7 @@ export function MeetTheStreetLamp({
           <div className="mt-8 text-center md:mt-10">
             <a
               href={cueHref}
-              className="text-base text-[#FFBA94]/80 underline underline-offset-2 transition-colors hover:text-[#FFBA94] sm:text-lg"
+              className="text-base text-stone-600 underline underline-offset-2 transition-colors hover:text-stone-900 dark:text-[#FFBA94]/80 dark:hover:text-[#FFBA94] sm:text-lg"
             >
               {cue}
             </a>

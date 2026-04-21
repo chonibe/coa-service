@@ -145,7 +145,7 @@ export function TestimonialCarousel({
               className="h-full w-full object-cover object-top opacity-[0.38] sm:opacity-[0.42] md:opacity-[0.45]"
             />
             <div
-              className="absolute inset-0 bg-gradient-to-b from-[#171515]/25 via-[#171515]/60 to-[#171515]"
+              className="absolute inset-0 bg-gradient-to-b from-[#faf6f2]/40 via-[#faf6f2]/85 to-[#faf6f2] dark:from-[#171515]/25 dark:via-[#171515]/60 dark:to-[#171515]"
               aria-hidden
             />
           </div>
@@ -157,18 +157,18 @@ export function TestimonialCarousel({
             {title && (
               <>
                 <p
-                  className="mb-3 text-center text-lg text-[#FFBA94] tracking-[0.35em] sm:text-xl md:text-2xl"
+                  className="mb-3 text-center text-lg tracking-[0.35em] text-amber-800/90 dark:text-[#FFBA94] sm:text-xl md:text-2xl"
                   aria-hidden
                 >
                   ★★★★★
                 </p>
-                <h2 className="font-serif font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight">
+                <h2 className="font-serif font-medium text-3xl tracking-tight text-stone-900 dark:text-[#FFBA94] sm:text-4xl md:text-5xl lg:text-6xl">
                   {title}
                 </h2>
               </>
             )}
             {subtitle && (
-              <p className="mt-3 sm:mt-4 text-base sm:text-xl md:text-2xl max-w-2xl mx-auto text-[#FFBA94]/80 px-2 sm:px-0">
+              <p className="mx-auto mt-3 max-w-2xl px-2 text-base text-stone-600 dark:text-[#FFBA94]/80 sm:mt-4 sm:px-0 sm:text-xl md:text-2xl">
                 {subtitle}
               </p>
             )}
@@ -179,7 +179,7 @@ export function TestimonialCarousel({
         <article
           className={cn(
             'w-full overflow-hidden',
-            'rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 shadow-lg',
+            'rounded-2xl border border-stone-200/90 bg-white/90 shadow-md dark:border-[#ffba94]/10 dark:bg-[#201c1c]/55 dark:shadow-lg',
             'p-4 sm:p-6 md:p-8'
           )}
         >
@@ -205,7 +205,7 @@ export function TestimonialCarousel({
                   aria-label="Previous testimonials"
                   className={cn(
                     'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4',
-                    'w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-[#FFBA94]/90 text-[#390000] shadow-lg',
+                    'flex h-10 w-10 items-center justify-center rounded-full bg-[#FFBA94]/90 text-[#390000] shadow-lg sm:h-12 sm:w-12',
                     'hover:opacity-90 hidden sm:flex'
                   )}
                 >
@@ -219,7 +219,7 @@ export function TestimonialCarousel({
                   aria-label="Next testimonials"
                   className={cn(
                     'absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4',
-                    'w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-[#FFBA94]/90 text-[#390000] shadow-lg',
+                    'flex h-10 w-10 items-center justify-center rounded-full bg-[#FFBA94]/90 text-[#390000] shadow-lg sm:h-12 sm:w-12',
                     'hover:opacity-90 hidden sm:flex'
                   )}
                 >
@@ -274,7 +274,14 @@ function TestimonialCard({ item }: { item: TestimonialCardItem }) {
       <div className="flex flex-col gap-2 sm:gap-3 text-center w-full pt-4 sm:pt-5">
         <div className="flex items-center justify-center gap-0.5 shrink-0">
           {[1, 2, 3, 4, 5].map((star) => (
-            <span key={star} className={star <= rating ? 'text-amber-400' : 'text-[#FFBA94]/40'}>
+            <span
+              key={star}
+              className={
+                star <= rating
+                  ? 'text-amber-500 dark:text-amber-400'
+                  : 'text-stone-300 dark:text-[#FFBA94]/40'
+              }
+            >
               <svg className="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
@@ -282,11 +289,11 @@ function TestimonialCard({ item }: { item: TestimonialCardItem }) {
           ))}
         </div>
 
-        <p className="text-neutral-300 text-sm sm:text-base leading-relaxed line-clamp-4">
+        <p className="line-clamp-4 text-sm leading-relaxed text-stone-700 dark:text-neutral-300 sm:text-base">
           {content}
         </p>
 
-        <div className="text-neutral-400 text-sm font-medium">
+        <div className="text-sm font-medium text-stone-600 dark:text-neutral-400">
           {author}
         </div>
       </div>
