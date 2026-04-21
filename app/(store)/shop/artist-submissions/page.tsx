@@ -31,7 +31,7 @@ export default function ArtistSubmissionsPage() {
           message: formState.message.trim(),
         }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setStatus('error')
         setErrorMessage(data.error || 'Failed to submit')

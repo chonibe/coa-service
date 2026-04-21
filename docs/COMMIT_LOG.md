@@ -1,5 +1,19 @@
 # Commit Log
 
+## Commit: fix(shop): artist submissions persist to Supabase; email notify best-effort (2026-04-21)
+
+### Summary
+**`/api/shop/artist-submissions`** previously required **`sendEmail`** to succeed, so missing **Resend** / **Gmail** configuration returned **500** and users saw an error after submit. The route now **inserts into `artist_applications`** first (same as **`/api/artists/apply`**), stores the message in **`bio`** with a shop-form prefix, and sends the team email **best-effort** only. The shop page parses JSON errors safely if the response is not JSON.
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-submissions/route.ts](app/api/shop/artist-submissions/route.ts)
+- [x] [app/(store)/shop/artist-submissions/page.tsx](app/(store)/shop/artist-submissions/page.tsx)
+- [x] [docs/features/shop-footer-pages/README.md](docs/features/shop-footer-pages/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
 ## Commit: feat(seo): GSC property setup doc, sitemap blog URLs, optional full webmasters OAuth (2026-04-19)
 
 ### Summary
