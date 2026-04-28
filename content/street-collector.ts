@@ -8,8 +8,129 @@
 /** Single destination for all CTAs and momentum cues */
 export const EXPERIENCE_URL = '/experience'
 
+/** Center nav labels (desktop landing) — matches primary shop IA */
+export const streetCollectorLandingNav = [
+  { label: 'LAMP', href: '/experience' },
+  { label: 'ARTWORKS', href: '/shop/products' },
+  { label: 'ARTISTS', href: '/shop/explore-artists' },
+  { label: 'COLLAB', href: '/shop/collab' },
+  { label: 'JOURNAL', href: '/shop/blog' },
+  { label: 'ABOUT', href: '/shop/contact' },
+] as const
+
 export const streetCollectorContent = {
   experienceUrl: EXPERIENCE_URL,
+  /** Split editorial hero — “living art system” + product HUD (light / dark) */
+  editorialHero: {
+    headline: 'A living art system.',
+    subheadline: 'Collect. Insert. Change.',
+    ctaPrimary: { label: 'GET YOUR LAMP', href: EXPERIENCE_URL },
+    ctaSecondary: { label: 'EXPLORE ART', href: '/shop/products' },
+    videoUrl:
+      'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
+    posterUrl:
+      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/684cd0c8b42142fdad8e4db442befa6e.thumbnail.0000000000_800x.jpg?v=1770544655',
+    hud: [
+      { label: 'CURRENT ARTWORK', value: 'Limited edition print' },
+      { label: 'STATUS', value: '(100% loaded)' },
+      { label: 'SYSTEM', value: 'Ready to swap' },
+    ] as const,
+  },
+  /** Thin full-width row directly under hero */
+  heroTrustStrip: [
+    'SWAP ARTWORKS IN SECONDS',
+    '80+ ARTISTS WORLDWIDE',
+    'LIMITED EDITIONS ALWAYS',
+    'FREE SHIPPING OVER $99',
+  ] as const,
+  howItWorksEditorial: {
+    eyebrow: 'HOW IT WORKS',
+    title: 'Most art lives in storage. This puts it in your daily life.',
+    viewGuideLabel: 'VIEW GUIDE +',
+    viewGuideHref: '/shop/faq',
+    steps: [
+      {
+        n: '01',
+        title: 'Choose your lamp',
+        hint: '10 SEC',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
+      },
+      {
+        n: '02',
+        title: 'Pick your artwork',
+        hint: '5 SEC',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
+      },
+      {
+        n: '03',
+        title: 'Slide it in',
+        hint: '5 SEC',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
+      },
+      {
+        n: '04',
+        title: 'Change it anytime',
+        hint: 'INSTANT',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/481c3eb1bcef489d84d3b69c881c431b.thumbnail.0000000000_800x.jpg?v=1770565793',
+      },
+    ] as const,
+  },
+  productSpecEditorial: {
+    imageUrl:
+      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_800x.jpg?v=1770018285',
+    headline: 'Buy once. Collect forever.',
+    body:
+      'A premium aluminum frame, museum-grade backlighting, and a swap system designed for daily ritual — not a gadget you tuck away.',
+    fromPrice: '$99',
+    ctaLabel: 'SHOP LAMPS',
+    ctaHref: EXPERIENCE_URL,
+    specs: [
+      {
+        key: 'build',
+        title: 'Premium build',
+        description: 'Aluminum frame, engineered for years of daily use.',
+      },
+      {
+        key: 'light',
+        title: 'Museum-grade lighting',
+        description: 'Dimming, color clarity, and even glow across the print.',
+      },
+      {
+        key: 'swap',
+        title: 'Swap in seconds',
+        description: 'Slide-in system — no tools, no fuss.',
+      },
+      {
+        key: 'power',
+        title: 'Rechargeable',
+        description: 'Cordless freedom; run plugged in or on battery.',
+      },
+    ] as const,
+  },
+  ritualBand: {
+    videoUrl:
+      'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
+    posterUrl:
+      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
+    watchLabel: 'WATCH THE RITUAL',
+    quote: 'It’s become a daily ritual. I change it more than my playlist.',
+    attribution: 'Mike, New York',
+  },
+  limitedDrop: {
+    eyebrow: 'LIMITED EDITIONS',
+    headline: 'Once they’re gone, they’re gone.',
+    body: 'Small-run prints from independent street artists worldwide.',
+    editionOf: 90,
+    remaining: 37,
+    ctaLabel: 'DISCOVER DROP',
+    ctaHref: '/shop/products',
+    imageUrl:
+      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png?v=1771844884&width=1200',
+  },
   hero: {
     headline: 'A living art collection.',
     subheadline: 'Not just a lamp.',
@@ -129,7 +250,7 @@ export const streetCollectorContent = {
   valuePropsCue: '',
   /** Testimonials with media (video/image) from thestreetcollector.com AI testimonial carousel */
   testimonials: {
-    title: 'Join 3000+ Collectors',
+    title: 'LOVED BY COLLECTORS',
     subtitle: '',
     /** Decorative wide image behind the testimonial carousel (same asset as the old value-prop banner) */
     sectionBackdropImage:
@@ -294,7 +415,7 @@ export const streetCollectorContent = {
     },
   },
   featuredArtists: {
-    title: '100+ Artists. Every corner of the world.',
+    title: 'FROM THE STREETS TO YOUR HOME',
     subtitle: '',
     afterCarousel: '',
     description: '',
@@ -406,11 +527,15 @@ export const streetCollectorContent = {
     ],
   },
   finalCta: {
-    headline: 'Not just a lamp. A living Art Collection',
+    headline: 'Start your collection.',
     subheadline: '',
     cta: {
-      text: 'Start your collection',
+      text: 'GET YOUR LAMP',
       url: EXPERIENCE_URL,
+    },
+    ctaSecondary: {
+      text: 'EXPLORE ART',
+      url: '/shop/products',
     },
   },
 } as const

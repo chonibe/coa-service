@@ -11,6 +11,7 @@ import { footerSections as syncedFooterSections } from '@/content/shopify-conten
 import { BackBar } from '@/components/shop/navigation/BackBar'
 import { ChatIconScrollReveal } from '@/components/shop/navigation/ChatIconScrollReveal'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
+import { LandingThemeProvider } from '@/components/shop/street-collector/LandingThemeProvider'
 import { cn } from '@/lib/utils'
 
 /**
@@ -67,6 +68,9 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
     isLandingPage || isStreetCollectorPage || isHomeV2Page
+  /** `/` and `/shop/street-collector` — theme toggle + coordinated light/dark (not home-v2). */
+  const needsLandingTheme =
+    pathname === '/' || pathname?.startsWith('/shop/street-collector')
   /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
   const showLandingChatIcon = isLandingPage || isStreetCollectorPage
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
@@ -128,7 +132,8 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         'flex min-h-screen flex-col',
-        isLandingOrStreetCollector && 'bg-[#171515]'
+        needsLandingTheme && 'bg-white dark:bg-neutral-950',
+        isLandingOrStreetCollector && !needsLandingTheme && 'bg-[#171515]'
       )}
     >
       <Suspense fallback={null}>
@@ -154,13 +159,14 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       <main
         id="main-content"
         className={cn(
-          /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
-          isLandingOrStreetCollector
-            ? 'flex-none bg-[#171515] max-md:!pb-0'
-            : 'flex-1'
+          needsLandingTheme
+            ? 'flex-none max-md:!pb-0 bg-white dark:bg-neutral-950'
+            : isLandingOrStreetCollector
+              ? 'flex-none bg-[#171515] max-md:!pb-0'
+              : 'flex-1'
         )}
       >
-        {children}
+        {needsLandingTheme ? <LandingThemeProvider>{children}</LandingThemeProvider> : children}
       </main>
       <Footer
         sections={footerSections}
