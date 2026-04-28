@@ -89,6 +89,7 @@ export default function LoginClient() {
 
   const hasCheckedSession = useRef(false)
   const hasRedirected = useRef(false)
+  const isAdminLoginIntent = searchParams.get("admin") === "true"
 
   useEffect(() => {
     if (hasCheckedSession.current) {
@@ -140,6 +141,13 @@ export default function LoginClient() {
           return
         }
 
+        // Admin login should never be hijacked by remembered collector/vendor sessions.
+        // If there is no active admin session, stay on /login?admin=true.
+        if (isAdminLoginIntent) {
+          setCheckingSession(false)
+          return
+        }
+
         if (data.isAdmin && !data.hasAdminSession) {
           setCheckingSession(false)
           return
@@ -186,7 +194,7 @@ export default function LoginClient() {
     return () => {
       abortController.abort()
     }
-  }, [searchParams])
+  }, [searchParams, isAdminLoginIntent])
 
   const handleGoogleLogin = () => {
     setFormError(null)
