@@ -11,24 +11,23 @@ const VIDEO_ASPECT_RATIO = 4 / 5
 /** Glass numeral — on dark overlay over video */
 const stepGlassBadgeInlineClass = cn(
   'inline-flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full sm:size-[3.5rem] md:size-16',
-  'font-body text-xl font-bold tabular-nums leading-none text-stone-900 sm:text-2xl md:text-2xl',
-  'border border-stone-300/80 bg-white/90 backdrop-blur-md backdrop-saturate-150',
-  'shadow-[0_4px_16px_rgba(61,36,24,0.12),inset_0_1px_0_rgba(255,255,255,0.6)]',
-  'dark:border-white/20 dark:bg-white/12 dark:text-white dark:shadow-[0_4px_16px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]'
+  'font-body text-xl font-bold tabular-nums leading-none text-white sm:text-2xl md:text-2xl',
+  'border border-white/20 bg-white/12 backdrop-blur-md backdrop-saturate-150',
+  'shadow-[0_4px_16px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]'
 )
 
 /** Glass bar: numeral + title one row; left on mobile, centered sm+; md+ offset down from top */
 const valuePropVideoOverlayBarClass = cn(
   'pointer-events-none absolute left-3 top-0 z-20 flex w-max max-w-[calc(100%-1.5rem)] min-w-0 translate-x-0 -translate-y-1/2 flex-row items-center gap-2.5 rounded-lg sm:left-1/2 sm:max-w-[calc(100%-0.75rem)] sm:-translate-x-1/2 sm:gap-3 md:top-4 md:gap-3.5 lg:top-5 xl:top-6',
-  'border border-stone-200/90 bg-white/90 px-2.5 py-1.5 shadow-[0_8px_24px_rgba(61,36,24,0.12)] backdrop-blur-xl backdrop-saturate-150 sm:px-3 sm:py-2',
-  'dark:border-white/[0.12] dark:bg-black/65 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.5)]'
+  'border border-white/[0.12] bg-black/65 px-2.5 py-1.5 backdrop-blur-xl backdrop-saturate-150 sm:px-3 sm:py-2',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.5)]'
 )
 
 /** Outer value-prop card — darker shell */
 const valuePropOuterCardClass = cn(
   'w-full max-w-full overflow-visible',
-  'rounded-2xl border border-stone-200/90 bg-white/95 p-4 shadow-[0_16px_48px_rgba(61,36,24,0.08)] sm:p-6 md:p-8',
-  'dark:border-[#ffba94]/[0.07] dark:bg-[#0c0b0b]/95 dark:shadow-[0_16px_48px_rgba(0,0,0,0.55)]'
+  'rounded-2xl border border-[#ffba94]/[0.07] bg-[#0c0b0b]/95 shadow-[0_16px_48px_rgba(0,0,0,0.55)]',
+  'p-4 sm:p-6 md:p-8'
 )
 
 /** Video card only (no section wrapper) - for embedding in other sections */
@@ -62,7 +61,7 @@ export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
                 <span className={stepGlassBadgeInlineClass} aria-hidden>
                   {i + 1}
                 </span>
-                <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-stone-900 dark:text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
                   <span className="sr-only">{`Step ${i + 1}: `}</span>
                   {prop.title}
                 </h3>
@@ -103,13 +102,13 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
     <section
       className={cn(
         'w-full py-6 sm:py-10 md:py-16',
-        'bg-[#faf6f2] text-stone-900 dark:bg-[#171515] dark:text-[#FFBA94]',
+        'bg-[#171515] text-[#FFBA94]',
         className
       )}
     >
       <div className="section-stack w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-6 lg:px-8">
         {title && (
-          <h2 className="mb-6 text-center font-body text-3xl font-medium tracking-tight text-stone-900 dark:text-[#FFBA94] sm:mb-8 sm:text-4xl md:text-5xl lg:text-6xl">
+          <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8">
             {title}
           </h2>
         )}
@@ -142,7 +141,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
                     <span className={stepGlassBadgeInlineClass} aria-hidden>
                       {i + 1}
                     </span>
-                    <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-stone-900 dark:text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                    <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
                       <span className="sr-only">{`Step ${i + 1}: `}</span>
                       {prop.title}
                     </h3>
@@ -166,10 +165,10 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
               key={i}
               className={cn(
                 'flex flex-col gap-2 text-center items-center w-full',
-                'rounded-xl border border-stone-200/90 bg-white/90 p-4 sm:p-5 dark:border-[#ffba94]/15 dark:bg-[#201c1c]/55'
+                'rounded-xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-4 sm:p-5'
               )}
             >
-              <p className="max-w-none font-body text-xs leading-relaxed text-stone-600 dark:text-[#FFBA94]/80 sm:text-sm">
+              <p className="font-body text-xs sm:text-sm leading-relaxed text-[#FFBA94]/80 max-w-none">
                 {prop.description}
               </p>
               <span className="sr-only">
@@ -184,7 +183,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
           <div className="text-center mt-8 sm:mt-10 md:mt-12">
             <a
               href={cueHref}
-              className="font-body text-base text-stone-600 underline underline-offset-2 transition-colors hover:text-stone-900 dark:text-[#FFBA94]/80 dark:hover:text-[#FFBA94] sm:text-lg"
+              className="font-body text-base sm:text-lg text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
             >
               {cue}
             </a>

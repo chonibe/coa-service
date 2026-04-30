@@ -12,11 +12,6 @@ import { BackBar } from '@/components/shop/navigation/BackBar'
 import { ChatIconScrollReveal } from '@/components/shop/navigation/ChatIconScrollReveal'
 import { LocalCartDrawer } from '@/components/impact/LocalCartDrawer'
 import { cn } from '@/lib/utils'
-import {
-  LandingThemeProvider,
-  LandingAppearanceFab,
-} from './shop/street-collector/LandingThemeProvider'
-import { isCollectorLedStoreShellPath } from '@/lib/shop/collector-store-shell'
 
 /**
  * Store Layout — wraps landing (/) and shop (/shop/*)
@@ -44,6 +39,11 @@ const footerSections = hasUsefulFooterSections
         title: 'RESOURCES',
         links: [
           { label: 'FAQ', href: '/shop/faq' },
+          { label: 'Blog', href: '/shop/blog' },
+          { label: 'Backlit Art Lamp', href: '/backlit-art-lamp' },
+          { label: 'Limited Edition Prints', href: '/limited-edition-street-art-prints' },
+          { label: 'Urban Art Prints', href: '/urban-art-prints' },
+          { label: 'Interchangeable Art Prints', href: '/interchangeable-art-prints' },
           { label: 'For Business', href: '/shop/for-business' },
           { label: 'Affiliate program', href: '/shop/collab' },
           { label: 'Artist Submissions', href: '/shop/artist-submissions' },
@@ -66,14 +66,14 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false)
   useEffect(() => setHasMounted(true), [])
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
-  /** `/`, street-collector marketing, drops, artists, reserve, and edition PDPs — shared light/dark shell */
-  const isCollectorLedStoreShell = isCollectorLedStoreShellPath(pathname ?? null)
+  const isLandingPage = pathname === '/'
+  const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
-    isCollectorLedStoreShell || isHomeV2Page
-  /** Chat icon on collector-led shell — not home-v2 (fixed nav + CTA already occupy the top bar). */
-  const showLandingChatIcon = isCollectorLedStoreShell
+    isLandingPage || isStreetCollectorPage || isHomeV2Page
+  /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
+  const showLandingChatIcon = isLandingPage || isStreetCollectorPage
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
   const cart = useCart()
 
@@ -129,21 +129,13 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
     if (!res.ok) throw new Error(data?.error || 'Signup failed')
   }, [])
 
-  const outerShellClass = cn(
-    'flex min-h-screen flex-col',
-    !isCollectorLedStoreShell && isLandingOrStreetCollector && 'bg-[#171515]'
-  )
-
-  const mainClassName = cn(
-    isCollectorLedStoreShell
-      ? 'flex-none max-md:!pb-0'
-      : isLandingOrStreetCollector
-        ? 'flex-none bg-[#171515] max-md:!pb-0'
-        : 'flex-1'
-  )
-
-  const branch = (
-    <>
+  return (
+    <div
+      className={cn(
+        'flex min-h-screen flex-col',
+        isLandingOrStreetCollector && 'bg-[#171515]'
+      )}
+    >
       <Suspense fallback={null}>
         <AffiliatePersistence />
       </Suspense>
@@ -164,7 +156,15 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
           creditsDiscount={cart.creditsDiscount}
         />
       )}
-      <main id="main-content" className={mainClassName}>
+      <main
+        id="main-content"
+        className={cn(
+          /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
+          isLandingOrStreetCollector
+            ? 'flex-none bg-[#171515] max-md:!pb-0'
+            : 'flex-1'
+        )}
+      >
         {children}
       </main>
       <Footer
@@ -176,22 +176,10 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         tagline=""
         legalLinks={[]}
         showPaymentIcons={true}
-        landingDualTone={isCollectorLedStoreShell}
         className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
       />
-    </>
+    </div>
   )
-
-  if (isCollectorLedStoreShell) {
-    return (
-      <LandingThemeProvider>
-        <LandingAppearanceFab />
-        {branch}
-      </LandingThemeProvider>
-    )
-  }
-
-  return <div className={outerShellClass}>{branch}</div>
 }
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {

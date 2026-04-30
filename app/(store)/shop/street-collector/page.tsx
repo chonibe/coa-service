@@ -1,110 +1,136 @@
 import { Metadata } from 'next'
-import dynamic from 'next/dynamic'
-import Link from 'next/link'
-import Image from 'next/image'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { StreetCollectorBrandJsonLd } from '@/components/seo/StreetCollectorBrandJsonLd'
-import { Container } from '@/components/impact'
-import { landingFontVariables } from '../home-v2/landing-fonts'
-import landingStyles from '../home-v2/landing.module.css'
-import exploreStyles from '../explore-artists/explore-artists.module.css'
-import scStyles from './collector-store.module.css'
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import {
+  Container,
+  SectionWrapper,
+} from '@/components/impact'
 import { streetCollectorContent } from '@/content/street-collector'
 import {
   getCollection,
   getCollectionWithListProducts,
-  getProduct,
   isStorefrontConfigured,
-  type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import { getVendorBioByHandle } from '@/lib/shopify/vendor-bio'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { cn } from '@/lib/utils'
-import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
-import { CollectorHomeArtistRoster } from './CollectorHomeArtistRoster'
-import { UpcomingDropCountdown } from './UpcomingDropCountdown'
-import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
-import { queryEditionStatesByProductIds } from '@/lib/shop/query-edition-states'
-import { mergeEditionStateWithStorefront } from '@/lib/shop/merge-collector-edition-state'
-import {
-  ladderStageBadgeClass,
-  ladderStageColumnClass,
-  ladderStageShortLabel,
-} from '@/lib/shop/collector-ladder-styles'
-import { getStreetLampProductHandle, streetLampProductPath } from '@/lib/shop/street-lamp-handle'
-import { collectorStoreChromePaddingTopClass } from '@/lib/shop/collector-store-chrome-layout'
+import Image from 'next/image'
+import { ValuePropVideoCard } from './MultiColumnVideoSection'
 
+const DesktopTopBar = dynamic(
+  () => import('./DesktopTopBar').then((m) => ({ default: m.DesktopTopBar }))
+)
+
+const MeetTheStreetLamp = dynamic(
+  () => import('./MeetTheStreetLamp').then((m) => ({ default: m.MeetTheStreetLamp })),
+  { loading: () => <section className="min-h-[280px] bg-[#171515]" aria-hidden /> }
+)
+const TestimonialCarousel = dynamic(
+  () => import('./TestimonialCarousel').then((m) => ({ default: m.TestimonialCarousel })),
+  { loading: () => <section className="min-h-[200px] bg-[#171515]" aria-hidden /> }
+)
 const StreetCollectorFAQ = dynamic(
   () => import('./StreetCollectorFAQ').then((m) => ({ default: m.StreetCollectorFAQ })),
-  { loading: () => <section className="min-h-[120px] bg-[#faf6f2] dark:bg-[#171515]" aria-hidden /> }
+  { loading: () => <section className="min-h-[120px] bg-[#171515]" aria-hidden /> }
 )
+const ArtistCarousel = dynamic(
+  () => import('@/components/sections/ArtistCarousel').then((m) => ({ default: m.ArtistCarousel })),
+  { loading: () => <section className="min-h-[400px] bg-[#171515]" aria-hidden /> }
+)
+
+/** When false, hides “What happens next” steps, reassurance, and Start your collection. */
+const SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE = false
+
+// 64×64 request for 32px display (2x) to minimize file size
+const HOME_LOGO_URL =
+  'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683&width=64&height=64'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
-  title: 'Street Collector — limited edition street art drops & artist roster',
+  title: 'What is Street Collector? | Backlit lamp & limited edition street art prints',
   description:
-    'Collect the street artists you love before everyone else does. Limited editions, transparent ladder pricing, new drops weekly — plus The Reserve for early access.',
+    'Street Collector pairs a premium illuminated display with swappable limited-edition street art prints from independent artists. Editioned works, Certificate of Authenticity, worldwide shipping.',
   alternates: { canonical: '/shop/street-collector' },
   openGraph: {
-    title: 'Street Collector — drops, artists, and collecting',
+    title: 'Street Collector — illuminated art & limited edition prints',
     description:
-      'Limited edition prints from independent street artists. Prices climb as editions sell through. Follow artists and shop live drops.',
+      'Collect limited edition street art prints and display them in a backlit Street Collector lamp. Small runs, COA, ships worldwide.',
     url: '/shop/street-collector',
     siteName: 'Street Collector',
     type: 'website',
   },
 }
 
+// Allow revalidation so bfcache can work; page uses Shopify API so short revalidate
 export const revalidate = 60
 
-function nextThursdayUtcNoonIso(): string {
-  const now = new Date()
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0))
-  const day = d.getUTCDay()
-  let add = (4 - day + 7) % 7
-  if (add === 0 && now.getTime() > d.getTime()) add = 7
-  d.setUTCDate(d.getUTCDate() + add)
-  return d.toISOString()
+type TrustBarItem = (typeof streetCollectorContent.trustBar)[number]
+
+const TRUST_BAR_ICON_SRC: Record<TrustBarItem['icon'], string> = {
+  shipping: '/street-collector/trust/shipping.svg',
+  guarantee: '/street-collector/trust/12months.svg',
+  returns: '/street-collector/trust/returns.svg',
 }
 
-const HOME_LADDER_DISPLAY = [
-  { key: 'ground_floor' as const, price: '$40' },
-  { key: 'rising' as const, price: '$50' },
-  { key: 'established' as const, price: '$62' },
-  { key: 'final' as const, price: '$75' },
-  { key: 'archive' as const, price: '—' },
-]
+function TrustBarItemIcon({
+  item,
+  variant,
+}: {
+  item: TrustBarItem
+  variant: 'compact' | 'featured'
+}) {
+  const wrap =
+    variant === 'compact'
+      ? 'inline-flex shrink-0 items-center justify-center'
+      : 'inline-flex items-center justify-center'
+  const isLargeTrustIcon =
+    item.icon === 'returns' || item.icon === 'shipping' || item.icon === 'guarantee'
+  const iconClass =
+    variant === 'featured'
+      ? 'h-20 w-20'
+      : isLargeTrustIcon
+        ? 'h-20 w-20'
+        : 'h-14 w-14'
+  const dim = variant === 'featured' ? 80 : isLargeTrustIcon ? 80 : 56
+
+  return (
+    <span className={wrap} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element -- local flat SVG assets */}
+      <img
+        src={TRUST_BAR_ICON_SRC[item.icon]}
+        alt=""
+        className={cn(iconClass, 'object-contain')}
+        width={dim}
+        height={dim}
+      />
+    </span>
+  )
+}
 
 export default async function StreetCollectorPage() {
   const apiConfigured = isStorefrontConfigured()
   let apiError: string | null = null
 
-  type FeaturedHomeArtist = {
+  let featuredArtists: Array<{
     handle: string
     name: string
     location?: string
     imageUrl?: string
     description?: string
-    collectionHref?: string
-  }
-  let featuredArtists: FeaturedHomeArtist[] = []
-
-  let spotlightProducts: ShopifyProduct[] = []
-  let lampTeaserImageUrl: string | undefined
+  }> = []
 
   const SEASON_2_HANDLE = '2025-edition'
 
   if (apiConfigured) {
     try {
-      const [featuredArtistsResult, season2Col, lampProduct] = await Promise.all([
+      // Fetch featured artists and season-2 collection in parallel
+      const [featuredArtistsResult, season2Col] = await Promise.all([
         Promise.all(
           streetCollectorContent.featuredArtists.collections.map(async (artist) => {
-            const collectionHref =
-              'collectionHref' in artist && typeof artist.collectionHref === 'string'
-                ? artist.collectionHref
-                : undefined
-            const location = 'location' in artist && typeof artist.location === 'string' ? artist.location : undefined
+            const collectionHref = 'collectionHref' in artist ? (artist as { collectionHref?: string }).collectionHref : undefined
             try {
               const col = await getCollection(artist.handle, { first: 1 }).catch(() => null)
               const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -130,10 +156,10 @@ export default async function StreetCollectorPage() {
               return {
                 handle: artist.handle,
                 name,
-                location,
+                location: artist.location,
                 imageUrl,
                 description,
-                collectionHref,
+                href: collectionHref,
               }
             } catch {
               const handleForName = artist.handle.replace(/-\d+$/, '')
@@ -144,10 +170,10 @@ export default async function StreetCollectorPage() {
                   .split('-')
                   .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                   .join(' '),
-                location,
+                location: artist.location,
                 imageUrl,
                 description: undefined,
-                collectionHref,
+                href: collectionHref,
               }
             }
           })
@@ -156,25 +182,14 @@ export default async function StreetCollectorPage() {
           first: 100,
           sortKey: 'MANUAL',
         }).catch(() => null),
-        getProduct(getStreetLampProductHandle()).catch(() => null),
       ])
       featuredArtists = featuredArtistsResult
-      lampTeaserImageUrl = lampProduct?.featuredImage?.url ?? undefined
 
+      // Add 2nd edition artists from season-2 collection (vendors not already in list)
       const existingHandles = new Set(
         featuredArtists.map((a) => a.handle.replace(/-\d+$/, '').toLowerCase())
       )
       const season2Products = season2Col?.products?.edges?.map((e) => e.node) ?? []
-      const lampHc = getStreetLampProductHandle().toLowerCase()
-      spotlightProducts = season2Products
-        .filter(
-          (p) =>
-            p.handle &&
-            p.handle.toLowerCase() !== lampHc &&
-            !p.handle.toLowerCase().startsWith('street-lamp')
-        )
-        .slice(0, 2)
-
       const vendorsBySlug = new Map<string, string>()
       for (const p of season2Products) {
         if (p.vendor?.trim()) {
@@ -216,13 +231,14 @@ export default async function StreetCollectorPage() {
           }
         })
       )
+      // Merge: season 2 first, then season 1. Deduplicate by name (prefer richer image+description).
       const HIDDEN_HANDLES = new Set(['khwampa', 'khwampah'])
       const isHidden = (a: { handle: string; name: string }) =>
         HIDDEN_HANDLES.has(a.handle.replace(/-\d+$/, '').toLowerCase()) ||
         HIDDEN_HANDLES.has(a.name.toLowerCase())
       const richness = (a: { imageUrl?: string; description?: string }) =>
         (a.imageUrl ? 1 : 0) + (a.description ? 1 : 0)
-      const nameToArtist = new Map<string, FeaturedHomeArtist>()
+      const nameToArtist = new Map<string, (typeof featuredArtists)[0]>()
       for (const a of season2Artists.filter((a) => a.name && !isHidden({ handle: a.handle, name: a.name }))) {
         const key = a.name.toLowerCase().trim()
         const existing = nameToArtist.get(key)
@@ -234,13 +250,15 @@ export default async function StreetCollectorPage() {
         if (isHidden(a)) continue
         const key = a.name.toLowerCase().trim()
         const existing = nameToArtist.get(key)
+        const aWithHref = 'href' in a ? a : undefined
         if (!existing || richness(a) > richness(existing)) {
           nameToArtist.set(key, a)
-        } else if (a.collectionHref) {
-          nameToArtist.set(key, { ...existing, collectionHref: a.collectionHref })
+        } else if (aWithHref?.href) {
+          nameToArtist.set(key, { ...existing, href: aWithHref.href })
         }
       }
       featuredArtists = Array.from(nameToArtist.values())
+      // Start with Jérôme Masi (Annecy)
       const leadHandle = 'jerome-masi'
       const leadIdx = featuredArtists.findIndex(
         (a) => a.handle.replace(/-\d+$/, '').toLowerCase() === leadHandle
@@ -249,340 +267,264 @@ export default async function StreetCollectorPage() {
         const [lead] = featuredArtists.splice(leadIdx, 1)
         featuredArtists.unshift(lead)
       }
-    } catch (error: unknown) {
-      console.error('Street Collector page API error:', error instanceof Error ? error.message : error)
-      apiError = error instanceof Error ? error.message : 'Unknown error'
+    } catch (error: any) {
+      console.error('Street Collector page API error:', error.message)
+      apiError = error.message
     }
   } else {
     apiError = 'Shopify Storefront API not configured.'
   }
 
-  const upcomingIso = nextThursdayUtcNoonIso()
-
-  const spotlightIds = spotlightProducts
-    .map((p) => normalizeShopifyProductId(p.id))
-    .filter((x): x is string => Boolean(x))
-    .map((s) => parseInt(s, 10))
-    .filter((n) => Number.isFinite(n))
-
-  const editionRows = spotlightIds.length
-    ? await queryEditionStatesByProductIds(spotlightIds)
-    : []
-  const editionByProductId = new Map(editionRows.map((r) => [r.productId, r]))
-
-  const debraQuote =
-    streetCollectorContent.testimonials.quotes.find((q) => q.author === 'Debra G.')?.content ??
-    streetCollectorContent.testimonials.quotes[0]?.content ??
-    ''
+  const trustPromoLine = streetCollectorContent.meetTheLamp.trustMicroItems.join(' · ')
 
   return (
-    <div className={cn(landingFontVariables, landingStyles.page, 'pb-24 md:pb-8')}>
+    <div className="dark w-full bg-[#171515] text-[#FFBA94] pb-16 md:pb-0">
       <StreetCollectorBrandJsonLd />
-      <CollectorStoreTopChrome />
-
-      <div className={collectorStoreChromePaddingTopClass} />
-
+      {/* Thin promo bar — shipping / guarantee / returns (above nav on desktop, top of page on mobile) */}
+      <div className="fixed top-0 left-0 right-0 z-[122] hidden md:flex flex-col">
+        <div
+          className="flex w-full items-center justify-center border-b border-white/[0.08] bg-[#0f0e0e] px-3 py-1 text-center text-[11px] font-medium leading-tight tracking-wide text-[#FFBA94]/75 sm:text-xs sm:py-1.5"
+          style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top, 0px))' }}
+          role="region"
+          aria-label="Shipping, guarantee, and returns"
+        >
+          {trustPromoLine}
+        </div>
+        <DesktopTopBar
+          embedded
+          text={streetCollectorContent.hero.cta.text}
+          href={streetCollectorContent.experienceUrl}
+          logoUrl={HOME_LOGO_URL}
+        />
+      </div>
+      <div
+        className="fixed top-0 left-0 right-0 z-[122] border-b border-white/[0.08] bg-[#0f0e0e] py-1 md:hidden"
+        style={{ paddingTop: 'max(0.25rem, env(safe-area-inset-top, 0px))' }}
+        role="region"
+        aria-label="Shipping, guarantee, and returns"
+      >
+        <p className="px-2 text-center text-[10px] font-medium leading-snug tracking-wide text-[#FFBA94]/75 sm:text-[11px]">
+          {trustPromoLine}
+        </p>
+      </div>
+      {/* Reserve space under fixed mobile promo (height ≈ promo + safe area) */}
+      <div
+        className="md:hidden shrink-0"
+        style={{ height: 'calc(2.125rem + env(safe-area-inset-top, 0px))' }}
+        aria-hidden
+      />
+      {/* Sticky CTA - always visible on mobile, no scroll logic */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-4 md:hidden"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Link
+          href={streetCollectorContent.experienceUrl}
+          prefetch={false}
+          className="flex min-h-[52px] w-full max-w-md items-center justify-center rounded-lg bg-[#047AFF] px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#0366d6] hover:opacity-90"
+        >
+          {streetCollectorContent.hero.cta.text}
+        </Link>
+      </div>
+      {/* API Warning (dev only) */}
       {apiError && process.env.NODE_ENV === 'development' && (
-        <div className="border-b border-amber-700/50 bg-amber-900/30 px-4 py-3">
+        <div className="bg-amber-900/30 border-b border-amber-700/50 px-4 py-3">
           <Container maxWidth="default" paddingX="gutter">
-            <p className="text-sm text-amber-200">{apiError}</p>
+            <p className="text-sm text-amber-200">
+              {apiError} Set NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN and SHOPIFY_SHOP.
+            </p>
           </Container>
         </div>
       )}
 
-      <div className={exploreStyles.wrap}>
-        <section className={cn(exploreStyles.hero, scStyles.heroShop)} aria-label="Street Collector home">
-          <div className={exploreStyles.heroBgGradient} aria-hidden />
-          <div className={exploreStyles.heroContent}>
-            <div className={exploreStyles.heroEyebrow}>Limited editions · 85+ artists · New drops weekly</div>
-            <h1 className={exploreStyles.heroH1}>
-              Collect the artists you love before <em>everyone else.</em>
-            </h1>
-            <p className={exploreStyles.heroDesc}>
-              Limited edition prints from artists around the world. Prices only go up. When editions sell out,
-              they&apos;re gone. Follow the artists you care about and get first access when they drop.
-            </p>
-            <div className={cn(scStyles.heroCtas, 'flex flex-wrap gap-4')}>
-              <Link href="/shop/artists" prefetch={false} className={landingStyles.btnPrimary}>
-                Browse artists
-              </Link>
-              <Link href="/shop/drops" prefetch={false} className={landingStyles.btnOutline}>
-                See upcoming drops
-              </Link>
-            </div>
-          </div>
-        </section>
+      {/* Mobile: in-flow logo (safe area handled by promo bar + spacer above) */}
+      <div className="flex justify-center px-5 pt-3 pb-2 md:hidden">
+        <Link
+          href="/"
+          aria-label="Street Collector Home"
+          className="inline-flex items-center justify-center p-2 -m-2 transition-transform hover:scale-105"
+        >
+          <Image
+            src={getProxiedImageUrl(HOME_LOGO_URL)}
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 object-contain drop-shadow-md"
+            loading="eager"
+            priority
+          />
+        </Link>
+      </div>
 
-        <section className={exploreStyles.artistsSection} aria-label="This week&apos;s drops">
-          <div className={exploreStyles.artistsHeader}>
-            <div>
-              <div className={exploreStyles.eyebrowInline}>On the calendar</div>
-              <h2 className={exploreStyles.featuredTitle}>
-                This week&apos;s <em>drops</em>
+      {/* Meet the Street Lamp — desktop + mobile */}
+      <MeetTheStreetLamp
+        title={streetCollectorContent.meetTheLamp.title}
+        taglineLines={streetCollectorContent.meetTheLamp.taglineLines}
+        stages={streetCollectorContent.meetTheLamp.stages}
+        desktopVideo={streetCollectorContent.meetTheLamp.desktopVideo}
+        mobileVideo={streetCollectorContent.meetTheLamp.mobileVideo}
+        poster={getProxiedImageUrl(streetCollectorContent.meetTheLamp.poster)}
+        pricingChips={
+          Array.isArray(streetCollectorContent.meetTheLamp.pricingChips)
+            ? streetCollectorContent.meetTheLamp.pricingChips
+            : undefined
+        }
+        cue={streetCollectorContent.meetTheLamp.cue}
+        cueHref={streetCollectorContent.experienceUrl}
+        className="pt-3 pb-8 sm:pt-4 sm:pb-10 md:pt-5 md:pb-8 lg:pt-6 lg:pb-10"
+      />
+
+      {SHOW_STREET_COLLECTOR_FUNNEL_BRIDGE && (
+        <SectionWrapper spacing="xs" background="experience" className="!py-8 sm:!py-10">
+          <Container maxWidth="default" paddingX="gutter">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-serif text-2xl font-medium tracking-tight text-[#FFBA94] sm:text-3xl md:text-4xl">
+                {streetCollectorContent.funnelBridge.title}
               </h2>
-            </div>
-            <Link
-              href="/shop/drops"
-              prefetch={false}
-              className={cn(exploreStyles.artistsHeaderNote, 'transition-colors hover:text-white')}
-            >
-              View all →
-            </Link>
-          </div>
-
-          <div className={scStyles.dropsGrid3}>
-            {spotlightProducts.map((p) => {
-              const pid = normalizeShopifyProductId(p.id) || ''
-              const row = editionByProductId.get(pid)
-              const merged = mergeEditionStateWithStorefront(p, row)
-              const img = p.featuredImage?.url
-              const sold = merged.editionsSold
-              const total = merged.editionTotal
-              const price = merged.priceUsd
-              const stageKey = merged.stageKey
-              return (
-                <article key={p.id} className={exploreStyles.artistCard}>
-                  <div className={exploreStyles.artistCardInner}>
-                    <Link
-                      href={`/shop/${encodeURIComponent(p.handle)}`}
-                      prefetch={false}
-                      className={exploreStyles.artistCardMediaButton}
-                      aria-label={`Open ${p.title}`}
-                    >
-                      <div className={exploreStyles.artistCardMedia}>
-                        {img ? (
-                          <Image
-                            className={exploreStyles.artistCardImg}
-                            src={getProxiedImageUrl(img)}
-                            alt=""
-                            fill
-                            sizes="(max-width:768px) 100vw, 33vw"
-                            style={{ objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div
-                            className="flex h-full w-full items-center justify-center text-4xl"
-                            style={{
-                              background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
-                              color: 'var(--peach)',
-                              fontFamily: 'var(--font-landing-serif), Georgia, serif',
-                            }}
-                            aria-hidden
-                          >
-                            {(p.vendor || '?').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div className={exploreStyles.artistCardOverlay} aria-hidden />
-                        <div className={exploreStyles.artistCardInfo}>
-                          <div className={exploreStyles.artistCardName}>{p.vendor || 'Artist'}</div>
-                          <div className={exploreStyles.artistCardCity}>
-                            Live · {ladderStageShortLabel(stageKey)}
-                          </div>
-                          <div className={exploreStyles.artistCardHook}>{p.title}</div>
-                        </div>
-                      </div>
-                    </Link>
-                    <div className={exploreStyles.artistCardFooter}>
-                      <div className={exploreStyles.editionsCount}>
-                        <span className="tabular-nums">{price != null ? `$${price}` : '—'}</span>
-                        {total != null ? (
-                          <span className="tabular-nums">
-                            {sold} / {total} sold
-                          </span>
-                        ) : null}
-                      </div>
-                      <span className={exploreStyles.cardExploreLink} aria-hidden>
-                        Shop
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-            {spotlightProducts.length < 2 &&
-              [0, 1].slice(spotlightProducts.length).map((i) => (
-                <article key={`ph-${i}`} className={exploreStyles.artistCard}>
-                  <div className={exploreStyles.artistCardInner}>
-                    <div className={exploreStyles.artistCardMedia}>
-                      <div
-                        className="flex h-full min-h-[200px] w-full items-center justify-center text-sm"
-                        style={{ color: 'var(--muted)' }}
-                      >
-                        More drops loading soon.
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            <article className={exploreStyles.artistCard}>
-              <div className={exploreStyles.artistCardInner}>
-                <div className={exploreStyles.artistCardMedia}>
-                  <div
-                    className="flex h-full min-h-[200px] w-full flex-col items-center justify-center gap-2 px-4 text-center"
-                    style={{ background: 'var(--card2)', color: 'var(--muted)' }}
-                  >
-                    <span className="text-[10px] uppercase tracking-wide text-[#c98a7a]">Drops Thursday</span>
-                    <span className="text-xs">Upcoming edition</span>
-                  </div>
-                  <div className={exploreStyles.artistCardOverlay} aria-hidden />
-                  <div className={exploreStyles.artistCardInfo}>
-                    <div className={exploreStyles.artistCardName}>Next on the calendar</div>
-                    <div className={exploreStyles.artistCardCity}>Ground floor from $40</div>
-                  </div>
-                </div>
-                <div className={exploreStyles.artistCardFooter}>
-                  <div className={exploreStyles.editionsCount}>
-                    <span>From $40</span>
-                  </div>
-                  <div style={{ marginLeft: 'auto' }}>
-                    <UpcomingDropCountdown targetIso={upcomingIso} notifyHref="/shop/reserve" />
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className={exploreStyles.philosophy} aria-label="How pricing works">
-          <div className={exploreStyles.philosophyInner}>
-            <div className={exploreStyles.philosophyEyebrow}>Ladder pricing</div>
-            <p className={exploreStyles.philosophyQuote}>
-              Prices only go up. Editions are finite. When they&apos;re gone, they&apos;re <em>gone.</em>
-            </p>
-            <div className="mx-auto mt-8 grid max-w-3xl grid-cols-5 gap-1.5 sm:gap-2">
-              {HOME_LADDER_DISPLAY.map((step) => (
-                <div
-                  key={step.key}
-                  className={cn(
-                    'rounded-lg px-1 py-2.5 text-center sm:px-2 sm:py-3',
-                    ladderStageColumnClass(step.key)
-                  )}
-                >
-                  <div className="text-[9px] font-medium uppercase opacity-90 sm:text-[10px]">
-                    {ladderStageShortLabel(step.key)}
-                  </div>
-                  <div className="mt-1 text-sm font-medium tabular-nums sm:text-base">{step.price}</div>
-                </div>
-              ))}
-            </div>
-            <p className={exploreStyles.philosophyBody}>
-              Every edition climbs as it sells through. Early collectors pay ground floor. Late collectors may not get
-              in at all.
-            </p>
-          </div>
-        </section>
-
-        <section className={exploreStyles.featuredSection} aria-label="The Reserve">
-          <div className={exploreStyles.featuredHeader}>
-            <div>
-              <div className={exploreStyles.eyebrowInline}>Membership</div>
-              <h2 className={exploreStyles.featuredTitle}>
-                The <em>Reserve</em>
-              </h2>
-            </div>
-          </div>
-          <div className="mx-auto max-w-2xl px-6 pb-20 text-center sm:px-10">
-            <p className={exploreStyles.philosophyBody}>
-              Never miss an artist you love. When they drop, you get 48-hour early access, ground-floor priority, and
-              monthly credit that rolls into your next purchase.
-            </p>
-            <ul
-              className="mx-auto mb-8 mt-6 max-w-md space-y-2 text-left text-sm"
-              style={{ color: 'var(--muted)', fontFamily: 'var(--font-landing-mono), monospace' }}
-            >
-              <li>48h early access</li>
-              <li>Priority allocation</li>
-              <li>$20/mo drop credit</li>
-              <li>Ground-floor price lock</li>
-            </ul>
-            <Link href="/shop/reserve" prefetch={false} className={exploreStyles.btnFeatured}>
-              Join the Reserve
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </section>
-
-        {featuredArtists.length > 0 ? (
-          <section className={exploreStyles.artistsSection} aria-label="Follow your artists">
-            <div className={exploreStyles.artistsHeader}>
-              <div>
-                <div className={exploreStyles.eyebrowInline}>Your roster</div>
-                <h2 className={exploreStyles.featuredTitle}>
-                  Follow your <em>artists</em>
-                </h2>
-              </div>
-              <Link
-                href="/shop/artists"
-                prefetch={false}
-                className={cn(exploreStyles.artistsHeaderNote, 'transition-colors hover:text-white')}
-              >
-                View directory →
-              </Link>
-            </div>
-            <CollectorHomeArtistRoster artists={featuredArtists} />
-          </section>
-        ) : null}
-
-        <section className={scStyles.lampRow} aria-label="Street Lamp">
-          <div className={exploreStyles.eyebrowInline}>The display your collection lives on</div>
-          <div className="mt-4 flex flex-wrap items-start gap-6">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden" style={{ background: 'var(--card2)' }}>
-              {lampTeaserImageUrl ? (
-                <Image
-                  src={getProxiedImageUrl(lampTeaserImageUrl)}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              ) : null}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className={exploreStyles.featuredName} style={{ fontSize: 22 }}>
-                Street Collector lamp
-              </h3>
-              <p className={exploreStyles.featuredBio}>
-                Backlit, swappable prints — the infrastructure that makes your collection visible at home.
+              <p className="mt-2 text-sm text-[#FFBA94]/80 sm:text-base">
+                {streetCollectorContent.funnelBridge.subtitle}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-4">
-                <span className={exploreStyles.statN} style={{ fontSize: 28 }}>
-                  $149
-                </span>
-                <Link href={streetLampProductPath()} prefetch={false} className={exploreStyles.lbCtaOutline}>
-                  Shop the lamp
+              <ol className="mt-6 space-y-3 text-left text-sm text-[#FFBA94]/90 sm:text-base">
+                {streetCollectorContent.funnelBridge.steps.map((step, i) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#047AFF]/20 text-xs font-bold text-[#047AFF]">
+                      {i + 1}
+                    </span>
+                    <span className="pt-0.5">{step}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-4 text-xs text-[#FFBA94]/60 sm:text-sm">{streetCollectorContent.funnelBridge.reassurance}</p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  href={streetCollectorContent.funnelBridge.cta.url}
+                  prefetch={false}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#047AFF] px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6]"
+                >
+                  {streetCollectorContent.funnelBridge.cta.text}
                 </Link>
               </div>
             </div>
-          </div>
-        </section>
+          </Container>
+        </SectionWrapper>
+      )}
 
-        {debraQuote ? (
-          <div className={scStyles.testimonialBlock}>
-            <blockquote className={scStyles.pullquote}>“{debraQuote}”</blockquote>
-            <p className={scStyles.attribution}>— Debra G., Street Collector collector</p>
-          </div>
-        ) : null}
-
-        <StreetCollectorFAQ
-          title={streetCollectorContent.faq.title}
-          groups={streetCollectorContent.faq.groups}
-          layout="immersive"
+      {/* Bringing art into everyday life + In Collaboration With — unified section */}
+      {featuredArtists.length > 0 && (
+        <ArtistCarousel
+          className="!pt-8 !pb-10 sm:!pt-9 sm:!pb-12 md:!pt-10 md:!pb-14 lg:!pt-12 xl:!pb-16"
+          disableArtistClicksOnMobile
+          title={streetCollectorContent.featuredArtists.title}
+          titleSize="2xl"
+          titleTag="h2"
+          namePosition="below"
+          headerAlignment="center"
+          titleClassName="font-serif font-medium text-[#FFBA94]"
+          sectionBackground="experience"
+          arrowButtonClassName="bg-[#FFBA94] text-[#390000]"
+          subtitle={streetCollectorContent.featuredArtists.subtitle}
+          artists={featuredArtists}
+          autoScroll={true}
+          showArrows={true}
+          showLink={false}
+          showInfoSheet={true}
+          showProgressBar={false}
+          cardWidth={280}
+          cardGap={24}
+          fullWidth={true}
+          mobileAvatarStyle
+          footerCue={streetCollectorContent.featuredArtistsCue}
+          footerScarcity={streetCollectorContent.featuredArtistsScarcity}
+          footerCueHref={streetCollectorContent.experienceUrl}
+          valueProps={[]}
+          trailingContent={
+            streetCollectorContent.featuredArtists.afterCarousel ? (
+              <p className="text-center font-body text-lg text-[#FFBA94]/90 sm:text-xl md:text-2xl">
+                {streetCollectorContent.featuredArtists.afterCarousel}
+              </p>
+            ) : null
+          }
+          leadingContent={
+            <div className="space-y-10 sm:space-y-6">
+              <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center">
+                {streetCollectorContent.valuePropsSectionTitle}
+              </h2>
+              <ValuePropVideoCard
+                items={streetCollectorContent.valueProps.map((p) => ({
+                  title: p.title,
+                  description: p.description,
+                  poster: getProxiedImageUrl(p.poster),
+                  video: p.video,
+                }))}
+              />
+            </div>
+          }
         />
-      </div>
+      )}
 
-      <div
-        className="fixed bottom-0 left-0 right-0 z-[120] flex justify-center px-4 py-3 md:hidden"
-        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      {/* Testimonials - Join 3000+ Collectors (with media: video/image) */}
+      <TestimonialCarousel
+        className="!pt-8 !pb-10 sm:!pt-10 sm:!pb-12 md:!pt-12 md:!pb-14"
+        title={streetCollectorContent.testimonials.title}
+        subtitle={streetCollectorContent.testimonials.subtitle}
+        testimonials={streetCollectorContent.testimonials.quotes}
+        backdropImageSrc={streetCollectorContent.testimonials.sectionBackdropImage}
+        fullWidth={true}
+      />
+
+      {/* Trust Bar — Free shipping, Guarantee, Returns */}
+      <SectionWrapper
+        spacing="xs"
+        background="experience"
+        className="!py-8 sm:!py-10 md:!py-12"
       >
-        <Link href="/shop/artists" prefetch={false} className={cn(landingStyles.btnPrimary, 'w-full max-w-md justify-center')}>
-          Browse artists
-        </Link>
-      </div>
+        <Container maxWidth="default" paddingX="gutter">
+          {streetCollectorContent.trustBarTitle ? (
+            <h2 className="mb-10 text-center font-serif text-3xl font-medium tracking-tight text-[#FFBA94] sm:mb-12 sm:text-4xl md:mb-14 md:text-5xl">
+              {streetCollectorContent.trustBarTitle}
+            </h2>
+          ) : null}
+          {/* Mobile: stacked rows, no card or dividers */}
+          <div className="mx-auto flex max-w-md flex-col items-center gap-10 md:hidden">
+            {streetCollectorContent.trustBar.map((item) => (
+              <div
+                key={item.label}
+                className="flex flex-col items-center gap-3 text-center"
+              >
+                <TrustBarItemIcon item={item} variant="compact" />
+                <p className="max-w-[22rem] px-1 text-sm font-bold leading-snug text-experience-highlight-muted">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
+          {/* md+: equal-height cards (testimonials-style surface) */}
+          <div className="hidden py-2 md:grid md:grid-cols-3 md:items-stretch md:gap-6 lg:gap-8 md:py-8">
+            {streetCollectorContent.trustBar.map((item) => (
+              <div
+                key={item.label}
+                className="flex h-full w-full flex-col rounded-2xl border border-[#ffba94]/10 bg-[#201c1c]/55 p-6 text-center shadow-[0_0_0_1px_rgba(255,186,148,0.05)_inset] lg:p-8"
+              >
+                <div className="flex h-28 shrink-0 items-center justify-center lg:h-32">
+                  <TrustBarItemIcon item={item} variant="featured" />
+                </div>
+                <p className="text-base font-bold leading-snug text-experience-highlight-muted lg:text-lg">
+                  {item.label}
+                </p>
+                <p className="mt-2 min-h-0 flex-1 text-base font-normal leading-relaxed text-experience-highlight-soft/90">
+                  {item.description ?? ''}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </SectionWrapper>
+
+      {/* FAQ */}
+      <StreetCollectorFAQ
+        title={streetCollectorContent.faq.title}
+        groups={streetCollectorContent.faq.groups}
+      />
     </div>
   )
 }
