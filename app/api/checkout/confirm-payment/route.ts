@@ -4,9 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 import { createAndCompleteOrder } from '@/lib/stripe/fulfill-embedded-payment'
 import { resolveRefToVendorId, AFFILIATE_REF_COOKIE } from '@/lib/affiliate'
+import { capturePostHogServerEvent } from '@/lib/posthog-server'
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-03-31.basil' }) : null
+const stripe = stripeSecret ? new Stripe(stripeSecret, { apiVersion: '2025-05-28.basil' }) : null
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 interface CartLineItem {
@@ -35,6 +36,44 @@ interface ConfirmPaymentRequest {
   items: CartLineItem[]
   paymentMethodId: string
   shippingAddress: ShippingAddressInput
+}
+
+async function resolvePaymentIntentPhone(paymentIntent: Stripe.PaymentIntent): Promise<string | null> {
+  if (paymentIntent.shipping?.phone) {
+    return paymentIntent.shipping.phone
+  }
+
+  const paymentMethodObj =
+    typeof paymentIntent.payment_method === 'object' && paymentIntent.payment_method
+      ? paymentIntent.payment_method
+      : null
+  if (paymentMethodObj && 'billing_details' in paymentMethodObj && paymentMethodObj.billing_details?.phone) {
+    return paymentMethodObj.billing_details.phone
+  }
+
+  if (typeof paymentIntent.payment_method === 'string') {
+    try {
+      const paymentMethod = await stripe!.paymentMethods.retrieve(paymentIntent.payment_method)
+      if (paymentMethod.billing_details?.phone) return paymentMethod.billing_details.phone
+    } catch (error) {
+      console.warn('[checkout/confirm-payment] Could not retrieve payment method for phone fallback:', error)
+    }
+  }
+
+  const latestChargeId =
+    typeof paymentIntent.latest_charge === 'string'
+      ? paymentIntent.latest_charge
+      : paymentIntent.latest_charge?.id
+  if (latestChargeId) {
+    try {
+      const charge = await stripe!.charges.retrieve(latestChargeId)
+      if (charge.billing_details?.phone) return charge.billing_details.phone
+    } catch (error) {
+      console.warn('[checkout/confirm-payment] Could not retrieve latest charge for phone fallback:', error)
+    }
+  }
+
+  return null
 }
 
 /**
@@ -92,6 +131,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (paymentIntent.status === 'succeeded') {
+      const phoneFromPayment = await resolvePaymentIntentPhone(paymentIntent)
+      const shippingWithPhone: ShippingAddressInput = {
+        ...shippingAddress,
+        phoneNumber: shippingAddress.phoneNumber || phoneFromPayment || undefined,
+      }
+
       const variants = items.map((i) => ({
         variantId: i.variantId,
         quantity: i.quantity,
@@ -99,7 +144,7 @@ export async function POST(request: NextRequest) {
       }))
       const { draftOrderId, orderId } = await createAndCompleteOrder(
         variants,
-        shippingAddress,
+        shippingWithPhone,
         paymentIntent.id,
         subtotalCents,
         'usd',
@@ -119,6 +164,24 @@ export async function POST(request: NextRequest) {
         metadata: paymentIntent.metadata,
         created_at: new Date().toISOString(),
       })
+
+      // Track purchase in PostHog for conversion rate analysis
+      if (shippingAddress.email) {
+        const posthogResult = await capturePostHogServerEvent(
+          'purchase',
+          shippingAddress.email.toLowerCase().trim(),
+          {
+            value: subtotalCents / 100, // Convert cents to dollars
+            currency: 'USD',
+            transaction_id: paymentIntent.id,
+            source: 'stripe_embedded_confirmation',
+            $set: { has_purchased: true },
+          }
+        )
+        if (!posthogResult.success) {
+          console.warn('[checkout/confirm-payment] PostHog purchase tracking failed:', posthogResult.error)
+        }
+      }
 
       return NextResponse.json({
         success: true,
