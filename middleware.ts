@@ -37,6 +37,34 @@ const LEGACY_NON_ARTIST_COLLECTION_HANDLES = new Set([
   'season-1',
   'season-2',
 ])
+const NOINDEX_PATH_PREFIXES = [
+  '/admin',
+  '/admin-login',
+  '/artwork-editor',
+  '/artwork-pages',
+  '/auth',
+  '/certificate',
+  '/collector',
+  '/customer',
+  '/dashboard',
+  '/dev',
+  '/e/',
+  '/forgot-password',
+  '/giveaway',
+  '/join-vendor',
+  '/login',
+  '/nfc',
+  '/pages/authenticate',
+  '/preview',
+  '/r/',
+  '/reset-password',
+  '/signup',
+  '/slides',
+  '/template-preview',
+  '/test-auth',
+  '/track',
+  '/vendor',
+]
 /** Redirect these hosts to canonical domain so product/collection links and cookies work */
 const REDIRECT_TO_CANONICAL_HOSTS = ['thestreetlamp.com', 'www.thestreetlamp.com']
 const AFFILIATE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
@@ -80,6 +108,12 @@ function setAffiliateCookie(response: NextResponse, slug: string): void {
 function addNoIndexHeader(response: NextResponse): NextResponse {
   response.headers.set('X-Robots-Tag', 'noindex, follow')
   return response
+}
+
+function shouldNoIndexPath(pathname: string): boolean {
+  return NOINDEX_PATH_PREFIXES.some((prefix) =>
+    prefix.endsWith('/') ? pathname.startsWith(prefix) : pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
 }
 
 /** Set cookie with affiliate query string so server can attribute session for tracking */
@@ -353,6 +387,9 @@ export async function middleware(request: NextRequest) {
 
   const supabaseResponse = await updateSession(request)
   setMetaAttributionCookies(supabaseResponse, fbclid)
+  if (shouldNoIndexPath(pathname)) {
+    addNoIndexHeader(supabaseResponse)
+  }
 
   // If user previously dismissed the affiliate filter, clear affiliate cookies so second session has no filter
   const dismissed = request.cookies.get(AFFILIATE_DISMISSED_COOKIE_NAME)?.value

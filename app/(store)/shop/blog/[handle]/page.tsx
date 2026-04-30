@@ -8,6 +8,7 @@ import { Container, SectionWrapper, Button } from '@/components/impact'
 import { ScrollReveal, ScrollProgress, ParallaxLayer } from '@/components/blocks'
 import { VinylTiltEffect } from '@/components/vinyl'
 import { SanitizedHtml } from '@/components/SanitizedHtml'
+import { HeroFallback } from '@/components/blog/HeroFallback'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { absoluteShopUrl, getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 
@@ -218,15 +219,25 @@ function ArticleContent({
     articleSection: tags,
     wordCount,
   }
+  const faqEntities = extractFaqEntities(contentHtml)
+  const faqJsonLd =
+    faqEntities.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqEntities,
+        }
+      : null
   
   return (
     <main className="min-h-screen bg-white">
       <JsonLd id={`article-${handle}-jsonld`} data={articleJsonLd} />
+      {faqJsonLd ? <JsonLd id={`article-${handle}-faq-jsonld`} data={faqJsonLd} /> : null}
       {/* Reading Progress Bar */}
       <ScrollProgress position="top" color="#f0c417" height={3} />
       
-      {/* Hero Image with Parallax */}
-      {imageUrl && (
+      {/* Hero: image or branded fallback (plan: every URL has meaningful header) */}
+      {imageUrl ? (
         <div className="w-full bg-[#f5f5f5] overflow-hidden">
           <div className="max-w-[1400px] mx-auto">
             <ParallaxLayer speed={0.5}>
@@ -242,6 +253,8 @@ function ArticleContent({
             </ParallaxLayer>
           </div>
         </div>
+      ) : (
+        <HeroFallback title={title} tags={tags} />
       )}
       
       <SectionWrapper spacing="md" background="default">
@@ -285,7 +298,7 @@ function ArticleContent({
           <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
             <SanitizedHtml
               html={contentHtml}
-              className="prose prose-lg max-w-none
+              className={`prose prose-lg max-w-none
                 prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
                 prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
                 prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
@@ -293,7 +306,8 @@ function ArticleContent({
                 prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
                 prose-img:rounded-xl
                 prose-blockquote:border-l-[#047AFF] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-              "
+                [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse [&_th]:border [&_td]:border [&_th]:border-[#1a1a1a]/15 [&_td]:border-[#1a1a1a]/15 [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_th]:text-left [&_td]:align-top [&_thead]:bg-[#f5f5f5]
+              `}
             />
           </ScrollReveal>
           
@@ -361,4 +375,51 @@ function ArticleContent({
       )}
     </main>
   )
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+}
+
+function stripTags(value: string): string {
+  return decodeHtmlEntities(value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim())
+}
+
+function extractFaqEntities(contentHtml: string) {
+  const faqStart = contentHtml.search(/<h2[^>]*>\s*FAQ\s*<\/h2>/i)
+  if (faqStart < 0) return []
+
+  const faqHtml = contentHtml.slice(faqStart)
+  const questionPattern = /<h3[^>]*>(.*?)<\/h3>\s*<p[^>]*>(.*?)<\/p>/gis
+  const entities: Array<{
+    '@type': 'Question'
+    name: string
+    acceptedAnswer: { '@type': 'Answer'; text: string }
+  }> = []
+
+  let match = questionPattern.exec(faqHtml)
+  while (match) {
+    const question = stripTags(match[1] ?? '')
+    const answer = stripTags(match[2] ?? '')
+    if (question && answer) {
+      entities.push({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: answer,
+        },
+      })
+    }
+    match = questionPattern.exec(faqHtml)
+  }
+
+  return entities
 }

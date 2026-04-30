@@ -429,8 +429,7 @@ export function hasPage(handle: string): boolean {
 // BLOG ARTICLES
 // =============================================================================
 
-export const articles: SyncedArticle[] = [
-  ...seoBlogArticles,
+export const legacyShopifyArticles: SyncedArticle[] = [
   {
     "handle": "israeli-street-artists-a-look-at-some-of-the-countrys-talents",
     "blogHandle": "art",
@@ -468,6 +467,8 @@ export const articles: SyncedArticle[] = [
     "tags": []
   }
 ]
+
+export const articles: SyncedArticle[] = seoBlogArticles
 
 /**
  * Get an article by handle

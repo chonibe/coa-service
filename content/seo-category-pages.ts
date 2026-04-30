@@ -80,6 +80,10 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       { label: 'Interchangeable art prints', href: '/interchangeable-art-prints' },
     ],
     relatedArticles: [
+      {
+        label: 'What Is an Illuminated Art Display?',
+        href: '/shop/blog/what-is-an-illuminated-art-display',
+      },
       { label: 'What Is a Backlit Art Lamp?', href: '/shop/blog/what-is-a-backlit-art-lamp' },
       { label: 'Gifts for Street Art Lovers', href: '/shop/blog/gifts-for-street-art-lovers' },
     ],
@@ -140,6 +144,10 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
     ],
     relatedArticles: [
       {
+        label: 'What Is a Limited Edition Print?',
+        href: '/shop/blog/what-is-a-limited-edition-print',
+      },
+      {
         label: 'How to Start Collecting Street Art Prints',
         href: '/shop/blog/how-to-start-collecting-street-art-prints',
       },
@@ -150,6 +158,14 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         label: 'How Numbered Art Editions Work',
         href: '/shop/blog/how-numbered-art-editions-work',
+      },
+      {
+        label: 'What Is a Print Run in Art?',
+        href: '/shop/blog/what-is-a-print-run-in-art',
+      },
+      {
+        label: 'Are Limited Edition Prints Worth It?',
+        href: '/shop/blog/are-limited-edition-prints-worth-it',
       },
       {
         label: 'What Is a Certificate of Authenticity for Art?',
@@ -212,6 +228,18 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       { label: 'Shop artworks', href: '/shop/products' },
     ],
     relatedArticles: [
+      {
+        label: 'What Is a Limited Edition Print?',
+        href: '/shop/blog/what-is-a-limited-edition-print',
+      },
+      {
+        label: 'Tel Aviv Street Art and Illustration',
+        href: '/shop/blog/tel-aviv-street-art-and-illustration-through-street-collector-artists',
+      },
+      {
+        label: 'Street Art vs Fine Art',
+        href: '/shop/blog/street-art-vs-fine-art',
+      },
       {
         label: 'Street Art Prints vs Posters',
         href: '/shop/blog/street-art-prints-vs-posters',
@@ -277,6 +305,10 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       { label: 'Explore artists', href: '/shop/explore-artists' },
     ],
     relatedArticles: [
+      {
+        label: 'Swappable Art Prints',
+        href: '/shop/blog/swappable-art-prints',
+      },
       { label: 'What Is a Backlit Art Lamp?', href: '/shop/blog/what-is-a-backlit-art-lamp' },
       { label: 'Gifts for Street Art Lovers', href: '/shop/blog/gifts-for-street-art-lovers' },
     ],

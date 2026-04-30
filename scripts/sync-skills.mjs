@@ -105,11 +105,31 @@ function hasZipCli() {
   }
 }
 
-function packSkill(name) {
-  if (!hasZipCli()) {
-    console.error("Install zip (e.g. brew install zip) or use macOS /usr/bin/zip.");
+/** PowerShell Compress-Archive when `zip` is not on PATH (typical Windows). */
+function packSkillPowerShell(name) {
+  const srcDir = path.join(SKILLS, name);
+  if (!fs.existsSync(path.join(srcDir, "SKILL.md"))) {
+    console.error("No skills/%s/SKILL.md", name);
     process.exit(1);
   }
+  fs.mkdirSync(ARTIFACTS, { recursive: true });
+  const out = path.join(ARTIFACTS, `${name}.skill`);
+  /** PS 5.1 Compress-Archive only accepts .zip destinations; rename to .skill after. */
+  const tmpZip = path.join(ARTIFACTS, `${name}.skill.__pack__.zip`);
+  if (fs.existsSync(tmpZip)) fs.unlinkSync(tmpZip);
+  if (fs.existsSync(out)) fs.unlinkSync(out);
+  const esc = (p) => String(p).replace(/'/g, "''");
+  const cmd =
+    `$ErrorActionPreference='Stop'; ` +
+    `Compress-Archive -LiteralPath '${esc(srcDir)}' -DestinationPath '${esc(tmpZip)}' -Force`;
+  execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd], {
+    stdio: "inherit",
+  });
+  fs.renameSync(tmpZip, out);
+  console.log("Wrote", path.relative(REPO, out), "(powershell Compress-Archive)");
+}
+
+function packSkill(name) {
   const srcDir = path.join(SKILLS, name);
   if (!fs.existsSync(path.join(srcDir, "SKILL.md"))) {
     console.error("No skills/%s/SKILL.md", name);
@@ -118,11 +138,20 @@ function packSkill(name) {
   fs.mkdirSync(ARTIFACTS, { recursive: true });
   const out = path.join(ARTIFACTS, `${name}.skill`);
   if (fs.existsSync(out)) fs.unlinkSync(out);
-  execFileSync("zip", ["-r", out, name, "-x", "*.DS_Store"], {
-    cwd: SKILLS,
-    stdio: "inherit",
-  });
-  console.log("Wrote", path.relative(REPO, out));
+  if (hasZipCli()) {
+    execFileSync("zip", ["-r", out, name, "-x", "*.DS_Store"], {
+      cwd: SKILLS,
+      stdio: "inherit",
+    });
+    console.log("Wrote", path.relative(REPO, out));
+    return;
+  }
+  if (process.platform === "win32") {
+    packSkillPowerShell(name);
+    return;
+  }
+  console.error("Install zip (e.g. brew install zip) or use macOS /usr/bin/zip.");
+  process.exit(1);
 }
 
 function packAll() {
