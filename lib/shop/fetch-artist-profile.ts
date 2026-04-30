@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { buildArtistProfileResponse, type ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 import {
   getCollection,
   getCollectionById,
@@ -18,7 +19,7 @@ async function finalizeArtist(slug: string, artist: ArtistProfileApiResponse): P
       a = { ...a, bio: page.body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() }
     }
   }
-  return a
+  return { ...a, bio: cleanPublicArtistBio(a.bio) }
 }
 
 function parseInstagramHandle(value: string): string {

@@ -9,6 +9,7 @@ import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { getInstagramEmbedSrc } from '@/lib/shop/instagram-embed'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 import { buildArtistAnswerFirstLead } from '@/lib/seo/artist-meta'
 import { buildArtistFaqPairs } from '@/lib/seo/artist-faqs'
 import { parsePullQuote } from '@/lib/shop/parse-pull-quote'
@@ -167,7 +168,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
     trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'artist_profile' })
   }
 
-  const paragraphs = bioParagraphs(artist.bio)
+  const publicBio = cleanPublicArtistBio(artist.bio)
+  const paragraphs = bioParagraphs(publicBio)
 
   return (
     <div className={styles.root}>
@@ -673,38 +675,41 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             </Link>
           </div>
           <div className={styles.relatedGrid}>
-            {related.map((a) => (
-              <button
-                key={a.slug}
-                type="button"
-                className={styles.relatedCard}
-                onClick={() => router.push(`/shop/artists/${a.slug}`)}
-              >
-                <div className={styles.relatedMedia} style={{ position: 'relative' }}>
-                  {a.image ? (
-                    <Image
-                      className={styles.relatedImg}
-                      src={getProxiedImageUrl(a.image)}
-                      alt={a.name}
-                      fill
-                      sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
-                      loading="lazy"
-                      style={{ objectFit: 'cover' }}
-                    />
-                  ) : null}
-                </div>
-                <div className={styles.relatedOverlay} aria-hidden />
-                <div className={styles.relatedInfo}>
-                  <div className={styles.relatedName}>{a.name}</div>
-                  <div className={styles.relatedCity}>{a.productCount} editions</div>
-                  {a.bio ? (
-                    <div className={styles.relatedHook}>
-                      &ldquo;{a.bio.length > 90 ? `${a.bio.slice(0, 90)}…` : a.bio}&rdquo;
-                    </div>
-                  ) : null}
-                </div>
-              </button>
-            ))}
+            {related.map((a) => {
+              const relatedBio = cleanPublicArtistBio(a.bio)
+              return (
+                <button
+                  key={a.slug}
+                  type="button"
+                  className={styles.relatedCard}
+                  onClick={() => router.push(`/shop/artists/${a.slug}`)}
+                >
+                  <div className={styles.relatedMedia} style={{ position: 'relative' }}>
+                    {a.image ? (
+                      <Image
+                        className={styles.relatedImg}
+                        src={getProxiedImageUrl(a.image)}
+                        alt={a.name}
+                        fill
+                        sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
+                        loading="lazy"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : null}
+                  </div>
+                  <div className={styles.relatedOverlay} aria-hidden />
+                  <div className={styles.relatedInfo}>
+                    <div className={styles.relatedName}>{a.name}</div>
+                    <div className={styles.relatedCity}>{a.productCount} editions</div>
+                    {relatedBio ? (
+                      <div className={styles.relatedHook}>
+                        &ldquo;{relatedBio.length > 90 ? `${relatedBio.slice(0, 90)}…` : relatedBio}&rdquo;
+                      </div>
+                    ) : null}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </section>
 

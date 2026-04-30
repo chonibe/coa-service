@@ -6,6 +6,7 @@ import type {
   ProcessGalleryItem,
 } from '@/lib/shop/artist-profile-api'
 import { isInstagramPostOrReelUrl } from '@/lib/shop/instagram-embed'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 import researchData from '@/content/artist-research-data.json'
 
 export type RawArtistResearchRow = Record<string, string>
@@ -256,16 +257,17 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
 
   return {
     location: shopify.location?.trim() || raw.location?.trim() || undefined,
-    alias: shopify.alias?.trim() || undefined,
-    storyHook: shopify.storyHook?.trim() || raw.heroHook?.trim() || undefined,
-    pullquote: shopify.pullquote?.trim() || raw.pullQuote?.trim() || undefined,
+    alias: cleanPublicArtistBio(shopify.alias) || undefined,
+    storyHook: cleanPublicArtistBio(shopify.storyHook) || cleanPublicArtistBio(raw.heroHook) || undefined,
+    pullquote: cleanPublicArtistBio(shopify.pullquote) || cleanPublicArtistBio(raw.pullQuote) || undefined,
     processGallery: mergeProcessGalleries(shopify.processGallery, processGallery),
     exhibitions: mergeExhibitionRows(shopify.exhibitions, exParsed),
     press: mergePressCards(shopify.press, pressParsed),
     instagramShowcase: mergeInstagramShowcaseItems(shopify.instagramShowcase, instagramShowcase),
-    activeSince: shopify.activeSince?.trim() || raw.activeSince?.trim() || undefined,
-    impactCallout: shopify.impactCallout?.trim() || raw.impactCallout?.trim() || undefined,
-    exclusiveCallout: shopify.exclusiveCallout?.trim() || raw.exclusiveCallout?.trim() || undefined,
+    activeSince: cleanPublicArtistBio(shopify.activeSince) || cleanPublicArtistBio(raw.activeSince) || undefined,
+    impactCallout: cleanPublicArtistBio(shopify.impactCallout) || cleanPublicArtistBio(raw.impactCallout) || undefined,
+    exclusiveCallout:
+      cleanPublicArtistBio(shopify.exclusiveCallout) || cleanPublicArtistBio(raw.exclusiveCallout) || undefined,
   }
 }
 
@@ -284,9 +286,9 @@ export function mergeShopifyCollectionBioWithResearch(
   researchStory: string | undefined,
   additionalHistory: string | undefined
 ): string | undefined {
-  const collection = collectionBio?.trim() || ''
-  const story = researchStory?.trim() || ''
-  const history = additionalHistory?.trim() || ''
+  const collection = cleanPublicArtistBio(collectionBio) || ''
+  const story = cleanPublicArtistBio(researchStory) || ''
+  const history = cleanPublicArtistBio(additionalHistory) || ''
   let researchBlock = ''
   if (story && history) researchBlock = `${story}\n\n${history}`
   else researchBlock = story || history

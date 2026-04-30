@@ -1,4 +1,5 @@
 import { mergeResearchBio, researchInstagramHandle } from '@/lib/shop/artist-research-merge'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 import { getArtistImageByHandle, getArtistListImageOverride } from '@/lib/shopify/artist-image'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { getVendorMeta } from '@/lib/shopify/vendor-meta'
@@ -134,7 +135,7 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
           (await getArtistImageByHandle(slugForImage)) ||
           (await getArtistImageByHandle(artist.slug)) ||
           artist.image
-        const bio = mergeResearchBio(artist.slug, artist.bio || meta.bio)
+        const bio = cleanPublicArtistBio(mergeResearchBio(artist.slug, artist.bio || meta.bio))
         const igFromResearch = researchInstagramHandle(artist.slug)
         const instagramUrl =
           artist.instagramUrl ||
@@ -152,7 +153,7 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
         const ig = researchInstagramHandle(artist.slug)
         return {
           ...artist,
-          bio: mergeResearchBio(artist.slug, artist.bio),
+          bio: cleanPublicArtistBio(mergeResearchBio(artist.slug, artist.bio)),
           instagramUrl:
             artist.instagramUrl || (ig ? `https://www.instagram.com/${ig}/` : undefined),
         }

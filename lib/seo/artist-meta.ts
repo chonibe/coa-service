@@ -1,4 +1,5 @@
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 
 const BRAND = 'Street Collector'
 const MAX_TITLE = 60
@@ -69,13 +70,22 @@ export function buildArtistAnswerFirstLead(artist: ArtistProfileApiResponse): st
   const name = artist.name
   const loc = artist.profile?.location?.trim()
   const n = artist.stats?.editionCount ?? artist.products.length
-  const open = loc
-    ? `${name} is an artist in the Street Collector roster based in ${loc}.`
-    : `${name} is an artist in the Street Collector roster.`
+  const cleanBio = cleanPublicArtistBio(artist.bio)
+  const firstSentence = cleanBio?.split(/(?<=[.!?])\s+/)[0]?.trim()
+  const firstNameToken = name.toLowerCase().split(/\s+/)[0]
+  const open =
+    firstSentence &&
+    firstSentence.length <= 220 &&
+    firstNameToken.length > 2 &&
+    firstSentence.toLowerCase().includes(firstNameToken)
+      ? firstSentence
+      : loc
+        ? `${name} is a ${loc}-based artist.`
+        : `${name} is an artist.`
   const collectorContext =
     n > 0
-      ? ` Collect limited edition ${name} prints (${n} artwork${n === 1 ? '' : 's'} listed); each release is finite and documented for collectors.`
-      : ` Collect limited edition ${name} prints on Street Collector, with finite releases documented for collectors.`
-  const close = ' Works ship worldwide; browse editions in the Works tab.'
+      ? ` Street Collector carries ${n} limited edition ${name} artwork${n === 1 ? '' : 's'}.`
+      : ` Street Collector carries limited edition ${name} artworks.`
+  const close = ' Browse available editions in the Works tab.'
   return (open + collectorContext + close).replace(/\s+/g, ' ').trim()
 }

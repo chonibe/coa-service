@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { cleanPublicArtistBio } from '@/lib/shop/public-artist-copy'
 import type { ExploreArtistRow } from '@/lib/shop/explore-artists-order'
 import landingStyles from '../../home-v2/landing.module.css'
 import exploreStyles from '../explore-artists.module.css'
@@ -13,8 +14,9 @@ import { exploreArtistsContent } from '@/content/explore-artists'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 
 function shortBio(s: string | undefined, max = 220): string | undefined {
-  if (!s) return undefined
-  const t = s.trim().replace(/\s+/g, ' ')
+  const clean = cleanPublicArtistBio(s)
+  if (!clean) return undefined
+  const t = clean.trim().replace(/\s+/g, ' ')
   if (t.length <= max) return t
   return `${t.slice(0, max).trim()}…`
 }
@@ -144,6 +146,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
   const [lightboxSlug, setLightboxSlug] = React.useState<string | null>(null)
   const lightboxArtist = lightboxSlug ? artists.find((a) => a.slug === lightboxSlug) : undefined
+  const lightboxBio = cleanPublicArtistBio(lightboxArtist?.bio)
   const [lightboxProducts, setLightboxProducts] = React.useState<ArtistApiProduct[]>([])
   const [lightboxProductsLoading, setLightboxProductsLoading] = React.useState(false)
   const [lightboxProductsError, setLightboxProductsError] = React.useState(false)
@@ -650,7 +653,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 {(lightboxArtist.location ?? 'Street Collector') + ' · ' + lightboxArtist.productCount + ' editions'}
               </div>
               <h2 className={exploreStyles.lbName}>{lightboxArtist.name}</h2>
-              {lightboxArtist.bio ? <p className={exploreStyles.lbStory}>{lightboxArtist.bio}</p> : null}
+              {lightboxBio ? <p className={exploreStyles.lbStory}>{lightboxBio}</p> : null}
 
               <div className={exploreStyles.lbActions}>
                 <Link href={`/shop/artists/${lightboxArtist.slug}`} className={exploreStyles.lbCta}>
