@@ -12,7 +12,7 @@ export function buildArtistFaqPairs(artist: ArtistProfileApiResponse): FaqPair[]
   const name = artist.name
   const editionCount = artist.stats?.editionCount ?? artist.products.length
   const q1 = `Is ${name}'s work available as a limited edition print?`
-  const a1 = `Yes. You can collect ${name}'s limited edition street art prints on Street Collector, shipped with a Certificate of Authenticity.`
+  const a1 = `Yes. You can collect limited edition prints by ${name} on Street Collector. Eligible works include collector documentation and edition details on the product page.`
 
   const q2 = `How many artworks by ${name} are on Street Collector?`
   const a2 =
@@ -22,12 +22,15 @@ export function buildArtistFaqPairs(artist: ArtistProfileApiResponse): FaqPair[]
 
   const q3 = 'What is Street Collector?'
   const a3 =
-    'Street Collector is a premium illuminated art lamp with swappable limited-edition street art prints. Collect prints from independent artists, display them backlit, and own editioned work with a Certificate of Authenticity.'
+    'Street Collector is an illuminated art display and limited edition print platform. Collect prints from independent artists, display them backlit, and build a documented art collection.'
+  const q4 = `Where can I buy ${name} prints?`
+  const a4 = `You can buy available ${name} prints through the ${name} artist page on Street Collector. The Works section shows current editions, prices, availability, and product details.`
 
   return [
     { question: q1, answer: a1 },
     { question: q2, answer: a2 },
     { question: q3, answer: a3 },
+    { question: q4, answer: a4 },
   ]
 }
 

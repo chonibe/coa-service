@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next'
 import { getShopArtistsList } from '@/lib/shop/artists-list'
 import { getProducts } from '@/lib/shopify/storefront-client'
 import { absoluteShopUrl } from '@/lib/seo/site-url'
+import { articles } from '@/content/shopify-content'
+import { seoCategoryPages } from '@/content/seo-category-pages'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,11 +18,14 @@ const STATIC_PATHS: { path: string; changeFrequency: MetadataRoute.Sitemap[0]['c
     { path: '/shop/contact', changeFrequency: 'monthly', priority: 0.5 },
     { path: '/shop/for-business', changeFrequency: 'monthly', priority: 0.5 },
     { path: '/shop/collab', changeFrequency: 'monthly', priority: 0.5 },
+    { path: '/shop/blog', changeFrequency: 'weekly', priority: 0.65 },
     { path: '/policies/terms-of-service', changeFrequency: 'yearly', priority: 0.3 },
     { path: '/policies/privacy-policy', changeFrequency: 'yearly', priority: 0.3 },
     { path: '/policies/shipping-policy', changeFrequency: 'yearly', priority: 0.3 },
     { path: '/policies/refund-policy', changeFrequency: 'yearly', priority: 0.3 },
   ]
+
+const STATIC_LAST_MODIFIED = new Date('2026-04-29T00:00:00.000Z')
 
 async function fetchAllProductHandles(): Promise<string[]> {
   const handles: string[] = []
@@ -47,9 +52,23 @@ async function fetchAllProductHandles(): Promise<string[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map(({ path, changeFrequency, priority }) => ({
     url: absoluteShopUrl(path),
-    lastModified: new Date(),
+    lastModified: STATIC_LAST_MODIFIED,
     changeFrequency,
     priority,
+  }))
+
+  const categoryEntries: MetadataRoute.Sitemap = Object.values(seoCategoryPages).map((page) => ({
+    url: absoluteShopUrl(`/${page.slug}`),
+    lastModified: STATIC_LAST_MODIFIED,
+    changeFrequency: 'weekly' as const,
+    priority: 0.85,
+  }))
+
+  const blogEntries: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: absoluteShopUrl(`/shop/blog/${article.handle}`),
+    lastModified: new Date(article.publishedAt),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
   }))
 
   let artistEntries: MetadataRoute.Sitemap = []
@@ -63,14 +82,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     artistEntries = artists.map((a) => ({
       url: absoluteShopUrl(`/shop/artists/${a.slug}`),
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'weekly' as const,
       priority: 0.75,
     }))
 
     productEntries = handles.map((h) => ({
       url: absoluteShopUrl(`/shop/${h}`),
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'daily' as const,
       priority: 0.7,
     }))
@@ -78,5 +97,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[sitemap] Dynamic entries failed:', e)
   }
 
-  return [...staticEntries, ...artistEntries, ...productEntries]
+  return [...staticEntries, ...categoryEntries, ...blogEntries, ...artistEntries, ...productEntries]
 }

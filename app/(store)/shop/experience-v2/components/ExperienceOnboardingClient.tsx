@@ -165,15 +165,17 @@ export function ExperienceOnboardingClient({
       if (!res.ok) {
         // Fallback: save via client so we don't lose the signup; Meta/TikTok won't get event
         const supabase = createClient()
-        const { error } = await supabase.from('experience_quiz_signups').insert({
-          email: email || null,
-          name: name || null,
-          owns_lamp: answers.ownsLamp,
-          purpose: answers.purpose,
-          source: 'experience',
-          affiliate_artist_slug: initialArtistSlug?.trim() || null,
-        })
-        if (error) console.warn('Experience quiz signup save failed:', error)
+        if (supabase) {
+          const { error } = await supabase.from('experience_quiz_signups').insert({
+            email: email || null,
+            name: name || null,
+            owns_lamp: answers.ownsLamp,
+            purpose: answers.purpose,
+            source: 'experience',
+            affiliate_artist_slug: initialArtistSlug?.trim() || null,
+          })
+          if (error) console.warn('Experience quiz signup save failed:', error)
+        }
       }
       const params = new URLSearchParams(searchParams)
       const q = params.toString()

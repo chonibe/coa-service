@@ -132,11 +132,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/shop/artists",
-        destination: "/shop/explore-artists",
-        permanent: true,
-      },
-      {
         source: "/favicon.ico",
         destination: `/api/proxy-image?url=${encodeURIComponent(faviconCdnUrl)}`,
         permanent: false,
@@ -151,6 +146,112 @@ const nextConfig = {
       {
         source: "/join-vendor",
         destination: "/for-artists",
+        permanent: true,
+      },
+      // SEO/GEO Phase 1: Redirect common 404 URLs identified in GSC
+      {
+        source: "/collections/all",
+        destination: "/shop/products",
+        permanent: true,
+      },
+      {
+        source: "/collections/frontpage",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/blogs",
+        destination: "/shop/blog",
+        permanent: true,
+      },
+      {
+        source: "/blog/:path*",
+        destination: "/shop/blog/:path*",
+        permanent: true,
+      },
+      {
+        source: "/news",
+        destination: "/shop/blog",
+        permanent: true,
+      },
+      {
+        source: "/articles/:path*",
+        destination: "/shop/blog/:path*",
+        permanent: true,
+      },
+      {
+        source: "/about",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/contact-us",
+        destination: "/shop/contact",
+        permanent: true,
+      },
+      {
+        source: "/wholesale-info",
+        destination: "/shop/wholesale",
+        permanent: true,
+      },
+      {
+        source: "/trade",
+        destination: "/shop/wholesale",
+        permanent: true,
+      },
+      {
+        source: "/collaborations",
+        destination: "/shop/collab",
+        permanent: true,
+      },
+      {
+        source: "/partnerships",
+        destination: "/shop/collab",
+        permanent: true,
+      },
+      {
+        source: "/gift-cards",
+        destination: "/shop/gift-cards",
+        permanent: true,
+      },
+      {
+        source: "/gift/:path*",
+        destination: "/shop/gift-cards/:path*",
+        permanent: true,
+      },
+      {
+        source: "/career",
+        destination: "/shop/careers",
+        permanent: true,
+      },
+      {
+        source: "/jobs",
+        destination: "/shop/careers",
+        permanent: true,
+      },
+      {
+        source: "/employment",
+        destination: "/shop/careers",
+        permanent: true,
+      },
+      {
+        source: "/faq",
+        destination: "/shop/faq",
+        permanent: true,
+      },
+      {
+        source: "/faqs",
+        destination: "/shop/faq",
+        permanent: true,
+      },
+      {
+        source: "/help",
+        destination: "/shop/faq",
+        permanent: true,
+      },
+      {
+        source: "/support",
+        destination: "/shop/faq",
         permanent: true,
       },
     ]

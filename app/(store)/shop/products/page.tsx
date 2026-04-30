@@ -21,6 +21,7 @@ import { ScrollReveal } from '@/components/blocks'
 import { ShopFilters } from '../components/ShopFilters'
 import { ProductCardItem } from '../components/ProductCardItem'
 import { cn } from '@/lib/utils'
+import { ProductListingJsonLd } from '@/components/seo/ProductListingJsonLd'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
@@ -185,6 +186,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="min-h-screen bg-white">
+      <ProductListingJsonLd
+        products={products}
+        name={collectionHandle ? `${title} limited edition art prints` : 'Street Collector limited edition art prints'}
+        url={collectionHandle ? `/shop/products?collection=${encodeURIComponent(collectionHandle)}` : '/shop/products'}
+      />
       {/* Collection Header with Image (for collection pages) */}
       {collectionHandle && collectionImage && (
         <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden bg-[#f5f5f5]">

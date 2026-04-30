@@ -20,6 +20,7 @@ import { homepageContent } from '@/content/homepage'
 export const metadata: Metadata = {
   title: 'Osmo-Inspired Components - Street Collector',
   description: 'Demo of Osmo-inspired GSAP components',
+  alternates: { canonical: '/shop/osmo-demo' },
 }
 
 export const dynamic = 'force-dynamic'

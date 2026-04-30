@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, SUPABASE_BROWSER_ENV_HINT } from '@/lib/supabase/client'
 
 import { AlertCircle } from 'lucide-react'
 
@@ -14,12 +14,18 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
+
+    if (!supabase) {
+      setError(SUPABASE_BROWSER_ENV_HINT)
+      setIsLoading(false)
+      return
+    }
 
     // Basic password validation
     if (password !== confirmPassword) {
@@ -59,6 +65,13 @@ export default function SignupPage() {
           <CardDescription>Sign up for Street Collector</CardDescription>
         </CardHeader>
         <CardContent>
+          {!supabase && (
+            <Alert className="mb-4 border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-700" />
+              <AlertTitle>Local setup</AlertTitle>
+              <AlertDescription>{SUPABASE_BROWSER_ENV_HINT}</AlertDescription>
+            </Alert>
+          )}
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
@@ -112,7 +125,7 @@ export default function SignupPage() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={isLoading || !supabase}
             >
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>

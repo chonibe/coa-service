@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useLayoutEffect } from 'react'
+import { useState, useLayoutEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, SUPABASE_BROWSER_ENV_HINT } from '@/lib/supabase/client'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Sheet, Modal, Button, Input } from '@/components/ui'
 import { useExperienceTheme } from '@/app/(store)/shop/experience-v2/ExperienceThemeContext'
@@ -54,7 +54,7 @@ export function AuthSlideupMenu({
 }: AuthSlideupMenuProps) {
   const { theme } = useExperienceTheme()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -85,6 +85,12 @@ export function AuthSlideupMenu({
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
       setError('Please enter your email address')
+      setIsLoading(false)
+      return
+    }
+
+    if (!supabase) {
+      setError(SUPABASE_BROWSER_ENV_HINT)
       setIsLoading(false)
       return
     }
@@ -140,6 +146,11 @@ export function AuthSlideupMenu({
     if (resendCooldown > 0) return
     setError(null)
     setIsLoading(true)
+    if (!supabase) {
+      setError(SUPABASE_BROWSER_ENV_HINT)
+      setIsLoading(false)
+      return
+    }
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
@@ -164,6 +175,12 @@ export function AuthSlideupMenu({
     const trimmedCode = code.replace(/\s/g, '')
     if (!trimmedCode) {
       setError('Please enter the code from your email')
+      setIsLoading(false)
+      return
+    }
+
+    if (!supabase) {
+      setError(SUPABASE_BROWSER_ENV_HINT)
       setIsLoading(false)
       return
     }
@@ -219,6 +236,48 @@ export function AuthSlideupMenu({
   }
 
   const isDesktop = useIsDesktop()
+  const isDark = theme === 'dark'
+
+  if (!supabase) {
+    const notice = (
+      <div className="flex flex-col p-4 gap-3">
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Setup required</h2>
+        <p className="text-sm text-neutral-600 dark:text-[#c4a0a0]">{SUPABASE_BROWSER_ENV_HINT}</p>
+      </div>
+    )
+    if (isDesktop) {
+      return (
+        <Modal
+          open={open}
+          onClose={handleClose}
+          size="medium"
+          overlayClassName="z-[80]"
+          theme={theme}
+          className={cn(
+            'max-w-md border-neutral-200 shadow-xl',
+            isDark ? 'dark border-neutral-700' : 'bg-white'
+          )}
+        >
+          {notice}
+        </Modal>
+      )
+    }
+    return (
+      <Sheet
+        open={open}
+        onClose={handleClose}
+        side="bottom"
+        overlayClassName="z-[80]"
+        theme={theme}
+        className={cn(
+          'max-h-[90vh] rounded-t-2xl border-t border-neutral-200',
+          isDark ? 'dark border-neutral-700' : 'bg-white'
+        )}
+      >
+        {notice}
+      </Sheet>
+    )
+  }
 
   const content = (
     <div className="flex flex-col">
@@ -356,8 +415,6 @@ export function AuthSlideupMenu({
         )}
     </div>
   )
-
-  const isDark = theme === 'dark'
 
   if (isDesktop) {
     return (

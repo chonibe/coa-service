@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Questions?',
   description:
     'Frequently asked questions about shipping, artworks, and The Street Lamp. Production time, delivery, tracking, limited editions, authenticity, and more.',
+  alternates: { canonical: '/shop/faq' },
 }
 
 export default function FAQPage() {

@@ -1,4 +1,5 @@
 import type React from "react"
+import type { Metadata } from "next"
 import "./globals.css"
 import { Fraunces, Barlow } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -26,13 +27,25 @@ const barlow = Barlow({
 /** Logo icon used for favicon — same as street-collector/header */
 const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683'
 
-export const metadata = {
-  title: "Limited Edition Certificate System",
-  description: "Manage and verify limited edition certificates",
+export const metadata: Metadata = {
+  metadataBase: new URL("https://www.thestreetcollector.com"),
+  title: {
+    default: "Street Collector | Backlit art lamp & limited edition street art prints",
+    template: "%s | Street Collector",
+  },
+  description:
+    "Street Collector is a backlit art lamp and limited edition street art print platform featuring independent artists, certificates of authenticity, and worldwide shipping.",
   generator: 'v0.dev',
   icons: {
     icon: getProxiedImageUrl(FAVICON_LOGO_URL),
     apple: getProxiedImageUrl(FAVICON_LOGO_URL),
+  },
+  openGraph: {
+    siteName: "Street Collector",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 }
 

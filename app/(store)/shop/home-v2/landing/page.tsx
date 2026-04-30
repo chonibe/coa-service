@@ -27,12 +27,12 @@ export const metadata: Metadata = {
   title: LANDING_TITLE,
   description: LANDING_DESCRIPTION,
   alternates: {
-    canonical: '/shop/home-v2/landing',
+    canonical: '/shop/home-v2',
   },
   openGraph: {
     title: LANDING_TITLE,
     description: LANDING_DESCRIPTION,
-    url: '/shop/home-v2/landing',
+    url: '/shop/home-v2',
     siteName: 'Street Collector',
     type: 'website',
     images: [

@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import { getPage as getPageFromShopify } from '@/lib/shopify/pages'
 import { getPage as getSyncedPage, hasPage } from '@/content/shopify-content'
 import { Container, SectionWrapper } from '@/components/impact'
-import { ScrollReveal, ParallaxLayer } from '@/components/blocks'
+import { ScrollReveal } from '@/components/blocks'
 import { SanitizedHtml } from '@/components/SanitizedHtml'
 
 // =============================================================================
@@ -35,9 +35,20 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
     }
   }
   
+  const path = `/shop/pages/${handle}`
+
   return {
     title: `${title} | Street Collector`,
     description: description || `Learn more about ${title}`,
+    alternates: { canonical: path },
+    openGraph: {
+      title: `${title} | Street Collector`,
+      description: description || `Learn more about ${title}`,
+      url: path,
+      siteName: 'Street Collector',
+      type: 'website',
+    },
+    robots: { index: true, follow: true },
   }
 }
 

@@ -64,6 +64,12 @@ export function useShopAuth(): UseShopAuthReturn {
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const checkAuth = useCallback(async (isRetryAfter429 = false) => {
+    if (!supabase) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
     const now = Date.now()
     if (!isRetryAfter429 && now - lastCheckRef.current < AUTH_THROTTLE_MS) {
       return
@@ -159,6 +165,11 @@ export function useShopAuth(): UseShopAuthReturn {
   }, [supabase])
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     checkAuth()
 
     // Listen for auth changes

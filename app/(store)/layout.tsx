@@ -39,6 +39,11 @@ const footerSections = hasUsefulFooterSections
         title: 'RESOURCES',
         links: [
           { label: 'FAQ', href: '/shop/faq' },
+          { label: 'Blog', href: '/shop/blog' },
+          { label: 'Backlit Art Lamp', href: '/backlit-art-lamp' },
+          { label: 'Limited Edition Prints', href: '/limited-edition-street-art-prints' },
+          { label: 'Urban Art Prints', href: '/urban-art-prints' },
+          { label: 'Interchangeable Art Prints', href: '/interchangeable-art-prints' },
           { label: 'For Business', href: '/shop/for-business' },
           { label: 'Affiliate program', href: '/shop/collab' },
           { label: 'Artist Submissions', href: '/shop/artist-submissions' },

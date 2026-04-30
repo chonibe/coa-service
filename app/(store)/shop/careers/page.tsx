@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Careers',
   description:
     'Join Street Collector. We\'re building a team of passionate people who believe art belongs in the physical world. View our open positions.',
+  alternates: { canonical: '/shop/careers' },
 }
 
 const CAREERS_URL = process.env.NEXT_PUBLIC_CAREERS_URL

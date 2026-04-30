@@ -6,11 +6,9 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/supabase'
 
-/** Shared browser Supabase client (singleton). Only created when used in browser. */
+/** Shared browser Supabase client (singleton), or null in local dev without env. */
 export const supabase =
-  typeof window !== 'undefined'
-    ? (createClient() as ReturnType<typeof createClient<Database>>)
-    : (null as unknown as ReturnType<typeof createClient<Database>>)
+  typeof window !== 'undefined' ? createClient<Database>() : null
 
 export async function getEditionInfo(orderId: string, lineItemId: string) {
   try {

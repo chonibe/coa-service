@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: 'Wholesale',
   description:
     'Partner with Street Collector. We collaborate with concept stores, museum shops, galleries, and design-led spaces. Wholesale partnerships reviewed by alignment.',
+  alternates: { canonical: '/shop/wholesale' },
 }
 
 const WHOLESALE_EMAIL = 'info@thestreetlamp.com'

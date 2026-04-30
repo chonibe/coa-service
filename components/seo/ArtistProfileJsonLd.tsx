@@ -46,6 +46,18 @@ export function ArtistProfileJsonLd({ artist }: Props) {
     image: artist.image,
     sameAs,
     description: artist.bio?.slice(0, 500),
+    homeLocation: artist.profile?.location
+      ? {
+          '@type': 'Place',
+          name: artist.profile.location,
+        }
+      : undefined,
+    knowsAbout: [
+      'limited edition prints',
+      'street art',
+      'urban art',
+      'contemporary art collecting',
+    ],
   }
 
   const faqPage = {

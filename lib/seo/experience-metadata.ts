@@ -35,6 +35,7 @@ export async function buildShopExperienceMetadata(
       metadataBase: base,
       title: DEFAULT_TITLE,
       description: DEFAULT_DESCRIPTION,
+      alternates: { canonical: path },
       openGraph: {
         title: DEFAULT_TITLE,
         description: DEFAULT_DESCRIPTION,

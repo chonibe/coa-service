@@ -24,6 +24,19 @@ function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
 const BARE_DOMAIN = 'thestreetcollector.com'
 const CANONICAL_HOST = 'www.thestreetcollector.com'
 const APP_HOST = 'app.thestreetcollector.com'
+const LEGACY_STREET_LAMP_PRODUCT_HANDLES = new Set([
+  'untitled-3',
+  'street_lamp',
+  'street-lamp',
+  'the-street-lamp',
+])
+const LEGACY_NON_ARTIST_COLLECTION_HANDLES = new Set([
+  '2025-edition',
+  'all',
+  'frontpage',
+  'season-1',
+  'season-2',
+])
 /** Redirect these hosts to canonical domain so product/collection links and cookies work */
 const REDIRECT_TO_CANONICAL_HOSTS = ['thestreetlamp.com', 'www.thestreetlamp.com']
 const AFFILIATE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
@@ -64,6 +77,11 @@ function setAffiliateCookie(response: NextResponse, slug: string): void {
   })
 }
 
+function addNoIndexHeader(response: NextResponse): NextResponse {
+  response.headers.set('X-Robots-Tag', 'noindex, follow')
+  return response
+}
+
 /** Set cookie with affiliate query string so server can attribute session for tracking */
 function setAffiliateSessionCookie(response: NextResponse, queryString: string): void {
   if (!queryString) return
@@ -81,6 +99,46 @@ function clearDismissedCookie(response: NextResponse): void {
 }
 
 export async function middleware(request: NextRequest) {
+  // ------------------------------------------------------------
+  // STEP 1 – Clean up Shopify variant query parameters
+  // ------------------------------------------------------------
+  // Shopify often appends market‑specific query strings such as:
+  //   ?country=AE&currency=USD&locale=en&variant=12345
+  // These create duplicate URLs that waste crawl budget.
+  // We strip the known variant params while preserving marketing
+  // parameters (utm_*, fbclid, ref, etc.) that are useful for analytics.
+  // The logic runs early, before any other redirect handling, and
+  // issues a 301 to the canonical path.
+  const cleanPath = request.nextUrl.pathname;
+  const sp = request.nextUrl.searchParams;
+  const variantParams = ['country','currency','locale','variant','price','shop'];
+  let hasVariant = false;
+  // Check if any variant param is present
+  for (const p of variantParams) {
+    if (sp.has(p)) { hasVariant = true; break; }
+  }
+  if (hasVariant) {
+    // Build a new URL keeping only allowed marketing params
+    const allowed = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','ref'];
+    const newSearch = new URLSearchParams();
+    for (const key of allowed) {
+      const val = sp.get(key);
+      if (val) newSearch.set(key, val);
+    }
+    const dest = new URL(cleanPath, request.url);
+    if (Array.from(newSearch).length) dest.search = newSearch.toString();
+    const redirect = NextResponse.redirect(dest, 301);
+    // Preserve affiliate cookies if they were set earlier in the flow
+    if (request.cookies.get('affiliate_artist')) {
+      redirect.cookies.set('affiliate_artist', request.cookies.get('affiliate_artist')!.value);
+    }
+    return redirect;
+  }
+
+  // ------------------------------------------------------------
+  // Existing middleware logic continues below
+  // ------------------------------------------------------------
+
   const searchParams = request.nextUrl.searchParams
   const fbclid = searchParams.get('fbclid')
   let affiliateSlug: string | undefined
@@ -105,14 +163,14 @@ export async function middleware(request: NextRequest) {
     // Malformed query string (e.g. bad encoding from fbclid) — skip affiliate cookie, continue
   }
 
-  const host = request.headers.get('host') ?? ''
+  const host = (request.headers.get('host') ?? '').split(':')[0].toLowerCase()
 
   // Redirect app subdomain to canonical www host.
   if (host === APP_HOST) {
     try {
       const path = request.nextUrl.pathname + request.nextUrl.search
       const dest = new URL(path, `https://${CANONICAL_HOST}`)
-      const redirect = NextResponse.redirect(dest, 308)
+      const redirect = addNoIndexHeader(NextResponse.redirect(dest, 308))
       setMetaAttributionCookies(redirect, fbclid)
       if (affiliateSlug) {
         setAffiliateCookie(redirect, affiliateSlug)
@@ -121,7 +179,7 @@ export async function middleware(request: NextRequest) {
       if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
       return redirect
     } catch {
-      const redirect = NextResponse.redirect(new URL(`https://${CANONICAL_HOST}${request.nextUrl.pathname}`), 308)
+      const redirect = addNoIndexHeader(NextResponse.redirect(new URL(`https://${CANONICAL_HOST}${request.nextUrl.pathname}`), 308))
       setMetaAttributionCookies(redirect, fbclid)
       if (affiliateSlug) {
         setAffiliateCookie(redirect, affiliateSlug)
@@ -242,7 +300,12 @@ export async function middleware(request: NextRequest) {
 
   // Affiliate product links → main page (/); set cookie so Experience applies vendor filter when they open it
   if (pathname.startsWith('/products/')) {
-    const dest = new URL('/', request.url)
+    const productHandle = pathname.slice('/products/'.length).replace(/\/.*$/, '').trim()
+    const normalizedProductHandle = productHandle.toLowerCase()
+    const destinationPath = LEGACY_STREET_LAMP_PRODUCT_HANDLES.has(normalizedProductHandle)
+      ? '/shop/street_lamp'
+      : '/'
+    const dest = new URL(destinationPath, request.url)
     const redirect = NextResponse.redirect(dest, 308)
     setMetaAttributionCookies(redirect, fbclid)
     if (affiliateSlug) {
@@ -250,7 +313,6 @@ export async function middleware(request: NextRequest) {
       clearDismissedCookie(redirect)
     } else {
       // No artist/utm in URL (e.g. /products/year-of-the-snake?fbclid=...) — set product handle so experience can resolve vendor → spotlight
-      const productHandle = pathname.slice('/products/'.length).replace(/\/.*$/, '').trim()
       if (productHandle && productHandle.length <= 200) {
         redirect.cookies.set(AFFILIATE_PRODUCT_COOKIE_NAME, productHandle, {
           path: '/',
@@ -268,7 +330,11 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/collections/')) {
     const rest = pathname.slice('/collections/'.length).replace(/\/.*$/, '') // first segment only (e.g. tiago-hesp)
     const slugFromPath = rest && rest.length <= 200 ? rest : undefined
-    const dest = new URL('/', request.url)
+    const destinationPath =
+      slugFromPath && !LEGACY_NON_ARTIST_COLLECTION_HANDLES.has(slugFromPath)
+        ? `/shop/artists/${slugFromPath}`
+        : '/shop/products'
+    const dest = new URL(destinationPath, request.url)
     const redirect = NextResponse.redirect(dest, 308)
     setMetaAttributionCookies(redirect, fbclid)
     const cookieSlug = affiliateSlug || slugFromPath

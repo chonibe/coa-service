@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Contact Us',
   description:
     'Get in touch with Street Collector. Questions about your order, our stores, or current collections? Our team is here and ready to help.',
+  alternates: { canonical: '/shop/contact' },
 }
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'info@thestreetlamp.com'

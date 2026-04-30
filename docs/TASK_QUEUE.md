@@ -325,6 +325,29 @@
 3. Include potential challenges
 4. Link to relevant documentation
 
+## SEO / GEO Phase 1 Implementation
+
+### Priority: High
+- [x] [SEO / GEO Phase 1 Implementation Plan](/docs/features/street-collector/seo-geo-phase-1-plan.md)
+  - [x] Validate canonical tags on staging
+  - [x] Add middleware / redirect rule to strip Shopify variant query parameters
+  - [x] Deploy updated sitemap and submit to Google Search Console
+  - [x] Run URL Inspection for representative URLs
+  - [x] Export & fix 404s from GSC
+  - [x] Audit robots.txt Disallow list
+  - [x] Run Rich Results Test on key pages
+  - [x] Add commit-log entry in docs/dev/commit-logs/
+  - [x] Update execution brief (seo-geo-phase-1-execution.md)
+  - [x] Schedule follow-up GSC audit (2 weeks)
+
+### Success Criteria
+- [ ] Index rate increases from ~4% to 30-60%
+- [x] Redirect issues reach 0 (variant URLs 301-redirected)
+- [ ] Duplicate-canonical pages reach 0
+- [x] 404 errors reach 0 (or safely redirected)
+- [x] Robots-blocked pages are only intentional (no valuable page blocked)
+- [x] "Crawled → Not indexed" pages ≤ 5% of discovered URLs
+
 ### Review Process
 - All tasks require peer review
 - Must pass code quality checks

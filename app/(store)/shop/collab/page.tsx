@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: 'Affiliate Program',
   description:
     'Collect culture. Earn with it. Join the Street Collector affiliate program—start with 10% commission. Top performers unlock higher tiers.',
+  alternates: { canonical: '/shop/collab' },
 }
 
 const COLLABS_APPLY_URL =

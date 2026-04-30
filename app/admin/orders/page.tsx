@@ -56,6 +56,12 @@ export default function OrdersPage() {
         setIsLoading(true);
         const supabase = createClient<Database>();
 
+        if (!supabase) {
+          setError('Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY). Run vercel env pull.');
+          setIsLoading(false);
+          return;
+        }
+
         const offset = (currentPage - 1) * limit;
 
         // Get total counts for both sources

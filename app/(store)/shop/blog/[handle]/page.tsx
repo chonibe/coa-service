@@ -2,12 +2,14 @@ import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getArticle as getArticleFromApi, getCachedArticle } from '@/lib/shopify/blogs'
+import { getCachedArticle } from '@/lib/shopify/blogs'
 import { getArticle as getSyncedArticle, articles as syncedArticles } from '@/content/shopify-content'
 import { Container, SectionWrapper, Button } from '@/components/impact'
 import { ScrollReveal, ScrollProgress, ParallaxLayer } from '@/components/blocks'
 import { VinylTiltEffect } from '@/components/vinyl'
 import { SanitizedHtml } from '@/components/SanitizedHtml'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { absoluteShopUrl, getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 
 // =============================================================================
 // METADATA
@@ -23,11 +25,24 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   // Try synced content first
   const syncedArticle = getSyncedArticle(handle)
   if (syncedArticle) {
+    const description = syncedArticle.excerpt || `Read ${syncedArticle.title} on the Street Collector blog`
     return {
+      metadataBase: getCanonicalSiteOrigin(),
       title: `${syncedArticle.title} | Blog | Street Collector`,
-      description: syncedArticle.excerpt || `Read ${syncedArticle.title} on the Street Collector blog`,
+      description,
+      alternates: { canonical: `/shop/blog/${handle}` },
       openGraph: syncedArticle.imageUrl ? {
+        title: syncedArticle.title,
+        description,
+        url: `/shop/blog/${handle}`,
+        type: 'article',
         images: [{ url: syncedArticle.imageUrl }],
+      } : undefined,
+      twitter: syncedArticle.imageUrl ? {
+        card: 'summary_large_image',
+        title: syncedArticle.title,
+        description,
+        images: [syncedArticle.imageUrl],
       } : undefined,
     }
   }
@@ -36,11 +51,24 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   // Default to 'news' blog, common Shopify default
   const article = await getCachedArticle('news', handle)
   if (article) {
+    const description = article.seo?.description || article.excerpt || `Read ${article.title} on the Street Collector blog`
     return {
+      metadataBase: getCanonicalSiteOrigin(),
       title: `${article.seo?.title || article.title} | Blog | Street Collector`,
-      description: article.seo?.description || article.excerpt || `Read ${article.title} on the Street Collector blog`,
+      description,
+      alternates: { canonical: `/shop/blog/${handle}` },
       openGraph: article.image ? {
+        title: article.seo?.title || article.title,
+        description,
+        url: `/shop/blog/${handle}`,
+        type: 'article',
         images: [{ url: article.image.url }],
+      } : undefined,
+      twitter: article.image ? {
+        card: 'summary_large_image',
+        title: article.seo?.title || article.title,
+        description,
+        images: [article.image.url],
       } : undefined,
     }
   }
@@ -72,6 +100,7 @@ export default async function ArticlePage({ params }: PageParams) {
     return (
       <ArticleContent
         title={syncedArticle.title}
+        handle={syncedArticle.handle}
         contentHtml={syncedArticle.contentHtml}
         imageUrl={syncedArticle.imageUrl}
         imageAlt={syncedArticle.imageAlt}
@@ -104,6 +133,7 @@ export default async function ArticlePage({ params }: PageParams) {
   return (
     <ArticleContent
       title={article.title}
+      handle={handle}
       contentHtml={article.contentHtml}
       imageUrl={article.image?.url || null}
       imageAlt={article.image?.altText || null}
@@ -121,6 +151,7 @@ export default async function ArticlePage({ params }: PageParams) {
 
 interface ArticleContentProps {
   title: string
+  handle: string
   contentHtml: string
   imageUrl: string | null
   imageAlt: string | null
@@ -137,6 +168,7 @@ interface ArticleContentProps {
 
 function ArticleContent({
   title,
+  handle,
   contentHtml,
   imageUrl,
   imageAlt,
@@ -155,9 +187,41 @@ function ArticleContent({
   // Calculate reading time
   const wordCount = contentHtml.replace(/<[^>]*>/g, '').split(/\s+/).length
   const readingTime = Math.ceil(wordCount / 200)
+  const articleUrl = absoluteShopUrl(`/shop/blog/${handle}`)
+  const plainText = contentHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description: plainText.slice(0, 220),
+    image: imageUrl ? [imageUrl] : undefined,
+    datePublished: publishedAt,
+    dateModified: publishedAt,
+    author: authorName
+      ? {
+          '@type': 'Person',
+          name: authorName,
+        }
+      : {
+          '@type': 'Organization',
+          name: 'Street Collector',
+        },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Street Collector',
+      url: absoluteShopUrl('/'),
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': articleUrl,
+    },
+    articleSection: tags,
+    wordCount,
+  }
   
   return (
     <main className="min-h-screen bg-white">
+      <JsonLd id={`article-${handle}-jsonld`} data={articleJsonLd} />
       {/* Reading Progress Bar */}
       <ScrollProgress position="top" color="#f0c417" height={3} />
       

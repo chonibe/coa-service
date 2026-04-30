@@ -1,3 +1,5 @@
+import { seoBlogArticles } from './seo-blog-articles'
+
 /**
  * Shopify Content (Auto-generated)
  * 
@@ -428,6 +430,7 @@ export function hasPage(handle: string): boolean {
 // =============================================================================
 
 export const articles: SyncedArticle[] = [
+  ...seoBlogArticles,
   {
     "handle": "israeli-street-artists-a-look-at-some-of-the-countrys-talents",
     "blogHandle": "art",

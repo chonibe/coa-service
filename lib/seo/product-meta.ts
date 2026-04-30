@@ -4,6 +4,12 @@ const BRAND = 'Street Collector'
 const MAX_TITLE = 60
 const MAX_DESC = 160
 
+function isStreetLampProduct(product: ShopifyProduct): boolean {
+  const handle = product.handle?.toLowerCase() ?? ''
+  const title = product.title?.toLowerCase() ?? ''
+  return handle === 'street_lamp' || handle.startsWith('street-lamp') || title.includes('street lamp')
+}
+
 function truncate(s: string, max: number): string {
   const t = s.trim()
   if (t.length <= max) return t
@@ -13,6 +19,10 @@ function truncate(s: string, max: number): string {
 }
 
 export function buildProductTitle(product: ShopifyProduct): string {
+  if (isStreetLampProduct(product)) {
+    return 'Street Lamp art display | Backlit lamp | Street Collector'
+  }
+
   const vendor = product.vendor?.trim()
   const title = product.title?.trim() || 'Art print'
   const base = vendor ? `${title} by ${vendor} | ${BRAND}` : `${title} | ${BRAND}`
@@ -21,6 +31,10 @@ export function buildProductTitle(product: ShopifyProduct): string {
 
 /** GEO: citable one-paragraph answer under the H1. */
 export function buildProductAnswerFirst(product: ShopifyProduct): string {
+  if (isStreetLampProduct(product)) {
+    return 'The Street Lamp is a backlit art lamp and illuminated display for Street Collector artworks. Buy the lamp once, then collect and swap limited edition street art prints from independent artists.'
+  }
+
   const t = product.title?.trim() || 'This artwork'
   const v = product.vendor?.trim()
   if (v) {
@@ -30,6 +44,10 @@ export function buildProductAnswerFirst(product: ShopifyProduct): string {
 }
 
 export function buildProductDescription(product: ShopifyProduct): string {
+  if (isStreetLampProduct(product)) {
+    return 'Street Lamp art display for swappable limited edition prints. A backlit art lamp for collecting and rotating Street Collector artworks.'
+  }
+
   const title = product.title?.trim() || 'Limited edition print'
   const vendor = product.vendor?.trim()
   const tail = `Limited edition street art print on ${BRAND}. Certificate of Authenticity. Ships worldwide.`

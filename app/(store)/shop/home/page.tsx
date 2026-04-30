@@ -26,6 +26,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'Street Collector - One Lamp, Endless Inspiration',
   description: 'Discover limited edition artworks for the Street Lamp. Collect, swap, and inspire with illuminated art from artists worldwide.',
+  alternates: { canonical: '/shop/home' },
 }
 
 // Force dynamic rendering to avoid build-time API calls

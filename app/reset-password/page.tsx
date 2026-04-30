@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Container, SectionWrapper, Input, Button } from "@/components/impact"
-import { createClient } from "@/lib/supabase/client"
+import { createClient, SUPABASE_BROWSER_ENV_HINT } from "@/lib/supabase/client"
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/constants/support"
 
 type Status =
@@ -78,6 +78,10 @@ export default function ResetPasswordPage() {
     }
     setStatus({ kind: "submitting" })
     const supabase = createClient()
+    if (!supabase) {
+      setStatus({ kind: "error", message: SUPABASE_BROWSER_ENV_HINT })
+      return
+    }
     const { error } = await supabase.auth.updateUser({ password })
     if (error) {
       setStatus({ kind: "error", message: error.message })
