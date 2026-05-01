@@ -129,27 +129,32 @@ export function ArtistsWall() {
         </div>
       ) : null}
 
-      <div className={styles.wallGrid}>
-        {artistsWall.tiles.map((t, idx) => {
-          const span2 = idx === 0 || idx === 3 || idx === 7
-          return (
-            <div className={`${styles.tile} ${span2 ? styles.tileSpan2 : ''}`} key={`${t.name}-${idx}`}>
+      <div className={styles.artistsBadges}>
+        {artistsWall.tiles.map((t, idx) => (
+          <div className={styles.artistBadge} key={`${t.name}-${idx}`}>
+            <div className={styles.artistBadgeAvatar}>
               <Image
                 src={t.imageUrl}
                 alt={t.name}
                 fill
-                sizes="(max-width: 960px) 25vw, (max-width: 1440px) 16vw, 220px"
+                sizes="56px"
                 style={{ objectFit: 'cover' }}
                 loading="lazy"
               />
-              <div className={styles.tileName}>{t.name}</div>
             </div>
-          )
-        })}
+            <span className={styles.artistBadgeName}>{t.name}</span>
+          </div>
+        ))}
 
-        <Link href={urls.exploreArtists} className={styles.tileMore}>
-          <span className={styles.tileMoreN}>100+</span>
-          <span className={styles.tileMoreL}>{artistsWall.ctaLabel}</span>
+        <Link
+          href={urls.exploreArtists}
+          className={styles.artistsBadgeMore}
+          aria-label={`${artistsWall.ctaLabel} — over 100 artists`}
+        >
+          <span className={styles.artistsBadgeMoreCircle} aria-hidden>
+            <span className={styles.artistsBadgeMoreNum}>100+</span>
+          </span>
+          <span className={styles.artistsBadgeMoreCaption}>{artistsWall.ctaLabel}</span>
         </Link>
       </div>
     </section>

@@ -33,7 +33,7 @@
 .gTitle,
 .faqQ,
 .finalTitle,
-.tileMoreN {
+.artistsBadgeMoreNum {
   font-family: var(--font-landing-serif), Georgia, serif;
 }
 
@@ -60,7 +60,7 @@
 .tVidName,
 .tImgName,
 .tAuthor,
-.tileName {
+.artistBadgeName {
   font-family: var(--font-landing-sans), Arial, sans-serif;
   letter-spacing: 0.08em;
 }
@@ -699,89 +699,126 @@
   }
 }
 
-.wallGrid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-auto-rows: 180px;
-  gap: 3px;
+/* Compact circular profile badges (replaces large square mosaic grid) */
+.artistsBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 14px 18px;
+  padding: 8px 72px 28px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-.tile {
-  position: relative;
-  overflow: hidden;
-  background: var(--card);
-}
-
-.tile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition:
-    transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    filter 0.4s;
-  filter: brightness(0.8) saturate(0.85);
-}
-
-.tile:hover img {
-  transform: scale(1.07);
-  filter: brightness(1) saturate(1.1);
-}
-
-.tileName {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(23, 21, 21, 0.92));
-  padding: 24px 14px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  opacity: 0;
-  transform: translateY(6px);
-  transition: all 0.3s;
-}
-
-.tile:hover .tileName {
-  opacity: 1;
-  transform: none;
-}
-
-.tileSpan2 {
-  grid-column: span 2;
-  grid-row: span 2;
-}
-
-.tileMore {
-  grid-column: span 2;
-  background: var(--peach);
+.artistBadge {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 6px;
+  width: 76px;
+  flex: 0 0 auto;
+}
+
+.artistBadgeAvatar {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 186, 148, 0.32);
+  background: var(--card);
+  transition:
+    border-color 0.2s,
+    transform 0.25s ease,
+    box-shadow 0.2s;
+}
+
+.artistBadgeAvatar img {
+  transition:
+    transform 0.35s ease,
+    filter 0.25s;
+  filter: brightness(0.92) saturate(0.95);
+}
+
+.artistBadge:hover .artistBadgeAvatar {
+  border-color: rgba(255, 186, 148, 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+}
+
+.artistBadge:hover .artistBadgeAvatar img {
+  transform: scale(1.07);
+  filter: brightness(1) saturate(1.06);
+}
+
+.artistBadgeName {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 76px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.artistsBadgeMore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 76px;
+  flex: 0 0 auto;
   text-decoration: none;
-  transition: background 0.25s;
+  color: inherit;
 }
 
-.tileMore:hover {
+.artistsBadgeMoreCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--peach);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s,
+    transform 0.2s ease,
+    box-shadow 0.2s;
+}
+
+.artistsBadgeMore:hover .artistsBadgeMoreCircle {
   background: var(--peach2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 }
 
-.tileMoreN {
-  font-size: 48px;
+.artistsBadgeMoreNum {
+  font-size: 20px;
   font-weight: 400;
   color: var(--dark);
   line-height: 1;
 }
 
-.tileMoreL {
-  font-size: 10px;
+.artistsBadgeMoreCaption {
+  font-size: 9px;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(23, 21, 21, 0.75);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 76px;
+  color: var(--peach);
+  transition: color 0.2s;
+}
+
+.artistsBadgeMore:hover .artistsBadgeMoreCaption {
+  color: var(--peach2);
 }
 
 .testimonialsSection {
@@ -1196,8 +1233,8 @@
   .faqSection {
     max-width: 1280px;
   }
-  .wallGrid {
-    grid-auto-rows: 170px;
+  .artistsBadges {
+    padding-inline: 56px;
   }
   .testimonialsGrid {
     grid-auto-rows: 260px;
@@ -1220,9 +1257,6 @@
   }
   .stepTextWrap {
     padding: 48px 28px;
-  }
-  .wallGrid {
-    grid-auto-rows: 150px;
   }
   .testimonialsGrid {
     grid-auto-rows: 240px;
@@ -1485,9 +1519,19 @@
   .artistsHeader {
     padding: 0 24px 40px;
   }
-  .wallGrid {
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 140px;
+  .artistsBadges {
+    gap: 12px 12px;
+    padding: 4px 20px 20px;
+  }
+
+  .artistBadgeAvatar,
+  .artistsBadgeMoreCircle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .artistsBadgeMoreNum {
+    font-size: 17px;
   }
   .testimonialsSection {
     padding: 72px 20px;
