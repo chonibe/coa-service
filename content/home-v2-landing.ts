@@ -77,8 +77,8 @@ export const homeV2LandingContent = {
   hero: {
     eyebrow: 'Collect. Insert. Change.',
     headlineHtml: '<em>A living art<br>collection.</em>',
-    description:
-      'A premium backlit lamp with 100+ interchangeable street art prints from artists worldwide. Collect. Swap. Own something truly original.',
+    /** Empty = no hero paragraph under the headline */
+    description: '',
     pricingLine: { lampFrom: '$99', artworksFrom: '$40' },
     ctaText: 'Start your collection',
     videoUrl:
