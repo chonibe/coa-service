@@ -213,11 +213,13 @@ export const homeV2LandingContent = {
       'https://cdn.shopify.com/videos/c/o/v/5544660fcedf42a2a766cbbf076346bb.mp4',
       'https://cdn.shopify.com/videos/c/o/v/f4f288bd1b9847dd802f7f39ef979494.mp4',
       'https://cdn.shopify.com/videos/c/o/v/880d24398a644fb6b4b7e6ddd9e8c42b.mp4',
-      'https://cdn.shopify.com/videos/c/o/v/bcf2595a0585495c9aea6042c68afb14.mp4',
       'https://cdn.shopify.com/videos/c/o/v/bc8506d404e745468bca0ec56ff7504d.mp4',
       'https://cdn.shopify.com/videos/c/o/v/37381e33d4f847d382991e5daf9e3065.mp4',
       'https://cdn.shopify.com/videos/c/o/v/693b7eeeec4b47afbf7a5e9bdd4f2151.mp4',
       'https://cdn.shopify.com/videos/c/o/v/eeca5f8ad623487eada9cd3c52091052.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/a9f4ecd941034b12bbb29242ed29a8a1.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/de8d91a33bad4bb38504d1aaf3ce5c24.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/32e2e5ae88b94eba82ebc9674c66f092.mp4',
     ],
     tiles: [
       {
@@ -384,6 +386,81 @@ export const homeV2LandingContent = {
         name: 'Beto Val',
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/beto-val-618237.png',
+      },
+      {
+        name: 'Cokorda Martin',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/cokorda-martin-401664.png',
+      },
+      {
+        name: 'Aviv Shamir',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/aviv-shamir-246294.png',
+      },
+      {
+        name: 'Hen Macabi',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/hen-macabi-716685.jpg',
+      },
+      {
+        name: 'Refiloe Mnisi',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/refiloe-mnisi-622066.png',
+      },
+      {
+        name: 'Geometric Bang',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/geometric-bang-304660.png',
+      },
+      {
+        name: 'Laura Fridman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/laura-fridman-134465.png',
+      },
+      {
+        name: 'Cubi Boumclap',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/cubi-boumclap-242467.png',
+      },
+      {
+        name: 'Studio Giftig',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/studio-giftig-393838.png',
+      },
+      {
+        name: 'Thales Towers',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/thales-towers-332488.png',
+      },
+      {
+        name: 'Niashtai',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/niashtai-311613.png',
+      },
+      {
+        name: 'Nurit Gross',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/nurit-gross-638445.png',
+      },
+      {
+        name: 'Moshe Gilboa',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/moshe-gilboa-794754.png',
+      },
+      {
+        name: 'Eden Kalif',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/eden-kalif-421492.png',
+      },
+      {
+        name: 'Tiffany Chin',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/tiffany-chin-256609.png',
+      },
+      {
+        name: 'Yoaz',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/yoaz-858025.png',
       },
     ] satisfies ArtistTile[],
   },

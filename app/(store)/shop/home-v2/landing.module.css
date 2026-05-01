@@ -689,16 +689,31 @@
   }
 }
 
-/* Compact circular profile badges (replaces large square mosaic grid) */
+/* Artist circles: centered grid + mixed sizes (“constellation”) */
 .artistsBadges {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, max-content));
   justify-content: center;
-  align-items: flex-start;
-  gap: 14px 18px;
-  padding: 8px 72px 28px;
-  max-width: 1100px;
+  justify-items: center;
+  align-items: start;
+  column-gap: 12px;
+  row-gap: 22px;
+  padding: 12px 56px 40px;
+  max-width: 1080px;
   margin: 0 auto;
+}
+
+/* Organic vertical rhythm (margin doesn’t fight hive keyframe transform) */
+.artistsBadges > .artistBadgeHive:nth-child(5n + 1) {
+  margin-top: 8px;
+}
+
+.artistsBadges > .artistBadgeHive:nth-child(5n + 3) {
+  margin-top: -6px;
+}
+
+.artistsBadges > .artistBadgeHive:nth-child(7n + 2) {
+  margin-top: 4px;
 }
 
 /* Scroll-triggered “hive”: badges spiral in from a ring (golden-angle offsets + stagger) */
@@ -753,8 +768,52 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 76px;
+  width: max-content;
+  max-width: 104px;
   flex: 0 0 auto;
+}
+
+.artistBadgeSzSm .artistBadgeAvatar {
+  width: 46px;
+  height: 46px;
+  border-width: 1.5px;
+}
+
+.artistBadgeSzSm {
+  max-width: 82px;
+  gap: 5px;
+}
+
+.artistBadgeSzSm .artistBadgeName {
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  max-width: 82px;
+}
+
+.artistBadgeSzMd .artistBadgeAvatar {
+  width: 56px;
+  height: 56px;
+}
+
+.artistBadgeSzMd {
+  max-width: 92px;
+}
+
+.artistBadgeSzLg .artistBadgeAvatar {
+  width: 70px;
+  height: 70px;
+  border-width: 2.5px;
+}
+
+.artistBadgeSzLg {
+  max-width: 104px;
+  gap: 7px;
+}
+
+.artistBadgeSzLg .artistBadgeName {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  max-width: 104px;
 }
 
 .artistBadgeAvatar {
@@ -809,10 +868,31 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 76px;
+  width: max-content;
+  min-width: 76px;
   flex: 0 0 auto;
   text-decoration: none;
   color: inherit;
+}
+
+.artistsBadgeMoreProminent {
+  gap: 8px;
+  min-width: 88px;
+}
+
+.artistsBadgeMoreProminent .artistsBadgeMoreCircle {
+  width: 74px;
+  height: 74px;
+}
+
+.artistsBadgeMoreProminent .artistsBadgeMoreNum {
+  font-size: 24px;
+}
+
+.artistsBadgeMoreProminent .artistsBadgeMoreCaption {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  max-width: 94px;
 }
 
 .artistsBadgeMoreCircle {
@@ -1605,18 +1685,43 @@
     padding: 0 24px 40px;
   }
   .artistsBadges {
-    gap: 12px 12px;
-    padding: 4px 20px 20px;
+    grid-template-columns: repeat(auto-fill, minmax(64px, max-content));
+    column-gap: 10px;
+    row-gap: 18px;
+    gap: unset;
+    padding: 8px 20px 22px;
   }
 
-  .artistBadgeAvatar,
-  .artistsBadgeMoreCircle {
+  .artistBadgeSzSm .artistBadgeAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .artistBadgeSzMd .artistBadgeAvatar {
     width: 48px;
     height: 48px;
   }
 
+  .artistBadgeSzLg .artistBadgeAvatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  .artistBadgeSzLg .artistBadgeName {
+    font-size: 9px;
+  }
+
+  .artistsBadgeMoreProminent .artistsBadgeMoreCircle {
+    width: 60px;
+    height: 60px;
+  }
+
   .artistsBadgeMoreNum {
     font-size: 17px;
+  }
+
+  .artistsBadgeMoreProminent .artistsBadgeMoreNum {
+    font-size: 20px;
   }
   .testimonialsSection {
     padding: 72px 20px;

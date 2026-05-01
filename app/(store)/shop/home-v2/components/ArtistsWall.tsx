@@ -51,6 +51,20 @@ function ArtistsCarouselVideo({ src }: { src: string }) {
   )
 }
 
+/** Alternating sm / md / lg for an organic “constellation” grid. */
+function artistBadgeTierClass(index: number): string {
+  const tier = (index * 7 + (index % 4) * 2) % 3
+  if (tier === 0) return styles.artistBadgeSzSm
+  if (tier === 2) return styles.artistBadgeSzLg
+  return styles.artistBadgeSzMd
+}
+
+function avatarSizesAttr(tierClass: string): string {
+  if (tierClass === styles.artistBadgeSzSm) return '(max-width: 960px) 44px, 52px'
+  if (tierClass === styles.artistBadgeSzLg) return '(max-width: 960px) 58px, 80px'
+  return '(max-width: 960px) 50px, 64px'
+}
+
 /** Golden-angle spiral — each cell “flies in” from an outer ring toward its slot (hive settle-in). */
 function hiveCellStyle(index: number): CSSProperties {
   const goldenAngle = Math.PI * (3 - Math.sqrt(5))
@@ -145,29 +159,32 @@ export function ArtistsWall() {
           reducedMotion && styles.artistsHiveInstant
         )}
       >
-        {artistsWall.tiles.map((t, idx) => (
-          <div
-            className={cn(styles.artistBadge, styles.artistBadgeHive)}
-            key={`${t.name}-${idx}`}
-            style={hiveCellStyle(idx)}
-          >
-            <div className={styles.artistBadgeAvatar}>
-              <Image
-                src={t.imageUrl}
-                alt={t.name}
-                fill
-                sizes="56px"
-                style={{ objectFit: 'cover' }}
-                loading="lazy"
-              />
+        {artistsWall.tiles.map((t, idx) => {
+          const tier = artistBadgeTierClass(idx)
+          return (
+            <div
+              className={cn(styles.artistBadge, styles.artistBadgeHive, tier)}
+              key={`${t.name}-${idx}`}
+              style={hiveCellStyle(idx)}
+            >
+              <div className={styles.artistBadgeAvatar}>
+                <Image
+                  src={t.imageUrl}
+                  alt={t.name}
+                  fill
+                  sizes={avatarSizesAttr(tier)}
+                  style={{ objectFit: 'cover' }}
+                  loading="lazy"
+                />
+              </div>
+              <span className={styles.artistBadgeName}>{t.name}</span>
             </div>
-            <span className={styles.artistBadgeName}>{t.name}</span>
-          </div>
-        ))}
+          )
+        })}
 
         <Link
           href={urls.exploreArtists}
-          className={cn(styles.artistsBadgeMore, styles.artistBadgeHive)}
+          className={cn(styles.artistsBadgeMore, styles.artistsBadgeMoreProminent, styles.artistBadgeHive)}
           style={hiveCellStyle(artistsWall.tiles.length)}
           aria-label={`${artistsWall.ctaLabel} — over 100 artists`}
         >
