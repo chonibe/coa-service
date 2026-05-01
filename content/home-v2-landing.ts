@@ -207,6 +207,9 @@ export const homeV2LandingContent = {
       'https://cdn.shopify.com/videos/c/o/v/b3fa9166216c452e84cc94cb8f6ba0d6.mp4',
       'https://cdn.shopify.com/videos/c/o/v/dd8871a5486149cb8ac7bcae3be7cbb0.mp4',
       'https://cdn.shopify.com/videos/c/o/v/3d38926d71814b69b1b382614593c2bd.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/24afd808e6a8480bad00abd9c938c912.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/5544660fcedf42a2a766cbbf076346bb.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/f4f288bd1b9847dd802f7f39ef979494.mp4',
     ],
     tiles: [
       {

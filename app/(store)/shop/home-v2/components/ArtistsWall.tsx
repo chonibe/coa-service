@@ -64,7 +64,7 @@ export function ArtistsWall() {
     track.scrollBy({ left: dir * step, behavior: 'smooth' })
   }, [])
 
-  const videos = artistsWall.carouselVideos ?? []
+  const videos = [...new Set(artistsWall.carouselVideos ?? [])]
 
   return (
     <section ref={reveal.ref} className={cn(styles.artistsSection, reveal.className)} aria-label="Artists wall">
