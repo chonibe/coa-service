@@ -75,14 +75,14 @@ export const homeV2LandingContent = {
   },
 
   hero: {
-    eyebrow: 'Revolutionizing Urban Art',
+    eyebrow: 'Collect. Insert. Change.',
     headlineHtml: '<em>A living art<br>collection.</em>',
     description:
       'A premium backlit lamp with 100+ interchangeable street art prints from artists worldwide. Collect. Swap. Own something truly original.',
     pricingLine: { lampFrom: '$99', artworksFrom: '$40' },
     ctaText: 'Start your collection',
     videoUrl:
-      'https://cdn.shopify.com/videos/c/o/v/a87e2b4aff714e91acf551cb6a31ac56.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/c4901eca91a14b65813886b586e3b7db.mp4',
     videoPosterUrl:
       'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
     stats: [
@@ -421,7 +421,7 @@ export const homeV2LandingContent = {
 
   footer: {
     left: '© 2026 Street Collector',
-    right: 'Revolutionizing the Urban Art World',
+    right: 'Collect. Insert. Change.',
     links: [
       { label: 'Home', href: '/' },
       { label: 'Shop', href: '/experience' },
@@ -431,4 +431,3 @@ export const homeV2LandingContent = {
 } as const
 
 export type HomeV2LandingContent = typeof homeV2LandingContent
-
