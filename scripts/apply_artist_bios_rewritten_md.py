@@ -27,12 +27,7 @@ COLLECTION_RE = re.compile(
 )
 
 # Slug -> normalized MD header key (when artistName / header differ)
-SLUG_TO_MD_NORM: dict[str, str] = {
-    "emelio-cerezo": "emilio cerezo",
-    "jake-ac-art": "jack ac art",
-    "twoone-hiroyasu-tsuri": "twoone",
-    "sancho": "sancho sancho",
-}
+SLUG_TO_MD_NORM: dict[str, str] = {}
 
 PART1_SLUGS: list[str] = [
     "agus-rucula",
@@ -179,6 +174,11 @@ def make_hero(story: str, max_len: int = 175) -> str:
         return ""
     parts = re.split(r"(?<=[.!?])\s+", story, maxsplit=1)
     first = parts[0].strip()
+    if len(re.findall(r"\S+", first)) < 8 and len(parts) > 1:
+        second = re.split(r"(?<=[.!?])\s+", parts[1].strip(), maxsplit=1)[0].strip()
+        combined = f"{first} {second}".strip()
+        if len(combined) <= max_len:
+            first = combined
     if len(first) <= max_len:
         base = first
     else:
@@ -215,6 +215,11 @@ def with_instagram(hero: str, handle: str, max_total: int = 195) -> str:
     return trimmed + suffix
 
 
+def clean_csv_cell(value: str | None) -> str:
+    text = value or ""
+    return "\n".join(line.rstrip() for line in text.splitlines())
+
+
 def sync_csv(data: dict[str, dict[str, str]]) -> None:
     if not CSV_PATH.is_file():
         print(f"Skip CSV sync: missing {CSV_PATH}")
@@ -226,6 +231,7 @@ def sync_csv(data: dict[str, dict[str, str]]) -> None:
         if not fieldnames:
             raise SystemExit("CSV has no header")
         for row in reader:
+            row = {key: clean_csv_cell(value) for key, value in row.items()}
             name = (row.get("Artist Name") or "").strip()
             if not name:
                 rows.append(row)

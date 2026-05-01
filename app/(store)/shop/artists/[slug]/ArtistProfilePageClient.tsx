@@ -186,7 +186,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               All Artists
             </Link>
             <Link href="/experience" className={styles.navCta}>
-              Collect this work
+              View the work
             </Link>
           </div>
         </nav>
@@ -295,8 +295,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   ))
                 ) : (
                   <p className={styles.storyBody}>
-                    We&apos;re still building this profile. For now, open <strong>Works</strong> for pricing, what&apos;s
-                    left in each run, and pieces you can add to your Street Lamp.
+                    We&apos;re still building this profile. The overview will grow as more reliable artist material is
+                    added.
                   </p>
                 )}
                 {profile.pullquote ? (() => {
@@ -355,8 +355,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   </div>
                 ) : (
                   <p className={styles.storyBody}>
-                    Studio shots, street work in progress, and detail photos land here when we publish them. Until
-                    then, use <strong>Works</strong> to see pieces you can add to your Street Lamp.
+                    Studio shots, street work in progress, and detail photos land here when we have reliable process
+                    material to show.
                   </p>
                 )}
                 {profile.exclusiveCallout ? (
@@ -566,8 +566,8 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               {artist.instagram ? <div className={styles.instagramHandle}>{artist.instagram}</div> : null}
               {!artist.instagram ? (
                 <p className={styles.storyBody} style={{ marginTop: 12 }}>
-                  We don&apos;t have a linked Instagram handle on file for this artist yet. Their editions are still
-                  under <strong>Works</strong> if you want to collect.
+                  We don&apos;t have a linked Instagram handle on file for this artist yet. When a reliable public feed is
+                  available, it will appear here.
                 </p>
               ) : null}
             </div>
@@ -632,7 +632,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 </div>
                 <p className={styles.igNativeEmptyCopy}>
                   New pieces and studio posts usually hit their feed before they land here. Open Instagram for the
-                  live thread; use <strong>Works</strong> when you&apos;re ready to add art to your Street Lamp.
+                  live thread and a closer look at the artist&apos;s current rhythm.
                 </p>
                 <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -714,18 +714,17 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
         </section>
 
         <section className={styles.profileCta} aria-label="Call to action">
-          <div className={styles.ctaEyebrow}>Own the work</div>
+          <div className={styles.ctaEyebrow}>Keep exploring</div>
           <h2 className={styles.ctaTitle}>
             You&apos;ve met {artist.name.split(' ')[0]}.<br />
-            <em>Now collect their work.</em>
+            <em>Now follow the work.</em>
           </h2>
           <p className={styles.ctaSub}>
-            {stats.remainingCount} pieces left across {stats.editionCount} editions—once a run sells out here, it
-            doesn&apos;t return. Add what you want to your Street Lamp while stock lasts.
+            Browse available works, related artists, and the visual thread around this practice.
           </p>
           <div className={styles.ctaBtns}>
             <Link href="/experience" className={styles.btnPrimary}>
-              Add to your lamp
+              Open the experience
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
@@ -736,7 +735,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
           </div>
         </section>
       </div>
-      <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+      <MobileStickyCta href="/experience" label={`Explore ${artist.name}`} />
     </div>
   )
 }
