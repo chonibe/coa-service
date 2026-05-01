@@ -103,8 +103,8 @@ export default function HomeV2LandingPage() {
       <main>
         <LandingHero />
         <TrustBar />
-        <MeetTheLamp />
         <StepsSection />
+        <MeetTheLamp />
         <ArtistsWall />
         <TestimonialsSection />
         <GuaranteeSection />

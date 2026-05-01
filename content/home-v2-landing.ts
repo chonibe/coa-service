@@ -285,6 +285,106 @@ export const homeV2LandingContent = {
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/elfassi-618423.png',
       },
+      {
+        name: 'Yonil',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/yonil-823611.png',
+      },
+      {
+        name: 'Emelio Cerezo',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/emelio-cerezo-958748.png',
+      },
+      {
+        name: 'Igal Talianski',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/igal-talianski-201541.jpg',
+      },
+      {
+        name: 'Carsten Gueth',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/carsten-gueth-457402.png',
+      },
+      {
+        name: 'Or Bar-El',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/or-bar-el-798628.jpg',
+      },
+      {
+        name: 'Ori Toor',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/ori-toor-182741.png',
+      },
+      {
+        name: 'My Sunbeam',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/my-sunbeam-753804.png',
+      },
+      {
+        name: 'Linda Baritski',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/linda-baritski-899063.png',
+      },
+      {
+        name: 'Erezoo',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/erezoo-944730.jpg',
+      },
+      {
+        name: 'Maalavidaa',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/maalavidaa-941602.png',
+      },
+      {
+        name: 'Psoman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/psoman-148667.png',
+      },
+      {
+        name: 'Agus Rucula',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/agus-rucula-674348.png',
+      },
+      {
+        name: 'Max Diamond',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/max-diamond-362960.png',
+      },
+      {
+        name: 'Ezra Baderman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/ezra-baderman-551846.png',
+      },
+      {
+        name: 'Marylou Faure',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/marylou-faure-306934.png',
+      },
+      {
+        name: 'Dima Korma',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/dima-korma-967960.png',
+      },
+      {
+        name: 'Snow Hands World',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/snow-hands-world-674556.png',
+      },
+      {
+        name: 'Bysancho',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/bysancho-373026.png',
+      },
+      {
+        name: 'Alin Mor',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/alin-mor-339783.png',
+      },
+      {
+        name: 'Beto Val',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/beto-val-618237.png',
+      },
     ] satisfies ArtistTile[],
   },
 
