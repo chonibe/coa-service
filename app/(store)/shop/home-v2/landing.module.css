@@ -1385,13 +1385,29 @@
     align-items: center;
     text-align: center;
     justify-content: center;
+    margin-bottom: 48px;
+    gap: 20px;
   }
   .ratingWrap {
     text-align: center;
+    width: 100%;
+  }
+  .stars {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+  .ratingSub {
+    font-size: 10px;
+    line-height: 1.45;
+    max-width: 18rem;
+    margin-left: auto;
+    margin-right: auto;
   }
   .tTextCard {
     text-align: center;
     align-items: center;
+    padding: 26px 22px;
+    min-height: unset;
   }
   .tTextCard::before {
     margin-left: auto;
@@ -1474,18 +1490,65 @@
     grid-auto-rows: 140px;
   }
   .testimonialsSection {
-    padding: 72px 24px;
+    padding: 72px 20px;
   }
+  /* Social proof: single column so videos + quotes aren’t cramped */
   .testimonialsGrid {
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: 240px;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 10px;
+  }
+  .tVidCard {
+    min-height: 240px;
+    max-height: min(78vw, 440px);
   }
   .tVidCardBig {
-    grid-column: span 2;
-    grid-row: span 1;
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 260px;
+    max-height: min(85vw, 460px);
+  }
+  .tVidOverlay {
+    padding: 14px 14px 16px;
+  }
+  .tVidName {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .tVidQuote {
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
   }
   .row2 {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .tProductCard {
+    min-height: 200px;
+    aspect-ratio: 4 / 3;
+    max-height: 320px;
+  }
+  .tImgCard {
+    min-height: 220px;
+    aspect-ratio: 4 / 5;
+    max-height: 420px;
+  }
+  .tImgOverlay {
+    padding: 14px;
+  }
+  .tImgQuote {
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .tQuote {
+    font-size: 15px;
+    line-height: 1.62;
+    overflow-wrap: anywhere;
+  }
+  .tAuthor {
+    margin-top: 16px;
   }
   .guarantee {
     grid-template-columns: 1fr;
