@@ -835,212 +835,229 @@
   gap: 24px;
 }
 
-.ratingWrap {
-  text-align: right;
-}
-
-.stars {
-  font-size: 22px;
-  color: var(--peach);
-  letter-spacing: 3px;
-}
-
-.ratingSub {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-/* Unified 2-col mosaic: videos → full-width product → mixed quotes & photos */
-.socialProofGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 16px;
-  max-width: 920px;
+/* Testimonials — editorial rail + split columns */
+.tmoInner {
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.socialProofProduct {
-  grid-column: 1 / -1;
-  border-radius: 16px;
-  min-height: 160px;
-  max-height: 240px;
-}
-
-.socialProofQuoteSolo {
-  grid-column: 1 / -1;
-  max-width: 640px;
-  width: 100%;
-  justify-self: center;
-}
-
-.tVidCard {
-  position: relative;
-  overflow: hidden;
-  background: var(--card);
-  border-radius: 16px;
-  aspect-ratio: 4 / 5;
-  min-height: 200px;
-  max-height: 320px;
-}
-
-.tVidCard video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.tVidOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(15, 14, 14, 0.88) 0%,
-    rgba(23, 21, 21, 0.15) 55%,
-    transparent 100%
-  );
+.tmoTrustPill {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 16px 14px 18px;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 186, 148, 0.28);
+  background: rgba(29, 27, 27, 0.65);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
-.tVidName {
-  font-size: 11px;
-  font-weight: 500;
+.tmoTrustStars {
+  font-size: 18px;
+  color: var(--peach);
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.tmoTrustSub {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+  max-width: 14rem;
+}
+
+.tmoVideoRail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin-bottom: 36px;
+}
+
+.tmoVideoCell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tmoVideoFrame {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+  aspect-ratio: 9 / 16;
+  max-height: 280px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+.tmoVideoMedia {
+  width: 100%;
+  height: 100%;
+}
+
+.tmoVideoCaption {
+  padding: 0 2px;
+}
+
+.tmoVideoAuthor {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--peach);
   margin-bottom: 4px;
 }
 
-.tVidQuote {
-  font-size: 14px;
+.tmoVideoQuote {
+  margin: 0;
+  font-size: 13px;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.85);
   line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
+  overflow-wrap: anywhere;
 }
 
-.tProductCard {
+.tmoProductBand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 44px;
+  padding: 20px 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background:
+    linear-gradient(145deg, rgba(255, 186, 148, 0.07) 0%, transparent 45%),
+    rgba(23, 21, 21, 0.55);
+}
+
+.tmoProductVisual {
   position: relative;
-  overflow: hidden;
-  background: rgba(29, 27, 27, 0.85);
-}
-
-.tProductCard img {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 20px;
-  display: block;
+  max-width: 440px;
+  min-height: 120px;
+  height: clamp(120px, 18vw, 200px);
 }
 
-.tImgCard {
+.tmoSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 36px;
+  align-items: start;
+}
+
+.tmoReviewsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tmoReviewCard {
+  margin: 0;
+  padding: 22px 22px 22px 26px;
+  border-radius: 4px 16px 16px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid rgba(255, 186, 148, 0.85);
+  background: rgba(29, 27, 27, 0.5);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+  transition:
+    border-color 0.25s,
+    background 0.25s,
+    box-shadow 0.25s;
+}
+
+.tmoReviewCard:hover {
+  border-color: rgba(255, 186, 148, 0.14);
+  background: rgba(34, 32, 32, 0.72);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.28);
+}
+
+.tmoReviewStars {
+  color: var(--peach);
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.tmoReviewBody {
+  margin: 0;
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.62;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tmoReviewByline {
+  margin-top: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--peach);
+}
+
+.tmoPhotosCol {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tmoPhotoCard {
   position: relative;
+  margin: 0;
   overflow: hidden;
-  background: var(--card);
-  border-radius: 16px;
-  min-height: 220px;
+  border-radius: 14px;
   aspect-ratio: 4 / 5;
-  max-height: 380px;
+  max-height: 320px;
+  background: var(--card);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
 }
 
-.tImgCard img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.7) saturate(0.8);
-  transition: filter 0.4s;
+.tmoPhotoCard img {
+  filter: brightness(0.72) saturate(0.85);
+  transition:
+    filter 0.35s ease,
+    transform 0.45s ease;
 }
 
-.tImgCard:hover img {
-  filter: brightness(0.85) saturate(1);
+.tmoPhotoCard:hover img {
+  filter: brightness(0.88) saturate(1);
+  transform: scale(1.03);
 }
 
-.tImgOverlay {
+.tmoPhotoCaption {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(23, 21, 21, 0.95) 0%,
-    rgba(23, 21, 21, 0.3) 50%,
-    transparent 100%
-  );
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 18px;
+  padding: 16px 18px;
+  background: linear-gradient(
+    to top,
+    rgba(12, 11, 11, 0.94) 0%,
+    rgba(23, 21, 21, 0.15) 52%,
+    transparent 100%
+  );
 }
 
-.tImgName {
+.tmoPhotoAuthor {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--peach);
   margin-bottom: 6px;
 }
 
-.tImgQuote {
-  font-size: 14px;
+.tmoPhotoQuote {
+  font-size: 13px;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
-}
-
-.tTextCard {
-  background: rgba(29, 27, 27, 0.55);
-  padding: 26px 22px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition:
-    border-color 0.25s,
-    background 0.25s;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
-}
-
-.tTextCard::before {
-  content: '\201C';
-  font-family: var(--font-landing-serif), Georgia, serif;
-  font-size: 48px;
-  color: rgba(255, 186, 148, 0.12);
-  line-height: 1;
-  display: block;
-  margin-top: -8px;
-  margin-bottom: -4px;
-}
-
-.tTextCard:hover {
-  border-color: rgba(255, 186, 148, 0.18);
-  background: rgba(34, 32, 32, 0.75);
-}
-
-.tStars {
-  color: var(--peach);
-  font-size: 12px;
-  letter-spacing: 2px;
-  margin-bottom: 14px;
-}
-
-.tQuote {
-  font-size: 16px;
-  font-style: italic;
-  font-weight: 400;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.85);
-  flex: 1;
-}
-
-.tAuthor {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: var(--peach);
-  margin-top: 20px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  overflow-wrap: anywhere;
 }
 
 .guarantee {
@@ -1433,30 +1450,13 @@
     margin-bottom: 48px;
     gap: 20px;
   }
-  .ratingWrap {
-    text-align: center;
-    width: 100%;
-  }
-  .stars {
-    font-size: 18px;
-    letter-spacing: 2px;
-  }
-  .ratingSub {
-    font-size: 10px;
-    line-height: 1.45;
-    max-width: 18rem;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .tTextCard {
-    text-align: center;
+  .tmoTrustPill {
     align-items: center;
-    padding: 26px 22px;
-    min-height: unset;
+    align-self: center;
+    text-align: center;
   }
-  .tTextCard::before {
-    margin-left: auto;
-    margin-right: auto;
+  .tmoTrustSub {
+    text-align: center;
   }
   .gItem {
     text-align: center;
@@ -1547,53 +1547,46 @@
   .testimonialsSection {
     padding: 72px 20px;
   }
-  .socialProofGrid {
-    gap: 12px;
-    max-width: 100%;
+  .tmoVideoRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 14px;
   }
-  .socialProofProduct {
-    max-height: 220px;
-    min-height: 140px;
+  .tmoVideoFrame {
+    max-height: min(52vw, 260px);
   }
-  .tVidCard {
-    min-height: 180px;
-    max-height: min(52vw, 280px);
-    aspect-ratio: 4 / 5;
+  .tmoVideoQuote {
+    font-size: 12px;
+    line-height: 1.45;
   }
-  .tVidOverlay {
-    padding: 12px 12px 14px;
+  .tmoProductBand {
+    padding: 16px 20px;
+    margin-bottom: 36px;
   }
-  .tVidName {
-    font-size: 10px;
-    letter-spacing: 0.06em;
+  .tmoSplit {
+    grid-template-columns: 1fr;
+    gap: 28px;
   }
-  .tVidQuote {
-    font-size: 13px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
+  .tmoReviewsCol {
+    order: 1;
   }
-  .tImgCard {
-    min-height: 200px;
-    max-height: min(52vw, 320px);
+  .tmoPhotosCol {
+    order: 2;
   }
-  .tImgOverlay {
-    padding: 12px;
+  .tmoReviewCard {
+    padding: 20px 18px 20px 22px;
   }
-  .tImgQuote {
-    font-size: 13px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-  }
-  .tTextCard {
-    padding: 22px 18px 24px;
-  }
-  .tQuote {
+  .tmoReviewBody {
     font-size: 14px;
-    line-height: 1.62;
+    line-height: 1.58;
     overflow-wrap: anywhere;
   }
-  .tAuthor {
-    margin-top: 14px;
+  .tmoPhotoCard {
+    max-height: min(56vw, 340px);
+  }
+  .tmoPhotoQuote {
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
   }
   .guarantee {
     grid-template-columns: 1fr;
@@ -1627,14 +1620,29 @@
   }
 }
 
-/* Very narrow phones: one column so cards stay readable */
+/* Narrow phones: horizontal video stories + full-width split */
 @media (max-width: 520px) {
-  .socialProofGrid {
-    grid-template-columns: 1fr;
+  .tmoVideoRail {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding: 0 0 10px;
+    margin-bottom: 28px;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .socialProofQuoteSolo {
-    max-width: 100%;
+  .tmoVideoCell {
+    flex: 0 0 min(78vw, 260px);
+    scroll-snap-align: start;
+  }
+
+  .tmoVideoFrame {
+    max-height: 240px;
+  }
+
+  .tmoTrustPill {
+    padding: 12px 18px;
   }
 }
 

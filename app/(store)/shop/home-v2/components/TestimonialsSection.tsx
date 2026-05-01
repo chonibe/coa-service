@@ -73,8 +73,6 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
 export function TestimonialsSection() {
   const { testimonials } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -6% 0px' })
-  const [i0, i1, i2] = testimonials.images
-  const [t0, t1, t2, t3] = testimonials.texts
 
   return (
     <section
@@ -82,127 +80,86 @@ export function TestimonialsSection() {
       className={cn(styles.testimonialsSection, reveal.className)}
       aria-label="Testimonials"
     >
-      <div className={styles.testimonialsHeader}>
-        <div>
-          <div className={styles.eyebrow}>{testimonials.eyebrow}</div>
-          <h2 className={styles.sectionTitle}>
-            Join <em>{testimonials.titleEmphasis}</em>
-            <br />
-            collectors worldwide.
-          </h2>
-        </div>
-        <div className={styles.ratingWrap}>
-          <div className={styles.stars} aria-label="5 stars">
-            ★★★★★
+      <div className={styles.tmoInner}>
+        <div className={styles.testimonialsHeader}>
+          <div>
+            <div className={styles.eyebrow}>{testimonials.eyebrow}</div>
+            <h2 className={styles.sectionTitle}>
+              Join <em>{testimonials.titleEmphasis}</em>
+              <br />
+              collectors worldwide.
+            </h2>
           </div>
-          <div className={styles.ratingSub}>{testimonials.ratingLabel}</div>
-        </div>
-      </div>
-
-      <div className={styles.socialProofGrid}>
-        {testimonials.videos.map((v, idx) => (
-          <div key={`${v.author}-${idx}`} className={styles.tVidCard}>
-            <LazyTestimonialVideo src={v.videoUrl} />
-            <div className={styles.tVidOverlay}>
-              <div className={styles.tVidName}>{v.author}</div>
-              <div className={styles.tVidQuote}>&quot;{v.quote}&quot;</div>
+          <div
+            className={styles.tmoTrustPill}
+            aria-label={`5 out of 5 stars. ${testimonials.ratingLabel}`}
+          >
+            <div className={styles.tmoTrustStars} aria-hidden>
+              ★★★★★
             </div>
+            <div className={styles.tmoTrustSub}>{testimonials.ratingLabel}</div>
           </div>
-        ))}
-
-        <div className={cn(styles.tProductCard, styles.socialProofProduct)}>
-          <Image
-            src={testimonials.productImageUrl}
-            alt="Street Collector Lamp"
-            fill
-            sizes="(max-width: 520px) 100vw, 920px"
-            style={{ objectFit: 'contain', padding: 20 }}
-            loading="lazy"
-          />
         </div>
 
-        {i0 ? (
-          <div className={styles.tImgCard} key={i0.imageUrl}>
+        <div className={styles.tmoVideoRail} role="list">
+          {testimonials.videos.map((v, idx) => (
+            <article key={`${v.author}-${idx}`} className={styles.tmoVideoCell} role="listitem">
+              <div className={styles.tmoVideoFrame}>
+                <LazyTestimonialVideo src={v.videoUrl} className={styles.tmoVideoMedia} />
+              </div>
+              <div className={styles.tmoVideoCaption}>
+                <div className={styles.tmoVideoAuthor}>{v.author}</div>
+                <p className={styles.tmoVideoQuote}>&quot;{v.quote}&quot;</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className={styles.tmoProductBand}>
+          <div className={styles.tmoProductVisual}>
             <Image
-              src={i0.imageUrl}
-              alt={i0.author}
+              src={testimonials.productImageUrl}
+              alt="Street Collector Lamp"
               fill
-              sizes="(max-width: 520px) 100vw, 440px"
-              style={{ objectFit: 'cover' }}
+              sizes="(max-width: 520px) 90vw, 420px"
+              style={{ objectFit: 'contain', padding: '12px 16px' }}
               loading="lazy"
             />
-            <div className={styles.tImgOverlay}>
-              <div className={styles.tImgName}>{i0.author}</div>
-              <div className={styles.tImgQuote}>&quot;{i0.quote}&quot;</div>
-            </div>
           </div>
-        ) : null}
+        </div>
 
-        {t0 ? (
-          <div className={styles.tTextCard} key={t0.author}>
-            <div className={styles.tStars}>★★★★★</div>
-            <p className={styles.tQuote}>&quot;{t0.quote}&quot;</p>
-            <div className={styles.tAuthor}>— {t0.author}</div>
+        <div className={styles.tmoSplit}>
+          <div className={styles.tmoReviewsCol}>
+            {testimonials.texts.map((t) => (
+              <blockquote key={t.author} className={styles.tmoReviewCard}>
+                <div className={styles.tmoReviewStars} aria-hidden>
+                  ★★★★★
+                </div>
+                <p className={styles.tmoReviewBody}>&quot;{t.quote}&quot;</p>
+                <footer className={styles.tmoReviewByline}>— {t.author}</footer>
+              </blockquote>
+            ))}
           </div>
-        ) : null}
 
-        {t1 ? (
-          <div className={styles.tTextCard} key={t1.author}>
-            <div className={styles.tStars}>★★★★★</div>
-            <p className={styles.tQuote}>&quot;{t1.quote}&quot;</p>
-            <div className={styles.tAuthor}>— {t1.author}</div>
+          <div className={styles.tmoPhotosCol}>
+            {testimonials.images.map((img) => (
+              <figure key={img.imageUrl} className={styles.tmoPhotoCard}>
+                <Image
+                  src={img.imageUrl}
+                  alt={`Collector photo — ${img.author}`}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 520px"
+                  style={{ objectFit: 'cover' }}
+                  loading="lazy"
+                />
+                <figcaption className={styles.tmoPhotoCaption}>
+                  <span className={styles.tmoPhotoAuthor}>{img.author}</span>
+                  <span className={styles.tmoPhotoQuote}>&quot;{img.quote}&quot;</span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
-        ) : null}
-
-        {t2 ? (
-          <div className={styles.tTextCard} key={t2.author}>
-            <div className={styles.tStars}>★★★★★</div>
-            <p className={styles.tQuote}>&quot;{t2.quote}&quot;</p>
-            <div className={styles.tAuthor}>— {t2.author}</div>
-          </div>
-        ) : null}
-
-        {i1 ? (
-          <div className={styles.tImgCard} key={i1.imageUrl}>
-            <Image
-              src={i1.imageUrl}
-              alt={i1.author}
-              fill
-              sizes="(max-width: 520px) 100vw, 440px"
-              style={{ objectFit: 'cover' }}
-              loading="lazy"
-            />
-            <div className={styles.tImgOverlay}>
-              <div className={styles.tImgName}>{i1.author}</div>
-              <div className={styles.tImgQuote}>&quot;{i1.quote}&quot;</div>
-            </div>
-          </div>
-        ) : null}
-
-        {i2 ? (
-          <div className={styles.tImgCard} key={i2.imageUrl}>
-            <Image
-              src={i2.imageUrl}
-              alt={i2.author}
-              fill
-              sizes="(max-width: 520px) 100vw, 440px"
-              style={{ objectFit: 'cover' }}
-              loading="lazy"
-            />
-            <div className={styles.tImgOverlay}>
-              <div className={styles.tImgName}>{i2.author}</div>
-              <div className={styles.tImgQuote}>&quot;{i2.quote}&quot;</div>
-            </div>
-          </div>
-        ) : null}
-
-        {t3 ? (
-          <div className={cn(styles.tTextCard, styles.socialProofQuoteSolo)} key={t3.author}>
-            <div className={styles.tStars}>★★★★★</div>
-            <p className={styles.tQuote}>&quot;{t3.quote}&quot;</p>
-            <div className={styles.tAuthor}>— {t3.author}</div>
-          </div>
-        ) : null}
+        </div>
       </div>
     </section>
   )
