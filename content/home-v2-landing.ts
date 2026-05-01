@@ -82,7 +82,7 @@ export const homeV2LandingContent = {
     pricingLine: { lampFrom: '$99', artworksFrom: '$40' },
     ctaText: 'Start your collection',
     videoUrl:
-      'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/a87e2b4aff714e91acf551cb6a31ac56.mp4',
     videoPosterUrl:
       'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
     stats: [
