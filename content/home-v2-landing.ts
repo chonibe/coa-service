@@ -198,6 +198,16 @@ export const homeV2LandingContent = {
     title: '100+ Artists.\n Every corner of the world.',
     titleEmphasis: 'Every corner of the world.',
     ctaLabel: 'View all artists',
+    /** Short clips in the carousel above the image grid (deduped URLs) */
+    carouselVideos: [
+      'https://cdn.shopify.com/videos/c/o/v/4e3914d1963f4f49bc5aa9b30fc28d06.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/d1866abf7d814c0ca47346fc5e8b2f5b.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/8b97b509d56c4cd7a841f7968918bf60.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/00e7a6d054fe4d3795376d830aeb9b5e.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/b3fa9166216c452e84cc94cb8f6ba0d6.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/dd8871a5486149cb8ac7bcae3be7cbb0.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/3d38926d71814b69b1b382614593c2bd.mp4',
+    ],
     tiles: [
       {
         name: 'Jérôme Masi',

@@ -583,6 +583,122 @@
   padding: 0 72px 56px;
 }
 
+.artistsCarouselWrap {
+  position: relative;
+  padding: 0 0 48px;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.artistsCarouselTrack {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: max(72px, env(safe-area-inset-left));
+  padding: 8px max(72px, env(safe-area-inset-right)) 20px max(72px, env(safe-area-inset-left));
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
+  outline: none;
+  touch-action: pan-x;
+}
+
+.artistsCarouselTrack:focus-visible {
+  outline: 2px solid var(--peach);
+  outline-offset: 3px;
+}
+
+.artistsVideoSlide {
+  flex: 0 0 min(72vw, 320px);
+  width: min(72vw, 320px);
+  scroll-snap-align: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--card);
+  aspect-ratio: 9 / 16;
+  max-height: min(52vh, 440px);
+}
+
+.artistsVideoEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.92) saturate(1.05);
+}
+
+.artistsCarouselBtn {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: rgba(29, 27, 27, 0.92);
+  color: var(--peach);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.artistsCarouselBtn:hover {
+  border-color: rgba(255, 186, 148, 0.45);
+  background: var(--card);
+  color: var(--white);
+}
+
+.artistsCarouselBtnPrev {
+  left: max(16px, env(safe-area-inset-left));
+}
+
+.artistsCarouselBtnNext {
+  right: max(16px, env(safe-area-inset-right));
+}
+
+@media (max-width: 960px) {
+  .artistsCarouselTrack {
+    scroll-padding-inline: 48px;
+    padding: 8px 48px 20px;
+  }
+
+  .artistsVideoSlide {
+    flex-basis: min(78vw, 280px);
+    width: min(78vw, 280px);
+  }
+
+  .artistsCarouselBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .artistsCarouselBtnPrev {
+    left: 6px;
+  }
+
+  .artistsCarouselBtnNext {
+    right: 6px;
+  }
+}
+
+@media (max-width: 520px) {
+  .artistsCarouselBtn {
+    display: none;
+  }
+
+  .artistsCarouselTrack {
+    scroll-padding-inline: 16px;
+    padding: 8px 16px 20px;
+  }
+}
+
 .wallGrid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
