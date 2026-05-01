@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
@@ -53,16 +53,6 @@ function ArtistsCarouselVideo({ src }: { src: string }) {
 export function ArtistsWall() {
   const { artistsWall, urls } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  const scrollCarousel = useCallback((dir: -1 | 1) => {
-    const track = trackRef.current
-    if (!track) return
-    const slide = track.querySelector<HTMLElement>('[data-artists-slide]')
-    const gap = 12
-    const step = (slide?.offsetWidth ?? Math.min(track.clientWidth * 0.82, 380)) + gap
-    track.scrollBy({ left: dir * step, behavior: 'smooth' })
-  }, [])
 
   const videos = [...new Set(artistsWall.carouselVideos ?? [])]
 
@@ -78,54 +68,24 @@ export function ArtistsWall() {
       </div>
 
       {videos.length > 0 ? (
-        <div className={styles.artistsCarouselWrap}>
+        <div
+          className={styles.artistsCarouselWrap}
+          role="region"
+          aria-labelledby="artists-carousel-label"
+        >
           <p id="artists-carousel-label" className="sr-only">
-            Swipe or use arrows to browse short films from artists in the collection.
+            Short films from artists in the collection glide by automatically; hover over the ribbon to pause.
           </p>
-          <button
-            type="button"
-            className={`${styles.artistsCarouselBtn} ${styles.artistsCarouselBtnPrev}`}
-            aria-controls="artists-carousel-track"
-            aria-label="Previous artist video"
-            onClick={() => scrollCarousel(-1)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <div
-            ref={trackRef}
-            id="artists-carousel-track"
-            className={styles.artistsCarouselTrack}
-            role="region"
-            aria-labelledby="artists-carousel-label"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft') {
-                e.preventDefault()
-                scrollCarousel(-1)
-              }
-              if (e.key === 'ArrowRight') {
-                e.preventDefault()
-                scrollCarousel(1)
-              }
-            }}
-          >
-            {videos.map((src) => (
-              <ArtistsCarouselVideo key={src} src={src} />
-            ))}
+          <div className={styles.artistsCarouselMarquee}>
+            <div className={styles.artistsCarouselMarqueeTrack}>
+              {videos.map((src, idx) => (
+                <ArtistsCarouselVideo key={`a-${idx}-${src.slice(-24)}`} src={src} />
+              ))}
+              {videos.map((src, idx) => (
+                <ArtistsCarouselVideo key={`b-${idx}-${src.slice(-24)}`} src={src} />
+              ))}
+            </div>
           </div>
-          <button
-            type="button"
-            className={`${styles.artistsCarouselBtn} ${styles.artistsCarouselBtnNext}`}
-            aria-controls="artists-carousel-track"
-            aria-label="Next artist video"
-            onClick={() => scrollCarousel(1)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
         </div>
       ) : null}
 

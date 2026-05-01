@@ -584,36 +584,67 @@
 }
 
 .artistsCarouselWrap {
-  position: relative;
   padding: 0 0 48px;
   margin: 0 auto;
   max-width: 100%;
 }
 
-.artistsCarouselTrack {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: max(72px, env(safe-area-inset-left));
-  padding: 8px max(72px, env(safe-area-inset-right)) 20px max(72px, env(safe-area-inset-left));
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
-  outline: none;
-  touch-action: pan-x;
+/* Seamless infinite horizontal glide — two identical clip sequences */
+.artistsCarouselMarquee {
+  overflow: hidden;
+  width: 100%;
+  padding: 8px 0 4px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
 }
 
-.artistsCarouselTrack:focus-visible {
-  outline: 2px solid var(--peach);
-  outline-offset: 3px;
+.artistsCarouselMarquee:hover .artistsCarouselMarqueeTrack {
+  animation-play-state: paused;
+}
+
+.artistsCarouselMarqueeTrack {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  width: max-content;
+  animation: artistsMarqueeGlide 118s linear infinite;
+  will-change: transform;
+}
+
+@keyframes artistsMarqueeGlide {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artistsCarouselMarquee {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    mask-image: none;
+    padding-inline: max(72px, env(safe-area-inset-left));
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
+    touch-action: pan-x;
+  }
+
+  .artistsCarouselMarqueeTrack {
+    animation: none;
+  }
 }
 
 .artistsVideoSlide {
   flex: 0 0 min(72vw, 320px);
   width: min(72vw, 320px);
-  scroll-snap-align: center;
   border-radius: 4px;
   overflow: hidden;
   background: var(--card);
@@ -629,73 +660,32 @@
   filter: brightness(0.92) saturate(1.05);
 }
 
-.artistsCarouselBtn {
-  position: absolute;
-  top: 50%;
-  z-index: 3;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  background: rgba(29, 27, 27, 0.92);
-  color: var(--peach);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.artistsCarouselBtn:hover {
-  border-color: rgba(255, 186, 148, 0.45);
-  background: var(--card);
-  color: var(--white);
-}
-
-.artistsCarouselBtnPrev {
-  left: max(16px, env(safe-area-inset-left));
-}
-
-.artistsCarouselBtnNext {
-  right: max(16px, env(safe-area-inset-right));
-}
-
 @media (max-width: 960px) {
-  .artistsCarouselTrack {
-    scroll-padding-inline: 48px;
-    padding: 8px 48px 20px;
+  .artistsCarouselMarquee {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 52px,
+      #000 calc(100% - 52px),
+      transparent
+    );
   }
 
   .artistsVideoSlide {
     flex-basis: min(78vw, 280px);
     width: min(78vw, 280px);
   }
+}
 
-  .artistsCarouselBtn {
-    width: 40px;
-    height: 40px;
-  }
-
-  .artistsCarouselBtnPrev {
-    left: 6px;
-  }
-
-  .artistsCarouselBtnNext {
-    right: 6px;
+@media (max-width: 960px) and (prefers-reduced-motion: reduce) {
+  .artistsCarouselMarquee {
+    padding-inline: 48px;
   }
 }
 
-@media (max-width: 520px) {
-  .artistsCarouselBtn {
-    display: none;
-  }
-
-  .artistsCarouselTrack {
-    scroll-padding-inline: 16px;
-    padding: 8px 16px 20px;
+@media (max-width: 520px) and (prefers-reduced-motion: reduce) {
+  .artistsCarouselMarquee {
+    padding-inline: 16px;
   }
 }
 
@@ -920,25 +910,62 @@
   overflow-wrap: anywhere;
 }
 
-.tmoProductBand {
-  display: flex;
+.tmoFeaturedStory {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 28px 40px;
   align-items: center;
-  justify-content: center;
   margin-bottom: 44px;
-  padding: 20px 28px;
+  padding: 28px 32px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(145deg, rgba(255, 186, 148, 0.07) 0%, transparent 45%),
+    radial-gradient(
+      ellipse 120% 80% at 0% 20%,
+      rgba(255, 186, 148, 0.09) 0%,
+      transparent 55%
+    ),
     rgba(23, 21, 21, 0.55);
 }
 
-.tmoProductVisual {
+.tmoFeaturedPhoto {
   position: relative;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  max-height: min(440px, 52vh);
   width: 100%;
-  max-width: 440px;
-  min-height: 120px;
-  height: clamp(120px, 18vw, 200px);
+  justify-self: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.tmoFeaturedPhoto img {
+  filter: brightness(0.86) saturate(0.92);
+}
+
+.tmoFeaturedBlockquote {
+  margin: 0;
+}
+
+.tmoFeaturedQuoteText {
+  margin: 0;
+  font-family: var(--font-landing-serif), Georgia, ui-serif, serif;
+  font-size: clamp(1.26rem, 2.85vw + 0.65rem, 2.08rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.42;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.tmoFeaturedByline {
+  margin-top: 22px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--peach);
 }
 
 .tmoSplit {
@@ -1558,9 +1585,24 @@
     font-size: 12px;
     line-height: 1.45;
   }
-  .tmoProductBand {
-    padding: 16px 20px;
+  .tmoFeaturedStory {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
     margin-bottom: 36px;
+    gap: 22px;
+  }
+
+  .tmoFeaturedQuoteText {
+    font-size: clamp(1.22rem, 4.2vw, 1.72rem);
+    text-align: center;
+  }
+
+  .tmoFeaturedByline {
+    text-align: center;
+  }
+
+  .tmoFeaturedPhoto {
+    max-height: min(56vw, 360px);
   }
   .tmoSplit {
     grid-template-columns: 1fr;

@@ -38,6 +38,8 @@ export type TestimonialImage = {
   author: string
   quote: string
   imageUrl: string
+  /** Renders as the large featured story in testimonials (one recommended) */
+  featured?: boolean
 }
 
 export type TestimonialText = {
@@ -290,8 +292,6 @@ export const homeV2LandingContent = {
     title: 'Join 3,000+\ncollectors worldwide.',
     titleEmphasis: '3,000+',
     ratingLabel: '5.0 · Verified reviews',
-    productImageUrl:
-      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png',
     videos: [
       {
         author: '@streetcollector_',
@@ -321,7 +321,9 @@ export const homeV2LandingContent = {
     images: [
       {
         author: 'Debra G.',
-        quote: 'A unique and unexpected comfort through sometimes daily turmoil.',
+        featured: true,
+        quote:
+          'In an immensely difficult year, where any sense of ease or peace often proved elusive, I found a unique and unexpected comfort—through sometimes daily turmoil.',
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg',
       },

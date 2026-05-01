@@ -73,6 +73,8 @@ function LazyTestimonialVideo({ src, poster, className, preferPlay = true }: Laz
 export function TestimonialsSection() {
   const { testimonials } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -6% 0px' })
+  const featuredImage = testimonials.images.find((img) => img.featured)
+  const photoGridImages = testimonials.images.filter((img) => !img.featured)
 
   return (
     <section
@@ -115,18 +117,27 @@ export function TestimonialsSection() {
           ))}
         </div>
 
-        <div className={styles.tmoProductBand}>
-          <div className={styles.tmoProductVisual}>
-            <Image
-              src={testimonials.productImageUrl}
-              alt="Street Collector Lamp"
-              fill
-              sizes="(max-width: 520px) 90vw, 420px"
-              style={{ objectFit: 'contain', padding: '12px 16px' }}
-              loading="lazy"
-            />
-          </div>
-        </div>
+        {featuredImage ? (
+          <aside className={styles.tmoFeaturedStory}>
+            <h3 id="tmo-featured-quote-heading" className="sr-only">
+              Featured collector story — {featuredImage.author}
+            </h3>
+            <figure className={styles.tmoFeaturedPhoto}>
+              <Image
+                src={featuredImage.imageUrl}
+                alt={`Photo shared by collector ${featuredImage.author}`}
+                fill
+                sizes="(max-width: 900px) 100vw, 420px"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+              />
+            </figure>
+            <blockquote className={styles.tmoFeaturedBlockquote}>
+              <p className={styles.tmoFeaturedQuoteText}>&ldquo;{featuredImage.quote}&rdquo;</p>
+              <footer className={styles.tmoFeaturedByline}>— {featuredImage.author}</footer>
+            </blockquote>
+          </aside>
+        ) : null}
 
         <div className={styles.tmoSplit}>
           <div className={styles.tmoReviewsCol}>
@@ -142,7 +153,7 @@ export function TestimonialsSection() {
           </div>
 
           <div className={styles.tmoPhotosCol}>
-            {testimonials.images.map((img) => (
+            {photoGridImages.map((img) => (
               <figure key={img.imageUrl} className={styles.tmoPhotoCard}>
                 <Image
                   src={img.imageUrl}
