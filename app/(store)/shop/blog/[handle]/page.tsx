@@ -1,300 +1,310 @@
-import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
-import { getArticle as getArticleFromApi, getCachedArticle } from '@/lib/shopify/blogs'
-import { getArticle as getSyncedArticle, articles as syncedArticles } from '@/content/shopify-content'
-import { Container, SectionWrapper, Button } from '@/components/impact'
-import { ScrollReveal, ScrollProgress, ParallaxLayer } from '@/components/blocks'
-import { VinylTiltEffect } from '@/components/vinyl'
+import { notFound } from 'next/navigation'
+import { ArrowLeft, ArrowRight, Clock } from 'lucide-react'
+import { ArticleBodyRenderer } from '@/components/blog/ArticleBodyRenderer'
 import { SanitizedHtml } from '@/components/SanitizedHtml'
-
-// =============================================================================
-// METADATA
-// =============================================================================
+import { ScrollProgress } from '@/components/blocks'
+import {
+  getEditorialArticle,
+  getEditorialArticleHandles,
+  getRelatedEditorialArticles,
+  type EditorialArticle,
+} from '@/content/editorial-blog'
+import { getCachedArticle } from '@/lib/shopify/blogs'
 
 interface PageParams {
   params: Promise<{ handle: string }>
 }
 
-export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
-  const { handle } = await params
-  
-  // Try synced content first
-  const syncedArticle = getSyncedArticle(handle)
-  if (syncedArticle) {
-    return {
-      title: `${syncedArticle.title} | Blog | Street Collector`,
-      description: syncedArticle.excerpt || `Read ${syncedArticle.title} on the Street Collector blog`,
-      openGraph: syncedArticle.imageUrl ? {
-        images: [{ url: syncedArticle.imageUrl }],
-      } : undefined,
-    }
-  }
-  
-  // Fall back to API - we need to find the blog handle
-  // Default to 'news' blog, common Shopify default
-  const article = await getCachedArticle('news', handle)
-  if (article) {
-    return {
-      title: `${article.seo?.title || article.title} | Blog | Street Collector`,
-      description: article.seo?.description || article.excerpt || `Read ${article.title} on the Street Collector blog`,
-      openGraph: article.image ? {
-        images: [{ url: article.image.url }],
-      } : undefined,
-    }
-  }
-  
-  return {
-    title: 'Article | Blog | Street Collector',
-    description: 'Read articles on the Street Collector blog',
-  }
+export async function generateStaticParams() {
+  return getEditorialArticleHandles()
 }
 
-// =============================================================================
-// PAGE COMPONENT
-// =============================================================================
+export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
+  const { handle } = await params
+  const article = await getArticleForHandle(handle)
+
+  if (!article) {
+    return {
+      title: 'Article | Collector Journal | Street Collector',
+      description: 'Read collector-first articles from Street Collector.',
+    }
+  }
+
+  return {
+    title: `${article.title} | Collector Journal | Street Collector`,
+    description: article.excerpt,
+    openGraph: article.heroImage
+      ? {
+          title: article.title,
+          description: article.excerpt,
+          images: [{ url: article.heroImage }],
+        }
+      : undefined,
+  }
+}
 
 export default async function ArticlePage({ params }: PageParams) {
   const { handle } = await params
-  
-  // Try synced content first
-  const syncedArticle = getSyncedArticle(handle)
-  if (syncedArticle) {
-    // Find related articles (same tags)
-    const relatedArticles = syncedArticles
-      .filter(a => 
-        a.handle !== handle && 
-        a.tags.some(tag => syncedArticle.tags.includes(tag))
-      )
-      .slice(0, 3)
-    
-    return (
-      <ArticleContent
-        title={syncedArticle.title}
-        contentHtml={syncedArticle.contentHtml}
-        imageUrl={syncedArticle.imageUrl}
-        imageAlt={syncedArticle.imageAlt}
-        publishedAt={syncedArticle.publishedAt}
-        authorName={syncedArticle.authorName}
-        tags={syncedArticle.tags}
-        relatedArticles={relatedArticles.map(a => ({
-          handle: a.handle,
-          title: a.title,
-          excerpt: a.excerpt,
-          imageUrl: a.imageUrl,
-        }))}
-      />
-    )
-  }
-  
-  // Fall back to API - try common blog handles
-  const blogHandles = ['news', 'blog', 'journal', 'stories']
-  let article = null
-  
-  for (const blogHandle of blogHandles) {
-    article = await getCachedArticle(blogHandle, handle)
-    if (article) break
-  }
-  
+  const article = await getArticleForHandle(handle)
+
   if (!article) {
     notFound()
   }
-  
+
+  const relatedArticles = getRelatedEditorialArticles(article, 3)
+  const headings = extractHeadings(article)
+
   return (
-    <ArticleContent
-      title={article.title}
-      contentHtml={article.contentHtml}
-      imageUrl={article.image?.url || null}
-      imageAlt={article.image?.altText || null}
-      publishedAt={article.publishedAt}
-      authorName={article.author.name}
-      tags={article.tags}
-      relatedArticles={[]}
-    />
+    <main className="min-h-screen bg-[#f7f4ef] text-[#171515]">
+      <ScrollProgress position="top" color="#8b3f25" height={3} />
+
+      <article>
+        <header className="border-b border-[#171515]/12 bg-white px-5 pt-20 sm:px-8 lg:px-12 lg:pt-24">
+          <div className="mx-auto grid max-w-[1600px] gap-10 pb-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(420px,1fr)] lg:items-end lg:pb-14">
+            <div>
+              <Link
+                href="/shop/blog"
+                className="inline-flex min-h-[44px] items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#171515]/55 transition hover:text-[#171515]"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Journal
+              </Link>
+              <div className="mt-8 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#8b3f25]">
+                <span>{article.category}</span>
+                <span className="h-px w-8 bg-[#8b3f25]/35" />
+                <span>{formatArticleFormat(article.articleFormat)}</span>
+                <span className="h-px w-8 bg-[#8b3f25]/35" />
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" aria-hidden />
+                  {article.readingTime} min read
+                </span>
+              </div>
+              <h1 className="mt-6 max-w-5xl font-heading text-4xl font-semibold leading-[0.98] tracking-[-0.02em] text-[#171515] sm:text-5xl lg:text-7xl">
+                {article.title}
+              </h1>
+            </div>
+            <div className="max-w-2xl lg:pb-2">
+              <p className="text-lg leading-8 text-[#171515]/70 sm:text-xl">{article.excerpt}</p>
+              <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#171515]/45">
+                Reviewed {formatEditorialDate(article.lastReviewedAt)}
+              </p>
+              <div className="mt-7 flex flex-wrap gap-2">
+                {article.tags.slice(0, 5).map((tag) => (
+                  <span key={tag} className="border border-[#171515]/12 bg-[#f7f4ef] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#171515]/58">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {article.heroImage && (
+            <div className="mx-auto max-w-[1600px]">
+              <figure className="border-t border-[#171515]/12 pt-4">
+                <div className="relative aspect-[16/9] max-h-[760px] overflow-hidden bg-[#171515]">
+                  <img
+                    src={article.heroImage}
+                    alt={article.heroAlt || article.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                {article.imageCredit && (
+                  <figcaption className="py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#171515]/45">
+                    {article.imageCredit}
+                  </figcaption>
+                )}
+              </figure>
+            </div>
+          )}
+        </header>
+
+        <section className="px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
+          <div className="mx-auto grid max-w-[1400px] gap-10 lg:grid-cols-[220px_minmax(0,760px)_minmax(220px,1fr)]">
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 border-t border-[#171515]/12 pt-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8b3f25]">In this guide</p>
+                <nav className="mt-4 flex flex-col gap-3">
+                  {headings.map((heading) => (
+                    <a
+                      key={heading.id}
+                      href={`#${heading.id}`}
+                      className="text-sm leading-5 text-[#171515]/58 transition hover:text-[#171515]"
+                    >
+                      {heading.text}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            </aside>
+
+            <div className="min-w-0">
+              {article.body ? (
+                <ArticleBodyRenderer article={article} />
+              ) : (
+                <SanitizedHtml
+                  html={normalizeLegacyArticleHtml(article.contentHtml)}
+                  config={{
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h2', 'h3', 'blockquote', 'img', 'figure', 'figcaption'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'id'],
+                  }}
+                  className="editorial-prose prose prose-lg max-w-none
+                    prose-headings:font-heading prose-headings:font-semibold prose-headings:tracking-[-0.02em] prose-headings:text-[#171515]
+                    prose-h2:mt-14 prose-h2:border-t prose-h2:border-[#171515]/12 prose-h2:pt-8 prose-h2:text-3xl
+                    prose-p:text-[#171515]/75 prose-p:leading-8
+                    prose-a:text-[#8b3f25] prose-a:no-underline hover:prose-a:underline
+                    prose-strong:text-[#171515]
+                    prose-ul:text-[#171515]/75 prose-li:my-2 prose-li:leading-7
+                    prose-img:my-8
+                    prose-blockquote:border-l-[#8b3f25] prose-blockquote:bg-white prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:font-heading prose-blockquote:text-2xl prose-blockquote:font-medium prose-blockquote:not-italic prose-blockquote:text-[#171515]
+                  "
+                />
+              )}
+
+              {article.relatedArtistSlug && (
+                <div className="mt-12 border border-[#171515]/12 bg-white p-6">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8b3f25]">Continue with the artist</p>
+                  <p className="mt-3 text-sm leading-7 text-[#171515]/65">
+                    Use the artist profile to compare works, materials, and availability after reading the editorial guide.
+                  </p>
+                  <Link
+                    href={`/shop/artists/${article.relatedArtistSlug}`}
+                    className="mt-5 inline-flex min-h-[44px] items-center gap-2 border border-[#171515] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#171515] transition hover:bg-[#171515] hover:text-white"
+                  >
+                    View artist profile
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </div>
+              )}
+            </div>
+            <div className="hidden xl:block" aria-hidden />
+          </div>
+        </section>
+      </article>
+
+      {relatedArticles.length > 0 && (
+        <section className="border-t border-[#171515]/12 bg-white px-5 py-12 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-[1600px]">
+            <div className="flex items-end justify-between gap-6">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8b3f25]">Keep reading</p>
+                <h2 className="mt-2 font-heading text-3xl font-semibold tracking-[-0.02em] text-[#171515]">Related collector guides</h2>
+              </div>
+              <Link href="/shop/blog" className="hidden min-h-[44px] items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#171515]/58 transition hover:text-[#171515] sm:inline-flex">
+                All articles
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              {relatedArticles.map((related) => (
+                <RelatedArticleCard key={related.handle} article={related} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </main>
   )
 }
 
-// =============================================================================
-// ARTICLE CONTENT COMPONENT
-// =============================================================================
+async function getArticleForHandle(handle: string): Promise<EditorialArticle | undefined> {
+  const localArticle = getEditorialArticle(handle)
+  if (localArticle) return localArticle
 
-interface ArticleContentProps {
-  title: string
-  contentHtml: string
-  imageUrl: string | null
-  imageAlt: string | null
-  publishedAt: string
-  authorName: string
-  tags: string[]
-  relatedArticles: Array<{
-    handle: string
-    title: string
-    excerpt: string | null
-    imageUrl: string | null
-  }>
+  for (const blogHandle of ['news', 'blog', 'journal', 'stories']) {
+    const shopifyArticle = await getCachedArticle(blogHandle, handle)
+    if (shopifyArticle) {
+      const contentHtml = shopifyArticle.contentHtml
+      return {
+        handle,
+        title: shopifyArticle.title,
+        excerpt: shopifyArticle.seo?.description || shopifyArticle.excerpt || `Read ${shopifyArticle.title}.`,
+        contentHtml,
+        heroImage: shopifyArticle.image?.url || null,
+        heroAlt: shopifyArticle.image?.altText || shopifyArticle.title,
+        imageCredit: shopifyArticle.image?.url ? 'Shopify-synced blog image' : null,
+        publishedAt: shopifyArticle.publishedAt,
+        author: shopifyArticle.author.name,
+        tags: shopifyArticle.tags,
+        category: 'Guides',
+        sourceKind: 'shopify-fallback',
+        readingTime: Math.max(2, Math.ceil(contentHtml.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length / 210)),
+      }
+    }
+  }
+
+  return undefined
 }
 
-function ArticleContent({
-  title,
-  contentHtml,
-  imageUrl,
-  imageAlt,
-  publishedAt,
-  authorName,
-  tags,
-  relatedArticles,
-}: ArticleContentProps) {
-  // Format date
-  const formattedDate = new Date(publishedAt).toLocaleDateString('en-US', {
+function extractHeadings(article: EditorialArticle): Array<{ id: string; text: string }> {
+  if (article.body) {
+    return article.body.sections
+      .filter((section) => section.title)
+      .map((section) => ({
+        id: section.id,
+        text: section.title || '',
+      }))
+  }
+
+  return Array.from(article.contentHtml.matchAll(/<h2\s+id="([^"]+)">([^<]+)<\/h2>/g)).map((match) => ({
+    id: match[1],
+    text: match[2],
+  }))
+}
+
+function normalizeLegacyArticleHtml(html: string): string {
+  return html
+    .replace(/<meta[^>]*>/gi, '')
+    .replace(/<div class="w-full border-b[\s\S]*?<div class="request-[\s\S]*?style="text-align: left;">/i, '')
+    .replace(/<\/div>\s*<\/div>\s*<\/div>\s*<\/div>\s*<\/div>/i, '')
+}
+
+function formatEditorialDate(value: string): string {
+  return new Date(value).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
-  
-  // Calculate reading time
-  const wordCount = contentHtml.replace(/<[^>]*>/g, '').split(/\s+/).length
-  const readingTime = Math.ceil(wordCount / 200)
-  
+}
+
+function formatArticleFormat(value: EditorialArticle['articleFormat']) {
+  switch (value) {
+    case 'profile':
+      return 'Profile'
+    case 'walkthrough':
+      return 'Walkthrough'
+    case 'checklist':
+      return 'Checklist'
+    case 'roundup':
+      return 'Roundup'
+    default:
+      return 'Field Guide'
+  }
+}
+
+function RelatedArticleCard({ article }: { article: EditorialArticle }) {
   return (
-    <main className="min-h-screen bg-white">
-      {/* Reading Progress Bar */}
-      <ScrollProgress position="top" color="#f0c417" height={3} />
-      
-      {/* Hero Image with Parallax */}
-      {imageUrl && (
-        <div className="w-full bg-[#f5f5f5] overflow-hidden">
-          <div className="max-w-[1400px] mx-auto">
-            <ParallaxLayer speed={0.5}>
-              <div className="relative aspect-[21/9] sm:aspect-[16/7] overflow-hidden">
-                <Image
-                  src={imageUrl}
-                  alt={imageAlt || title}
-                  fill
-                  priority
-                  className="object-cover"
-                />
-              </div>
-            </ParallaxLayer>
+    <Link href={`/shop/blog/${article.handle}`} className="group block border-t border-[#171515]/12 pt-4">
+      <div className="aspect-[4/3] overflow-hidden bg-[#171515]/10">
+        {article.heroImage ? (
+          <img
+            src={article.heroImage}
+            alt={article.heroAlt || article.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[#171515] font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+            Editorial
           </div>
-        </div>
-      )}
-      
-      <SectionWrapper spacing="md" background="default">
-        <Container maxWidth="narrow">
-          <ScrollReveal animation="fadeUp" duration={0.6}>
-            {/* Tags */}
-            {tags.length > 0 && (
-              <div className="flex gap-2 flex-wrap mb-4">
-                {tags.map(tag => (
-                  <Link
-                    key={tag}
-                    href={`/shop/blog?tag=${encodeURIComponent(tag)}`}
-                    className="text-xs font-medium text-[#047AFF] uppercase tracking-wider hover:underline"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            )}
-            
-            {/* Title */}
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-6">
-              {title}
-            </h1>
-            
-            {/* Meta */}
-            <div className="flex items-center gap-4 text-sm text-[#1a1a1a]/60 mb-8 pb-8 border-b border-[#1a1a1a]/10">
-              <span>{formattedDate}</span>
-              <span>·</span>
-              <span>{readingTime} min read</span>
-              {authorName && (
-                <>
-                  <span>·</span>
-                  <span>By {authorName}</span>
-                </>
-              )}
-            </div>
-          </ScrollReveal>
-          
-          {/* Content */}
-          <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
-            <SanitizedHtml
-              html={contentHtml}
-              className="prose prose-lg max-w-none
-                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
-                prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-                prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-[#1a1a1a]
-                prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
-                prose-img:rounded-xl
-                prose-blockquote:border-l-[#047AFF] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-              "
-            />
-          </ScrollReveal>
-          
-          {/* Share & Back */}
-          <div className="mt-12 pt-8 border-t border-[#1a1a1a]/10 flex items-center justify-between">
-            <Link href="/shop/blog">
-              <Button variant="outline">
-                ← Back to Blog
-              </Button>
-            </Link>
-          </div>
-        </Container>
-      </SectionWrapper>
-      
-      {/* Related Articles with Tilt Effect */}
-      {relatedArticles.length > 0 && (
-        <SectionWrapper spacing="md" background="muted">
-          <Container maxWidth="default">
-            <ScrollReveal animation="fadeUp">
-              <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-8">
-                Related Articles
-              </h2>
-            </ScrollReveal>
-            <ScrollReveal animation="stagger" staggerAmount={0.1}>
-              <div className="grid gap-8 md:grid-cols-3">
-                {relatedArticles.map((article) => (
-                  <VinylTiltEffect key={article.handle} maxTilt={8} scale={1.01}>
-                    <Link
-                      href={`/shop/blog/${article.handle}`}
-                      className="group block"
-                    >
-                      <div className="aspect-[16/9] relative rounded-[24px] overflow-hidden bg-[#f5f5f5] mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                        {article.imageUrl ? (
-                          <Image
-                            src={article.imageUrl}
-                            alt={article.title}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
-                              <rect x="3" y="3" width="18" height="18" rx="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <path d="M21 15l-5-5L5 21" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
-                        {article.title}
-                      </h3>
-                      {article.excerpt && (
-                        <p className="mt-2 text-sm text-[#1a1a1a]/60 line-clamp-2">
-                          {article.excerpt}
-                        </p>
-                      )}
-                    </Link>
-                  </VinylTiltEffect>
-                ))}
-              </div>
-            </ScrollReveal>
-          </Container>
-        </SectionWrapper>
-      )}
-    </main>
+        )}
+      </div>
+      <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8b3f25]">{article.category}</p>
+      <h3 className="mt-2 font-heading text-xl font-semibold leading-tight tracking-[-0.02em] text-[#171515] transition group-hover:text-[#8b3f25]">
+        {article.title}
+      </h3>
+      <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#171515]/60">{article.excerpt}</p>
+    </Link>
   )
 }
