@@ -2,8 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
@@ -51,71 +50,59 @@ function ArtistsCarouselVideo({ src }: { src: string }) {
   )
 }
 
-/** Alternating sm / md / lg for an organic “constellation” grid. */
-function artistBadgeTierClass(index: number): string {
-  const tier = (index * 7 + (index % 4) * 2) % 3
-  if (tier === 0) return styles.artistBadgeSzSm
-  if (tier === 2) return styles.artistBadgeSzLg
-  return styles.artistBadgeSzMd
-}
-
-function avatarSizesAttr(tierClass: string): string {
-  if (tierClass === styles.artistBadgeSzSm) return '(max-width: 960px) 44px, 52px'
-  if (tierClass === styles.artistBadgeSzLg) return '(max-width: 960px) 58px, 80px'
-  return '(max-width: 960px) 50px, 64px'
-}
-
-/** Golden-angle spiral — each cell “flies in” from an outer ring toward its slot (hive settle-in). */
-function hiveCellStyle(index: number): CSSProperties {
-  const goldenAngle = Math.PI * (3 - Math.sqrt(5))
-  const theta = index * goldenAngle
-  const r = 52 + Math.sqrt(index + 1) * 26
-  const tx = Math.round(Math.cos(theta) * r)
-  const ty = Math.round(Math.sin(theta) * r)
-  return {
-    '--hive-tx': `${tx}px`,
-    '--hive-ty': `${ty}px`,
-    '--hive-i': index,
-  } as CSSProperties
+/** One full pass of portraits + “100+” for seamless marquee duplication. */
+function BadgeMarqueeSequence({
+  idPrefix,
+  tiles,
+  ctaLabel,
+  exploreHref,
+}: {
+  idPrefix: string
+  tiles: { name: string; imageUrl: string }[]
+  ctaLabel: string
+  exploreHref: string
+}) {
+  return (
+    <>
+      {tiles.map((t, idx) => (
+        <div className={styles.artistBadgeMarqueeSlide} key={`${idPrefix}-${t.name}-${idx}`}>
+          <div className={styles.artistBadge}>
+            <div className={styles.artistBadgeAvatar}>
+              <Image
+                src={t.imageUrl}
+                alt={t.name}
+                fill
+                sizes="56px"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+              />
+            </div>
+            <span className={styles.artistBadgeName}>{t.name}</span>
+          </div>
+        </div>
+      ))}
+      <div className={styles.artistBadgeMarqueeSlide} key={`${idPrefix}-more`}>
+        <Link
+          href={exploreHref}
+          className={cn(styles.artistsBadgeMore, styles.artistsBadgeMoreProminent)}
+          aria-label={`${ctaLabel} — over 100 artists`}
+        >
+          <span className={styles.artistsBadgeMoreCircle} aria-hidden>
+            <span className={styles.artistsBadgeMoreNum}>100+</span>
+          </span>
+          <span className={styles.artistsBadgeMoreCaption}>{ctaLabel}</span>
+        </Link>
+      </div>
+    </>
+  )
 }
 
 export function ArtistsWall() {
   const { artistsWall, urls } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
-  const hiveRootRef = useRef<HTMLDivElement>(null)
-  const [hiveVisible, setHiveVisible] = useState(false)
-  const [reducedMotion, setReducedMotion] = useState(false)
 
   const videos = [...new Set(artistsWall.carouselVideos ?? [])]
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const sync = () => setReducedMotion(mq.matches)
-    sync()
-    mq.addEventListener('change', sync)
-    return () => mq.removeEventListener('change', sync)
-  }, [])
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setHiveVisible(true)
-      return
-    }
-    const el = hiveRootRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue
-          setHiveVisible(true)
-          obs.unobserve(e.target)
-        }
-      },
-      { rootMargin: '0px 0px -12% 0px', threshold: 0.08 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [reducedMotion])
+  const tiles = artistsWall.tiles
 
   return (
     <section ref={reveal.ref} className={cn(styles.artistsSection, reveal.className)} aria-label="Artists wall">
@@ -151,48 +138,19 @@ export function ArtistsWall() {
       ) : null}
 
       <div
-        ref={hiveRootRef}
-        className={cn(
-          styles.artistsBadges,
-          styles.artistsHiveRoot,
-          hiveVisible && styles.artistsHiveVisible,
-          reducedMotion && styles.artistsHiveInstant
-        )}
+        className={styles.artistsBadgesCarouselWrap}
+        role="region"
+        aria-labelledby="artists-badges-carousel-label"
       >
-        {artistsWall.tiles.map((t, idx) => {
-          const tier = artistBadgeTierClass(idx)
-          return (
-            <div
-              className={cn(styles.artistBadge, styles.artistBadgeHive, tier)}
-              key={`${t.name}-${idx}`}
-              style={hiveCellStyle(idx)}
-            >
-              <div className={styles.artistBadgeAvatar}>
-                <Image
-                  src={t.imageUrl}
-                  alt={t.name}
-                  fill
-                  sizes={avatarSizesAttr(tier)}
-                  style={{ objectFit: 'cover' }}
-                  loading="lazy"
-                />
-              </div>
-              <span className={styles.artistBadgeName}>{t.name}</span>
-            </div>
-          )
-        })}
-
-        <Link
-          href={urls.exploreArtists}
-          className={cn(styles.artistsBadgeMore, styles.artistsBadgeMoreProminent, styles.artistBadgeHive)}
-          style={hiveCellStyle(artistsWall.tiles.length)}
-          aria-label={`${artistsWall.ctaLabel} — over 100 artists`}
-        >
-          <span className={styles.artistsBadgeMoreCircle} aria-hidden>
-            <span className={styles.artistsBadgeMoreNum}>100+</span>
-          </span>
-          <span className={styles.artistsBadgeMoreCaption}>{artistsWall.ctaLabel}</span>
-        </Link>
+        <p id="artists-badges-carousel-label" className="sr-only">
+          Artist portraits scroll automatically in the opposite direction from the clips above; hover to pause.
+        </p>
+        <div className={styles.artistsBadgesMarquee}>
+          <div className={styles.artistsBadgesMarqueeTrack}>
+            <BadgeMarqueeSequence idPrefix="m1" tiles={tiles} ctaLabel={artistsWall.ctaLabel} exploreHref={urls.exploreArtists} />
+            <BadgeMarqueeSequence idPrefix="m2" tiles={tiles} ctaLabel={artistsWall.ctaLabel} exploreHref={urls.exploreArtists} />
+          </div>
+        </div>
       </div>
     </section>
   )

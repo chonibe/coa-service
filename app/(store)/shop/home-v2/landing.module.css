@@ -671,6 +671,24 @@
     );
   }
 
+  .artistsBadgesMarquee {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 52px,
+      #000 calc(100% - 52px),
+      transparent
+    );
+  }
+
+  .artistsBadgesMarqueeTrack {
+    gap: 16px;
+  }
+
+  .artistBadgeMarqueeSlide {
+    width: 76px;
+  }
+
   .artistsVideoSlide {
     flex-basis: min(78vw, 280px);
     width: min(78vw, 280px);
@@ -681,86 +699,88 @@
   .artistsCarouselMarquee {
     padding-inline: 48px;
   }
+
+  .artistsBadgesMarquee {
+    padding-inline: 48px;
+  }
 }
 
 @media (max-width: 520px) and (prefers-reduced-motion: reduce) {
   .artistsCarouselMarquee {
     padding-inline: 16px;
   }
+
+  .artistsBadgesMarquee {
+    padding-inline: 16px;
+  }
 }
 
-/* Artist circles: centered grid + mixed sizes (“constellation”) */
-.artistsBadges {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(74px, max-content));
-  justify-content: center;
-  justify-items: center;
-  align-items: start;
-  column-gap: 12px;
-  row-gap: 22px;
-  padding: 12px 56px 40px;
-  max-width: 1080px;
+/* Artist profile circles — infinite marquee, scroll direction opposite to videos */
+.artistsBadgesCarouselWrap {
+  padding: 0 0 40px;
   margin: 0 auto;
+  max-width: 100%;
 }
 
-/* Organic vertical rhythm (margin doesn’t fight hive keyframe transform) */
-.artistsBadges > .artistBadgeHive:nth-child(5n + 1) {
-  margin-top: 8px;
+.artistsBadgesMarquee {
+  overflow: hidden;
+  width: 100%;
+  padding: 10px 0 8px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
 }
 
-.artistsBadges > .artistBadgeHive:nth-child(5n + 3) {
-  margin-top: -6px;
+.artistsBadgesMarquee:hover .artistsBadgesMarqueeTrack {
+  animation-play-state: paused;
 }
 
-.artistsBadges > .artistBadgeHive:nth-child(7n + 2) {
-  margin-top: 4px;
+.artistsBadgesMarqueeTrack {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+  width: max-content;
+  animation: artistsBadgesMarqueeGlide 100s linear infinite;
+  will-change: transform;
 }
 
-/* Scroll-triggered “hive”: badges spiral in from a ring (golden-angle offsets + stagger) */
-.artistsHiveRoot {
-  overflow: visible;
-  perspective: 900px;
-}
-
-.artistsHiveRoot .artistBadgeHive {
-  opacity: 0;
-  transform: translate3d(var(--hive-tx, 0px), var(--hive-ty, 0px), -28px) scale(0.42) rotate(-8deg);
-  will-change: transform, opacity;
-}
-
-.artistsHiveVisible.artistsHiveRoot:not(.artistsHiveInstant) .artistBadgeHive {
-  animation: artistsHiveClusterIn 0.78s cubic-bezier(0.22, 1.05, 0.36, 1) forwards;
-  animation-delay: calc(var(--hive-i, 0) * 42ms);
-}
-
-.artistsHiveInstant.artistsHiveRoot .artistBadgeHive {
-  opacity: 1;
-  transform: none;
-  animation: none;
-}
-
-@keyframes artistsHiveClusterIn {
-  0% {
-    opacity: 0;
-    transform: translate3d(var(--hive-tx, 0px), var(--hive-ty, 0px), -28px) scale(0.42) rotate(-8deg);
+/* Videos: 0 → -50% (content drifts one way); badges: -50% → 0 (opposite drift) */
+@keyframes artistsBadgesMarqueeGlide {
+  from {
+    transform: translate3d(-50%, 0, 0);
   }
 
-  70% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  to {
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .artistsHiveRoot .artistBadgeHive {
-    opacity: 1;
-    transform: none;
-    animation: none !important;
+  .artistsBadgesMarquee {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    mask-image: none;
+    padding-inline: max(72px, env(safe-area-inset-left));
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 186, 148, 0.35) transparent;
+    touch-action: pan-x;
   }
+
+  .artistsBadgesMarqueeTrack {
+    animation: none;
+  }
+}
+
+.artistBadgeMarqueeSlide {
+  flex: 0 0 auto;
+  width: 84px;
+  display: flex;
+  justify-content: center;
 }
 
 .artistBadge {
@@ -768,52 +788,8 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: max-content;
-  max-width: 104px;
+  width: 76px;
   flex: 0 0 auto;
-}
-
-.artistBadgeSzSm .artistBadgeAvatar {
-  width: 46px;
-  height: 46px;
-  border-width: 1.5px;
-}
-
-.artistBadgeSzSm {
-  max-width: 82px;
-  gap: 5px;
-}
-
-.artistBadgeSzSm .artistBadgeName {
-  font-size: 8px;
-  letter-spacing: 0.05em;
-  max-width: 82px;
-}
-
-.artistBadgeSzMd .artistBadgeAvatar {
-  width: 56px;
-  height: 56px;
-}
-
-.artistBadgeSzMd {
-  max-width: 92px;
-}
-
-.artistBadgeSzLg .artistBadgeAvatar {
-  width: 70px;
-  height: 70px;
-  border-width: 2.5px;
-}
-
-.artistBadgeSzLg {
-  max-width: 104px;
-  gap: 7px;
-}
-
-.artistBadgeSzLg .artistBadgeName {
-  font-size: 10px;
-  letter-spacing: 0.07em;
-  max-width: 104px;
 }
 
 .artistBadgeAvatar {
@@ -1421,7 +1397,7 @@
   .faqSection {
     max-width: 1280px;
   }
-  .artistsBadges {
+  .artistsBadgesCarouselWrap {
     padding-inline: 56px;
   }
 }
@@ -1684,44 +1660,30 @@
   .artistsHeader {
     padding: 0 24px 40px;
   }
-  .artistsBadges {
-    grid-template-columns: repeat(auto-fill, minmax(64px, max-content));
-    column-gap: 10px;
-    row-gap: 18px;
-    gap: unset;
-    padding: 8px 20px 22px;
+  .artistsBadgesCarouselWrap {
+    padding: 0 20px 28px;
   }
 
-  .artistBadgeSzSm .artistBadgeAvatar {
-    width: 40px;
-    height: 40px;
+  .artistsBadgesMarqueeTrack {
+    gap: 14px;
   }
 
-  .artistBadgeSzMd .artistBadgeAvatar {
+  .artistBadgeMarqueeSlide {
+    width: 72px;
+  }
+
+  .artistBadgeAvatar,
+  .artistsBadgeMoreProminent .artistsBadgeMoreCircle {
     width: 48px;
     height: 48px;
   }
 
-  .artistBadgeSzLg .artistBadgeAvatar {
-    width: 56px;
-    height: 56px;
-  }
-
-  .artistBadgeSzLg .artistBadgeName {
-    font-size: 9px;
-  }
-
-  .artistsBadgeMoreProminent .artistsBadgeMoreCircle {
-    width: 60px;
-    height: 60px;
+  .artistsBadgeMoreProminent .artistsBadgeMoreNum {
+    font-size: 19px;
   }
 
   .artistsBadgeMoreNum {
     font-size: 17px;
-  }
-
-  .artistsBadgeMoreProminent .artistsBadgeMoreNum {
-    font-size: 20px;
   }
   .testimonialsSection {
     padding: 72px 20px;
