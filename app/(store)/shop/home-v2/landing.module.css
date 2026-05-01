@@ -1169,6 +1169,8 @@
     box-sizing: border-box;
     align-self: stretch;
     justify-content: flex-end;
+    align-items: center;
+    text-align: center;
     padding-top: 100px;
     /* Space for fixed bottom sticky CTA (~52px) + bar padding + safe area */
     padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
@@ -1178,12 +1180,139 @@
   .heroContent .btnPrimary {
     display: none;
   }
+  .heroEyebrow {
+    justify-content: center;
+  }
+  .heroEyebrow::before {
+    display: none;
+  }
   .heroDesc {
-    border-left-color: rgba(255, 186, 148, 0.45);
+    border-left: none;
+    padding-left: 0;
+    padding-bottom: 4px;
+    border-bottom: 2px solid rgba(255, 186, 148, 0.28);
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 38rem;
     color: rgba(255, 255, 255, 0.82);
+  }
+  .heroPricing {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .heroStats {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 28px 32px;
+    width: 100%;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .heroStats .stat {
+    align-items: center;
+    text-align: center;
+    min-width: 72px;
   }
   .finalBtns .btnPrimary {
     display: none;
+  }
+  /* Center section headings + narrative copy (desktop stays left-aligned) */
+  .sectionHeader,
+  .lampHeader,
+  .artistsHeader {
+    text-align: center;
+  }
+  .eyebrow {
+    justify-content: center;
+  }
+  .eyebrow::before {
+    display: none;
+  }
+  .sectionTitle {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .lampItem {
+    justify-content: center;
+    text-align: center;
+    flex-wrap: wrap;
+  }
+  .lampItemNum {
+    min-width: unset;
+  }
+  .stepTabHeader {
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: center;
+    gap: 12px;
+  }
+  .stepTextWrap {
+    text-align: center;
+    align-items: center;
+  }
+  .stepBodyTitle,
+  .stepBodyText {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 36rem;
+  }
+  .stepDetail {
+    justify-content: center;
+    text-align: left;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .testimonialsHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+  .ratingWrap {
+    text-align: center;
+  }
+  .tTextCard {
+    text-align: center;
+    align-items: center;
+  }
+  .tTextCard::before {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .gItem {
+    text-align: center;
+  }
+  .gIcon {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .faqSection > div:first-of-type {
+    text-align: center;
+  }
+  .faqItem {
+    text-align: center;
+  }
+  .faqQ {
+    justify-content: center;
+    text-align: center;
+  }
+  .faqA {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .finalInner {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .footer {
+    align-items: center;
+    text-align: center;
+  }
+  .footerLinks {
+    justify-content: center;
+    flex-wrap: wrap;
   }
   .lampHeader {
     padding: 0 24px 40px;
