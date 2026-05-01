@@ -15,9 +15,8 @@
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   position: relative;
-  /* artist-profile.html body: DM Mono 300 */
-  font-family: var(--font-landing-mono), 'Courier New', monospace;
-  font-weight: 300;
+  font-family: var(--font-landing-sans), Arial, sans-serif;
+  font-weight: 400;
 }
 
 /* Playfair Display — `--serif` (explicit serif roles from landing-page.html) */
@@ -50,10 +49,6 @@
   color: var(--white);
 }
 
-/*
- * Final typography overrides (landing-page.html lines 234–238):
- * DM Mono + 0.12em on UI chrome; Bebas on stat numerals.
- */
 .heroEyebrow,
 .eyebrow,
 .trustItem,
@@ -66,14 +61,15 @@
 .tImgName,
 .tAuthor,
 .tileName {
-  font-family: var(--font-landing-mono), 'Courier New', monospace;
-  letter-spacing: 0.12em;
+  font-family: var(--font-landing-sans), Arial, sans-serif;
+  letter-spacing: 0.08em;
 }
 
 .statN {
-  font-family: var(--font-landing-display), Impact, sans-serif;
+  font-family: var(--font-landing-sans), Arial, sans-serif;
   font-size: 36px;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 /* Grain overlay (scoped to page wrapper, not <body>) */
@@ -1126,20 +1122,61 @@
   .navScrolled {
     padding: 14px 24px;
   }
+  /* Sticky bottom CTA duplicates these on ≤960px — keep outline / secondary actions only */
+  .navCta {
+    display: none;
+  }
   .hero {
     grid-template-columns: 1fr;
-    min-height: auto;
+    grid-template-rows: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    isolation: isolate;
   }
   .heroMedia {
-    height: 65vw;
-    min-height: 300px;
-    order: -1;
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+    order: 0;
+    z-index: 0;
   }
+  .heroMedia video {
+    min-height: 100%;
+    object-fit: cover;
+    filter: brightness(0.52) saturate(1.05);
+  }
+  /* Full-bleed darken + bottom weight for legibility over video */
   .heroMedia::after {
-    background: linear-gradient(to bottom, transparent 40%, rgba(23, 21, 21, 0.7) 100%);
+    background:
+      linear-gradient(to top, rgba(10, 9, 9, 0.88) 0%, rgba(15, 14, 14, 0.45) 42%, rgba(15, 14, 14, 0.2) 100%),
+      linear-gradient(to bottom, rgba(10, 9, 9, 0.55) 0%, transparent 38%);
   }
   .heroContent {
-    padding: 48px 24px 64px;
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    align-self: stretch;
+    justify-content: flex-end;
+    padding-top: 100px;
+    /* Space for fixed bottom sticky CTA (~52px) + bar padding + safe area */
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .heroContent .btnPrimary {
+    display: none;
+  }
+  .heroDesc {
+    border-left-color: rgba(255, 186, 148, 0.45);
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .finalBtns .btnPrimary {
+    display: none;
   }
   .lampHeader {
     padding: 0 24px 40px;
@@ -1224,6 +1261,10 @@
     padding: 14px 24px;
     gap: 20px;
   }
+  /* Let scroll reach footer / last section above the fixed sticky bar */
+  .page > main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* prefers-reduced-motion: disable decorative hero scanline + grain; FAQ open/close jumps without animation */
@@ -1245,4 +1286,3 @@
     transition: none;
   }
 }
-

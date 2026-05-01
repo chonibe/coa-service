@@ -115,6 +115,7 @@ export default function HomeV2LandingPage() {
       <MobileStickyCta
         href={homeV2LandingContent.urls.experience}
         label={homeV2LandingContent.hero.ctaText}
+        breakpoint="960"
       />
     </div>
   )
