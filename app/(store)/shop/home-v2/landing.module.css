@@ -701,6 +701,53 @@
   margin: 0 auto;
 }
 
+/* Scroll-triggered “hive”: badges spiral in from a ring (golden-angle offsets + stagger) */
+.artistsHiveRoot {
+  overflow: visible;
+  perspective: 900px;
+}
+
+.artistsHiveRoot .artistBadgeHive {
+  opacity: 0;
+  transform: translate3d(var(--hive-tx, 0px), var(--hive-ty, 0px), -28px) scale(0.42) rotate(-8deg);
+  will-change: transform, opacity;
+}
+
+.artistsHiveVisible.artistsHiveRoot:not(.artistsHiveInstant) .artistBadgeHive {
+  animation: artistsHiveClusterIn 0.78s cubic-bezier(0.22, 1.05, 0.36, 1) forwards;
+  animation-delay: calc(var(--hive-i, 0) * 42ms);
+}
+
+.artistsHiveInstant.artistsHiveRoot .artistBadgeHive {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+@keyframes artistsHiveClusterIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--hive-tx, 0px), var(--hive-ty, 0px), -28px) scale(0.42) rotate(-8deg);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artistsHiveRoot .artistBadgeHive {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+}
+
 .artistBadge {
   display: flex;
   flex-direction: column;

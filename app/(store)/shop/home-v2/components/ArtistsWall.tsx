@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
@@ -50,11 +51,57 @@ function ArtistsCarouselVideo({ src }: { src: string }) {
   )
 }
 
+/** Golden-angle spiral — each cell “flies in” from an outer ring toward its slot (hive settle-in). */
+function hiveCellStyle(index: number): CSSProperties {
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+  const theta = index * goldenAngle
+  const r = 52 + Math.sqrt(index + 1) * 26
+  const tx = Math.round(Math.cos(theta) * r)
+  const ty = Math.round(Math.sin(theta) * r)
+  return {
+    '--hive-tx': `${tx}px`,
+    '--hive-ty': `${ty}px`,
+    '--hive-i': index,
+  } as CSSProperties
+}
+
 export function ArtistsWall() {
   const { artistsWall, urls } = homeV2LandingContent
   const reveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
+  const hiveRootRef = useRef<HTMLDivElement>(null)
+  const [hiveVisible, setHiveVisible] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
 
   const videos = [...new Set(artistsWall.carouselVideos ?? [])]
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => setReducedMotion(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setHiveVisible(true)
+      return
+    }
+    const el = hiveRootRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          setHiveVisible(true)
+          obs.unobserve(e.target)
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.08 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [reducedMotion])
 
   return (
     <section ref={reveal.ref} className={cn(styles.artistsSection, reveal.className)} aria-label="Artists wall">
@@ -89,9 +136,21 @@ export function ArtistsWall() {
         </div>
       ) : null}
 
-      <div className={styles.artistsBadges}>
+      <div
+        ref={hiveRootRef}
+        className={cn(
+          styles.artistsBadges,
+          styles.artistsHiveRoot,
+          hiveVisible && styles.artistsHiveVisible,
+          reducedMotion && styles.artistsHiveInstant
+        )}
+      >
         {artistsWall.tiles.map((t, idx) => (
-          <div className={styles.artistBadge} key={`${t.name}-${idx}`}>
+          <div
+            className={cn(styles.artistBadge, styles.artistBadgeHive)}
+            key={`${t.name}-${idx}`}
+            style={hiveCellStyle(idx)}
+          >
             <div className={styles.artistBadgeAvatar}>
               <Image
                 src={t.imageUrl}
@@ -108,7 +167,8 @@ export function ArtistsWall() {
 
         <Link
           href={urls.exploreArtists}
-          className={styles.artistsBadgeMore}
+          className={cn(styles.artistsBadgeMore, styles.artistBadgeHive)}
+          style={hiveCellStyle(artistsWall.tiles.length)}
           aria-label={`${artistsWall.ctaLabel} — over 100 artists`}
         >
           <span className={styles.artistsBadgeMoreCircle} aria-hidden>
