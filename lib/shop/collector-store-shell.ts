@@ -16,6 +16,7 @@ const SHOP_STATIC_SEGMENTS = new Set([
   'drops',
   'experience',
   'experience-v2',
+  'experience-v3',
   'faq',
   'for-business',
   'gift-cards',

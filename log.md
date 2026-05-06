@@ -4,6 +4,14 @@ Append-only. Most recent entry at top. Valid operations: `ingest`, `query`, `lin
 
 ---
 
+## [2026-05-06] feature | Experience V3 (`/shop/experience-v3`) — slideout collection + spline/gallery toggle
+
+**Checklist**
+- [x] [`docs/COMMIT_LOGS/experience-v3-initial-slideout-f458-2026-05-06.md`](docs/COMMIT_LOGS/experience-v3-initial-slideout-f458-2026-05-06.md) — full file links + QA notes
+- [x] [`docs/features/experience-v3/README.md`](docs/features/experience-v3/README.md) — overview, implementation paths, changelog
+
+---
+
 ## [2026-04-19] feature | Unlock experience editor before publish (draft submissions)
 
 **Checklist**
