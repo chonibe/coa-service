@@ -1464,3 +1464,39 @@
   line-height: 1.65;
   color: var(--muted);
 }
+
+/* Embedded in experience v3 — no full-page chrome or 100vh hero */
+.embedded {
+  min-height: 0;
+  background: transparent;
+}
+
+.embedded::after {
+  display: none;
+}
+
+.embedded .profileHero {
+  min-height: 0;
+  grid-template-columns: 1fr;
+}
+
+.embedded .heroCanvasCol {
+  min-height: 280px;
+  max-height: 360px;
+}
+
+.embedded .heroContentCol {
+  padding: 24px 20px 28px;
+}
+
+@media (min-width: 768px) {
+  .embedded .profileHero {
+    grid-template-columns: minmax(200px, 38%) 1fr;
+    min-height: 320px;
+  }
+
+  .embedded .heroCanvasCol {
+    min-height: 320px;
+    max-height: none;
+  }
+}

@@ -91,6 +91,8 @@ type EditionStateLite = {
 type Props = {
   artist: ArtistProfileApiResponse
   earlyAccessCoupon?: string | null
+  /** Compact layout for embedding inside another surface (e.g. experience v3). */
+  embedded?: boolean
 }
 
 function nextThursdayUtcNoonIso(): string {
@@ -103,7 +105,7 @@ function nextThursdayUtcNoonIso(): string {
   return d.toISOString()
 }
 
-export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
+export function ArtistProfilePageClient({ artist, earlyAccessCoupon, embedded = false }: Props) {
   const router = useRouter()
   const cart = useCart()
   const [tab, setTab] = React.useState<TabId>('overview')
@@ -230,9 +232,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   const paragraphs = bioParagraphs(artist.bio)
 
   return (
-    <div className={styles.root}>
+    <div className={cn(styles.root, embedded && styles.embedded)}>
       <div className={styles.inner}>
-        <CollectorStoreTopChrome embedded />
+        {!embedded ? <CollectorStoreTopChrome embedded /> : null}
 
         <section className={styles.profileHero} aria-label="Artist hero">
           <div className={styles.heroCanvasCol}>
@@ -842,6 +844,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
           </div>
         </section>
 
+        {!embedded ? (
         <section className={styles.profileCta} aria-label="Call to action">
           <div className={styles.ctaEyebrow}>Own the work</div>
           <h2 className={styles.ctaTitle}>
@@ -864,8 +867,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             </Link>
           </div>
         </section>
+        ) : null}
       </div>
-      <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+      {!embedded ? <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} /> : null}
     </div>
   )
 }
