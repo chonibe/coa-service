@@ -71,18 +71,17 @@ def fix_model_provider_lines(text: str) -> str:
 
 
 def fix_model_if_oss(text: str) -> str:
-    match = re.search(r'^model\s*=\s*"([^"]+)"', text, re.M)
-    if not match:
+    """Reset any OSS-style model= lines (root and [profiles.*]) to gpt-5.5."""
+
+    def repl_model(match: re.Match[str]) -> str:
+        value = match.group(1)
+        if OSS_MODEL_HINTS.search(value):
+            return 'model = "gpt-5.5"'
+        return match.group(0)
+
+    if not re.search(r'^model\s*=', text, re.M):
         return upsert_line(text, "model", "gpt-5.5")
-    if OSS_MODEL_HINTS.search(match.group(1)):
-        return re.sub(
-            r'^model\s*=.*$',
-            'model = "gpt-5.5"',
-            text,
-            count=1,
-            flags=re.M,
-        )
-    return text
+    return re.sub(r'^model\s*=\s*"([^"]+)"', repl_model, text, flags=re.M)
 
 
 def default_config() -> str:
