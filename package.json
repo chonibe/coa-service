@@ -84,7 +84,8 @@
     "skills:org:manifest": "node scripts/skills-org.mjs manifest",
     "skills:org:pull": "node scripts/skills-org.mjs pull",
     "skills:org:publish": "node scripts/skills-org.mjs publish",
-    "skills:org:push-proposal": "node scripts/skills-org.mjs push-proposal"
+    "skills:org:push-proposal": "node scripts/skills-org.mjs push-proposal",
+    "codex:fix-openai": "python3 scripts/fix-codex-openai-config.py"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
