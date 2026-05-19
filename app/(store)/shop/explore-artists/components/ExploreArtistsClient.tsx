@@ -16,7 +16,7 @@ function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
   const t = s.trim().replace(/\s+/g, ' ')
   if (t.length <= max) return t
-  return `${t.slice(0, max).trim()}…`
+  return `${t.slice(0, max).trim()}...`
 }
 
 type Props = {
@@ -26,19 +26,9 @@ type Props = {
 
 type FilterKey = 'all' | 'featured' | 'withBio'
 
-/** Subset of Shopify product fields returned by GET /api/shop/artists/[slug] */
-type ArtistApiProduct = {
-  id: string
-  handle: string
-  title: string
-  featuredImage?: { url?: string; altText?: string | null } | null
-}
-
 function useIsFinePointer() {
   const [fine, setFine] = React.useState(false)
   React.useEffect(() => {
-    // Only enable the custom cursor on desktop-class viewports with a
-    // fine pointer. Below 1024px the cursor is noisy and fights hover states.
     const mq = window.matchMedia('(pointer: fine) and (min-width: 1024px)')
     const apply = () => setFine(mq.matches)
     apply()
@@ -85,7 +75,6 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
   const [filter, setFilter] = React.useState<FilterKey>('all')
 
   const featured = artists.slice(0, featuredCount)
-
   const spotlightIndex = React.useMemo(() => {
     if (featured.length <= 1) return 0
     const now = new Date()
@@ -94,6 +83,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     const isoWeek = Math.floor(diffDays / 7)
     return isoWeek % featured.length
   }, [featured.length])
+
   const filtered =
     filter === 'featured'
       ? featured
@@ -108,9 +98,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     .join(' · ')
   const spotlightPullQuote = React.useMemo(() => {
     if (!spotlight) return null
-    return (
-      exploreArtistsContent.spotlightPullQuotes.find((q) => q.artistSlug === spotlight.slug) ?? null
-    )
+    return exploreArtistsContent.spotlightPullQuotes.find((q) => q.artistSlug === spotlight.slug) ?? null
   }, [spotlight])
 
   const isFinePointer = useIsFinePointer()
@@ -142,107 +130,6 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     }
   }, [isFinePointer, reducedMotion])
 
-  const [lightboxSlug, setLightboxSlug] = React.useState<string | null>(null)
-  const lightboxArtist = lightboxSlug ? artists.find((a) => a.slug === lightboxSlug) : undefined
-  const [lightboxProducts, setLightboxProducts] = React.useState<ArtistApiProduct[]>([])
-  const [lightboxProductsLoading, setLightboxProductsLoading] = React.useState(false)
-  const [lightboxProductsError, setLightboxProductsError] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!lightboxSlug || !lightboxArtist) {
-      setLightboxProducts([])
-      setLightboxProductsLoading(false)
-      setLightboxProductsError(false)
-      return
-    }
-    const ac = new AbortController()
-    setLightboxProducts([])
-    setLightboxProductsLoading(true)
-    setLightboxProductsError(false)
-    const url = `/api/shop/artists/${encodeURIComponent(lightboxSlug)}?vendor=${encodeURIComponent(lightboxArtist.name)}`
-    fetch(url, { signal: ac.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error('Artist fetch failed')
-        return r.json() as Promise<{ products?: ArtistApiProduct[] }>
-      })
-      .then((data) => setLightboxProducts(Array.isArray(data.products) ? data.products : []))
-      .catch((e: unknown) => {
-        const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: string }).name) : ''
-        if (name === 'AbortError') return
-        setLightboxProductsError(true)
-      })
-      .finally(() => {
-        if (!ac.signal.aborted) setLightboxProductsLoading(false)
-      })
-    return () => ac.abort()
-  }, [lightboxSlug, lightboxArtist?.name])
-
-  const related = React.useMemo(() => {
-    if (!lightboxArtist) return []
-    const pool = artists.filter((a) => a.slug !== lightboxArtist.slug)
-    return pool.slice(0, 3)
-  }, [artists, lightboxArtist])
-
-  const lightboxRef = React.useRef<HTMLDivElement | null>(null)
-  const pageShellRef = React.useRef<HTMLDivElement | null>(null)
-  const lastTriggerRef = React.useRef<HTMLElement | null>(null)
-
-  const openLightbox = React.useCallback((slug: string) => {
-    lastTriggerRef.current = (document.activeElement as HTMLElement) ?? null
-    setLightboxSlug(slug)
-  }, [])
-
-  const closeLightbox = React.useCallback(() => {
-    setLightboxSlug(null)
-  }, [])
-
-  React.useEffect(() => {
-    if (!lightboxSlug) {
-      // Restore focus to the originating element when closing.
-      const el = lastTriggerRef.current
-      if (el && typeof el.focus === 'function') {
-        window.requestAnimationFrame(() => el.focus())
-      }
-      return
-    }
-
-    // Make background inert while the dialog is open (a11y + escape-hatch safety).
-    const shell = pageShellRef.current
-    if (shell) shell.setAttribute('inert', '')
-    document.body.style.overflow = 'hidden'
-
-    // Move focus into the dialog.
-    const dialog = lightboxRef.current
-    const focusables = dialog?.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-    const first = focusables?.[0]
-    first?.focus()
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeLightbox()
-        return
-      }
-      if (e.key !== 'Tab' || !focusables || focusables.length === 0) return
-      const firstEl = focusables[0]
-      const lastEl = focusables[focusables.length - 1]
-      if (e.shiftKey && document.activeElement === firstEl) {
-        e.preventDefault()
-        lastEl.focus()
-      } else if (!e.shiftKey && document.activeElement === lastEl) {
-        e.preventDefault()
-        firstEl.focus()
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      if (shell) shell.removeAttribute('inert')
-      document.body.style.overflow = ''
-    }
-  }, [lightboxSlug, closeLightbox])
-
   return (
     <>
       {isFinePointer && !reducedMotion ? (
@@ -260,7 +147,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
         </>
       ) : null}
 
-      <div className={exploreStyles.wrap} ref={pageShellRef}>
+      <div className={exploreStyles.wrap}>
         <section ref={heroReveal.ref} className={cn(exploreStyles.hero, heroReveal.className)} aria-label="Hero">
           <div className={exploreStyles.heroBgGradient} aria-hidden />
           <div className={exploreStyles.heroContent}>
@@ -271,7 +158,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             </h1>
             <p className={exploreStyles.heroDesc}>
               {artists.length}+ independent artists across 40+ countries. Each name here ties to real street or
-              studio practice—not a stock library. Open a profile for the story and every edition we carry.
+              studio practice, not a stock library. Open a profile for the story and every edition we carry.
             </p>
             <div className={exploreStyles.heroStats}>
               <div className={exploreStyles.stat}>
@@ -308,16 +195,16 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               Why the artists
             </div>
             <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyQuote)} style={{ ['--stagger' as string]: 1 }}>
-              “We don&apos;t license stock. We don&apos;t source prints.
+              &ldquo;We don&apos;t license stock. We don&apos;t source prints.
               <br />
               We find the people painting walls at <em>3am</em>
               <br />
-              in cities that don&apos;t ask permission.”
+              in cities that don&apos;t ask permission.&rdquo;
             </p>
             <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyBody)} style={{ ['--stagger' as string]: 2 }}>
               Every artist in this directory is independently sourced.
               <br />
-              Editions you see here are the runs we carry—built with the artist, not repackaged stock.
+              Editions you see here are the runs we carry, built with the artist, not repackaged stock.
               <br />
               When you buy a print, <strong>30% goes to the artist.</strong>
               <br />
@@ -384,7 +271,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 <div className={exploreStyles.featuredMeta}>{spotlightMeta || 'Street Collector · Limited editions'}</div>
                 <h3 className={exploreStyles.featuredName}>{spotlight.name}</h3>
                 <p className={exploreStyles.featuredHook}>
-                  Full profile: long-form story, history when we have it, and every edition in the shop—in one place.
+                  Full profile: long-form story, history when we have it, and every edition in the shop, in one place.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 {spotlightPullQuote ? (
@@ -392,21 +279,17 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                     {spotlightPullQuote.quote}
                     {spotlightPullQuote.attribution ? (
                       <footer style={{ marginTop: 8, fontStyle: 'normal', fontSize: 12, opacity: 0.7 }}>
-                        — {spotlightPullQuote.attribution}
+                        - {spotlightPullQuote.attribution}
                       </footer>
                     ) : null}
                   </blockquote>
                 ) : null}
-                <button
-                  type="button"
-                  className={exploreStyles.btnFeatured}
-                  onClick={() => openLightbox(spotlight.slug)}
-                >
+                <Link href={`/shop/artists/${spotlight.slug}`} className={exploreStyles.btnFeatured}>
                   {exploreArtistsContent.featured.ctaLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                </button>
+                </Link>
               </div>
             </div>
           </section>
@@ -423,15 +306,13 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               </h2>
             </div>
             <p className={exploreStyles.artistsHeaderNote}>
-              Tap a card for a quick preview, or open the full profile for story, press, and works.
+              Open any card to go straight into the full artist profile with story, press, and works.
             </p>
           </div>
 
           <div className={exploreStyles.artistsGrid} id="artists-grid">
             {filtered.map((artist, idx) => {
-              const hook = artist.bio
-                ? `“${shortBio(artist.bio, 72)}”`
-                : exploreArtistsContent.collection.emptyHook
+              const hook = artist.bio ? `"${shortBio(artist.bio, 72)}"` : exploreArtistsContent.collection.emptyHook
               return (
                 <article
                   key={artist.slug}
@@ -446,52 +327,52 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                       aria-label={`Open ${artist.name} profile`}
                     >
                       <div className={exploreStyles.artistCardMedia}>
-                      {artist.image ? (
-                        <Image
-                          className={exploreStyles.artistCardImg}
-                          src={getProxiedImageUrl(artist.image)}
-                          alt={artist.name}
-                          fill
-                          sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 25vw"
-                          loading={idx < 6 ? 'eager' : 'lazy'}
-                          style={{ objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <div
-                          className="flex h-full w-full items-center justify-center text-5xl"
-                          style={{
-                            background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
-                            color: 'var(--peach)',
-                            fontFamily: 'var(--font-landing-serif), Georgia, serif',
-                          }}
-                          aria-hidden
-                        >
-                          {artist.name.charAt(0).toUpperCase()}
+                        {artist.image ? (
+                          <Image
+                            className={exploreStyles.artistCardImg}
+                            src={getProxiedImageUrl(artist.image)}
+                            alt={artist.name}
+                            fill
+                            sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                            loading={idx < 6 ? 'eager' : 'lazy'}
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center text-5xl"
+                            style={{
+                              background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
+                              color: 'var(--peach)',
+                              fontFamily: 'var(--font-landing-serif), Georgia, serif',
+                            }}
+                            aria-hidden
+                          >
+                            {artist.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className={exploreStyles.artistCardOverlay} aria-hidden />
+                        <div className={exploreStyles.artistCardInfo}>
+                          <div className={exploreStyles.artistCardName}>{artist.name}</div>
+                          <div className={exploreStyles.artistCardCity}>{artist.location ?? 'Street Collector'}</div>
+                          <div className={exploreStyles.artistCardHook}>{hook}</div>
                         </div>
-                      )}
-                      <div className={exploreStyles.artistCardOverlay} aria-hidden />
-                      <div className={exploreStyles.artistCardInfo}>
-                        <div className={exploreStyles.artistCardName}>{artist.name}</div>
-                        <div className={exploreStyles.artistCardCity}>{artist.location ?? 'Street Collector'}</div>
-                        <div className={exploreStyles.artistCardHook}>{hook}</div>
-                      </div>
                       </div>
                     </Link>
                     <div className={exploreStyles.artistCardFooter}>
                       <div className={exploreStyles.editionsCount}>
                         <span>{artist.productCount}</span> editions
                       </div>
-                      <button
-                        type="button"
+                      <Link
+                        href={`/shop/artists/${artist.slug}`}
+                        prefetch={false}
                         className={exploreStyles.cardExploreLink}
-                        onClick={() => openLightbox(artist.slug)}
-                        aria-label={`Quick preview: ${artist.name}`}
+                        aria-label={`Open ${artist.name} profile`}
                       >
-                        Preview
+                        Open profile
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -613,133 +494,6 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             </a>
           </div>
         </section>
-      </div>
-
-      <div
-        ref={lightboxRef}
-        className={cn(exploreStyles.lightbox, lightboxArtist && exploreStyles.lightboxOpen)}
-        role="dialog"
-        aria-modal="true"
-        aria-label={lightboxArtist ? `Artist details: ${lightboxArtist.name}` : 'Artist details'}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) closeLightbox()
-        }}
-      >
-        {lightboxArtist ? (
-          <div className={exploreStyles.lightboxInner}>
-            <div className={exploreStyles.lightboxMedia}>
-              {lightboxArtist.image ? (
-                <Image
-                  className={exploreStyles.lightboxImg}
-                  src={getProxiedImageUrl(lightboxArtist.image)}
-                  alt={lightboxArtist.name}
-                  fill
-                  sizes="(max-width: 960px) 100vw, 50vw"
-                  priority
-                  style={{ objectFit: 'cover' }}
-                />
-              ) : null}
-              <div className={exploreStyles.lightboxMediaOverlay} aria-hidden />
-            </div>
-            <div className={exploreStyles.lightboxContent}>
-              <button type="button" className={exploreStyles.lightboxClose} onClick={closeLightbox} aria-label="Close">
-                ✕
-              </button>
-
-              <div className={exploreStyles.lbMeta}>
-                {(lightboxArtist.location ?? 'Street Collector') + ' · ' + lightboxArtist.productCount + ' editions'}
-              </div>
-              <h2 className={exploreStyles.lbName}>{lightboxArtist.name}</h2>
-              {lightboxArtist.bio ? <p className={exploreStyles.lbStory}>{lightboxArtist.bio}</p> : null}
-
-              <div className={exploreStyles.lbActions}>
-                <Link href={`/shop/artists/${lightboxArtist.slug}`} className={exploreStyles.lbCta}>
-                  Open full profile
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <Link href={experienceUrl} className={exploreStyles.lbCtaOutline}>
-                  Start collecting
-                </Link>
-              </div>
-
-              <div className={exploreStyles.lbArtworks}>
-                <div className={exploreStyles.lbArtworksTitle}>Editions on Street Collector</div>
-                {lightboxProductsLoading ? (
-                  <p className={exploreStyles.lbArtworksHint} aria-live="polite">
-                    Loading editions…
-                  </p>
-                ) : null}
-                {lightboxProductsError ? (
-                  <p className={exploreStyles.lbArtworksHint} role="alert">
-                    We couldn&apos;t load editions in this preview. Use Open full profile for the complete list.
-                  </p>
-                ) : null}
-                {!lightboxProductsLoading && !lightboxProductsError && lightboxProducts.length === 0 ? (
-                  <p className={exploreStyles.lbArtworksHint}>
-                    No shop editions are linked to this artist in preview yet—the full profile may list more.
-                  </p>
-                ) : null}
-                {lightboxProducts.length > 0 ? (
-                  <ul className={exploreStyles.lbArtworksGrid}>
-                    {lightboxProducts.slice(0, 12).map((p) => (
-                      <li key={p.id}>
-                        <Link href={`/shop/${p.handle}`} className={exploreStyles.lbArtworkCard}>
-                          {p.featuredImage?.url ? (
-                            <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1' }}>
-                              <Image
-                                src={getProxiedImageUrl(p.featuredImage.url)}
-                                alt={p.featuredImage.altText?.trim() || p.title}
-                                fill
-                                sizes="(max-width: 960px) 33vw, 150px"
-                                loading="lazy"
-                                style={{ objectFit: 'cover' }}
-                              />
-                            </div>
-                          ) : (
-                            <div className={exploreStyles.lbArtworkPlaceholder} aria-hidden />
-                          )}
-                          <span className={exploreStyles.lbArtworkTitle}>{p.title}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-
-              {related.length ? (
-                <div className={exploreStyles.lbRelated}>
-                  <div className={exploreStyles.lbRelatedTitle}>You might also connect with</div>
-                  <div className={exploreStyles.lbRelatedGrid}>
-                    {related.map((a) => (
-                      <button
-                        key={a.slug}
-                        type="button"
-                        className={exploreStyles.lbRelatedCard}
-                        onClick={() => openLightbox(a.slug)}
-                      >
-                        {a.image ? (
-                          <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1' }}>
-                            <Image
-                              src={getProxiedImageUrl(a.image)}
-                              alt={a.name}
-                              fill
-                              sizes="(max-width: 960px) 33vw, 150px"
-                              loading="lazy"
-                              style={{ objectFit: 'cover', filter: 'saturate(0.6) brightness(0.7)' }}
-                            />
-                          </div>
-                        ) : null}
-                        <div className={exploreStyles.lbRelatedName}>{a.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <MobileStickyCta href={experienceUrl} label={exploreArtistsContent.hero.ctaLabel} />

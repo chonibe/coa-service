@@ -1,12 +1,17 @@
-import { mergeShopifyCollectionBioWithResearch } from './artist-research-merge'
+import {
+  lookupArtistResearch,
+  mergeResearchBio,
+  mergeResearchIntoProfile,
+  mergeShopifyCollectionBioWithResearch,
+} from './artist-research-merge'
 
 describe('mergeShopifyCollectionBioWithResearch', () => {
   it('returns only research when collection is empty', () => {
     expect(mergeShopifyCollectionBioWithResearch(undefined, 'Story body.', undefined)).toBe('Story body.')
   })
 
-  it('returns story plus history when collection is empty', () => {
-    expect(mergeShopifyCollectionBioWithResearch(undefined, 'A.', 'B.')).toBe('A.\n\nB.')
+  it('ignores additional history when story is present', () => {
+    expect(mergeShopifyCollectionBioWithResearch(undefined, 'A.', 'B.')).toBe('A.')
   })
 
   it('returns only collection when research is empty', () => {
@@ -19,7 +24,7 @@ describe('mergeShopifyCollectionBioWithResearch', () => {
     expect(mergeShopifyCollectionBioWithResearch(collection, story, undefined)).toBe(story)
   })
 
-  it('puts curated research before collection when both differ (shop UI reads bio from the start)', () => {
+  it('puts curated research before collection when both differ', () => {
     expect(
       mergeShopifyCollectionBioWithResearch('Exclusive prints on Street Collector.', 'Born in Lisbon in 1990.', undefined)
     ).toBe('Born in Lisbon in 1990.\n\nExclusive prints on Street Collector.')
@@ -29,5 +34,35 @@ describe('mergeShopifyCollectionBioWithResearch', () => {
     const collection = '<p>Same text</p>'
     const story = 'Same text'
     expect(mergeShopifyCollectionBioWithResearch(collection, story, undefined)).toBe(story)
+  })
+
+  it('repairs mojibake in the visible bio', () => {
+    const story = 'JÃ©rÃ´me Masi paints quiet, cinematic scenes that leave room for the viewer.'
+    expect(mergeShopifyCollectionBioWithResearch(undefined, story, undefined)).toBe(
+      'Jérôme Masi paints quiet, cinematic scenes that leave room for the viewer.'
+    )
+  })
+})
+
+describe('mergeResearchIntoProfile', () => {
+  it('strips instagram handles from storefront story hooks', () => {
+    const profile = mergeResearchIntoProfile({}, 'alin-mor')
+    expect(profile.storyHook).toBe(
+      'Alin Mor graduated Bezalel in visual communications and built a practice around femininity, archetype, and spiritual symbolism at mural scale.'
+    )
+  })
+
+  it('drops note-style activeSince metadata', () => {
+    const profile = mergeResearchIntoProfile({}, 'alin-mor')
+    expect(profile.activeSince).toBeUndefined()
+  })
+
+  it('supports research aliases for artists whose storefront slug differs', () => {
+    const research = lookupArtistResearch('zivink')
+    expect(research?.artistName).toBe('Erezoo')
+
+    const profile = mergeResearchIntoProfile({}, 'zivink')
+    expect(profile.storyHook).toContain('Erez Sameach works as Erezoo from Haifa')
+    expect(mergeResearchBio('zivink', undefined)).toContain('Born in Carmiel')
   })
 })

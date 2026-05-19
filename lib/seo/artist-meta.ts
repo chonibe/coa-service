@@ -13,7 +13,7 @@ function truncate(s: string, max: number): string {
 }
 
 /**
- * SEO title for artist collection pages (strategy template).
+ * SEO title for artist collection pages.
  */
 export function buildArtistTitle(name: string): string {
   const base = `${name} | Limited Edition Prints | ${BRAND}`
@@ -21,7 +21,7 @@ export function buildArtistTitle(name: string): string {
 }
 
 /**
- * Meta description: artist name, limited edition, COA, worldwide (strategy template).
+ * Meta description for artist collection pages.
  */
 export function buildArtistDescription(artist: Pick<ArtistProfileApiResponse, 'name' | 'stats'>): string {
   const name = artist.name
@@ -38,7 +38,7 @@ export function buildArtistOgTitle(name: string): string {
   return `${name} — Limited edition prints | ${BRAND}`
 }
 
-/** Experience /shop/experience* pages with ?artist= — never use internal “Experience V2” labels in SERP/social. */
+/** Experience /shop/experience* pages with ?artist= never use internal "Experience V2" labels in SERP/social. */
 export function buildExperienceArtistTitles(
   name: string,
   opts?: { earlyAccess?: boolean }
@@ -59,18 +59,15 @@ export function buildArtistH1(name: string): string {
   return name
 }
 
-/** Answer-first, citable lead (GEO): who they are + what you can buy here. */
+/** Short editorial lead for artist profile pages. */
 export function buildArtistAnswerFirstLead(artist: ArtistProfileApiResponse): string {
   const name = artist.name
   const loc = artist.profile?.location?.trim()
-  const n = artist.stats?.editionCount ?? artist.products.length
-  const open = loc
-    ? `${name} is an urban and street art artist based in ${loc}.`
-    : `${name} is an urban and street art artist on Street Collector.`
-  const mid =
-    n > 0
-      ? ` Collect limited edition ${name} prints (${n} artwork${n === 1 ? '' : 's'} listed)—each run is finite, with Certificate of Authenticity.`
-      : ` Collect limited edition ${name} prints on Street Collector with Certificate of Authenticity.`
-  const close = ' Works ship worldwide; browse editions in the Works tab.'
-  return (open + mid + close).replace(/\s+/g, ' ').trim()
+  const alias = artist.profile?.alias?.trim()
+  const activeSince = artist.profile?.activeSince?.trim()
+  const base = loc ? `${name} is an artist based in ${loc}.` : `${name} is an artist.`
+  const details = [alias, activeSince ? `Active since ${activeSince}.` : null]
+    .filter(Boolean)
+    .join(' ')
+  return [base, details].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
 }

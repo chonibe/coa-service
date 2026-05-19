@@ -1,0 +1,18 @@
+company,domain,contact_name,first_name,last_name,title,location,linkedin_url,selection_reason,priority
+Riot Games,riotgames.com,Charlie Allen,Charlie,Allen,"EMEA Director, Commercial Partnerships & Business Development","London Area, United Kingdom, United Kingdom",https://www.linkedin.com/in/allencharlie/,Best non-CEO route: senior commercial partnerships and BD,A
+Supercell,supercell.com,Ishai Smadja,Ishai,Smadja,Head of Business Operations,"London, England, United Kingdom",https://www.linkedin.com/in/ishai-smadja-13473155/,Best match: Head of Business Operations,A
+Playtika,playtika.com,Ziva Shalom,Ziva,Shalom,Director Of Operations,"Tel Aviv-Yafo, Tel Aviv District, Israel",https://www.linkedin.com/in/ziva-shalom-a17236153/,Best match: operations owner,A
+ShopMy,shopmy.us,Callie Farmakis,Callie,Farmakis,Director of Business Development,"New York, New York, United States",https://www.linkedin.com/in/callie-farmakis/,Best available BD route for partnerships/gifting concept,B
+Kajabi,kajabi.com,Mahesh Guruswamy,Mahesh,Guruswamy,Chief Operating Officer,"Irvine, California, United States",https://www.linkedin.com/in/maheshguruswamy/,Best match: COO/operator,A
+Elementor,elementor.com,Eitan Grosbard,Eitan,Grosbard,Chief of Staff,"Tel Aviv District, Israel",https://www.linkedin.com/in/eitan-grosbard-1872ba3/,Best match: Chief of Staff,A
+Circle,circle.so,Igor Cabral,Igor,Cabral,Design Operations Manager,"Joinville, Santa Catarina, Brazil",https://www.linkedin.com/in/igoracabral/,Best available operations contact; design ops has creative adjacency,B
+Miniclip,miniclip.com,Jayvian Hong,Jayvian,Hong,Head of Strategic Partnerships,"Greater London, England, United Kingdom",https://www.linkedin.com/in/jayvian-hong-a8487685/,Best match: strategic partnerships,A
+Cameo,cameo.com,Mackenzie O'Connor,Mackenzie,O'Connor,Vice President Operations,"Greater Chicago Area, United States",https://www.linkedin.com/in/mackenzie-o-connor-146966138/,Best match: VP Operations,A
+Pietra,pietrastudio.com,Tala Akhavan,Tala,Akhavan,Chief Operating Officer,"Los Angeles, California, United States",https://www.linkedin.com/in/tala-akhavan-8b574829/,Best match: COO/operator,A
+Mighty Networks,mightynetworks.com,Tanisha Singh,Tanisha,Singh,Chief of Staff,"San Francisco Bay Area, United States",https://www.linkedin.com/in/tanisha-singh-405619173/,Best match: Chief of Staff,A
+Passes,passes.com,Annette Rivera,Annette,Rivera,Director of Brand Partnerships,"Miami, Florida, United States",https://www.linkedin.com/in/annetterivera/,Best brand partnerships route for creator-led gifting,A
+Dapper Labs,dapperlabs.com,Jacob Eisenberg,Jacob,Eisenberg,Chief of Staff,"New York, New York, United States",https://www.linkedin.com/in/jacob-eisenberg-8b473457/,Best match: Chief of Staff,A
+Agentio,agentio.com,Jason Li,Jason,Li,"VP, Marketing","Brooklyn, New York, United States",https://www.linkedin.com/in/jason-li-2830486/,Best non-CEO route found; marketing can route brand/partnership gifting,B
+Podia,podia.com,Len Markidan,Len,Markidan,Chief Operating Officer,"Hershey, Pennsylvania, United States",https://www.linkedin.com/in/len-markidan-b3816914/,Best match: COO/operator,A
+Stationhead,stationhead.com,Ryan Star,Ryan,Star,CEO / Co-Founder,"Brooklyn, New York, United States",https://www.linkedin.com/in/ryan-star-272b225/,Fallback: Clay found CEO only; use only as router,C
+Supercast,supercast.com,Jason Sew Hoy,Jason,Hoy,Co-Founder & CEO,"Austin, Texas, United States",https://www.linkedin.com/in/jason-sew-hoy-9471ba/,Fallback: Clay found CEO only; use only as router,C

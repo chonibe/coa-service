@@ -1,4 +1,4 @@
-import { getCollectionInstagram } from '@/lib/shopify/artist-image'
+import { getArtistImageByHandle, getCollectionInstagram } from '@/lib/shopify/artist-image'
 import {
   mergeResearchBio,
   mergeResearchIntoProfile,
@@ -11,6 +11,17 @@ export type ExhibitionRow = { year: number; type: string; title: string; venue: 
 export type PressCard = { outlet: string; year?: string; quote: string; url?: string }
 /** `url` = image src; optional `link` = click target (e.g. post permalink). Falls back to profile URL. */
 export type InstagramShowcaseItem = { url: string; kind?: string; link?: string }
+export type InstagramProfileSummary = {
+  handle: string
+  url: string
+  displayName?: string
+  biography?: string
+  avatarUrl?: string
+  followersCount?: number
+  followsCount?: number
+  mediaCount?: number
+  website?: string
+}
 
 export type ArtistProfileRich = {
   location?: string
@@ -21,6 +32,7 @@ export type ArtistProfileRich = {
   exhibitions?: ExhibitionRow[]
   press?: PressCard[]
   instagramShowcase?: InstagramShowcaseItem[]
+  instagramProfile?: InstagramProfileSummary
   activeSince?: string
   impactCallout?: string
   exclusiveCallout?: string
@@ -138,13 +150,42 @@ export async function buildArtistProfileResponse(input: {
     }
   }
 
+  let image = input.image?.trim() || undefined
+  if (!image) {
+    image =
+      col?.image?.url ||
+      input.products.find((product) => product.featuredImage?.url)?.featuredImage?.url ||
+      input.products.find((product) => product.images?.edges?.[0]?.node?.url)?.images?.edges?.[0]?.node?.url ||
+      undefined
+  }
+  if (!image) {
+    const handlesToTry = [
+      input.slug,
+      ...(input.collectionHandlesToTry ?? []),
+      col?.handle,
+    ].filter(Boolean) as string[]
+    for (const handle of [...new Set(handlesToTry)]) {
+      image = await getArtistImageByHandle(handle)
+      if (image) break
+    }
+  }
+
   const bio = mergeResearchBio(input.slug, input.bio)
+  if (ig.handle && ig.url && !profile.instagramProfile) {
+    profile = {
+      ...profile,
+      instagramProfile: {
+        handle: ig.handle,
+        url: ig.url,
+      },
+    }
+  }
 
   return {
     name: input.name,
     slug: input.slug,
     bio,
-    image: input.image,
+    image,
     instagram: ig.handle,
     instagramUrl: ig.url,
     products: input.products,
