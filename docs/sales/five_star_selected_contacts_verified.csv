@@ -1,0 +1,17 @@
+company,domain,contact_name,title,location,linkedin_url,email,priority,selection_reason
+Artlist,artlist.io,Orit Bar-Niv,Chief of Staff to the CEOs,"Tel Aviv-Yafo, Tel Aviv District, Israel",https://www.linkedin.com/in/orit-bar-niv-687876199/,orit@artlist.io,A,Best match: CEO-office owner likely to route investor gifting
+Epidemic Sound,epidemicsound.com,Benjamin Page,SVP Corporate Development,"Amsterdam, Noord-Holland, Netherlands",https://www.linkedin.com/in/benjamin-page-6444652/,benjamin@epidemicsound.com,A,Best match: corporate development likely close to investor/strategic relationship work
+Splice,splice.com,Ankur Patel,Vice President Corporate Development,"New York, New York, United States",https://www.linkedin.com/in/ankur-patel-00204980/,ankur@splice.com,A,Best match: corporate development and strategic/investor adjacency
+Dribbble,dribbble.com,Rina Shimizu,VP of Operations,"San Francisco Bay Area, United States",https://www.linkedin.com/in/rinashimizu/,rina@dribbble.com,A,Best match: operations owner over CEO
+VSCO,vsco.co,Emily Tan,Chief of Staff,"Los Angeles, California, United States",https://www.linkedin.com/in/emily-tan-063095/,emily@vsco.co,A,Best match: Chief of Staff
+Pitch,pitch.com,Vanessa Stock,COO,"Berlin, Berlin, Germany",https://www.linkedin.com/in/vanessa-stock-8aba7297/,vanessa@pitch.io,A,Best match: COO/operator
+Framer,framer.com,Monika Michalczyk,Head of Brand,"Amsterdam, North Holland, Netherlands",https://www.linkedin.com/in/monika-michalczyk-63baba16a/,monika@framer.com,B,Best available: brand owner for artist-led proposal
+Readymag,readymag.com,Diana Kasay,CEO,"Berlin, Berlin, Germany",https://www.linkedin.com/in/diana-kasay-3b0b904a/,diana@readymag.com,C,Fallback: Clay found no operator/CoS; CEO only as router
+Sorare,sorare.com,Thibaut Predhomme,Chief of staff,"Paris et peripherie, France",https://www.linkedin.com/in/thibaut-predhomme-85451523/,thibaut@sorare.com,A,Best match: Chief of Staff
+Whatnot,whatnot.com,Raleigh Anne Gray,Chief of Staff,"Charlotte, North Carolina, United States",https://www.linkedin.com/in/raleigh-anne-blank-07b1595/,raleigh.gray@whatnot.com,A,Best match: Chief of Staff
+Complex Networks,complex.com,Kirsten Atkinson,"SVP, Brand Partnerships","Los Angeles Metropolitan Area, United States",https://www.linkedin.com/in/kirsten-atkinson-0158b36/,kirsten.atkinson@complex.com,A,Best match: senior brand partnerships owner
+A24,a24films.com,Daina Norkus,Chief of Staff,"New York, New York, United States",https://www.linkedin.com/in/daina-norkus/,dnorkus@a24films.com,A,Best match: Chief of Staff
+Letterboxd,letterboxd.com,Catherine Buchanan,Chief Operating Officer,"New Zealand, New Zealand",https://www.linkedin.com/in/catherine-buchanan-b60727a3/,catherine.buchanan@letterboxd.com,A,Best match: COO over CEO
+Tracklib,tracklib.com,Kieran Houston,Head of Operations,"Newcastle Upon Tyne, England, United Kingdom",https://www.linkedin.com/in/kieran-houston-75b09b133/,kieran@tracklib.com,A,Best match: Head of Operations
+Rive,rive.app,Guido Rosso,Founder/CEO,"Palo Alto, California, United States",https://www.linkedin.com/in/guidorosso/,guido@rive.app,C,Fallback: Clay found no operator/CoS; CEO only as router
+Kittl,kittl.com,Julia Bladinieres,Chief of Staff & Head of People,"Berlin, Berlin, Germany",https://www.linkedin.com/in/julia-bladinieres-521026b9/,jbladinieres@kittl.com,A,Best match: Chief of Staff

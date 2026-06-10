@@ -19,6 +19,7 @@ function generateHandle(title: string): string {
 
 /**
  * Validates product submission data
+ * eslint-disable security/detect-unsafe-regex — the regex patterns here are hardcoded literals, not user-constructed
  */
 function validateProductSubmission(data: any): { valid: boolean; errors: string[] } {
   const errors: string[] = []
@@ -60,8 +61,9 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
       if (!variant.price || typeof variant.price !== "string") {
         errors.push(`Variant ${index + 1}: Price is required`)
       }
-      // Validate price format
+      /* eslint-disable security/detect-unsafe-regex */
       if (variant.price && typeof variant.price === "string" && !/^\d+(\.\d{1,2})?$/.test(variant.price)) {
+        /* eslint-enable security/detect-unsafe-regex */
         errors.push(`Variant ${index + 1}: Price must be a valid number`)
       }
           // Auto-generate SKU if missing
@@ -79,6 +81,11 @@ function validateProductSubmission(data: any): { valid: boolean; errors: string[
         variant.sku = `${vendorPrefix}-${productCode}${variantSuffix}`
       }
     })
+  }
+
+  // Validate series assignment — every artwork must belong to a series
+  if (!data.series_id || typeof data.series_id !== "string" || data.series_id.trim().length === 0) {
+    errors.push("Every artwork must belong to a series.")
   }
 
   return {
@@ -183,7 +190,7 @@ export async function POST(request: NextRequest) {
           const filePath = `product_submissions/${sanitizedVendorName}/${fileName}`
           
           // Upload to Supabase storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from("product-images")
             .upload(filePath, buffer, {
               contentType: "image/png",
@@ -296,7 +303,8 @@ export async function POST(request: NextRequest) {
     // Handle benefits: Create series-level benefits immediately, artwork-level benefits will be created when product is published
     if (productData.benefits && Array.isArray(productData.benefits) && productData.benefits.length > 0) {
       const seriesLevelBenefits = productData.benefits.filter((b: any) => b.is_series_level && seriesId)
-      const artworkLevelBenefits = productData.benefits.filter((b: any) => !b.is_series_level)
+      // artwork-level benefits deferred until product is published
+      const _artworkLevelBenefits = productData.benefits.filter((b: any) => !b.is_series_level)
 
       // Create series-level benefits immediately
       for (const benefit of seriesLevelBenefits) {

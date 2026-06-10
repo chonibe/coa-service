@@ -1,6 +1,12 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 import LoginClient from "./login-client"
 import { Loader2 } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false },
+}
 
 export default function LoginPage() {
   return (

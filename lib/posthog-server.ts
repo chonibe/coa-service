@@ -11,8 +11,8 @@
 
 import crypto from 'crypto'
 
-const POSTHOG_API_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY
+const POSTHOG_HOST = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID
 
 // Extract project ID from API key if not set (phc_<project_id>_<random>)

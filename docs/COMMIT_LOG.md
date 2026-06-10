@@ -1,5 +1,198 @@
 # Commit Log
 
+## Commit: feat(landing): Street Collector home light mode + local theme toggle (2026-04-21)
+
+### Summary
+**`/`** and **`/shop/street-collector`** use a warm **light** canvas by default, with a **local** light/dark toggle (not the root `ThemeProvider`, which stays forced light). Preference is stored in **`localStorage`** under **`sc-landing-appearance`**. **Desktop:** sun/moon control in **`DesktopTopBar`**. **Mobile:** fixed FAB (below promo bar). **`LandingThemeProvider`** applies **`dark`** on a wrapper so Tailwind **`dark:`** pairs work. **Footer** gains **`landingDualTone`** for matching surfaces; **`SectionWrapper`** **`experience`** background is dual-tone; **ArtistCarousel** / landing sections use **`isStreetExperience`** for chrome. **Deploy was intentionally skipped** pending approval.
+
+### Implementation Checklist
+
+- [x] [app/(store)/shop/street-collector/LandingThemeProvider.tsx](app/(store)/shop/street-collector/LandingThemeProvider.tsx)
+- [x] [app/(store)/layout.tsx](app/(store)/layout.tsx)
+- [x] [app/(store)/shop/street-collector/DesktopTopBar.tsx](app/(store)/shop/street-collector/DesktopTopBar.tsx)
+- [x] [app/(store)/shop/street-collector/page.tsx](app/(store)/shop/street-collector/page.tsx)
+- [x] [app/(store)/shop/street-collector/MeetTheStreetLamp.tsx](app/(store)/shop/street-collector/MeetTheStreetLamp.tsx)
+- [x] [app/(store)/shop/street-collector/StreetCollectorFAQ.tsx](app/(store)/shop/street-collector/StreetCollectorFAQ.tsx)
+- [x] [app/(store)/shop/street-collector/TestimonialCarousel.tsx](app/(store)/shop/street-collector/TestimonialCarousel.tsx)
+- [x] [app/(store)/shop/street-collector/MultiColumnVideoSection.tsx](app/(store)/shop/street-collector/MultiColumnVideoSection.tsx)
+- [x] [components/impact/Footer.tsx](components/impact/Footer.tsx)
+- [x] [components/impact/SectionWrapper.tsx](components/impact/SectionWrapper.tsx)
+- [x] [components/sections/ArtistCarousel.tsx](components/sections/ArtistCarousel.tsx)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(admin): artist applications list + default notify to choni@thestreetcollector.com (2026-04-21)
+
+### Summary
+**`/admin/artist-applications`** lists **`artist_applications`** (shop + `/for-artists/apply`) with **`GET /api/admin/artist-applications`**. Sidebar: Products → **Artist applications**. Team email for new applications uses **`getArtistApplicationNotifyRecipients()`** — defaults to **`choni@thestreetcollector.com`**, override with **`ARTIST_APPLICATION_NOTIFY_EMAIL`** (comma-separated). Docs and **`.env.example`** updated.
+
+### Implementation Checklist
+
+- [x] [app/admin/artist-applications/page.tsx](app/admin/artist-applications/page.tsx)
+- [x] [app/api/admin/artist-applications/route.ts](app/api/admin/artist-applications/route.ts)
+- [x] [lib/constants/artist-application-notify.ts](lib/constants/artist-application-notify.ts)
+- [x] [app/api/shop/artist-submissions/route.ts](app/api/shop/artist-submissions/route.ts)
+- [x] [app/api/artists/apply/route.ts](app/api/artists/apply/route.ts)
+- [x] [app/admin/admin-shell.tsx](app/admin/admin-shell.tsx)
+- [x] [.env.example](.env.example)
+- [x] [docs/features/artist-onboarding/README.md](docs/features/artist-onboarding/README.md)
+- [x] [docs/features/shop-footer-pages/README.md](docs/features/shop-footer-pages/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: fix(shop): artist submissions persist to Supabase; email notify best-effort (2026-04-21)
+
+### Summary
+**`/api/shop/artist-submissions`** previously required **`sendEmail`** to succeed, so missing **Resend** / **Gmail** configuration returned **500** and users saw an error after submit. The route now **inserts into `artist_applications`** first (same as **`/api/artists/apply`**), stores the message in **`bio`** with a shop-form prefix, and sends the team email **best-effort** only. The shop page parses JSON errors safely if the response is not JSON.
+
+### Implementation Checklist
+
+- [x] [app/api/shop/artist-submissions/route.ts](app/api/shop/artist-submissions/route.ts)
+- [x] [app/(store)/shop/artist-submissions/page.tsx](app/(store)/shop/artist-submissions/page.tsx)
+- [x] [docs/features/shop-footer-pages/README.md](docs/features/shop-footer-pages/README.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(seo): GSC property setup doc, sitemap blog URLs, optional full webmasters OAuth (2026-04-19)
+
+### Summary
+**[`GSC_PROPERTY_SETUP.md`](docs/features/street-collector/GSC_PROPERTY_SETUP.md)** — Search Console checklist (sitemap, verification, UI, API). **Sitemap** now includes **`/shop/blog`**, **blog article** URLs from Storefront, and documents **www** vs **app** canonical alignment. **`gsc-oauth-token.mjs`** supports **`GSC_OAUTH_SCOPE`** for **`gsc:sitemaps submit`** (read-only default caused Insufficient Permission). **[`GSC_API.md`](docs/features/street-collector/GSC_API.md)** and **[`.env.example`](.env.example)** updated.
+
+### Implementation Checklist
+
+- [x] [app/sitemap.ts](app/sitemap.ts)
+- [x] [docs/features/street-collector/GSC_PROPERTY_SETUP.md](docs/features/street-collector/GSC_PROPERTY_SETUP.md)
+- [x] [docs/features/street-collector/GSC_API.md](docs/features/street-collector/GSC_API.md)
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [.env.example](.env.example)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(scripts): Google Search Console toolkit — CSV, export pack, inspection, sitemaps (2026-04-19)
+
+### Summary
+**`gsc-lib.mjs`**, extended **`gsc:report`** (CSV, `--output`, `--start-row`, `country` / `device` dimensions), **`gsc:export-all`**, **`gsc:sitemaps`**, **`gsc:inspect`**, **`config/gsc-default-urls.txt`**, **[`GSC_API.md`](docs/features/street-collector/GSC_API.md)**, related doc/wikilinks, **`docs/dev/gsc-exports/`** in **`.gitignore`**.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-lib.mjs](scripts/gsc-lib.mjs)
+- [x] [scripts/gsc-search-analytics.mjs](scripts/gsc-search-analytics.mjs)
+- [x] [scripts/gsc-sitemaps.mjs](scripts/gsc-sitemaps.mjs)
+- [x] [scripts/gsc-url-inspection.mjs](scripts/gsc-url-inspection.mjs)
+- [x] [scripts/gsc-export-all.mjs](scripts/gsc-export-all.mjs)
+- [x] [config/gsc-default-urls.txt](config/gsc-default-urls.txt)
+- [x] [docs/features/street-collector/GSC_API.md](docs/features/street-collector/GSC_API.md)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [package.json](package.json)
+- [x] [.gitignore](.gitignore)
+- [x] [.env.example](.env.example)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: fix(scripts): GSC OAuth — keep terminal open; --code / --url recovery (2026-04-19)
+
+### Summary
+**`ERR_CONNECTION_REFUSED` on** `127.0.0.1:3333` **= local OAuth server not running** (terminal closed before redirect). Script now prints a clear **do not close** banner; supports **`npm run gsc:oauth -- --url='...?code=...'`** (or `--code=`) to complete exchange if the user still has the redirect URL. [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md) — troubleshooting line.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: feat(scripts): Google Search Console OAuth + search analytics CLI (2026-04-19)
+
+### Summary
+Adds **`scripts/gsc-oauth-token.mjs`** (loopback OAuth, `webmasters.readonly`) and **`scripts/gsc-search-analytics.mjs`** (queries + average position via Search Console API). **`npm run gsc:oauth`** / **`gsc:report`**; env documented in **`.env.example`**. **`wiki/sources/seo-gsc-baseline-runbook.md`** — optional API section. **`.gitignore`** — `client_secret*.json`, `secrets/`.
+
+### Implementation Checklist
+
+- [x] [scripts/gsc-oauth-token.mjs](scripts/gsc-oauth-token.mjs)
+- [x] [scripts/gsc-search-analytics.mjs](scripts/gsc-search-analytics.mjs)
+- [x] [package.json](package.json) (`gsc:oauth`, `gsc:report`)
+- [x] [.env.example](.env.example)
+- [x] [.gitignore](.gitignore)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: docs(wiki,gtm): GSC fill-in template, hero-drop playbook, pillar Shopify drafts (2026-04-19)
+
+### Summary
+Completes **operational** GTM/SEO artifacts: [`wiki/sources/gsc-baseline-fill-in-template.md`](wiki/sources/gsc-baseline-fill-in-template.md) (pages / queries / Tier tables), [`wiki/sources/hero-drop-playbook.md`](wiki/sources/hero-drop-playbook.md) (UTMs, 5-slot calendar, email starter, canonical URLs), [`docs/features/street-collector/pillar-articles-shopify-draft.md`](docs/features/street-collector/pillar-articles-shopify-draft.md) — four Shopify HTML drafts (editions, COA, display/lighting, collecting online) with links to `thestreetcollector.com` shop paths. Updated [`wiki/concepts/gtm-battle-plan.md`](wiki/concepts/gtm-battle-plan.md), [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md), [`wiki/index.md`](wiki/index.md), [`wiki/log.md`](wiki/log.md), [`docs/features/street-collector/NICHE_BATTLE_PLAN.md`](docs/features/street-collector/NICHE_BATTLE_PLAN.md) (v1.1.0).
+
+### Implementation Checklist
+
+- [x] [wiki/sources/gsc-baseline-fill-in-template.md](wiki/sources/gsc-baseline-fill-in-template.md)
+- [x] [wiki/sources/hero-drop-playbook.md](wiki/sources/hero-drop-playbook.md)
+- [x] [docs/features/street-collector/pillar-articles-shopify-draft.md](docs/features/street-collector/pillar-articles-shopify-draft.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [wiki/concepts/gtm-battle-plan.md](wiki/concepts/gtm-battle-plan.md)
+- [x] [wiki/index.md](wiki/index.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+---
+
+## Commit: docs(wiki,gtm): niche battle plan, GSC runbook, EVENTS_MAP alignment (2026-04-19)
+
+### Summary
+Adds **wiki-first GTM/SEO artifacts**: [`wiki/concepts/positioning-wedge.md`](wiki/concepts/positioning-wedge.md), [`wiki/concepts/gtm-battle-plan.md`](wiki/concepts/gtm-battle-plan.md), [`wiki/syntheses/competitive-intelligence-templates.md`](wiki/syntheses/competitive-intelligence-templates.md), [`wiki/syntheses/tier-artist-priority-rubric.md`](wiki/syntheses/tier-artist-priority-rubric.md), [`wiki/sources/seo-gsc-baseline-runbook.md`](wiki/sources/seo-gsc-baseline-runbook.md). **Docs mirror:** [`docs/features/street-collector/NICHE_BATTLE_PLAN.md`](docs/features/street-collector/NICHE_BATTLE_PLAN.md). **[`wiki/index.md`](wiki/index.md)** expanded (concepts, sources, syntheses); **[`wiki/log.md`](wiki/log.md)** entry **[2026-04-19]**. **[`docs/features/street-collector/SEO-shop.md`](docs/features/street-collector/SEO-shop.md)** Related + **changelog 1.2.0** link to battle plan. **[`docs/features/analytics/EVENTS_MAP.md`](docs/features/analytics/EVENTS_MAP.md)**: `item_list_name` **`artist_profile`**, corrected `app/(store)/shop/` paths, stage notes.
+
+### Implementation Checklist
+
+- [x] [wiki/concepts/positioning-wedge.md](wiki/concepts/positioning-wedge.md)
+- [x] [wiki/concepts/gtm-battle-plan.md](wiki/concepts/gtm-battle-plan.md)
+- [x] [wiki/syntheses/competitive-intelligence-templates.md](wiki/syntheses/competitive-intelligence-templates.md)
+- [x] [wiki/syntheses/tier-artist-priority-rubric.md](wiki/syntheses/tier-artist-priority-rubric.md)
+- [x] [wiki/sources/seo-gsc-baseline-runbook.md](wiki/sources/seo-gsc-baseline-runbook.md)
+- [x] [docs/features/street-collector/NICHE_BATTLE_PLAN.md](docs/features/street-collector/NICHE_BATTLE_PLAN.md)
+- [x] [wiki/index.md](wiki/index.md)
+- [x] [wiki/log.md](wiki/log.md)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/features/analytics/EVENTS_MAP.md](docs/features/analytics/EVENTS_MAP.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+**Manual / ongoing:** run GSC export and fill competitive templates per runbook; coordinated drops and pillar articles are process work outside this commit.
+
+---
+
+## Commit: fix(seo): root metadata, blog index, noindex app shells, sitemap canonical/ISR (2026-04-19)
+
+### Summary
+Implements the **SEO audit** plan: **[`app/layout.tsx`](app/layout.tsx)** default `metadata` and `metadataBase` for Street Collector (removed `v0.dev` **generator**). **Blog** [`app/(store)/shop/blog/layout.tsx`](app/(store)/shop/blog/layout.tsx) gets full **title, canonical, OG/Twitter**. **Admin, vendor, collector** layouts and **login** + **signup/forgot-password** layouts set **`robots: noindex, nofollow`**. **[`app/sitemap.ts`](app/sitemap.ts)**: **ISR** `revalidate = 3600`, drop duplicate **`/`** (canonical is **`/shop/street-collector`**, priority 1), product **`lastModified`** from Shopify **`updatedAt`**. **[`lib/shopify/storefront-client.ts`](lib/shopify/storefront-client.ts)**: **`ProductCardFields`** + **`ShopifyProduct.updatedAt`**. Doc: [`docs/features/street-collector/SEO-shop.md`](docs/features/street-collector/SEO-shop.md).
+
+### Implementation Checklist
+
+- [x] [app/layout.tsx](app/layout.tsx)
+- [x] [app/(store)/shop/blog/layout.tsx](app/(store)/shop/blog/layout.tsx)
+- [x] [app/admin/layout.tsx](app/admin/layout.tsx)
+- [x] [app/vendor/layout.tsx](app/vendor/layout.tsx)
+- [x] [app/collector/layout.tsx](app/collector/layout.tsx)
+- [x] [app/login/page.tsx](app/login/page.tsx)
+- [x] [app/signup/layout.tsx](app/signup/layout.tsx)
+- [x] [app/forgot-password/layout.tsx](app/forgot-password/layout.tsx)
+- [x] [app/sitemap.ts](app/sitemap.ts)
+- [x] [lib/shopify/storefront-client.ts](lib/shopify/storefront-client.ts)
+- [x] [docs/features/street-collector/SEO-shop.md](docs/features/street-collector/SEO-shop.md)
+- [x] [docs/COMMIT_LOG.md](docs/COMMIT_LOG.md)
+
+**Post-deploy (manual):** confirm `NEXT_PUBLIC_SITE_URL` in Vercel; [Rich Results Test](https://search.google.com/test/rich-results) on a PDP; Google Search Console URL inspection for `/shop/street-collector` and a product.
+
+---
+
 ## Commit: fix(experience): transparent carousel strip; mini Spline shell-colored backdrop (2026-04-06)
 
 **Ref:** `469c0e651`

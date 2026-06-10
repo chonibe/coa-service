@@ -329,6 +329,8 @@ export type ShopifyMedia = ShopifyVideo | ShopifyExternalVideo | ShopifyMediaIma
 export interface ShopifyProduct {
   id: string
   handle: string
+  /** ISO 8601 from Storefront API — used for sitemap lastModified when present */
+  updatedAt?: string
   title: string
   description: string
   descriptionHtml: string
@@ -558,6 +560,7 @@ const PRODUCT_CARD_FRAGMENT = `
   fragment ProductCardFields on Product {
     id
     handle
+    updatedAt
     title
     vendor
     availableForSale

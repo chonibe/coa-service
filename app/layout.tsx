@@ -10,6 +10,7 @@ import { MetaPixel } from "@/components/meta-pixel"
 import { TikTokPixel } from "@/components/tiktok-pixel"
 import { AsyncMaterialSymbolsFont } from "@/components/AsyncMaterialSymbolsFont"
 import { streetCollectorContent } from "@/content/street-collector"
+import { getCanonicalSiteOrigin } from "@/lib/seo/site-url"
 
 const fraunces = Fraunces({ 
   subsets: ["latin"],
@@ -28,14 +29,13 @@ const barlow = Barlow({
 const FAVICON_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/logo_1.png?v=1773229683'
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.thestreetcollector.com"),
+  metadataBase: getCanonicalSiteOrigin(),
   title: {
-    default: "Street Collector | Backlit art lamp & limited edition street art prints",
+    default: "Street Collector — limited edition street art & illuminated display",
     template: "%s | Street Collector",
   },
   description:
-    "Street Collector is a backlit art lamp and limited edition street art print platform featuring independent artists, certificates of authenticity, and worldwide shipping.",
-  generator: 'v0.dev',
+    "Limited edition street art prints, certificates of authenticity, and the Street Collector illuminated art display. Independent artists, small runs, worldwide shipping.",
   icons: {
     icon: getProxiedImageUrl(FAVICON_LOGO_URL),
     apple: getProxiedImageUrl(FAVICON_LOGO_URL),

@@ -67,6 +67,7 @@ export async function fetchArtistProfile(
 
     let vendorBio: string | undefined
     let vendorInstagram: string | undefined
+    let vendorImage: string | undefined
     let pairedCollectionId: string | null = null
     let pairedCollectionHandle: string | null = null
     let vendorName: string | undefined
@@ -83,7 +84,7 @@ export async function fetchArtistProfile(
         if (vc?.vendor_id) {
           const { data: vendor } = await supabase
             .from('vendors')
-            .select('id, bio, vendor_name, instagram_url')
+            .select('id, bio, vendor_name, instagram_url, profile_image, profile_picture_url')
             .eq('id', vc.vendor_id)
             .maybeSingle()
 
@@ -92,6 +93,8 @@ export async function fetchArtistProfile(
             vendorName = vendor.vendor_name
             const v = vendor as { instagram_url?: string }
             if (v?.instagram_url?.trim()) vendorInstagram = parseInstagramHandle(v.instagram_url)
+            const imageRow = vendor as { profile_image?: string | null; profile_picture_url?: string | null }
+            vendorImage = imageRow.profile_picture_url?.trim() || imageRow.profile_image?.trim() || undefined
             pairedCollectionId = vc.shopify_collection_id ?? null
             pairedCollectionHandle = vc.shopify_collection_handle ?? null
             break
@@ -104,7 +107,7 @@ export async function fetchArtistProfile(
           if (!nameToTry) continue
           const { data: vendor } = await supabase
             .from('vendors')
-            .select('id, bio, vendor_name, instagram_url')
+            .select('id, bio, vendor_name, instagram_url, profile_image, profile_picture_url')
             .ilike('vendor_name', nameToTry)
             .maybeSingle()
 
@@ -113,6 +116,8 @@ export async function fetchArtistProfile(
             vendorName = vendor.vendor_name
             const v = vendor as { instagram_url?: string }
             if (v?.instagram_url?.trim()) vendorInstagram = parseInstagramHandle(v.instagram_url)
+            const imageRow = vendor as { profile_image?: string | null; profile_picture_url?: string | null }
+            vendorImage = imageRow.profile_picture_url?.trim() || imageRow.profile_image?.trim() || undefined
 
             const { data: vendorCollection } = await supabase
               .from('vendor_collections')
@@ -173,14 +178,14 @@ export async function fetchArtistProfile(
     if (collection?.products?.edges?.length) {
       const products = collection.products.edges.map((edge) => edge.node)
       const bio = vendorBio || (collectionDesc || undefined) || getBioFromShopifyPage(slug)
-      const artist = await buildArtistProfileResponse({
-        slug,
-        name: vendorName || collection.title,
-        bio: bio || undefined,
-        image: collection.image?.url ?? undefined,
-        products,
-        collection,
-        vendorInstagramHandle: vendorInstagram,
+        const artist = await buildArtistProfileResponse({
+          slug,
+          name: vendorName || collection.title,
+          bio: bio || undefined,
+          image: vendorImage || collection.image?.url || undefined,
+          products,
+          collection,
+          vendorInstagramHandle: vendorInstagram,
         collectionHandlesToTry: [
           ...new Set(
             [
@@ -231,7 +236,7 @@ export async function fetchArtistProfile(
               slug,
               name,
               bio: bio || undefined,
-              image: col.image?.url ?? undefined,
+              image: vendorImage || col.image?.url || undefined,
               products,
               collection: col,
               vendorInstagramHandle: vendorInstagram,
@@ -269,11 +274,11 @@ export async function fetchArtistProfile(
       collectionDesc ||
       vendorProducts[0]?.description ||
       getBioFromShopifyPage(slug)
-    const artist = await buildArtistProfileResponse({
+      const artist = await buildArtistProfileResponse({
       slug,
       name: vendorName || vendorProducts[0]?.vendor || artistNameForMatch,
       bio: bio || undefined,
-      image: vendorProducts[0]?.featuredImage?.url,
+      image: vendorImage || vendorProducts[0]?.featuredImage?.url,
       products: vendorProducts,
       collection: null,
       vendorInstagramHandle: vendorInstagram,

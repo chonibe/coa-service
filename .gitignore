@@ -19,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+.tmp/
 
 # debug
 npm-debug.log*
@@ -50,6 +51,9 @@ postgresql-installer.exe
 ga-service-account.json
 ga4-*.json
 bfg.jar
+client_secret*.json
+*-client_secret*.json
+secrets/
 
 # mobile NFC writer (separate app with own node_modules)
 /mobile-nfc-writer/
@@ -60,3 +64,6 @@ bfg.jar
 # Packed Claude .skill bundles (regenerate with npm run skills:pack)
 /artifacts/
 .skills-hub-data/
+
+# Local Google Search Console CSV export batches (npm run gsc:export-all)
+docs/dev/gsc-exports/

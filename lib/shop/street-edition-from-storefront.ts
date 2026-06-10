@@ -37,13 +37,13 @@ function editionsSoldFromInventory(editionTotal: number, qtyLeft: number | null)
 }
 
 /**
- * When `GET /api/shop/edition-states` has no Supabase row, derive ladder copy from Storefront
- * `custom.edition_size` + remaining variant inventory (same rules as the API route).
+ * Edition size + sold count from Storefront inventory (and optional season band fallback when
+ * edition_size metafield is missing but inventory is tracked).
  */
-export function streetEditionRowFromStorefrontProduct(
+export function getEditionsProgressFromStorefront(
   product: ShopifyProduct,
   options?: { seasonBandsFallback?: 1 | 2 }
-): StreetEditionStatesRow | null {
+): { editionTotal: number; editionsSold: number } | null {
   const metafieldTotal = parseEditionSizeMetafield(product)
   const qtyLeft = totalQuantityAvailable(product)
 
@@ -63,6 +63,21 @@ export function streetEditionRowFromStorefrontProduct(
     if (sold === null) return null
   }
 
+  return { editionTotal, editionsSold: sold }
+}
+
+/**
+ * When `GET /api/shop/edition-states` has no Supabase row, derive ladder copy from Storefront
+ * `custom.edition_size` + remaining variant inventory (same rules as the API route).
+ */
+export function streetEditionRowFromStorefrontProduct(
+  product: ShopifyProduct,
+  options?: { seasonBandsFallback?: 1 | 2 }
+): StreetEditionStatesRow | null {
+  const prog = getEditionsProgressFromStorefront(product, options)
+  if (!prog) return null
+  const { editionTotal, editionsSold: sold } = prog
+
   const season = streetSeasonFromTotalEditions(editionTotal)
   const display = getStreetPricingStageDisplay(season, sold)
   const bump = getStreetNextPriceBump(season, sold)
@@ -81,6 +96,7 @@ export function streetEditionRowFromStorefrontProduct(
   }
 
   return {
+    stageKey: display.stageKey,
     label: display.label,
     priceUsd: display.priceUsd,
     subcopy: display.subcopy,

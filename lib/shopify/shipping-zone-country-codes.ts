@@ -1,8 +1,7 @@
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from '@/lib/env'
+import { STORE_SHIP_TO_COUNTRIES, type ShopifyShippingCountry } from '@/lib/shopify/shipping-zone-country-codes-data'
 
 const SHOPIFY_SHIPPING_ZONES_API_VERSION = '2024-01'
-
-export type ShopifyShippingCountry = { code: string; name: string }
 
 export type FetchShopifyShippingCountriesOutcome = {
   countries: ShopifyShippingCountry[]

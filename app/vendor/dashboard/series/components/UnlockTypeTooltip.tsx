@@ -17,9 +17,7 @@ interface UnlockTypeTooltipProps {
 const unlockTypeDescriptions: Record<UnlockType, string> = {
   any_purchase: "All artworks unlock immediately when any piece is purchased.",
   sequential: "Each purchase unlocks the next artwork in order.",
-  threshold: "Exclusive pieces unlock when collectors reach purchase thresholds.",
-  time_based: "Artworks unlock at specific times or on schedules.",
-  vip: "Exclusive pieces unlock for collectors who own earlier works.",
+  vip: "Exclusive pieces unlock for collectors who own all earlier works.",
 }
 
 export function UnlockTypeTooltip({ unlockType, children }: UnlockTypeTooltipProps) {

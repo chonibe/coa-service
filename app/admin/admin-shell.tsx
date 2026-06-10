@@ -127,6 +127,11 @@ export function AdminShell({ children }: AdminShellProps) {
           icon: <Icon size="sm"><ArrowUpTrayIcon className="h-4 w-4" /></Icon>,
         },
         {
+          title: "Artist applications",
+          href: "/admin/artist-applications",
+          icon: <Icon size="sm"><UserIcon className="h-4 w-4" /></Icon>,
+        },
+        {
           title: "Product Editions",
           href: "/admin/product-editions",
           icon: <Icon size="sm"><AcademicCapIcon className="h-4 w-4" /></Icon>,

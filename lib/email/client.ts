@@ -93,6 +93,21 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   return sendViaResend(options)
 }
 
+function extractAllowedTestRecipient(errorMessage: string): string | null {
+  const match = errorMessage.match(/\(([^)@\s]+@[^)\s]+)\)/)
+  return match?.[1] ?? null
+}
+
+function isResendQuotaError(error?: { message?: string; name?: string } | null): boolean {
+  const msg = (error?.message || '').toLowerCase()
+  return (
+    msg.includes('daily quota') ||
+    msg.includes('quota limit') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
+  )
+}
+
 /**
  * Send email via Resend (fallback method)
  */
@@ -106,29 +121,97 @@ async function sendViaResend(options: EmailOptions): Promise<EmailResult> {
   }
 
   try {
-    const fromEmail = options.from || process.env.EMAIL_FROM || 'onboarding@resend.dev'
+    const primaryFromEmail = options.from || process.env.EMAIL_FROM || 'onboarding@resend.dev'
     const recipients = Array.isArray(options.to) ? options.to : [options.to]
     
     console.log('[Email] Sending via Resend:', {
-      from: fromEmail,
+      from: primaryFromEmail,
       to: recipients,
       subject: options.subject,
     })
     
-    const result = await resend.emails.send({
-      from: fromEmail,
-      to: recipients,
-      subject: options.subject,
-      html: options.html,
-      reply_to: options.replyTo,
-      attachments: options.attachments?.map((att) => ({
-        filename: att.filename,
-        content: typeof att.content === 'string' ? att.content : att.content.toString('base64'),
-        content_type: att.contentType,
-      })),
-    })
+    const sendResendEmail = async (fromEmail: string) =>
+      resend.emails.send({
+        from: fromEmail,
+        to: recipients,
+        subject: options.subject,
+        html: options.html,
+        reply_to: options.replyTo,
+        attachments: options.attachments?.map((att) => ({
+          filename: att.filename,
+          content: typeof att.content === 'string' ? att.content : att.content.toString('base64'),
+          content_type: att.contentType,
+        })),
+      })
+
+    let result = await sendResendEmail(primaryFromEmail)
+    let deliveredRecipients = recipients
+
+    const shouldRetryWithResendDefault =
+      !!result.error &&
+      result.error.name === 'validation_error' &&
+      typeof result.error.message === 'string' &&
+      result.error.message.toLowerCase().includes('domain is not verified') &&
+      primaryFromEmail.toLowerCase() !== 'onboarding@resend.dev'
+
+    if (shouldRetryWithResendDefault) {
+      const fallbackFromEmail = 'onboarding@resend.dev'
+      console.warn('[Email] Retrying Resend with fallback sender:', {
+        previousFrom: primaryFromEmail,
+        fallbackFrom: fallbackFromEmail,
+      })
+      result = await sendResendEmail(fallbackFromEmail)
+    }
+
+    const resendErrorMessage = result.error?.message || ''
+    const allowedTestRecipient = extractAllowedTestRecipient(resendErrorMessage)
+    const shouldRetryWithAllowedTestRecipient =
+      !!result.error &&
+      result.error.name === 'validation_error' &&
+      resendErrorMessage.toLowerCase().includes('you can only send testing emails to your own email address') &&
+      process.env.NODE_ENV !== 'production' &&
+      !!allowedTestRecipient
+
+    if (shouldRetryWithAllowedTestRecipient && allowedTestRecipient) {
+      console.warn('[Email] Retrying Resend to allowed test recipient in non-production:', {
+        allowedTestRecipient,
+        originalRecipients: recipients,
+      })
+      const singleTestRecipient = [allowedTestRecipient]
+      const resultFromAllowedRecipient = await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: singleTestRecipient,
+        subject: `[TEST FALLBACK] ${options.subject}`,
+        html: `${options.html}<hr/><p style="font-size:12px;color:#666;">Original recipients: ${recipients.join(', ')}</p>`,
+        reply_to: options.replyTo,
+      })
+      result = resultFromAllowedRecipient
+      deliveredRecipients = singleTestRecipient
+    }
 
     if (result.error) {
+      // Automatic fallback: when Resend quota is exhausted, try Gmail if available.
+      if (isResendQuotaError(result.error) && GMAIL_ENABLED && !options.attachments?.length) {
+        console.warn('[Email] Resend quota reached, attempting Gmail fallback:', result.error.message)
+        const gmailResult = await sendGmailEmail({
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          from: options.from,
+          replyTo: options.replyTo,
+        })
+
+        if (gmailResult.success) {
+          await logEmailToCRM(recipients, options, gmailResult.messageId, 'gmail')
+          return {
+            success: true,
+            messageId: gmailResult.messageId,
+          }
+        }
+
+        console.error('[Email] Gmail fallback after Resend quota failed:', gmailResult.error)
+      }
+
       console.error('[Email] Resend API error:', {
         error: result.error,
         message: result.error.message,
@@ -141,13 +224,21 @@ async function sendViaResend(options: EmailOptions): Promise<EmailResult> {
       }
     }
 
+    const deliveredFrom = shouldRetryWithResendDefault ? 'onboarding@resend.dev' : primaryFromEmail
+
     console.log('[Email] Sent via Resend successfully:', {
       messageId: result.data?.id,
-      to: recipients,
+      from: deliveredFrom,
+      to: deliveredRecipients,
     })
 
     // Log email to CRM
-    await logEmailToCRM(recipients, options, result.data?.id, 'resend')
+    await logEmailToCRM(
+      deliveredRecipients,
+      { ...options, from: deliveredFrom },
+      result.data?.id,
+      'resend'
+    )
 
     return {
       success: true,

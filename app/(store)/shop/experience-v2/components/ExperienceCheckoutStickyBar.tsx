@@ -46,6 +46,15 @@ export interface ExperienceCheckoutStickyBarProps {
    * Sticky **artwork** tiles show the “on preview” eye when their id is in this list (both sides).
    */
   lampPreviewProductIds?: string[]
+  /** Hide picker FAB + empty-collection CTA on lg+ (experience v3 desktop uses side rail). */
+  hidePickerOnDesktop?: boolean
+  /** Hide “Your Collection” checkout pill on lg+. */
+  hideCheckoutOnDesktop?: boolean
+  /**
+   * When true, hide the collection picker strip (arc label + add-artwork FAB) and the empty-collection CTA.
+   * Checkout pill still shows when there is at least one artwork. Used when the shell opens the picker elsewhere (e.g. experience v3 header).
+   */
+  hideCollectionStrip?: boolean
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -206,6 +215,9 @@ export function ExperienceCheckoutStickyBar({
   onSelectThumbnailForSpline,
   previewSelectedProductId = null,
   lampPreviewProductIds = [],
+  hidePickerOnDesktop = false,
+  hideCheckoutOnDesktop = false,
+  hideCollectionStrip = false,
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -228,7 +240,8 @@ export function ExperienceCheckoutStickyBar({
   const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
   /** Lamp in experience cart but user still needs to pick artwork(s). */
   const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
-  const visible = hasArtworks || showEmptyCollectionCta
+  const visible = hideCollectionStrip ? hasArtworks : hasArtworks || showEmptyCollectionCta
+  const showPickerStrip = Boolean(onOpenPicker) && !hideCollectionStrip
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
 
   const createBundleCtaClass = cn(
@@ -306,7 +319,11 @@ export function ExperienceCheckoutStickyBar({
             <button
               type="button"
               onClick={onOpenPicker}
-              className={cn(lampInCartNeedsArtwork ? chooseArtworksAfterLampClass : createBundleCtaClass, 'w-full')}
+              className={cn(
+                lampInCartNeedsArtwork ? chooseArtworksAfterLampClass : createBundleCtaClass,
+                'w-full',
+                hidePickerOnDesktop && 'lg:hidden'
+              )}
               aria-label={lampInCartNeedsArtwork ? 'Choose your artworks' : 'Create your own bundle'}
             >
               <span className="min-w-0 truncate">
@@ -319,14 +336,14 @@ export function ExperienceCheckoutStickyBar({
           <div
             className={cn(
               'flex w-full min-w-0 flex-col',
-              onOpenPicker || !suppressCartThumbnails ? 'gap-3' : 'gap-0'
+              showPickerStrip || !suppressCartThumbnails ? 'gap-3' : 'gap-0'
             )}
           >
-            {onOpenPicker || !suppressCartThumbnails ? (
+            {showPickerStrip || !suppressCartThumbnails ? (
               <div
                 className={cn(
                   'flex w-full min-w-0 items-center gap-3',
-                  suppressCartThumbnails && onOpenPicker ? 'justify-end' : ''
+                  suppressCartThumbnails && showPickerStrip ? 'justify-end' : ''
                 )}
               >
                 {!suppressCartThumbnails ? (
@@ -373,7 +390,12 @@ export function ExperienceCheckoutStickyBar({
                   </div>
                 ) : null}
                 {onOpenPicker ? (
-                  <div className="relative z-[3] flex shrink-0 flex-col items-center gap-0">
+                  <div
+                    className={cn(
+                      'relative z-[3] flex shrink-0 flex-col items-center gap-0',
+                      hidePickerOnDesktop && 'lg:hidden'
+                    )}
+                  >
                     <CollectionArcLabel theme={theme} variant="fab" className="pointer-events-none" />
                     <div className="animate-experience-collection-plus-prize-float">
                       <button
@@ -393,7 +415,7 @@ export function ExperienceCheckoutStickyBar({
             <button
               type="button"
               onClick={openOrderBar}
-              className={checkoutPillClass}
+              className={cn(checkoutPillClass, hideCheckoutOnDesktop && 'lg:hidden')}
               aria-label={`Open your collection, total ${finalTotal.toFixed(2)} dollars`}
             >
               <span className="whitespace-nowrap">

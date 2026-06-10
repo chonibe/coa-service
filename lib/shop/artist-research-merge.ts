@@ -11,15 +11,141 @@ import researchData from '@/content/artist-research-data.json'
 export type RawArtistResearchRow = Record<string, string>
 
 const bySlug = researchData as Record<string, RawArtistResearchRow>
+const RESEARCH_SLUG_ALIASES: Record<string, string[]> = {
+  zivink: ['erezoo'],
+  zivsameach: ['erezoo'],
+}
+const MOJIBAKE_MARKERS = /(?:Ã.|Â.|â.|ðŸ|�)/g
+const INTERNAL_NOTE_PATTERNS = [
+  /\bauto-extracted from primary source page\b/i,
+  /\bverify before publishing\b/i,
+  /\bweb research\b/i,
+  /\bmanual web enrichment applied\b/i,
+  /\benrichment pass\b/i,
+  /\bbatch\s+\d+\b/i,
+  /\bdo not conflate\b/i,
+  /\breminder\s+\d{4}-\d{2}-\d{2}\b/i,
+  /\bprior exhibitions cell\b/i,
+  /\bindexed sources\b/i,
+]
+const SCRAPE_BOILERPLATE_PATTERNS = [
+  /behance sign in explore jobs resources/i,
+  /download on the app store/i,
+  /cookie preferences/i,
+  /do not sell or share my personal information/i,
+  /navigate to adobe\.com/i,
+  /\bhome products cart about the artist\b/i,
+  /\bback to top\b/i,
+  /\blog in about\b/i,
+]
+const DEDUPE_DASH = /\s*[-–—]\s*/g
+
+function mojibakeScore(value: string): number {
+  return value.match(MOJIBAKE_MARKERS)?.length ?? 0
+}
+
+function decodeLatin1AsUtf8(value: string): string {
+  const bytes = Uint8Array.from(value, (char) => char.charCodeAt(0) & 0xff)
+  return new TextDecoder('utf-8', { fatal: false }).decode(bytes)
+}
+
+function fixLikelyMojibake(value: string): string {
+  let current = value
+  let currentScore = mojibakeScore(current)
+  if (currentScore === 0) return current
+
+  for (let i = 0; i < 2; i += 1) {
+    const decoded = decodeLatin1AsUtf8(current)
+    const decodedScore = mojibakeScore(decoded)
+    if (decodedScore >= currentScore) break
+    current = decoded
+    currentScore = decodedScore
+    if (currentScore === 0) break
+  }
+
+  return current
+}
+
+function normalizeWhitespace(value: string): string {
+  return value
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function sanitizeInlineText(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined
+  const cleaned = normalizeWhitespace(fixLikelyMojibake(value))
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return cleaned || undefined
+}
+
+function sanitizeStoryHook(value: string | undefined): string | undefined {
+  const cleaned = sanitizeInlineText(value)
+  if (!cleaned) return undefined
+  return cleaned.replace(/\s*\(@[a-z0-9._]+\)\s*$/i, '').trim() || undefined
+}
+
+function sanitizeActiveSince(value: string | undefined): string | undefined {
+  const cleaned = sanitizeInlineText(value)
+  if (!cleaned) return undefined
+  if (cleaned.length > 48) return undefined
+  if (/[;|]/.test(cleaned)) return undefined
+  if (/\b(linkedin|behance|adobe|per\b|interview|portfolio|blog)\b/i.test(cleaned)) return undefined
+  if (/\b\d{4}\s*[–-]\s*\d{4}\b/.test(cleaned)) return undefined
+  return cleaned
+}
+
+function looksLikeInternalOrScrapedParagraph(value: string): boolean {
+  if (!value) return true
+  if (INTERNAL_NOTE_PATTERNS.some((pattern) => pattern.test(value))) return true
+  if (SCRAPE_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(value))) return true
+  return false
+}
+
+function sanitizeNarrativeText(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined
+
+  const decoded = normalizeWhitespace(fixLikelyMojibake(value))
+  const paragraphs = decoded
+    .split(/\n\s*\n+/)
+    .map((paragraph) =>
+      paragraph
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    )
+    .filter(Boolean)
+
+  const deduped: string[] = []
+  const seen = new Set<string>()
+  for (const paragraph of paragraphs) {
+    if (looksLikeInternalOrScrapedParagraph(paragraph)) continue
+    const key = paragraph.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    deduped.push(paragraph)
+  }
+
+  const joined = deduped.join('\n\n').trim()
+  return joined || undefined
+}
 
 export function lookupArtistResearch(slug: string): RawArtistResearchRow | undefined {
   if (bySlug[slug]) return bySlug[slug]
   const base = slug.replace(/-\d+$/, '')
   if (base !== slug && bySlug[base]) return bySlug[base]
+  const aliases = RESEARCH_SLUG_ALIASES[slug] ?? RESEARCH_SLUG_ALIASES[base] ?? []
+  for (const alias of aliases) {
+    if (bySlug[alias]) return bySlug[alias]
+  }
   return undefined
 }
 
-/** Skip Instagram post/reel URLs — not usable as <img src> without oEmbed. */
+/** Skip Instagram post/reel URLs; not usable as <img src> without oEmbed. */
 export function isDirectImageUrl(url: string): boolean {
   const t = url.trim()
   if (!t) return false
@@ -43,9 +169,13 @@ function normalizeExhibitionType(raw: string): string {
   return capitalizeWord(t)
 }
 
+function sanitizeDashSeparatedText(value: string): string {
+  return fixLikelyMojibake(value).replace(DEDUPE_DASH, ' — ').trim()
+}
+
 /** Turn CSV / research lines into demo-style type, title, venue, city when commas allow. */
 function parseExhibitionRest(rest: string): Pick<ExhibitionRow, 'type' | 'title' | 'venue' | 'city'> {
-  const full = rest.trim()
+  const full = sanitizeDashSeparatedText(rest)
   const noParen = full.replace(/\s*\([^)]*\)\s*$/g, '').trim()
   const commas = noParen.split(',').map((x) => x.trim()).filter(Boolean)
 
@@ -72,8 +202,9 @@ function parseExhibitionRest(rest: string): Pick<ExhibitionRow, 'type' | 'title'
 
 function parseExhibitions(text: string): ExhibitionRow[] {
   const rows: ExhibitionRow[] = []
-  for (const line of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
-    const m = line.match(/^(\d{4})\s*[—–-]\s*(.+)$/)
+  const cleaned = fixLikelyMojibake(text)
+  for (const line of cleaned.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    const m = line.match(/^(\d{4})\s*[-–—]\s*(.+)$/)
     if (!m) continue
     const year = Number.parseInt(m[1], 10)
     if (!Number.isFinite(year)) continue
@@ -85,10 +216,11 @@ function parseExhibitions(text: string): ExhibitionRow[] {
 
 function parsePress(text: string): PressCard[] {
   const cards: PressCard[] = []
-  for (const line of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
-    const parts = line.split(/\s+[—–-]\s+/).map((p) => p.trim())
+  const cleaned = fixLikelyMojibake(text)
+  for (const line of cleaned.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    const parts = line.split(/\s+[-–—]\s+/).map((p) => p.trim())
     if (parts.length < 2) continue
-    const outlet = parts[0]
+    const outlet = sanitizeInlineText(parts[0]) || parts[0]
     let year: string | undefined
     let i = 1
     if (/^\d{4}$/.test(parts[1])) {
@@ -102,7 +234,7 @@ function parsePress(text: string): PressCard[] {
       url = last
       end = parts.length - 1
     }
-    const quote = parts.slice(i, end).join(' — ') || outlet
+    const quote = sanitizeInlineText(parts.slice(i, end).join(' — ')) || outlet
     cards.push({ outlet, year, quote, url })
   }
   return cards
@@ -124,7 +256,7 @@ function processGalleryFromRaw(raw: RawArtistResearchRow): ProcessGalleryItem[] 
     const k = processGalleryDedupeKey(u)
     if (seen.has(k)) continue
     seen.add(k)
-    items.push({ url: u, label: label?.trim() || undefined })
+    items.push({ url: u, label: sanitizeInlineText(label) })
   }
   return items
 }
@@ -190,7 +322,7 @@ function mergePressCards(shopify: PressCard[] | undefined, research: PressCard[]
   return out.length > 0 ? out : undefined
 }
 
-/** Collapse same artwork at different WxH or query variants (aligns with extract_artist_portfolio_images.py). */
+/** Collapse same artwork at different WxH or query variants. */
 function processGalleryDedupeKey(url: string): string {
   const raw = url.trim()
   try {
@@ -247,7 +379,18 @@ function mergeInstagramShowcaseItems(
  */
 export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: string): ArtistProfileRich {
   const raw = lookupArtistResearch(slug)
-  if (!raw) return shopify
+  if (!raw) {
+    return {
+      ...shopify,
+      location: sanitizeInlineText(shopify.location),
+      alias: sanitizeInlineText(shopify.alias),
+      storyHook: sanitizeStoryHook(shopify.storyHook),
+      pullquote: sanitizeInlineText(shopify.pullquote),
+      activeSince: sanitizeActiveSince(shopify.activeSince),
+      impactCallout: sanitizeNarrativeText(shopify.impactCallout),
+      exclusiveCallout: sanitizeNarrativeText(shopify.exclusiveCallout),
+    }
+  }
 
   const pressParsed = parsePress(raw.pressText || '')
   const exParsed = parseExhibitions(raw.exhibitionsText || '')
@@ -255,17 +398,17 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
   const instagramShowcase = instagramShowcaseFromRaw(raw)
 
   return {
-    location: shopify.location?.trim() || raw.location?.trim() || undefined,
-    alias: shopify.alias?.trim() || undefined,
-    storyHook: shopify.storyHook?.trim() || raw.heroHook?.trim() || undefined,
-    pullquote: shopify.pullquote?.trim() || raw.pullQuote?.trim() || undefined,
+    location: sanitizeInlineText(shopify.location) || sanitizeInlineText(raw.location),
+    alias: sanitizeInlineText(shopify.alias),
+    storyHook: sanitizeStoryHook(shopify.storyHook) || sanitizeStoryHook(raw.heroHook),
+    pullquote: sanitizeInlineText(shopify.pullquote) || sanitizeInlineText(raw.pullQuote),
     processGallery: mergeProcessGalleries(shopify.processGallery, processGallery),
     exhibitions: mergeExhibitionRows(shopify.exhibitions, exParsed),
     press: mergePressCards(shopify.press, pressParsed),
     instagramShowcase: mergeInstagramShowcaseItems(shopify.instagramShowcase, instagramShowcase),
-    activeSince: shopify.activeSince?.trim() || raw.activeSince?.trim() || undefined,
-    impactCallout: shopify.impactCallout?.trim() || raw.impactCallout?.trim() || undefined,
-    exclusiveCallout: shopify.exclusiveCallout?.trim() || raw.exclusiveCallout?.trim() || undefined,
+    activeSince: sanitizeActiveSince(shopify.activeSince) || sanitizeActiveSince(raw.activeSince),
+    impactCallout: sanitizeNarrativeText(shopify.impactCallout) || sanitizeNarrativeText(raw.impactCallout),
+    exclusiveCallout: sanitizeNarrativeText(shopify.exclusiveCallout) || sanitizeNarrativeText(raw.exclusiveCallout),
   }
 }
 
@@ -277,26 +420,23 @@ function normalizeBioForDedup(s: string): string {
 
 /**
  * When both Shopify collection description and research body exist, prefer one block if they
- * duplicate; otherwise stack collection first (storefront voice) then curated research.
+ * duplicate; otherwise place the edited narrative first and keep storefront copy after it.
  */
 export function mergeShopifyCollectionBioWithResearch(
   collectionBio: string | undefined,
   researchStory: string | undefined,
   additionalHistory: string | undefined
 ): string | undefined {
-  const collection = collectionBio?.trim() || ''
-  const story = researchStory?.trim() || ''
-  const history = additionalHistory?.trim() || ''
-  let researchBlock = ''
-  if (story && history) researchBlock = `${story}\n\n${history}`
-  else researchBlock = story || history
+  const collection = sanitizeNarrativeText(collectionBio) || ''
+  const story = sanitizeNarrativeText(researchStory) || ''
+  const history = sanitizeNarrativeText(additionalHistory) || ''
+  const researchBlock = story || history
 
   if (!collection) return researchBlock || undefined
   if (!researchBlock) return collection || undefined
 
   const cN = normalizeBioForDedup(collection)
   const rN = normalizeBioForDedup(researchBlock)
-  // Same words after normalization (e.g. Shopify HTML vs plain JSON): prefer curated research body.
   if (cN === rN) return researchBlock
   if (rN.includes(cN)) return researchBlock
   if (cN.includes(rN)) return collection.length >= researchBlock.length ? collection : researchBlock
@@ -307,24 +447,17 @@ export function mergeShopifyCollectionBioWithResearch(
     if (rN.includes(prefix)) return researchBlock
   }
 
-  // Curated CSV story (+ optional history) should lead: explore cards, lightbox, and profile
-  // all read from the start of `bio`. Collection/vendor HTML often duplicates or overruns;
-  // keep it after research when both are distinct.
   return `${researchBlock}\n\n${collection}`
 }
 
 export function mergeResearchBio(slug: string, existingBio: string | undefined): string | undefined {
   const raw = lookupArtistResearch(slug)
-  return mergeShopifyCollectionBioWithResearch(
-    existingBio,
-    raw?.storyFullText,
-    raw?.additionalHistoryText
-  )
+  return mergeShopifyCollectionBioWithResearch(existingBio, raw?.storyFullText, undefined)
 }
 
 export function researchInstagramHandle(slug: string): string | undefined {
   const raw = lookupArtistResearch(slug)
-  const h = raw?.instagramHandle?.trim()
+  const h = sanitizeInlineText(raw?.instagramHandle)
   if (!h) return undefined
   return h.replace(/^@/, '').split('/')[0]?.split('?')[0]?.trim() || undefined
 }

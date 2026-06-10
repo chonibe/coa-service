@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from "framer-motion"
 
 
 
-import { Eye, Copy, Trash2, Lock, ArrowRight, Crown, Clock, MoreVertical } from "lucide-react"
+import { Eye, Copy, Trash2, Lock, ArrowRight, Crown, MoreVertical } from "lucide-react"
 import { UnlockTypeTooltip } from "./UnlockTypeTooltip"
 import type { ArtworkSeries } from "@/types/artwork-series"
 import { cn } from "@/lib/utils"
 
-import { Card, CardContent, Badge, Button } from "@/components/ui"
+import { Card, Badge, Button } from "@/components/ui"
 interface SeriesCardProps {
   series: ArtworkSeries
   index: number
@@ -43,20 +43,6 @@ const unlockTypeConfig: Record<string, {
     badgeColor: "text-purple-600 dark:text-purple-400",
     badgeBg: "bg-purple-100 dark:bg-purple-900/30",
   },
-  threshold: {
-    gradient: "from-orange-500/30 to-red-500/30",
-    borderColor: "border-orange-400/50",
-    icon: Crown,
-    badgeColor: "text-orange-600 dark:text-orange-400",
-    badgeBg: "bg-orange-100 dark:bg-orange-900/30",
-  },
-  time_based: {
-    gradient: "from-green-500/30 to-emerald-500/30",
-    borderColor: "border-green-400/50",
-    icon: Clock,
-    badgeColor: "text-green-600 dark:text-green-400",
-    badgeBg: "bg-green-100 dark:bg-green-900/30",
-  },
   vip: {
     gradient: "from-orange-500/30 to-red-500/30",
     borderColor: "border-orange-400/50",
@@ -69,14 +55,14 @@ const unlockTypeConfig: Record<string, {
 export function SeriesCard({
   series,
   index,
-  isHovered,
-  onHover,
+  isHovered: _isHovered,
+  onHover: _onHover,
   onView,
   onDuplicate,
   onDelete,
   getUnlockTypeLabel,
 }: SeriesCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [_menuOpen, setMenuOpen] = useState(false)
   const totalCount = series.member_count || 0
   const config = unlockTypeConfig[series.unlock_type] || {
     gradient: "from-gray-500/20 to-slate-500/20",
@@ -191,7 +177,7 @@ export function SeriesCard({
 
       {/* Slide-up menu */}
       <AnimatePresence>
-        {menuOpen && (
+        {_menuOpen && (
           <>
             {/* Backdrop */}
             <motion.div

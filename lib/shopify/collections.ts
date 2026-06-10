@@ -1,6 +1,12 @@
 import { SHOPIFY_SHOP, SHOPIFY_ACCESS_TOKEN } from "@/lib/env"
 import { safeJsonParse } from "@/lib/shopify-api"
 import { createClient } from "@/lib/supabase/server"
+import {
+  getVendorCollectionHandle,
+  getVendorCollectionTitle,
+} from "@/lib/shopify/vendor-collection-handle"
+
+export { getVendorCollectionHandle, getVendorCollectionTitle } from "@/lib/shopify/vendor-collection-handle"
 
 const API_VERSION = "2024-01"
 
@@ -38,23 +44,6 @@ async function shopifyFetch2024(url: string, options: RequestInit = {}, retries 
     }
     throw error
   }
-}
-
-/**
- * Generates a handle from vendor name for use in Shopify collection handles
- */
-export function getVendorCollectionHandle(vendorName: string): string {
-  return vendorName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-/**
- * Gets the collection title for a vendor
- */
-export function getVendorCollectionTitle(vendorName: string): string {
-  return `${vendorName} Collection`
 }
 
 /**

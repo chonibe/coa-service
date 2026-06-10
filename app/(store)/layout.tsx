@@ -166,17 +166,19 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <Footer
-        sections={footerSections}
-        newsletterEnabled={true}
-        newsletterTitle="Stay in the loop."
-        newsletterDescription=""
-        onNewsletterSubmit={handleNewsletterSubmit}
-        tagline=""
-        legalLinks={[]}
-        showPaymentIcons={true}
-        className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
-      />
+      {!isHomeV2Page && (
+        <Footer
+          sections={footerSections}
+          newsletterEnabled={false}
+          newsletterTitle="Stay in the loop."
+          newsletterDescription=""
+          onNewsletterSubmit={handleNewsletterSubmit}
+          tagline=""
+          legalLinks={[]}
+          showPaymentIcons={true}
+          className={cn(isLandingOrStreetCollector && '-mt-4 sm:-mt-5')}
+        />
+      )}
     </div>
   )
 }

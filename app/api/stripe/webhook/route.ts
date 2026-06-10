@@ -339,6 +339,31 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
       })() : '',
     }
 
+    if (!customer?.phone) {
+      const paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : (session.payment_intent as Stripe.PaymentIntent | null)?.id
+
+      if (paymentIntentId) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+          const latestChargeId =
+            typeof paymentIntent.latest_charge === 'string'
+              ? paymentIntent.latest_charge
+              : paymentIntent.latest_charge?.id
+
+          if (paymentIntent.shipping?.phone) {
+            customer.phone = paymentIntent.shipping.phone
+          } else if (latestChargeId) {
+            const charge = await stripe.charges.retrieve(latestChargeId)
+            customer.phone = charge.billing_details?.phone || customer.phone
+          }
+        } catch (phoneError) {
+          console.warn('[stripe/webhook] Could not resolve phone from payment intent:', phoneError)
+        }
+      }
+    }
+
     // Build billing from customer_details or fallback to shipping (PayPal often omits customer_details)
     const billingFromSession = session.customer_details?.address
     const billingFromShipping = shipping?.address
@@ -481,15 +506,16 @@ async function handleCheckoutCompleted(supabase: any, session: Stripe.Checkout.S
         ? session.payment_intent
         : (session.payment_intent as Stripe.PaymentIntent)?.id || session.id
     if (purchaserEmail) {
-      capturePostHogServerEvent('purchase', purchaserEmail, {
+      const posthogResult = await capturePostHogServerEvent('purchase', purchaserEmail, {
         value: phValue,
         currency: phCurrency,
         transaction_id: phTxnId,
         source: 'stripe_webhook',
         $set: { has_purchased: true },
-      }).catch((err) => {
-        console.warn('[stripe/webhook] PostHog purchase mirror failed (non-critical):', err)
       })
+      if (!posthogResult.success) {
+        console.warn('[stripe/webhook] PostHog purchase mirror failed (non-critical):', posthogResult.error)
+      }
     }
 
     // ── TikTok Events API: Purchase event ──

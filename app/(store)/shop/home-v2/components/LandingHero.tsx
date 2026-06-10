@@ -5,6 +5,10 @@ import Link from 'next/link'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
 
+function getVideoType(url: string): string {
+  return url.toLowerCase().includes('.mov') ? 'video/quicktime' : 'video/mp4'
+}
+
 function formatCounter(value: number): string {
   if (value >= 1000) {
     // match the original: 3000 -> "3,000"
@@ -76,7 +80,7 @@ export function LandingHero() {
           preload="metadata"
           poster={'videoPosterUrl' in hero ? (hero as { videoPosterUrl?: string }).videoPosterUrl : undefined}
         >
-          <source src={hero.videoUrl} type="video/mp4" />
+          <source src={hero.videoUrl} type={getVideoType(hero.videoUrl)} />
         </video>
       </div>
 
@@ -87,7 +91,9 @@ export function LandingHero() {
           // HTML is authored content (from the original file), used only for <br> + <em>
           dangerouslySetInnerHTML={{ __html: hero.headlineHtml }}
         />
-        <p className={styles.heroDesc}>{hero.description}</p>
+        {hero.description.trim() ? (
+          <p className={styles.heroDesc}>{hero.description}</p>
+        ) : null}
         <p className={styles.heroPricing}>
           Lamp from <strong>{hero.pricingLine.lampFrom}</strong> · Artworks from{' '}
           <strong>{hero.pricingLine.artworksFrom}</strong>
@@ -133,4 +139,3 @@ export function LandingHero() {
     </section>
   )
 }
-

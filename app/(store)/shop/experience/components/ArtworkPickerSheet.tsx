@@ -96,6 +96,7 @@ interface ArtworkCardV2Props {
   isSelected: boolean
   selectionNumber: number | null
   onSelect: (product: ShopifyProduct) => void
+  onQuickAdd?: (product: ShopifyProduct) => void
   priorityLoad?: boolean
   mergeWithLeft?: boolean
   mergeWithRight?: boolean
@@ -120,6 +121,7 @@ function ArtworkCardV2({
   isSelected,
   selectionNumber,
   onSelect,
+  onQuickAdd,
   priorityLoad = false,
   mergeWithLeft = false,
   mergeWithRight = false,
@@ -210,6 +212,20 @@ function ArtworkCardV2({
           )}>
             No image
           </div>
+        )}
+
+        {onQuickAdd && product.availableForSale && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onQuickAdd(product)
+            }}
+            className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-violet-300/40 bg-violet-600 text-white shadow-md shadow-violet-950/40 hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+            aria-label="Quick add to cart"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          </button>
         )}
 
         {(isNewDrop || isEarlyAccess) && (
@@ -421,6 +437,12 @@ interface ArtworkPickerSheetProps {
   lampPickerDetailOpen?: boolean
   onOpenLampPickerDetail?: () => void
   onCloseLampPickerDetail?: () => void
+  pickerCardMode?: 'toggleCart' | 'previewAndQuickAdd'
+  onPreviewProduct?: (product: ShopifyProduct) => void
+  onQuickAddProduct?: (product: ShopifyProduct) => void
+  sheetVariant?: 'bottomSheet' | 'rightRail'
+  presentation?: 'modal' | 'pushPanel'
+  showDoneButton?: boolean
 }
 
 export function ArtworkPickerSheet({
@@ -457,12 +479,27 @@ export function ArtworkPickerSheet({
   lampPickerDetailOpen = false,
   onOpenLampPickerDetail,
   onCloseLampPickerDetail,
+  pickerCardMode = 'toggleCart',
+  onPreviewProduct,
+  onQuickAddProduct,
+  sheetVariant = 'bottomSheet',
+  presentation = 'modal',
+  showDoneButton = true,
 }: ArtworkPickerSheetProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const prevSeasonRef = useRef(activeSeason)
   const { theme } = useExperienceTheme()
   const { pickerEngaged, orderDrawerOpen } = useExperienceOrder()
+  const [isDesktopRail, setIsDesktopRail] = useState(false)
+
+  useEffect(() => {
+    const q = window.matchMedia('(min-width: 768px)')
+    const sync = () => setIsDesktopRail(q.matches)
+    sync()
+    q.addEventListener('change', sync)
+    return () => q.removeEventListener('change', sync)
+  }, [])
 
   useEffect(() => {
     if (prevSeasonRef.current !== activeSeason && isOpen && scrollRef.current) {
@@ -576,6 +613,7 @@ export function ArtworkPickerSheet({
   )
 
   useEffect(() => {
+    if (presentation === 'pushPanel' && isDesktopRail) return
     if (isOpen) {
       document.body.style.overflow = 'hidden'
     } else {
@@ -584,9 +622,25 @@ export function ArtworkPickerSheet({
     return () => {
       document.body.style.overflow = ''
     }
-  }, [isOpen])
+  }, [isOpen, presentation, isDesktopRail])
 
   const rows = useMemo(() => buildArtworkRowsByArtist(products), [products])
+
+  const cardSelectHandler = useCallback(
+    (product: ShopifyProduct) => {
+      if (pickerCardMode === 'previewAndQuickAdd' && onPreviewProduct) {
+        onPreviewProduct(product)
+        return
+      }
+      onToggleSelect(product)
+    },
+    [pickerCardMode, onPreviewProduct, onToggleSelect]
+  )
+
+  const quickAddHandler =
+    pickerCardMode === 'previewAndQuickAdd' && onQuickAddProduct ? onQuickAddProduct : undefined
+
+  const isRightRailDesktop = sheetVariant === 'rightRail' && isDesktopRail
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -595,34 +649,10 @@ export function ArtworkPickerSheet({
     overscan: 6,
   })
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
+  const docked = presentation === 'pushPanel' && isDesktopRail
 
-          <div className="fixed inset-0 z-[71] flex items-end justify-center pointer-events-none md:px-4 md:pb-5">
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={cn(
-                'flex w-full flex-col pointer-events-auto shadow-2xl',
-                /* Mobile: nearly full viewport sheet */
-                'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
-                /* Desktop: wider shell (matches experience top chrome); floated panel with full rounding */
-                'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]',
-                theme === 'light' ? 'bg-white' : 'bg-[#171515]'
-              )}
-            >
+  const renderPickerPanelBody = () => (
+    <>
             {/* Header: mobile = title + Done; desktop = two-zone bar (title block | tools) */}
             <div className={cn(
               'flex-shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 pt-[max(0.75rem,env(safe-area-inset-top,0px))] border-b',
@@ -710,6 +740,7 @@ export function ArtworkPickerSheet({
                   )}
                 </button>
               )}
+              {showDoneButton && (
               <button
                 type="button"
                 onClick={onClose}
@@ -723,6 +754,7 @@ export function ArtworkPickerSheet({
               >
                 Done
               </button>
+              )}
               </div>
             </div>
 
@@ -807,7 +839,8 @@ export function ArtworkPickerSheet({
                                 product={product1}
                                 isSelected={p1Selected}
                                 selectionNumber={getSelectionNumber(product1.id)}
-                                onSelect={onToggleSelect}
+                                onSelect={cardSelectHandler}
+                                onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
                                 mergeWithRight
                                 spinePairLayout
@@ -846,7 +879,8 @@ export function ArtworkPickerSheet({
                                 product={product2}
                                 isSelected={p2Selected}
                                 selectionNumber={getSelectionNumber(product2.id)}
-                                onSelect={onToggleSelect}
+                                onSelect={cardSelectHandler}
+                                onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
                                 mergeWithLeft
                                 spinePairLayout
@@ -873,7 +907,8 @@ export function ArtworkPickerSheet({
                                 product={product1}
                                 isSelected={!!p1Selected}
                                 selectionNumber={getSelectionNumber(product1.id)}
-                                onSelect={onToggleSelect}
+                                onSelect={cardSelectHandler}
+                                onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
@@ -1006,6 +1041,64 @@ export function ArtworkPickerSheet({
                 artistCatalog={artistCatalogForFilters}
               />
             )}
+    </>
+  )
+
+  if (docked) {
+    if (!isOpen) return null
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 16 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 16 }}
+        transition={{ duration: 0.2 }}
+        className={cn(
+          'flex h-full min-h-0 w-full flex-col overflow-hidden shadow-2xl',
+          theme === 'light' ? 'border-l border-neutral-200 bg-white' : 'border-l border-white/10 bg-[#171515]'
+        )}
+      >
+        {renderPickerPanelBody()}
+      </motion.div>
+    )
+  }
+
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          <div
+            className={cn(
+              'fixed inset-0 z-[71] flex pointer-events-none',
+              'items-end justify-center md:px-4 md:pb-5',
+              sheetVariant === 'rightRail' && 'md:items-stretch md:justify-end md:p-0'
+            )}
+          >
+            <motion.div
+              initial={isRightRailDesktop ? { x: '100%' } : { y: '100%' }}
+              animate={isRightRailDesktop ? { x: 0 } : { y: 0 }}
+              exit={isRightRailDesktop ? { x: '100%' } : { y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className={cn(
+                'flex w-full flex-col pointer-events-auto shadow-2xl',
+                'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
+                !isRightRailDesktop &&
+                  'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]',
+                isRightRailDesktop &&
+                  'md:h-full md:max-h-none md:max-w-[min(440px,42vw)] md:rounded-none md:rounded-l-3xl',
+                theme === 'light' ? 'bg-white' : 'bg-[#171515]'
+              )}
+            >
+            {renderPickerPanelBody()}
             </motion.div>
           </div>
         </>

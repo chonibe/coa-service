@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import * as React from 'react'
 import Image from 'next/image'
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { getInstagramEmbedSrc } from '@/lib/shop/instagram-embed'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
-import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
+import type { ArtistProfileApiResponse, InstagramProfileSummary } from '@/lib/shop/artist-profile-api'
 import { buildArtistAnswerFirstLead } from '@/lib/seo/artist-meta'
 import { buildArtistFaqPairs } from '@/lib/seo/artist-faqs'
 import { parsePullQuote } from '@/lib/shop/parse-pull-quote'
@@ -16,9 +16,16 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
+import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
+import {
+  ladderStageBadgeClass,
+  ladderStageShortLabel,
+} from '@/lib/shop/collector-ladder-styles'
+import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
 
-type TabId = 'overview' | 'works' | 'exhibitions' | 'instagram'
+type TabId = 'overview' | 'works' | 'exhibitions'
 
 type WorkFilter = 'all' | 'available' | 'sold' | string
 
@@ -73,27 +80,109 @@ function bioParagraphs(bio: string | undefined): string[] {
       }, [])
 }
 
+type EditionStateLite = {
+  stageKey: StreetPricingStageKey
+  priceUsd: number | null
+  editionsSold: number
+  editionTotal: number | null
+}
+
 type Props = {
   artist: ArtistProfileApiResponse
   earlyAccessCoupon?: string | null
+  /** Compact layout for embedding inside another surface (e.g. experience v3). */
+  embedded?: boolean
 }
 
-export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
+function formatCompactCount(value: number | undefined): string | null {
+  if (!Number.isFinite(value)) return null
+  const n = value as number
+  if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K`
+  return `${n}`
+}
+
+export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
   const router = useRouter()
   const cart = useCart()
   const [tab, setTab] = React.useState<TabId>('overview')
   const [workFilter, setWorkFilter] = React.useState<WorkFilter>('all')
-  const [navScrolled, setNavScrolled] = React.useState(false)
   const [related, setRelated] = React.useState<ListArtist[]>([])
+  const [editionByProductId, setEditionByProductId] = React.useState<
+    Record<string, EditionStateLite>
+  >({})
 
   const profile = artist.profile ?? {}
   const stats = artist.stats ?? { editionCount: artist.products.length, remainingCount: 0 }
+  const [instagramProfile, setInstagramProfile] = React.useState<InstagramProfileSummary | undefined>(
+    profile.instagramProfile
+  )
+  const instagramHandle = instagramProfile?.handle || artist.instagram || null
+  const instagramProfileUrl = artist.instagramUrl || (instagramHandle ? `https://www.instagram.com/${instagramHandle}/` : null)
 
   React.useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 60)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const handle = instagramHandle?.trim()
+    if (!handle) return
+    if (
+      instagramProfile?.followersCount &&
+      instagramProfile?.followsCount &&
+      instagramProfile?.mediaCount &&
+      instagramProfile?.avatarUrl
+    ) {
+      return
+    }
+    let cancelled = false
+    fetch(`/api/shop/instagram-profile?handle=${encodeURIComponent(handle)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { profile?: InstagramProfileSummary } | null) => {
+        if (cancelled || !data?.profile) return
+        setInstagramProfile((prev) => ({
+          ...(prev || {}),
+          ...data.profile,
+        }))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [
+    instagramHandle,
+    instagramProfile?.avatarUrl,
+    instagramProfile?.followersCount,
+    instagramProfile?.followsCount,
+    instagramProfile?.mediaCount,
+  ])
+
+  React.useEffect(() => {
+    const ids = artist.products
+      .map((p) => normalizeShopifyProductId(p.id))
+      .filter((x): x is string => Boolean(x))
+    if (ids.length === 0) return
+    const q = ids.slice(0, 80).join(',')
+    let cancelled = false
+    fetch(`/api/shop/edition-states?ids=${encodeURIComponent(q)}`)
+      .then((r) => r.json())
+      .then((data: { items?: Array<EditionStateLite & { productId: string }> }) => {
+        if (cancelled) return
+        const items = data.items || []
+        const map: Record<string, EditionStateLite> = {}
+        for (const row of items) {
+          if (row.productId) {
+            map[row.productId] = {
+              stageKey: row.stageKey,
+              priceUsd: row.priceUsd,
+              editionsSold: row.editionsSold,
+              editionTotal: row.editionTotal,
+            }
+          }
+        }
+        setEditionByProductId(map)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [artist.products])
 
   React.useEffect(() => {
     let cancelled = false
@@ -129,6 +218,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
     return list
   }, [artist.products, workFilter])
 
+  const dropHistorySorted = React.useMemo(() => {
+    return [...artist.products].sort((a, b) => {
+      const ta = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+      const tb = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+      return tb - ta
+    })
+  }, [artist.products])
+
   const exhibitionsByYear = React.useMemo(() => {
     const rows = (profile.exhibitions ?? []).filter((r) => Number.isFinite(r.year))
     const map = new Map<number, typeof rows>()
@@ -143,7 +240,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   const heroImage = artist.image
   const eyebrow = [profile.location, profile.activeSince ? `Active since ${profile.activeSince}` : null]
     .filter(Boolean)
-    .join(' · ')
+    .join(' Â· ')
 
   const onTab = (id: TabId) => {
     setTab(id)
@@ -170,26 +267,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
   const paragraphs = bioParagraphs(artist.bio)
 
   return (
-    <div className={styles.root}>
+    <div className={cn(styles.root, embedded && styles.rootEmbedded)}>
       <div className={styles.inner}>
-        <nav className={cn(styles.nav, navScrolled && styles.navScrolled)} aria-label="Artist profile">
-          <Link href="/shop/street-collector" className={styles.logo}>
-            Street Collector
-          </Link>
-          <div className={styles.navRight}>
-            <Link href="/shop/explore-artists" className={styles.navBack}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M19 12H5M12 5l-7 7 7 7" />
-              </svg>
-              All Artists
-            </Link>
-            <Link href="/experience" className={styles.navCta}>
-              Collect this work
-            </Link>
-          </div>
-        </nav>
+        {!embedded ? <CollectorStoreTopChrome /> : null}
 
-        <section className={styles.profileHero} aria-label="Artist hero">
+        <section
+          className={cn(styles.profileHero, embedded && styles.profileHeroEmbedded)}
+          aria-label="Artist hero"
+        >
           <div className={styles.heroCanvasCol}>
             <div className={styles.heroGradient} aria-hidden />
             <div className={styles.heroPortrait}>
@@ -221,9 +306,9 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               01
             </div>
             <div className={styles.heroEditionBadge}>
-              <span className={styles.badgeLabel}>Available editions</span>
+              <span className={styles.badgeLabel}>Works</span>
               <span className={styles.badgeVal}>
-                {stats.editionCount} {stats.editionCount === 1 ? 'work' : 'works'} · {stats.remainingCount} remaining
+                {stats.editionCount} {stats.editionCount === 1 ? 'work' : 'works'}
               </span>
             </div>
           </div>
@@ -231,19 +316,12 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             {eyebrow ? <div className={styles.heroEyebrow}>{eyebrow}</div> : null}
             <h1 className={styles.heroName}>{artist.name}</h1>
             <p className={styles.heroLead}>{buildArtistAnswerFirstLead(artist)}</p>
-            <p className={styles.heroKeywords}>
-              Limited edition street art prints with Certificate of Authenticity.
-            </p>
             {profile.alias ? <div className={styles.heroAlias}>{profile.alias}</div> : null}
             {profile.storyHook ? <p className={styles.heroHook}>&ldquo;{profile.storyHook}&rdquo;</p> : null}
             <div className={styles.heroMeta}>
               <div className={styles.metaItem}>
                 <span className={styles.metaVal}>{stats.editionCount}</span>
-                <span className={styles.metaLabel}>Editions</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span className={styles.metaVal}>{stats.remainingCount}</span>
-                <span className={styles.metaLabel}>Remaining</span>
+                <span className={styles.metaLabel}>Works</span>
               </div>
               {profile.activeSince ? (
                 <div className={styles.metaItem}>
@@ -261,7 +339,6 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               ['overview', 'Overview'],
               ['works', 'Works'],
               ['exhibitions', 'Exhibitions & Press'],
-              ['instagram', 'Instagram'],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -293,8 +370,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   ))
                 ) : (
                   <p className={styles.storyBody}>
-                    We&apos;re still building this profile. For now, open <strong>Works</strong> for pricing, what&apos;s
-                    left in each run, and pieces you can add to your Street Lamp.
+                    We&apos;re still building this profile. Check back soon for a fuller artist biography and studio context.
                   </p>
                 )}
                 {profile.pullquote ? (() => {
@@ -312,7 +388,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 {profile.impactCallout ? (
                   <div className={styles.bioCard}>
                     <div className={styles.bioCardIcon} aria-hidden>
-                      →
+                      â†’
                     </div>
                     <div className={styles.bioCardText}>
                       {profile.impactCallout.split('\n').map((line, li) => (
@@ -353,14 +429,13 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   </div>
                 ) : (
                   <p className={styles.storyBody}>
-                    Studio shots, street work in progress, and detail photos land here when we publish them. Until
-                    then, use <strong>Works</strong> to see pieces you can add to your Street Lamp.
+                    Studio shots, work in progress, and detail images will appear here as this profile develops.
                   </p>
                 )}
                 {profile.exclusiveCallout ? (
                   <div className={styles.bioCard} style={{ marginTop: 'auto' }}>
                     <div className={styles.bioCardIcon} style={{ fontSize: 14 }} aria-hidden>
-                      ✦
+                      âœ¦
                     </div>
                     <div className={styles.bioCardText}>
                       {profile.exclusiveCallout.split('\n').map((line, li) => (
@@ -373,6 +448,100 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 ) : null}
               </div>
             </div>
+            {instagramProfileUrl ? (
+              <section className={styles.profileLinkSection} aria-labelledby="artist-instagram-heading">
+                <div className={styles.profileLinkCard}>
+                  <div className={styles.profileLinkHeader}>
+                    <div className={styles.storyEyebrow}>Instagram</div>
+                    <h2 id="artist-instagram-heading" className={styles.storyH2}>
+                      The artist&apos;s <em>profile.</em>
+                    </h2>
+                  </div>
+                  <div
+                    className={styles.instagramProfileCard}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (instagramProfileUrl) window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
+                    }}
+                    onKeyDown={(event) => {
+                      if (!instagramProfileUrl) return
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
+                    <a
+                      href={instagramProfileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.instagramProfileAvatar}
+                      aria-label={artist.instagram ? `Open @${artist.instagram} on Instagram` : `Open ${artist.name} on Instagram`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {instagramProfile?.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={getProxiedImageUrl(instagramProfile.avatarUrl)} alt={artist.name} loading="lazy" />
+                      ) : heroImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={getProxiedImageUrl(heroImage)} alt={artist.name} loading="lazy" />
+                      ) : (
+                        <span>{(artist.name[0] || '?').toUpperCase()}</span>
+                      )}
+                    </a>
+                    <div className={styles.instagramProfileMain}>
+                      <div className={styles.instagramProfileTop}>
+                        <div>
+                          <div className={styles.instagramProfileName}>
+                            {instagramProfile?.displayName || artist.name}
+                          </div>
+                          {instagramHandle ? (
+                            <div className={styles.instagramProfileHandle}>@{instagramHandle}</div>
+                          ) : null}
+                        </div>
+                        <a
+                          href={instagramProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.btnIg}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          Open profile
+                        </a>
+                      </div>
+                      {instagramProfile?.biography ? (
+                        <p className={styles.storyBody}>{instagramProfile.biography}</p>
+                      ) : (
+                        <p className={styles.storyBody}>
+                          Visit Instagram for recent posts, studio updates, and work that sits outside this profile.
+                        </p>
+                      )}
+                      <div className={styles.instagramProfileStats}>
+                        {formatCompactCount(instagramProfile?.followersCount) ? (
+                          <div className={styles.instagramStat}>
+                            <strong>{formatCompactCount(instagramProfile?.followersCount)}</strong>
+                            <span>followers</span>
+                          </div>
+                        ) : null}
+                        {formatCompactCount(instagramProfile?.followsCount) ? (
+                          <div className={styles.instagramStat}>
+                            <strong>{formatCompactCount(instagramProfile?.followsCount)}</strong>
+                            <span>following</span>
+                          </div>
+                        ) : null}
+                        {formatCompactCount(instagramProfile?.mediaCount) ? (
+                          <div className={styles.instagramStat}>
+                            <strong>{formatCompactCount(instagramProfile?.mediaCount)}</strong>
+                            <span>posts</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            ) : null}
             <section className={styles.faqSection} aria-labelledby="artist-faq-heading">
               <h2 id="artist-faq-heading" className={styles.faqH2}>
                 Common questions
@@ -394,15 +563,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             <div className={styles.worksHeader}>
               <div>
                 <div className={styles.storyEyebrow} style={{ marginBottom: 10 }}>
-                  The Collection
+                  Works
                 </div>
                 <h2 className={styles.storyH2} style={{ marginBottom: 0 }}>
-                  {stats.editionCount} editions · {stats.remainingCount} pieces remaining
+                  {stats.editionCount} {stats.editionCount === 1 ? 'work' : 'works'}
                 </h2>
               </div>
               <p style={{ fontSize: 11, color: 'var(--muted)', maxWidth: 260, lineHeight: 1.7, textAlign: 'right' }}>
-                Every run is capped. When an edition sells out here, it doesn&apos;t come back.
-                {earlyAccessCoupon ? ` Early access: ${earlyAccessCoupon}` : null}
+                A selection of works by {artist.name}.
               </p>
             </div>
             <div className={styles.worksFilterBar}>
@@ -443,6 +611,12 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 const price = product.priceRange.minVariantPrice
                 const ed = editionLabel(product)
                 const season = seasonFromTags(product.tags)
+                const pid = normalizeShopifyProductId(product.id) || ''
+                const st = editionByProductId[pid]
+                const pct =
+                  st?.editionTotal && st.editionTotal > 0
+                    ? Math.min(100, Math.round((st.editionsSold / st.editionTotal) * 100))
+                    : 0
                 return (
                   <div key={product.id} className={cn(styles.workItem, !product.availableForSale && styles.workSoldOut)}>
                     <Link href={`/shop/${product.handle}`} className={styles.workMedia}>
@@ -462,8 +636,28 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                       {!product.availableForSale ? <div className={styles.workSold}>Sold Out</div> : null}
                     </Link>
                     <div className={styles.workInfo}>
-                      <div className={styles.workTitle}>{product.title}</div>
-                      <div className={styles.workYear}>{[season].filter(Boolean).join(' · ')}</div>
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <div className={styles.workTitle}>{product.title}</div>
+                        {st ? (
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide',
+                              ladderStageBadgeClass(st.stageKey)
+                            )}
+                          >
+                            {ladderStageShortLabel(st.stageKey)}
+                          </span>
+                        ) : null}
+                      </div>
+                      {st?.editionTotal ? (
+                        <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      ) : null}
+                      <div className={styles.workYear}>{[season].filter(Boolean).join(' Â· ')}</div>
                       <div className={styles.workFooter}>
                         <span className={cn(styles.workPrice, !product.availableForSale && styles.workPriceSold)}>
                           {product.availableForSale ? formatPrice(price) : 'Sold out'}
@@ -484,8 +678,46 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 )
               })}
             </div>
+            <section className="mt-10 border-t border-white/10 pt-8" aria-labelledby="drop-history-heading">
+              <h3
+                id="drop-history-heading"
+                className="mb-4 text-xs font-medium uppercase tracking-wide text-[#FFBA94]/60"
+              >
+                Drop history
+              </h3>
+              <ul className="space-y-3">
+                {dropHistorySorted.map((p) => {
+                  const pid = normalizeShopifyProductId(p.id) || ''
+                  const st = editionByProductId[pid]
+                  const when = p.updatedAt
+                    ? new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+                    : 'â€”'
+                  const status =
+                    st?.stageKey === 'archive' || !p.availableForSale
+                      ? 'Sold out'
+                      : st
+                        ? `${ladderStageShortLabel(st.stageKey)} Â· ${st.editionsSold}/${st.editionTotal ?? 'â€”'} sold`
+                        : p.availableForSale
+                          ? 'Available'
+                          : 'Sold out'
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3 text-sm text-[#FFBA94]/90 last:border-0"
+                    >
+                      <span>
+                        <span className="text-[#FFBA94]/55">{when}</span>
+                        {' Â· '}
+                        {p.title}
+                      </span>
+                      <span className="text-xs text-[#FFBA94]/65">{status}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
             {filteredProducts.length === 0 ? (
-              <p className={styles.mutedNote}>Nothing matches this filter—try All Works or another season.</p>
+              <p className={styles.mutedNote}>Nothing matches this filterâ€”try All Works or another season.</p>
             ) : null}
           </div>
         </div>
@@ -516,7 +748,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
               ) : (
                 <p className={styles.storyBody}>
                   We don&apos;t list shows and public projects on this profile yet. Verified history appears here
-                  when it&apos;s published—newest year first.
+                  when it&apos;s publishedâ€”newest year first.
                 </p>
               )}
             </div>
@@ -529,7 +761,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   <div key={i} className={styles.pressCard}>
                     <div className={styles.pressOutlet}>
                       {card.outlet}
-                      {card.year ? ` · ${card.year}` : ''}
+                      {card.year ? ` Â· ${card.year}` : ''}
                     </div>
                     <p className={styles.pressQuote}>&ldquo;{card.quote}&rdquo;</p>
                     {card.url ? (
@@ -552,111 +784,6 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
           </div>
         </div>
 
-        <div className={cn(styles.tabPanel, tab === 'instagram' && styles.tabPanelActive)} role="tabpanel" hidden={tab !== 'instagram'}>
-          <div className={styles.instagramSection}>
-            <div className={styles.instagramHeader}>
-              <div className={styles.storyEyebrow}>Instagram</div>
-              <h2 className={styles.storyH2}>
-                The work, the street,
-                <br />
-                <em>the process.</em>
-              </h2>
-              {artist.instagram ? <div className={styles.instagramHandle}>{artist.instagram}</div> : null}
-              {!artist.instagram ? (
-                <p className={styles.storyBody} style={{ marginTop: 12 }}>
-                  We don&apos;t have a linked Instagram handle on file for this artist yet. Their editions are still
-                  under <strong>Works</strong> if you want to collect.
-                </p>
-              ) : null}
-            </div>
-            {profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
-              <div className={styles.instagramGrid}>
-                {profile.instagramShowcase.map((cell, i) => {
-                  const tileHref = (cell.link?.trim() || artist.instagramUrl || '').trim() || '#'
-                  const igEmbed = getInstagramEmbedSrc(cell.url)
-                  if (igEmbed) {
-                    return (
-                      <div key={`${cell.url}-${i}`} className={styles.igCell}>
-                        <div className={styles.igEmbedFrame}>
-                          <iframe
-                            src={igEmbed}
-                            title={cell.kind ? `${cell.kind} on Instagram` : `Instagram ${i + 1}`}
-                            loading="lazy"
-                            allow="encrypted-media; picture-in-picture"
-                            referrerPolicy="strict-origin-when-cross-origin"
-                          />
-                        </div>
-                        <a
-                          href={tileHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.igCellTap}
-                          aria-label={cell.kind ? `Open ${cell.kind} on Instagram` : 'Open on Instagram'}
-                        />
-                        <div className={styles.igOverlay} aria-hidden>
-                          <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                        </div>
-                      </div>
-                    )
-                  }
-                  return (
-                    <a
-                      key={`${cell.url}-${i}`}
-                      href={tileHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.igCell}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getProxiedImageUrl(cell.url)}
-                        alt={cell.kind ? `${cell.kind} on Instagram` : `Photo ${i + 1}`}
-                        loading="lazy"
-                      />
-                      <div className={styles.igOverlay}>
-                        <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                      </div>
-                    </a>
-                  )
-                })}
-              </div>
-            ) : null}
-            {artist.instagramUrl && !(profile.instagramShowcase && profile.instagramShowcase.length > 0) ? (
-              <div className={styles.igNativeEmpty}>
-                <div className={styles.igNativeEmptySilhouette} aria-hidden>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className={styles.igNativeEmptyCell} />
-                  ))}
-                </div>
-                <p className={styles.igNativeEmptyCopy}>
-                  New pieces and studio posts usually hit their feed before they land here. Open Instagram for the
-                  live thread; use <strong>Works</strong> when you&apos;re ready to add art to your Street Lamp.
-                </p>
-                <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                    <rect x="2" y="2" width="20" height="20" rx="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-                  </svg>
-                  {artist.instagram ? `View @${artist.instagram} on Instagram` : 'View on Instagram'}
-                </a>
-              </div>
-            ) : null}
-            {artist.instagramUrl && profile.instagramShowcase && profile.instagramShowcase.length > 0 ? (
-              <div className={styles.instagramCta}>
-                <a href={artist.instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                    <rect x="2" y="2" width="20" height="20" rx="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-                  </svg>
-                  {artist.instagram ? `Follow @${artist.instagram}` : 'Follow on Instagram'}
-                </a>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
         <section className={styles.relatedSection} aria-label="Related artists">
           <div className={styles.relatedHeader}>
             <div>
@@ -665,12 +792,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 More artists <em>to explore.</em>
               </h2>
             </div>
-            <Link href="/shop/explore-artists" className={styles.navBack}>
-              See all artists
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
+
           </div>
           <div className={styles.relatedGrid}>
             {related.map((a) => (
@@ -699,7 +821,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                   <div className={styles.relatedCity}>{a.productCount} editions</div>
                   {a.bio ? (
                     <div className={styles.relatedHook}>
-                      &ldquo;{a.bio.length > 90 ? `${a.bio.slice(0, 90)}…` : a.bio}&rdquo;
+                      &ldquo;{a.bio.length > 90 ? `${a.bio.slice(0, 90)}â€¦` : a.bio}&rdquo;
                     </div>
                   ) : null}
                 </div>
@@ -707,7 +829,6 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
             ))}
           </div>
         </section>
-
         <section className={styles.profileCta} aria-label="Call to action">
           <div className={styles.ctaEyebrow}>Own the work</div>
           <h2 className={styles.ctaTitle}>
@@ -725,13 +846,12 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon }: Props) {
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
-            <Link href="/shop/explore-artists" className={styles.btnOutline}>
-              Browse all artists
-            </Link>
           </div>
         </section>
       </div>
-      <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+      {!embedded ? (
+        <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+      ) : null}
     </div>
   )
 }

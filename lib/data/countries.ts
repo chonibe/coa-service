@@ -1,9 +1,9 @@
 /**
  * Country list for address forms and dropdowns.
- * Shop shipping aligns with {@link STORE_SHIP_TO_COUNTRIES} in `lib/shopify/shipping-zone-country-codes.ts`.
+ * Shop shipping aligns with {@link STORE_SHIP_TO_COUNTRIES} in `lib/shopify/shipping-zone-country-codes-data.ts`.
  */
 
-import { STORE_SHIP_TO_COUNTRIES } from '@/lib/shopify/shipping-zone-country-codes'
+import { STORE_SHIP_TO_COUNTRIES } from '@/lib/shopify/shipping-zone-country-codes-data'
 
 export interface CountryOption {
   code: string

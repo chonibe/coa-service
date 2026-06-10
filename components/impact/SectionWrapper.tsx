@@ -43,8 +43,9 @@ const sectionVariants = cva(
         default: 'bg-white',
         muted: 'bg-[#f5f5f5]',
         dark: 'bg-[#1a1a1a] text-white',
-        /** Same canvas as shop experience dark shell (#171515) — landing / street-collector */
-        experience: 'bg-[#171515] text-[#ffba94]',
+        /** Street Collector landing — warm light canvas; dark when ancestor has `.dark` */
+        experience:
+          'bg-[#faf6f2] text-stone-900 dark:bg-[#171515] dark:text-[#ffba94]',
         header: 'bg-[#390000] text-[#ffba94]',
         headerSubtle: 'bg-[#390000]/10 text-[#390000]',
         primary: 'bg-[#047AFF] text-white',

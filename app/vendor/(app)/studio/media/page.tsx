@@ -82,7 +82,7 @@ export default function VendorMediaPage() {
       const params = new URLSearchParams()
       if (filter !== 'all') params.set('type', filter)
       if (searchQuery) params.set('search', searchQuery)
-      params.set('sort', 'newest')
+      params.set('sort', 'date_desc')
 
       const res = await fetch(`/api/vendor/media-library?${params.toString()}`, { credentials: 'include' })
       if (res.ok) {

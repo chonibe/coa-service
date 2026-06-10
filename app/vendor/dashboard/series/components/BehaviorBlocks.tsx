@@ -10,7 +10,8 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
 import type { UnlockType } from "@/types/artwork-series"
 import { UnlockTypeCards } from "./UnlockTypeCards"
-import { TimeBasedUnlockConfig } from "./TimeBasedUnlockConfig"
+// time_based deferred
+// import { TimeBasedUnlockConfig } from "./TimeBasedUnlockConfig"
 import { VIPUnlockConfig } from "./VIPUnlockConfig"
 import { CoverArtUpload } from "./CoverArtUpload"
 
@@ -90,40 +91,12 @@ export function BehaviorBlocks({
               />
             </div>
 
-            {unlockType === "time_based" && (
-              <TimeBasedUnlockConfig
-                value={unlockConfig}
-                onChange={onUnlockConfigChange}
-              />
-            )}
-
             {unlockType === "vip" && (
               <VIPUnlockConfig
                 value={unlockConfig}
                 onChange={onUnlockConfigChange}
                 seriesMembers={[]}
               />
-            )}
-
-            {unlockType === "threshold" && (
-              <div className="space-y-2">
-                <Label htmlFor="required-count">Required Purchases</Label>
-                <Input
-                  id="required-count"
-                  type="number"
-                  min="1"
-                  value={unlockConfig.required_count || 1}
-                  onChange={(e) =>
-                    onUnlockConfigChange({
-                      ...unlockConfig,
-                      required_count: parseInt(e.target.value) || 1,
-                    })
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  Number of artworks collectors must purchase to unlock exclusive pieces
-                </p>
-              </div>
             )}
 
             {unlockType === "sequential" && (

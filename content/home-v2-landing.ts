@@ -38,6 +38,8 @@ export type TestimonialImage = {
   author: string
   quote: string
   imageUrl: string
+  /** Renders as the large featured story in testimonials (one recommended) */
+  featured?: boolean
 }
 
 export type TestimonialText = {
@@ -75,14 +77,14 @@ export const homeV2LandingContent = {
   },
 
   hero: {
-    eyebrow: 'Revolutionizing Urban Art',
+    eyebrow: 'Collect. Insert. Change.',
     headlineHtml: '<em>A living art<br>collection.</em>',
-    description:
-      'A premium backlit lamp with 100+ interchangeable street art prints from artists worldwide. Collect. Swap. Own something truly original.',
+    /** Empty = no hero paragraph under the headline */
+    description: '',
     pricingLine: { lampFrom: '$99', artworksFrom: '$40' },
     ctaText: 'Start your collection',
     videoUrl:
-      'https://cdn.shopify.com/videos/c/o/v/2b189c367ed04f3f86dce86d120a40d6.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/c4901eca91a14b65813886b586e3b7db.mp4',
     videoPosterUrl:
       'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
     stats: [
@@ -166,13 +168,7 @@ export const homeV2LandingContent = {
         bodyTitleEmphasis: 'Transform any space instantly.',
         bodyText:
           'One tap. Multiple brightness levels. Colors deepen, details surface as the room changes mood. Swap prints in seconds — no tools, no clips. A living room that changes whenever you do.',
-        details: [
-          {
-            text: 'One tap dimming — multiple brightness levels for morning, evening, night.',
-          },
-          { text: 'Swap prints in under 10 seconds. No tools. Slide out, slide in — done.' },
-          { text: 'Wireless & rechargeable — days of charge, no cables cluttering your space.' },
-        ],
+          details: [],
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
       },
@@ -183,9 +179,7 @@ export const homeV2LandingContent = {
         bodyText:
           'Street Collector is built on a simple idea: artists deserve to be paid. Every artwork you collect puts money directly into the hands of the creator — no galleries, no middlemen, no markups.',
         details: [
-          { text: 'Direct artist revenue — every sale goes straight to the creator.' },
-          { text: 'Discover emerging talent before the rest of the world does.' },
-          { text: 'Join 3,000+ collectors in 40+ countries building meaningful art collections.' },
+          // Secondary texts removed per design update
         ],
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
@@ -198,6 +192,27 @@ export const homeV2LandingContent = {
     title: '100+ Artists.\n Every corner of the world.',
     titleEmphasis: 'Every corner of the world.',
     ctaLabel: 'View all artists',
+    /** Short clips in the carousel above the image grid (deduped URLs) */
+    carouselVideos: [
+      'https://cdn.shopify.com/videos/c/o/v/4e3914d1963f4f49bc5aa9b30fc28d06.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/d1866abf7d814c0ca47346fc5e8b2f5b.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/8b97b509d56c4cd7a841f7968918bf60.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/00e7a6d054fe4d3795376d830aeb9b5e.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/b3fa9166216c452e84cc94cb8f6ba0d6.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/dd8871a5486149cb8ac7bcae3be7cbb0.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/3d38926d71814b69b1b382614593c2bd.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/24afd808e6a8480bad00abd9c938c912.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/5544660fcedf42a2a766cbbf076346bb.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/f4f288bd1b9847dd802f7f39ef979494.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/880d24398a644fb6b4b7e6ddd9e8c42b.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/bc8506d404e745468bca0ec56ff7504d.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/37381e33d4f847d382991e5daf9e3065.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/693b7eeeec4b47afbf7a5e9bdd4f2151.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/eeca5f8ad623487eada9cd3c52091052.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/a9f4ecd941034b12bbb29242ed29a8a1.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/de8d91a33bad4bb38504d1aaf3ce5c24.mp4',
+      'https://cdn.shopify.com/videos/c/o/v/32e2e5ae88b94eba82ebc9674c66f092.mp4',
+    ],
     tiles: [
       {
         name: 'Jérôme Masi',
@@ -264,6 +279,181 @@ export const homeV2LandingContent = {
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/elfassi-618423.png',
       },
+      {
+        name: 'Yonil',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/yonil-823611.png',
+      },
+      {
+        name: 'Emelio Cerezo',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/emelio-cerezo-958748.png',
+      },
+      {
+        name: 'Igal Talianski',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/igal-talianski-201541.jpg',
+      },
+      {
+        name: 'Carsten Gueth',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/carsten-gueth-457402.png',
+      },
+      {
+        name: 'Or Bar-El',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/or-bar-el-798628.jpg',
+      },
+      {
+        name: 'Ori Toor',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/ori-toor-182741.png',
+      },
+      {
+        name: 'My Sunbeam',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/my-sunbeam-753804.png',
+      },
+      {
+        name: 'Linda Baritski',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/linda-baritski-899063.png',
+      },
+      {
+        name: 'Erezoo',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/erezoo-944730.jpg',
+      },
+      {
+        name: 'Maalavidaa',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/maalavidaa-941602.png',
+      },
+      {
+        name: 'Psoman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/psoman-148667.png',
+      },
+      {
+        name: 'Agus Rucula',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/agus-rucula-674348.png',
+      },
+      {
+        name: 'Max Diamond',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/max-diamond-362960.png',
+      },
+      {
+        name: 'Ezra Baderman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/ezra-baderman-551846.png',
+      },
+      {
+        name: 'Marylou Faure',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/marylou-faure-306934.png',
+      },
+      {
+        name: 'Dima Korma',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/dima-korma-967960.png',
+      },
+      {
+        name: 'Snow Hands World',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/snow-hands-world-674556.png',
+      },
+      {
+        name: 'Bysancho',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/bysancho-373026.png',
+      },
+      {
+        name: 'Alin Mor',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/alin-mor-339783.png',
+      },
+      {
+        name: 'Beto Val',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/beto-val-618237.png',
+      },
+      {
+        name: 'Cokorda Martin',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/cokorda-martin-401664.png',
+      },
+      {
+        name: 'Aviv Shamir',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/aviv-shamir-246294.png',
+      },
+      {
+        name: 'Hen Macabi',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/hen-macabi-716685.jpg',
+      },
+      {
+        name: 'Refiloe Mnisi',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/refiloe-mnisi-622066.png',
+      },
+      {
+        name: 'Geometric Bang',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/geometric-bang-304660.png',
+      },
+      {
+        name: 'Laura Fridman',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/laura-fridman-134465.png',
+      },
+      {
+        name: 'Cubi Boumclap',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/cubi-boumclap-242467.png',
+      },
+      {
+        name: 'Studio Giftig',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/studio-giftig-393838.png',
+      },
+      {
+        name: 'Thales Towers',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/thales-towers-332488.png',
+      },
+      {
+        name: 'Niashtai',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/niashtai-311613.png',
+      },
+      {
+        name: 'Nurit Gross',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/nurit-gross-638445.png',
+      },
+      {
+        name: 'Moshe Gilboa',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/moshe-gilboa-794754.png',
+      },
+      {
+        name: 'Eden Kalif',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/eden-kalif-421492.png',
+      },
+      {
+        name: 'Tiffany Chin',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/tiffany-chin-256609.png',
+      },
+      {
+        name: 'Yoaz',
+        imageUrl:
+          'https://cdn.shopify.com/s/files/1/0659/7925/2963/collections/yoaz-858025.png',
+      },
     ] satisfies ArtistTile[],
   },
 
@@ -272,8 +462,6 @@ export const homeV2LandingContent = {
     title: 'Join 3,000+\ncollectors worldwide.',
     titleEmphasis: '3,000+',
     ratingLabel: '5.0 · Verified reviews',
-    productImageUrl:
-      'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Group_8252.png',
     videos: [
       {
         author: '@streetcollector_',
@@ -300,37 +488,17 @@ export const homeV2LandingContent = {
           'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
       },
     ] satisfies TestimonialVideo[],
-    images: [
+      images: [
       {
         author: 'Debra G.',
-        quote: 'A unique and unexpected comfort through sometimes daily turmoil.',
+        featured: true,
+        quote:
+          'In an immensely difficult year, where any sense of ease or peace often proved elusive, I found a unique and unexpected comfort—through sometimes daily turmoil.',
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg',
       },
-      {
-        author: 'Gabriel M.',
-        quote: 'Every artist involved is astounding.',
-        imageUrl:
-          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_4.webp',
-      },
-      {
-        author: 'Haya B.',
-        quote: 'The packaging is sooo glamorous.',
-        imageUrl:
-          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_1.webp',
-      },
     ] satisfies TestimonialImage[],
     texts: [
-      {
-        author: 'Gabriel M.',
-        quote:
-          "Everything about it from the design to the concept is just perfect. Through this project, I discovered some truly exceptional artists, and I'm blown away by the talent featured.",
-      },
-      {
-        author: 'Haya B.',
-        quote:
-          'It is well made, the packaging is sooo glamorous, the design is above and beyond and the ART IS AMAZING!! Definitely worth every penny.',
-      },
       {
         author: 'Andiva B.',
         quote:
@@ -339,7 +507,7 @@ export const homeV2LandingContent = {
       {
         author: 'Maayan F.',
         quote:
-          'Such prestige and chic with this product! Every single bit lovely and lush and the concept innovative. So honored to be in on the first edition.',
+          'Such prestige and chic with this product! Every single bit lovely and lush and the concept innovative. So honored to be on the first edition.',
       },
     ] satisfies TestimonialText[],
   },
@@ -421,7 +589,7 @@ export const homeV2LandingContent = {
 
   footer: {
     left: '© 2026 Street Collector',
-    right: 'Revolutionizing the Urban Art World',
+    right: 'Collect. Insert. Change.',
     links: [
       { label: 'Home', href: '/' },
       { label: 'Shop', href: '/experience' },
@@ -431,4 +599,3 @@ export const homeV2LandingContent = {
 } as const
 
 export type HomeV2LandingContent = typeof homeV2LandingContent
-

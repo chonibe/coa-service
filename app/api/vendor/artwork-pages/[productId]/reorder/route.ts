@@ -17,7 +17,11 @@ export async function POST(
 
     const supabase = createClient()
     const { productId } = params
-    const { updates } = await request.json() as { updates: Array<{ id: number; display_order: number }> }
+    const body = (await request.json()) as {
+      updates?: Array<{ id: number; display_order: number }>
+      blockOrders?: Array<{ id: number; display_order: number }>
+    }
+    const updates = body.updates ?? body.blockOrders
 
     if (!updates || !Array.isArray(updates)) {
       return NextResponse.json({ error: "Invalid updates array" }, { status: 400 })
@@ -42,9 +46,18 @@ export async function POST(
       const productData = submission.product_data as any
       const benefits = productData?.benefits || []
 
-      // Update display_order for each benefit
+      // Update display_order for each benefit (match by id; support number / string / temp- ids)
       const updatedBenefits = benefits.map((benefit: any) => {
-        const update = updates.find(u => benefit.id && u.id.toString() === benefit.id.replace('temp-', ''))
+        const update = updates.find((u) => {
+          if (benefit.id === undefined || benefit.id === null) return false
+          if (u.id === benefit.id) return true
+          if (typeof benefit.id === "number" && !Number.isNaN(Number(u.id))) {
+            return benefit.id === Number(u.id)
+          }
+          const bStr = typeof benefit.id === "string" ? benefit.id.replace(/^temp-/, "") : String(benefit.id)
+          const uStr = String(u.id).replace(/^temp-/, "")
+          return bStr === uStr
+        })
         if (update) {
           return { ...benefit, display_order: update.display_order }
         }

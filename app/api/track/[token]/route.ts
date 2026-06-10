@@ -23,20 +23,79 @@ export async function GET(
 
     // Fetch the tracking link from database
     const supabase = createClient()
-    const { data: trackingLink, error: linkError } = await supabase
+    let { data: trackingLink } = await supabase
       .from('shared_order_tracking_links')
       .select('*')
       .eq('token', token)
-      .single()
+      .maybeSingle()
 
-    if (linkError || !trackingLink) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Invalid or expired tracking link',
-        },
-        { status: 404 }
-      )
+    // Self-heal tracking links: if missing, attempt to auto-create from a real warehouse order.
+    if (!trackingLink) {
+      // Get date range (last 180 days to ensure we capture the orders)
+      const endDate = new Date().toISOString().split('T')[0]
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 180)
+      const startDateStr = startDate.toISOString().split('T')[0]
+
+      const client = createChinaDivisionClient()
+      const allOrders = await client.getOrdersInfo(startDateStr, endDate)
+
+      const candidateTokens = [token]
+      if (!token.startsWith('#')) candidateTokens.push(`#${token}`)
+      if (token.startsWith('#')) candidateTokens.push(token.slice(1))
+
+      const matchedOrder = allOrders.find((order) => {
+        const ids = [order.sys_order_id, order.order_id, order.order_detail_id].filter(Boolean) as string[]
+        return ids.some((id) => candidateTokens.includes(id))
+      })
+
+      if (!matchedOrder) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Invalid or expired tracking link',
+          },
+          { status: 404 }
+        )
+      }
+
+      const resolvedOrderId =
+        matchedOrder.sys_order_id || matchedOrder.order_id || matchedOrder.order_detail_id || token
+      const autoTitle = matchedOrder.order_id ? `Order ${matchedOrder.order_id}` : `Order ${resolvedOrderId}`
+
+      const { data: insertedLink } = await supabase
+        .from('shared_order_tracking_links')
+        .insert({
+          token,
+          order_ids: [resolvedOrderId],
+          title: autoTitle,
+          created_by: 'system:auto-tracking',
+          primary_color: '#8217ff',
+        })
+        .select('*')
+        .maybeSingle()
+
+      if (insertedLink) {
+        trackingLink = insertedLink
+      } else {
+        // If insert races/conflicts, fetch again and continue.
+        const { data: existingAfterInsert } = await supabase
+          .from('shared_order_tracking_links')
+          .select('*')
+          .eq('token', token)
+          .maybeSingle()
+
+        if (!existingAfterInsert) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: 'Invalid or expired tracking link',
+            },
+            { status: 404 }
+          )
+        }
+        trackingLink = existingAfterInsert
+      }
     }
 
     // Check if link has expired

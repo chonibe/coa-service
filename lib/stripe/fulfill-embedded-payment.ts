@@ -62,6 +62,7 @@ export async function createAndCompleteOrder(
         province: address.state || '',
         country: address.country || 'US',
         zip: address.postalCode || '',
+        phone: address.phoneNumber || '',
       },
       email: address.email || 'guest@checkout.local',
       note: `Stripe PaymentIntent: ${paymentIntentId}\nSource: Headless Storefront (Embedded)`,

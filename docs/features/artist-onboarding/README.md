@@ -1,7 +1,7 @@
 # Artist Onboarding (Public Welcome → Apply → Login → Onboarding Wizard)
 
-**Version:** 1.1.0
-**Last Updated:** 2026-04-17
+**Version:** 1.2.0
+**Last Updated:** 2026-04-21
 
 ## Feature Overview & Purpose
 - Give prospective artists a single, editorial entry point (`/for-artists`) that explains
@@ -31,11 +31,14 @@
 - Legacy alias: [`next.config.js`](../../../next.config.js) redirects
   `/join-vendor` → `/for-artists`
 - Support constants: [`lib/constants/support.ts`](../../../lib/constants/support.ts)
+- Application notify inbox resolution: [`lib/constants/artist-application-notify.ts`](../../../lib/constants/artist-application-notify.ts)
+- Admin list (triage): [`app/admin/artist-applications/page.tsx`](../../../app/admin/artist-applications/page.tsx), API [`app/api/admin/artist-applications/route.ts`](../../../app/api/admin/artist-applications/route.ts)
 
 ## API Endpoints & Usage
 | Endpoint | Method | Description | Auth |
 | --- | --- | --- | --- |
-| `/api/artists/apply` | POST | Accept a new artist application, de-duplicate within 24h, insert into `artist_applications`, and email the team. | Public |
+| `/api/artists/apply` | POST | Accept a new artist application, de-duplicate within 24h, insert into `artist_applications`, and email the team (best-effort). | Public |
+| `/api/admin/artist-applications` | GET | List applications for admins (auth required). | Admin |
 
 ### Request Shape
 ```json
@@ -82,10 +85,10 @@
 - Requires the `artist_applications` migration to be applied before the API route
   works in production. Apply via Supabase CLI or MCP.
 - Vercel production deploy after merge (see `.cursorrules`).
-- No environment variable changes.
+- Optional: set **`ARTIST_APPLICATION_NOTIFY_EMAIL`** to the inbox(es) that should receive application alerts (comma-separated). If unset, notifications go to **`choni@thestreetcollector.com`** (this channel does not reuse **`CONTACT_EMAIL`**).
 
 ## Known Limitations
-- Team notification is sent as plain email; no backoffice triage UI yet.
+- Admin UI is read-only list/triage (**`/admin/artist-applications`**); status changes are not exposed in-app yet (use Supabase or a follow-up build).
 - Applications are not currently linked back to a Supabase auth user when the
   artist signs up — this is intentional for v1 (humans do the matching) but should
   be automated later.

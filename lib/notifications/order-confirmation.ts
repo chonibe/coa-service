@@ -12,6 +12,7 @@ export interface OrderConfirmationPayload {
     price: string
   }>
   totalPrice?: string
+  orderDate?: string
   currency?: string
   primaryColor?: string
   baseUrl?: string
@@ -130,6 +131,8 @@ export async function sendOrderConfirmationWithTracking(payload: OrderConfirmati
   const templateResult = await renderTemplate('order_confirmation', {
     orderName: payload.orderName,
     customerName: payload.customerName || 'Customer',
+    total: payload.totalPrice || '',
+    orderDate: payload.orderDate || '',
     trackingUrl,
   })
 

@@ -39,15 +39,19 @@ All footer-linked pages for the Street Collector shop, providing information, fo
 
 **Behavior**:
 - Validates required fields (name, email, message)
-- Sends email via `sendEmail()` to `CONTACT_EMAIL` (default: info@thestreetlamp.com)
+- Persists to Supabase `artist_applications` (same pipeline as `/api/artists/apply`), with the message stored in `bio` prefixed by the shop form path so the source is clear
+- Sends a notification email via `sendEmail()` to `CONTACT_EMAIL` (default: info@thestreetlamp.com) as best-effort; a failed email does not block a saved submission
 - Reply-To set to submitter email
 - Returns `{ success: true }` or `{ error: string }`
+- Review submissions in the admin app: **`/admin/artist-applications`** (Products → Artist applications in the sidebar).
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CONTACT_EMAIL` | Email for artist submissions | info@thestreetlamp.com |
+| `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Required to persist shop artist submissions | — |
+| `ARTIST_APPLICATION_NOTIFY_EMAIL` | Team inbox for new artist applications (shop + /for-artists); comma-separated allowed | Defaults to **`choni@thestreetcollector.com`** when unset |
+| `CONTACT_EMAIL` | Other shop forms (e.g. for-business); not used for artist-application email | info@thestreetlamp.com |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Contact page display email | info@thestreetlamp.com |
 | `NEXT_PUBLIC_COLLABS_SIGNUP_URL` | Shopify Collabs signup URL | https://collabs.shopify.com/creator |
 | `NEXT_PUBLIC_COLLABS_LOGIN_URL` | Shopify Collabs login URL | https://collabs.shopify.com/creator |
@@ -85,5 +89,5 @@ content/
 
 ## Version
 
-- Last updated: 2026-03-01
-- Version: 1.0.0
+- Last updated: 2026-04-21
+- Version: 1.0.2
