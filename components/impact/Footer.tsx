@@ -8,6 +8,7 @@ import { Container } from './Container'
 
 import { openTawkChat } from '@/lib/tawk'
 import { PaymentIcons } from './PaymentIcons'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { socialLinks as themeSocialLinks } from '@/lib/design-system/tokens'
 
 /**
@@ -504,9 +505,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
 
           <div className="mt-8 border-t border-[#ffba94]/10 pt-8 sm:mt-10">
             <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left">
-              <p className="text-sm text-[#ffba94]/80 sm:text-xs">
-                {copyrightText || `© ${currentYear} Street Collector`}
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-[#ffba94]/80 sm:text-xs">
+                  {copyrightText || `© ${currentYear} Street Collector`}
+                </p>
+                <ThemeToggle />
+              </div>
 
               {legalLinks.length > 0 && (
                 <nav

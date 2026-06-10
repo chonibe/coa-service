@@ -1,8 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-
-const STORAGE_KEY = 'experience-theme'
+import { useTheme } from 'next-themes'
 
 type ExperienceTheme = 'light' | 'dark'
 
@@ -13,36 +12,35 @@ interface ExperienceThemeContextValue {
 
 export const ExperienceThemeContext = createContext<ExperienceThemeContextValue | null>(null)
 
+/**
+ * ExperienceThemeProvider — thin adapter over the global next-themes provider.
+ *
+ * Historically the experience pages kept their own localStorage-backed theme
+ * and a local `.dark` wrapper div. Now the whole site is themeable via
+ * next-themes (html-level class), so this provider simply exposes the global
+ * theme through the existing Experience API to avoid touching every consumer.
+ *
+ * Docs: docs/features/theme-toggle/README.md
+ */
 export function ExperienceThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ExperienceTheme>('dark')
+  const { resolvedTheme, setTheme: setGlobalTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as ExperienceTheme | null
-    if (stored === 'light' || stored === 'dark') {
-      setThemeState(stored)
-    }
-    setMounted(true)
-  }, [])
+  useEffect(() => setMounted(true), [])
 
-  const setTheme = React.useCallback((value: ExperienceTheme) => {
-    setThemeState(value)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, value)
-    }
-  }, [])
+  // Before mount, report the site default (dark) to match server markup.
+  const theme: ExperienceTheme = mounted && resolvedTheme === 'light' ? 'light' : 'dark'
 
-  if (!mounted) {
-    return (
-      <ExperienceThemeContext.Provider value={{ theme: 'dark', setTheme: () => {} }}>
-        <div className="dark">{children}</div>
-      </ExperienceThemeContext.Provider>
-    )
-  }
+  const setTheme = React.useCallback(
+    (value: ExperienceTheme) => {
+      setGlobalTheme(value)
+    },
+    [setGlobalTheme]
+  )
 
   return (
     <ExperienceThemeContext.Provider value={{ theme, setTheme }}>
-      <div className={theme === 'dark' ? 'dark' : ''}>{children}</div>
+      {children}
     </ExperienceThemeContext.Provider>
   )
 }

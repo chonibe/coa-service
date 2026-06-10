@@ -67,13 +67,12 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => setHasMounted(true), [])
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
-  const isStreetCollectorPage = pathname?.startsWith('/shop/street-collector')
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
-    isLandingPage || isStreetCollectorPage || isHomeV2Page
-  /** Chat icon: hero pages only — not home-v2 (fixed nav + CTA already occupy the top bar). */
-  const showLandingChatIcon = isLandingPage || isStreetCollectorPage
+    isLandingPage || isHomeV2Page
+  /** Chat icon: legacy street-collector layout only — home-v2 landing (/) has its own nav + sticky CTA. */
+  const showLandingChatIcon = false
   const pathnameReady = hasMounted && pathname != null && pathname !== ''
   const cart = useCart()
 
@@ -133,7 +132,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         'flex min-h-screen flex-col',
-        isLandingOrStreetCollector && 'bg-[#171515]'
+        isLandingOrStreetCollector && 'bg-background dark:bg-[#171515]'
       )}
     >
       <Suspense fallback={null}>
@@ -161,7 +160,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         className={cn(
           /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
           isLandingOrStreetCollector
-            ? 'flex-none bg-[#171515] max-md:!pb-0'
+            ? 'flex-none bg-background dark:bg-[#171515] max-md:!pb-0'
             : 'flex-1'
         )}
       >
