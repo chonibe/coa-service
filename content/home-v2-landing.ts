@@ -168,13 +168,7 @@ export const homeV2LandingContent = {
         bodyTitleEmphasis: 'Transform any space instantly.',
         bodyText:
           'One tap. Multiple brightness levels. Colors deepen, details surface as the room changes mood. Swap prints in seconds — no tools, no clips. A living room that changes whenever you do.',
-        details: [
-          {
-            text: 'One tap dimming — multiple brightness levels for morning, evening, night.',
-          },
-          { text: 'Swap prints in under 10 seconds. No tools. Slide out, slide in — done.' },
-          { text: 'Wireless & rechargeable — days of charge, no cables cluttering your space.' },
-        ],
+          details: [],
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
       },
@@ -185,9 +179,7 @@ export const homeV2LandingContent = {
         bodyText:
           'Street Collector is built on a simple idea: artists deserve to be paid. Every artwork you collect puts money directly into the hands of the creator — no galleries, no middlemen, no markups.',
         details: [
-          { text: 'Direct artist revenue — every sale goes straight to the creator.' },
-          { text: 'Discover emerging talent before the rest of the world does.' },
-          { text: 'Join 3,000+ collectors in 40+ countries building meaningful art collections.' },
+          // Secondary texts removed per design update
         ],
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
@@ -496,7 +488,7 @@ export const homeV2LandingContent = {
           'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
       },
     ] satisfies TestimonialVideo[],
-    images: [
+      images: [
       {
         author: 'Debra G.',
         featured: true,
@@ -505,30 +497,8 @@ export const homeV2LandingContent = {
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg',
       },
-      {
-        author: 'Gabriel M.',
-        quote: 'Every artist involved is astounding.',
-        imageUrl:
-          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_4.webp',
-      },
-      {
-        author: 'Haya B.',
-        quote: 'The packaging is sooo glamorous.',
-        imageUrl:
-          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_1.webp',
-      },
     ] satisfies TestimonialImage[],
     texts: [
-      {
-        author: 'Gabriel M.',
-        quote:
-          "Everything about it from the design to the concept is just perfect. Through this project, I discovered some truly exceptional artists, and I'm blown away by the talent featured.",
-      },
-      {
-        author: 'Haya B.',
-        quote:
-          'It is well made, the packaging is sooo glamorous, the design is above and beyond and the ART IS AMAZING!! Definitely worth every penny.',
-      },
       {
         author: 'Andiva B.',
         quote:
@@ -537,7 +507,7 @@ export const homeV2LandingContent = {
       {
         author: 'Maayan F.',
         quote:
-          'Such prestige and chic with this product! Every single bit lovely and lush and the concept innovative. So honored to be in on the first edition.',
+          'Such prestige and chic with this product! Every single bit lovely and lush and the concept innovative. So honored to be on the first edition.',
       },
     ] satisfies TestimonialText[],
   },

@@ -17,6 +17,7 @@ import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
 import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
+import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import {
   ladderStageBadgeClass,
@@ -101,7 +102,7 @@ function formatCompactCount(value: number | undefined): string | null {
   return `${n}`
 }
 
-export function ArtistProfilePageClient({ artist, earlyAccessCoupon: _earlyAccessCoupon, embedded = false }: Props) {
+export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
   const router = useRouter()
   const cart = useCart()
   const [tab, setTab] = React.useState<TabId>('overview')
@@ -266,11 +267,14 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon: _earlyAcces
   const paragraphs = bioParagraphs(artist.bio)
 
   return (
-    <div className={cn(styles.root, embedded && styles.embedded)}>
+    <div className={cn(styles.root, embedded && styles.rootEmbedded)}>
       <div className={styles.inner}>
-        {!embedded ? <CollectorStoreTopChrome embedded /> : null}
+        {!embedded ? <CollectorStoreTopChrome /> : null}
 
-        <section className={styles.profileHero} aria-label="Artist hero">
+        <section
+          className={cn(styles.profileHero, embedded && styles.profileHeroEmbedded)}
+          aria-label="Artist hero"
+        >
           <div className={styles.heroCanvasCol}>
             <div className={styles.heroGradient} aria-hidden />
             <div className={styles.heroPortrait}>
@@ -788,12 +792,7 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon: _earlyAcces
                 More artists <em>to explore.</em>
               </h2>
             </div>
-            <Link href="/shop/explore-artists" className={styles.navBack}>
-              See all artists
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
+
           </div>
           <div className={styles.relatedGrid}>
             {related.map((a) => (
@@ -830,8 +829,29 @@ export function ArtistProfilePageClient({ artist, earlyAccessCoupon: _earlyAcces
             ))}
           </div>
         </section>
-
+        <section className={styles.profileCta} aria-label="Call to action">
+          <div className={styles.ctaEyebrow}>Own the work</div>
+          <h2 className={styles.ctaTitle}>
+            You&apos;ve met {artist.name.split(' ')[0]}.<br />
+            <em>Now collect their work.</em>
+          </h2>
+          <p className={styles.ctaSub}>
+            {stats.remainingCount} pieces left across {stats.editionCount} editions—once a run sells out here, it
+            doesn&apos;t return. Add what you want to your Street Lamp while stock lasts.
+          </p>
+          <div className={styles.ctaBtns}>
+            <Link href="/experience" className={styles.btnPrimary}>
+              Add to your lamp
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        </section>
       </div>
+      {!embedded ? (
+        <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+      ) : null}
     </div>
   )
 }

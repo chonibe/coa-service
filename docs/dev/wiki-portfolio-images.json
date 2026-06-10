@@ -1,0 +1,992 @@
+{
+  "jerome-masi": {
+    "name": "Jerome Masi",
+    "aboutUrl": "https://www.jeromemasi.com/",
+    "ogImage": null,
+    "workImages": [
+      "https://www.jeromemasi.com/img/structure/jerome-masi.jpg",
+      "https://www.jeromemasi.com/img/works/117_1110x625.png",
+      "https://www.jeromemasi.com/img/works/116_1110x625.png",
+      "https://www.jeromemasi.com/img/works/115_1110x625.png",
+      "https://www.jeromemasi.com/img/works/113_1110x625.png",
+      "https://www.jeromemasi.com/img/works/112_1110x625.png",
+      "https://www.jeromemasi.com/img/works/110_1110x625.png",
+      "https://www.jeromemasi.com/img/works/99_1110x625.png"
+    ],
+    "igHandle": "@jerome.masi"
+  },
+  "moritz-adam-schmitt": {
+    "name": "Moritz Adam Schmitt",
+    "aboutUrl": "https://www.behance.net/MoAdam",
+    "ogImage": "https://pps.services.adobe.com/api/profile/42F71225526058710A490D4D@AdobeID/image/10a8e067-ba49-4154-b40f-5319ba2edb5b/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/919a6d6792582b2782a1e8d29c5e9f2d/509817f1-4580-4216-875c-fca139033104_rwc_-2x31x3200x329x3200.jpg?h=6d860cf02d63f148097193e33df68c98",
+      "https://mir-s3-cdn-cf.behance.net/team/115/ad5b3832919.551fc3a9c8839.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/670a86237027193.Y3JvcCwxNDAwLDEwOTUsMCwyNDI.png",
+      "https://a5.behance.net/c54fd1ab69ebd35c33102d35c65b56823506ae28/img/project/tools/1x/photoshop.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/70c72d218968949.Y3JvcCwyNjE4LDIwNDgsNTgsMA.jpg"
+    ],
+    "igHandle": "@moritz.adam.schmitt"
+  },
+  "loreta-isac": {
+    "name": "Loreta Isac",
+    "aboutUrl": "https://www.behance.net/loretaisac",
+    "ogImage": "https://pps.services.adobe.com/api/profile/2EEC41C3535F051A0A490D45@AdobeID/image/9704d1fa-cf28-49c8-b3d2-b2e0c7df4df4/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/6e1a579dcbd12a1fee401aa3d0724947/8a8abc04-ebcf-4351-97c7-0d4db9019f31_rwc_-2x0x3200x402x3200.jpg?h=44ef5df3a6618cd85cae534e6e5e73bd",
+      "https://mir-s3-cdn-cf.behance.net/team/115/5385d2135593.5911901e205d9.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/362a48219261223.Y3JvcCwxMzgwLDEwODAsMTgxLDA.png",
+      "https://a5.behance.net/f2ef650fec37ca7dcb15af451bc9d5cd657b218f/img/project/tools/1x/illustrator.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/89e6f4221774271.Y3JvcCwxMzgwLDEwODAsMjcwLDA.png"
+    ],
+    "igHandle": "@loreta_isac"
+  },
+  "marc-david-spengler": {
+    "name": "Marc David Spengler",
+    "aboutUrl": "https://marcdavid.studio/about",
+    "ogImage": "https://cdn.myportfolio.com/2f8f07c5-cfd4-4a23-a97a-113d1bb79fc6/62c52ae5-652c-4e81-821e-76fbad70e73c_rwc_0x0x1181x1181x1181.jpg?h=f8dde6b52451789e30b0409a5d0b0e2c",
+    "workImages": [
+      "https://cdn.myportfolio.com/2f8f07c5-cfd4-4a23-a97a-113d1bb79fc6/74499507-f336-45a0-a284-66ad39586883_rwc_0x0x1972x210x4096.png?h=1e6f0b27439130566e5dcce690c9e8d2",
+      "https://cdn.myportfolio.com/2f8f07c5-cfd4-4a23-a97a-113d1bb79fc6/6416827d-adb6-4461-a520-5432e1055ed6_rwc_0x0x1972x210x4096.png?h=e34df755b10dd197bf988894620f353f",
+      "https://cdn.myportfolio.com/2f8f07c5-cfd4-4a23-a97a-113d1bb79fc6/0a80fd01-f9ed-467d-aa59-3034b5e364d1_rw_1920.jpg?h=9bd235caa1dbae2d192e8d6f375512b9"
+    ],
+    "igHandle": "@_marcdavid_"
+  },
+  "dawal": {
+    "name": "Dawal",
+    "aboutUrl": "https://creapills.com/dawal-street-art-paris-fresques-miniatures-20251121",
+    "ogImage": "https://creapills.com/wp-content/uploads/2025/10/dawal-street-art-paris-fresques-miniatures-20251003.jpg",
+    "workImages": [
+      "https://creapills.com/wp-content/uploads/2025/12/pill-11-22.png",
+      "https://creapills.com/wp-content/uploads/2025/12/1.png",
+      "https://creapills.com/wp-content/uploads/2025/12/13.png",
+      "https://creapills.com/wp-content/uploads/2025/10/dawal-street-art-paris-fresques-miniatures-20251003.jpg",
+      "https://creapills.com/wp-includes/images/spinner.gif",
+      "https://creapills.com/wp-content/uploads/2025/12/pill-11-25-copie.png",
+      "https://creapills.com/wp-content/uploads/2025/12/pill-11-25-copie-1.png",
+      "https://creapills.com/wp-content/uploads/2019/08/synesthesie-peintures-chansons.jpg"
+    ],
+    "igHandle": "@_dawal"
+  },
+  "antonia-lev": {
+    "name": "Antonia Lev",
+    "aboutUrl": "https://www.behance.net/antonialev",
+    "ogImage": "https://pps.services.adobe.com/api/profile/C3427D44535FDD700A490D4D@AdobeID/image/b6f4c11c-d15d-4b53-a3a2-b5af88655127/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/34e3e2131429463.Y3JvcCwyMzAyLDE4MDEsNSww.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/08b194215761119.Y3JvcCw1OTA2LDQ2MTksMCwxOTA.jpg",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/img/covers/404-blocked.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/df2268215760315.Y3JvcCwxMDAyLDc4NCwxOTgsMA.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/f5cdc8190975265.Y3JvcCwxMjE2LDk1MSwyNjEsMjI4.png"
+    ],
+    "igHandle": "@antonialev"
+  },
+  "hedof": {
+    "name": "Hedof",
+    "aboutUrl": "https://www.hedof.com/about",
+    "ogImage": null,
+    "workImages": [
+      "https://static.wixstatic.com/media/827c6d_5374398e4f084a8089e71a043c4db3b3~mv2.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/827c6d_5374398e4f084a8089e71a043c4db3b3~mv2.png",
+      "https://static.wixstatic.com/media/827c6d_7d15837000144a0f96b95fc504e07ad3~mv2.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/827c6d_7d15837000144a0f96b95fc504e07ad3~mv2.png",
+      "https://static.wixstatic.com/media/827c6d_888f7c798cc44ac695078142dab09a8a~mv2_d_1920_1280_s_2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/827c6d_888f7c798cc44ac695078142dab09a8a~mv2_d_1920_1280_s_2.jpg",
+      "https://static.wixstatic.com/media/827c6d_194d99b807d140eca3d222add70f6152~mv2_d_1920_1280_s_2.jpg/v1/fit/w_1919,h_1280,q_90,enc_avif,quality_auto/827c6d_194d99b807d140eca3d222add70f6152~mv2_d_1920_1280_s_2.jpg"
+    ],
+    "igHandle": "@hedof"
+  },
+  "taloosh": {
+    "name": "Taloosh",
+    "aboutUrl": "https://www.taloosh.com/",
+    "ogImage": "https://static.wixstatic.com/media/63c6a9_a2870b6ca8d3434a99a3576dc5276e9f%7Emv2.png/v1/fit/w_2500,h_1330,al_c/63c6a9_a2870b6ca8d3434a99a3576dc5276e9f%7Emv2.png",
+    "workImages": [
+      "https://static.wixstatic.com/media/63c6a9_4b2186f7aa6749caa78302cfac691dc6~mv2.png/v1/fill/w_165,h_114,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/%D7%9C%D7%95%D7%92%D7%95-%D7%9C%D7%90%D7%AA%D7%A8.png",
+      "https://static.wixstatic.com/media/63c6a9_963df181cc384197b6bb25d7e1384eea~mv2.png/v1/fill/w_20,h_20,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/%D7%99%D7%A6%D7%99%D7%A8%D7%AA-%D7%A7%D7%A9%D7%A8.png",
+      "https://static.wixstatic.com/media/63c6a9_950408652ca5481a9f989134f731c2d5~mv2.png/v1/fill/w_20,h_20,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/63c6a9_950408652ca5481a9f989134f731c2d5~mv2.png",
+      "https://static.wixstatic.com/media/63c6a9_526f1dfc7939433f9dd955f0ac367691~mv2.jpg/v1/fit/w_480,h_601,q_90,enc_avif,quality_auto/63c6a9_526f1dfc7939433f9dd955f0ac367691~mv2.jpg",
+      "https://static.wixstatic.com/media/63c6a9_4617c35de86b45eab8f7df4cc584f3e2~mv2.jpg/v1/fit/w_480,h_601,q_90,enc_avif,quality_auto/63c6a9_4617c35de86b45eab8f7df4cc584f3e2~mv2.jpg",
+      "https://static.wixstatic.com/media/63c6a9_6324f94e867f4f31bc13f54eabb5698d~mv2.jpg/v1/fit/w_480,h_600,q_90,enc_avif,quality_auto/63c6a9_6324f94e867f4f31bc13f54eabb5698d~mv2.jpg",
+      "https://static.wixstatic.com/media/63c6a9_56b17265e2ee41faaba8dba10d17163e~mv2.jpg/v1/fit/w_480,h_600,q_90,enc_avif,quality_auto/63c6a9_56b17265e2ee41faaba8dba10d17163e~mv2.jpg",
+      "https://static.wixstatic.com/media/63c6a9_f97269fbe76c48859d801a22f42b05fb~mv2.jpg/v1/fit/w_960,h_960,q_90,enc_avif,quality_auto/63c6a9_f97269fbe76c48859d801a22f42b05fb~mv2.jpg"
+    ],
+    "igHandle": "@taloosh.studio"
+  },
+  "yonil": {
+    "name": "Yonil",
+    "aboutUrl": "https://www.yonil.com/about",
+    "ogImage": "https://format.creatorcdn.com/083918c1-650f-4513-9504-ddfe3d4141dc/0/0/0/378,0,822,300,1600,1200/0-0-0/bc844364-2598-4432-837b-1e64205bd134/1/2/ABOUT_IMAGE.jpg?fjkss=exp=2091639128~hmac=e0520e28ff2879b1e5b374d51babfcb12d797f7b89da4f4cd96dcbe80133c826",
+    "workImages": [
+      "https://format.creatorcdn.com/083918c1-650f-4513-9504-ddfe3d4141dc/0/0/0/0,0,1200,300,1140,285/0-0-0/bc844364-2598-4432-837b-1e64205bd134/1/2/ABOUT_IMAGE.jpg?fjkss=exp=2091639128~hmac=500bea0acd7ce49342b63cbfaf3e00d24669e0d79ad5dead0dbe837de6923e64"
+    ],
+    "igHandle": "@yonil"
+  },
+  "troy-browne": {
+    "name": "Troy Browne",
+    "aboutUrl": "https://www.troybrowne.com/",
+    "ogImage": null,
+    "workImages": [
+      "https://static.wixstatic.com/media/2b63f5_9ca1c427d6f74a01a12d8097cf69546d~mv2.png/v1/fill/w_88,h_79,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/tigertt%20mac_edited_edited.png",
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_20,h_20,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png",
+      "https://static.wixstatic.com/media/2b63f5_3b348d7d3e5f4b10b9ac8276cfcedd6c~mv2.jpg/v1/fill/w_123,h_108,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_3b348d7d3e5f4b10b9ac8276cfcedd6c~mv2.jpg",
+      "https://static.wixstatic.com/media/2b63f5_dce76f4c78ea425eb817873e2787c316~mv2.png/v1/fill/w_47,h_47,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_dce76f4c78ea425eb817873e2787c316~mv2.png",
+      "https://static.wixstatic.com/media/2b63f5_98e625dca69e4d06941c4e2a36edbd82~mv2.png/v1/fill/w_59,h_59,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_98e625dca69e4d06941c4e2a36edbd82~mv2.png",
+      "https://static.wixstatic.com/media/2b63f5_a8715f1385824dfdade6052e8cf61b5b~mv2.png/v1/fill/w_59,h_59,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_a8715f1385824dfdade6052e8cf61b5b~mv2.png",
+      "https://static.wixstatic.com/media/2b63f5_3826b6a2eca3480ea9e8e06ffd72ade3~mv2.png/v1/fill/w_47,h_47,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_3826b6a2eca3480ea9e8e06ffd72ade3~mv2.png",
+      "https://static.wixstatic.com/media/2b63f5_1ba1dde05f0640e7bb9260c86edf798e~mv2.png/v1/fill/w_47,h_47,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/2b63f5_1ba1dde05f0640e7bb9260c86edf798e~mv2.png"
+    ],
+    "igHandle": "@troybrowne"
+  },
+  "elfassi": {
+    "name": "Elfassi",
+    "aboutUrl": "https://www.elfassiart.com/about/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@elfassi"
+  },
+  "emelio-cerezo": {
+    "name": "Emelio Cerezo",
+    "aboutUrl": "https://www.urbanpresents.net/en/2023/05/emilio-cerezo-in-spain-from-style-and-characters-to-painting/",
+    "ogImage": "https://www.urbanpresents.net/wp-content/uploads/2023/05/04-EMILIO-CEREZO-Reencuadre-Bostik-00-Montaje-Grande-2019-%C2%A9Emilio-Cerezo.jpg",
+    "workImages": [
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/a3/OSK-crew-flyer-2026-a3419108.jpg?src=wp-content/uploads/2026/03/OSK-crew-flyer-2026.jpg&amp;thumbnail=300,300,&amp;hash=d8e84af5",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/b9/Unlock-Book-Fair-2026-b9cc219a.jpg?src=wp-content/uploads/2026/03/Unlock-Book-Fair-2026.jpg&amp;thumbnail=300,300,&amp;hash=da87463a",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/77/Urban-Art-Biennale-Volklingen-Mai-2022-1683-779df6b9.jpg?src=wp-content/uploads/2022/05/Urban-Art-Biennale-Volklingen-Mai-2022-1683.jpg&amp;thumbnail=300,300,&amp;hash=8c9b0e14",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/01/light-installation-teufelsberg-berlin_8350706992_o-01aac41f.jpg?src=wp-content/uploads/2019/02/light-installation-teufelsberg-berlin_8350706992_o.jpg&amp;thumbnail=300,300,&amp;hash=525933fc",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/d5/Splash_Borsigplatz_Photo_Nils_Muller-d50158f1.jpg?src=wp-content/uploads/2026/02/Splash_Borsigplatz_Photo_Nils_Muller.jpg&amp;thumbnail=300,300,&amp;hash=3bd37a11",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/a3/04-EMILIO-CEREZO-Reencuadre-Bostik-00-Montaje-Grande-2019-%C2%A9Emilio-Cerezo-a3daa192.jpg?src=wp-content/uploads/2023/05/04-EMILIO-CEREZO-Reencuadre-Bostik-00-Montaje-Grande-2019-%C2%A9Emilio-Cerezo.jpg&amp;thumbnail=2400,800,&amp;hash=e313165c",
+      "https://www.urbanpresents.net/wp-content/uploads/yootheme/cache/67/04-EMILIO-CEREZO-Reencuadre-Bostik-00-Montaje-Grande-2019-%C2%A9Emilio-Cerezo-67f658f2.jpg?src=wp-content/uploads/2023/05/04-EMILIO-CEREZO-Reencuadre-Bostik-00-Montaje-Grande-2019-%C2%A9Emilio-Cerezo.jpg&amp;thumbnail=480,300,&amp;hash=6eda3ea4",
+      "https://www.urbanpresents.net/wp-content/uploads/2023/05/01-EMILIO-CEREZO-ARIAS-Totana-2001-%C2%A9Emilio-Cerezo-1024x768.jpg"
+    ],
+    "igHandle": "@emiliocerezo"
+  },
+  "igal-talianski": {
+    "name": "Igal Talianski",
+    "aboutUrl": "https://flashed.com/shop/product/igal-talianski",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@iigalskii"
+  },
+  "carsten-gueth": {
+    "name": "Carsten Gueth",
+    "aboutUrl": "https://artinrug.com/artist/die-doing-carsten-gueth/",
+    "ogImage": null,
+    "workImages": [
+      "https://artinrug.com/wp-content/uploads/2023/08/Die-Doing_Profile-Picture-768x767.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/08/Die-Doing_I-Thought-You-Were-Sleeping-300x450.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/01/Anke-Ryba-Profile-Picture.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/01/Annike-Limborco_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/01/Andres-Lozano_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/09/Arianna-Holligan_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/01/Ameya-Ajay_Profile-Pic-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/08/Adry-Delrocio_Profile-Picture-768x768.jpg"
+    ],
+    "igHandle": "@die_doing"
+  },
+  "or-bar-el": {
+    "name": "Or Bar El",
+    "aboutUrl": "https://orbarel.com/",
+    "ogImage": "http://static1.squarespace.com/static/5f8d9448186df7575f56a012/t/6120fbb628271e5ea9c0e394/1629551543091/icon.jpg?format=1500w",
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-33f06cd969f7946c-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-8e170465b68f28f0-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-645a57b94c2239f3-min.en-US.js"
+    ],
+    "igHandle": "@or_bar_el"
+  },
+  "ori-toor": {
+    "name": "Ori Toor",
+    "aboutUrl": "https://www.behance.net/oritoor",
+    "ogImage": "https://pps.services.adobe.com/api/profile/E7D941C3535FF3C30A490D45@AdobeID/image/d7a050fa-5bdc-447d-b5b7-3f7483c29a7c/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/edb737240129229.Y3JvcCwxMTkyLDkzMywxMDMsMA.jpg",
+      "https://a5.behance.net/7397b7c7336a633755c6c6faeeb85185d0a50405/img/project/tools/1x/photoshop.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/94b64a217754101.Y3JvcCwxOTc5LDE1NDgsNCww.png",
+      "https://a5.behance.net/7397b7c7336a633755c6c6faeeb85185d0a50405/img/project/tools/1x/illustrator.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/94e86b182993623.Y3JvcCwxMzgwLDEwODAsMCww.jpg"
+    ],
+    "igHandle": "@oritoor"
+  },
+  "my-sunbeam": {
+    "name": "My Sunbeam",
+    "aboutUrl": "https://members.peopleofprint.com/profile/my-sunbeam/",
+    "ogImage": "https://i0.wp.com/members.peopleofprint.com/wp-content/uploads/2024/01/Feeld-Good-1.png?fit=851%2C1200&#038;quality=80&#038;ssl=1",
+    "workImages": [
+      "https://members.peopleofprint.com/wp-content/uploads/2024/01/Feeld-Good-1.png",
+      "https://i0.wp.com/members.peopleofprint.com/wp-content/uploads/2024/01/Feeld-Good.png?fit=726%2C1024&amp;quality=80&amp;ssl=1"
+    ],
+    "igHandle": "@mysunbeam"
+  },
+  "linda-baritski": {
+    "name": "Linda Baritski",
+    "aboutUrl": "https://www.seasonofvictory.com/about",
+    "ogImage": "https://static.wixstatic.com/media/e00f2a_71002dadd3484d33a2e02f6aac21927a%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/e00f2a_71002dadd3484d33a2e02f6aac21927a%7Emv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/e00f2a_1dd7019cad8d44b8b6318bf22e20314b~mv2.png/v1/fill/w_262,h_159,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/linda%20baritski%20seasonofvictory.png",
+      "https://static.wixstatic.com/media/e1aa082f7c0747168d9cf43e77046142.png/v1/fill/w_37,h_37,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e1aa082f7c0747168d9cf43e77046142.png",
+      "https://static.wixstatic.com/media/11062b_a06d85fa94d64ef68680321f5a043a8c~mv2.png/v1/fill/w_37,h_37,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_a06d85fa94d64ef68680321f5a043a8c~mv2.png",
+      "https://static.wixstatic.com/media/11062b_07e3fcc7259b4575af023d486157cc4e~mv2.png/v1/fill/w_37,h_37,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_07e3fcc7259b4575af023d486157cc4e~mv2.png",
+      "https://static.wixstatic.com/media/11062b_4b88b89fe4694d949be4919c81f194b4~mv2.png/v1/fill/w_37,h_37,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_4b88b89fe4694d949be4919c81f194b4~mv2.png",
+      "https://static.wixstatic.com/media/4057345bcf57474b96976284050c00df.png/v1/fill/w_37,h_37,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4057345bcf57474b96976284050c00df.png",
+      "https://static.wixstatic.com/media/e00f2a_2ac7238bcb214219845a34d3ddd2f85c~mv2.jpg/v1/fill/w_723,h_960,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/lindabaritski_seasonofvictory.jpg",
+      "https://static.wixstatic.com/media/e00f2a_f79cc5b7adee4e828ab71f3b0fa1db3b~mv2.png/v1/crop/x_185,y_282,w_733,h_556/fill/w_178,h_133,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e00f2a_f79cc5b7adee4e828ab71f3b0fa1db3b~mv2.png"
+    ],
+    "igHandle": "@seasonofvictory"
+  },
+  "erezoo": {
+    "name": "Erezoo",
+    "aboutUrl": "https://www.erezoo.com/about",
+    "ogImage": "https://static.wixstatic.com/media/efd261_ca0f936f0c2848faa39782528f50ff04%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/efd261_ca0f936f0c2848faa39782528f50ff04%7Emv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/23fd2a2be53141ed810f4d3dcdcd01fa.png/v1/fill/w_24,h_24,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/23fd2a2be53141ed810f4d3dcdcd01fa.png",
+      "https://static.wixstatic.com/media/81af6121f84c41a5b4391d7d37fce12a.png/v1/fill/w_24,h_24,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/81af6121f84c41a5b4391d7d37fce12a.png",
+      "https://static.wixstatic.com/media/efd261_b684f57ce0f0488cbe669d1eeea25de8~mv2.png/v1/fill/w_288,h_114,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/%D7%90%D7%A8%D7%96%D7%95%20%D7%9C%D7%95%D7%92%D7%95%20%D7%9B%D7%AA%D7%95%D7%9D.png",
+      "https://static.wixstatic.com/media/efd261_3f8296e5b7c640c4ae3f83150c8c8e81~mv2.png/v1/fill/w_176,h_121,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Scanned%20Documents2%2010.png",
+      "https://static.wixstatic.com/media/efd261_4a27e5a44c0a4908b3c7a3534772532e~mv2.png/v1/fill/w_167,h_159,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Scanned%20Documents2%206.png",
+      "https://static.wixstatic.com/media/efd261_0b97598e866c4cc7b2ef90223a8a6a29~mv2.png/v1/fill/w_132,h_159,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Scanned%20Documents2%203.png",
+      "https://static.wixstatic.com/media/efd261_7cd6ad43c4f844c7a3c2638fe3026ec0~mv2.png/v1/fill/w_116,h_140,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Scanned%20Documents2%208.png",
+      "https://static.wixstatic.com/media/efd261_463b764e13904a59b1bdf60510778fd3~mv2.png/v1/fill/w_104,h_113,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Scanned%20Documents2%204.png"
+    ],
+    "igHandle": "@erezoo"
+  },
+  "maalavidaa": {
+    "name": "Maalavidaa",
+    "aboutUrl": "https://www.maalavidaa.com/about",
+    "ogImage": "https://www.maalavidaa.com/share.jpg",
+    "workImages": [
+      "https://www.maalavidaa.com/_nuxt/image/53e0c6.webp"
+    ],
+    "igHandle": "@maalavidaa"
+  },
+  "agus-rucula": {
+    "name": "Agus Rucula",
+    "aboutUrl": "https://www.venusurbanart.com/agus-rucula",
+    "ogImage": null,
+    "workImages": [
+      "https://static.wixstatic.com/media/a96708_160604fee8f146eaa3fce616082afb91~mv2.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Linkedin.png",
+      "https://static.wixstatic.com/media/a96708_bd6b3bbedcc24811b8b73cf56abb5544~mv2.png/v1/fill/w_34,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/youtube.png",
+      "https://static.wixstatic.com/media/a96708_fc818034ac6c4e68b01cc798c8d229cc~mv2.jpg/v1/crop/x_0,y_187,w_3000,h_988/fill/w_980,h_323,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/DSC04417%20copia_edited.jpg",
+      "https://static.wixstatic.com/media/a96708_ee012a0362834669800bea759c8aa408~mv2.jpg/v1/fill/w_239,h_357,q_90,enc_avif,quality_auto/a96708_ee012a0362834669800bea759c8aa408~mv2.jpg",
+      "https://static.wixstatic.com/media/a96708_b32ee4922fb34fc084689b543e0572d7~mv2.jpg/v1/fill/w_240,h_160,q_90,enc_avif,quality_auto/a96708_b32ee4922fb34fc084689b543e0572d7~mv2.jpg",
+      "https://static.wixstatic.com/media/a96708_a3e727a7e2954b5591eaa4a822548fbd~mv2.jpg/v1/fill/w_239,h_359,q_90,enc_avif,quality_auto/a96708_a3e727a7e2954b5591eaa4a822548fbd~mv2.jpg",
+      "https://static.wixstatic.com/media/a96708_d993ab3b3bcc4255b0fefee3a5606284~mv2.jpg/v1/fill/w_240,h_189,q_90,enc_avif,quality_auto/a96708_d993ab3b3bcc4255b0fefee3a5606284~mv2.jpg",
+      "https://static.wixstatic.com/media/a96708_1d49e08c44ef4eaa9e004a221f34b241~mv2.jpg/v1/fill/w_240,h_160,q_90,enc_avif,quality_auto/a96708_1d49e08c44ef4eaa9e004a221f34b241~mv2.jpg"
+    ],
+    "igHandle": "@agus.rucula"
+  },
+  "ezra-baderman": {
+    "name": "Ezra Baderman",
+    "aboutUrl": "https://ezrabaderman.com/about/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@ezrabaderman"
+  },
+  "marylou-faure": {
+    "name": "Marylou Faure",
+    "aboutUrl": "https://www.maryloufaure.com/pages/about",
+    "ogImage": "http://maryloufaure.com/cdn/shop/files/Marylou-Faure-OG_c1ea7cd0-d9a5-4e61-b9e3-232af43c918e_large.jpg?v=1631045234",
+    "workImages": [],
+    "igHandle": "@maryloufaure"
+  },
+  "dima-korma": {
+    "name": "Dima Korma",
+    "aboutUrl": "https://www.bookastreetartist.com/dima-korma",
+    "ogImage": "https://res.cloudinary.com/hzwebux5t/image/upload/v1731918073/pzpwwvyh7tiqvmfvngou.jpg",
+    "workImages": [
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_320,w_320/v1731918073/pzpwwvyh7tiqvmfvngou.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1643786061/vmsbkkibthi2lnmkznb8.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1493141524/ownli2ihzwsbqvhvaxs1.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1649004257/eurdtkvya7nnpwmgfqef.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1555251771/nb6a9mhy6ngifoducc3v.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1587406395/hajpglrx0knzdnv1yk0f.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1587550777/omify1ljfv3uskdngp4s.jpg",
+      "https://res.cloudinary.com/hzwebux5t/image/upload/c_fill,g_center,h_700,w_700/v1587980584/or412lrydvj0dagtfeml.jpg"
+    ],
+    "igHandle": "@dimakorma"
+  },
+  "sancho": {
+    "name": "Sancho",
+    "aboutUrl": "https://sanchosancho.com/about",
+    "ogImage": null,
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-68385b8902309af4-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-13148aadb28837dc-min.en-US.js"
+    ],
+    "igHandle": "@bysancho"
+  },
+  "alice-bureau": {
+    "name": "Alice Bureau",
+    "aboutUrl": "https://www.behance.net/alicealice",
+    "ogImage": "https://pps.services.adobe.com/api/profile/2A9941C35361EAA50A490D45@AdobeID/image/74468c75-8175-40c0-ae2c-53f741dbf6e1/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/92188eb55efa999335760b318bdfec62/0a2811ec-8b77-4dad-965b-04e729068766_rwc_319x0x2766x410x3200.jpg?h=bc99c63ef12588eab5dc079febbff520",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/29824b242469777.Y3JvcCwxMDgwLDg0NCwwLDIyNA.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/322cd9242469607.Y3JvcCwxNTAwLDExNzMsMCwzNTY.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/b2e376236849555.Y3JvcCwxMDgwLDg0NCwwLDEyOA.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/e4c147236849367.Y3JvcCwxMjU2LDk4MywyMSww.jpg"
+    ],
+    "igHandle": "@bureau_alice"
+  },
+  "alin-mor": {
+    "name": "Alin Mor",
+    "aboutUrl": "https://www.alinmor.com/about",
+    "ogImage": "https://static.wixstatic.com/media/a41f39_6d397220c47b481bbe119db28ad5bbb8%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/a41f39_6d397220c47b481bbe119db28ad5bbb8%7Emv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/a41f39_83af7b202f884ede8c97a51d5976e4c7~mv2.jpg/v1/fill/w_424,h_600,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/a41f39_83af7b202f884ede8c97a51d5976e4c7~mv2.jpg",
+      "https://static.wixstatic.com/media/11062b_7268d2bd4cf9497b997234c7cb71f24b~mv2.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_7268d2bd4cf9497b997234c7cb71f24b~mv2.png",
+      "https://static.wixstatic.com/media/0fdef751204647a3bbd7eaa2827ed4f9.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/0fdef751204647a3bbd7eaa2827ed4f9.png",
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png",
+      "https://static.wixstatic.com/media/8f6f59264a094af0b46e9f6c77dff83e.png/v1/fill/w_29,h_29,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8f6f59264a094af0b46e9f6c77dff83e.png"
+    ],
+    "igHandle": "@alinmor"
+  },
+  "beto-val": {
+    "name": "Beto Val",
+    "aboutUrl": "http://elbetoval.com/",
+    "ogImage": "http://elbetoval.com/cdn/shop/files/LOGO_BETO_VAL.jpg?height=628&pad_color=f5f3eb&v=1648070298&width=1200",
+    "workImages": [
+      "https://cdn.shopify.com/extensions/019d8c1b-980b-774c-b13e-de3a1bd96ef8/judgeme-460/assets/loader.js",
+      "https://cdn.shopify.com/extensions/aeb61bea-dfdd-41b5-9ccc-da025818f0a6/inbox-1260/assets/inbox-chat-loader.js",
+      "http://elbetoval.com/cdn/shop/files/LOGO_BETO_VAL.jpg?v=1648070298&amp;width=600",
+      "http://elbetoval.com/cdn/shop/files/banner_web_2024.jpg?v=1710848138&amp;width=3840",
+      "http://elbetoval.com/cdn/shop/files/enhanced-matte-paper-poster-_in_-16x20-transparent-67460a9703ce4.jpg?v=1732643483&width=533",
+      "http://elbetoval.com/cdn/shop/files/enhanced-matte-paper-poster-_in_-8x10-transparent-67460a9704ce4.jpg?v=1732643483&width=533",
+      "http://elbetoval.com/cdn/shop/files/enhanced-matte-paper-poster-_in_-8x10-transparent-67548713450dc.jpg?v=1733592855&width=533",
+      "http://elbetoval.com/cdn/shop/files/enhanced-matte-paper-poster-_in_-16x20-transparent-6744480a99977.jpg?v=1732528142&width=533"
+    ],
+    "igHandle": "@elbetoval"
+  },
+  "aviv-shamir": {
+    "name": "Aviv Shamir",
+    "aboutUrl": "https://www.instagram.com/avivos_91/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@avivos_91"
+  },
+  "hen-macabi": {
+    "name": "Hen Macabi",
+    "aboutUrl": "https://henmacabi.com/",
+    "ogImage": null,
+    "workImages": [
+      "https://henmacabi.com/_gfx/loadingAnim.gif",
+      "https://payload.cargocollective.com/1/4/140286/14612502/prt_300x201_1760707442.png",
+      "https://payload.cargocollective.com/1/4/140286/14598926/prt_300x201_1760707722.png",
+      "https://payload.cargocollective.com/1/4/140286/14514580/prt_300x201_1752060603.png",
+      "https://payload.cargocollective.com/1/4/140286/14605437/prt_300x201_1756619425.png",
+      "https://payload.cargocollective.com/1/4/140286/14592770/prt_300x201_1748320647.png",
+      "https://payload.cargocollective.com/1/4/140286/14598929/prt_300x201_1752060276.png",
+      "https://payload.cargocollective.com/1/4/140286/14601071/prt_300x201_1753678333.png"
+    ],
+    "igHandle": "@henmacabi"
+  },
+  "refiloe-mnisi": {
+    "name": "Refiloe Mnisi",
+    "aboutUrl": "https://www.instagram.com/urfavsweatpants/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@urfavsweatpants"
+  },
+  "geometric-bang": {
+    "name": "Geometric Bang",
+    "aboutUrl": "https://www.galleriavarsi.it/collections/geometricbang",
+    "ogImage": "http://www.galleriavarsi.it/cdn/shop/collections/GeometricBang_-_Artist_-_Varsi.jpg?v=1753694531",
+    "workImages": [
+      "https://cdn.shopify.com/extensions/019d7141-8817-7e81-9717-e419047210ff/shopify-app-template-php-79/assets/consent-tracking.js",
+      "https://cdn.shopify.com/extensions/019d4c96-e72c-71c2-bfa3-7a52fa7ce550/wishlist-engine-235/assets/wishlist-engine-app.js",
+      "https://cdn.shopify.com/extensions/019d6be7-5eb3-7f64-b2ba-aebd72914e1a/preorderfrontend-188/assets/globo.preorder.min.js",
+      "https://www.galleriavarsi.it/cdn/shop/collections/GeometricBang_-_Artist_-_Varsi.jpg?v=1753694531",
+      "https://www.galleriavarsi.it/cdn/shop/files/geometricbang-dancetribal.jpg?v=1753377281&width=533",
+      "https://www.galleriavarsi.it/cdn/shop/files/geometricbang-composizione02020-varsi1.jpg?v=1751044318&width=533",
+      "https://www.galleriavarsi.it/cdn/shop/files/Varsi-size-guide_2.png?v=1747806127",
+      "https://www.galleriavarsi.it/cdn/shop/files/t-shirt-size-chart.jpg?v=1760003186"
+    ],
+    "igHandle": "@geometricbang"
+  },
+  "laura-fridman": {
+    "name": "Laura Fridman",
+    "aboutUrl": "https://www.laurafridman.art/about",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@laura_fridman_art"
+  },
+  "cubi-boumclap": {
+    "name": "Cubi Boumclap",
+    "aboutUrl": "https://www.behance.net/cubi?locale=en_US",
+    "ogImage": "https://pps.services.adobe.com/api/profile/4E287D44536166570A490D4D@AdobeID/image/0c344e44-731a-4a2c-868e-a5a1181cf6b0/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/d70c2072730743.Y3JvcCwxNzQ1LDEzNjQsMCww.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/64dd9f41819657.Y3JvcCw2ODEsNTMzLDAsMA.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/cb39f441819465.Y3JvcCw0MDUsMzE3LDE1NSw0ODQ.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/d6215132015359.Y3JvcCw2MTIsNDc5LDkzLDEz.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/39ab0332015127.Y3JvcCw2MDAsNDcwLDk0LDIw.jpg"
+    ],
+    "igHandle": "cubi_boumclap"
+  },
+  "studio-giftig": {
+    "name": "Studio Giftig",
+    "aboutUrl": "https://studiogiftig.nl/about/",
+    "ogImage": "https://s0.wp.com/i/blank.jpg",
+    "workImages": [
+      "https://studiogiftig.nl/wp-content/uploads/2019/09/About2.jpg"
+    ],
+    "igHandle": "studiogiftig"
+  },
+  "unapaulogetic": {
+    "name": "Unapaulogetic",
+    "aboutUrl": "https://paulrozenboim.com/capturing-chaos",
+    "ogImage": "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/3b4ab127-1b26-4d74-886c-330cab8eec4e_rwc_0x0x1506x972x1506.png?h=6a32cbacfc0d62838658c050095bc541",
+    "workImages": [
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/559160cc-2352-4552-b424-17e638de4885_rwc_1x0x207x144x4096.gif?h=4ce71994b38d82531d55c8289ef63e72",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/43a5967f-29f2-493d-ac7d-8abdd1d8da75_rwc_1x0x207x144x4096.gif?h=c8151e907f82ca61021e78a1b3cee9bd",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/011bb4f3-0bc3-4b69-866b-9a3fefbb3d5b.gif?h=6dd85abd632dc8f4e0429ef3e9314122",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/011bb4f3-0bc3-4b69-866b-9a3fefbb3d5b_rw_1920.gif?h=278e32bc4e6d03e9357055e2783d2745",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/61757961-731a-4f7b-aa0d-c82e2287f1c2_rw_1200.jpg?h=5fc93bbf83390928594ab1cd3bfebffc",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/136737b8-6769-4993-8b0d-3ae1bbc95cf2_rw_1200.jpg?h=dfce6290207594945afe4cfce5e3b29c",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/67abada1-9a5f-4d72-ad65-3536554f5a4e_rw_1200.jpg?h=90b1c6eb2011bf92239f5677e23e9a99",
+      "https://cdn.myportfolio.com/92f8f2299102b6d3819affc033c4864e/0ab63b9e-3f7d-4d4c-aaff-ed54b9898ce3_rw_1200.jpg?h=74a5495e1b1ceaada9fef73099f84187"
+    ],
+    "igHandle": "unapaulogetic_"
+  },
+  "thales-towers": {
+    "name": "Thales Towers",
+    "aboutUrl": "https://www.thalestowers.com/",
+    "ogImage": "https://static.wixstatic.com/media/7c9d3f_78f696ef6df5438493c86402d2a78d22%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/7c9d3f_78f696ef6df5438493c86402d2a78d22%7Emv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_20,h_20,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png",
+      "https://static.wixstatic.com/media/7c9d3f_2716247ec83c4d97964d878f43067f65~mv2.jpg/v1/fill/w_200,h_200,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/thales%20pic.jpg",
+      "https://static.wixstatic.com/media/7c9d3f_9b80498fe1864c1287d42145b8a3fd6e~mv2.jpg/v1/fill/w_147,h_139,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/7c9d3f_9b80498fe1864c1287d42145b8a3fd6e~mv2.jpg",
+      "https://static.wixstatic.com/media/7c9d3f_205b8b66c807424ebc403a802fa86483~mv2.jpg/v1/fill/w_147,h_203,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/7c9d3f_205b8b66c807424ebc403a802fa86483~mv2.jpg",
+      "https://static.wixstatic.com/media/7c9d3f_e5074a43767849a18422323004bf1e33~mv2.jpg/v1/fill/w_147,h_117,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/7c9d3f_e5074a43767849a18422323004bf1e33~mv2.jpg",
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_26,h_26,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png"
+    ],
+    "igHandle": "thalestowers"
+  },
+  "nia-shtai": {
+    "name": "Nia Shtai",
+    "aboutUrl": "https://www.behance.net/niashtai",
+    "ogImage": "https://pps.services.adobe.com/api/profile/77B729DC5EA7D3F60A495ED1@AdobeID/image/f461c663-0527-4b2a-ae3e-feb1866e8fb4/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/1caa6d9c0c6a63a3fece598bbab2f50e/ba1f2c92-ed29-40f0-9b98-95b1f714ea8c_rwc_0x1549x3000x331x3000.jpg?h=fc0449da71d27cb0575f442020a5e03f",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/c641d7142769035.626d02908c2cd.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/5365ed135678439.61ebf4f36d9eb.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/ad3df3133412777.Y3JvcCw0MDkzLDMyMDEsMCwxMjk2.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/4281a8133076225.Y3JvcCwzNTA4LDI3NDMsMCwyMjA1.jpg"
+    ],
+    "igHandle": "nia.shtai.art"
+  },
+  "nurit-gross": {
+    "name": "Nurit Gross",
+    "aboutUrl": "https://nuritgross.com/about",
+    "ogImage": "https://freight.cargo.site/w/1058/i/fc7becf6b4f945ba96914a329cd8781db6f7b755ebaaa07b16a3fe22cb0e959a/logo.png",
+    "workImages": [
+      "https://freight.cargo.site/t/original/i/86fd92059b176f577e3e421861f78a1112615fa762be01fbd897b3ba317db4e4/DSC09164.jpg"
+    ],
+    "igHandle": "nurit_gross"
+  },
+  "moshe-gilboa": {
+    "name": "Moshe Gilboa",
+    "aboutUrl": "https://medium.com/@moshegilboa/exploding-sheep-making-of-part-i-b45ef5aaa93a",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "moshegilboa"
+  },
+  "eden-kalif": {
+    "name": "Eden Kalif",
+    "aboutUrl": "https://artinrug.com/artist/eden-kalif/",
+    "ogImage": null,
+    "workImages": [
+      "https://artinrug.com/wp-content/uploads/2023/08/Eden-Kalif_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/08/Eden-Kalif_Sunrise-300x450.jpg",
+      "https://artinrug.com/wp-content/uploads/2025/02/Osmolovska-Anastasiia-Personal-Photo.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/01/Annike-Limborco_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/09/Arianna-Holligan_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2022/12/Alexandra-Chiritescu_Profile-Picture-768x768.jpg",
+      "https://artinrug.com/wp-content/uploads/2025/02/anamariaedulescu.jpg",
+      "https://artinrug.com/wp-content/uploads/2023/09/Alice-Rudolf_Profile-Picture-768x768.jpg"
+    ],
+    "igHandle": "_e_d_e_n_"
+  },
+  "tiffany-chin": {
+    "name": "Tiffany Chin",
+    "aboutUrl": "https://www.twkchin.com/about",
+    "ogImage": null,
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-2eac4a367f52804c-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-07e4fe3587866ec1-min.en-US.js"
+    ],
+    "igHandle": "twkchin"
+  },
+  "tiago-hesp": {
+    "name": "Tiago Hesp",
+    "aboutUrl": "https://www.tiagohesp.com/profile",
+    "ogImage": "http://static1.squarespace.com/static/653c22d3dff711234fbd9313/t/654ba6dad6c476053a4be9d5/1699456730706/th-icon-vector-tri+icon+redondos.jpg?format=1500w",
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-68385b8902309af4-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-13148aadb28837dc-min.en-US.js"
+    ],
+    "igHandle": "tiagohesp"
+  },
+  "yoaz": {
+    "name": "Yoaz",
+    "aboutUrl": "https://www.behance.net/yoaz",
+    "ogImage": "https://pps.services.adobe.com/api/profile/486041C35361B8250A490D45@AdobeID/image/a4bb9b79-d208-4efd-b031-ff0b147a3c59/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/team/115/e486cf38695.555df487c4850.jpg",
+      "https://mir-s3-cdn-cf.behance.net/team/115/608910256901.5eb003b34265e.jpg",
+      "https://mir-s3-cdn-cf.behance.net/team/115/3d428086351.68a69ac0b2f5e.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/9c9139218970231.Y3JvcCwxMTk3LDkzNywyLDA.png",
+      "https://a5.behance.net/7397b7c7336a633755c6c6faeeb85185d0a50405/img/project/tools/1x/illustrator.png"
+    ],
+    "igHandle": "iamyoaz"
+  },
+  "twoone-hiroyasu-tsuri": {
+    "name": "TWOONE Hiroyasu Tsuri",
+    "aboutUrl": "https://hiroyasutsuri.com/about",
+    "ogImage": null,
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-68385b8902309af4-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-13148aadb28837dc-min.en-US.js"
+    ],
+    "igHandle": "t_w_o_o_n_e"
+  },
+  "s-a-r-g-o-n": {
+    "name": "S A R G O N",
+    "aboutUrl": "https://www.instagram.com/oky.sargon/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "oky.sargon"
+  },
+  "kymo-one": {
+    "name": "kymo_one",
+    "aboutUrl": "https://www.behance.net/kymo",
+    "ogImage": "https://pps.services.adobe.com/api/profile/C12F3C5D4FF9D74B0A490D45@AdobeID/image/5c666530-3942-42ce-948a-546f0a2bccf2/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/ab09cb07bed82f26f2a058111d61dcf1/28d903fa-2464-42f6-8de8-3c3afd639a82_rwc_430x2554x5849x766x6712.jpg?h=e0bf8449e93b1c9eb52623f700b362c2",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/9e2057161418403.Y3JvcCwzMTE3LDI0MzgsMCwzMA.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/83f0cc141120465.Y3JvcCwzMTMwLDI0NDgsNzEyLDQwMg.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/2d4c46117924831.Y3JvcCwzMzQ5LDI2MTksMCwzNDg.jpg",
+      "https://mir-s3-cdn-cf.behance.net/projects/404/ea199a117153581.Y3JvcCwzNDU0LDI3MDIsNzYsMA.jpg"
+    ],
+    "igHandle": "kymo_one"
+  },
+  "tyler-shelton": {
+    "name": "Tyler Shelton",
+    "aboutUrl": "https://www.dallasobserver.com/arts/dallas-painter-tyler-sheltons-instagram-is-a-celebrity-obsession-21238536",
+    "ogImage": "https://www.dallasobserver.com/wp-content/uploads/sites/3/ww-media/mediaserver/dal/2024-49/tyler-shelton-photo-credit-jaci_huckeba.webp",
+    "workImages": [
+      "https://www.dallasobserver.com/wp-content/uploads/sites/3/ww-media/mediaserver/dal/2024-49/tyler-shelton-photo-credit-jaci_huckeba.webp",
+      "https://gamalpha.com/images/tts-pre-loader.gif",
+      "https://www.dallasobserver.com/wp-content/uploads/sites/3/2025/09/NT-dal.png",
+      "https://www.dallasobserver.com/wp-content/uploads/sites/3/2026/04/01-COVER-1_0cc0d4.jpg?w=272"
+    ],
+    "igHandle": "sheltonartco"
+  },
+  "saturn-png": {
+    "name": "saturn_png",
+    "aboutUrl": "https://marche-des-createurs.fr/saturn-illustration/",
+    "ogImage": "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-05.jpg?fit=1000%2C1000&#038;ssl=1",
+    "workImages": [
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-05.jpg?fit=900%2C900&amp;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-12.jpg?resize=1000%2C1000&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-03.jpg?resize=799%2C826&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-04.jpg?resize=1000%2C1000&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-08.jpg?fit=1000%2C1000&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-10.jpg?fit=239%2C729&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-06.jpg?fit=1000%2C1000&#038;ssl=1",
+      "https://i0.wp.com/marche-des-createurs.fr/wp-content/uploads/2021/10/Saturn-02.jpg?fit=800%2C1762&#038;ssl=1"
+    ],
+    "igHandle": "@saturn_png"
+  },
+  "levi-jacobs": {
+    "name": "Levi Jacobs",
+    "aboutUrl": "https://www.levijacobs.nl/info",
+    "ogImage": null,
+    "workImages": [
+      "https://static.wixstatic.com/media/827c6d_34f661b2c2704ca79314975b06cf309c~mv2.gif",
+      "https://static.wixstatic.com/media/827c6d_b51990fe387640749a982c836c60d019~mv2.gif",
+      "https://static.wixstatic.com/media/827c6d_ed17e4e3c44646e2a5589b048b2acb08~mv2.png/v1/fill/w_22,h_22,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/827c6d_ed17e4e3c44646e2a5589b048b2acb08~mv2.png",
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_22,h_22,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png"
+    ],
+    "igHandle": "@levijacobss"
+  },
+  "jake-ac-art": {
+    "name": "Jake Ac art",
+    "aboutUrl": "https://officialjackacart.com/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@jack_ac_art"
+  },
+  "wuper-kec": {
+    "name": "Wuper Kec",
+    "aboutUrl": "https://streetart.boulogne-sur-mer.fr/wuper-kec/",
+    "ogImage": "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-1.jpg",
+    "workImages": [
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-portrait.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-1.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2024/08/wuper-kec-10-1024x683.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-8-400x284.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-6-400x284.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-2-400x284.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-5-400x284.jpg",
+      "https://streetart.boulogne-sur-mer.fr/wp-content/uploads/2023/08/wuper-kec-4-400x284.jpg"
+    ],
+    "igHandle": "@wuper_kec"
+  },
+  "ajax-blyth-piper": {
+    "name": "Ajax Blyth Piper",
+    "aboutUrl": "https://streetartcities.com/artists/ajax-piper",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@ajaxpiper"
+  },
+  "raki": {
+    "name": "Raki",
+    "aboutUrl": "https://www.bangkokillustrationfair.com/artist/2025/1901",
+    "ogImage": "https://www.bangkokillustrationfair.com//storage/participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_9_1751647307.png",
+    "workImages": [
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_0_1751647297.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_1_1751647298.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_2_1751647299.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_3_1751647300.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_4_1751647301.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_5_1751647302.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_6_1751647303.png",
+      "https://www.bangkokillustrationfair.com/storage//participants/2025/07/04/13025d18-5799-405e-8c85-f6f355affb7c/port_7_1751647304.png"
+    ],
+    "igHandle": "@raki.official.art"
+  },
+  "odsk": {
+    "name": "Odsk",
+    "aboutUrl": "https://www.behance.net/anthonydaudet",
+    "ogImage": "https://pps.services.adobe.com/api/profile/9639A5EF56F92DB67F000101@AdobeID/image/b56ddab9-65de-4a9c-aa81-ec9a9a2d7cd2/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/fbadfbdc866ad05d6123aef6ceb04b5f/2e4393f6-c5db-47dc-9b43-4b8a4d4dcaa3_rwc_0x0x3200x447x3200.jpg?h=73055020e38ba1f9cf8bd6cdecf58550",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/45206e218869893.Y3JvcCwyNTA3LDE5NjAsMCwxOA.jpg",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/img/project/tools/1x/illustrator.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/1e94e7239672677.Y3JvcCwyODAwLDIxOTAsMCw1NzU.jpg",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/img/project/tools/1x/photoshop.png"
+    ],
+    "igHandle": "@odsk_"
+  },
+  "kaka-chazz": {
+    "name": "Kaka Chazz",
+    "aboutUrl": "https://kakachazz.com.br/biografia/",
+    "ogImage": null,
+    "workImages": [
+      "https://kakachazz.com.br/wp-content/uploads/2024/09/jpeg-optimizer_kaka-bio.jpg"
+    ],
+    "igHandle": "@kaka.chazz"
+  },
+  "chubby-nida": {
+    "name": "Chubby Nida",
+    "aboutUrl": "https://www.chubbynida.studio/",
+    "ogImage": null,
+    "workImages": [
+      "https://static.wixstatic.com/media/e28de2_4538d519319e42f4bb978ec1d281ec38~mv2.gif",
+      "https://static.wixstatic.com/media/e28de2_66121ffe8aa342889bdeb358613af4cd~mv2.png/v1/fill/w_275,h_150,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_66121ffe8aa342889bdeb358613af4cd~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_f260ebb310e549d8b9952c6ca56efa44~mv2.png/v1/fill/w_378,h_217,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_f260ebb310e549d8b9952c6ca56efa44~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_f58b30631ccf4c2a8ace11bea7e940d8~mv2.png/v1/fill/w_303,h_105,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_f58b30631ccf4c2a8ace11bea7e940d8~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_ce07ed3422eb442cb0d5e56bb20fb96f~mv2.png/v1/fill/w_235,h_78,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_ce07ed3422eb442cb0d5e56bb20fb96f~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_96b31c66a017462f8183dc3a5ab3276d~mv2.png/v1/fill/w_235,h_199,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_96b31c66a017462f8183dc3a5ab3276d~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_f8376951cd10432f907e7052b0fd4413~mv2.png/v1/fill/w_39,h_39,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_f8376951cd10432f907e7052b0fd4413~mv2.png",
+      "https://static.wixstatic.com/media/e28de2_74aaf38b9af44484a97cb8dc1e97a1f5~mv2.png/v1/fill/w_39,h_39,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e28de2_74aaf38b9af44484a97cb8dc1e97a1f5~mv2.png"
+    ],
+    "igHandle": "@chubbynida"
+  },
+  "lobster-robin": {
+    "name": "Lobster Robin",
+    "aboutUrl": "https://www.northwestwalls.be/history/2024/lobster-robin",
+    "ogImage": null,
+    "workImages": [
+      "https://networksites.livenationinternational.com/networksites/nf0fbi4u/facebook.png?format=webp&amp;width=96&amp;quality=75",
+      "https://networksites.livenationinternational.com/networksites/lfreajit/instagram.png?format=webp&amp;width=96&amp;quality=75"
+    ],
+    "igHandle": "@lobster_robin"
+  },
+  "mameko-maeda": {
+    "name": "Mameko Maeda",
+    "aboutUrl": "https://www.behance.net/mameko_maeda",
+    "ogImage": "https://pps.services.adobe.com/api/profile/673643964FCE07270A490D4C@AdobeID/image/555bff95-ab84-4a36-b518-c202c83229df/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/3bf1233ea9c9e762cb0ce4b2293b890b/1ab74d5c-f69e-46cf-bacd-96190db2369b_rwc_0x1439x4134x526x4134.jpg?h=638c5049f9c28487d378f4a5456af3c0",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/f8adf2240399875.Y3JvcCwyMjUwLDE3NTksMCw1Mjk.png",
+      "https://a5.behance.net/7397b7c7336a633755c6c6faeeb85185d0a50405/img/project/tools/1x/photoshop.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/9c9139218970231.Y3JvcCwxMTk3LDkzNywyLDA.png",
+      "https://a5.behance.net/7397b7c7336a633755c6c6faeeb85185d0a50405/img/project/tools/1x/illustrator.png"
+    ],
+    "igHandle": "@mameko_maeda"
+  },
+  "frederique-mati": {
+    "name": "Frederique Mati",
+    "aboutUrl": "http://www.frederiquematti.com/",
+    "ogImage": "https://freight.cargo.site/w/1000/i/V2787522326220407153294575666118/screenshot-2601593570.jpg",
+    "workImages": [],
+    "igHandle": "@frederique.png"
+  },
+  "phil-huelz": {
+    "name": "Phil Huelz",
+    "aboutUrl": "https://www.huelz.art/",
+    "ogImage": "https://assets.bigcartel.com/account_images/7697307/IMG_5050+2.jpg?auto=format&amp;fit=max&amp;h=1200&amp;w=1200",
+    "workImages": [
+      "https://assets.bigcartel.com/theme_images/144606408/Unbenakjjnnt-1.png?auto=format&fit=max&h=400&w=400",
+      "https://assets.bigcartel.com/theme_assets/128/1.11.0/images/ghost-emoji.png",
+      "https://assets.bigcartel.com/product_images/414226626/kop2.jpg?auto=format&fit=max&h=1000&w=1000",
+      "https://assets.bigcartel.com/product_images/407600049/Sticker1.png?auto=format&fit=max&h=1000&w=1000"
+    ],
+    "igHandle": "@phil.huelz"
+  },
+  "ollie-smither": {
+    "name": "Ollie Smither",
+    "aboutUrl": "https://www.osillustration.com/",
+    "ogImage": "https://static.wixstatic.com/media/1fb5e4_9f7a3ea926bd40b198107202427268ee~mv2.jpg/v1/fill/w_2500,h_3536,al_c/1fb5e4_9f7a3ea926bd40b198107202427268ee~mv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/1fb5e4_753b72f834684d34bfed1c5a0eb13268~mv2.png/v1/fill/w_49,h_27,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/1fb5e4_753b72f834684d34bfed1c5a0eb13268~mv2.png",
+      "https://static.wixstatic.com/media/1fb5e4_80a64d0d4d5143a7af2dcb52cf1b2797~mv2.png/v1/crop/x_720,y_107,w_1060,h_380/fill/w_775,h_280,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/dddvv.png",
+      "https://static.wixstatic.com/media/1fb5e4_95e2e4c6483d49d09b012fb563978398~mv2.jpg/v1/crop/x_12,y_0,w_727,h_1000/fill/w_450,h_620,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/book%20cover.jpg",
+      "https://static.wixstatic.com/media/1fb5e4_66028e29cec740dca541605596efd95c~mv2.png/v1/fill/w_200,h_90,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/DEARRRR.png",
+      "https://static.wixstatic.com/media/1fb5e4_3ef9b5db88b1418a98c9e2009a61712e~mv2.png/v1/fill/w_251,h_110,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/SKATE%20VAN.png",
+      "https://static.wixstatic.com/media/1fb5e4_54ceb056cba046f29d8d23a881f794e4~mv2.jpg/v1/crop/x_423,y_1365,w_1493,h_1512/fill/w_238,h_240,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9190_JPG.jpg",
+      "https://static.wixstatic.com/media/fdcfaba150fc427da298a00cb09d91c1.png/v1/fill/w_39,h_39,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdcfaba150fc427da298a00cb09d91c1.png",
+      "https://static.wixstatic.com/media/1fb5e4_d4a180e117aa46219c36950b8a4c36f1~mv2.jpg/v1/fill/w_146,h_144,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/1fb5e4_d4a180e117aa46219c36950b8a4c36f1~mv2.jpg"
+    ],
+    "igHandle": "@os.illustration"
+  },
+  "nasca-uno": {
+    "name": "NASCA Uno",
+    "aboutUrl": "https://www.nasca1.com/about-1",
+    "ogImage": "https://static.wixstatic.com/media/97be02_71afd8649bc741049fad68b1bc844ebd%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/97be02_71afd8649bc741049fad68b1bc844ebd%7Emv2.jpg",
+    "workImages": [
+      "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_39,h_39,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png",
+      "https://static.wixstatic.com/media/97be02_438fa030637c444eafe8123cf8565d07~mv2.jpg/v1/fill/w_77,h_57,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/97be02_438fa030637c444eafe8123cf8565d07~mv2.jpg",
+      "https://static.wixstatic.com/media/97be02_0985f063a6f34c2eb940f3f53c6a822a~mv2.png/v1/fill/w_100,h_100,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/tesla_edited.png",
+      "https://static.wixstatic.com/media/97be02_ab4e926e80c4471ba59cabd684e0fb66~mv2.png/v1/fill/w_100,h_100,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/seat_edited.png",
+      "https://static.wixstatic.com/media/97be02_1b0d2dcc694b49fca55a626496fc9c1e~mv2.png/v1/fill/w_141,h_141,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/netflix_PNG10%20Kopie_edited_edited_edited.png",
+      "https://static.wixstatic.com/media/97be02_ff8cd8093b18443494377bb10608b114~mv2.png/v1/fill/w_162,h_115,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/katjes_edited_edited.png",
+      "https://static.wixstatic.com/media/97be02_bd6f53f8156e4da48f5fc3fea4a2f79b~mv2.png/v1/fill/w_125,h_69,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ts_edited.png"
+    ],
+    "igHandle": "@nasca_one"
+  },
+  "animalitoland": {
+    "name": "Animalitoland",
+    "aboutUrl": "https://animalitoland.com/about/",
+    "ogImage": "https://animalitoland.com/wp-content/uploads/2025/06/icon.jpg",
+    "workImages": [
+      "https://animalitoland.com/wp-content/uploads/2025/08/Bio-animalitoland-muralist-painter-portrait-Shanghai2-768x432.png",
+      "https://animalitoland.com/wp-content/uploads/2025/06/Bio-animalitoland-muralist-painter-portrait-768x768.jpg"
+    ],
+    "igHandle": "@animalitoland"
+  },
+  "thibaud-herem": {
+    "name": "Thibaud Herem",
+    "aboutUrl": "https://thibaudherem.com/pages/about",
+    "ogImage": null,
+    "workImages": [
+      "https://thibaudherem.com/cdn/shop/files/Thibaud_site_2_e2678b23-864d-46f8-9e24-7232cdc5a735.jpg?v=7482608833483997030"
+    ],
+    "igHandle": "@thibaudherem"
+  },
+  "jennypo-art": {
+    "name": "Jennypo Art",
+    "aboutUrl": "https://jennypoart.com/",
+    "ogImage": "http://static1.squarespace.com/static/5fb97358e169e24786d099be/t/693fae890a6bb627a7911cb4/1765781129186/logo+L.png?format=1500w",
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-4d5bb1b5d3757843-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-f34e77dab2f6444a-min.en-US.js"
+    ],
+    "igHandle": "@jennypoart"
+  },
+  "rik-lee": {
+    "name": "Rik Lee",
+    "aboutUrl": "https://riklee.net/about-1",
+    "ogImage": "http://static1.squarespace.com/static/59003d9ab8a79b6aaa946ddc/t/5903fea186e6c0c523993694/1493434017430/logo-for-web-skull.jpg?format=1500w",
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-68385b8902309af4-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-cf01d9543545c2bb-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-13148aadb28837dc-min.en-US.js"
+    ],
+    "igHandle": "@rikleeillustration"
+  },
+  "paola-delfin": {
+    "name": "Paola Delfin",
+    "aboutUrl": "https://es.wikipedia.org/wiki/Paola_Delf%C3%ADn",
+    "ogImage": null,
+    "workImages": [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Paola_Delfin_%28Mexico%29_mural%2C_%C5%81%C3%B3d%C5%BA_5_Brzechwy_Street.jpg/250px-Paola_Delfin_%28Mexico%29_mural%2C_%C5%81%C3%B3d%C5%BA_5_Brzechwy_Street.jpg"
+    ],
+    "igHandle": "@paola_delfin"
+  },
+  "wotto": {
+    "name": "Wotto",
+    "aboutUrl": "https://wottoart.com/about/",
+    "ogImage": null,
+    "workImages": [
+      "https://wottoart.com/wp-content/themes/wotto/images/wotto.png",
+      "https://wottoart.com/wp-content/themes/wotto/images/social-instagram.png",
+      "https://wottoart.com/wp-content/themes/wotto/images/social-threads.png",
+      "https://wottoart.com/wp-content/themes/wotto/images/social-dribbble.png",
+      "https://wottoart.com/wp-content/themes/wotto/images/social-behance.png",
+      "https://wottoart.com/wp-content/uploads/2025/04/wottoabout2.png"
+    ],
+    "igHandle": "@wotto76"
+  },
+  "yippie-hey": {
+    "name": "Yippie Hey",
+    "aboutUrl": "https://yippiehey.com/about",
+    "ogImage": null,
+    "workImages": [
+      "https://yippiehey.com/wp-content/uploads/2024/01/Y_LOGO_bunt_2024_small.png",
+      "https://yippiehey.com/wp-content/uploads/2024/05/SODBRENNER_sporty_02_small.jpg",
+      "https://yippiehey.com/wp-content/uploads/2024/05/CUTIES_bigglasses_thumbnai.jpg",
+      "https://yippiehey.com/wp-content/uploads/2025/07/PICTURE-4.jpg",
+      "https://yippiehey.com/wp-content/uploads/2024/04/YIPPIEHEY-3d-illustration-FC-St-Pauli-VivaConAqua-Printciples-hamburg-stadion-urban-stadtbild-miniatur-isometric-2024.jpg",
+      "https://yippiehey.com/wp-content/uploads/2025/04/YIPPIEHEYxLEHNART_UpInTheAlps_mid.jpg",
+      "https://yippiehey.com/wp-content/uploads/2023/07/CC_YIPPIEHEY_small.jpg",
+      "https://yippiehey.com/wp-content/uploads/2024/01/SHARK_TN_02_details_02.jpg"
+    ],
+    "igHandle": "@yippiehey"
+  },
+  "keya-tama": {
+    "name": "Keya Tama",
+    "aboutUrl": "https://www.keyatama.com/bio",
+    "ogImage": "http://static1.squarespace.com/static/55c86a69e4b0b6c7b4abb441/t/5ccf6930ee6eb0583464eecf/1557096765149/IMG_6932.JPG?format=1500w",
+    "workImages": [
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/legacy.js",
+      "https://assets.squarespace.com/@sqs/polyfiller/1.6/modern.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-runtime-33f06cd969f7946c-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/extract-css-moment-js-vendor-6f2a1f6ec9a41489-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/cldr-resource-pack-22c6db795661f68d-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-stable-b8d716935110c7b2-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-vendors-8e170465b68f28f0-min.en-US.js",
+      "https://assets.squarespace.com/universal/scripts-compressed/common-645a57b94c2239f3-min.en-US.js"
+    ],
+    "igHandle": "@keyatama"
+  },
+  "facio": {
+    "name": "Facio",
+    "aboutUrl": "https://streetartcities.com/artists/tomas-facio",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@tomas_facio"
+  },
+  "woizo": {
+    "name": "Woizo",
+    "aboutUrl": "https://woizo.art/Biographie",
+    "ogImage": "https://freight.cargo.site/w/1000/i/5b414e01bad1d2f99118dde8fc5c865f4c514fcd3c25772957c9cb5e48971745/BG4A8004.jpg",
+    "workImages": [
+      "https://freight.cargo.site/t/original/i/04d70ff61ba8dd94136c449f2134a1b11e58c4a0ad7e264b90349cdf8f56a462/Woizo-01.png",
+      "https://freight.cargo.site/t/original/i/5b414e01bad1d2f99118dde8fc5c865f4c514fcd3c25772957c9cb5e48971745/BG4A8004.jpg",
+      "https://freight.cargo.site/t/original/i/c0477fb6568027752dd60a61630e3c04c7f17382f672360b668fe4a0223e96e0/Woizo_LITTLE_FESTIVAL___7.jpg",
+      "https://freight.cargo.site/t/original/i/5e8bf6c1beef82e33c421c995c6ce3566a3d1a6ca6677d30ce773eb3131e5e9c/Woizo-portrait-BORISSECRETIN-2020_3.jpg",
+      "https://freight.cargo.site/w/2400/q/75/i/5e8bf6c1beef82e33c421c995c6ce3566a3d1a6ca6677d30ce773eb3131e5e9c/Woizo-portrait-BORISSECRETIN-2020_3.jpg"
+    ],
+    "igHandle": "@woizoner"
+  },
+  "thomas-stary": {
+    "name": "Thomas Stary",
+    "aboutUrl": "https://tomasstary.com/",
+    "ogImage": null,
+    "workImages": [],
+    "igHandle": "@tomasstary.studio"
+  },
+  "iain-macarthur": {
+    "name": "Iain Macarthur",
+    "aboutUrl": "https://www.behance.net/iainmac",
+    "ogImage": "https://pps.services.adobe.com/api/profile/645F752A4A2FFCDD992015A8@AdobeID/image/9e87d302-84b1-4382-aef9-c557f1bd1a0d/276",
+    "workImages": [
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/main.56b21e100ca462728f43.js",
+      "https://a5.behance.net/6a79f31575dbca28cfbf3e440fd0b004e57c1ae4/js/runtimechunk~6a79f31575dbca28cfbf3e440fd0b004e57c1ae4.app_client.09bd4f9b6e72a0c3161a.js",
+      "https://www.behance.net/+(n.target&&n.target.src):n%7Dfunction%20e(n)%7Breturn%20n.replace(/(access_?token)=[a-zA-Z0-9=+\\/.\\-_]+/gi,",
+      "https://mir-s3-cdn-cf.behance.net/b95b5159da18075e9d7d4b837ba3711e/608eac13-00ea-4244-b38f-76d95019e6c4_rwc_343x0x2513x410x3200.jpg?h=ab5b19d96fe5ecaf1e028eecf7b1ad05",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/7dfc0d176558963.Y3JvcCw0MjU4LDMzMzEsMzY4LDA.jpg",
+      "https://a5.behance.net/59a8934bed8adee38ff88988c4d1d31d854ae460/img/project/tools/1x/photoshop.png",
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808/b5540e198966973.Y3JvcCwxMTQ1LDg5NiwyOCw5Ng.png",
+      "https://a5.behance.net/59a8934bed8adee38ff88988c4d1d31d854ae460/img/project/tools/1x/illustrator.png"
+    ],
+    "igHandle": "@iain.macarthur"
+  },
+  "igor-mikutski": {
+    "name": "Igor Mikutski",
+    "aboutUrl": "https://igormikutski.com/",
+    "ogImage": null,
+    "workImages": [
+      "https://igormikutski.com/wp-content/uploads/2024/01/3-1920x1353.jpg",
+      "https://igormikutski.com/wp-content/uploads/2023/12/FREEOURKIDS_MURALS_WIP_MICHAEL_SHVADRON_102-1920x1281.jpg",
+      "https://igormikutski.com/wp-content/uploads/2025/04/IMG_3045-1920x1280.jpg",
+      "https://igormikutski.com/wp-content/uploads/2023/12/1.png",
+      "https://igormikutski.com/wp-content/uploads/2025/04/IMG_3042-1920x1332.jpg",
+      "https://igormikutski.com/wp-content/uploads/2024/10/1-1920x1395.jpg",
+      "https://igormikutski.com/wp-content/uploads/2025/04/AC6C6A0E-AA77-4F27-9DAF-CC68F260FF6B-1920x2560.jpg"
+    ],
+    "igHandle": "@igor.mikutski"
+  }
+}

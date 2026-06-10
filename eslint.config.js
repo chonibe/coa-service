@@ -41,6 +41,7 @@ module.exports = [
   {
     ignores: [
       '.next/**',
+      '.obsidian/**',
       'node_modules/**',
       'mcp-servers/**/node_modules/**',
       'public/**',

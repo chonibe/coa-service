@@ -56,7 +56,7 @@ import {
 } from '@/lib/experience-image-position'
 import { ChevronLeft, ChevronRight, Package, ZoomIn, X } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { getVendorCollectionHandle } from '@/lib/shopify/vendor-collection-handle'
 import type { ExperienceV3ArtistProfileTarget } from './ExperienceV3ArtistProfileSection'
 
 const Spline3DPreview = dynamic(
@@ -189,6 +189,8 @@ export function ExperienceV3Client({
   const mediaModeLoaded = useRef(false)
 
   const artworkScrollRef = useRef<HTMLDivElement | null>(null)
+  const experienceScrollRootRef = useRef<HTMLDivElement | null>(null)
+  const artistBioSectionRef = useRef<HTMLElement | null>(null)
   const currentFrontSideRef = useRef<'A' | 'B'>('A')
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
     currentFrontSideRef.current = side
@@ -768,9 +770,17 @@ export function ExperienceV3Client({
     setPreviewProduct(product)
   }, [])
 
+  const handleSplineStickyThumbSelect = useCallback((product: ShopifyProduct) => {
+    setPreviewProduct(product)
+    setMediaMode('spline')
+  }, [])
+
   const handleQuickAddFromPicker = useCallback((product: ShopifyProduct) => {
     if (product.availableForSale === false) return
-    setCartOrder((prev) => [...prev, product.id])
+    setCartOrder((prev) => {
+      if (prev.includes(product.id)) return prev
+      return [...prev, product.id]
+    })
     setLastAddedProductId(product.id)
     const variant = product.variants?.edges?.[0]?.node
     trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3-quick' })
@@ -1019,6 +1029,10 @@ export function ExperienceV3Client({
     initialArtistSlug,
   ])
 
+  const scrollToArtistBio = useCallback(() => {
+    artistBioSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
   const editionWatchNode = useMemo(() => {
     if (!pDetail || !editionMetricsForWatch) return null
     return (
@@ -1079,6 +1093,7 @@ export function ExperienceV3Client({
     <div className="relative flex h-full min-h-0 w-full flex-col bg-[#0f0d0d] text-[#f0e8e8]">
       <div className="flex min-h-0 flex-1 min-w-0 flex-row">
         <div
+          ref={experienceScrollRootRef}
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden',
             /* Main column scroll — distinct from nested product column overflow-y-auto */
@@ -1093,14 +1108,21 @@ export function ExperienceV3Client({
           className={cn(
             /* grow-0: hero height stays content-driven so artist section stacks below in normal flow */
             'flex min-h-0 w-full max-w-full shrink-0 grow-0 snap-start snap-always flex-col',
-            'min-w-0 max-h-full md:max-h-full md:flex-row md:items-stretch md:justify-center'
+            /* Mobile: stack gallery then titles in normal flow. Desktop: side-by-side; no max-h trap (artist bio scrolls below). */
+            'min-w-0 max-md:max-h-none md:flex-row md:items-stretch md:justify-center'
           )}
         >
         <h2 id="experience-v3-hero-heading" className="sr-only">
           Artwork and details
         </h2>
         {/* Left: thumbnail strip + controls, then hero / 3D */}
-        <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col md:max-w-[min(100%,720px)] md:flex-none md:grow-0 md:shrink">
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 w-full flex-col',
+            'max-md:flex-none max-md:shrink-0',
+            'md:max-w-[min(100%,720px)] md:flex-none md:grow-0 md:shrink'
+          )}
+        >
           <div className="mx-auto flex w-full max-w-[min(96vw,720px)] flex-col px-2 pt-3 md:max-w-[min(100%,720px)] md:px-2 md:pr-2 md:pt-4">
             {/* md+: vertical left rail; mobile: horizontal thumb strip (images + 3D) above hero */}
             <div className="mb-2 flex min-h-0 w-full flex-col gap-3 bg-[#0f0d0d] md:mb-0 md:flex-row md:items-stretch md:gap-3">
@@ -1194,7 +1216,7 @@ export function ExperienceV3Client({
               <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col">
                 <div
                   className={cn(
-                    'relative w-full',
+                    'relative isolate w-full max-md:overflow-hidden',
                     mediaMode === 'spline' && splineImage1 && 'min-h-[min(52vh,500px)]'
                   )}
                 >
@@ -1322,11 +1344,16 @@ export function ExperienceV3Client({
           </div>
         </div>
 
-        {/* Right: product layout — scroll independently */}
+        {/* Right: product layout — below gallery on mobile, side column on md+ */}
         <div
           ref={artworkScrollRef}
           data-experience-artwork-scroll
-          className="flex w-full shrink-0 flex-col overflow-y-auto overflow-x-hidden md:max-h-full md:min-h-0 md:w-[min(100%,392px)]"
+          className={cn(
+            'flex w-full shrink-0 flex-col overflow-x-hidden',
+            'relative z-10 max-md:flex-none max-md:bg-[#0f0d0d]',
+            'max-md:overflow-visible',
+            'md:min-h-0 md:w-[min(100%,392px)] md:overflow-visible'
+          )}
         >
           {previewProduct && pDetail && (
             <div className="flex flex-col gap-5 px-5 py-6 pb-28 md:gap-4 md:px-3 md:py-6 md:pb-8">
@@ -1334,6 +1361,15 @@ export function ExperienceV3Client({
                 <p className="text-[11px] font-medium uppercase tracking-widest text-white/55">
                   {editionArtistName}
                 </p>
+                {artistProfileTarget ? (
+                  <button
+                    type="button"
+                    onClick={scrollToArtistBio}
+                    className="mx-auto block text-[10px] font-semibold uppercase tracking-[0.14em] text-[#FFBA94]/75 underline-offset-4 transition-colors hover:text-[#FFBA94] hover:underline"
+                  >
+                    Artist bio ↓
+                  </button>
+                ) : null}
                 <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-[#FFBA94] lg:text-[1.65rem]">
                   {previewProduct.title}
                 </h1>
@@ -1422,12 +1458,15 @@ export function ExperienceV3Client({
 
         {/* Artist region: full width of scroll column only — avoid w-screen / negative vw margins (breaks flow in nested flex). */}
         <section
+          ref={artistBioSectionRef}
+          id="experience-v3-artist-bio"
           aria-labelledby="experience-v3-artist-heading"
           className={cn(
-            'relative z-0 w-full max-w-full shrink-0 snap-start',
+            'relative z-0 w-full max-w-full shrink-0 snap-start snap-always',
             'mt-6 border-t border-white/[0.04] pt-8 pb-10',
             'bg-[#0a0909]',
-            'md:mt-8 md:pt-10 md:pb-12'
+            'md:mt-8 md:pt-10 md:pb-12',
+            'scroll-mt-[max(4.5rem,env(safe-area-inset-top))]'
           )}
           data-experience-v3-below-media=""
         >
@@ -1498,6 +1537,7 @@ export function ExperienceV3Client({
               pickerCardMode="previewAndQuickAdd"
               onPreviewProduct={handlePreviewFromPicker}
               onQuickAddProduct={handleQuickAddFromPicker}
+              previewProductId={previewProduct?.id ?? null}
               sheetVariant="rightRail"
             />
           </div>
@@ -1507,7 +1547,7 @@ export function ExperienceV3Client({
       {pickerHasBeenOpened && !pickerLayoutDesktop && (
         <ArtworkPickerSheet
           presentation="modal"
-          showDoneButton={false}
+          showDoneButton
           isOpen={isPickerOpen}
           onClose={handleClosePicker}
           products={filteredProducts}
@@ -1541,6 +1581,7 @@ export function ExperienceV3Client({
           pickerCardMode="previewAndQuickAdd"
           onPreviewProduct={handlePreviewFromPicker}
           onQuickAddProduct={handleQuickAddFromPicker}
+          previewProductId={previewProduct?.id ?? null}
           sheetVariant="rightRail"
         />
       )}
@@ -1581,19 +1622,23 @@ export function ExperienceV3Client({
         </RadixDialog.Portal>
       </RadixDialog.Root>
 
-      <ExperienceCheckoutStickyBar
-        lamp={lamp}
-        lampQuantity={lampQuantity}
-        selectedArtworks={selectedArtworks}
-        orderSubtotal={orderTotal}
-        stripMode="collection"
-        onOpenPicker={handleOpenPicker}
-        onViewLampDetail={() => {}}
-        suppressCartThumbnails
-        previewSelectedProductId={previewProduct?.id ?? null}
-        lampPreviewProductIds={[]}
-        hideCollectionStrip
-      />
+      {!pickerLayoutDesktop ? (
+        <ExperienceCheckoutStickyBar
+          lamp={lamp}
+          lampQuantity={lampQuantity}
+          selectedArtworks={selectedArtworks}
+          orderSubtotal={orderTotal}
+          stripMode="collection"
+          onOpenPicker={handleOpenPicker}
+          onViewLampDetail={() => {}}
+          suppressCartThumbnails={mediaMode !== 'spline'}
+          onSelectThumbnailForSpline={
+            mediaMode === 'spline' ? handleSplineStickyThumbSelect : undefined
+          }
+          previewSelectedProductId={previewProduct?.id ?? null}
+          lampPreviewProductIds={[]}
+        />
+      ) : null}
 
       <OrderBar
         lamp={lamp}

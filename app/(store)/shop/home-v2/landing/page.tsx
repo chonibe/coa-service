@@ -13,7 +13,6 @@ import { TestimonialsSection } from '../components/TestimonialsSection'
 import { GuaranteeSection } from '../components/GuaranteeSection'
 import { FaqSectionLanding } from '../components/FaqSectionLanding'
 import { FinalCta } from '../components/FinalCta'
-import { LandingFooter } from '../components/LandingFooter'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 import { JsonLd } from '@/components/seo/JsonLd'
 
@@ -111,7 +110,6 @@ export default function HomeV2LandingPage() {
         <FaqSectionLanding />
         <FinalCta />
       </main>
-      <LandingFooter />
       <MobileStickyCta
         href={homeV2LandingContent.urls.experience}
         label={homeV2LandingContent.hero.ctaText}

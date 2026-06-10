@@ -21,6 +21,20 @@
   font-weight: 300;
 }
 
+/* Embedded in experience-v3 — no duplicate shop header; flows inside parent scroll. */
+.rootEmbedded {
+  min-height: 0;
+  background: transparent;
+}
+
+.rootEmbedded::after {
+  display: none;
+}
+
+.profileHeroEmbedded {
+  min-height: auto;
+}
+
 .root::after {
   content: '';
   position: fixed;

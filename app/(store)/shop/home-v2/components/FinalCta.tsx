@@ -79,9 +79,6 @@ export function FinalCta() {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
-          <Link href={urls.exploreArtists} className={styles.btnOutline}>
-            {finalCta.secondaryCta}
-          </Link>
         </div>
 
         <form

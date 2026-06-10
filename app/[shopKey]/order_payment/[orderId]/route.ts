@@ -8,6 +8,7 @@ import {
 import stripe from '@/lib/stripe'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // Prevent static generation during build
 
 const RATE = 30 // per minute per IP
 

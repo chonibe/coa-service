@@ -1,10 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
-import { cn } from '@/lib/utils'
 
 const ArtistProfilePageClient = dynamic(
   () =>
@@ -31,12 +29,6 @@ function ArtistProfileEmbeddedSkeleton() {
       </div>
     </div>
   )
-}
-
-function profileHref(slug: string, vendor: string): string {
-  const base = `/shop/artists/${encodeURIComponent(slug)}`
-  if (!vendor.trim()) return base
-  return `${base}?vendor=${encodeURIComponent(vendor)}`
 }
 
 export type ExperienceV3ArtistProfileTarget = { slug: string; vendor: string }
@@ -75,35 +67,18 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
   if (phase === 'error' || !artist) {
     return (
       <div className="rounded-xl border border-white/[0.08] bg-[#171515]/80 px-5 py-6 text-center text-sm text-white/70">
-        <p className="mb-4">Couldn&apos;t load this artist profile in the experience view.</p>
-        <Link
-          href={profileHref(slug, vendor)}
-          className={cn(
-            'inline-flex items-center justify-center rounded-full border border-[#FFBA94]/35 bg-[#FFBA94]/10 px-4 py-2',
-            'text-[10px] font-semibold uppercase tracking-[0.14em] text-[#FFBA94]'
-          )}
-        >
-          Open full profile
-        </Link>
+        <p>Couldn&apos;t load this artist profile in the experience view.</p>
       </div>
     )
   }
-
-  const href = profileHref(artist.slug ?? slug, vendor)
 
   return (
     <div
       data-experience-v3-artist-profile=""
       className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0909]"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
+      <div className="border-b border-white/[0.06] px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">Artist profile</p>
-        <Link
-          href={href}
-          className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FFBA94] underline-offset-4 hover:underline"
-        >
-          Full profile →
-        </Link>
       </div>
       <div className="-mx-[1px]">
         <ArtistProfilePageClient artist={artist} embedded />

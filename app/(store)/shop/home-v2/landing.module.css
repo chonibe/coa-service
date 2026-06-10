@@ -125,6 +125,7 @@
   position: relative;
   min-height: 100vh; /* fallback */
   min-height: 100dvh;
+  height: 100vh; /* ensure hero does not exceed viewport */
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
@@ -262,6 +263,13 @@
   gap: 40px;
   padding-top: 28px;
   border-top: 1px solid var(--border);
+}
+
+/* Hide the fourth stat (Countries) on mobile */
+@media (max-width: 640px) {
+  .heroStats .stat:nth-child(4) {
+    display: none;
+  }
 }
 
 .stat {
@@ -603,9 +611,6 @@
   );
 }
 
-.artistsCarouselMarquee:hover .artistsCarouselMarqueeTrack {
-  animation-play-state: paused;
-}
 
 .artistsCarouselMarqueeTrack {
   display: flex;
@@ -735,9 +740,6 @@
   );
 }
 
-.artistsBadgesMarquee:hover .artistsBadgesMarqueeTrack {
-  animation-play-state: paused;
-}
 
 .artistsBadgesMarqueeTrack {
   display: flex;

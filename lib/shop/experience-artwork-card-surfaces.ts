@@ -52,6 +52,12 @@ export function getPickerCardSelectionChrome(isSelected: boolean, suppressIndivi
   return 'ring-1 ring-inset ring-[#FFBA94]/40 dark:ring-[#FFBA94]/30'
 }
 
+/** Previewing on main stage but not in cart — inset only (no outer ring / offset). */
+export function getPickerCardPreviewChrome(isPreviewActive: boolean, isInCart: boolean): string {
+  if (!isPreviewActive || isInCart) return ''
+  return 'ring-1 ring-inset ring-[#FFBA94]/50 dark:ring-[#FFBA94]/35'
+}
+
 /** Strip: same as picker — thin ring unless merged pair (both in cart) uses row tint only. */
 export function getStripCardSelectionChrome(isInCart: boolean, suppressIndividualRing: boolean): string {
   if (!isInCart || suppressIndividualRing) return ''

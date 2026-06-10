@@ -1,0 +1,231 @@
+{
+  "main": {
+    "id": "940be230d270459c",
+    "type": "split",
+    "children": [
+      {
+        "id": "05fb79ffc6971a1a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1dfefe1faa83c288",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "wiki/entities/tyler-shelton.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "tyler-shelton"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d99d2cbd3353a706",
+    "type": "split",
+    "children": [
+      {
+        "id": "cd36f1e715a35b2b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bde420ea1b449cf8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "27767229e053fa8a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "4e4771551e7d86f6",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "fe8bf205bc8b4b1b",
+    "type": "split",
+    "children": [
+      {
+        "id": "a49672cf62692854",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "12f4ff123f6dd4f9",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "giveaway-story-assets/giveaway-form-filled.png",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for giveaway-form-filled"
+            }
+          },
+          {
+            "id": "265aab540f824f65",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "giveaway-story-assets/giveaway-form-filled.png",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from giveaway-form-filled"
+            }
+          },
+          {
+            "id": "69aa0463283d462a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "b65c6c5445141b4c",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "c42ba7124223a0a9",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "giveaway-story-assets/giveaway-form-filled.png",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of giveaway-form-filled"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "1dfefe1faa83c288",
+  "lastOpenFiles": [
+    "wiki/entities/twoone-hiroyasu-tsuri.md",
+    "wiki/entities/troy-browne.md",
+    "wiki/entities/tiffany-chin.md",
+    "wiki/entities/thales-towers.md",
+    "wiki/entities/taloosh.md",
+    "scripts/apply-portfolio-images-to-wiki.mjs",
+    "docs/dev/wiki-portfolio-images.json",
+    "scripts/fetch-artist-portfolio-images.mjs",
+    "wiki/entities/supabase.md",
+    "wiki/entities/mathew-gagnon.md",
+    "wiki/sources/2026-04-14-vendor-product-creation.md",
+    "wiki/sources/2026-04-14-warehouse-order-tracking.md",
+    "wiki/entities/max-diamond.md",
+    "wiki/sources/2026-04-14-first-edition-reserve.md",
+    "wiki/sources/2026-04-14-conditional-artwork-access.md",
+    "wiki/concepts/vendor-product-creation.md",
+    "wiki/concepts/certificate-of-authenticity.md",
+    "wiki/concepts/warehouse-order-tracking.md",
+    "wiki/concepts/collector-dashboard.md",
+    "wiki/concepts/first-edition-reserve.md",
+    "wiki/concepts/analytics-tracking.md",
+    "wiki/concepts/affiliate-program.md",
+    "giveaway-story-assets/giveaway-form-filled.png",
+    "wiki/entities/marylou-faure.md",
+    "wiki/concepts/conditional-artwork-access.md",
+    "wiki/sources/2026-04-14-analytics.md",
+    "wiki/sources/2026-04-14-giveaway.md",
+    "wiki/sources/2026-04-14-journey-milestone.md",
+    "wiki/entities/maalavidaa.md",
+    "wiki/sources/2026-04-14-series-manager.md",
+    "scripts/generate-artist-wiki-pages.mjs",
+    "wiki/syntheses",
+    "wiki/sources",
+    "wiki/entities",
+    "wiki/concepts",
+    "wiki",
+    "giveaway-story-assets/story-frame-03-spinning.png",
+    "giveaway-story-assets/story-frame-02-entries.png",
+    "giveaway-story-assets/giveaway-winner-modal.png",
+    "giveaway-story-assets/giveaway-wheel-step.png",
+    "giveaway-story-assets/giveaway-new-design-step1.png",
+    "giveaway-story-assets/giveaway-mobile-step1.png"
+  ]
+}

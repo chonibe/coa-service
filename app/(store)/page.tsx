@@ -3,4 +3,4 @@
  * Renders the same content as the street-collector page so the URL stays / with no redirect.
  * Uses (store) layout so Footer, Cart, and ChatIcon are shown.
  */
-export { default, metadata, revalidate } from './shop/street-collector/page'
+export { default, metadata, revalidate } from './shop/home-v2/page'

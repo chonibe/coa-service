@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { Container, SectionWrapper } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
+import { ContactFormClient } from './ContactFormClient'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'info@thestreetlamp.com'
 
 export default function ContactPage() {
+
   return (
     <main className="min-h-screen bg-white">
       <SectionWrapper spacing="md" background="default">
@@ -24,38 +26,41 @@ export default function ContactPage() {
             </p>
           </ScrollReveal>
 
-          <ScrollReveal animation="fadeUp" delay={0.1} duration={0.8}>
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Email</h2>
-                <a
-                  href={`mailto:${CONTACT_EMAIL}`}
-                  className="text-[#047AFF] hover:underline font-medium"
-                >
-                  {CONTACT_EMAIL}
-                </a>
-                <p className="text-sm text-[#1a1a1a]/60 mt-1">
-                  The quickest way to reach us. We aim to respond within 24 hours during business days.
-                </p>
+          <div className="grid md:grid-cols-2 gap-12 mb-12">
+            <ScrollReveal animation="fadeUp" delay={0.1} duration={0.8}>
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Email</h2>
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="text-[#047AFF] hover:underline font-medium"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                  <p className="text-sm text-[#1a1a1a]/60 mt-1">
+                    The quickest way to reach us. We aim to respond within 24 hours during business days.
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Support Hours</h2>
+                  <p className="text-[#1a1a1a]/80">
+                    Monday to Friday: 8am – 8:30pm
+                  </p>
+                  <p className="text-sm text-[#1a1a1a]/60 mt-1">
+                    Average response time: 24h
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Personal Data Requests</h2>
+                  <p className="text-[#1a1a1a]/80">
+                    Our customer service team can also handle your personal data requests in relation to your rights stated in our Privacy Notice. You can write to us at the email above. If you wish to contact our Data Protection Officer, please include &quot;DPO&quot; in the subject line.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Support Hours</h2>
-                <p className="text-[#1a1a1a]/80">
-                  Monday to Friday: 8am – 8:30pm
-                </p>
-                <p className="text-sm text-[#1a1a1a]/60 mt-1">
-                  Average response time: 24h
-                </p>
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-[#1a1a1a] mb-2">Personal Data Requests</h2>
-                <p className="text-[#1a1a1a]/80">
-                  Our customer service team can also handle your personal data requests in relation to your rights stated in our Privacy Notice. You can write to us at the email above. If you wish to contact our Data Protection Officer, please include &quot;DPO&quot; in the subject line.
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
 
+            <ContactFormClient contactEmail={CONTACT_EMAIL} />
+          </div>
         </Container>
       </SectionWrapper>
     </main>
