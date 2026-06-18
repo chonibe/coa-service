@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
-import { ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap, ChevronRight } from 'lucide-react'
+import { ImageIcon, Package, List, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, Gift, ShoppingBag, Scale, Box, Sun, Battery, Zap, ChevronRight, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import {
@@ -50,6 +51,8 @@ interface ArtworkAccordionsProps {
   streetEdition?: StreetEditionStatesRow | null
   /** Unlisted spotlight + product in spotlight → early-access list pricing */
   isEarlyAccess?: boolean
+  /** Optional root class overrides (e.g. Experience V3 right column) */
+  className?: string
 }
 
 const artistCache = new Map<string, ArtistData | null>()
@@ -125,11 +128,17 @@ export function ArtworkAccordions({
   variant = 'full',
   streetEdition = null,
   isEarlyAccess = false,
+  className,
 }: ArtworkAccordionsProps) {
   useExperienceTheme() // ensures we're in theme context for dark: classes
   const [artistData, setArtistData] = useState<ArtistData | null>(null)
   const [spotlightData, setSpotlightData] = useState<SpotlightData | null>(null)
   const [artistLoading, setArtistLoading] = useState(false)
+  const [showDescription, setShowDescription] = useState(false)
+
+  useEffect(() => {
+    setShowDescription(false)
+  }, [product.id])
 
   const isLamp = !!(productIncludes && productIncludes.length > 0)
   const artist = product.vendor || ''
@@ -377,8 +386,15 @@ export function ArtworkAccordions({
       </>
     ) : null
 
-  const artworkDetailsPanel = renderArtworkCardInner()
-  const artworkGalleryFirstSlide = renderArtworkCardInner({ artistNavigatesToSpotlight: true })
+  const isContentOnly = variant === 'contentOnly'
+  const showArtworkEditionCard = variant === 'full'
+  const artworkDetailsPanel = showArtworkEditionCard ? renderArtworkCardInner() : null
+  const artworkGalleryFirstSlide = showArtworkEditionCard
+    ? renderArtworkCardInner({ artistNavigatesToSpotlight: true })
+    : null
+
+  const description = (product.description || '').trim()
+  const productDetailsLabel = isLamp ? 'Product details' : 'Artwork details'
 
   const hasArtworkCard = artworkDetailsPanel != null
   const showArtworkArtistSectionGallery =
@@ -389,7 +405,12 @@ export function ArtworkAccordions({
   }
 
   return (
-    <div className="w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-2 pb-4 space-y-5">
+    <div
+      className={cn(
+        'w-full max-w-[min(92vw,360px)] md:max-w-[min(65vh,520px)] mx-auto px-4 pt-2 pb-4 space-y-5',
+        className
+      )}
+    >
       {/* Collection GIF — outside spotlight card, above edition / scarcity */}
       {!isLamp && spotlightGifUrl && (
         <div className="w-full">
@@ -421,6 +442,44 @@ export function ArtworkAccordions({
         </div>
       ) : (
         <>
+          {isContentOnly && description && (
+            <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowDescription((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-neutral-100/60 dark:hover:bg-white/[0.03]"
+                aria-expanded={showDescription}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={iconCls}>
+                    <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
+                  </div>
+                  <span className={labelCls}>{productDetailsLabel}</span>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 text-neutral-400 transition-transform duration-200',
+                    showDescription && 'rotate-180'
+                  )}
+                />
+              </button>
+              <AnimatePresence initial={false}>
+                {showDescription && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="border-t border-neutral-100 px-4 pb-4 pt-3 text-sm leading-relaxed text-neutral-600 dark:border-white/10 dark:text-[#c4a0a0]">
+                      {description}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
           {artworkDetailsPanel && (
             <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
               {artworkDetailsPanel}

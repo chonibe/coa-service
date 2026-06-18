@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { FeaturedBundleCheckoutPrices } from '@/lib/shop/experience-featured-bundle'
+import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
 
 export interface OrderBarRefLike {
   testZeroOrder: () => Promise<void>
@@ -47,6 +48,12 @@ export interface OrderBarContextProps {
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
   /** Cart indices (aligned with `selectedArtworks`) that use bundle artwork unit prices from `featuredBundleCheckout`. */
   bundlePricedArtworkIndices?: Set<number> | null
+  /** When true, lamp cannot be added until at least one artwork is in the cart. */
+  requireArtworkForLamp?: boolean
+  /** Active 24h cart edition holds keyed by numeric Shopify product id. */
+  cartEditionHolds?: Record<string, CartEditionHold>
+  /** Earliest expiry among active cart edition holds (ISO). */
+  cartEditionHoldSoonestExpiry?: string | null
   /** Wizard: which step is highlighted (0=Eye, 1=Info, 2=Add, 3=Lamp, 4=Filter, 5=Chevron) */
   wizardHighlightStep?: number
   /** Wizard: whether highlight animation is active */

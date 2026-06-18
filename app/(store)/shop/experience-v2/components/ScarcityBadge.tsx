@@ -114,6 +114,8 @@ interface ScarcityBadgeProps {
   panelTitle?: string
   /** Bar + caption only — use inside {@link ArtworkEditionUnifiedSection} (no nested panel) */
   unifiedSection?: boolean
+  /** Hide "X of Y remaining" under the bar (e.g. when caption is rendered elsewhere) */
+  hideEditionCaption?: boolean
   /** Street ladder (stage, list price, next-step chip) — shown under bar when `variant` is `bar` */
   streetLadder?: StreetLadderForScarcity | null
   /** Rendered directly under the ladder block (e.g. edition watchlist CTA) */
@@ -131,6 +133,7 @@ export function ScarcityBadge({
   className,
   panelTitle,
   unifiedSection = false,
+  hideEditionCaption = false,
   streetLadder = null,
   belowStreetLadder,
 }: ScarcityBadgeProps) {
@@ -216,7 +219,12 @@ export function ScarcityBadge({
       : loading ? 100 : 100
     const barWidth = Math.min(100, Math.max(0, percentRemaining))
 
-    const showCaption = (panelTitle || unifiedSection) && editionSize && editionSize > 0 && typeof available === 'number'
+    const showCaption =
+      !hideEditionCaption &&
+      (panelTitle || unifiedSection) &&
+      editionSize &&
+      editionSize > 0 &&
+      typeof available === 'number'
     const editionCaption = showCaption ? (
       <p className="text-center text-sm font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums leading-snug">
         <span className="text-neutral-900 dark:text-[#f0e8e8]">{available}</span>

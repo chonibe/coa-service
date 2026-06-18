@@ -573,14 +573,6 @@ export function ArtworkCarouselBar({
                         >
                           {stripLampTitle}
                         </span>
-                        <Plus
-                          className={cn(
-                            'h-3 w-3 shrink-0 opacity-95',
-                            theme === 'light' ? 'text-neutral-800' : 'text-white'
-                          )}
-                          strokeWidth={2.5}
-                          aria-hidden
-                        />
                       </div>
                     </div>
                   </button>
@@ -638,14 +630,6 @@ export function ArtworkCarouselBar({
                           >
                             {artwork.title}
                           </span>
-                          <Plus
-                            className={cn(
-                              'h-3 w-3 shrink-0 opacity-95',
-                              theme === 'light' ? 'text-neutral-800' : 'text-white'
-                            )}
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
                         </div>
                       </div>
                     </button>
@@ -665,8 +649,8 @@ export function ArtworkCarouselBar({
                       type="button"
                       onClick={onOpenPicker}
                       className={pickerPlusWithJourney}
-                      aria-label="Add artwork to collection"
-                      title="Add artwork to collection"
+                      aria-label="Open the collection picker"
+                      title="The Collection"
                     >
                       <Plus className="w-5 h-5" strokeWidth={2.25} />
                     </button>

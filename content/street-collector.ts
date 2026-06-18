@@ -5,7 +5,10 @@
  * Used by app/(store)/shop/street-collector/page.tsx and app/(store)/page.tsx (root /)
  */
 
-/** Single destination for all CTAs and momentum cues */
+/**
+ * Single destination for all CTAs and momentum cues.
+ * Middleware rewrites `/experience` → `/shop/experience` (Experience V3 shell).
+ */
 export const EXPERIENCE_URL = '/experience'
 
 export const streetCollectorContent = {

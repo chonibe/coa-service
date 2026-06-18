@@ -4,30 +4,24 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import styles from '../landing.module.css'
 import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { formatTrustStatCount } from '@/lib/shop/trust-stat-placeholders'
 
 function getVideoType(url: string): string {
   return url.toLowerCase().includes('.mov') ? 'video/quicktime' : 'video/mp4'
 }
 
-function formatCounter(value: number): string {
-  if (value >= 1000) {
-    // match the original: 3000 -> "3,000"
-    return `${Math.round(value / 1000)},000`
-  }
-  return String(value)
-}
-
 export function LandingHero() {
   const { hero } = homeV2LandingContent
   const [animated, setAnimated] = useState(false)
-  const [values, setValues] = useState<number[]>(() =>
-    hero.stats.map((s) => (s.target ? 0 : 0))
-  )
-
   const statTargets = useMemo(
     () => hero.stats.map((s) => s.target ?? null),
     [hero.stats]
   )
+  const statFloors = useMemo(
+    () => hero.stats.map((s) => s.target ?? 0),
+    [hero.stats]
+  )
+  const [values, setValues] = useState<number[]>(() => [...statFloors])
 
   useEffect(() => {
     if (animated) return
@@ -42,6 +36,7 @@ export function LandingHero() {
           if (!e.isIntersecting) continue
           const idx = Number((e.target as HTMLElement).dataset.counterIndex ?? -1)
           const target = statTargets[idx]
+          const floor = statFloors[idx] ?? 0
           if (!target) {
             obs.unobserve(e.target)
             continue
@@ -50,7 +45,7 @@ export function LandingHero() {
           const step = (now: number) => {
             const p = Math.min((now - start) / duration, 1)
             const ease = 1 - Math.pow(1 - p, 3)
-            const val = Math.round(ease * target)
+            const val = Math.max(floor, Math.round(ease * target))
             setValues((prev) => {
               const next = [...prev]
               next[idx] = val
@@ -67,7 +62,7 @@ export function LandingHero() {
 
     els.forEach((el) => obs.observe(el))
     return () => obs.disconnect()
-  }, [animated, statTargets])
+  }, [animated, statFloors, statTargets])
 
   return (
     <section className={styles.hero} aria-label="Hero">
@@ -118,7 +113,7 @@ export function LandingHero() {
             const text = s.fixedText
               ? s.fixedText
               : s.target
-                ? `${formatCounter(values[i])}${s.suffix ?? ''}`
+                ? `${formatTrustStatCount(values[i])}${s.suffix ?? ''}`
                 : ''
             return (
               <div className={styles.stat} key={`${s.label}-${i}`}>

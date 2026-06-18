@@ -83,3 +83,13 @@ export function formatFileSize(bytes: number): string {
   
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
+
+/**
+ * Uppercases only the first character for display (does not title-case the rest).
+ */
+export function capitalizeFirstLetter(value: string): string {
+  if (!value) return value
+  const first = value.charAt(0)
+  if (!first) return value
+  return first.toLocaleUpperCase() + value.slice(1)
+}

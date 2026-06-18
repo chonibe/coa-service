@@ -38,8 +38,12 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
   const [phase, setPhase] = useState<'loading' | 'ok' | 'error'>('loading')
 
   useEffect(() => {
-    let cancelled = false
     setPhase('loading')
+    setArtist(null)
+  }, [slug])
+
+  useEffect(() => {
+    let cancelled = false
     const q = vendor.trim() ? `?vendor=${encodeURIComponent(vendor)}` : ''
     fetch(`/api/shop/artists/${encodeURIComponent(slug)}${q}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -51,7 +55,6 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
       })
       .catch(() => {
         if (!cancelled) {
-          setArtist(null)
           setPhase('error')
         }
       })
@@ -60,7 +63,7 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
     }
   }, [slug, vendor])
 
-  if (phase === 'loading') {
+  if (phase === 'loading' && !artist) {
     return <ArtistProfileEmbeddedSkeleton />
   }
 

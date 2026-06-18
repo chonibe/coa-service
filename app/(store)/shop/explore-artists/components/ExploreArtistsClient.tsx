@@ -11,6 +11,11 @@ import exploreStyles from '../explore-artists.module.css'
 import { useLandingScrollReveal } from '../../home-v2/hooks/useLandingScrollReveal'
 import { exploreArtistsContent } from '@/content/explore-artists'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import {
+  TRUST_STAT_PLACEHOLDERS,
+  formatTrustStatWithSuffix,
+  resolveTrustStatCount,
+} from '@/lib/shop/trust-stat-placeholders'
 
 function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
@@ -51,6 +56,10 @@ function usePrefersReducedMotion() {
 }
 
 export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
+  const displayArtistCount = resolveTrustStatCount(
+    artists.length,
+    TRUST_STAT_PLACEHOLDERS.artists
+  )
   const heroReveal = useLandingScrollReveal({ rootMargin: '0px 0px -8% 0px' })
   const philosophyReveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px', mode: 'stagger' })
   const featuredReveal = useLandingScrollReveal({ rootMargin: '0px 0px -12% 0px' })
@@ -157,16 +166,22 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               <br />a <em>street.</em>
             </h1>
             <p className={exploreStyles.heroDesc}>
-              {artists.length}+ independent artists across 40+ countries. Each name here ties to real street or
-              studio practice, not a stock library. Open a profile for the story and every edition we carry.
+              {formatTrustStatWithSuffix(artists.length, TRUST_STAT_PLACEHOLDERS.artists)} independent artists across{' '}
+              {formatTrustStatWithSuffix(null, TRUST_STAT_PLACEHOLDERS.countries)} countries. Each name here ties to
+              real street or studio practice, not a stock library. Open a profile for the story and every edition we
+              carry.
             </p>
             <div className={exploreStyles.heroStats}>
               <div className={exploreStyles.stat}>
-                <span className={exploreStyles.statN}>{artists.length}+</span>
+                <span className={exploreStyles.statN}>
+                  {formatTrustStatWithSuffix(artists.length, TRUST_STAT_PLACEHOLDERS.artists)}
+                </span>
                 <span className={exploreStyles.statL}>Artists</span>
               </div>
               <div className={exploreStyles.stat}>
-                <span className={exploreStyles.statN}>40+</span>
+                <span className={exploreStyles.statN}>
+                  {formatTrustStatWithSuffix(null, TRUST_STAT_PLACEHOLDERS.countries)}
+                </span>
                 <span className={exploreStyles.statL}>Countries</span>
               </div>
               <div className={exploreStyles.stat}>
@@ -174,7 +189,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 <span className={exploreStyles.statL}>To the artist</span>
               </div>
               <div className={exploreStyles.stat}>
-                <span className={exploreStyles.statN}>★ 5.0</span>
+                <span className={exploreStyles.statN}>{TRUST_STAT_PLACEHOLDERS.ratingText}</span>
                 <span className={exploreStyles.statL}>Rated</span>
               </div>
             </div>
@@ -408,7 +423,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
           ) : null}
           <div className={cn(landingStyles.landingStagger, exploreStyles.mapStats)} style={{ ['--stagger' as string]: 3 }}>
             <div className={exploreStyles.mapStat}>
-              <span className={exploreStyles.mapStatN}>{artists.length}</span>
+              <span className={exploreStyles.mapStatN}>{displayArtistCount}</span>
               <span className={exploreStyles.mapStatL}>Artists</span>
             </div>
             {locatedCities.length > 0 ? (

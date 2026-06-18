@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
 import type { Metadata } from 'next'
@@ -8,21 +7,10 @@ import {
   type ShopifyCollection,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { ExperienceV2ClientLoader } from './components/ExperienceV2ClientLoader'
+import { ExperienceV3ClientLoader } from '../experience-v3/components/ExperienceV3ClientLoader'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
 
 export const dynamic = 'force-dynamic'
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-950">
-      <div className="flex flex-col items-center gap-6">
-        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        <p className="text-sm text-white/50">Loading experience…</p>
-      </div>
-    </div>
-  )
-}
 
 const getCachedExperienceBundle = unstable_cache(
   () =>
@@ -40,21 +28,15 @@ export async function generateMetadata({
 }
 
 function filterLamp(products: ShopifyProduct[]) {
-  return products.filter(
-    (p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp')
-  )
+  return products.filter((p) => p.handle !== 'street_lamp' && !p.handle?.startsWith('street-lamp'))
 }
 
 function buildProductsFromSeasons(
   season1Result: ShopifyCollection | null,
   season2Result: ShopifyCollection | null
 ) {
-  const productsSeason1 = filterLamp(
-    season1Result?.products?.edges?.map((e) => e.node) ?? []
-  )
-  const productsSeason2 = filterLamp(
-    season2Result?.products?.edges?.map((e) => e.node) ?? []
-  )
+  const productsSeason1 = filterLamp(season1Result?.products?.edges?.map((e) => e.node) ?? [])
+  const productsSeason2 = filterLamp(season2Result?.products?.edges?.map((e) => e.node) ?? [])
   const pageInfoSeason1 = season1Result?.products?.pageInfo ?? {
     hasNextPage: false,
     endCursor: null,
@@ -66,7 +48,14 @@ function buildProductsFromSeasons(
   return { productsSeason1, productsSeason2, pageInfoSeason1, pageInfoSeason2 }
 }
 
-async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug?: string }) {
+type ExperiencePageProps = {
+  searchParams: Promise<{ artist?: string; vendor?: string }>
+}
+
+export default async function ExperiencePage({ searchParams }: ExperiencePageProps) {
+  const resolved = await searchParams
+  const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
+
   const bundle = await getCachedExperienceBundle().catch(() => ({
     lamp: null as ShopifyProduct | null,
     season1: null as ShopifyCollection | null,
@@ -79,9 +68,7 @@ async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug
       <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
         <div className="text-center max-w-md px-6">
           <h1 className="text-2xl font-semibold mb-3 text-white">Unavailable</h1>
-          <p className="text-neutral-400 mb-6">
-            Could not load the lamp product. Please try again later.
-          </p>
+          <p className="text-neutral-400 mb-6">Could not load the lamp product. Please try again later.</p>
           <Link
             href="/shop"
             className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
@@ -99,7 +86,7 @@ async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug
   const shopDiscountSettings = await getShopDiscountSettings()
 
   return (
-    <ExperienceV2ClientLoader
+    <ExperienceV3ClientLoader
       lamp={lamp}
       productsSeason1={productsSeason1}
       productsSeason2={productsSeason2}
@@ -108,20 +95,5 @@ async function ExperienceV2DataLoader({ initialArtistSlug }: { initialArtistSlug
       initialArtistSlug={initialArtistSlug}
       shopDiscountSettings={shopDiscountSettings}
     />
-  )
-}
-
-type ExperiencePageProps = {
-  searchParams: Promise<{ artist?: string; vendor?: string }>
-}
-
-export default async function ExperienceV2Page({ searchParams }: ExperiencePageProps) {
-  const resolved = await searchParams
-  const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
-
-  return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <ExperienceV2DataLoader initialArtistSlug={initialArtistSlug} />
-    </Suspense>
   )
 }

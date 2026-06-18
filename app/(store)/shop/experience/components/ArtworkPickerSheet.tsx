@@ -94,7 +94,6 @@ function MergeConfetti({ active }: { active: boolean }) {
 interface ArtworkCardV2Props {
   product: ShopifyProduct
   isSelected: boolean
-  selectionNumber: number | null
   onSelect: (product: ShopifyProduct) => void
   onQuickAdd?: (product: ShopifyProduct) => void
   priorityLoad?: boolean
@@ -110,7 +109,7 @@ interface ArtworkCardV2Props {
   suppressSelectionRing?: boolean
   /** Street ladder: price row in footer; title lives in image-bottom chip; edition chip above title when non-ladder. */
   streetPricing?: StreetEditionStatesRow | null
-  /** Journey: subtle tilt + title-chip shine + plus pulse (not full-card) */
+  /** Journey: subtle tilt + title-chip shine (not full-card) */
   journeyPulseChooseArtworks?: boolean
   /** Stagger animations across virtual rows */
   journeyStaggerIndex?: number
@@ -119,7 +118,6 @@ interface ArtworkCardV2Props {
 function ArtworkCardV2({
   product,
   isSelected,
-  selectionNumber,
   onSelect,
   onQuickAdd,
   priorityLoad = false,
@@ -242,26 +240,6 @@ function ArtworkCardV2({
           </span>
         )}
 
-        <AnimatePresence initial={false}>
-          {isSelected && selectionNumber !== null && (
-            <motion.div
-              key="selection-badge"
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
-              className={cn(
-                'absolute top-1.5 z-10 w-3.5 h-3.5 rounded-full flex items-center justify-center pointer-events-none',
-                'border border-white/35 bg-blue-600/75 backdrop-blur-md backdrop-saturate-150',
-                'shadow-md shadow-black/25',
-                (isNewDrop || isEarlyAccess) ? 'right-1.5' : 'left-1.5'
-              )}
-            >
-              <span className="text-[8px] font-bold leading-none text-white tabular-nums">{selectionNumber}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div
           className={cn(
             'absolute inset-x-0 bottom-0 z-[9] pointer-events-none flex flex-col items-center justify-end gap-0.5 px-1.5 pb-1',
@@ -299,22 +277,6 @@ function ArtworkCardV2({
               >
                 {product.title}
               </span>
-              {!isSelected && (
-                <span
-                  className={cn(journeyPickerHint && 'experience-journey-artwork-plus-pulse')}
-                  style={
-                    journeyPickerHint
-                      ? ({ '--journey-plus-delay': `${journeyStaggerIndex * 0.5}s` } as CSSProperties)
-                      : undefined
-                  }
-                >
-                  <Plus
-                    className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
-                    strokeWidth={2.5}
-                    aria-hidden
-                  />
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -604,14 +566,6 @@ export function ArtworkPickerSheet({
     return () => observer.disconnect()
   }, [isOpen, onLoadMore, hasMore])
 
-  const getSelectionNumber = useCallback(
-    (productId: string): number | null => {
-      const idx = selectedArtworks.findIndex((p) => p.id === productId)
-      return idx >= 0 ? idx + 1 : null
-    },
-    [selectedArtworks]
-  )
-
   useEffect(() => {
     if (presentation === 'pushPanel' && isDesktopRail) return
     if (isOpen) {
@@ -838,7 +792,6 @@ export function ArtworkPickerSheet({
                                 key={product1.id}
                                 product={product1}
                                 isSelected={p1Selected}
-                                selectionNumber={getSelectionNumber(product1.id)}
                                 onSelect={cardSelectHandler}
                                 onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
@@ -878,7 +831,6 @@ export function ArtworkPickerSheet({
                                 key={product2.id}
                                 product={product2}
                                 isSelected={p2Selected}
-                                selectionNumber={getSelectionNumber(product2.id)}
                                 onSelect={cardSelectHandler}
                                 onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
@@ -906,7 +858,6 @@ export function ArtworkPickerSheet({
                                 key={product1.id}
                                 product={product1}
                                 isSelected={!!p1Selected}
-                                selectionNumber={getSelectionNumber(product1.id)}
                                 onSelect={cardSelectHandler}
                                 onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}

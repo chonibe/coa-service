@@ -30,6 +30,8 @@ import {
   EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
   resolveExperienceNextAction,
 } from '@/lib/shop/experience-journey-next-action'
+import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
+import { EditionHoldCartSummary, EditionHoldIndicator } from './EditionHoldIndicator'
 
 /** Compact ± controls — globals.css gives all buttons min 44×44; qty-stepper-compact opts out */
 const qtyStepperBtnClass =
@@ -86,6 +88,11 @@ interface OrderBarProps {
   featuredBundleCheckout?: FeaturedBundleCheckoutPrices | null
   /** Which `selectedArtworks` indices use bundle unit prices (extras use natural ladder/lock prices). */
   bundlePricedArtworkIndices?: Set<number> | null
+  /** When true, hide “+ Add lamp” until at least one artwork is in the cart (experience v3). */
+  requireArtworkForLamp?: boolean
+  /** Active 24h edition holds for cart artworks (numeric Shopify product id). */
+  cartEditionHolds?: Record<string, CartEditionHold>
+  cartEditionHoldSoonestExpiry?: string | null
 }
 
 export interface OrderBarRef {
@@ -148,6 +155,9 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   streetPricingSeasonFallback,
   featuredBundleCheckout,
   bundlePricedArtworkIndices,
+  requireArtworkForLamp = false,
+  cartEditionHolds,
+  cartEditionHoldSoonestExpiry,
 }, ref) {
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -245,6 +255,15 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       : 0
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
+  const activeCartHoldCount = React.useMemo(() => {
+    if (!cartEditionHolds) return 0
+    const seen = new Set<string>()
+    for (const art of selectedArtworks) {
+      const key = normalizeExperienceProductKey(art.id)
+      if (key && cartEditionHolds[key]) seen.add(key)
+    }
+    return seen.size
+  }, [cartEditionHolds, selectedArtworks])
 
   const buildLineItems = useCallback(() => {
     const items: Array<{
@@ -499,6 +518,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           Your Street Lamp + artworks
         </p>
       </div>
+      {activeCartHoldCount > 1 ? (
+        <EditionHoldCartSummary
+          holdCount={activeCartHoldCount}
+          soonestExpiry={cartEditionHoldSoonestExpiry ?? null}
+          holds={Object.values(cartEditionHolds ?? {})}
+        />
+      ) : null}
       {/* Compact cart lines */}
       <div className="pt-2 space-y-2 max-h-[35vh] overflow-y-auto scrollbar-prominent">
         {lampQuantity > 0 && (
@@ -564,9 +590,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         )}
         {artworkRuns.map(({ product: art, quantity, runStartIndex }) => {
           const collected = isProductCollected(art.id, collectedProductIds)
+          const hold = cartEditionHolds?.[normalizeExperienceProductKey(art.id)]
           const lineSubtotal = artworkUnitUsd(art, runStartIndex) * quantity
           return (
-          <div key={`${art.id}-${runStartIndex}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
+          <div key={`${art.id}-${runStartIndex}`} className="space-y-0.5">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
               <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
                 {art.featuredImage?.url ? (
@@ -621,8 +649,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
               ${formatPriceCompact(lineSubtotal)}
             </span>
           </div>
+          {hold ? (
+            <div className="pl-9">
+              <EditionHoldIndicator hold={hold} variant="line" />
+            </div>
+          ) : null}
+          </div>
         )})}
-        {lampQuantity === 0 && (
+        {lampQuantity === 0 && (!requireArtworkForLamp || selectedArtworks.length > 0) && (
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}

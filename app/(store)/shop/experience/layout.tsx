@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { ExperienceOrderProvider } from '../experience-v2/ExperienceOrderContext'
 import { ExperienceThemeProvider } from '../experience-v2/ExperienceThemeContext'
 import { ExperienceAuthProvider } from '../experience-v2/ExperienceAuthContext'
-import { ExperienceSlideoutMenu } from '../experience-v2/ExperienceSlideoutMenu'
+
+const ExperienceSlideoutMenu = dynamic(
+  () => import('../experience-v2/ExperienceSlideoutMenu').then((m) => ({ default: m.ExperienceSlideoutMenu }))
+)
 
 export const viewport = {
   width: 'device-width',
@@ -11,20 +15,15 @@ export const viewport = {
 
 export default function ExperienceLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <link rel="preload" href="/internal.webp" as="image" crossOrigin="anonymous" />
-      <ExperienceOrderProvider>
-        <ExperienceThemeProvider>
-          <ExperienceAuthProvider>
-            <div className="fixed inset-0 z-[60] bg-white dark:bg-[#171515] overflow-hidden flex flex-col">
-              <ExperienceSlideoutMenu />
-              <div className="flex-1 min-h-0 relative overflow-hidden">
-                {children}
-              </div>
-            </div>
-          </ExperienceAuthProvider>
-        </ExperienceThemeProvider>
-      </ExperienceOrderProvider>
-    </>
+    <ExperienceOrderProvider>
+      <ExperienceThemeProvider>
+        <ExperienceAuthProvider>
+          <div className="fixed inset-0 z-[60] h-dvh max-h-dvh bg-white dark:bg-[#171515] overflow-hidden flex flex-col">
+            <ExperienceSlideoutMenu />
+            <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">{children}</div>
+          </div>
+        </ExperienceAuthProvider>
+      </ExperienceThemeProvider>
+    </ExperienceOrderProvider>
   )
 }

@@ -1,10 +1,19 @@
 # Shop Experience Page
 
+## Canonical URL (2026-06)
+
+| Route | Role |
+|-------|------|
+| **`/shop/experience`** | **Production default** — Experience V3 shell ([`ExperienceV3Client`](../../../app/(store)/shop/experience-v3/components/ExperienceV3Client.tsx)) |
+| **`/experience`** | Short URL; middleware 308 → `/shop/experience` |
+| **`/shop/experience-v3`** | Alias redirect → `/shop/experience` (bookmarks) |
+| **`/shop/experience-v2`** | Legacy V2 shell; unchanged for onboarding/internal use |
+
+**Implementation (canonical)**: [`app/(store)/shop/experience/page.tsx`](../../../app/(store)/shop/experience/page.tsx)
+
 ## Overview
 
-The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. It includes an intro quiz, a 3D Spline preview, an artwork strip, filters, and checkout. There is **no** top **collection carousel strip** in the main shells — [`ArtworkCarouselBar`](../../../app/(store)/shop/experience/components/ArtworkCarouselBar.tsx) remains in the repo for reference but is **not mounted** by [`ExperienceV2Client`](../../../app/(store)/shop/experience/components/ExperienceV2Client.tsx). A sticky bottom bar shows **only** **“Choose your first artwork”** when the collection is empty (no checkout on that bar — use the header cart). Once art is added, the bar shows **cart thumbnails** (only horizontal strip), **Checkout** (same OrderBar as the header cart), and a **purple/violet** add FAB; **tapping a thumbnail** selects that item on the **Spline** preview at **all** breakpoints. See [`ExperienceCheckoutStickyBar`](../../../app/(store)/shop/experience-v2/components/ExperienceCheckoutStickyBar.tsx). **Featured artist bundle ($159)** (spotlight + two prints, allocated Stripe lines) is documented in [Experience V2 README](../experience-v2/README.md#featured-artist-bundle-159) and implemented in [`ExperienceV2Client`](../../../app/(store)/shop/experience/components/ExperienceV2Client.tsx) (this route) and the v2 shell.
-
-**Implementation**: [`app/shop/experience/`](../../../app/shop/experience/)
+The Experience page (`/shop/experience`) lets users customize a Street Lamp with artwork. The live shell is **Experience V3** (scroll-snap hero, artist profile, product panel). Legacy V2 reel/Spline code remains under [`app/(store)/shop/experience/components/`](../../../app/(store)/shop/experience/components/) and [`experience-v2/`](../../../app/(store)/shop/experience-v2/) for reference and the `/shop/experience-v2` route.
 
 ## Rotation And Selection Reference
 

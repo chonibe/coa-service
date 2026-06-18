@@ -283,7 +283,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`/shop/experience-v2${rest}${search}`, request.url), 308)
   }
 
-  // /experience and /experience/* → /shop/experience (main experience)
+  // /experience and /experience/* → /shop/experience (canonical Experience V3)
   if (pathname === '/experience' || pathname === '/experience/' || pathname.startsWith('/experience/')) {
     const rest = pathname === '/experience' || pathname === '/experience/' ? '' : pathname.slice('/experience'.length)
     const dest = new URL(`/shop/experience${rest}${search}`, request.url)

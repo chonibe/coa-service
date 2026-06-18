@@ -256,6 +256,11 @@ const nextConfig = {
         destination: "/shop/faq",
         permanent: true,
       },
+      {
+        source: "/shop/experience-v3",
+        destination: "/shop/experience",
+        permanent: true,
+      },
     ]
   },
   // Webpack configuration for web components support

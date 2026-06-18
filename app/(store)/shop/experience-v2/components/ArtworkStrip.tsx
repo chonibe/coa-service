@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo, type CSSProperties }
 import Image from 'next/image'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, Heart, Info, Plus } from 'lucide-react'
+import { Check, Eye, Heart, Info } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useWishlist } from '@/lib/shop/WishlistContext'
@@ -505,22 +505,6 @@ function ArtworkCard({
               >
                 {product.title}
               </span>
-              {!isInCart && !isSoldOut && (
-                <span
-                  className={cn(journeyStripHint && 'experience-journey-artwork-plus-pulse')}
-                  style={
-                    journeyStripHint
-                      ? ({ '--journey-plus-delay': `${globalIdx * 0.45}s` } as CSSProperties)
-                      : undefined
-                  }
-                >
-                  <Plus
-                    className="h-3.5 w-3.5 shrink-0 text-white opacity-95"
-                    strokeWidth={2.5}
-                    aria-hidden
-                  />
-                </span>
-              )}
             </div>
           </div>
         </div>

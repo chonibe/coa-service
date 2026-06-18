@@ -29,6 +29,7 @@ export function EditionWatchControl({
   totalEditions,
   artistName,
   compact,
+  inline,
   chipOnly,
   className,
   variant = 'default',
@@ -38,6 +39,8 @@ export function EditionWatchControl({
   totalEditions: number
   artistName: string
   compact?: boolean
+  /** When true, sit inline in a text row (no full-width centering). */
+  inline?: boolean
   chipOnly?: boolean
   className?: string
   /** `well` — pill CTA + stronger dark surface (e.g. {@link ScarcityWatchRegion}) */
@@ -203,7 +206,13 @@ export function EditionWatchControl({
   if (chipOnly || !stage) return null
 
   return (
-    <div className={cn('w-full flex justify-center', compact && 'pt-0.5', className)}>
+    <div
+      className={cn(
+        inline ? 'inline-flex shrink-0' : 'w-full flex justify-center',
+        compact && !inline && 'pt-0.5',
+        className
+      )}
+    >
       <button
         type="button"
         disabled={busy || authLoading}

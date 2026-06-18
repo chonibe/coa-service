@@ -1,3 +1,5 @@
+import { TRUST_STAT_PLACEHOLDERS } from '@/lib/shop/trust-stat-placeholders'
+
 export type LandingStat = {
   label: string
   target?: number
@@ -88,10 +90,10 @@ export const homeV2LandingContent = {
     videoPosterUrl:
       'https://cdn.shopify.com/s/files/1/0858/7828/6798/files/street-collector-hero-poster.jpg',
     stats: [
-      { label: 'Collectors', target: 3000, suffix: '+' },
-      { label: 'Artists', target: 100, suffix: '+' },
-      { label: 'Rated', fixedText: '★ 5.0' },
-      { label: 'Countries', target: 40, suffix: '+' },
+      { label: 'Collectors', target: TRUST_STAT_PLACEHOLDERS.collectors, suffix: '+' },
+      { label: 'Artists', target: TRUST_STAT_PLACEHOLDERS.artists, suffix: '+' },
+      { label: 'Rated', fixedText: TRUST_STAT_PLACEHOLDERS.ratingText },
+      { label: 'Countries', target: TRUST_STAT_PLACEHOLDERS.countries, suffix: '+' },
     ] satisfies LandingStat[],
   },
 

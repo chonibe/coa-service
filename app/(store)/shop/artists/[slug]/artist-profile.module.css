@@ -668,6 +668,13 @@
   color: var(--muted);
 }
 
+.instagramStatLoading {
+  align-self: center;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
 .bioCardText strong {
   color: var(--white);
   font-weight: 400;
@@ -1640,5 +1647,101 @@
   .embedded .heroCanvasCol {
     min-height: 320px;
     max-height: none;
+  }
+}
+
+.embedded .overviewSection {
+  padding: 20px 0 28px;
+}
+
+.embedded .overviewGrid {
+  min-height: 0;
+  grid-template-columns: 1fr;
+}
+
+.embedded .overviewStory,
+.embedded .overviewProcess {
+  padding: 20px 16px;
+  border-right: none;
+}
+
+.embedded .overviewStory {
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .embedded .overviewGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .embedded .overviewStory {
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+  }
+
+  .embedded .overviewStory,
+  .embedded .overviewProcess {
+    padding: 24px 20px;
+  }
+}
+
+.embedded .faqSection {
+  padding: 24px 16px 32px;
+}
+
+.embedded .profileLinkSection {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.embedded .profileLinkCard {
+  padding: 28px 0 32px;
+}
+
+.embedded .instagramGrid {
+  margin-top: 24px;
+}
+
+.embedded .instagramCta {
+  margin-top: 20px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.embedded .tabsBar {
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+}
+
+.embedded .tabBtn {
+  padding: 14px 20px 14px 0;
+  font-size: 9px;
+}
+
+.embedded .exhibitionsSection {
+  padding: 20px 0 0;
+}
+
+.embedded .exhibitionsInner {
+  padding: 0 16px 24px;
+}
+
+.embedded .pressSection {
+  padding: 24px 16px;
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .embedded .tabsBar {
+    padding: 0 20px;
+  }
+
+  .embedded .exhibitionsInner {
+    padding: 0 20px 28px;
+  }
+
+  .embedded .pressSection {
+    padding: 28px 20px;
   }
 }

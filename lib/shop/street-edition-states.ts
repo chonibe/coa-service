@@ -10,6 +10,8 @@ export const EDITION_STATES_MAX_IDS_PER_REQUEST = 120
  * Shape of each item from `GET /api/shop/edition-states` used by the experience picker and cart pricing.
  */
 export type StreetEditionStatesRow = {
+  /** Sold count from Supabase `products.edition_counter` when loaded via edition-states API. */
+  editionsSold?: number
   /** Ladder stage for badges and UI (added for artist-led storefront). */
   stageKey: StreetPricingStageKey
   label: string

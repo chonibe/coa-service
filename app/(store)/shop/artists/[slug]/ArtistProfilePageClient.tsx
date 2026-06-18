@@ -27,6 +27,17 @@ import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-
 
 type TabId = 'overview' | 'works' | 'exhibitions'
 
+const FULL_PROFILE_TABS: ReadonlyArray<{ id: TabId; label: string }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'works', label: 'Works' },
+  { id: 'exhibitions', label: 'Exhibitions & Press' },
+]
+
+const EMBEDDED_PROFILE_TABS: ReadonlyArray<{ id: TabId; label: string }> = [
+  { id: 'overview', label: 'Bio' },
+  { id: 'exhibitions', label: 'Exhibitions & Articles' },
+]
+
 type WorkFilter = 'all' | 'available' | 'sold' | string
 
 type ListArtist = {
@@ -94,12 +105,38 @@ type Props = {
   embedded?: boolean
 }
 
-function formatCompactCount(value: number | undefined): string | null {
-  if (!Number.isFinite(value)) return null
-  const n = value as number
+function coerceStatCount(value: number | string | undefined | null): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number.parseInt(value.replace(/[^\d]/g, ''), 10)
+    return Number.isFinite(n) ? n : undefined
+  }
+  return undefined
+}
+
+function formatCompactCount(value: number | string | undefined | null): string | null {
+  const n = coerceStatCount(value)
+  if (n === undefined) return null
   if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K`
   return `${n}`
+}
+
+function hasInstagramStats(profile?: InstagramProfileSummary): boolean {
+  return (
+    coerceStatCount(profile?.followersCount) !== undefined &&
+    coerceStatCount(profile?.followsCount) !== undefined &&
+    coerceStatCount(profile?.mediaCount) !== undefined
+  )
+}
+
+function normalizeInstagramHandle(value: string | undefined | null): string | null {
+  const pick = value?.trim()
+  if (!pick) return null
+  const match = pick.match(/(?:instagram\.com\/|instagr\.am\/|@)([a-zA-Z0-9._]+)/i)
+  const h = match ? match[1] : pick.startsWith('@') ? pick.slice(1) : pick
+  const clean = h.split('/')[0]?.split('?')[0]?.trim()
+  return clean || null
 }
 
 export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
@@ -117,40 +154,68 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
   const [instagramProfile, setInstagramProfile] = React.useState<InstagramProfileSummary | undefined>(
     profile.instagramProfile
   )
-  const instagramHandle = instagramProfile?.handle || artist.instagram || null
-  const instagramProfileUrl = artist.instagramUrl || (instagramHandle ? `https://www.instagram.com/${instagramHandle}/` : null)
+  const [instagramProfileLoading, setInstagramProfileLoading] = React.useState(false)
+  const seedInstagramProfile = profile.instagramProfile
+
+  React.useEffect(() => {
+    setInstagramProfile(profile.instagramProfile)
+  }, [artist.slug, profile.instagramProfile])
+
+  const instagramHandle =
+    normalizeInstagramHandle(instagramProfile?.handle) ||
+    normalizeInstagramHandle(seedInstagramProfile?.handle) ||
+    normalizeInstagramHandle(artist.instagram)
+  const instagramProfileUrl =
+    artist.instagramUrl?.trim() ||
+    instagramProfile?.url?.trim() ||
+    seedInstagramProfile?.url?.trim() ||
+    (instagramHandle ? `https://www.instagram.com/${instagramHandle}/` : null)
+
+  const mergedInstagramProfile = React.useMemo((): InstagramProfileSummary | undefined => {
+    if (!instagramHandle && !seedInstagramProfile && !instagramProfile) return undefined
+    return {
+      handle: instagramHandle || instagramProfile?.handle || seedInstagramProfile?.handle || '',
+      url: instagramProfileUrl || instagramProfile?.url || seedInstagramProfile?.url || '',
+      displayName: instagramProfile?.displayName || seedInstagramProfile?.displayName,
+      biography: instagramProfile?.biography || seedInstagramProfile?.biography,
+      avatarUrl: instagramProfile?.avatarUrl || seedInstagramProfile?.avatarUrl,
+      website: instagramProfile?.website || seedInstagramProfile?.website,
+      followersCount: instagramProfile?.followersCount ?? seedInstagramProfile?.followersCount,
+      followsCount: instagramProfile?.followsCount ?? seedInstagramProfile?.followsCount,
+      mediaCount: instagramProfile?.mediaCount ?? seedInstagramProfile?.mediaCount,
+    }
+  }, [instagramHandle, instagramProfile, instagramProfileUrl, seedInstagramProfile])
 
   React.useEffect(() => {
     const handle = instagramHandle?.trim()
     if (!handle) return
-    if (
-      instagramProfile?.followersCount &&
-      instagramProfile?.followsCount &&
-      instagramProfile?.mediaCount &&
-      instagramProfile?.avatarUrl
-    ) {
-      return
-    }
+    if (hasInstagramStats(mergedInstagramProfile)) return
     let cancelled = false
+    setInstagramProfileLoading(true)
     fetch(`/api/shop/instagram-profile?handle=${encodeURIComponent(handle)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { profile?: InstagramProfileSummary } | null) => {
         if (cancelled || !data?.profile) return
+        const fetched = data.profile
         setInstagramProfile((prev) => ({
-          ...(prev || {}),
-          ...data.profile,
+          ...prev,
+          ...fetched,
+          handle: fetched.handle || prev?.handle || handle,
+          url: fetched.url || prev?.url || `https://www.instagram.com/${handle}/`,
         }))
       })
       .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setInstagramProfileLoading(false)
+      })
     return () => {
       cancelled = true
     }
   }, [
     instagramHandle,
-    instagramProfile?.avatarUrl,
-    instagramProfile?.followersCount,
-    instagramProfile?.followsCount,
-    instagramProfile?.mediaCount,
+    mergedInstagramProfile?.followersCount,
+    mergedInstagramProfile?.followsCount,
+    mergedInstagramProfile?.mediaCount,
   ])
 
   React.useEffect(() => {
@@ -237,10 +302,41 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
     return [...map.entries()].sort((a, b) => b[0] - a[0])
   }, [profile.exhibitions])
 
+  const paragraphs = bioParagraphs(artist.bio)
+  const hasProcessGallery = (profile.processGallery?.length ?? 0) > 0
+  const hasExhibitions = exhibitionsByYear.length > 0
+  const hasPress = (profile.press?.length ?? 0) > 0
+  const faqPairs = buildArtistFaqPairs(artist)
+  const instagramShowcase = profile.instagramShowcase ?? []
+  const hasInstagramShowcase = instagramShowcase.length > 0
+  const showInstagramProfileCard = Boolean(
+    instagramProfileUrl ||
+      instagramHandle ||
+      mergedInstagramProfile?.displayName ||
+      mergedInstagramProfile?.biography ||
+      mergedInstagramProfile?.avatarUrl ||
+      hasInstagramStats(mergedInstagramProfile)
+  )
+  const showInstagramSection = showInstagramProfileCard || hasInstagramShowcase
+
   const heroImage = artist.image
   const eyebrow = [profile.location, profile.activeSince ? `Active since ${profile.activeSince}` : null]
     .filter(Boolean)
-    .join(' Â· ')
+    .join(' · ')
+
+  const profileTabs = React.useMemo(() => {
+    const base = embedded ? EMBEDDED_PROFILE_TABS : FULL_PROFILE_TABS
+    return base.filter((t) => {
+      if (t.id === 'exhibitions') return hasExhibitions || hasPress
+      return true
+    })
+  }, [embedded, hasExhibitions, hasPress])
+
+  React.useEffect(() => {
+    if (tab === 'exhibitions' && !hasExhibitions && !hasPress) {
+      setTab('overview')
+    }
+  }, [tab, hasExhibitions, hasPress])
 
   const onTab = (id: TabId) => {
     setTab(id)
@@ -264,10 +360,8 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
     trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'artist_profile' })
   }
 
-  const paragraphs = bioParagraphs(artist.bio)
-
   return (
-    <div className={cn(styles.root, embedded && styles.rootEmbedded)}>
+    <div className={cn(styles.root, embedded && styles.rootEmbedded, embedded && styles.embedded)}>
       <div className={styles.inner}>
         {!embedded ? <CollectorStoreTopChrome /> : null}
 
@@ -334,13 +428,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
         </section>
 
         <div className={styles.tabsBar} id="artist-tabs" role="tablist" aria-label="Artist sections">
-          {(
-            [
-              ['overview', 'Overview'],
-              ['works', 'Works'],
-              ['exhibitions', 'Exhibitions & Press'],
-            ] as const
-          ).map(([id, label]) => (
+          {profileTabs.map(({ id, label }) => (
             <button
               key={id}
               type="button"
@@ -354,25 +442,22 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
           ))}
         </div>
 
-        <div className={cn(styles.tabPanel, tab === 'overview' && styles.tabPanelActive)} role="tabpanel" hidden={tab !== 'overview'}>
+        <div
+          className={cn(styles.tabPanel, tab === 'overview' && styles.tabPanelActive)}
+          role="tabpanel"
+          hidden={tab !== 'overview'}
+        >
           <div className={styles.overviewSection}>
             <div className={styles.overviewGrid}>
               <div className={styles.overviewStory}>
                 <div className={styles.storyEyebrow}>The Story</div>
-                <h2 className={styles.storyH2}>
-                  The work behind <em>the name.</em>
-                </h2>
-                {paragraphs.length ? (
-                  paragraphs.map((p, idx) => (
-                    <p key={idx} className={styles.storyBody}>
-                      {p}
-                    </p>
-                  ))
-                ) : (
-                  <p className={styles.storyBody}>
-                    We&apos;re still building this profile. Check back soon for a fuller artist biography and studio context.
-                  </p>
-                )}
+                {paragraphs.length
+                  ? paragraphs.map((p, idx) => (
+                      <p key={idx} className={styles.storyBody}>
+                        {p}
+                      </p>
+                    ))
+                  : null}
                 {profile.pullquote ? (() => {
                   const parsed = parsePullQuote(profile.pullquote)
                   if (!parsed) return null
@@ -388,7 +473,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                 {profile.impactCallout ? (
                   <div className={styles.bioCard}>
                     <div className={styles.bioCardIcon} aria-hidden>
-                      â†’
+                      →
                     </div>
                     <div className={styles.bioCardText}>
                       {profile.impactCallout.split('\n').map((line, li) => (
@@ -400,11 +485,12 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   </div>
                 ) : null}
               </div>
+              {hasProcessGallery || profile.exclusiveCallout ? (
               <div className={styles.overviewProcess}>
                 <div className={styles.processLabel}>Process</div>
-                {profile.processGallery && profile.processGallery.length > 0 ? (
+                {hasProcessGallery ? (
                   <div className={styles.processGrid}>
-                    {profile.processGallery.slice(0, 4).map((item, i) => {
+                    {profile.processGallery!.slice(0, 4).map((item, i) => {
                       const igEmbed = getInstagramEmbedSrc(item.url)
                       return (
                         <div key={`${item.url}-${i}`} className={styles.processImg}>
@@ -427,15 +513,11 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                       )
                     })}
                   </div>
-                ) : (
-                  <p className={styles.storyBody}>
-                    Studio shots, work in progress, and detail images will appear here as this profile develops.
-                  </p>
-                )}
+                ) : null}
                 {profile.exclusiveCallout ? (
                   <div className={styles.bioCard} style={{ marginTop: 'auto' }}>
                     <div className={styles.bioCardIcon} style={{ fontSize: 14 }} aria-hidden>
-                      âœ¦
+                      ✦
                     </div>
                     <div className={styles.bioCardText}>
                       {profile.exclusiveCallout.split('\n').map((line, li) => (
@@ -447,8 +529,9 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   </div>
                 ) : null}
               </div>
+              ) : null}
             </div>
-            {instagramProfileUrl ? (
+            {showInstagramSection ? (
               <section className={styles.profileLinkSection} aria-labelledby="artist-instagram-heading">
                 <div className={styles.profileLinkCard}>
                   <div className={styles.profileLinkHeader}>
@@ -457,97 +540,187 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                       The artist&apos;s <em>profile.</em>
                     </h2>
                   </div>
-                  <div
-                    className={styles.instagramProfileCard}
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => {
-                      if (instagramProfileUrl) window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
-                    }}
-                    onKeyDown={(event) => {
-                      if (!instagramProfileUrl) return
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
-                      }
-                    }}
-                  >
-                    <a
-                      href={instagramProfileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.instagramProfileAvatar}
-                      aria-label={artist.instagram ? `Open @${artist.instagram} on Instagram` : `Open ${artist.name} on Instagram`}
-                      onClick={(event) => event.stopPropagation()}
+                  {showInstagramProfileCard ? (
+                    <div
+                      className={styles.instagramProfileCard}
+                      role={instagramProfileUrl ? 'link' : undefined}
+                      tabIndex={instagramProfileUrl ? 0 : undefined}
+                      onClick={() => {
+                        if (instagramProfileUrl) window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
+                      }}
+                      onKeyDown={(event) => {
+                        if (!instagramProfileUrl) return
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
+                        }
+                      }}
                     >
-                      {instagramProfile?.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getProxiedImageUrl(instagramProfile.avatarUrl)} alt={artist.name} loading="lazy" />
-                      ) : heroImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getProxiedImageUrl(heroImage)} alt={artist.name} loading="lazy" />
-                      ) : (
-                        <span>{(artist.name[0] || '?').toUpperCase()}</span>
-                      )}
-                    </a>
-                    <div className={styles.instagramProfileMain}>
-                      <div className={styles.instagramProfileTop}>
-                        <div>
-                          <div className={styles.instagramProfileName}>
-                            {instagramProfile?.displayName || artist.name}
-                          </div>
-                          {instagramHandle ? (
-                            <div className={styles.instagramProfileHandle}>@{instagramHandle}</div>
-                          ) : null}
-                        </div>
+                      {instagramProfileUrl ? (
                         <a
                           href={instagramProfileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={styles.btnIg}
+                          className={styles.instagramProfileAvatar}
+                          aria-label={
+                            instagramHandle
+                              ? `Open @${instagramHandle} on Instagram`
+                              : `Open ${artist.name} on Instagram`
+                          }
                           onClick={(event) => event.stopPropagation()}
                         >
-                          Open profile
+                          {mergedInstagramProfile?.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt={artist.name} loading="lazy" />
+                          ) : heroImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getProxiedImageUrl(heroImage)} alt={artist.name} loading="lazy" />
+                          ) : (
+                            <span>{(artist.name[0] || '?').toUpperCase()}</span>
+                          )}
                         </a>
-                      </div>
-                      {instagramProfile?.biography ? (
-                        <p className={styles.storyBody}>{instagramProfile.biography}</p>
                       ) : (
-                        <p className={styles.storyBody}>
-                          Visit Instagram for recent posts, studio updates, and work that sits outside this profile.
-                        </p>
+                        <div className={styles.instagramProfileAvatar} aria-hidden>
+                          {mergedInstagramProfile?.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt="" loading="lazy" />
+                          ) : heroImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getProxiedImageUrl(heroImage)} alt="" loading="lazy" />
+                          ) : (
+                            <span>{(artist.name[0] || '?').toUpperCase()}</span>
+                          )}
+                        </div>
                       )}
-                      <div className={styles.instagramProfileStats}>
-                        {formatCompactCount(instagramProfile?.followersCount) ? (
-                          <div className={styles.instagramStat}>
-                            <strong>{formatCompactCount(instagramProfile?.followersCount)}</strong>
-                            <span>followers</span>
+                      <div className={styles.instagramProfileMain}>
+                        <div className={styles.instagramProfileTop}>
+                          <div>
+                            <div className={styles.instagramProfileName}>
+                              {mergedInstagramProfile?.displayName || artist.name}
+                            </div>
+                            {instagramHandle ? (
+                              <div className={styles.instagramProfileHandle}>@{instagramHandle}</div>
+                            ) : null}
                           </div>
+                          {instagramProfileUrl ? (
+                            <a
+                              href={instagramProfileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.btnIg}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              Open profile
+                            </a>
+                          ) : null}
+                        </div>
+                        {mergedInstagramProfile?.biography ? (
+                          <p className={styles.storyBody}>{mergedInstagramProfile.biography}</p>
                         ) : null}
-                        {formatCompactCount(instagramProfile?.followsCount) ? (
-                          <div className={styles.instagramStat}>
-                            <strong>{formatCompactCount(instagramProfile?.followsCount)}</strong>
-                            <span>following</span>
-                          </div>
-                        ) : null}
-                        {formatCompactCount(instagramProfile?.mediaCount) ? (
-                          <div className={styles.instagramStat}>
-                            <strong>{formatCompactCount(instagramProfile?.mediaCount)}</strong>
-                            <span>posts</span>
-                          </div>
-                        ) : null}
+                        <div className={styles.instagramProfileStats}>
+                          {formatCompactCount(mergedInstagramProfile?.followersCount) ? (
+                            <div className={styles.instagramStat}>
+                              <strong>{formatCompactCount(mergedInstagramProfile?.followersCount)}</strong>
+                              <span>followers</span>
+                            </div>
+                          ) : null}
+                          {formatCompactCount(mergedInstagramProfile?.followsCount) ? (
+                            <div className={styles.instagramStat}>
+                              <strong>{formatCompactCount(mergedInstagramProfile?.followsCount)}</strong>
+                              <span>following</span>
+                            </div>
+                          ) : null}
+                          {formatCompactCount(mergedInstagramProfile?.mediaCount) ? (
+                            <div className={styles.instagramStat}>
+                              <strong>{formatCompactCount(mergedInstagramProfile?.mediaCount)}</strong>
+                              <span>posts</span>
+                            </div>
+                          ) : null}
+                          {instagramProfileLoading &&
+                          instagramHandle &&
+                          !hasInstagramStats(mergedInstagramProfile) ? (
+                            <span className={styles.instagramStatLoading} aria-live="polite">
+                              Loading stats…
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
+                  {hasInstagramShowcase ? (
+                    <div className={styles.instagramGrid}>
+                      {instagramShowcase.map((cell, i) => {
+                        const tileHref = (cell.link?.trim() || instagramProfileUrl || '').trim() || '#'
+                        const igEmbed = getInstagramEmbedSrc(cell.url)
+                        if (igEmbed) {
+                          return (
+                            <div key={`${cell.url}-${i}`} className={styles.igCell}>
+                              <div className={styles.igEmbedFrame}>
+                                <iframe
+                                  src={igEmbed}
+                                  title={cell.kind ? `${cell.kind} on Instagram` : `Instagram ${i + 1}`}
+                                  loading="lazy"
+                                  allow="encrypted-media; picture-in-picture"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                />
+                              </div>
+                              <a
+                                href={tileHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.igCellTap}
+                                aria-label={cell.kind ? `Open ${cell.kind} on Instagram` : 'Open on Instagram'}
+                              />
+                              <div className={styles.igOverlay} aria-hidden>
+                                <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                              </div>
+                            </div>
+                          )
+                        }
+                        return (
+                          <a
+                            key={`${cell.url}-${i}`}
+                            href={tileHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.igCell}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getProxiedImageUrl(cell.url)}
+                              alt={cell.kind ? `${cell.kind} on Instagram` : `Photo ${i + 1}`}
+                              loading="lazy"
+                            />
+                            <div className={styles.igOverlay}>
+                              <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                            </div>
+                          </a>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+                  {instagramProfileUrl && hasInstagramShowcase ? (
+                    <div className={styles.instagramCta}>
+                      <a href={instagramProfileUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                          <rect x="2" y="2" width="20" height="20" rx="5" />
+                          <circle cx="12" cy="12" r="4" />
+                          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                        </svg>
+                        {instagramHandle ? `Follow @${instagramHandle}` : 'Follow on Instagram'}
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             ) : null}
+            {!embedded && faqPairs.length > 0 ? (
             <section className={styles.faqSection} aria-labelledby="artist-faq-heading">
               <h2 id="artist-faq-heading" className={styles.faqH2}>
                 Common questions
               </h2>
               <dl className={styles.faqList}>
-                {buildArtistFaqPairs(artist).map((f) => (
+                {faqPairs.map((f) => (
                   <div key={f.question} className={styles.faqItem}>
                     <dt className={styles.faqQ}>{f.question}</dt>
                     <dd className={styles.faqA}>{f.answer}</dd>
@@ -555,9 +728,11 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                 ))}
               </dl>
             </section>
+            ) : null}
           </div>
         </div>
 
+        {!embedded ? (
         <div className={cn(styles.tabPanel, tab === 'works' && styles.tabPanelActive)} role="tabpanel" hidden={tab !== 'works'}>
           <div className={styles.worksSection}>
             <div className={styles.worksHeader}>
@@ -657,7 +832,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                           />
                         </div>
                       ) : null}
-                      <div className={styles.workYear}>{[season].filter(Boolean).join(' Â· ')}</div>
+                      <div className={styles.workYear}>{[season].filter(Boolean).join(' · ')}</div>
                       <div className={styles.workFooter}>
                         <span className={cn(styles.workPrice, !product.availableForSale && styles.workPriceSold)}>
                           {product.availableForSale ? formatPrice(price) : 'Sold out'}
@@ -691,12 +866,12 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   const st = editionByProductId[pid]
                   const when = p.updatedAt
                     ? new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-                    : 'â€”'
+                    : '—'
                   const status =
                     st?.stageKey === 'archive' || !p.availableForSale
                       ? 'Sold out'
                       : st
-                        ? `${ladderStageShortLabel(st.stageKey)} Â· ${st.editionsSold}/${st.editionTotal ?? 'â€”'} sold`
+                        ? `${ladderStageShortLabel(st.stageKey)} · ${st.editionsSold}/${st.editionTotal ?? '—'} sold`
                         : p.availableForSale
                           ? 'Available'
                           : 'Sold out'
@@ -707,7 +882,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                     >
                       <span>
                         <span className="text-[#FFBA94]/55">{when}</span>
-                        {' Â· '}
+                        {' · '}
                         {p.title}
                       </span>
                       <span className="text-xs text-[#FFBA94]/65">{status}</span>
@@ -716,21 +891,20 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                 })}
               </ul>
             </section>
-            {filteredProducts.length === 0 ? (
-              <p className={styles.mutedNote}>Nothing matches this filterâ€”try All Works or another season.</p>
-            ) : null}
           </div>
         </div>
+        ) : null}
 
+        {(hasExhibitions || hasPress) ? (
         <div className={cn(styles.tabPanel, tab === 'exhibitions' && styles.tabPanelActive)} role="tabpanel" hidden={tab !== 'exhibitions'}>
+          {hasExhibitions ? (
           <div className={styles.exhibitionsSection}>
             <div className={cn(styles.exhibitionsInner, styles.exhibitionsTimeline)}>
               <div className={styles.storyEyebrow}>Exhibition History</div>
               <h2 className={styles.storyH2}>
                 Shows, murals, <em>and milestones.</em>
               </h2>
-              {exhibitionsByYear.length ? (
-                exhibitionsByYear.map(([year, rows]) => (
+              {exhibitionsByYear.map(([year, rows]) => (
                   <div key={year} className={styles.yearGroup}>
                     <div className={styles.yearLabel}>{year}</div>
                     {rows.map((row, i) => (
@@ -744,24 +918,19 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                       </div>
                     ))}
                   </div>
-                ))
-              ) : (
-                <p className={styles.storyBody}>
-                  We don&apos;t list shows and public projects on this profile yet. Verified history appears here
-                  when it&apos;s publishedâ€”newest year first.
-                </p>
-              )}
+                ))}
             </div>
           </div>
+          ) : null}
+          {hasPress ? (
           <div className={styles.pressSection}>
             <div className={styles.pressEyebrow}>Press &amp; Features</div>
-            {profile.press && profile.press.length > 0 ? (
               <div className={styles.pressGrid}>
-                {profile.press.map((card, i) => (
+                {profile.press!.map((card, i) => (
                   <div key={i} className={styles.pressCard}>
                     <div className={styles.pressOutlet}>
                       {card.outlet}
-                      {card.year ? ` Â· ${card.year}` : ''}
+                      {card.year ? ` · ${card.year}` : ''}
                     </div>
                     <p className={styles.pressQuote}>&ldquo;{card.quote}&rdquo;</p>
                     {card.url ? (
@@ -775,15 +944,12 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className={styles.storyBody}>
-                Verified quotes and links from press will show here once they&apos;re added. Check the artist&apos;s
-                site or search their name if you want to read coverage today.
-              </p>
-            )}
           </div>
+          ) : null}
         </div>
+        ) : null}
 
+        {!embedded ? (
         <section className={styles.relatedSection} aria-label="Related artists">
           <div className={styles.relatedHeader}>
             <div>
@@ -821,7 +987,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   <div className={styles.relatedCity}>{a.productCount} editions</div>
                   {a.bio ? (
                     <div className={styles.relatedHook}>
-                      &ldquo;{a.bio.length > 90 ? `${a.bio.slice(0, 90)}â€¦` : a.bio}&rdquo;
+                      &ldquo;{a.bio.length > 90 ? `${a.bio.slice(0, 90)}…` : a.bio}&rdquo;
                     </div>
                   ) : null}
                 </div>
@@ -829,6 +995,8 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
             ))}
           </div>
         </section>
+        ) : null}
+        {!embedded ? (
         <section className={styles.profileCta} aria-label="Call to action">
           <div className={styles.ctaEyebrow}>Own the work</div>
           <h2 className={styles.ctaTitle}>
@@ -848,6 +1016,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
             </Link>
           </div>
         </section>
+        ) : null}
       </div>
       {!embedded ? (
         <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />

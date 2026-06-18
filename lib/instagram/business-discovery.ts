@@ -276,13 +276,18 @@ export async function fetchInstagramBusinessDiscovery(
   }
 }
 
+function hasInstagramProfileStats(profile?: InstagramProfileSummary): boolean {
+  return (
+    Number.isFinite(profile?.followersCount) &&
+    Number.isFinite(profile?.followsCount) &&
+    Number.isFinite(profile?.mediaCount)
+  )
+}
+
 /** When the collection has no `instagram_showcase` metafield, try Business Discovery using the resolved @handle. */
 export async function mergeInstagramDiscoveryIfNeeded(artist: ArtistProfileApiResponse): Promise<ArtistProfileApiResponse> {
-  if (
-    artist.profile.instagramProfile &&
-    artist.profile.instagramShowcase &&
-    artist.profile.instagramShowcase.length > 0
-  ) {
+  const hasShowcase = (artist.profile.instagramShowcase?.length ?? 0) > 0
+  if (hasInstagramProfileStats(artist.profile.instagramProfile) && hasShowcase) {
     return artist
   }
   const handle = artist.instagram?.trim()
@@ -301,21 +306,18 @@ export async function mergeInstagramDiscoveryIfNeeded(artist: ArtistProfileApiRe
       mergedProfile.followsCount ||
       mergedProfile.mediaCount
   )
-  if (!items.length && !hasProfileData) return artist
+  if (!items.length && !hasProfileData && !hasInstagramProfileStats(artist.profile.instagramProfile)) return artist
   return {
     ...artist,
     profile: {
       ...artist.profile,
-      instagramShowcase:
-        artist.profile.instagramShowcase && artist.profile.instagramShowcase.length > 0
-          ? artist.profile.instagramShowcase
-          : items,
-      instagramProfile: artist.profile.instagramProfile
-        ? {
-            ...mergedProfile,
-            ...artist.profile.instagramProfile,
-          }
-        : mergedProfile,
+      instagramShowcase: hasShowcase ? artist.profile.instagramShowcase : items,
+      instagramProfile: {
+        ...(artist.profile.instagramProfile || {}),
+        ...mergedProfile,
+        handle: artist.profile.instagramProfile?.handle || mergedProfile.handle || handle,
+        url: artist.profile.instagramProfile?.url || mergedProfile.url || `https://www.instagram.com/${handle}/`,
+      },
     },
   }
 }

@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
+import { fetchInstagramPublicProfileSummary } from '@/lib/instagram/business-discovery'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -51,7 +52,9 @@ function profileUrl(handle: string): string {
   return `https://www.instagram.com/${handle}/`
 }
 
-function normalizeProfile(handle: string, user?: InstagramWebProfileResponse['data']['user']): InstagramProfileResponse {
+type InstagramWebUser = NonNullable<InstagramWebProfileResponse['data']>['user']
+
+function normalizeProfile(handle: string, user?: InstagramWebUser): InstagramProfileResponse {
   return {
     profile: {
       handle,
@@ -65,6 +68,42 @@ function normalizeProfile(handle: string, user?: InstagramWebProfileResponse['da
       mediaCount: user?.edge_owner_to_timeline_media?.count,
     },
   }
+}
+
+function hasProfileStats(profile: InstagramProfileResponse['profile']): boolean {
+  return (
+    Number.isFinite(profile.followersCount) &&
+    Number.isFinite(profile.followsCount) &&
+    Number.isFinite(profile.mediaCount)
+  )
+}
+
+function mergeProfilePayload(
+  base: InstagramProfileResponse['profile'],
+  extra?: Partial<InstagramProfileResponse['profile']>
+): InstagramProfileResponse['profile'] {
+  if (!extra) return base
+  return {
+    handle: base.handle || extra.handle || '',
+    url: base.url || extra.url || profileUrl(base.handle || extra.handle || ''),
+    displayName: base.displayName || extra.displayName,
+    biography: base.biography || extra.biography,
+    website: base.website || extra.website,
+    avatarUrl: base.avatarUrl || extra.avatarUrl,
+    followersCount: base.followersCount ?? extra.followersCount,
+    followsCount: base.followsCount ?? extra.followsCount,
+    mediaCount: base.mediaCount ?? extra.mediaCount,
+  }
+}
+
+async function enrichWithPublicSummary(
+  handle: string,
+  payload: InstagramProfileResponse
+): Promise<InstagramProfileResponse> {
+  if (hasProfileStats(payload.profile)) return payload
+  const fallback = await fetchInstagramPublicProfileSummary(handle)
+  if (!fallback) return payload
+  return { profile: mergeProfilePayload(payload.profile, fallback) }
 }
 
 async function fetchInstagramProfile(handle: string): Promise<InstagramWebProfileResponse> {
@@ -87,8 +126,9 @@ async function fetchInstagramProfile(handle: string): Promise<InstagramWebProfil
 
 async function fetchInstagramProfileViaCurl(handle: string): Promise<InstagramWebProfileResponse> {
   const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`
+  const curlBin = process.platform === 'win32' ? 'curl.exe' : 'curl'
   const { stdout } = await execFileAsync(
-    'curl.exe',
+    curlBin,
     [
       '-sS',
       url,
@@ -133,7 +173,7 @@ export async function GET(request: NextRequest) {
       console.warn('[Instagram Profile API] Falling back to curl for handle', handle, error)
     }
 
-    const payload = normalizeProfile(handle, json.data?.user)
+    const payload = await enrichWithPublicSummary(handle, normalizeProfile(handle, json.data?.user))
     profileCache.set(handle, {
       expiresAt: Date.now() + CACHE_TTL_MS,
       payload,
@@ -142,14 +182,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(payload)
   } catch (error) {
     console.error('[Instagram Profile API] Error for handle', handle, error)
-    return NextResponse.json(
-      {
+    try {
+      const payload = await enrichWithPublicSummary(handle, {
         profile: {
           handle,
-          url: `https://www.instagram.com/${handle}/`,
+          url: profileUrl(handle),
         },
-      },
-      { status: 200 }
-    )
+      })
+      profileCache.set(handle, {
+        expiresAt: Date.now() + CACHE_TTL_MS,
+        payload,
+      })
+      return NextResponse.json(payload)
+    } catch (fallbackError) {
+      console.error('[Instagram Profile API] Public summary fallback failed', handle, fallbackError)
+      return NextResponse.json(
+        {
+          profile: {
+            handle,
+            url: profileUrl(handle),
+          },
+        },
+        { status: 200 }
+      )
+    }
   }
 }

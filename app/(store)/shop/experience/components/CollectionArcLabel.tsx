@@ -11,7 +11,7 @@ type CollectionArcLabelProps = {
 }
 
 /**
- * “Collection” on a shallow upward arc, for placement above the add-to-collection + control.
+ * “The Collection” on a shallow upward arc, for placement above the add-to-collection + control.
  */
 export function CollectionArcLabel({ theme, variant = 'fab', className }: CollectionArcLabelProps) {
   const pathId = `collection-arc-${useId().replace(/:/g, '')}`
@@ -42,7 +42,7 @@ export function CollectionArcLabel({ theme, variant = 'fab', className }: Collec
         style={{ fontSize: `${fontSizePx}px` }}
       >
         <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
-          Collection
+          The Collection
         </textPath>
       </text>
     </svg>

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="dark min-h-screen w-full bg-[#0f0d0d] text-[#f0e8e8] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <StreetCollectorFAQ title="Questions?" groups={shopFaqGroups} />
     </main>
   )

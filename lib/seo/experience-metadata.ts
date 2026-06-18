@@ -14,8 +14,9 @@ export type ExperiencePageSearchParams = {
 }
 
 /**
- * Shared metadata for `/shop/experience`, `/shop/experience-v2`, and `/shop/experience-v3` so shared links show the artist
- * (not internal “Experience V2” copy) when `?artist=` / `?vendor=` is present.
+ * Shared metadata for `/shop/experience` (canonical V3), `/shop/experience-v2`, and the
+ * `/shop/experience-v3` alias (redirects to `/shop/experience`) so shared links show the artist
+ * (not internal “Experience V2” labels) when `?artist=` / `?vendor=` is present.
  */
 export async function buildShopExperienceMetadata(
   searchParams: Promise<ExperiencePageSearchParams>,

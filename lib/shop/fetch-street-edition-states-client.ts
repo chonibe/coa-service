@@ -34,6 +34,8 @@ export async function fetchStreetEditionStatesMap(
     if (!j?.items) continue
     for (const item of j.items) {
       map[item.productId] = {
+        editionsSold: item.editionsSold,
+        stageKey: item.stageKey,
         label: item.label,
         priceUsd: item.priceUsd,
         subcopy: item.subcopy,

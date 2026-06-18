@@ -14,9 +14,8 @@ import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { applyFilters, DEFAULT_FILTERS, type FilterState } from '../../experience-v2/components/FilterPanel'
 import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
-import { cn, formatPriceCompact } from '@/lib/utils'
+import { capitalizeFirstLetter, cn, formatPriceCompact } from '@/lib/utils'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
-import { resolveArtworkDetailProduct } from '@/lib/shop/resolve-artwork-detail-product'
 import {
   experienceEarlyAccessForProduct,
   experienceVendorsLooselyEqual,
@@ -41,8 +40,10 @@ import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/F
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { streetEditionRowFromStorefrontProduct } from '@/lib/shop/street-edition-from-storefront'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
-import { ScarcityBadge, ScarcityWatchRegion } from '../../experience-v2/components/ScarcityBadge'
-import { EditionWatchWithNarrative } from '../../experience-v2/components/EditionWatchWithNarrative'
+import {
+  ExperienceV3EditionStrip,
+  ExperienceV3ProductInfoStack,
+} from './ExperienceV3ProductPanel'
 import { buildStreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import {
   buildEditionMetrics,
@@ -54,10 +55,17 @@ import {
   DEFAULT_SIDE_POSITION,
   DEFAULT_SIDE_B_POSITION,
 } from '@/lib/experience-image-position'
-import { ChevronLeft, ChevronRight, Package, ZoomIn, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LayoutGrid, Package, ZoomIn, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getVendorCollectionHandle } from '@/lib/shopify/vendor-collection-handle'
+import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
 import type { ExperienceV3ArtistProfileTarget } from './ExperienceV3ArtistProfileSection'
+import { ExperienceV3ArtistWorksSlider } from './ExperienceV3ArtistWorksSlider'
+import { ExperienceV3LampBundleCard } from './ExperienceV3LampBundleCard'
+import { ExperienceV3ProductInfoTabs } from './ExperienceV3ProductInfoTabs'
+import { useCartEditionHolds } from '@/lib/shop/use-cart-edition-holds'
+import { computeReservedEditionNumber } from '@/lib/shop/compute-cart-edition-reserve'
+import { EditionHoldIndicator } from '../../experience-v2/components/EditionHoldIndicator'
 
 const Spline3DPreview = dynamic(
   () =>
@@ -149,7 +157,7 @@ export function ExperienceV3Client({
   initialArtistSlug,
 }: ExperienceV3ClientProps) {
   const searchParams = useSearchParams()
-  const { setOrderSummary, setOrderBarProps, setPickerEngaged, setHeaderTrailingContent } = useExperienceOrder()
+  const { setOrderSummary, setOrderBarProps, setPickerEngaged, setHeaderCenterContent } = useExperienceOrder()
   const { flags: discountFlags, featuredBundle: featuredBundleDiscount } = useShopDiscountSettings()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = discountFlags
   const { isAuthenticated } = useShopAuthContext()
@@ -178,8 +186,6 @@ export function ExperienceV3Client({
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
 
   const [previewProduct, setPreviewProduct] = useState<ShopifyProduct | null>(null)
-  const [previewFull, setPreviewFull] = useState<ShopifyProduct | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
   const [galleryIndex, setGalleryIndex] = useState(0)
   const [galleryZoomOpen, setGalleryZoomOpen] = useState(false)
   const [splineReady, setSplineReady] = useState(false)
@@ -210,7 +216,6 @@ export function ExperienceV3Client({
   const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
   const [pickerLayoutDesktop, setPickerLayoutDesktop] = useState(false)
   const cartCountWhenPickerOpenedRef = useRef(0)
-  const fullProductCacheRef = useRef<Map<string, ShopifyProduct>>(new Map())
 
   useEffect(() => {
     const saved = loadImagePosition()
@@ -388,56 +393,16 @@ export function ExperienceV3Client({
   }, [filteredProducts, previewProduct])
 
   useEffect(() => {
-    if (!previewProduct) {
-      setPreviewFull(null)
-      setPreviewLoading(false)
-      return
-    }
-    const handle = previewProduct.handle
-    const cached = fullProductCacheRef.current.get(handle)
-    if (cached) {
-      setPreviewFull(cached)
-      setPreviewLoading(false)
-      return
-    }
-    let cancelled = false
-    setPreviewLoading(true)
-    setPreviewFull(null)
-    fetch(`/api/shop/products/${encodeURIComponent(handle)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.product) return
-        const full = data.product as ShopifyProduct
-        fullProductCacheRef.current.set(handle, full)
-        setPreviewFull(full)
-        setPreviewLoading(false)
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [previewProduct])
+    if (!previewProduct) return
+    const variant = previewProduct.variants?.edges?.[0]?.node
+    trackViewItem({ ...storefrontProductToItem(previewProduct, variant, 1), item_list_name: 'experience-v3' })
+  }, [previewProduct?.id])
 
-  const artworkDetailProduct = useMemo(
-    () => (previewProduct ? resolveArtworkDetailProduct(previewProduct, previewFull) : null),
-    [previewProduct, previewFull]
-  )
-
-  useEffect(() => {
-    if (!artworkDetailProduct || previewLoading) return
-    const variant = artworkDetailProduct.variants?.edges?.[0]?.node
-    trackViewItem({ ...storefrontProductToItem(artworkDetailProduct, variant, 1), item_list_name: 'experience-v3' })
-  }, [artworkDetailProduct, previewLoading, previewProduct?.id])
-
-  const galleryImages = useMemo(() => collectProductImages(artworkDetailProduct), [artworkDetailProduct])
+  const galleryImages = useMemo(() => collectProductImages(previewProduct), [previewProduct])
 
   useLayoutEffect(() => {
     setGalleryIndex(galleryImages.length >= 2 ? 1 : 0)
   }, [previewProduct?.id, galleryImages.length])
-
-  const activeGalleryImage = galleryImages[galleryIndex] ?? galleryImages[0]
 
   const heroImageUrl = useMemo(() => {
     const imgs = galleryImages
@@ -453,15 +418,13 @@ export function ExperienceV3Client({
     return getShopifyImageUrl(node.url, 2400) ?? node.url
   }, [galleryImages, galleryIndex])
 
-  const heroLayoutWidth =
-    activeGalleryImage?.width && activeGalleryImage.width > 0 ? activeGalleryImage.width : 4
-  const heroLayoutHeight =
-    activeGalleryImage?.height && activeGalleryImage.height > 0 ? activeGalleryImage.height : 5
+  const heroLayoutWidth = 3
+  const heroLayoutHeight = 4
 
   const splineImage1 = useMemo(() => {
-    const u = getFirstImage(artworkDetailProduct ?? previewProduct)
+    const u = getFirstImage(previewProduct)
     return u ? (getShopifyImageUrl(u, 1600) ?? u) : null
-  }, [artworkDetailProduct, previewProduct])
+  }, [previewProduct])
 
   const splineImage2 = useMemo(() => {
     const imgs = galleryImages
@@ -552,6 +515,20 @@ export function ExperienceV3Client({
     () => cartOrder.map((id) => findProductByCartId(id)).filter(Boolean) as ShopifyProduct[],
     [cartOrder, findProductByCartId]
   )
+
+  const {
+    cartHoldsByProductId: cartEditionHolds,
+    soonestExpiry: cartEditionHoldSoonestExpiry,
+  } = useCartEditionHolds({
+    cartProductGids: cartOrder,
+    streetEditionByProductId,
+  })
+
+  const previewCartEditionHold = useMemo(() => {
+    if (!previewProduct) return null
+    const key = normalizeShopifyProductId(previewProduct.id)
+    return key ? cartEditionHolds[key] ?? null : null
+  }, [previewProduct, cartEditionHolds])
 
   const artworkPriceMaps = useMemo(
     () => ({
@@ -723,9 +700,46 @@ export function ExperienceV3Client({
     searchParams,
   ])
 
-  const handleLampQuantityChange = useCallback((n: number) => {
-    setLampQuantity(Math.max(0, n))
+  const handleLampQuantityChange = useCallback(
+    (n: number) => {
+      const next = Math.max(0, n)
+      if (next > 0 && cartOrder.length === 0) return
+      setLampQuantity(next)
+    },
+    [cartOrder.length]
+  )
+
+  useEffect(() => {
+    if (cartOrder.length === 0 && lampQuantity > 0) {
+      setLampQuantity(0)
+    }
+  }, [cartOrder.length, lampQuantity])
+
+  const addArtworkToCart = useCallback((product: ShopifyProduct) => {
+    setCartOrder((prev) => {
+      if (prev.includes(product.id)) return prev
+      const next = [...prev, product.id]
+      setLastAddedProductId(product.id)
+      const variant = product.variants?.edges?.[0]?.node
+      trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3' })
+      return next
+    })
   }, [])
+
+  const handleAddPreviewWithLamp = useCallback(() => {
+    if (!previewProduct || previewProduct.id === lamp.id || previewProduct.availableForSale === false) return
+    addArtworkToCart(previewProduct)
+    setLampQuantity((q) => (q > 0 ? q : 1))
+  }, [previewProduct, lamp.id, addArtworkToCart])
+
+  const handleAddPreviewArtworkOnly = useCallback(() => {
+    if (!previewProduct || previewProduct.id === lamp.id) return
+    if (cartOrder.includes(previewProduct.id)) {
+      setCartOrder((prev) => prev.filter((id) => id !== previewProduct.id))
+      return
+    }
+    addArtworkToCart(previewProduct)
+  }, [previewProduct, lamp.id, cartOrder, addArtworkToCart])
 
   const handleAdjustArtworkQuantity = useCallback((runStartIndex: number, delta: 1 | -1) => {
     if (delta === -1) {
@@ -853,39 +867,38 @@ export function ExperienceV3Client({
   }, [cartOrder.length])
 
   useEffect(() => {
-    setHeaderTrailingContent(
+    setHeaderCenterContent(
       <button
         type="button"
         onClick={() => (isPickerOpen ? handleClosePicker() : handleOpenPicker())}
         className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-colors outline-none',
-          'focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2',
+          'flex shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
+          'focus-visible:ring-2 focus-visible:ring-offset-2',
           theme === 'light'
-            ? 'focus-visible:ring-offset-white'
-            : 'focus-visible:ring-offset-[#0f0d0d]',
-          isPickerOpen ? 'bg-violet-700 hover:bg-violet-600' : 'bg-violet-600 hover:bg-violet-500'
+            ? [
+                'border-neutral-800/70 bg-transparent text-[#FFBA94] hover:border-neutral-900 hover:bg-neutral-900/[0.06]',
+                'focus-visible:ring-neutral-800 focus-visible:ring-offset-white',
+              ]
+            : [
+                'border-[#FFBA94]/50 bg-transparent text-[#FFBA94] hover:border-[#FFBA94]/75 hover:bg-[#FFBA94]/[0.08]',
+                'focus-visible:ring-[#FFBA94] focus-visible:ring-offset-[#0f0d0d]',
+              ],
+          isPickerOpen && (theme === 'light' ? 'ring-2 ring-neutral-700' : 'ring-2 ring-[#FFBA94]/70')
         )}
-        aria-label={isPickerOpen ? 'Close gallery picker' : 'Open gallery picker'}
+        aria-label={isPickerOpen ? 'Close the collection picker' : 'Open the collection picker'}
         aria-expanded={isPickerOpen}
       >
-        <span
-          className={cn(
-            'pointer-events-none select-none text-lg leading-none',
-            isPickerOpen ? 'opacity-100' : 'opacity-90'
-          )}
-          aria-hidden
-        >
-          ✦
-        </span>
+        <LayoutGrid className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+        The Collection
       </button>
     )
-    return () => setHeaderTrailingContent(null)
+    return () => setHeaderCenterContent(null)
   }, [
     theme,
     isPickerOpen,
     handleOpenPicker,
     handleClosePicker,
-    setHeaderTrailingContent,
+    setHeaderCenterContent,
   ])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
@@ -912,6 +925,9 @@ export function ExperienceV3Client({
       featuredBundleCheckout: featuredArtistBundlePricingActive ? featuredBundleCheckoutPayload : null,
       bundlePricedArtworkIndices:
         featuredArtistBundlePricingActive ? bundlePricing.bundlePricedArtworkIndices : undefined,
+      requireArtworkForLamp: true,
+      cartEditionHolds,
+      cartEditionHoldSoonestExpiry,
     })
   }, [
     lamp,
@@ -926,6 +942,8 @@ export function ExperienceV3Client({
     featuredArtistBundlePricingActive,
     featuredBundleCheckoutPayload,
     bundlePricing.bundlePricedArtworkIndices,
+    cartEditionHolds,
+    cartEditionHoldSoonestExpiry,
     handleLampQuantityChange,
     handleAdjustArtworkQuantity,
     setOrderBarProps,
@@ -934,14 +952,21 @@ export function ExperienceV3Client({
   const hasMore =
     activeSeason === 'season1' ? pageInfoSeason1.hasNextPage : pageInfoSeason2.hasNextPage
 
-  const filterPanelLampOffer = useMemo(
-    () => ({
-      product: lamp,
-      quantity: lampQuantity,
-      onAdd: () => handleLampQuantityChange(1),
-    }),
-    [lamp, lampQuantity, handleLampQuantityChange]
-  )
+  const previewArtworkUnitUsd = useMemo(() => {
+    if (!previewProduct || previewProduct.id === lamp.id) return 0
+    return experienceArtworkUnitUsd(previewProduct, {
+      lockedUsdByProductId: lockedArtworkPrices,
+      streetLadderUsdByProductId: streetLadderPrices,
+      seasonBandsFallback: activeSeason === 'season2' ? 2 : 1,
+    })
+  }, [previewProduct, lamp.id, lockedArtworkPrices, streetLadderPrices, activeSeason])
+
+  const previewLampUnitUsd = lampPrices[0] ?? lampPrice
+
+  const previewInCart = Boolean(previewProduct && cartOrder.includes(previewProduct.id))
+  const lampInCart = lampQuantity > 0 || cartOrder.includes(lamp.id)
+  const showLampBundleCard =
+    Boolean(previewProduct && previewProduct.id !== lamp.id && !previewInCart && !lampInCart)
 
   const streetRowForPreview = useMemo(() => {
     if (!previewProduct) return null
@@ -954,15 +979,22 @@ export function ExperienceV3Client({
 
   const addButtonLabel = useMemo(() => {
     if (!previewProduct) return 'Add to cart'
-    const inCart = cartOrder.includes(previewProduct.id)
-    const p = resolveArtworkDetailProduct(previewProduct, previewFull) ?? previewProduct
-    const variant = p.variants?.edges?.[0]?.node
-    const amt = parseFloat(variant?.price?.amount ?? p.priceRange?.minVariantPrice?.amount ?? '0')
-    if (inCart) return 'Remove from cart'
-    return `Add to cart $${formatPriceCompact(amt)}`
-  }, [previewProduct, cartOrder, previewFull])
+    if (previewInCart) return 'Remove from cart'
+    if (lampInCart && previewProduct.id !== lamp.id) return 'Add to your lamp collection'
+    return 'Add to cart'
+  }, [previewProduct, previewInCart, lampInCart, lamp.id])
 
-  const pDetail = artworkDetailProduct ?? previewProduct
+  const previewDisplayTitle = useMemo(
+    () => (previewProduct?.title ? capitalizeFirstLetter(previewProduct.title) : null),
+    [previewProduct?.title]
+  )
+
+  const heroImageAlt = useMemo(() => {
+    const raw = galleryImages[galleryIndex]?.altText ?? previewProduct?.title ?? 'Artwork'
+    return capitalizeFirstLetter(raw)
+  }, [galleryImages, galleryIndex, previewProduct?.title])
+
+  const pDetail = previewProduct
   const isEarlyAccessPreview = pDetail
     ? experienceEarlyAccessForProduct(pDetail, lamp.id, spotlightData)
     : false
@@ -999,6 +1031,11 @@ export function ExperienceV3Client({
     return null
   }, [pDetail, quantityAvailable])
 
+  const previewHoldFallbackEditionNumber = useMemo(() => {
+    if (!editionMetricsForWatch) return null
+    return computeReservedEditionNumber(editionMetricsForWatch.editionNumberSold, 0)
+  }, [editionMetricsForWatch])
+
   const editionArtistName = (previewProduct?.vendor ?? '').trim() || 'Artist'
 
   const artistProfileTarget = useMemo((): ExperienceV3ArtistProfileTarget | null => {
@@ -1033,19 +1070,38 @@ export function ExperienceV3Client({
     artistBioSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  const editionWatchNode = useMemo(() => {
-    if (!pDetail || !editionMetricsForWatch) return null
-    return (
-      <EditionWatchWithNarrative
-        product={pDetail}
-        editionNumberSold={editionMetricsForWatch.editionNumberSold}
-        totalEditions={editionMetricsForWatch.totalEditions}
-        artistName={editionArtistName}
-      />
-    )
-  }, [editionMetricsForWatch, pDetail, editionArtistName])
-
   const isSoldOut = pDetail ? !pDetail.availableForSale : false
+
+  const showEditionStrip =
+    !isSoldOut &&
+    !!previewProduct &&
+    previewProduct.id !== lamp.id &&
+    editionSizeNum != null &&
+    editionSizeNum > 0 &&
+    !!editionMetricsForWatch &&
+    !!pDetail
+
+  const editionStripProps = useMemo(() => {
+    if (!showEditionStrip || !pDetail || !editionMetricsForWatch || editionSizeNum == null) return null
+    return {
+      product: pDetail,
+      editionSize: editionSizeNum,
+      quantityAvailable,
+      streetLadder: streetLadderBlock ?? undefined,
+      editionNumberSold: editionMetricsForWatch.editionNumberSold,
+      totalEditions: editionMetricsForWatch.totalEditions,
+      artistName: editionArtistName,
+    }
+  }, [
+    showEditionStrip,
+    pDetail,
+    editionMetricsForWatch,
+    editionSizeNum,
+    quantityAvailable,
+    streetLadderBlock,
+    editionArtistName,
+  ])
+
   const autoRotatePauseUntil = useRef(0)
 
   useEffect(() => {
@@ -1097,7 +1153,7 @@ export function ExperienceV3Client({
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden',
             /* Main column scroll — distinct from nested product column overflow-y-auto */
-            'snap-y snap-mandatory overflow-y-auto overscroll-y-contain',
+            'snap-y snap-proximity overflow-y-auto overscroll-y-contain',
             /* Keep snap points clear of fixed bottom checkout UI */
             '[scroll-padding-bottom:max(8rem,env(safe-area-inset-bottom))]'
           )}
@@ -1107,7 +1163,7 @@ export function ExperienceV3Client({
           aria-labelledby="experience-v3-hero-heading"
           className={cn(
             /* grow-0: hero height stays content-driven so artist section stacks below in normal flow */
-            'flex min-h-0 w-full max-w-full shrink-0 grow-0 snap-start snap-always flex-col',
+            'flex min-h-0 w-full max-w-full shrink-0 grow-0 snap-start flex-col',
             /* Mobile: stack gallery then titles in normal flow. Desktop: side-by-side; no max-h trap (artist bio scrolls below). */
             'min-w-0 max-md:max-h-none md:flex-row md:items-stretch md:justify-center'
           )}
@@ -1148,13 +1204,13 @@ export function ExperienceV3Client({
                             setGalleryIndex(i)
                           }}
                           className={cn(
-                            'relative h-12 w-12 shrink-0 overflow-hidden rounded-lg ring-2 ring-transparent transition-[opacity,box-shadow]',
+                            'relative aspect-[3/4] w-12 shrink-0 overflow-hidden rounded-lg ring-2 ring-transparent transition-[opacity,box-shadow]',
                             selected
                               ? 'opacity-100 shadow-[0_6px_18px_rgba(255,186,148,0.42)] ring-[#FFBA94]/80'
                               : 'opacity-70'
                           )}
                         >
-                          <Image src={u} alt="" fill className="object-cover" unoptimized />
+                          <Image src={u} alt="" fill className="object-contain" unoptimized />
                         </button>
                       )
                     })}
@@ -1216,12 +1272,18 @@ export function ExperienceV3Client({
               <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col">
                 <div
                   className={cn(
-                    'relative isolate w-full max-md:overflow-hidden',
+                    'relative isolate w-full max-md:overflow-visible',
                     mediaMode === 'spline' && splineImage1 && 'min-h-[min(52vh,500px)]'
                   )}
                 >
               {mediaMode === 'gallery' && heroImageUrl && (
-                <div className="relative z-[2]">
+                <div
+                  className={cn(
+                    'relative z-[2] mx-auto aspect-[3/4] overflow-hidden rounded-lg bg-[#0a0909]',
+                    'w-[min(100%,calc(min(52dvh,560px)*3/4))]',
+                    'md:w-[min(100%,calc(min(72vh,820px)*3/4))]'
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => setGalleryZoomOpen(true)}
@@ -1232,10 +1294,9 @@ export function ExperienceV3Client({
                   </button>
                   <Image
                     src={heroImageUrl}
-                    alt={galleryImages[galleryIndex]?.altText ?? previewProduct?.title ?? 'Artwork'}
-                    width={heroLayoutWidth}
-                    height={heroLayoutHeight}
-                    className="mx-auto h-auto w-full max-h-[min(72vh,820px)] object-contain"
+                    alt={heroImageAlt}
+                    fill
+                    className="object-contain"
                     sizes="(max-width:1023px) 96vw, 720px"
                     unoptimized
                     priority={galleryImages.length > 1 ? galleryIndex === 1 : galleryIndex === 0}
@@ -1276,7 +1337,13 @@ export function ExperienceV3Client({
               )}
 
               {mediaMode === 'gallery' && !heroImageUrl && (
-                <div className="flex min-h-[200px] items-center justify-center px-6 py-12 text-center text-sm text-white/50">
+                <div
+                  className={cn(
+                    'mx-auto flex aspect-[3/4] items-center justify-center rounded-lg bg-[#0a0909] px-6 text-center text-sm text-white/50',
+                    'w-[min(100%,calc(min(52dvh,560px)*3/4))]',
+                    'md:w-[min(100%,calc(min(72vh,820px)*3/4))]'
+                  )}
+                >
                   No images for this artwork yet.
                 </div>
               )}
@@ -1327,20 +1394,17 @@ export function ExperienceV3Client({
                   </div>
                 </div>
               )}
-
-              {previewLoading && (
-                <div
-                  className={cn(
-                    'pointer-events-none absolute inset-0 flex items-center justify-center',
-                    mediaMode === 'spline' ? 'bg-[#0f0d0d]/80' : 'bg-black/20'
-                  )}
-                >
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                </div>
-              )}
                 </div>
               </div>
             </div>
+
+            {editionStripProps ? (
+              <div className="mx-auto hidden w-full max-w-[min(96vw,720px)] px-2 pb-3 md:block md:max-w-[min(100%,720px)] md:px-2">
+                <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111010]/60">
+                  <ExperienceV3EditionStrip {...editionStripProps} />
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -1356,23 +1420,47 @@ export function ExperienceV3Client({
           )}
         >
           {previewProduct && pDetail && (
-            <div className="flex flex-col gap-5 px-5 py-6 pb-28 md:gap-4 md:px-3 md:py-6 md:pb-8">
-              <header className="mx-auto max-w-xl space-y-2 pb-5 text-center md:pb-4">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-white/55">
-                  {editionArtistName}
-                </p>
+            <div className="flex flex-col gap-4 px-5 py-6 pb-28 md:gap-3 md:px-3 md:py-5 md:pb-8">
+              <header className="mx-auto max-w-xl space-y-2 pb-2 text-center md:pb-1">
                 {artistProfileTarget ? (
                   <button
                     type="button"
                     onClick={scrollToArtistBio}
-                    className="mx-auto block text-[10px] font-semibold uppercase tracking-[0.14em] text-[#FFBA94]/75 underline-offset-4 transition-colors hover:text-[#FFBA94] hover:underline"
+                    className="mx-auto block text-[11px] font-medium uppercase tracking-widest text-white/55 underline-offset-4 transition-colors hover:text-[#FFBA94]/90 hover:underline"
                   >
-                    Artist bio ↓
+                    {editionArtistName}
                   </button>
-                ) : null}
+                ) : (
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-white/55">
+                    {editionArtistName}
+                  </p>
+                )}
                 <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-[#FFBA94] lg:text-[1.65rem]">
-                  {previewProduct.title}
+                  {previewDisplayTitle}
                 </h1>
+                {previewProduct.id !== lamp.id &&
+                (streetLadderBlock?.listPricePrimary ||
+                  previewArtworkUnitUsd > 0) ? (
+                  <div className="space-y-1 pt-0.5">
+                    <p className="flex items-center justify-center gap-2">
+                      <span className="text-lg font-semibold tabular-nums text-white">
+                        {streetLadderBlock?.listPricePrimary
+                          ? streetLadderBlock.listPricePrimary
+                          : `$${formatPriceCompact(previewArtworkUnitUsd)}`}
+                      </span>
+                      {streetLadderBlock?.listPriceCompareAt ? (
+                        <span className="text-sm tabular-nums text-white/40 line-through">
+                          {streetLadderBlock.listPriceCompareAt}
+                        </span>
+                      ) : null}
+                    </p>
+                    {streetLadderBlock?.nextStepChip ? (
+                      <p className="text-[10px] font-medium tabular-nums text-white/40">
+                        {streetLadderBlock.nextStepChip}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                   {isSoldOut && (
                     <span className="rounded bg-red-950/60 px-2 py-0.5 text-[11px] font-semibold text-red-300">
@@ -1397,60 +1485,59 @@ export function ExperienceV3Client({
                 </div>
               </header>
 
-              {previewLoading && (
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
-                  Loading artwork details…
-                </div>
-              )}
-
-              {!isSoldOut &&
-                previewProduct.id !== lamp.id &&
-                editionSizeNum != null &&
-                editionSizeNum > 0 && (
-                  <div className="flex flex-col gap-1 py-1">
-                    <ScarcityBadge
-                      quantityAvailable={quantityAvailable}
-                      editionSize={editionSizeNum}
-                      availableForSale={previewProduct.availableForSale}
-                      variant="bar"
-                      productId={previewProduct.id}
-                      productImage={
-                        previewProduct.featuredImage?.url ??
-                        previewProduct.images?.edges?.[0]?.node?.url ??
-                        null
-                      }
-                      productTitle={previewProduct.title}
-                      unifiedSection
-                      className="w-full"
-                      streetLadder={streetLadderBlock ?? undefined}
-                      belowStreetLadder={streetLadderBlock ? editionWatchNode : undefined}
-                    />
-                    {!streetLadderBlock && editionWatchNode ? (
-                      <ScarcityWatchRegion className="mt-4">{editionWatchNode}</ScarcityWatchRegion>
-                    ) : null}
-                  </div>
-                )}
-
               <div className="sticky bottom-0 z-[5] -mx-5 bg-[#0f0d0d]/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md md:static md:mx-0 md:mt-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.99 }}
-                  disabled={isSoldOut}
-                  onClick={() => handleToggleSelect(previewProduct)}
-                  className={cn(
-                    'flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold shadow-lg transition-colors',
-                    isSoldOut
-                      ? 'cursor-not-allowed bg-white/10 text-white/40'
-                      : 'bg-[#FFBA94] text-neutral-900 shadow-black/30 hover:bg-[#ffc9a8]'
-                  )}
-                >
-                  {cartOrder.includes(previewProduct.id) && (
-                    <Package className="h-4 w-4 opacity-90" strokeWidth={2} />
-                  )}
-                  {addButtonLabel}
-                </motion.button>
+                {previewInCart && previewCartEditionHold ? (
+                  <div className="mb-3">
+                    <EditionHoldIndicator
+                      hold={previewCartEditionHold}
+                      inCart
+                      fallbackEditionNumber={previewHoldFallbackEditionNumber}
+                      variant="banner"
+                    />
+                  </div>
+                ) : null}
+                {showLampBundleCard ? (
+                  <ExperienceV3LampBundleCard
+                    lamp={lamp}
+                    artwork={previewProduct}
+                    artworkUnitUsd={previewArtworkUnitUsd}
+                    lampUnitUsd={previewLampUnitUsd}
+                    disabled={isSoldOut}
+                    onAddWithLamp={handleAddPreviewWithLamp}
+                    onArtworkOnly={handleAddPreviewArtworkOnly}
+                  />
+                ) : (
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.99 }}
+                    disabled={isSoldOut}
+                    onClick={() =>
+                      previewProduct.id !== lamp.id
+                        ? handleAddPreviewArtworkOnly()
+                        : handleToggleSelect(previewProduct)
+                    }
+                    className={cn(
+                      'flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold shadow-lg transition-colors',
+                      isSoldOut
+                        ? 'cursor-not-allowed bg-white/10 text-white/40'
+                        : 'bg-[#FFBA94] text-neutral-900 shadow-black/30 hover:bg-[#ffc9a8]'
+                    )}
+                  >
+                    {previewInCart && (
+                      <Package className="h-4 w-4 opacity-90" strokeWidth={2} />
+                    )}
+                    {addButtonLabel}
+                  </motion.button>
+                )}
               </div>
+
+              {previewProduct.id !== lamp.id ? (
+                <ExperienceV3ProductInfoTabs />
+              ) : null}
+
+              {editionStripProps ? (
+                <ExperienceV3ProductInfoStack edition={editionStripProps} />
+              ) : null}
             </div>
           )}
         </div>
@@ -1462,7 +1549,7 @@ export function ExperienceV3Client({
           id="experience-v3-artist-bio"
           aria-labelledby="experience-v3-artist-heading"
           className={cn(
-            'relative z-0 w-full max-w-full shrink-0 snap-start snap-always',
+            'relative z-0 w-full max-w-full shrink-0 snap-start',
             'mt-6 border-t border-white/[0.04] pt-8 pb-10',
             'bg-[#0a0909]',
             'md:mt-8 md:pt-10 md:pb-12',
@@ -1493,6 +1580,25 @@ export function ExperienceV3Client({
             )}
           </div>
         </section>
+
+        {previewProduct && previewProduct.id !== lamp.id ? (
+          <ExperienceV3ArtistWorksSlider
+            currentProduct={previewProduct}
+            catalog={allProducts}
+            lampProductId={lamp.id}
+            artistSlug={artistProfileTarget?.slug ?? null}
+            artistVendor={artistProfileTarget?.vendor ?? previewProduct.vendor ?? null}
+            previewProductId={previewProduct.id}
+            cartProductIds={cartOrder}
+            onPreview={handlePreviewFromPicker}
+            onQuickAdd={(product) => {
+              addArtworkToCart(product)
+            }}
+            lockedArtworkPrices={lockedArtworkPrices}
+            streetLadderPrices={streetLadderPrices}
+            streetPricingSeasonFallback={activeSeason === 'season2' ? 2 : 1}
+          />
+        ) : null}
         </div>
         {pickerHasBeenOpened && pickerLayoutDesktop && (
           <div
@@ -1528,12 +1634,10 @@ export function ExperienceV3Client({
               spotlightBannerExpanded={spotlightExpanded}
               streetEditionByProductId={streetEditionByProductId}
               featuredBundleOffer={featuredBundleFilterOffer}
-              filterPanelLamp={filterPanelLampOffer}
               artistCatalogForFilters={artistCatalogForFilters}
               pickerLamp={lamp}
               lampQuantity={lampQuantity}
               lampPriceUsd={lampPrice}
-              onPickerAddLamp={() => handleLampQuantityChange(1)}
               pickerCardMode="previewAndQuickAdd"
               onPreviewProduct={handlePreviewFromPicker}
               onQuickAddProduct={handleQuickAddFromPicker}
@@ -1572,12 +1676,10 @@ export function ExperienceV3Client({
           spotlightBannerExpanded={spotlightExpanded}
           streetEditionByProductId={streetEditionByProductId}
           featuredBundleOffer={featuredBundleFilterOffer}
-          filterPanelLamp={filterPanelLampOffer}
           artistCatalogForFilters={artistCatalogForFilters}
           pickerLamp={lamp}
           lampQuantity={lampQuantity}
           lampPriceUsd={lampPrice}
-          onPickerAddLamp={() => handleLampQuantityChange(1)}
           pickerCardMode="previewAndQuickAdd"
           onPreviewProduct={handlePreviewFromPicker}
           onQuickAddProduct={handleQuickAddFromPicker}
@@ -1610,7 +1712,7 @@ export function ExperienceV3Client({
               <div className="pointer-events-auto flex max-h-[min(100vh,100dvh)] max-w-[min(100vw,100dvw)] items-center justify-center">
                 <Image
                   src={heroImageUrlLightbox}
-                  alt={galleryImages[galleryIndex]?.altText ?? previewProduct?.title ?? 'Artwork'}
+                  alt={heroImageAlt}
                   width={heroLayoutWidth}
                   height={heroLayoutHeight}
                   className="max-h-[min(calc(100vh-5rem),calc(100dvh-5rem))] w-auto max-w-[min(100vw,100dvw)] object-contain"
@@ -1655,6 +1757,7 @@ export function ExperienceV3Client({
         bundlePricedArtworkIndices={
           featuredArtistBundlePricingActive ? bundlePricing.bundlePricedArtworkIndices : undefined
         }
+        requireArtworkForLamp
       />
     </div>
   )

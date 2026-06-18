@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { Menu, Check, ChevronRight } from 'lucide-react'
+import { Menu, Check, ChevronRight, LayoutGrid } from 'lucide-react'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { ExperienceCartChip } from './ExperienceCartChip'
 
@@ -21,10 +21,20 @@ import { useExperienceAuthContext } from './ExperienceAuthContext'
 import { cn } from '@/lib/utils'
 
 const ONBOARDING_PATH_PREFIX = '/shop/experience-v2/onboarding'
+const CANONICAL_EXPERIENCE_PATH = '/shop/experience'
+const EXPERIENCE_V3_ALIAS_PREFIX = '/shop/experience-v3'
+
+function isExperienceV3Path(pathname: string | null | undefined): boolean {
+  if (!pathname) return false
+  return pathname === CANONICAL_EXPERIENCE_PATH || pathname.startsWith(EXPERIENCE_V3_ALIAS_PREFIX)
+}
+/** Temporarily hidden — re-enable when shipping promo returns to the header sub-bar. */
+const SHOW_SHIPPING_PROMO = false
 
 export function ExperienceSlideoutMenu() {
   const pathname = usePathname()
   const isOnOnboarding = pathname?.startsWith(ONBOARDING_PATH_PREFIX) ?? false
+  const isExperienceV3 = isExperienceV3Path(pathname)
   const { menuOpen: open, setMenuOpen: setOpen, openAuthWhenMenuOpens, setOpenAuthWhenMenuOpens, onboardingRedirectPath } = useExperienceAuthContext()
   const {
     orderBarProps,
@@ -93,26 +103,25 @@ export function ExperienceSlideoutMenu() {
           </button>
         </div>
 
-        {/* Mobile: logo absolute center (unchanged) */}
-        <div className="md:hidden absolute left-0 right-0 top-0 bottom-0 flex items-center justify-center pointer-events-none">
-          <Link
-            href="/"
-            aria-label="Street Collector - Home"
-            className="pointer-events-auto inline-flex items-center justify-center p-2 -m-2 transition-opacity hover:opacity-80 z-10"
-          >
-            <img
-              src={getProxiedImageUrl(ROUND_LOGO_URL)}
-              alt="Street Collector"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain shrink-0"
-            />
-          </Link>
-        </div>
-
-        {/* Desktop: title absolute center */}
-        <div className="hidden md:flex absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none">
-          <div className="pointer-events-auto">{headerCenterContent}</div>
+        {/* Center: collection control (v3) or mobile logo fallback */}
+        <div className="absolute left-0 right-0 top-0 bottom-0 flex items-center justify-center pointer-events-none">
+          {headerCenterContent ? (
+            <div className="pointer-events-auto z-10">{headerCenterContent}</div>
+          ) : (
+            <Link
+              href="/"
+              aria-label="Street Collector - Home"
+              className="pointer-events-auto inline-flex items-center justify-center p-2 -m-2 transition-opacity hover:opacity-80 z-10 md:hidden"
+            >
+              <img
+                src={getProxiedImageUrl(ROUND_LOGO_URL)}
+                alt="Street Collector"
+                width={32}
+                height={32}
+                className="w-8 h-8 object-contain shrink-0"
+              />
+            </Link>
+          )}
         </div>
 
         {/* Right: cart (desktop); spacer for mobile balance */}
@@ -146,7 +155,7 @@ export function ExperienceSlideoutMenu() {
         </div>
       </header>
 
-      {!isOnOnboarding && (
+      {!isOnOnboarding && SHOW_SHIPPING_PROMO && (
         <div
           className="shrink-0 border-b border-neutral-200/80 px-4 py-1 text-center text-[10px] text-neutral-500 dark:border-white/5 dark:text-[#a09090] sm:text-[11px]"
           role="status"
@@ -200,6 +209,8 @@ export function ExperienceSlideoutMenu() {
         volumeDiscountDescription={orderBarProps?.lampSavings != null && orderBarProps.lampSavings > 0 ? 'Discount varies by size & material' : undefined}
         onSpecifications={openLampSpecifications}
         onChooseYourArt={isOnOnboarding ? undefined : openArtworkPicker}
+        chooseYourArtLabel={isExperienceV3 ? 'The Collection' : undefined}
+        chooseYourArtIcon={isExperienceV3 ? LayoutGrid : undefined}
       />
     </>
   )

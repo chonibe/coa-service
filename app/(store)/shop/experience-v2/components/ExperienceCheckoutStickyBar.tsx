@@ -402,8 +402,8 @@ export function ExperienceCheckoutStickyBar({
                         type="button"
                         onClick={onOpenPicker}
                         className={openPickerFabClass}
-                        aria-label="Add artwork to collection"
-                        title="Add artwork"
+                        aria-label="Open the collection picker"
+                        title="The Collection"
                       >
                         <Plus className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.25} />
                       </button>
