@@ -1,15 +1,15 @@
 /* Artist profile — layout parity with artist-profile.html; tokens match home-v2 landing */
 
 .root {
-  --dark: #171515;
-  --darker: #0f0e0e;
-  --card: #1d1b1b;
-  --card2: #222020;
-  --peach: #ffba94;
-  --peach2: #e09060;
-  --white: #ffffff;
-  --muted: rgba(255, 255, 255, 0.45);
-  --border: rgba(255, 255, 255, 0.08);
+  --dark: var(--experience-bg);
+  --darker: var(--experience-surface);
+  --card: var(--experience-surface-2);
+  --card2: var(--experience-surface-3);
+  --peach: var(--experience-cta);
+  --peach2: var(--experience-cta-hover);
+  --white: var(--experience-text);
+  --muted: var(--experience-text-muted);
+  --border: var(--experience-border);
 
   background: var(--dark);
   color: var(--white);
@@ -63,13 +63,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(to bottom, rgba(23, 21, 21, 0.97), transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--experience-surface) 97%, transparent),
+    transparent
+  );
   transition: all 0.3s;
 }
 
 .navScrolled {
   padding: 14px 56px;
-  background: rgba(15, 14, 14, 0.97);
+  background: color-mix(in srgb, var(--experience-surface) 97%, transparent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
@@ -308,12 +312,13 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(15, 14, 14, 0.97);
+  background: color-mix(in srgb, var(--experience-surface) 97%, transparent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   display: flex;
   padding: 0 72px;
   overflow-x: auto;
+  touch-action: pan-x;
   scrollbar-width: none;
 }
 
@@ -342,8 +347,8 @@
 }
 
 .tabActive {
-  color: var(--peach);
-  border-bottom-color: var(--peach);
+  color: var(--experience-highlight);
+  border-bottom-color: var(--experience-highlight);
 }
 
 .tabPanel {
@@ -378,6 +383,46 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* Mobile: Instagram above gallery; desktop: gallery above Instagram (see media queries below) */
+.overviewProcessGallery {
+  order: 2;
+}
+
+.overviewProcessInstagram {
+  order: 1;
+  border-bottom: none;
+}
+
+.overviewProcessInstagram .profileLinkCard {
+  padding: 0 0 24px;
+}
+
+.overviewProcess > .bioCard {
+  order: 3;
+}
+
+.overviewProcessGallery .processGrid {
+  margin-bottom: 0;
+}
+
+@media (min-width: 961px) {
+  .overviewProcessGallery {
+    order: 1;
+  }
+
+  .overviewProcessInstagram {
+    order: 2;
+  }
+
+  .overviewProcessInstagram .profileLinkCard {
+    padding: 24px 0 0;
+  }
+
+  .overviewProcessGallery .processGrid {
+    margin-bottom: 0;
+  }
 }
 
 .storyEyebrow {
@@ -562,10 +607,6 @@
   padding: 56px 72px 64px;
 }
 
-.profileLinkHeader {
-  margin-bottom: 28px;
-}
-
 .instagramProfileCard {
   display: grid;
   grid-template-columns: 112px 1fr;
@@ -574,6 +615,10 @@
   padding: 28px;
   background: var(--card2);
   border: 1px solid var(--border);
+}
+
+.instagramProfileAvatarWrap {
+  display: contents;
 }
 
 .instagramProfileAvatar {
@@ -615,11 +660,15 @@
   min-width: 0;
 }
 
+.instagramProfileIdentity {
+  min-width: 0;
+}
+
 .instagramProfileTop {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  align-items: start;
+  gap: 12px;
+  align-items: center;
   margin-bottom: 18px;
 }
 
@@ -643,6 +692,10 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 8px;
+}
+
+.instagramProfileStatsCard {
+  width: 100%;
 }
 
 .instagramStat {
@@ -675,6 +728,30 @@
   letter-spacing: 0.04em;
 }
 
+.instagramProfileOpenBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid rgba(255, 186, 148, 0.25);
+  color: var(--peach);
+  font-family: var(--font-landing-mono), monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  text-decoration: none;
+  transition: all 0.25s;
+  background: transparent;
+}
+
+.instagramProfileOpenBtn:hover {
+  border-color: var(--peach);
+  background: rgba(255, 186, 148, 0.06);
+}
+
 .bioCardText strong {
   color: var(--white);
   font-weight: 400;
@@ -700,6 +777,7 @@
   gap: 0;
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
+  touch-action: pan-x;
   scrollbar-width: none;
 }
 
@@ -1234,6 +1312,25 @@
   background: rgba(255, 186, 148, 0.06);
 }
 
+.btnIgIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 186, 148, 0.25);
+  color: var(--peach);
+  text-decoration: none;
+  transition: all 0.25s;
+}
+
+.btnIgIcon:hover {
+  border-color: var(--peach);
+  background: rgba(255, 186, 148, 0.06);
+}
+
 /* ── RELATED ── */
 .relatedSection {
   padding: 72px 0 80px;
@@ -1555,6 +1652,128 @@
   }
 }
 
+/* Instagram mobile card — centered avatar, inline stats row, open button below */
+@media (max-width: 720px) {
+  .instagramProfileCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 16px;
+  }
+
+  .instagramProfileAvatarWrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .instagramProfileAvatar {
+    width: 88px;
+    height: 88px;
+  }
+
+  .instagramProfileAvatar span {
+    font-size: 32px;
+  }
+
+  .instagramProfileMain {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .instagramProfileTop {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0;
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  .instagramProfileDesktopAction {
+    display: none;
+  }
+
+  .instagramProfileName {
+    font-size: 18px;
+  }
+
+  .instagramProfileHandle {
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  .instagramProfileCard .storyBody {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    text-align: center;
+  }
+
+  .instagramProfileStatsCard {
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px 0;
+  }
+
+  .instagramProfileStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 0;
+    width: 100%;
+  }
+
+  .instagramStat {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    flex: none;
+    padding: 6px 4px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .instagramStat:last-child {
+    border-right: none;
+  }
+
+  .instagramStat strong {
+    font-size: 16px;
+    line-height: 1.2;
+    margin-top: 4px;
+  }
+
+  .instagramStat span {
+    margin-top: 0;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  .instagramStatLoading {
+    grid-column: 1 / -1;
+    justify-self: center;
+    padding: 8px 0;
+    font-size: 11px;
+  }
+
+  .instagramProfileOpenBtn {
+    display: flex;
+  }
+}
+
 /* SEO / GEO: answer-first lead + visible FAQ (matches JSON-LD) */
 .heroLead {
   font-size: 14px;
@@ -1689,9 +1908,27 @@
   padding: 24px 16px 32px;
 }
 
+.embedded .overviewProcessInstagram .profileLinkCard {
+  padding: 0 0 20px;
+}
+
+@media (min-width: 768px) {
+  .embedded .overviewProcessGallery {
+    order: 1;
+  }
+
+  .embedded .overviewProcessInstagram {
+    order: 2;
+  }
+
+  .embedded .overviewProcessInstagram .profileLinkCard {
+    padding: 20px 0 0;
+  }
+}
+
 .embedded .profileLinkSection {
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .embedded .profileLinkCard {
@@ -1706,6 +1943,126 @@
   margin-top: 20px;
   padding-left: 0;
   padding-right: 0;
+}
+
+/* Embedded experience panel — same stacked Instagram card as mobile */
+.embedded .instagramProfileCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px;
+}
+
+.embedded .instagramProfileAvatarWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.embedded .instagramProfileAvatar {
+  width: 88px;
+  height: 88px;
+}
+
+.embedded .instagramProfileAvatar span {
+  font-size: 32px;
+}
+
+.embedded .instagramProfileMain {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.embedded .instagramProfileTop {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.embedded .instagramProfileDesktopAction {
+  display: none;
+}
+
+.embedded .instagramProfileName {
+  font-size: 18px;
+}
+
+.embedded .instagramProfileHandle {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.embedded .instagramProfileCard .storyBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.embedded .instagramProfileStatsCard {
+  border: 1px solid var(--border);
+  background: var(--experience-surface-2);
+  padding: 10px 0;
+}
+
+.embedded .instagramProfileStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 0;
+  width: 100%;
+}
+
+.embedded .instagramStat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  flex: none;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.embedded .instagramStat:last-child {
+  border-right: none;
+}
+
+.embedded .instagramStat strong {
+  font-size: 16px;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+.embedded .instagramStat span {
+  margin-top: 0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.embedded .instagramStatLoading {
+  grid-column: 1 / -1;
+  justify-self: center;
+  padding: 8px 0;
+  font-size: 11px;
+}
+
+.embedded .instagramProfileOpenBtn {
+  display: flex;
 }
 
 .embedded .tabsBar {

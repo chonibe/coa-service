@@ -9,6 +9,7 @@ import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { getInstagramEmbedSrc } from '@/lib/shop/instagram-embed'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import type { ArtistProfileApiResponse, InstagramProfileSummary } from '@/lib/shop/artist-profile-api'
+import { artistPortraitCoverStyle } from '@/lib/shopify/artist-collection-image'
 import { buildArtistAnswerFirstLead } from '@/lib/seo/artist-meta'
 import { buildArtistFaqPairs } from '@/lib/seo/artist-faqs'
 import { parsePullQuote } from '@/lib/shop/parse-pull-quote'
@@ -45,6 +46,7 @@ type ListArtist = {
   slug: string
   bio?: string
   image?: string
+  imageObjectPosition?: string
   productCount: number
 }
 
@@ -304,6 +306,8 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
 
   const paragraphs = bioParagraphs(artist.bio)
   const hasProcessGallery = (profile.processGallery?.length ?? 0) > 0
+  const hasImpactCallout = Boolean(profile.impactCallout?.trim())
+  const hasExclusiveCallout = Boolean(profile.exclusiveCallout?.trim())
   const hasExhibitions = exhibitionsByYear.length > 0
   const hasPress = (profile.press?.length ?? 0) > 0
   const faqPairs = buildArtistFaqPairs(artist)
@@ -318,8 +322,11 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
       hasInstagramStats(mergedInstagramProfile)
   )
   const showInstagramSection = showInstagramProfileCard || hasInstagramShowcase
+  const showOverviewProcessColumn =
+    hasProcessGallery || hasExclusiveCallout || showInstagramSection
 
   const heroImage = artist.image
+  const heroPortraitStyle = artistPortraitCoverStyle(artist.imageObjectPosition)
   const eyebrow = [profile.location, profile.activeSince ? `Active since ${profile.activeSince}` : null]
     .filter(Boolean)
     .join(' · ')
@@ -379,14 +386,15 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   fill
                   sizes="(max-width: 960px) 100vw, 50vw"
                   priority
-                  style={{ objectFit: 'cover' }}
+                  style={heroPortraitStyle}
                 />
               ) : (
                 <div
                   className="flex h-full w-full items-center justify-center text-7xl"
                   style={{
-                    background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
-                    color: 'var(--peach)',
+                    background:
+                      'linear-gradient(145deg, var(--experience-surface-2) 0%, var(--experience-surface) 100%)',
+                    color: 'var(--experience-cta)',
                     fontFamily: 'var(--font-landing-serif), Georgia, serif',
                   }}
                   aria-hidden
@@ -470,13 +478,10 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                     </blockquote>
                   )
                 })() : null}
-                {profile.impactCallout ? (
+                {hasImpactCallout ? (
                   <div className={styles.bioCard}>
-                    <div className={styles.bioCardIcon} aria-hidden>
-                      →
-                    </div>
                     <div className={styles.bioCardText}>
-                      {profile.impactCallout.split('\n').map((line, li) => (
+                      {profile.impactCallout!.split('\n').map((line, li) => (
                         <p key={li} style={{ margin: '0 0 0.5em' }}>
                           {line}
                         </p>
@@ -485,42 +490,230 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                   </div>
                 ) : null}
               </div>
-              {hasProcessGallery || profile.exclusiveCallout ? (
+              {showOverviewProcessColumn ? (
               <div className={styles.overviewProcess}>
-                <div className={styles.processLabel}>Process</div>
                 {hasProcessGallery ? (
-                  <div className={styles.processGrid}>
-                    {profile.processGallery!.slice(0, 4).map((item, i) => {
-                      const igEmbed = getInstagramEmbedSrc(item.url)
-                      return (
-                        <div key={`${item.url}-${i}`} className={styles.processImg}>
-                          {igEmbed ? (
-                            <div className={styles.processIgFrame}>
-                              <iframe
-                                src={igEmbed}
-                                title={item.label || `Instagram process ${i + 1}`}
-                                loading="lazy"
-                                allow="encrypted-media; picture-in-picture"
-                                referrerPolicy="strict-origin-when-cross-origin"
-                              />
-                            </div>
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={getProxiedImageUrl(item.url)} alt={item.label || `Process ${i + 1}`} loading="lazy" />
-                          )}
-                          {item.label ? <div className={styles.processImgLabel}>{item.label}</div> : null}
-                        </div>
-                      )
-                    })}
+                  <div className={styles.overviewProcessGallery}>
+                    <div className={styles.processGrid}>
+                      {profile.processGallery!.slice(0, 4).map((item, i) => {
+                        const igEmbed = getInstagramEmbedSrc(item.url)
+                        return (
+                          <div key={`${item.url}-${i}`} className={styles.processImg}>
+                            {igEmbed ? (
+                              <div className={styles.processIgFrame}>
+                                <iframe
+                                  src={igEmbed}
+                                  title={item.label || `Studio ${i + 1}`}
+                                  loading="lazy"
+                                  allow="encrypted-media; picture-in-picture"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                />
+                              </div>
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={getProxiedImageUrl(item.url)} alt={item.label || `Studio ${i + 1}`} loading="lazy" />
+                            )}
+                            {item.label ? <div className={styles.processImgLabel}>{item.label}</div> : null}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ) : null}
-                {profile.exclusiveCallout ? (
-                  <div className={styles.bioCard} style={{ marginTop: 'auto' }}>
-                    <div className={styles.bioCardIcon} style={{ fontSize: 14 }} aria-hidden>
-                      ✦
+                {showInstagramSection ? (
+                  <section
+                    className={cn(styles.profileLinkSection, styles.overviewProcessInstagram)}
+                    aria-label="Instagram profile"
+                  >
+                    <div className={styles.profileLinkCard}>
+                      {showInstagramProfileCard ? (
+                        <div className={styles.instagramProfileCard}>
+                          <div className={styles.instagramProfileAvatarWrap}>
+                            {instagramProfileUrl ? (
+                              <a
+                                href={instagramProfileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.instagramProfileAvatar}
+                                aria-label={
+                                  instagramHandle
+                                    ? `Open @${instagramHandle} on Instagram`
+                                    : `Open ${artist.name} on Instagram`
+                                }
+                              >
+                                {mergedInstagramProfile?.avatarUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt={artist.name} loading="lazy" />
+                                ) : heroImage ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={getProxiedImageUrl(heroImage)} alt={artist.name} loading="lazy" />
+                                ) : (
+                                  <span>{(artist.name[0] || '?').toUpperCase()}</span>
+                                )}
+                              </a>
+                            ) : (
+                              <div className={styles.instagramProfileAvatar} aria-hidden>
+                                {mergedInstagramProfile?.avatarUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt="" loading="lazy" />
+                                ) : heroImage ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={getProxiedImageUrl(heroImage)} alt="" loading="lazy" />
+                                ) : (
+                                  <span>{(artist.name[0] || '?').toUpperCase()}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className={styles.instagramProfileMain}>
+                            <div className={styles.instagramProfileTop}>
+                              <div className={styles.instagramProfileIdentity}>
+                                <div className={styles.instagramProfileName}>
+                                  {mergedInstagramProfile?.displayName || artist.name}
+                                </div>
+                                {instagramHandle ? (
+                                  <div className={styles.instagramProfileHandle}>@{instagramHandle}</div>
+                                ) : null}
+                              </div>
+                              {instagramProfileUrl ? (
+                                <a
+                                  href={instagramProfileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(styles.btnIgIcon, styles.instagramProfileDesktopAction)}
+                                  aria-label={
+                                    instagramHandle
+                                      ? `Open @${instagramHandle} on Instagram`
+                                      : 'Open Instagram profile'
+                                  }
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                                    <path d="M7 17L17 7M17 7H7M17 7V17" />
+                                  </svg>
+                                </a>
+                              ) : null}
+                            </div>
+                            {mergedInstagramProfile?.biography ? (
+                              <p className={styles.storyBody}>{mergedInstagramProfile.biography}</p>
+                            ) : null}
+                            <div className={styles.instagramProfileStatsCard}>
+                              <div className={styles.instagramProfileStats}>
+                                {formatCompactCount(mergedInstagramProfile?.mediaCount) ? (
+                                  <div className={styles.instagramStat}>
+                                    <strong>{formatCompactCount(mergedInstagramProfile?.mediaCount)}</strong>
+                                    <span>posts</span>
+                                  </div>
+                                ) : null}
+                                {formatCompactCount(mergedInstagramProfile?.followersCount) ? (
+                                  <div className={styles.instagramStat}>
+                                    <strong>{formatCompactCount(mergedInstagramProfile?.followersCount)}</strong>
+                                    <span>followers</span>
+                                  </div>
+                                ) : null}
+                                {formatCompactCount(mergedInstagramProfile?.followsCount) ? (
+                                  <div className={styles.instagramStat}>
+                                    <strong>{formatCompactCount(mergedInstagramProfile?.followsCount)}</strong>
+                                    <span>following</span>
+                                  </div>
+                                ) : null}
+                                {instagramProfileLoading &&
+                                instagramHandle &&
+                                !hasInstagramStats(mergedInstagramProfile) ? (
+                                  <span className={styles.instagramStatLoading} aria-live="polite">
+                                    Loading stats…
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                          {instagramProfileUrl ? (
+                            <a
+                              href={instagramProfileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.instagramProfileOpenBtn}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                                <rect x="2" y="2" width="20" height="20" rx="5" />
+                                <circle cx="12" cy="12" r="4" />
+                                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                              </svg>
+                              {instagramHandle ? `Open @${instagramHandle}` : 'Open Instagram'}
+                            </a>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {hasInstagramShowcase ? (
+                        <div className={styles.instagramGrid}>
+                          {instagramShowcase.map((cell, i) => {
+                            const tileHref = (cell.link?.trim() || instagramProfileUrl || '').trim() || '#'
+                            const igEmbed = getInstagramEmbedSrc(cell.url)
+                            if (igEmbed) {
+                              return (
+                                <div key={`${cell.url}-${i}`} className={styles.igCell}>
+                                  <div className={styles.igEmbedFrame}>
+                                    <iframe
+                                      src={igEmbed}
+                                      title={cell.kind ? `${cell.kind} on Instagram` : `Instagram ${i + 1}`}
+                                      loading="lazy"
+                                      allow="encrypted-media; picture-in-picture"
+                                      referrerPolicy="strict-origin-when-cross-origin"
+                                    />
+                                  </div>
+                                  <a
+                                    href={tileHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={styles.igCellTap}
+                                    aria-label={cell.kind ? `Open ${cell.kind} on Instagram` : 'Open on Instagram'}
+                                  />
+                                  <div className={styles.igOverlay} aria-hidden>
+                                    <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return (
+                              <a
+                                key={`${cell.url}-${i}`}
+                                href={tileHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.igCell}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={getProxiedImageUrl(cell.url)}
+                                  alt={cell.kind ? `${cell.kind} on Instagram` : `Photo ${i + 1}`}
+                                  loading="lazy"
+                                />
+                                <div className={styles.igOverlay}>
+                                  <span className={styles.igType}>{cell.kind || 'Post'}</span>
+                                </div>
+                              </a>
+                            )
+                          })}
+                        </div>
+                      ) : null}
+                      {instagramProfileUrl && hasInstagramShowcase ? (
+                        <div className={styles.instagramCta}>
+                          <a href={instagramProfileUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                              <rect x="2" y="2" width="20" height="20" rx="5" />
+                              <circle cx="12" cy="12" r="4" />
+                              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                            </svg>
+                            {instagramHandle ? `Follow @${instagramHandle}` : 'Follow on Instagram'}
+                          </a>
+                        </div>
+                      ) : null}
                     </div>
+                  </section>
+                ) : null}
+                {hasExclusiveCallout ? (
+                  <div className={styles.bioCard} style={{ marginTop: hasProcessGallery ? undefined : 'auto' }}>
                     <div className={styles.bioCardText}>
-                      {profile.exclusiveCallout.split('\n').map((line, li) => (
+                      {profile.exclusiveCallout!.split('\n').map((line, li) => (
                         <p key={li} style={{ margin: '0 0 0.5em' }}>
                           {line}
                         </p>
@@ -531,189 +724,6 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
               </div>
               ) : null}
             </div>
-            {showInstagramSection ? (
-              <section className={styles.profileLinkSection} aria-labelledby="artist-instagram-heading">
-                <div className={styles.profileLinkCard}>
-                  <div className={styles.profileLinkHeader}>
-                    <div className={styles.storyEyebrow}>Instagram</div>
-                    <h2 id="artist-instagram-heading" className={styles.storyH2}>
-                      The artist&apos;s <em>profile.</em>
-                    </h2>
-                  </div>
-                  {showInstagramProfileCard ? (
-                    <div
-                      className={styles.instagramProfileCard}
-                      role={instagramProfileUrl ? 'link' : undefined}
-                      tabIndex={instagramProfileUrl ? 0 : undefined}
-                      onClick={() => {
-                        if (instagramProfileUrl) window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
-                      }}
-                      onKeyDown={(event) => {
-                        if (!instagramProfileUrl) return
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          window.open(instagramProfileUrl, '_blank', 'noopener,noreferrer')
-                        }
-                      }}
-                    >
-                      {instagramProfileUrl ? (
-                        <a
-                          href={instagramProfileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.instagramProfileAvatar}
-                          aria-label={
-                            instagramHandle
-                              ? `Open @${instagramHandle} on Instagram`
-                              : `Open ${artist.name} on Instagram`
-                          }
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          {mergedInstagramProfile?.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt={artist.name} loading="lazy" />
-                          ) : heroImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={getProxiedImageUrl(heroImage)} alt={artist.name} loading="lazy" />
-                          ) : (
-                            <span>{(artist.name[0] || '?').toUpperCase()}</span>
-                          )}
-                        </a>
-                      ) : (
-                        <div className={styles.instagramProfileAvatar} aria-hidden>
-                          {mergedInstagramProfile?.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={getProxiedImageUrl(mergedInstagramProfile.avatarUrl)} alt="" loading="lazy" />
-                          ) : heroImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={getProxiedImageUrl(heroImage)} alt="" loading="lazy" />
-                          ) : (
-                            <span>{(artist.name[0] || '?').toUpperCase()}</span>
-                          )}
-                        </div>
-                      )}
-                      <div className={styles.instagramProfileMain}>
-                        <div className={styles.instagramProfileTop}>
-                          <div>
-                            <div className={styles.instagramProfileName}>
-                              {mergedInstagramProfile?.displayName || artist.name}
-                            </div>
-                            {instagramHandle ? (
-                              <div className={styles.instagramProfileHandle}>@{instagramHandle}</div>
-                            ) : null}
-                          </div>
-                          {instagramProfileUrl ? (
-                            <a
-                              href={instagramProfileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles.btnIg}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              Open profile
-                            </a>
-                          ) : null}
-                        </div>
-                        {mergedInstagramProfile?.biography ? (
-                          <p className={styles.storyBody}>{mergedInstagramProfile.biography}</p>
-                        ) : null}
-                        <div className={styles.instagramProfileStats}>
-                          {formatCompactCount(mergedInstagramProfile?.followersCount) ? (
-                            <div className={styles.instagramStat}>
-                              <strong>{formatCompactCount(mergedInstagramProfile?.followersCount)}</strong>
-                              <span>followers</span>
-                            </div>
-                          ) : null}
-                          {formatCompactCount(mergedInstagramProfile?.followsCount) ? (
-                            <div className={styles.instagramStat}>
-                              <strong>{formatCompactCount(mergedInstagramProfile?.followsCount)}</strong>
-                              <span>following</span>
-                            </div>
-                          ) : null}
-                          {formatCompactCount(mergedInstagramProfile?.mediaCount) ? (
-                            <div className={styles.instagramStat}>
-                              <strong>{formatCompactCount(mergedInstagramProfile?.mediaCount)}</strong>
-                              <span>posts</span>
-                            </div>
-                          ) : null}
-                          {instagramProfileLoading &&
-                          instagramHandle &&
-                          !hasInstagramStats(mergedInstagramProfile) ? (
-                            <span className={styles.instagramStatLoading} aria-live="polite">
-                              Loading stats…
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                  {hasInstagramShowcase ? (
-                    <div className={styles.instagramGrid}>
-                      {instagramShowcase.map((cell, i) => {
-                        const tileHref = (cell.link?.trim() || instagramProfileUrl || '').trim() || '#'
-                        const igEmbed = getInstagramEmbedSrc(cell.url)
-                        if (igEmbed) {
-                          return (
-                            <div key={`${cell.url}-${i}`} className={styles.igCell}>
-                              <div className={styles.igEmbedFrame}>
-                                <iframe
-                                  src={igEmbed}
-                                  title={cell.kind ? `${cell.kind} on Instagram` : `Instagram ${i + 1}`}
-                                  loading="lazy"
-                                  allow="encrypted-media; picture-in-picture"
-                                  referrerPolicy="strict-origin-when-cross-origin"
-                                />
-                              </div>
-                              <a
-                                href={tileHref}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.igCellTap}
-                                aria-label={cell.kind ? `Open ${cell.kind} on Instagram` : 'Open on Instagram'}
-                              />
-                              <div className={styles.igOverlay} aria-hidden>
-                                <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                              </div>
-                            </div>
-                          )
-                        }
-                        return (
-                          <a
-                            key={`${cell.url}-${i}`}
-                            href={tileHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.igCell}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getProxiedImageUrl(cell.url)}
-                              alt={cell.kind ? `${cell.kind} on Instagram` : `Photo ${i + 1}`}
-                              loading="lazy"
-                            />
-                            <div className={styles.igOverlay}>
-                              <span className={styles.igType}>{cell.kind || 'Post'}</span>
-                            </div>
-                          </a>
-                        )
-                      })}
-                    </div>
-                  ) : null}
-                  {instagramProfileUrl && hasInstagramShowcase ? (
-                    <div className={styles.instagramCta}>
-                      <a href={instagramProfileUrl} target="_blank" rel="noopener noreferrer" className={styles.btnIg}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                          <rect x="2" y="2" width="20" height="20" rx="5" />
-                          <circle cx="12" cy="12" r="4" />
-                          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-                        </svg>
-                        {instagramHandle ? `Follow @${instagramHandle}` : 'Follow on Instagram'}
-                      </a>
-                    </div>
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
             {!embedded && faqPairs.length > 0 ? (
             <section className={styles.faqSection} aria-labelledby="artist-faq-heading">
               <h2 id="artist-faq-heading" className={styles.faqH2}>
@@ -825,7 +835,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                         ) : null}
                       </div>
                       {st?.editionTotal ? (
-                        <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-white/10">
+                        <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-foreground/10">
                           <div
                             className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
                             style={{ width: `${pct}%` }}
@@ -977,7 +987,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                       fill
                       sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
                       loading="lazy"
-                      style={{ objectFit: 'cover' }}
+                      style={artistPortraitCoverStyle(a.imageObjectPosition)}
                     />
                   ) : null}
                 </div>
