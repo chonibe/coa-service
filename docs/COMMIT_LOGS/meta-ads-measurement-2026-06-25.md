@@ -24,6 +24,8 @@ Shipped Meta ads measurement documentation, PostHog paid-traffic funnel specs, U
 
 ## Post-deploy verification
 
-- [ ] `/experience?utm_source=facebook&utm_medium=paid&utm_campaign=test` → PostHog person `initial_utm_*`
-- [ ] Events Manager → Website Events pixel receives PageView
+- [x] Production deploy succeeded (`vercel --prod`, deployment `AVqJKXkrqdZY6rtA36JBbgb72HYW`)
+- [x] `/experience?utm_source=facebook&utm_medium=paid&utm_campaign=test` returns HTTP 200; PostHog SDK present on page
+- [ ] PostHog Live Events — confirm person `initial_utm_*` on fresh incognito visit
+- [ ] Events Manager → Website Events pixel (`1315234756106483`) receives PageView after env change + redeploy
 - [ ] Guest checkout → `identify(email)` before `purchase`
