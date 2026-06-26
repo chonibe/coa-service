@@ -47,7 +47,7 @@ export function BackBar({
     <header
       className={cn(
         'sticky top-0 z-40 w-full',
-        'bg-white border-b border-[#1a1a1a]/10',
+        'bg-background border-b border-border',
         'safe-area-inset-top',
         className
       )}
@@ -61,7 +61,7 @@ export function BackBar({
             }
           }}
           aria-label="Back"
-          className="absolute left-4 sm:left-6 inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#047AFF] transition-transform hover:scale-110 cursor-pointer"
+          className="absolute left-4 sm:left-6 inline-flex items-center justify-center p-2 -m-2 text-muted-foreground hover:text-experience-highlight transition-transform hover:scale-110 cursor-pointer"
         >
           <ArrowLeft size={24} className="shrink-0" />
         </button>
@@ -90,7 +90,7 @@ export function BackBar({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-xs text-[#1a1a1a]/60 hover:text-[#047AFF] transition-colors"
+                  className="text-xs text-muted-foreground hover:text-experience-highlight transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -102,7 +102,7 @@ export function BackBar({
               type="button"
               onClick={openTawkChat}
               aria-label="Open chat"
-              className="inline-flex items-center justify-center p-2 -m-2 text-[#1a1a1a]/80 hover:text-[#047AFF] transition-colors hover:scale-110 cursor-pointer"
+              className="inline-flex items-center justify-center p-2 -m-2 text-muted-foreground hover:text-experience-highlight transition-colors hover:scale-110 cursor-pointer"
             >
               <MessageCircle size={22} className="shrink-0" aria-hidden />
             </button>

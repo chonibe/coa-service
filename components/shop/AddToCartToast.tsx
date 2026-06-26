@@ -124,8 +124,8 @@ export function AddToCartToast({
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
-              'bg-white rounded-[20px] shadow-2xl',
-              'border border-slate-200',
+              'bg-card rounded-[20px] shadow-2xl',
+              'border border-border',
               'overflow-hidden'
             )}
           >

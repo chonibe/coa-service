@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo, type CSSProperties }
 import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import Image from 'next/image'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { Check, Plus, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -26,7 +26,8 @@ import { cn } from '@/lib/utils'
 import { buildArtworkRowsByArtist } from '@/lib/shop/experience-artwork-rows'
 import {
   experienceArtistRowDefaultClass,
-  experienceArtistRowMergeClass,
+  experienceQuickAddFabIconClass,
+  getExperienceQuickAddFabClass,
   getPickerArtworkCardSurfaces,
   getPickerCardSelectionChrome,
 } from '@/lib/shop/experience-artwork-card-surfaces'
@@ -42,8 +43,11 @@ import {
 
 type SeasonTab = 'season1' | 'season2'
 
+/** Collection picker artist spotlight banner + "Explore full collection" CTA. Set true to re-enable. */
+const SHOW_ARTIST_SPOTLIGHT_IN_COLLECTION = false
+
 const MERGE_CONFETTI_COUNT = 16
-const MERGE_CONFETTI_COLORS = ['#047AFF', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
+const MERGE_CONFETTI_COLORS = ['#C21350', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
 
 function MergeConfetti({ active }: { active: boolean }) {
   const [sparkle, setSparkle] = useState(false)
@@ -99,8 +103,6 @@ interface ArtworkCardV2Props {
   priorityLoad?: boolean
   mergeWithLeft?: boolean
   mergeWithRight?: boolean
-  /** True when this card sits in a 2-up artist row with center spine (flush inner corners). */
-  spinePairLayout?: boolean
   /** Show "New Drop" chip when product is in spotlight (featured artist) */
   isNewDrop?: boolean
   /** Show "Early access" chip when spotlight is unlisted */
@@ -113,6 +115,8 @@ interface ArtworkCardV2Props {
   journeyPulseChooseArtworks?: boolean
   /** Stagger animations across virtual rows */
   journeyStaggerIndex?: number
+  /** Artist name shown as uppercase subtitle below title chip, above price */
+  artistName?: string
 }
 
 function ArtworkCardV2({
@@ -123,18 +127,18 @@ function ArtworkCardV2({
   priorityLoad = false,
   mergeWithLeft = false,
   mergeWithRight = false,
-  spinePairLayout = false,
   isNewDrop = false,
   isEarlyAccess = false,
   suppressSelectionRing = false,
   streetPricing = null,
   journeyPulseChooseArtworks = false,
   journeyStaggerIndex = 0,
+  artistName,
 }: ArtworkCardV2Props) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageUrl = product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url
   const isMergedVisual = isSelected && (mergeWithLeft || mergeWithRight)
-  const flushToSpine = isMergedVisual || spinePairLayout
+  const flushToSpine = isMergedVisual
   const roundLeft = !flushToSpine || mergeWithRight
   const roundRight = !flushToSpine || mergeWithLeft
   const footerPrice = formatStreetArtworkListPrice(product, streetPricing, isEarlyAccess)
@@ -150,6 +154,7 @@ function ArtworkCardV2({
 
   const journeyPickerHint =
     journeyPulseChooseArtworks && !isSelected && product.availableForSale
+  const artistSubtitle = (artistName ?? product.vendor?.trim() ?? 'Artist').toUpperCase()
 
   return (
     <motion.div
@@ -171,7 +176,7 @@ function ArtworkCardV2({
     >
       <motion.div
         className={cn(
-          'aspect-[4/5.15] relative overflow-hidden cursor-pointer touch-manipulation select-none',
+          'aspect-[4/5] relative overflow-hidden cursor-pointer touch-manipulation select-none',
           surfaces.imageWell,
           roundLeft && roundRight && 'rounded-t-xl',
           roundLeft && !roundRight && 'rounded-tl-xl',
@@ -191,12 +196,12 @@ function ArtworkCardV2({
               <div className="absolute inset-0 bg-neutral-200/80 dark:bg-[#262222]/50 animate-pulse" />
             )}
             <Image
-              src={getShopifyImageUrl(imageUrl, 420) ?? imageUrl}
+              src={getShopifyImageUrl(imageUrl, 500) ?? imageUrl}
               alt={product.title}
               fill
               unoptimized
               className={cn('object-cover transition-opacity duration-200', imageLoaded ? 'opacity-100' : 'opacity-0')}
-              sizes="(max-width: 480px) 48vw, (max-width: 768px) 42vw, 220px"
+              sizes="(max-width: 480px) 50vw, (max-width: 768px) 46vw, 280px"
               priority={priorityLoad}
               loading="eager"
               onLoad={() => setImageLoaded(true)}
@@ -204,10 +209,7 @@ function ArtworkCardV2({
             />
           </>
         ) : (
-          <div className={cn(
-            'w-full h-full flex items-center justify-center text-xs',
-            isSelected ? 'text-neutral-500' : 'text-neutral-300 dark:text-[#b89090]'
-          )}>
+          <div className="w-full h-full flex items-center justify-center text-xs text-neutral-300 dark:text-[#b89090]">
             No image
           </div>
         )}
@@ -217,12 +219,17 @@ function ArtworkCardV2({
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              onQuickAdd(product)
+              if (!isSelected) onQuickAdd(product)
             }}
-            className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-violet-300/40 bg-violet-600 text-white shadow-md shadow-violet-950/40 hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-            aria-label="Quick add to cart"
+            className={cn('absolute top-2 right-2 z-20', getExperienceQuickAddFabClass(isSelected))}
+            aria-label={isSelected ? 'Added to cart' : 'Quick add to cart'}
+            aria-pressed={isSelected}
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            {isSelected ? (
+              <Check className={experienceQuickAddFabIconClass} strokeWidth={2.5} aria-hidden />
+            ) : (
+              <Plus className={experienceQuickAddFabIconClass} strokeWidth={2.5} aria-hidden />
+            )}
           </button>
         )}
 
@@ -293,7 +300,13 @@ function ArtworkCardV2({
         )}
         onClick={handleClick}
       >
-        <div className="w-full min-w-0 flex flex-col gap-0 items-center">
+        <div className="w-full min-w-0 flex flex-col gap-0.5 items-center">
+          <p
+            className="w-full min-w-0 truncate px-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-[#a09090]"
+            title={artistSubtitle}
+          >
+            {artistSubtitle}
+          </p>
           {streetPricing ? (
             <div className="w-full min-w-0 flex flex-col gap-0 items-center text-center">
               {streetListActive ? (
@@ -339,7 +352,7 @@ function ArtworkCardV2({
                 'text-xs font-medium transition-colors duration-200 ease-out',
                 showEarlyAccessCompare
                   ? 'text-violet-700 dark:text-violet-300'
-                  : (isSelected ? 'text-neutral-800 dark:text-[#d4b8b8]' : 'text-neutral-800 dark:text-[#c4a0a0]')
+                  : 'text-neutral-800 dark:text-[#c4a0a0]'
               )}>
                 {footerPrice.primary}
               </p>
@@ -357,7 +370,7 @@ function ArtworkCardV2({
 }
 
 /** Virtual row estimate; rows use measureElement (includes row vertical gap). */
-const ROW_HEIGHT_ESTIMATE = 480
+const ROW_HEIGHT_ESTIMATE = 500
 
 interface ArtworkPickerSheetProps {
   isOpen: boolean
@@ -538,12 +551,8 @@ export function ArtworkPickerSheet({
   const activeFilterCount = useMemo(() => {
     if (!filters) return 0
     let n = 0
-    if (filters.artists.length) n += filters.artists.length
-    if (filters.tags.length) n += filters.tags.length
-    if (filters.priceRange) n += 1
-    if (filters.inStockOnly) n += 1
+    if (filters.artists?.length) n += filters.artists.length
     if (filters.sortBy !== 'featured') n += 1
-    if (filters.minStarRating !== null) n += 1
     return n
   }, [filters])
 
@@ -594,6 +603,8 @@ export function ArtworkPickerSheet({
   const quickAddHandler =
     pickerCardMode === 'previewAndQuickAdd' && onQuickAddProduct ? onQuickAddProduct : undefined
 
+  const isPreviewPickerMode = pickerCardMode === 'previewAndQuickAdd'
+
   const isRightRailDesktop = sheetVariant === 'rightRail' && isDesktopRail
 
   const virtualizer = useVirtualizer({
@@ -613,22 +624,13 @@ export function ArtworkPickerSheet({
               'md:flex-nowrap md:items-center md:justify-between md:gap-4 md:px-6 md:py-3.5',
               theme === 'light' ? 'border-neutral-200' : 'border-neutral-800'
             )}>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-none md:max-w-[55%]">
+              <div className="flex min-w-0 flex-1 flex-col md:flex-none md:max-w-[55%]">
                 <h2 className={cn(
                   'text-base font-semibold leading-tight',
-                  theme === 'light' ? 'text-neutral-900' : 'text-white'
+                  theme === 'light' ? 'text-neutral-900' : 'text-foreground'
                 )}>
-                  Start your Collection
+                  Choose your Art
                 </h2>
-                <p
-                  className={cn(
-                    'text-[11px] sm:text-xs font-normal leading-snug',
-                    theme === 'light' ? 'text-neutral-500' : 'text-[#c4a0a0]'
-                  )}
-                >
-                  <span className="md:hidden">Tap to add</span>
-                  <span className="hidden md:inline">Click to add</span>
-                </p>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0 md:gap-3">
               {onSeasonChange && (
@@ -645,7 +647,7 @@ export function ArtworkPickerSheet({
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season1'
                         ? theme === 'light'
-                          ? 'bg-white text-neutral-900 shadow-sm'
+                          ? 'bg-card text-foreground shadow-sm'
                           : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
                         : theme === 'light'
                           ? 'text-neutral-500 hover:text-neutral-700'
@@ -661,7 +663,7 @@ export function ArtworkPickerSheet({
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season2'
                         ? theme === 'light'
-                          ? 'bg-white text-neutral-900 shadow-sm'
+                          ? 'bg-card text-foreground shadow-sm'
                           : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
                         : theme === 'light'
                           ? 'text-neutral-500 hover:text-neutral-700'
@@ -681,14 +683,14 @@ export function ArtworkPickerSheet({
                     hasActiveFilters(filters)
                       ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                       : theme === 'light'
-                        ? 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                        ? 'bg-card text-muted-foreground border-border hover:border-border hover:bg-muted'
                         : 'bg-[#201c1c] text-[#d4b8b8] border-[#3e3838] hover:border-[#4a4444] hover:bg-[#262222]'
                   )}
                   aria-label="Open filters"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   {activeFilterCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-[#2c2828] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#4a4444] text-[10px] flex items-center justify-center font-bold leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-card text-foreground ring-1 ring-border text-[10px] flex items-center justify-center font-bold leading-none">
                       {activeFilterCount}
                     </span>
                   )}
@@ -702,7 +704,7 @@ export function ArtworkPickerSheet({
                 className={cn(
                   'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold -my-2 transition-colors shrink-0',
                   theme === 'light'
-                    ? 'text-[#047AFF] hover:text-[#0366d6] hover:bg-neutral-100'
+                    ? 'text-experience-highlight hover:text-experience-highlight-muted hover:bg-neutral-100'
                     : 'text-[#60A5FA] hover:text-[#93C5FD] hover:bg-[#262222]'
                 )}
               >
@@ -731,7 +733,7 @@ export function ArtworkPickerSheet({
                     highlightAddCta={showLampPromoInPicker && pickerJourneyNext === 'add_lamp'}
                   />
                 </div>
-              ) : spotlightData && onSpotlightSelect ? (
+              ) : SHOW_ARTIST_SPOTLIGHT_IN_COLLECTION && spotlightData && onSpotlightSelect ? (
                 <div className="mb-3">
                   <ArtistSpotlightBanner
                     spotlight={{ ...spotlightData, gifUrl: undefined }}
@@ -759,9 +761,8 @@ export function ArtworkPickerSheet({
                   const p2Selected = product2 && selectedIds.has(product2.id)
                   const bothSelected = !!(p1Selected && p2Selected)
                   const sameVendor = !!(product1 && product2 && product1.vendor === product2.vendor)
-                  const shouldMerge = bothSelected && sameVendor
-                  const showArtistSpine = row.length === 2
-                  const artistLabel = (product1?.vendor || product2?.vendor || 'Artist').trim() || 'Artist'
+                  const shouldMerge = !isPreviewPickerMode && bothSelected && sameVendor
+                  const isPairRow = row.length === 2
                   const justMerged = shouldMerge && (
                     (product1?.id === lastAddedProductId) || (product2?.id === lastAddedProductId)
                   )
@@ -772,17 +773,18 @@ export function ArtworkPickerSheet({
                       ref={virtualizer.measureElement}
                       className={cn(
                         'absolute top-0 left-0 w-full',
-                        showArtistSpine && shouldMerge ? 'py-4 md:py-6' : 'pb-12 md:pb-16'
+                        isPairRow && shouldMerge ? 'py-4 md:py-6' : 'pb-10 md:pb-14'
                       )}
                       style={{
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
                     >
-                      {showArtistSpine ? (
+                      {isPairRow ? (
                         <div
                           className={cn(
                             'relative flex items-stretch rounded-xl overflow-hidden',
-                            shouldMerge ? experienceArtistRowMergeClass : experienceArtistRowDefaultClass
+                            experienceArtistRowDefaultClass,
+                            !shouldMerge && 'gap-1.5 md:gap-2'
                           )}
                         >
                           {shouldMerge && <MergeConfetti active={justMerged} />}
@@ -795,8 +797,7 @@ export function ArtworkPickerSheet({
                                 onSelect={cardSelectHandler}
                                 onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
-                                mergeWithRight
-                                spinePairLayout
+                                mergeWithRight={!isPreviewPickerMode && shouldMerge}
                                 isNewDrop={isInSpotlight(product1.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product1.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
@@ -810,21 +811,6 @@ export function ArtworkPickerSheet({
                               />
                             </div>
                           )}
-                          <div
-                            className={cn(
-                              'shrink-0 z-[1] self-stretch flex flex-col items-center justify-center bg-transparent',
-                              shouldMerge ? 'px-0' : 'px-0.5'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase whitespace-nowrap [writing-mode:vertical-rl] rotate-180',
-                                shouldMerge ? 'py-0.5 tracking-wide' : 'py-1 tracking-widest'
-                              )}
-                            >
-                              {artistLabel}
-                            </span>
-                          </div>
                           {product2 && (
                             <div className={cn('flex-1 min-w-0', shouldMerge && '-ml-px')}>
                               <ArtworkCardV2
@@ -834,8 +820,7 @@ export function ArtworkPickerSheet({
                                 onSelect={cardSelectHandler}
                                 onQuickAdd={quickAddHandler}
                                 priorityLoad={virtualRow.index < 3}
-                                mergeWithLeft
-                                spinePairLayout
+                                mergeWithLeft={!isPreviewPickerMode && shouldMerge}
                                 isNewDrop={isInSpotlight(product2.id) && !spotlightData?.unlisted}
                                 isEarlyAccess={isInSpotlight(product2.id) && !!spotlightData?.unlisted}
                                 suppressSelectionRing={shouldMerge}
@@ -853,7 +838,7 @@ export function ArtworkPickerSheet({
                       ) : (
                         <div className="relative flex justify-center">
                           {product1 && (
-                            <div className="w-[calc(52.5%-0.125rem)] max-w-[280px]">
+                            <div className="w-1/2 max-w-[300px]">
                               <ArtworkCardV2
                                 key={product1.id}
                                 product={product1}
@@ -880,7 +865,8 @@ export function ArtworkPickerSheet({
                 })}
               </div>
 
-              {!showLampPromoInPicker &&
+              {SHOW_ARTIST_SPOTLIGHT_IN_COLLECTION &&
+                !showLampPromoInPicker &&
                 spotlightData &&
                 onSpotlightSelect &&
                 spotlightAccordionExpanded &&
@@ -894,7 +880,7 @@ export function ArtworkPickerSheet({
                         spotlightData.unlisted
                           ? 'border-violet-400/40 bg-violet-950/15 text-violet-100 hover:bg-violet-950/30 dark:border-violet-500/35'
                           : theme === 'light'
-                            ? 'border-amber-200/60 bg-white text-neutral-900 hover:bg-amber-50/80'
+                            ? 'border-amber-200/60 bg-card text-foreground hover:bg-amber-50/80'
                             : 'border-[#FFBA94]/35 bg-[#262222] text-[#FFBA94] hover:bg-[#2c2828]'
                       )}
                     >
@@ -910,14 +896,13 @@ export function ArtworkPickerSheet({
             {/* Mobile bottom bar: Season 1/2 + Filter */}
             {(onSeasonChange || (onFilterOpen && onFilterClose && filters && onFiltersChange)) && (
               <div className={cn(
-                'md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 border-t pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]',
-                theme === 'light' ? 'border-neutral-200 bg-neutral-50/80' : 'border-neutral-800 bg-[#1a1616]/80'
+                'md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 border-t border-border bg-experience-surface/80 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
               )}>
                 {onSeasonChange && (
                   <div className={cn(
                     'flex rounded-lg border p-0.5 flex-1',
                     theme === 'light'
-                      ? 'border-neutral-200 bg-white'
+                      ? 'border-border bg-card'
                       : 'border-[#2c2828] bg-[#201c1c]/50'
                   )}>
                     <button
@@ -927,7 +912,7 @@ export function ArtworkPickerSheet({
                         'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         activeSeason === 'season1'
                           ? theme === 'light'
-                            ? 'bg-white text-neutral-900 shadow-sm'
+                            ? 'bg-card text-foreground shadow-sm'
                             : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
                           : theme === 'light'
                             ? 'text-neutral-500 hover:text-neutral-700'
@@ -943,7 +928,7 @@ export function ArtworkPickerSheet({
                         'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                         activeSeason === 'season2'
                           ? theme === 'light'
-                            ? 'bg-white text-neutral-900 shadow-sm'
+                            ? 'bg-card text-foreground shadow-sm'
                             : 'bg-[#262222] text-[#f0e8e8] shadow-sm'
                           : theme === 'light'
                             ? 'text-neutral-500 hover:text-neutral-700'
@@ -963,14 +948,14 @@ export function ArtworkPickerSheet({
                       hasActiveFilters(filters)
                         ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                         : theme === 'light'
-                          ? 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                          ? 'bg-card text-muted-foreground border-border hover:border-border hover:bg-muted'
                           : 'bg-[#201c1c] text-[#d4b8b8] border-[#3e3838] hover:border-[#4a4444] hover:bg-[#262222]'
                     )}
                     aria-label="Open filters"
                   >
                     <SlidersHorizontal className="w-5 h-5" />
                     {activeFilterCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] px-1 rounded-full bg-white dark:bg-[#2c2828] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#4a4444] text-[11px] flex items-center justify-center font-bold leading-none">
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] px-1 rounded-full bg-card text-foreground ring-1 ring-border text-[11px] flex items-center justify-center font-bold leading-none">
                         {activeFilterCount}
                       </span>
                     )}
@@ -1004,8 +989,7 @@ export function ArtworkPickerSheet({
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          'flex h-full min-h-0 w-full flex-col overflow-hidden shadow-2xl',
-          theme === 'light' ? 'border-l border-neutral-200 bg-white' : 'border-l border-white/10 bg-[#171515]'
+          'flex h-full min-h-0 w-full flex-col overflow-hidden shadow-2xl border-l border-border bg-popover text-popover-foreground'
         )}
       >
         {renderPickerPanelBody()}
@@ -1040,13 +1024,12 @@ export function ArtworkPickerSheet({
               exit={isRightRailDesktop ? { x: '100%' } : { y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                'flex w-full flex-col pointer-events-auto shadow-2xl',
+                'flex w-full flex-col pointer-events-auto shadow-2xl bg-popover text-popover-foreground',
                 'max-w-full h-[calc(100dvh-10px)] max-h-[calc(100dvh-10px)] rounded-t-3xl',
                 !isRightRailDesktop &&
                   'md:max-w-[min(92vw,768px)] md:rounded-2xl md:h-auto md:min-h-[65vh] md:max-h-[min(92vh,900px)]',
                 isRightRailDesktop &&
-                  'md:h-full md:max-h-none md:max-w-[min(440px,42vw)] md:rounded-none md:rounded-l-3xl',
-                theme === 'light' ? 'bg-white' : 'bg-[#171515]'
+                  'md:h-full md:max-h-none md:max-w-[min(440px,42vw)] md:rounded-none md:rounded-l-3xl'
               )}
             >
             {renderPickerPanelBody()}

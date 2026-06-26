@@ -105,7 +105,7 @@ export function FeaturedArtistsSection({
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className={cn(
-            'flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide',
+            'touch-pan-x flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide',
             '-mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0'
           )}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -148,7 +148,7 @@ function ArtistCard({ artist }: { artist: FeaturedArtist }) {
     <Link
       href={`/shop?collection=${artist.handle}`}
       className={cn(
-        'flex-shrink-0 snap-start group',
+        'flex-shrink-0 group',
         'w-[280px] sm:w-[320px] lg:w-[calc(33.333%-16px)]'
       )}
     >
@@ -182,7 +182,7 @@ function ArtistCard({ artist }: { artist: FeaturedArtist }) {
       
       {/* Info */}
       <div className="text-center">
-        <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
+        <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-experience-title transition-colors">
           {artist.name}
         </h3>
         <p className="text-sm text-[#1a1a1a]/60 mt-1">

@@ -118,7 +118,7 @@ export function CreditBalanceWidget({
         <div 
           className={cn(
             'absolute right-0 top-full mt-2 w-64',
-            'bg-white rounded-lg shadow-lg border border-slate-200',
+            'bg-card rounded-lg shadow-lg border border-border',
             'z-50 overflow-hidden',
             'animate-in fade-in slide-in-from-top-2 duration-200'
           )}

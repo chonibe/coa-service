@@ -40,9 +40,9 @@ export function EditionHoldIndicator({
 
   if (variant === 'line') {
     return (
-      <p className={cn('text-[10px] font-medium text-amber-700 dark:text-amber-200/90', className)}>
-        <Gem className="mr-1 inline h-3 w-3 -translate-y-px opacity-80" aria-hidden />
-        <span className="tabular-nums">{line}</span>
+      <p className={cn('text-[10px] font-medium text-muted-foreground', className)}>
+        <Gem className="mr-1 inline h-3 w-3 -translate-y-px text-experience-highlight opacity-90" aria-hidden />
+        <span className="tabular-nums text-foreground">{line}</span>
       </p>
     )
   }
@@ -51,13 +51,13 @@ export function EditionHoldIndicator({
     return (
       <div
         className={cn(
-          'flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-950/35 px-3 py-2.5 text-left',
+          'flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left shadow-sm',
           className
         )}
         role="status"
       >
-        <Gem className="h-4 w-4 shrink-0 text-amber-300/90" aria-hidden />
-        <p className="min-w-0 text-[12px] font-semibold leading-snug text-amber-100 tabular-nums">
+        <Gem className="h-4 w-4 shrink-0 text-experience-highlight" aria-hidden />
+        <p className="min-w-0 text-[12px] font-semibold leading-snug text-foreground tabular-nums">
           {line}
         </p>
       </div>
@@ -67,12 +67,12 @@ export function EditionHoldIndicator({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[10px] font-semibold text-amber-100/95 ring-1 ring-amber-400/20',
+        'inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground ring-1 ring-border',
         className
       )}
       role="status"
     >
-      <Gem className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
+      <Gem className="h-3 w-3 shrink-0 text-experience-highlight opacity-90" aria-hidden />
       <span className="tabular-nums">{line}</span>
     </span>
   )
@@ -101,13 +101,13 @@ export function EditionHoldCartSummary({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-950/25 px-2.5 py-2 text-[11px] leading-snug text-amber-100/90',
+        'flex items-center gap-2 rounded-lg border border-border bg-muted px-2.5 py-2 text-[11px] leading-snug text-foreground',
         className
       )}
       role="status"
     >
-      <Gem className="h-3.5 w-3.5 shrink-0 text-amber-300/85" aria-hidden />
-      <span className="font-medium tabular-nums text-amber-50">{line}</span>
+      <Gem className="h-3.5 w-3.5 shrink-0 text-experience-highlight" aria-hidden />
+      <span className="font-medium tabular-nums">{line}</span>
     </div>
   )
 }

@@ -247,7 +247,7 @@ export default function ProductPage() {
   // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md">
           <Container maxWidth="default">
             <div className="animate-pulse">
@@ -269,7 +269,7 @@ export default function ProductPage() {
   // API Error state
   if (apiError) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md" background="default">
           <Container maxWidth="default">
             <div className="text-center py-12">
@@ -280,10 +280,10 @@ export default function ProductPage() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+              <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-foreground tracking-[-0.02em] mb-4">
                 Product Unavailable
               </h1>
-              <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Unable to load this product. This may be due to a configuration issue with the store.
               </p>
               <p className="text-sm text-[#f83a3a] mb-6 font-mono bg-[#f83a3a]/5 py-2 px-4 rounded-lg inline-block">
@@ -316,7 +316,7 @@ export default function ProductPage() {
     id: `seo-faq-${i}`,
     title: f.question,
     content: (
-      <p className="text-[#1a1a1a]/80 text-sm leading-relaxed max-w-prose">
+      <p className="text-muted-foreground text-sm leading-relaxed max-w-prose">
         {f.answer}
       </p>
     ),
@@ -328,7 +328,7 @@ export default function ProductPage() {
     : [...seoFaqAccordionItems, ...artworkAccordionItems]
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       {/* Sticky Buy Bar */}
       <StickyBuyBar
         productTitle={product.title}
@@ -364,17 +364,17 @@ export default function ProductPage() {
               {product.vendor && (
                 <Link 
                   href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
-                  className="text-sm text-[#1a1a1a]/60 hover:text-[#047AFF] transition-colors uppercase tracking-wider"
+                  className="text-sm text-muted-foreground hover:text-experience-highlight transition-colors uppercase tracking-wider"
                 >
                   {product.vendor}
                 </Link>
               )}
 
               {/* Title */}
-              <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground tracking-[-0.02em]">
                 {product.title}
               </h1>
-              <p className="text-sm text-[#1a1a1a]/75 leading-relaxed max-w-prose">
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
                 {buildProductAnswerFirst(product)}
               </p>
 
@@ -396,13 +396,13 @@ export default function ProductPage() {
 
               {/* Price */}
               <div className="space-y-1">
-                <p className="text-sm text-[#1a1a1a]/60">Sale price</p>
+                <p className="text-sm text-muted-foreground">Sale price</p>
                 <div className="flex items-center gap-3">
-                  <span className={`text-2xl font-semibold ${onSale ? 'text-[#f83a3a]' : 'text-[#1a1a1a]'}`}>
+                  <span className={`text-2xl font-semibold ${onSale ? 'text-[#f83a3a]' : 'text-foreground'}`}>
                     {selectedVariant ? formatPrice(selectedVariant.price) : formatPrice(product.priceRange.minVariantPrice)}
                   </span>
                   {selectedVariant?.compareAtPrice && (
-                    <span className="text-lg text-[#1a1a1a]/50 line-through">
+                    <span className="text-lg text-muted-foreground line-through">
                       {formatPrice(selectedVariant.compareAtPrice)}
                     </span>
                   )}
@@ -431,7 +431,7 @@ export default function ProductPage() {
                 )}
                 
                 {/* Shipping info — matches Stripe Checkout when promo settings load */}
-                <p className="text-[#1a1a1a]/60">
+                <p className="text-muted-foreground">
                   {shippingPromoReady ? (
                     shippingPromo.shippingFreeOver70 ? (
                       `Free standard shipping on orders $${shippingPromo.freeOverUsd}+; $${shippingPromo.standardUnderUsd} standard shipping below.`
@@ -445,7 +445,7 @@ export default function ProductPage() {
                 
                 {/* SKU */}
                 {selectedVariant?.sku && (
-                  <p className="text-[#1a1a1a]/50">
+                  <p className="text-muted-foreground">
                     SKU: {selectedVariant.sku}
                   </p>
                 )}
@@ -459,8 +459,8 @@ export default function ProductPage() {
                 
                 return (
                   <div key={option.id} className="space-y-3">
-                    <label className="text-sm font-medium text-[#1a1a1a]">
-                      {option.name}: <span className="font-normal text-[#1a1a1a]/70">{selectedOptions[option.name]}</span>
+                    <label className="text-sm font-medium text-foreground">
+                      {option.name}: <span className="font-normal text-muted-foreground">{selectedOptions[option.name]}</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {option.values.map((value) => {
@@ -472,8 +472,8 @@ export default function ProductPage() {
                             className={`
                               px-5 py-2.5 text-sm rounded-full border-2 transition-all font-medium
                               ${isSelected
-                                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
-                                : 'border-[#1a1a1a]/20 bg-white text-[#1a1a1a] hover:border-[#1a1a1a]/50'
+                                ? 'border-foreground bg-foreground text-background'
+                                : 'border-border bg-background text-foreground hover:border-foreground/50'
                               }
                             `}
                             aria-pressed={isSelected}
@@ -489,12 +489,12 @@ export default function ProductPage() {
 
               {/* Quantity */}
               <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a]/60">Quantity:</label>
+                <label className="text-sm text-muted-foreground">Quantity:</label>
                 <div className="flex items-center gap-2 w-fit">
-                  <div className="flex items-center border border-[#1a1a1a]/20 rounded-lg overflow-hidden">
+                  <div className="flex items-center border border-border rounded-lg overflow-hidden">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M4 8H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -503,7 +503,7 @@ export default function ProductPage() {
                     <span className="w-12 text-center font-medium">{quantity}</span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors"
+                      className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M4 8H12M8 4V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -535,8 +535,8 @@ export default function ProductPage() {
                     flex items-center justify-center gap-2 min-h-[44px]
                     transition-all duration-300 ease-out
                     disabled:cursor-not-allowed
-                    ${cartButtonState === 'idle' && 'bg-[#f0c417] text-[#1a1a1a] hover:bg-[#e0b415] active:scale-[0.98]'}
-                    ${cartButtonState === 'loading' && 'bg-[#f0c417] text-[#1a1a1a] scale-[0.98]'}
+                    ${cartButtonState === 'idle' && 'bg-[#f0c417] text-foreground hover:bg-[#e0b415] active:scale-[0.98]'}
+                    ${cartButtonState === 'loading' && 'bg-[#f0c417] text-foreground scale-[0.98]'}
                     ${cartButtonState === 'success' && 'bg-[#0a8754] text-white scale-105'}
                     ${(!product.availableForSale || !selectedVariant?.availableForSale) && 'opacity-50'}
                   `}
@@ -574,13 +574,13 @@ export default function ProductPage() {
                 </div>
                 
                 {/* Tax & Shipping Notice */}
-                <p className="text-xs text-center text-[#1a1a1a]/60">
+                <p className="text-xs text-center text-muted-foreground">
                   Taxes and shipping calculated at checkout
                 </p>
               </div>
 
               {/* Product Accordions */}
-              <div className="pt-6 border-t border-[#1a1a1a]/10">
+              <div className="pt-6 border-t border-border">
                 <ProductAccordion items={accordionItems} />
               </div>
             </div>
@@ -594,12 +594,12 @@ export default function ProductPage() {
         <SectionWrapper spacing="md" background="default">
           <Container maxWidth="default">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-foreground tracking-[-0.02em]">
                 More from {product.vendor}
               </h2>
               <Link
                 href={`/shop/artists/${encodeURIComponent(product.vendor.toLowerCase().replace(/\s+/g, '-'))}`}
-                className="text-sm font-medium text-[#047AFF] hover:underline flex items-center gap-1"
+                className="text-sm font-medium text-experience-highlight hover:underline flex items-center gap-1"
               >
                 View all
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -648,7 +648,7 @@ export default function ProductPage() {
         text="One Lamp, Endless Inspiration"
         textSize="large"
         scrollingSpeed={6}
-        textColor="#1a1a1a"
+        textColor="hsl(var(--foreground))"
       />
 
       {/* You May Also Like - Scrollable Carousel */}
@@ -656,13 +656,13 @@ export default function ProductPage() {
         <SectionWrapper spacing="md" background="muted">
           <Container maxWidth="default">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h2 className="font-heading text-2xl sm:text-3xl font-semibold text-foreground tracking-[-0.02em]">
                 You May Also Like
               </h2>
               <div className="flex gap-2">
                 <button 
                   onClick={() => scrollCarousel('left')}
-                  className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 hover:bg-[#1a1a1a]/5 transition-colors"
+                  className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:border-foreground/40 hover:bg-muted transition-colors"
                   aria-label="Scroll left"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -671,7 +671,7 @@ export default function ProductPage() {
                 </button>
                 <button 
                   onClick={() => scrollCarousel('right')}
-                  className="w-10 h-10 rounded-full border border-[#1a1a1a]/20 flex items-center justify-center hover:border-[#1a1a1a]/40 hover:bg-[#1a1a1a]/5 transition-colors"
+                  className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:border-foreground/40 hover:bg-muted transition-colors"
                   aria-label="Scroll right"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

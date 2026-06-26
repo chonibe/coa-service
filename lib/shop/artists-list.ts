@@ -1,5 +1,6 @@
 import { mergeResearchBio, researchInstagramHandle } from '@/lib/shop/artist-research-merge'
-import { getArtistImageByHandle, getArtistListImageOverride } from '@/lib/shopify/artist-image'
+import { getArtistListImageOverride } from '@/lib/shopify/artist-image'
+import { resolveArtistPortrait } from '@/lib/shopify/artist-collection-image'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
 import { getVendorMeta } from '@/lib/shopify/vendor-meta'
 import { getProducts } from '@/lib/shopify/storefront-client'
@@ -20,6 +21,8 @@ export type ShopArtist = {
   slug: string
   productCount: number
   image?: string
+  /** CSS object-position for collection portrait cropping */
+  imageObjectPosition?: string
   bio?: string
   instagramUrl?: string
   hasProfile: boolean
@@ -128,12 +131,17 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
         const slugForImage = meta.vendorSlug || artist.slug
         const imageOverride =
           getArtistListImageOverride(slugForImage) || getArtistListImageOverride(artist.slug)
-        const image =
-          imageOverride ||
-          meta.image ||
-          (await getArtistImageByHandle(slugForImage)) ||
-          (await getArtistImageByHandle(artist.slug)) ||
-          artist.image
+        const supabaseImage =
+          profileLookup.get(artist.name.toLowerCase())?.profile_picture_url ||
+          profileLookup.get(artist.name.toLowerCase())?.profile_image ||
+          undefined
+        const portrait = await resolveArtistPortrait({
+          handle: slugForImage,
+          extraHandles: [artist.slug],
+          overrideUrl: imageOverride,
+          supabaseUrl: supabaseImage || undefined,
+          productUrl: artist.image,
+        })
         const bio = mergeResearchBio(artist.slug, artist.bio || meta.bio)
         const igFromResearch = researchInstagramHandle(artist.slug)
         const instagramUrl =
@@ -144,7 +152,8 @@ export async function getShopArtistsList(): Promise<ShopArtist[]> {
           ...artist,
           /** Experience ?artist= must match Shopify collection handle when vendor_collections is paired. */
           slug: meta.vendorSlug || artist.slug,
-          image,
+          image: portrait.url,
+          imageObjectPosition: portrait.objectPosition,
           bio,
           instagramUrl,
         }

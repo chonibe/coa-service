@@ -154,7 +154,7 @@ export function WishlistButton({
         xmlns="http://www.w3.org/2000/svg"
         className={cn(
           'transition-all duration-300',
-          isSaved ? 'text-[#f83a3a]' : 'text-[#1a1a1a]/40 group-hover:text-[#f83a3a]/60'
+          isSaved ? 'text-[#f83a3a]' : 'text-muted-foreground group-hover:text-[#f83a3a]/60'
         )}
       >
         {isSaved ? (

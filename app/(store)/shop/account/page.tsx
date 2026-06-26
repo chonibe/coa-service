@@ -185,27 +185,27 @@ function OrderShipmentAccordion({
       : null
 
   return (
-    <Collapsible open={open} onOpenChange={handleOpenChange} className="pt-4 border-t border-[#1a1a1a]/10">
+    <Collapsible open={open} onOpenChange={handleOpenChange} className="pt-4 border-t border-border">
       <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left py-2 rounded-lg hover:bg-black/[0.03] px-2 -mx-2 transition-colors">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-sm font-semibold text-[#1a1a1a]">Shipment &amp; tracking</span>
+          <span className="text-sm font-semibold text-foreground">Shipment &amp; tracking</span>
           {showStatusOnShipmentRow && orderStatus ? (
             <>
-              <span className="text-[#1a1a1a]/30 shrink-0 select-none" aria-hidden>
+              <span className="text-muted-foreground shrink-0 select-none" aria-hidden>
                 ·
               </span>
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <StatusBadge status={orderStatus} className="shrink-0" />
                 {warehouseExtra ? (
                   <>
-                    <span className="text-[#1a1a1a]/30 shrink-0 select-none" aria-hidden>
+                    <span className="text-muted-foreground shrink-0 select-none" aria-hidden>
                       ·
                     </span>
                     <Badge
                       variant="outline"
                       size="sm"
                       rounded="full"
-                      className="shrink-0 normal-case tracking-normal font-semibold text-[#1a1a1a]"
+                      className="shrink-0 normal-case tracking-normal font-semibold text-foreground"
                     >
                       {warehouseExtra}
                     </Badge>
@@ -216,7 +216,7 @@ function OrderShipmentAccordion({
           ) : null}
         </div>
         <ChevronDown
-          className={cn('h-5 w-5 shrink-0 text-[#1a1a1a]/50 transition-transform', open && 'rotate-180')}
+          className={cn('h-5 w-5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
           aria-hidden
         />
       </CollapsibleTrigger>
@@ -240,7 +240,7 @@ function OrderShipmentAccordion({
         ) : (
           <>
             {!state.data.chinaDivisionOrder && !state.data.tracking ? (
-              <p className="text-sm text-[#1a1a1a]/60 py-2">
+              <p className="text-sm text-muted-foreground py-2">
                 No warehouse shipment data yet for this order. When your package ships, status and tracking events will
                 appear here.
               </p>
@@ -249,8 +249,8 @@ function OrderShipmentAccordion({
             {state.data.chinaDivisionOrder &&
             !state.data.tracking &&
             (state.data.chinaDivisionOrder.track_status_name || state.data.chinaDivisionOrder.status_name) ? (
-              <p className="text-sm text-[#1a1a1a]/80 py-1">
-                <span className="font-medium text-[#1a1a1a]">Warehouse status: </span>
+              <p className="text-sm text-muted-foreground py-1">
+                <span className="font-medium text-foreground">Warehouse status: </span>
                 {state.data.chinaDivisionOrder.track_status_name || state.data.chinaDivisionOrder.status_name}
               </p>
             ) : null}
@@ -274,7 +274,7 @@ function OrderShipmentAccordion({
               />
             </div>
 
-            <div className="rounded-[12px] border border-[#1a1a1a]/10 bg-[#fafafa] px-4 py-3">
+            <div className="rounded-[12px] border border-border bg-[#fafafa] px-4 py-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -286,15 +286,15 @@ function OrderShipmentAccordion({
                 {supportEmailOpen ? 'Hide support contact' : 'Need help with this shipment?'}
               </Button>
               {supportEmailOpen ? (
-                <div className="mt-3 space-y-3 text-sm text-[#1a1a1a]/80 leading-relaxed">
+                <div className="mt-3 space-y-3 text-sm text-muted-foreground leading-relaxed">
                   <p>
                     Email is the best way to get a fast answer if anything about your parcel is uncertain or delivery is
                     difficult—we can look up your order and coordinate with our warehouse and carriers.
                   </p>
-                  <p className="font-medium text-[#1a1a1a]">
+                  <p className="font-medium text-foreground">
                     <a
                       href={supportMailtoHref}
-                      className="text-[#047AFF] hover:underline break-all"
+                      className="text-experience-highlight hover:underline break-all"
                     >
                       {SHOP_SUPPORT_EMAIL}
                     </a>
@@ -499,9 +499,9 @@ export default function AccountPage() {
         <SectionWrapper spacing="md" background="muted">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-6">
-              <div className="h-10 bg-white rounded w-1/4" />
-              <div className="h-64 bg-white rounded-[24px]" />
-              <div className="h-64 bg-white rounded-[24px]" />
+              <div className="h-10 bg-background rounded w-1/4" />
+              <div className="h-64 bg-card rounded-[24px]" />
+              <div className="h-64 bg-card rounded-[24px]" />
             </div>
           </Container>
         </SectionWrapper>
@@ -519,15 +519,15 @@ export default function AccountPage() {
               <Card variant="default" padding="lg" className="text-center">
                 <div className="py-8">
                   <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <h1 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+                  <h1 className="font-heading text-2xl font-semibold text-foreground mb-2">
                     Sign in to your account
                   </h1>
-                  <p className="text-[#1a1a1a]/60 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Access your order history and manage your profile.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -541,7 +541,7 @@ export default function AccountPage() {
                     </Link>
                   </div>
                   {process.env.NODE_ENV === 'development' && (
-                    <p className="mt-4 text-xs text-[#1a1a1a]/50">
+                    <p className="mt-4 text-xs text-muted-foreground">
                       <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-amber-600 hover:underline">
                         Dev: View as mock user (streets@streets.com)
                       </Link>
@@ -568,11 +568,11 @@ export default function AccountPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-foreground tracking-[-0.02em]">
                 My Account
               </h1>
               {profile?.email && (
-                <p className="text-[#1a1a1a]/60 mt-1">{profile.email}</p>
+                <p className="text-muted-foreground mt-1">{profile.email}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -607,14 +607,14 @@ export default function AccountPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mb-6 p-1 bg-white rounded-[12px] w-fit">
+          <div className="flex gap-1 mb-6 p-1 bg-card rounded-[12px] w-fit">
             <button
               type="button"
               onClick={() => setActiveTab('orders')}
               className={`px-6 py-2.5 text-sm font-medium rounded-[8px] transition-colors ${
                 activeTab === 'orders'
-                  ? 'bg-[#047AFF] text-white'
-                  : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  ? 'bg-experience-highlight text-white'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Order History
@@ -624,8 +624,8 @@ export default function AccountPage() {
               onClick={() => setActiveTab('profile')}
               className={`px-6 py-2.5 text-sm font-medium rounded-[8px] transition-colors ${
                 activeTab === 'profile'
-                  ? 'bg-[#047AFF] text-white'
-                  : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  ? 'bg-experience-highlight text-white'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Profile
@@ -646,15 +646,15 @@ export default function AccountPage() {
                 <Card variant="default" padding="lg" className="text-center">
                   <div className="py-8">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeOpacity="0.3">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3">
                         <path d="M5.5 10L3 21H21L18.5 10" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M8 10V8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8V10" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] mb-2">
+                    <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
                       No orders yet
                     </h2>
-                    <p className="text-[#1a1a1a]/60 mb-6">
+                    <p className="text-muted-foreground mb-6">
                       When you make a purchase, your orders will appear here.
                     </p>
                     <Link href={SHOP_EXPERIENCE_HREF}>
@@ -667,22 +667,22 @@ export default function AccountPage() {
                   {orders.map((order) => (
                     <Card key={order.id} variant="default" padding="md">
                     {/* Order Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#1a1a1a]/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-border">
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="font-heading text-lg font-semibold text-[#1a1a1a]">
+                          <h3 className="font-heading text-lg font-semibold text-foreground">
                             Order #{order.orderNumber}
                           </h3>
                           {!['shipped', 'out_for_delivery'].includes(order.status) ? (
                             <StatusBadge status={order.status} />
                           ) : null}
                         </div>
-                        <p className="text-sm text-[#1a1a1a]/60 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Placed on {formatDate(order.createdAt)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-[#1a1a1a]">
+                        <p className="text-lg font-bold text-foreground">
                           {formatPrice(order.totalAmount, order.currency)}
                         </p>
                       </div>
@@ -700,7 +700,7 @@ export default function AccountPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                   <rect x="3" y="3" width="18" height="18" rx="2" />
                                   <circle cx="8.5" cy="8.5" r="1.5" />
@@ -710,19 +710,19 @@ export default function AccountPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-[#1a1a1a] truncate">
+                            <p className="font-medium text-foreground truncate">
                               {item.title}
                             </p>
                             {item.variantTitle && (
-                              <p className="text-sm text-[#1a1a1a]/60">
+                              <p className="text-sm text-muted-foreground">
                                 {item.variantTitle}
                               </p>
                             )}
-                            <p className="text-sm text-[#1a1a1a]/60">
+                            <p className="text-sm text-muted-foreground">
                               Qty: {item.quantity}
                             </p>
                           </div>
-                          <p className="font-semibold text-[#1a1a1a]">
+                          <p className="font-semibold text-foreground">
                             {formatPrice(item.price * item.quantity, order.currency)}
                           </p>
                         </div>
@@ -738,20 +738,20 @@ export default function AccountPage() {
 
                     {/* Tracking Info */}
                     {order.trackingNumber && (
-                      <div className="pt-4 border-t border-[#1a1a1a]/10">
-                        <p className="text-sm text-[#1a1a1a]/60">
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-sm text-muted-foreground">
                           Tracking: {' '}
                           {order.trackingUrl ? (
                             <a
                               href={order.trackingUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#047AFF] hover:underline"
+                              className="text-experience-highlight hover:underline"
                             >
                               {order.trackingNumber}
                             </a>
                           ) : (
-                            <span className="font-medium text-[#1a1a1a]">
+                            <span className="font-medium text-foreground">
                               {order.trackingNumber}
                             </span>
                           )}
@@ -761,11 +761,11 @@ export default function AccountPage() {
 
                     {/* Shipping Address */}
                     {order.shippingAddress && (
-                      <div className="pt-4 border-t border-[#1a1a1a]/10">
-                        <p className="text-sm font-medium text-[#1a1a1a] mb-1">
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-sm font-medium text-foreground mb-1">
                           Shipping Address
                         </p>
-                        <p className="text-sm text-[#1a1a1a]/70">
+                        <p className="text-sm text-muted-foreground">
                           {order.shippingAddress.name}<br />
                           {order.shippingAddress.address1}
                           {order.shippingAddress.address2 && <>, {order.shippingAddress.address2}</>}<br />
@@ -851,18 +851,18 @@ export default function AccountPage() {
               <Card variant="default" padding="lg">
                 <CardHeader title="Saved Addresses" />
                 <CardContent className="mt-6">
-                  <p className="text-sm text-[#1a1a1a]/60 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Add and manage your addresses. They will appear at checkout so you can choose quickly.
                   </p>
                   <div className="space-y-4">
                     {(savedAddresses?.addresses ?? []).map(({ id, address: addr }) => (
                       <div
                         key={id}
-                        className="flex items-start justify-between gap-4 rounded-lg border border-[#1a1a1a]/10 p-4"
+                        className="flex items-start justify-between gap-4 rounded-lg border border-border p-4"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[#1a1a1a]">{addr.fullName}</p>
-                          <p className="text-sm text-[#1a1a1a]/80 mt-0.5">
+                          <p className="text-sm font-medium text-foreground">{addr.fullName}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
                             {addr.addressLine1}
                             {addr.addressLine2 && `, ${addr.addressLine2}`}<br />
                             {addr.city}, {addr.state} {addr.postalCode}, {addr.country}

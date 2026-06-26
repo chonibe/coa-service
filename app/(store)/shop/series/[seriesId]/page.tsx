@@ -67,7 +67,7 @@ export default function SeriesPage() {
   // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
@@ -87,7 +87,7 @@ export default function SeriesPage() {
   // Error state
   if (error || !series) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md">
           <Container maxWidth="default">
             <div className="text-center py-16">
@@ -98,11 +98,11 @@ export default function SeriesPage() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h1 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+              <h1 className="font-heading text-2xl font-semibold text-foreground mb-2">
                 {error || 'Series Not Found'}
               </h1>
-              <p className="text-[#1a1a1a]/60 mb-6">
-                The series you're looking for doesn't exist or has been removed.
+              <p className="text-muted-foreground mb-6">
+                The series you&apos;re looking for doesn&apos;t exist or has been removed.
               </p>
               <Link href="/shop">
                 <Button variant="primary">Back to Shop</Button>
@@ -118,7 +118,7 @@ export default function SeriesPage() {
   const lockedCount = artworks.filter(a => a.is_locked).length
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       {/* Series Header */}
       <SectionWrapper spacing="sm" background="muted">
         <Container maxWidth="default">
@@ -126,7 +126,7 @@ export default function SeriesPage() {
             <div className="flex items-start gap-6">
               {/* Series Thumbnail */}
               {series.thumbnail_url && (
-                <div className="hidden sm:block flex-shrink-0 w-32 h-32 rounded-[16px] overflow-hidden bg-white shadow-md">
+                <div className="hidden sm:block flex-shrink-0 w-32 h-32 rounded-[16px] overflow-hidden bg-background shadow-md">
                   <img
                     src={series.thumbnail_url}
                     alt={series.name}
@@ -139,15 +139,15 @@ export default function SeriesPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   <Badge variant="primary">Series</Badge>
-                  <span className="text-sm text-[#1a1a1a]/60">by {series.vendor_name}</span>
+                  <span className="text-sm text-muted-foreground">by {series.vendor_name}</span>
                 </div>
                 
-                <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+                <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-4">
                   {series.name}
                 </h1>
 
                 {series.description && (
-                  <p className="text-lg text-[#1a1a1a]/70 mb-4 max-w-3xl">
+                  <p className="text-lg text-muted-foreground mb-4 max-w-3xl">
                     {series.description}
                   </p>
                 )}
@@ -161,12 +161,12 @@ export default function SeriesPage() {
                       <rect x="14" y="14" width="7" height="7" />
                       <rect x="3" y="14" width="7" height="7" />
                     </svg>
-                    <span className="font-medium text-[#1a1a1a]">
+                    <span className="font-medium text-foreground">
                       {series.total_artworks} Artwork{series.total_artworks !== 1 ? 's' : ''}
                     </span>
                   </div>
                   
-                  <span className="text-[#1a1a1a]/20">•</span>
+                  <span className="text-border">•</span>
                   
                   <div className="flex items-center gap-2">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a8754" strokeWidth="2">
@@ -180,7 +180,7 @@ export default function SeriesPage() {
 
                   {lockedCount > 0 && (
                     <>
-                      <span className="text-[#1a1a1a]/20">•</span>
+                      <span className="text-border">•</span>
                       <div className="flex items-center gap-2">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0c417" strokeWidth="2">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -204,7 +204,7 @@ export default function SeriesPage() {
         <Container maxWidth="default">
           {artworks.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-[#1a1a1a]/60">No artworks in this series yet.</p>
+              <p className="text-muted-foreground">No artworks in this series yet.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -212,7 +212,7 @@ export default function SeriesPage() {
                 <div key={artwork.id} className="relative">
                   {/* Locked Overlay */}
                   {artwork.is_locked && (
-                    <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm rounded-[24px] flex items-center justify-center">
+                    <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm rounded-[24px] flex items-center justify-center">
                       <div className="text-center p-4">
                         <svg
                           width="32"
@@ -226,8 +226,8 @@ export default function SeriesPage() {
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
-                        <p className="text-sm font-medium text-[#1a1a1a]">Locked</p>
-                        <p className="text-xs text-[#1a1a1a]/60 mt-1">Coming Soon</p>
+                        <p className="text-sm font-medium text-foreground">Locked</p>
+                        <p className="text-xs text-muted-foreground mt-1">Coming Soon</p>
                       </div>
                     </div>
                   )}
@@ -263,7 +263,7 @@ export default function SeriesPage() {
                             height="64"
                             viewBox="0 0 24 24"
                             fill="none"
-                            stroke="#1a1a1a"
+                            stroke="currentColor"
                             strokeWidth="1"
                             className="opacity-20"
                           >

@@ -15,7 +15,7 @@ const TOTAL_DURATION_MS = 2800
 const TOTAL_DURATION_S = TOTAL_DURATION_MS / 1000
 
 const pillClass =
-  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-bold tabular-nums bg-white/95 dark:bg-neutral-800/95 text-neutral-800 dark:text-neutral-100 shadow-xl border border-neutral-200/80 dark:border-neutral-600/60 backdrop-blur-sm'
+  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-bold tabular-nums bg-card/95 dark:bg-neutral-800/95 text-neutral-800 dark:text-neutral-100 shadow-xl border border-neutral-200/80 dark:border-neutral-600/60 backdrop-blur-sm'
 
 export function DiscountCelebration({ amount, onComplete, popFromCart = false }: DiscountCelebrationProps) {
   const formatted = amount >= 0.01 ? `$${formatPriceCompact(amount)}` : ''

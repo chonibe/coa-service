@@ -51,8 +51,8 @@ export function NavCart({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ShoppingBag className="text-[#1a1a1a]" size={20} />
-          <h3 className="font-semibold text-lg text-[#1a1a1a]">
+          <ShoppingBag className="text-foreground" size={20} />
+          <h3 className="font-semibold text-lg text-foreground">
             Cart {itemCount > 0 && `(${itemCount})`}
           </h3>
         </div>
@@ -60,7 +60,7 @@ export function NavCart({
           <button
             type="button"
             onClick={onViewCart}
-            className="text-sm text-[#047AFF] hover:underline"
+            className="text-sm text-experience-highlight hover:underline"
           >
             View Full Cart
           </button>
@@ -71,18 +71,18 @@ export function NavCart({
       {!isEmpty && showTieredFreeShippingBar && remainingForFreeShipping > 0 && (
         <div className="mb-4 p-3 bg-[#f5f5f5] rounded-xl">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-[#1a1a1a]/60">
+            <p className="text-xs text-muted-foreground">
               {remainingForFreeShipping > 0
                 ? `$${remainingForFreeShipping.toFixed(2)} away from free shipping`
                 : '🎉 You qualify for free shipping!'}
             </p>
-            <span className="text-xs font-semibold text-[#047AFF]">
+            <span className="text-xs font-semibold text-experience-highlight">
               {Math.round(progressToFreeShipping)}%
             </span>
           </div>
-          <div className="w-full h-2 bg-white rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-background rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#047AFF] to-[#4c6bfe] transition-all duration-500"
+              className="h-full bg-gradient-to-r from-experience-highlight to-experience-highlight-soft transition-all duration-500"
               style={{ width: `${progressToFreeShipping}%` }}
             />
           </div>
@@ -93,10 +93,10 @@ export function NavCart({
       {isEmpty && (
         <div className="text-center py-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#f5f5f5] rounded-full mb-4">
-            <ShoppingBag className="text-[#1a1a1a]/30" size={28} />
+            <ShoppingBag className="text-muted-foreground" size={28} />
           </div>
-          <h4 className="font-semibold text-[#1a1a1a] mb-1">Your cart is empty</h4>
-          <p className="text-sm text-[#1a1a1a]/60">
+          <h4 className="font-semibold text-foreground mb-1">Your cart is empty</h4>
+          <p className="text-sm text-muted-foreground">
             Start adding artworks to your collection
           </p>
         </div>
@@ -118,10 +118,10 @@ export function NavCart({
 
       {/* Subtotal & Checkout */}
       {!isEmpty && (
-        <div className="border-t border-[#1a1a1a]/10 pt-4 space-y-3">
+        <div className="border-t border-border pt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#1a1a1a]/60">Subtotal</span>
-            <span className="font-semibold text-lg text-[#1a1a1a]">
+            <span className="text-sm text-muted-foreground">Subtotal</span>
+            <span className="font-semibold text-lg text-foreground">
               ${subtotal.toFixed(2)}
             </span>
           </div>
@@ -133,7 +133,7 @@ export function NavCart({
             className={cn(
               'w-full flex items-center justify-center gap-2',
               'py-3.5 px-6 rounded-xl',
-              'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white',
+              'bg-foreground hover:bg-foreground/90 text-background',
               'font-semibold text-base',
               'transition-all duration-200',
               'disabled:opacity-50 disabled:cursor-not-allowed'
@@ -141,7 +141,7 @@ export function NavCart({
           >
             {loading ? (
               <>
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-background/20 border-t-background rounded-full animate-spin" />
                 Processing...
               </>
             ) : (
@@ -152,7 +152,7 @@ export function NavCart({
             )}
           </button>
 
-          <p className="text-xs text-center text-[#1a1a1a]/40">
+          <p className="text-xs text-center text-muted-foreground">
             Taxes and shipping calculated at checkout
           </p>
         </div>
@@ -172,7 +172,7 @@ interface CartItemCardProps {
 
 function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
   return (
-    <div className="flex gap-3 p-3 bg-white rounded-xl border border-[#1a1a1a]/5 hover:border-[#1a1a1a]/10 transition-colors">
+    <div className="flex gap-3 p-3 bg-card rounded-xl border border-border hover:border-border transition-colors">
       {/* Image */}
       <Link
         href={`/shop/${item.handle}`}
@@ -194,15 +194,15 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
           className="block"
         >
           {item.artistName && (
-            <p className="text-xs text-[#1a1a1a]/50 uppercase tracking-wider">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
               {item.artistName}
             </p>
           )}
-          <h4 className="text-sm font-medium text-[#1a1a1a] line-clamp-1 hover:underline">
+          <h4 className="text-sm font-medium text-foreground line-clamp-1 hover:underline">
             {item.title}
           </h4>
           {item.variantTitle && item.variantTitle !== 'Default Title' && (
-            <p className="text-xs text-[#1a1a1a]/50">{item.variantTitle}</p>
+            <p className="text-xs text-muted-foreground">{item.variantTitle}</p>
           )}
         </Link>
 
@@ -216,9 +216,9 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
               className="p-1 hover:bg-[#f5f5f5] rounded transition-colors"
               aria-label="Decrease quantity"
             >
-              <Minus size={14} className="text-[#1a1a1a]/60" />
+              <Minus size={14} className="text-muted-foreground" />
             </button>
-            <span className="text-sm font-medium text-[#1a1a1a] min-w-[24px] text-center">
+            <span className="text-sm font-medium text-foreground min-w-[24px] text-center">
               {item.quantity}
             </span>
             <button
@@ -233,13 +233,13 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
               className="p-1 hover:bg-[#f5f5f5] rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
             >
-              <Plus size={14} className="text-[#1a1a1a]/60" />
+              <Plus size={14} className="text-muted-foreground" />
             </button>
           </div>
 
           {/* Price & Remove */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#1a1a1a]">
+            <span className="text-sm font-semibold text-foreground">
               ${(item.price * item.quantity).toFixed(2)}
             </span>
             <button

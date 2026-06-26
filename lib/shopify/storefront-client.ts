@@ -247,6 +247,7 @@ async function storefrontQueryWithToken<T>(
 // =============================================================================
 
 export interface ShopifyImage {
+  id?: string | null
   url: string
   altText: string | null
   width: number
@@ -688,6 +689,7 @@ const COLLECTION_FRAGMENT = `
     description
     descriptionHtml
     image {
+      id
       url
       altText
       width
@@ -1042,8 +1044,8 @@ export async function getCollectionWithFullProducts(handle: string, options: {
 
 /**
  * Get a collection with lightweight product data for the experience artwork strip.
- * Uses ProductListFields (no description, media, full variants). Fetch full product
- * on-demand when user opens ArtworkDetail.
+ * Uses ProductListFields (no description, media, full variants). Gallery views hydrate
+ * full image sets on demand via /api/shop/products/[handle] (ProductFields images first: 50).
  */
 export async function getCollectionWithListProducts(handle: string, options: {
   first?: number

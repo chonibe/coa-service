@@ -169,7 +169,7 @@ export function WishlistDrawer({
       <div
         ref={drawerRef}
         className={cn(
-          'fixed bottom-4 left-4 z-50 h-[calc(100%-2rem)] w-full max-w-md bg-white flex flex-col shadow-2xl',
+          'fixed bottom-4 left-4 z-50 h-[calc(100%-2rem)] w-full max-w-md bg-background flex flex-col shadow-2xl',
           className
         )}
         style={{
@@ -208,7 +208,7 @@ export function WishlistDrawer({
           <div className="px-6 py-4 bg-gradient-to-b from-white to-[#f9f9f9]/50">
             {/* Sort Bar */}
             <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2 text-sm text-[#1a1a1a]/60">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium">
                   {filteredAndSortedItems.length} {filteredAndSortedItems.length === 1 ? 'item' : 'items'}
                 </span>
@@ -220,7 +220,7 @@ export function WishlistDrawer({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="appearance-none text-sm pl-3 pr-8 py-2 border border-[#1a1a1a]/10 rounded-lg bg-white text-[#1a1a1a] hover:border-[#390000]/30 focus:outline-none focus:ring-2 focus:ring-[#390000]/20 focus:border-[#390000]/30 transition-all cursor-pointer"
+                    className="appearance-none text-sm pl-3 pr-8 py-2 border border-border rounded-lg bg-background text-foreground hover:border-[#390000]/30 focus:outline-none focus:ring-2 focus:ring-[#390000]/20 focus:border-[#390000]/30 transition-all cursor-pointer"
                   >
                     <option value="newest">Newest</option>
                     <option value="oldest">Oldest</option>
@@ -231,7 +231,7 @@ export function WishlistDrawer({
                   </select>
                   <ChevronDown 
                     size={14} 
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#1a1a1a]/40 pointer-events-none"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
                   />
                 </div>
 
@@ -243,7 +243,7 @@ export function WishlistDrawer({
                       'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                       showFilters || artistFilter !== 'all'
                         ? 'bg-[#390000] text-[#ffba94] shadow-sm'
-                        : 'bg-white border border-[#1a1a1a]/10 text-[#1a1a1a] hover:border-[#390000]/30'
+                        : 'bg-background border border-border text-foreground hover:border-[#390000]/30'
                     )}
                   >
                     <SlidersHorizontal size={16} />
@@ -260,10 +260,10 @@ export function WishlistDrawer({
 
             {/* Expandable Filter Panel */}
             {showFilters && uniqueArtists.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-[#1a1a1a]/5 animate-in slide-in-from-top-2 duration-200">
+              <div className="space-y-3 pt-3 border-t border-border animate-in slide-in-from-top-2 duration-200">
                 {/* Artist Filter - Button Grid */}
                 <div>
-                  <label className="text-xs font-semibold text-[#1a1a1a]/70 uppercase tracking-wide mb-2 block">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
                     Artist
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -273,7 +273,7 @@ export function WishlistDrawer({
                         'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
                         artistFilter === 'all'
                           ? 'bg-[#390000] text-[#ffba94] shadow-sm'
-                          : 'bg-white border border-[#1a1a1a]/10 text-[#1a1a1a] hover:border-[#390000]/30 hover:bg-[#390000]/5'
+                          : 'bg-background border border-border text-foreground hover:border-[#390000]/30 hover:bg-[#390000]/5'
                       )}
                     >
                       All <span className="ml-1 text-xs opacity-70">({items.length})</span>
@@ -288,7 +288,7 @@ export function WishlistDrawer({
                             'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
                             artistFilter === artist
                               ? 'bg-[#390000] text-[#ffba94] shadow-sm'
-                              : 'bg-white border border-[#1a1a1a]/10 text-[#1a1a1a] hover:border-[#390000]/30 hover:bg-[#390000]/5'
+                              : 'bg-background border border-border text-foreground hover:border-[#390000]/30 hover:bg-[#390000]/5'
                           )}
                         >
                           {artist} <span className="ml-1 text-xs opacity-70">({count})</span>
@@ -317,11 +317,11 @@ export function WishlistDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <Heart size={48} className="text-[#1a1a1a]/20 mb-4" />
-              <p className="text-lg font-medium text-[#1a1a1a]">
+              <Heart size={48} className="text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-foreground">
                 Your wishlist is empty
               </p>
-              <p className="mt-1 text-sm text-[#1a1a1a]/60">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Save items you love for later
               </p>
               <button
@@ -333,11 +333,11 @@ export function WishlistDrawer({
             </div>
           ) : filteredAndSortedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <SlidersHorizontal size={48} className="text-[#1a1a1a]/20 mb-4" />
-              <p className="text-lg font-medium text-[#1a1a1a]">
+              <SlidersHorizontal size={48} className="text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-foreground">
                 No items match your filters
               </p>
-              <p className="mt-1 text-sm text-[#1a1a1a]/60">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Try adjusting your filters
               </p>
               <button
@@ -368,7 +368,7 @@ export function WishlistDrawer({
 
         {/* Footer */}
         {!isEmpty && (
-          <div className="border-t border-[#1a1a1a]/10 px-6 py-4 bg-white">
+          <div className="border-t border-border px-6 py-4 bg-background">
             <button
               onClick={onClose}
               className="w-full px-6 py-3 bg-[#390000] text-[#ffba94] hover:bg-[#390000]/90 rounded-lg font-semibold transition-colors"
@@ -396,7 +396,7 @@ interface WishlistItemCardProps {
 function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: WishlistItemCardProps) {
   return (
     <div
-      className="wishlist-item group relative bg-white border border-[#1a1a1a]/10 rounded-lg p-3 hover:shadow-md transition-all duration-200"
+      className="wishlist-item group relative bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all duration-200"
       style={{
         opacity: isOpen ? 1 : 0,
         transform: isOpen ? 'translateY(0)' : 'translateY(15px)',
@@ -409,7 +409,7 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove() }}
-        className="absolute top-2 right-2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm text-[#047AFF] hover:bg-[#047AFF]/10 hover:scale-110 active:scale-95 transition-all touch-manipulation"
+        className="absolute top-2 right-2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-background/90 backdrop-blur-sm shadow-sm text-experience-highlight hover:bg-experience-highlight/10 hover:scale-110 active:scale-95 transition-all touch-manipulation"
         aria-label="Remove from wishlist"
       >
         <Heart size={18} className="fill-[#f83a3a] text-[#f83a3a]" />
@@ -428,7 +428,7 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
@@ -442,19 +442,19 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div>
             <h3 
-              className="text-sm font-semibold text-[#1a1a1a] line-clamp-2 mb-1 cursor-pointer hover:text-[#390000] transition-colors"
+              className="text-sm font-semibold text-foreground line-clamp-2 mb-1 cursor-pointer hover:text-[#390000] transition-colors"
               onClick={() => window.location.href = `/shop/${item.handle}`}
             >
               {item.title}
             </h3>
             <div className="flex items-center gap-2 mb-2">
               {item.artistName && (
-                <p className="text-xs text-[#1a1a1a]/60">{item.artistName}</p>
+                <p className="text-xs text-muted-foreground">{item.artistName}</p>
               )}
               {item.editionCount && (
                 <>
-                  {item.artistName && <span className="text-xs text-[#1a1a1a]/30">•</span>}
-                  <p className="text-xs text-[#1a1a1a]/50 font-medium">
+                  {item.artistName && <span className="text-xs text-muted-foreground">•</span>}
+                  <p className="text-xs text-muted-foreground font-medium">
                     Edition {item.editionCount}
                   </p>
                 </>
@@ -464,7 +464,7 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
           
           {/* Price and Add to Cart */}
           <div className="flex items-center gap-3">
-            <p className="text-sm font-bold text-[#1a1a1a]">
+            <p className="text-sm font-bold text-foreground">
               ${item.price.toFixed(2)}
             </p>
             
@@ -491,8 +491,8 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
       </div>
 
       {/* Added date */}
-      <div className="mt-2 pt-2 border-t border-[#1a1a1a]/5">
-        <p className="text-xs text-[#1a1a1a]/40">
+      <div className="mt-2 pt-2 border-t border-border">
+        <p className="text-xs text-muted-foreground">
           Added {new Date(item.addedAt).toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric',

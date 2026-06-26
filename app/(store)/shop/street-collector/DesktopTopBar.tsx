@@ -3,7 +3,10 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { cn } from '@/lib/utils'
+import { streetCollectorCtaCompactClass } from '@/lib/shop/street-collector-cta'
 
 interface DesktopTopBarProps {
   text: string
@@ -17,6 +20,8 @@ interface DesktopTopBarProps {
  * Desktop top bar with logo, menu, and CTA (md+). Always visible — no full-width hero above the fold.
  */
 export function DesktopTopBar({ text, href, logoUrl, embedded = false }: DesktopTopBarProps) {
+  const { resolvedTheme } = useTheme()
+  const menuTheme = resolvedTheme === 'light' ? 'light' : 'dark'
   const [menuOpen, setMenuOpen] = useState(false)
   const [SlideoutMenu, setSlideoutMenu] = useState<React.ComponentType<{
     open: boolean
@@ -36,8 +41,8 @@ export function DesktopTopBar({ text, href, logoUrl, embedded = false }: Desktop
   return (
     <div
       className={embedded
-        ? 'relative z-0 flex w-full items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4'
-        : 'fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between border-b border-neutral-200/60 bg-white/80 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/80 sm:px-4'}
+        ? 'relative z-0 flex w-full items-center justify-between border-b border-border bg-background px-3 py-1.5 shadow-none [filter:none] sm:px-4'
+        : 'fixed top-0 left-0 right-0 z-[120] hidden md:flex items-center justify-between border-b border-border bg-background px-3 py-1.5 shadow-none [filter:none] sm:px-4'}
       style={
         embedded
           ? undefined
@@ -62,7 +67,7 @@ export function DesktopTopBar({ text, href, logoUrl, embedded = false }: Desktop
           type="button"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
-          className="inline-flex items-center justify-center p-1 -m-1 text-neutral-600 hover:text-neutral-900 dark:text-white/80 dark:hover:text-white transition-colors"
+          className="inline-flex items-center justify-center p-1 -m-1 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Menu size={20} className="shrink-0" />
         </button>
@@ -70,7 +75,7 @@ export function DesktopTopBar({ text, href, logoUrl, embedded = false }: Desktop
           <SlideoutMenu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
-            theme="light"
+            theme={menuTheme}
             authRedirectTo="/"
           />
         )}
@@ -78,7 +83,7 @@ export function DesktopTopBar({ text, href, logoUrl, embedded = false }: Desktop
       <Link
         href={href}
         prefetch={false}
-        className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#047AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#0366d6] hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
+        className={cn(streetCollectorCtaCompactClass, 'shadow-none hover:opacity-90')}
       >
         {text}
       </Link>

@@ -145,7 +145,7 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
           willChange: 'transform, opacity',
         }}
       >
-        <div className="bg-white rounded-2xl shadow-2xl border border-[#1a1a1a]/10 overflow-hidden">
+        <div className="bg-background rounded-2xl shadow-2xl border border-border overflow-hidden">
           {/* Success Header */}
           <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border-b border-emerald-100">
             <div className="notif-check flex items-center justify-center w-6 h-6 bg-emerald-500 rounded-full">
@@ -187,17 +187,17 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
             {/* Details */}
             <div className="flex-1 min-w-0">
               {artistName && (
-                <p className="text-xs text-[#1a1a1a]/50 uppercase tracking-wider">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
                   {artistName}
                 </p>
               )}
-              <h4 className="font-semibold text-[#1a1a1a] line-clamp-1">
+              <h4 className="font-semibold text-foreground line-clamp-1">
                 {title}
               </h4>
               {variantTitle && variantTitle !== 'Default Title' && (
-                <p className="text-xs text-[#1a1a1a]/50">{variantTitle}</p>
+                <p className="text-xs text-muted-foreground">{variantTitle}</p>
               )}
-              <p className="text-sm font-semibold text-[#1a1a1a] mt-1">
+              <p className="text-sm font-semibold text-foreground mt-1">
                 {price}
               </p>
             </div>
@@ -214,7 +214,7 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
                 'py-2.5 px-4 rounded-xl',
-                'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white',
+                'bg-foreground hover:bg-foreground/90 text-background',
                 'font-semibold text-sm',
                 'transition-colors duration-200'
               )}
@@ -230,7 +230,7 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
               }}
               className={cn(
                 'py-2.5 px-4 rounded-xl',
-                'border border-[#1a1a1a]/10 text-[#1a1a1a]',
+                'border border-border text-foreground',
                 'font-medium text-sm',
                 'hover:bg-[#f5f5f5] transition-colors duration-200'
               )}

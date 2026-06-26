@@ -65,7 +65,7 @@ export function LampDescriptionSection({
   if (!description.trim()) return null
   const wrap =
     layout === 'mobile'
-      ? 'px-4 pt-5 pb-3 border-t border-neutral-100 dark:border-white/10'
+      ? 'px-4 pt-5 pb-3 border-t border-border'
       : layout === 'embedded'
         ? 'px-4 py-3'
         : undefined
@@ -159,7 +159,7 @@ export function LampIncludesSpecsPanel({
                 <div
                   key={i}
                   className={cn(
-                    'rounded-xl border border-neutral-100 dark:border-white/10 bg-white/60 dark:bg-black/20',
+                    'rounded-xl border border-border bg-card/60 dark:bg-black/20',
                     specCardPad
                   )}
                 >
@@ -178,7 +178,7 @@ export function LampIncludesSpecsPanel({
                           key={j}
                           className="flex items-start gap-2 text-xs text-neutral-700 dark:text-[#d4b8b8] leading-relaxed"
                         >
-                          <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-white/90" />
+                          <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-card/90" />
                           <span>{item}</span>
                         </li>
                       ))}
@@ -215,7 +215,7 @@ export function LampIncludesSpecsPanel({
   return (
     <div
       className={cn(
-        'rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/40 dark:bg-[#201c1c]/35 px-4 py-4',
+        'rounded-xl border border-border bg-neutral-50/40 dark:bg-[#201c1c]/35 px-4 py-4',
         className
       )}
     >

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Container, SectionWrapper, Button } from '@/components/impact'
+import { Container, SectionWrapper, Button, NoArticlesFound } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
 import { VinylTiltEffect } from '@/components/vinyl'
 import { articles as syncedArticles, type SyncedArticle } from '@/content/shopify-content'
@@ -57,7 +57,7 @@ export default function BlogPage() {
   
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md" background="default">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
@@ -79,16 +79,16 @@ export default function BlogPage() {
   }
   
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="default">
           {/* Header with Scroll Animation */}
           <ScrollReveal animation="fadeUp" duration={0.8}>
             <div className="text-center mb-12">
-              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-4">
                 Blog
               </h1>
-              <p className="text-[#1a1a1a]/60 text-lg max-w-2xl mx-auto">
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Stories, insights, and inspiration from the world of street art and contemporary design.
               </p>
             </div>
@@ -101,8 +101,8 @@ export default function BlogPage() {
                 onClick={() => setSelectedTag(null)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
                   ${!selectedTag 
-                    ? 'bg-[#1a1a1a] text-white' 
-                    : 'bg-[#f5f5f5] text-[#1a1a1a] hover:bg-[#e5e5e5]'
+                    ? 'bg-foreground text-background' 
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                   }`}
               >
                 All
@@ -113,8 +113,8 @@ export default function BlogPage() {
                   onClick={() => setSelectedTag(tag)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
                     ${selectedTag === tag 
-                      ? 'bg-[#1a1a1a] text-white' 
-                      : 'bg-[#f5f5f5] text-[#1a1a1a] hover:bg-[#e5e5e5]'
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                 >
                   {tag}
@@ -184,7 +184,7 @@ function ArticleCard({
             {article.tags.slice(0, 2).map(tag => (
               <span 
                 key={tag}
-                className="text-xs font-medium text-[#047AFF] uppercase tracking-wider"
+                className="text-xs font-medium text-experience-highlight uppercase tracking-wider"
               >
                 {tag}
               </span>
@@ -193,19 +193,19 @@ function ArticleCard({
         )}
         
         {/* Title */}
-        <h2 className="font-heading text-xl font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
+        <h2 className="font-heading text-xl font-semibold text-foreground group-hover:text-experience-highlight transition-colors">
           {article.title}
         </h2>
         
         {/* Excerpt */}
         {article.excerpt && (
-          <p className="text-[#1a1a1a]/60 text-sm line-clamp-2">
+          <p className="text-muted-foreground text-sm line-clamp-2">
             {article.excerpt}
           </p>
         )}
         
         {/* Meta */}
-        <div className="flex items-center gap-2 text-sm text-[#1a1a1a]/50">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{formatDate(article.publishedAt)}</span>
           {article.authorName && (
             <>

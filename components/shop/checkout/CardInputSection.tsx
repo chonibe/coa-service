@@ -3,8 +3,10 @@
 import * as React from 'react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Loader2 } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import type { SavedCardInfo } from '@/lib/shop/CheckoutContext'
 import type { Stripe } from '@stripe/stripe-js'
+import { getStripeCardAppearance } from '@/lib/shop/stripe-appearance'
 
 /** Lazy-load Stripe only when component mounts (avoids loading on landing page) */
 function useStripePromise() {
@@ -99,7 +101,7 @@ function SetupFormInner({ customerEmail, onSuccess, onError }: SetupFormInnerPro
       <button
         type="submit"
         disabled={!stripe || loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-experience-text px-4 py-3 text-sm font-medium text-experience-bg disabled:opacity-50"
       >
         {loading ? (
           <>
@@ -124,16 +126,20 @@ export interface CardInputSectionProps {
 
 export function CardInputSection({ clientSecret, customerEmail, onSuccess, onError }: CardInputSectionProps) {
   const stripePromise = useStripePromise()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme !== 'light'
+  const appearance = React.useMemo(() => getStripeCardAppearance(isDark), [isDark])
+
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
-      <p className="text-sm text-amber-600">
+      <p className="text-sm text-amber-600 dark:text-amber-400">
         Payment configuration is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
       </p>
     )
   }
   if (!stripePromise) {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+      <div className="flex items-center justify-center gap-2 py-12 text-experience-text-muted">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading payment...</span>
       </div>
@@ -144,18 +150,7 @@ export function CardInputSection({ clientSecret, customerEmail, onSuccess, onErr
       stripe={stripePromise}
       options={{
         clientSecret,
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            borderRadius: '8px',
-            colorPrimary: '#0a0a0a',
-            colorBackground: '#ffffff',
-            colorText: '#171717',
-            colorDanger: '#dc2626',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            spacingUnit: '4px',
-          },
-        },
+        appearance,
       }}
     >
       <SetupFormInner customerEmail={customerEmail} onSuccess={onSuccess} onError={onError} />

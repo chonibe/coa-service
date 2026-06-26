@@ -1,12 +1,13 @@
 /**
  * Vendor profile + Shopify collection enrichment — shared by artist-spotlight and artists list API.
- * Mirrors spotlight priority: Supabase portrait → collection image/description → synced page bio.
+ * Portrait priority matches homepage: Shopify collection image → Supabase portrait → product thumbnail.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 import { hasPage, getPage } from '@/content/shopify-content'
 import { getVendorCollectionHandle } from '@/lib/shopify/collections'
+import { portraitFromCollection } from '@/lib/shopify/artist-collection-image'
 import {
   getCollectionVideoUrlByAdmin,
   resolveMediaGidToUrl,
@@ -62,6 +63,7 @@ export async function getVendorMeta(
 ): Promise<{
   bio?: string
   image?: string
+  imageObjectPosition?: string
   vendorSlug?: string
   instagram?: string
   gifUrl?: string
@@ -71,12 +73,14 @@ export async function getVendorMeta(
 }> {
   let bio: string | undefined
   let image: string | undefined
+  let imageObjectPosition: string | undefined
   let vendorSlug: string | undefined
   let instagram: string | undefined
   let gifUrl: string | undefined
   let videoUrl: string | undefined
   let unlisted: boolean | undefined
   let resolvedVendorId = vendorId
+  let supabaseImage: string | undefined
 
   if (resolvedVendorId) {
     const { data: vendor } = await supabase
@@ -87,7 +91,7 @@ export async function getVendorMeta(
     if (vendor?.bio?.trim()) bio = vendor.bio.trim()
     const v = vendor as { profile_picture_url?: string; profile_image?: string; instagram_url?: string } | null
     if (v?.profile_picture_url || v?.profile_image) {
-      image = v.profile_picture_url || v.profile_image
+      supabaseImage = v.profile_picture_url || v.profile_image
     }
     if (v?.instagram_url?.trim()) instagram = parseInstagramHandle(v.instagram_url)
   } else {
@@ -99,7 +103,7 @@ export async function getVendorMeta(
     if (vendor?.bio?.trim()) bio = vendor.bio.trim()
     const v = vendor as { profile_picture_url?: string; profile_image?: string; instagram_url?: string } | null
     if (v?.profile_picture_url || v?.profile_image) {
-      image = v.profile_picture_url || v.profile_image
+      supabaseImage = v.profile_picture_url || v.profile_image
     }
     if (v?.instagram_url?.trim()) instagram = parseInstagramHandle(v.instagram_url)
     if (vendor?.id) resolvedVendorId = (vendor as { id: number }).id
@@ -124,9 +128,10 @@ export async function getVendorMeta(
 
   const primaryCol = loadedCols[0]
   if (primaryCol) {
-    if (!image) {
-      image =
-        primaryCol.image?.url ?? primaryCol.products?.edges?.[0]?.node?.featuredImage?.url
+    const portrait = await portraitFromCollection(primaryCol)
+    if (portrait.url) {
+      image = portrait.url
+      imageObjectPosition = portrait.objectPosition
     }
     if (!bio) {
       const desc =
@@ -173,6 +178,10 @@ export async function getVendorMeta(
     if (resolved) videoUrl = resolved
   }
 
+  if (!image && supabaseImage) {
+    image = supabaseImage
+  }
+
   if (!bio) {
     const handleToTry = vendorSlug || getVendorCollectionHandle(vendorName)
     if (handleToTry) {
@@ -181,5 +190,5 @@ export async function getVendorMeta(
     }
   }
 
-  return { bio, image, vendorSlug, instagram, gifUrl, videoUrl, unlisted }
+  return { bio, image, imageObjectPosition, vendorSlug, instagram, gifUrl, videoUrl, unlisted }
 }

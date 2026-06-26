@@ -274,14 +274,14 @@ export function SplineFullScreen({
     'backdrop-blur-xl backdrop-saturate-150 shadow-md',
     theme === 'light'
       ? [
-          'border border-white/80 bg-white/45 text-neutral-800',
+          'border border-white/80 bg-card/45 text-neutral-800',
           'shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.85)]',
-          'hover:bg-white/60 hover:border-white',
+          'hover:bg-card/60 hover:border-white',
         ]
       : [
-          'border border-white/30 bg-white/18 text-[#f0e8e8]',
+          'border border-white/30 bg-card/18 text-[#f0e8e8]',
           'shadow-[0_6px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)]',
-          'hover:bg-white/28 hover:border-white/45',
+          'hover:bg-card/28 hover:border-white/45',
         ]
   )
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -539,7 +539,7 @@ export function SplineFullScreen({
       ref={shellRef}
       className={cn(
       'absolute inset-0 w-full h-full min-w-0 min-h-0 flex flex-col',
-      theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]',
+      theme === 'light' ? 'bg-experience-surface' : 'bg-experience-bg',
       className
     )}
     >
@@ -684,7 +684,6 @@ export function SplineFullScreen({
               onStripItemPress={onBundleStripItemPress}
               selectedProductId={bundleStripSelectedProductId}
               lampPreviewProductIds={bundleStripLampPreviewProductIds}
-              experienceReelRef={scrollRef}
             />
           ) : null}
         </div>
@@ -824,7 +823,7 @@ export function SplineFullScreen({
                 type="button"
                 onClick={() => setPreviewQuarterTurns((prev) => (prev + 3) % 4)}
                 aria-label="Rotate preview 90 degrees"
-                className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 text-foreground/80 hover:text-foreground bg-card/70 hover:bg-card dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
                 title="Rotate 90 degrees"
               >
                 <RotateCw size={20} className="shrink-0" />

@@ -144,8 +144,8 @@ function ArtworkArtistDetailGallery({
   detailsLabel?: string
 }) {
   return (
-    <div className={cn('py-3 border-t border-neutral-100 dark:border-white/10', className)}>
-      <div className="relative rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/40 dark:bg-[#201c1c]/35 overflow-hidden">
+    <div className={cn('py-3 border-t border-border', className)}>
+      <div className="relative rounded-xl border border-border bg-neutral-50/40 dark:bg-[#201c1c]/35 overflow-hidden">
         <HorizontalTwoSlideGallery
           resetKey={resetKey}
           ariaLabel="Artwork and artist details"
@@ -164,7 +164,7 @@ function ArtworkArtistDetailGallery({
             <div className="px-3 sm:px-4 py-3 pl-9 sm:pl-10 pr-9 sm:pr-10">
               {artistLoading ? (
                 <div className="py-10 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                 </div>
               ) : spotlight ? (
                 <ArtistSpotlightBanner
@@ -321,15 +321,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const productDetailsLabel = isLampOrBundleProduct ? 'Product details' : 'Artwork details'
   /** Hero inside unified media card: lamp 3:4; prints fixed height. Shell supplies rounded-xl. */
   const detailHeroAreaClassDesktop = cn(
-    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] overflow-hidden',
+    'relative w-full shrink-0 bg-neutral-100 bg-card overflow-hidden',
     isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(42dvh,380px)] max-h-[380px]'
   )
   const detailHeroAreaClassMobile = cn(
-    'relative w-full shrink-0 bg-neutral-100 dark:bg-[#1a1616] overflow-hidden',
+    'relative w-full shrink-0 bg-neutral-100 bg-card overflow-hidden',
     isLampOrBundleProduct ? 'aspect-[3/4]' : 'h-[min(36dvh,260px)] max-h-[260px]'
   )
   const unifiedMediaCardClass =
-    'rounded-xl overflow-hidden border border-neutral-200/90 dark:border-white/10 bg-neutral-100 dark:bg-[#1a1616] shadow-inner ring-1 ring-black/10 dark:ring-white/10 flex flex-col w-full'
+    'rounded-xl overflow-hidden border border-neutral-200/90 dark:border-white/10 bg-neutral-100 bg-card shadow-inner ring-1 ring-black/10 dark:ring-white/10 flex flex-col w-full'
   const unifiedMediaDividerClass =
     'border-t border-neutral-200/70 dark:border-white/10 bg-neutral-50/95 dark:bg-black/30'
   const streetLadderBlock = useMemo(
@@ -359,17 +359,17 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
   const detailHeaderArtistLine = isLampOrBundleProduct ? '' : editionArtistName
   const detailTitleClass = cn(
     'text-lg font-semibold leading-tight',
-    isLampOrBundleProduct ? 'text-neutral-900 dark:text-white' : 'text-[#FFBA94]',
+    isLampOrBundleProduct ? 'text-neutral-900 text-foreground' : 'text-experience-title',
     detailHeaderArtistLine && 'mt-1'
   )
   const stickySheetTitleClass = cn(
     'text-sm font-semibold tracking-tight',
-    isLampOrBundleProduct ? 'text-neutral-900 dark:text-white' : 'text-[#FFBA94]',
+    isLampOrBundleProduct ? 'text-neutral-900 text-foreground' : 'text-experience-title',
     detailHeaderArtistLine && 'mt-0.5'
   )
   const detailPriceClass = cn(
     'text-base font-semibold',
-    isLampOrBundleProduct && !isEarlyAccess && 'text-neutral-900 dark:text-white',
+    isLampOrBundleProduct && !isEarlyAccess && 'text-neutral-900 text-foreground',
     isEarlyAccess && 'text-violet-600 dark:text-violet-400'
   )
 
@@ -672,7 +672,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           data-experience-artwork-scroll
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8"
         >
-          <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
+          <div className="flex-shrink-0 pb-4 border-b border-border">
             {detailHeaderArtistLine ? (
               <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
                 {detailHeaderArtistLine}
@@ -692,8 +692,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             </div>
           </div>
           {isLoadingDetails && (
-            <div className="py-3 border-b border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
-              <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#3e3838] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+            <div className="py-3 border-b border-border flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+              <div className="w-4 h-4 border-2 border-neutral-300 border-border border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
               <span className="text-xs">Loading details…</span>
             </div>
           )}
@@ -708,7 +708,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           {showArtworkArtistGallery ? (
             <>
               {!isLampOrBundleProduct && spotlightGifUrl ? (
-                <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
+                <div className="py-3 border-b border-border space-y-3">
                   <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                 </div>
               ) : null}
@@ -724,16 +724,16 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           ) : (
             <>
               {!isLampOrBundleProduct && spotlightGifUrl ? (
-                <div className="py-3 border-b border-neutral-100 dark:border-white/10 space-y-3">
+                <div className="py-3 border-b border-border space-y-3">
                   <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                 </div>
               ) : null}
               {!isLampOrBundleProduct && description.trim() && (
-                <div className="py-3 border-b border-neutral-100 dark:border-white/10">
+                <div className="py-3 border-b border-border">
                   <button
                     type="button"
                     onClick={() => setShowDescription(!showDescription)}
-                    className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                    className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-card/5 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -761,9 +761,9 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 </div>
               )}
               {!isLampOrBundleProduct && artist && (
-                <div className="py-3 border-b border-neutral-100 dark:border-white/10">
+                <div className="py-3 border-b border-border">
                   {artistLoading ? (
-                    <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                    <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
                   ) : spotlightForBanner ? (
                     <ArtistSpotlightBanner
                       spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
@@ -775,7 +775,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             </>
           )}
         </div>
-        <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-3">
+        <div className="flex-shrink-0 border-t border-border bg-card pt-3 pb-5 space-y-3">
           {isLampOrBundleProduct && !hideScarcityBar && (
             <ScarcityBadge
               quantityAvailable={quantityAvailable}
@@ -789,7 +789,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             />
           )}
           {!hideCta && (
-            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-[#047AFF] text-white hover:bg-[#0366d6]', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
+            <button onClick={onToggleSelect} disabled={isSoldOut && !isSelected} className={cn('w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', isSelected ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]' : isSoldOut ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed' : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900', journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS)}>
               {isSelected ? <><Check className="w-4 h-4" />Added to your collection — Tap to remove</> : isSoldOut ? 'Sold Out' : <>{addToOrderLabel} — {price}{isEarlyAccess && originalPrice && <span className="ml-1.5 text-xs line-through opacity-60">{originalPrice}</span>}</>}
             </button>
           )}
@@ -800,8 +800,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
   if (inline) {
     return (
-      <div className="h-full flex flex-col bg-white dark:bg-[#171515] overflow-hidden">
-        <button type="button" onClick={onClose} className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-neutral-100 dark:border-white/10 text-sm font-medium text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 dark:hover:text-[#f0e8e8] transition-colors" aria-label="Browse artworks">
+      <div className="h-full flex flex-col bg-card overflow-hidden">
+        <button type="button" onClick={onClose} className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-border text-sm font-medium text-neutral-600 dark:text-[#c4a0a0] hover:text-neutral-900 hover:text-foreground transition-colors" aria-label="Browse artworks">
           <ChevronLeft className="w-4 h-4" />
           Browse artworks
         </button>
@@ -842,7 +842,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           exit={isSlideout ? { x: '-100%' } : { y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
-            'relative z-10 bg-white dark:bg-[#171515] overflow-hidden flex flex-col shadow-xl pointer-events-auto',
+            'relative z-10 bg-card overflow-hidden flex flex-col shadow-xl pointer-events-auto',
             isSlideout ? 'w-full max-w-4xl h-[88dvh] rounded-r-2xl' : 'w-full max-h-[95dvh] rounded-t-2xl'
           )}
         >
@@ -942,7 +942,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   {/* Scrollable content — pb ensures bottom text isn't cut off when scrolling */}
                   <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 pb-8">
                   {/* Header: title, artist, price — edition size shown in scarcity / edition blocks */}
-                  <div className="flex-shrink-0 pb-4 border-b border-neutral-100 dark:border-white/10">
+                  <div className="flex-shrink-0 pb-4 border-b border-border">
                     {detailHeaderArtistLine ? (
                       <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-widest">
                         {detailHeaderArtistLine}
@@ -990,7 +990,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
                   {/* Guarantee / returns / shipping badges — desktop */}
                   {productBadges && productBadges.length > 0 && (
-                    <div className="flex flex-wrap gap-2 py-4 border-b border-neutral-100 dark:border-white/10">
+                    <div className="flex flex-wrap gap-2 py-4 border-b border-border">
                       {productBadges.map((item, i) => {
                         const Icon = { shield: Shield, rotate: RotateCcw, globe: Globe }[item.icon]
                         const styles = item.icon === 'shield'
@@ -1034,10 +1034,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   ) : (
                     <>
                       {productIncludes && productIncludes.length > 0 && (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                        <div className="py-3 border-t border-border">
                           <button
                             onClick={() => setShowIncludes(!showIncludes)}
-                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-card/5 transition-colors group"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1075,10 +1075,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         </div>
                       )}
                       {productSpecs && productSpecs.length > 0 && (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                        <div className="py-3 border-t border-border">
                           <button
                             onClick={() => setShowSpecs(!showSpecs)}
-                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-card/5 transition-colors group"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1104,7 +1104,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                     const SpecIcon = spec.icon ? { ruler: Ruler, scale: Scale, box: Box, sun: Sun, battery: Battery, zap: Zap }[spec.icon] : List
                                     const isSingleValue = spec.items.length === 1
                                     return (
-                                      <div key={i} className="rounded-lg border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/30 px-4 py-3">
+                                      <div key={i} className="rounded-lg border border-border bg-neutral-50/50 dark:bg-[#201c1c]/30 px-4 py-3">
                                         <div className="flex items-center gap-2 mb-2">
                                           <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
                                           <h4 className="text-[11px] font-semibold text-neutral-500 dark:text-experience-highlight uppercase tracking-wider">{spec.title}</h4>
@@ -1115,7 +1115,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                           <ul className="space-y-1.5">
                                             {spec.items.map((item, j) => (
                                               <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
-                                                <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-white/90 mt-1.5 flex-shrink-0" />
+                                                <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-card/90 mt-1.5 flex-shrink-0" />
                                                 <span>{item}</span>
                                               </li>
                                             ))}
@@ -1133,15 +1133,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     </>
                   )}
                   {isLoadingDetails && (
-                    <div className="py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
-                      <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#3e3838] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+                    <div className="py-3 border-t border-border flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+                      <div className="w-4 h-4 border-2 border-neutral-300 border-border border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
                       <span className="text-xs">Loading details…</span>
                     </div>
                   )}
                   {showArtworkArtistGallery ? (
                     <>
                       {!isLampOrBundleProduct && spotlightGifUrl ? (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
+                        <div className="py-3 border-t border-border space-y-3">
                           <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                         </div>
                       ) : null}
@@ -1157,11 +1157,11 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   ) : (
                     <>
                       {!isLampOrBundleProduct && description.trim() && (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                        <div className="py-3 border-t border-border">
                           <button
                             type="button"
                             onClick={() => setShowDescription(!showDescription)}
-                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group"
+                            className="w-full flex items-center justify-between py-2.5 -my-2.5 px-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-card/5 transition-colors group"
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1189,14 +1189,14 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         </div>
                       )}
                       {!isLampOrBundleProduct && spotlightGifUrl ? (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10 space-y-3">
+                        <div className="py-3 border-t border-border space-y-3">
                           <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                         </div>
                       ) : null}
                       {!isLampOrBundleProduct && artist && (
-                        <div className="py-3 border-t border-neutral-100 dark:border-white/10">
+                        <div className="py-3 border-t border-border">
                           {artistLoading ? (
-                            <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                            <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
                           ) : spotlightForBanner ? (
                             <ArtistSpotlightBanner
                               spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
@@ -1210,7 +1210,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   </div>
 
                   {/* Fixed bar at bottom of right panel — add button (+ lamp scarcity) */}
-                  <div className="flex-shrink-0 border-t border-neutral-100 dark:border-white/10 bg-white dark:bg-[#171515] pt-3 pb-5 space-y-3">
+                  <div className="flex-shrink-0 border-t border-border bg-card pt-3 pb-5 space-y-3">
                     {isLampOrBundleProduct && !hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
@@ -1230,10 +1230,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                         className={cn(
                           'w-full h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
                           isSelected
-                            ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
+                            ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]'
                             : isSoldOut
                               ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                              : 'bg-[#047AFF] text-white hover:bg-[#0366d6]',
+                              : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
                           journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                         )}
                       >
@@ -1356,7 +1356,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             )}
 
             {!isLampOrBundleProduct && !hideScarcityBar && editionSizeNum != null && editionSizeNum > 0 && (
-              <div className="mx-4 mt-3 rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
+              <div className="mx-4 mt-3 rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-4">
                 <ScarcityBadge
                   quantityAvailable={quantityAvailable}
                   editionSize={editionSizeNum}
@@ -1393,7 +1393,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <div className="px-4 pb-3">
                 <button
                   onClick={() => setShowIncludes(!showIncludes)}
-                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
+                  className="w-full flex items-center justify-between py-3 border-t border-border group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1451,7 +1451,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               <div className="px-4 pb-3">
                 <button
                   onClick={() => setShowSpecs(!showSpecs)}
-                  className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
+                  className="w-full flex items-center justify-between py-3 border-t border-border group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1484,7 +1484,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                           return (
                             <div
                               key={i}
-                              className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-3"
+                              className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 px-4 py-3"
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 <SpecIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8] flex-shrink-0" />
@@ -1500,7 +1500,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                                 <ul className="space-y-1.5">
                                   {spec.items.map((item, j) => (
                                     <li key={j} className="text-sm text-neutral-700 dark:text-[#d4b8b8] leading-relaxed flex items-start gap-2">
-                                      <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-white/90 mt-1.5 flex-shrink-0" />
+                                      <span className="w-1 h-1 rounded-full bg-neutral-400 dark:bg-card/90 mt-1.5 flex-shrink-0" />
                                       <span>{item}</span>
                                     </li>
                                   ))}
@@ -1518,8 +1518,8 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
             {/* Loading indicator when fetching full product details */}
             {isLoadingDetails && (
-              <div className="px-4 py-3 border-t border-neutral-100 dark:border-white/10 flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
-                <div className="w-4 h-4 border-2 border-neutral-300 dark:border-[#3e3838] border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
+              <div className="px-4 py-3 border-t border-border flex items-center gap-2 text-neutral-500 dark:text-[#c4a0a0]">
+                <div className="w-4 h-4 border-2 border-neutral-300 border-border border-t-neutral-600 dark:border-t-white rounded-full animate-spin" />
                 <span className="text-xs">Loading details…</span>
               </div>
             )}
@@ -1527,7 +1527,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
             {showArtworkArtistGallery ? (
               <>
                 {!isLampOrBundleProduct && spotlightGifUrl ? (
-                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
+                  <div className="px-4 pb-3 border-t border-border pt-3 space-y-3">
                     <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                   </div>
                 ) : null}
@@ -1548,7 +1548,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                     <button
                       type="button"
                       onClick={() => setShowDescription(!showDescription)}
-                      className="w-full flex items-center justify-between py-3 border-t border-neutral-100 dark:border-white/10 group"
+                      className="w-full flex items-center justify-between py-3 border-t border-border group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center">
@@ -1581,15 +1581,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                 )}
 
                 {!isLampOrBundleProduct && spotlightGifUrl ? (
-                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3 space-y-3">
+                  <div className="px-4 pb-3 border-t border-border pt-3 space-y-3">
                     <SpotlightCollectionGif gifUrl={spotlightGifUrl} />
                   </div>
                 ) : null}
 
                 {!isLampOrBundleProduct && artist && (
-                  <div className="px-4 pb-3 border-t border-neutral-100 dark:border-white/10 pt-3">
+                  <div className="px-4 pb-3 border-t border-border pt-3">
                     {artistLoading ? (
-                      <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
+                      <div className="py-4 flex justify-center"><div className="w-5 h-5 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" /></div>
                     ) : spotlightForBanner ? (
                       <ArtistSpotlightBanner
                         spotlight={{ ...spotlightForBanner, gifUrl: undefined }}
@@ -1610,7 +1610,7 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
           <div className="absolute bottom-0 left-0 right-0 z-10 pt-0">
             <div
               className={cn(
-                'space-y-3 p-5 bg-white/90 dark:bg-[#171515]/95 backdrop-blur-xl border-t border-neutral-100 dark:border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
+                'space-y-3 p-5 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]',
                 productBadges?.length ? 'pt-4' : 'pt-5'
               )}
               style={{ backdropFilter: 'blur(20px) saturate(140%)', WebkitBackdropFilter: 'blur(20px) saturate(140%)' }}
@@ -1726,10 +1726,10 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
                   className={cn(
                     'w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
                     isSelected
-                      ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-200 dark:hover:bg-[#262222]'
+                      ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-900 text-foreground hover:bg-neutral-200 dark:hover:bg-[#262222]'
                       : isSoldOut
                         ? 'bg-neutral-100 dark:bg-[#201c1c] text-neutral-400 dark:text-[#b89090] cursor-not-allowed'
-                        : 'bg-[#047AFF] text-white hover:bg-[#0366d6]',
+                        : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
                     journeyCtaPulse && !isSelected && !isSoldOut && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
                   )}
                 >

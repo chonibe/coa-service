@@ -19,7 +19,7 @@ const HERO_VIDEO_URL =
 
 export default function CollabPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       {/* Video Hero */}
       <section className="relative w-full aspect-video bg-neutral-900 overflow-hidden">
         <MutedVideo
@@ -47,52 +47,52 @@ export default function CollabPage() {
         <Container maxWidth="narrow" paddingX="gutter">
           <ScrollReveal animation="fadeUp" delay={0.1} duration={0.8}>
             <div className="mb-12 text-center">
-              <p className="text-lg font-semibold text-[#1a1a1a] mb-2">
+              <p className="text-lg font-semibold text-foreground mb-2">
                 Start with 10% commission.
               </p>
-              <p className="text-[#1a1a1a]/80">
+              <p className="text-muted-foreground">
                 Top-performing partners unlock higher tiers and priority access to limited drops.
               </p>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-8 mb-16">
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-experience-highlight/10 text-experience-highlight font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   1
                 </div>
-                <h3 className="font-semibold text-[#1a1a1a] mb-2">Register</h3>
-                <p className="text-sm text-[#1a1a1a]/80">
+                <h3 className="font-semibold text-foreground mb-2">Register</h3>
+                <p className="text-sm text-muted-foreground">
                   Click the button and register as a collab.
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-experience-highlight/10 text-experience-highlight font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   2
                 </div>
-                <h3 className="font-semibold text-[#1a1a1a] mb-2">Share</h3>
-                <p className="text-sm text-[#1a1a1a]/80">
+                <h3 className="font-semibold text-foreground mb-2">Share</h3>
+                <p className="text-sm text-muted-foreground">
                   Share your unique collab link on your Facebook, Twitter, Blog, Website, or wherever you&apos;d like!
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-[#047AFF]/10 text-[#047AFF] font-bold text-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-experience-highlight/10 text-experience-highlight font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   3
                 </div>
-                <h3 className="font-semibold text-[#1a1a1a] mb-2">Get Commissions</h3>
-                <p className="text-sm text-[#1a1a1a]/80">
+                <h3 className="font-semibold text-foreground mb-2">Get Commissions</h3>
+                <p className="text-sm text-muted-foreground">
                   Refer to your collabs dashboard and watch your commissions roll in!
                 </p>
               </div>
             </div>
 
             <div className="rounded-2xl bg-[#f5f5f5] p-8 sm:p-10 text-center">
-              <p className="text-sm font-semibold uppercase tracking-wider text-[#1a1a1a]/60 mb-2">
+              <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                 Street Collector
               </p>
-              <h3 className="text-2xl font-semibold text-[#1a1a1a] mb-2">
+              <h3 className="text-2xl font-semibold text-foreground mb-2">
                 Limited partner spots available.
               </h3>
-              <p className="text-[#1a1a1a]/80 mb-6">
+              <p className="text-muted-foreground mb-6">
                 To apply, create a Collab account or sign in to your existing one.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

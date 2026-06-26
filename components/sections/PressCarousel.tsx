@@ -166,7 +166,7 @@ export function PressCarousel({
           {/* Scroll container */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
+            className="touch-pan-x flex gap-6 overflow-x-auto scrollbar-hide pb-4"
             style={{ scrollPaddingLeft: '1.25rem' }}
           >
             {safeQuotes.map((quote) => (
@@ -235,7 +235,7 @@ export function PressCarousel({
                 className={cn(
                   'w-2 h-2 rounded-full transition-all',
                   index === currentIndex
-                    ? 'bg-[#047AFF] w-6'
+                    ? 'bg-experience-highlight w-6'
                     : 'bg-[#1a1a1a]/20 hover:bg-[#1a1a1a]/40'
                 )}
                 aria-label={`Go to quote ${index + 1}`}
@@ -261,7 +261,7 @@ function QuoteCard({ quote, sizeClass, textColor }: QuoteCardProps) {
   return (
     <div
       className={cn(
-        'flex-shrink-0 snap-start',
+        'flex-shrink-0',
         sizeClass,
         'w-[85vw] sm:w-auto',
         'p-6 sm:p-8',
@@ -283,7 +283,7 @@ function QuoteCard({ quote, sizeClass, textColor }: QuoteCardProps) {
         className="text-base sm:text-lg leading-relaxed mb-4"
         style={{ color: textColor || '#1a1a1a' }}
       >
-        "{quote.content}"
+        {'"'}{quote.content}{'"'}
       </blockquote>
 
       {/* Author & Rating */}

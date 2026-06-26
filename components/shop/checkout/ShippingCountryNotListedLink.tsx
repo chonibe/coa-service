@@ -43,7 +43,7 @@ export function ShippingCountryNotListedLink({
           'underline underline-offset-2 font-medium',
           variant === 'dark'
             ? 'text-[#60A5FA] hover:text-[#93C5FD]'
-            : 'text-[#047AFF] hover:opacity-90',
+            : 'text-experience-highlight hover:opacity-90',
           linkClassName
         )}
       >

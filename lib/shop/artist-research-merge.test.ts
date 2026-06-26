@@ -65,4 +65,16 @@ describe('mergeResearchIntoProfile', () => {
     expect(profile.storyHook).toContain('Erez Sameach works as Erezoo from Haifa')
     expect(mergeResearchBio('zivink', undefined)).toContain('Born in Carmiel')
   })
+
+  it('drops system-like research notes for tyler-shelton', () => {
+    const profile = mergeResearchIntoProfile({}, 'tyler-shelton')
+    expect(profile.impactCallout).toBeUndefined()
+    expect(profile.exclusiveCallout).toBeUndefined()
+    expect(profile.location).toBe('Texas, USA')
+    expect(profile.storyHook).not.toMatch(/sheltonartco/i)
+    expect(profile.processGallery?.[0]?.label).toBeUndefined()
+    expect(profile.press?.some((c) => /see source article/i.test(c.quote))).toBe(false)
+    expect(profile.exhibitions?.[0]?.title).toBe('Tyler Shelton collection')
+    expect(profile.exhibitions?.[0]?.city).toBe('Austin, Texas')
+  })
 })

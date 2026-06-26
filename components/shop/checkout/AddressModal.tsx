@@ -714,7 +714,7 @@ export function AddressModal({
               'pointer-events-auto relative flex w-full max-w-full flex-col overflow-hidden',
               'max-h-[96dvh] min-h-0 sm:max-h-[90vh] sm:w-full sm:max-w-md',
               'rounded-t-2xl sm:rounded-xl',
-              isDark ? 'bg-[#171515]' : 'bg-white',
+              'bg-background',
               'shadow-2xl',
               'group-data-[state=open]:animate-in group-data-[state=closed]:animate-out',
               'group-data-[state=closed]:fade-out-0 group-data-[state=open]:fade-in-0',
@@ -785,7 +785,7 @@ export function AddressModal({
                             'w-full text-left rounded-xl border px-4 py-3 transition-colors',
                             isDark
                               ? 'border-white/20 hover:border-[#60A5FA]/50 hover:bg-[#60A5FA]/10'
-                              : 'border-neutral-200 hover:border-[#047AFF]/50 hover:bg-[#047AFF]/5'
+                              : 'border-neutral-200 hover:border-experience-highlight/50 hover:bg-experience-highlight/5'
                           )}
                         >
                           <p className={cn('text-xs font-medium mb-0.5', isDark ? 'text-[#c4a0a0]' : 'text-neutral-500')}>
@@ -815,7 +815,7 @@ export function AddressModal({
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   isDark
                     ? 'border-[#60A5FA]/40 bg-[#60A5FA]/10 text-[#60A5FA] hover:bg-[#60A5FA]/15 hover:border-[#60A5FA]/60'
-                    : 'border-[#047AFF]/40 bg-[#047AFF]/5 text-[#047AFF] hover:bg-[#047AFF]/10 hover:border-[#047AFF]/60'
+                    : 'border-experience-highlight/40 bg-experience-highlight/5 text-experience-highlight hover:bg-experience-highlight/10 hover:border-experience-highlight/60'
                 )}
               >
                 {locationLoading ? (
@@ -845,7 +845,7 @@ export function AddressModal({
                   <span aria-hidden>{flagEmoji(form.country)}</span>{' '}
                   {countryOptions.find((c) => c.code === form.country)?.name ?? form.country}
                 </span>
-                <span className={cn('text-xs font-medium', isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]')}>
+                <span className={cn('text-xs font-medium', isDark ? 'text-[#60A5FA]' : 'text-experience-highlight')}>
                   · Change
                 </span>
               </button>
@@ -1086,7 +1086,7 @@ export function AddressModal({
                         onClick={() => setShowLine2(true)}
                         className={cn(
                           'text-sm text-left hover:underline',
-                          isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]'
+                          isDark ? 'text-[#60A5FA]' : 'text-experience-highlight'
                         )}
                       >
                         + Add apartment, suite, or unit
@@ -1324,7 +1324,7 @@ export function AddressModal({
             {/* Sticky bottom save button */}
             <div className={cn(
               'shrink-0 border-t px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
-              isDark ? 'border-white/10 bg-[#171515]' : 'border-neutral-100 bg-white'
+              'border-border bg-background'
             )}>
               <Button
                 onClick={handleDone}
@@ -1339,7 +1339,7 @@ export function AddressModal({
           {/* Country picker sheet — slides in from right */}
           <div className={cn(
             'absolute inset-0 z-10 flex flex-col transition-transform duration-300 ease-in-out',
-            isDark ? 'bg-[#171515]' : 'bg-white',
+            'bg-background',
             showCountryPicker ? 'translate-x-0' : 'translate-x-full pointer-events-none'
           )}>
             <div className={cn(
@@ -1380,7 +1380,7 @@ export function AddressModal({
                     'w-full h-10 pl-9 pr-3 rounded-lg border text-sm outline-none transition-colors',
                     isDark
                       ? 'bg-[#1a1616] border-[#3e3838] text-[#f0e8e8] placeholder:text-[#b89090] focus:border-[#60A5FA]/50'
-                      : 'bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#047AFF]/50'
+                      : 'bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-experience-highlight/50'
                   )}
                 />
               </div>
@@ -1406,14 +1406,14 @@ export function AddressModal({
                           'w-full flex items-center gap-3 px-4 py-3.5 text-sm text-left transition-colors',
                           isDark ? 'hover:bg-[#201c1c]' : 'hover:bg-neutral-50',
                           isSelected
-                            ? isDark ? 'text-[#60A5FA] font-medium' : 'text-[#047AFF] font-medium'
+                            ? isDark ? 'text-[#60A5FA] font-medium' : 'text-experience-highlight font-medium'
                             : isDark ? 'text-white' : 'text-neutral-900'
                         )}
                       >
                         <span className="text-base w-6 text-center" aria-hidden>{flagEmoji(c.code)}</span>
                         <span className="flex-1">{c.name}</span>
                         {isSelected && (
-                          <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]')} />
+                          <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-experience-highlight')} />
                         )}
                       </button>
                       {/* Divider after pinned selected country */}
@@ -1431,7 +1431,7 @@ export function AddressModal({
           {narrowPhoneCountrySheet && (
             <div className={cn(
               'absolute inset-0 z-10 flex flex-col transition-transform duration-300 ease-in-out',
-              isDark ? 'bg-[#171515]' : 'bg-white',
+              'bg-background',
               showPhonePicker ? 'translate-x-0' : 'translate-x-full pointer-events-none'
             )}>
               <div className={cn(
@@ -1472,7 +1472,7 @@ export function AddressModal({
                         'w-full flex items-center gap-3 px-4 py-3.5 text-sm text-left transition-colors',
                         isDark ? 'hover:bg-[#201c1c]' : 'hover:bg-neutral-50',
                         isSelected
-                          ? isDark ? 'text-[#60A5FA] font-medium' : 'text-[#047AFF] font-medium'
+                          ? isDark ? 'text-[#60A5FA] font-medium' : 'text-experience-highlight font-medium'
                           : isDark ? 'text-white' : 'text-neutral-900'
                       )}
                     >
@@ -1482,7 +1482,7 @@ export function AddressModal({
                         {dial}
                       </span>
                       {isSelected && (
-                        <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-[#047AFF]')} />
+                        <Check className={cn('w-4 h-4 shrink-0', isDark ? 'text-[#60A5FA]' : 'text-experience-highlight')} />
                       )}
                     </button>
                   )

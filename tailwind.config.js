@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -13,10 +15,26 @@ module.exports = {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1600px",
       },
     },
+    screens: {
+      sm: "700px",
+      md: "1000px",
+      lg: "1150px",
+      xl: "1400px",
+      "2xl": "1600px",
+    },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-barlow)", "system-ui", "sans-serif"],
+        serif: ["var(--font-fraunces)", "serif"],
+        heading: ["var(--font-fraunces)", "serif"],
+        body: ["var(--font-barlow)", "system-ui", "sans-serif"],
+        "landing-serif": ["var(--font-landing-serif)", "Georgia", "serif"],
+        "landing-mono": ["var(--font-landing-mono)", "Courier New", "monospace"],
+        "landing-display": ["var(--font-landing-display)", "Impact", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -51,11 +69,112 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        app: {
+          chrome: "var(--app-chrome-bg)",
+          "chrome-text": "var(--app-chrome-text)",
+          "chrome-inactive": "var(--app-chrome-text-inactive)",
+          "chrome-border": "var(--app-chrome-border)",
+          content: "var(--app-content-bg)",
+        },
+        impact: {
+          bg: "#ffffff",
+          text: "#1a1a1a",
+          "header-bg": "#390000",
+          "header-text": "#ffba94",
+          "footer-bg": "#390000",
+          "footer-text": "#ffba94",
+          primary: "#047AFF",
+          "primary-text": "#ffffff",
+          secondary: "#f0c417",
+          "secondary-text": "#1a1a1a",
+          success: "#00a341",
+          warning: "#ffb74a",
+          error: "#f83a3a",
+          "on-sale": "#f83a3a",
+          "sold-out": "#000000",
+          badge: "#803cee",
+          "checkout-accent": "#f0c417",
+        },
+        experience: {
+          bg: "var(--experience-bg)",
+          surface: "var(--experience-surface)",
+          "surface-2": "var(--experience-surface-2)",
+          "surface-3": "var(--experience-surface-3)",
+          border: "var(--experience-border)",
+          text: "var(--experience-text)",
+          "text-secondary": "var(--experience-text-secondary)",
+          "text-muted": "var(--experience-text-muted)",
+          highlight: "var(--experience-highlight)",
+          "highlight-muted": "var(--experience-highlight-muted)",
+          "highlight-soft": "var(--experience-highlight-soft)",
+          title: "var(--experience-title)",
+          cta: "var(--experience-cta)",
+          "cta-hover": "var(--experience-cta-hover)",
+          accent: "var(--experience-accent)",
+          "accent-soft": "var(--experience-accent-soft)",
+          "accent-hover": "var(--experience-accent-hover)",
+          /** @deprecated use bg-experience-bg — kept for gradual migration */
+          dark: "var(--experience-bg)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "impact-button": "60px",
+        "impact-input": "8px",
+        "impact-block": "24px",
+        "impact-block-sm": "12px",
+        "impact-block-xs": "6px",
+      },
+      fontSize: {
+        "impact-h0": ["3rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "impact-h1": ["2.5rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "impact-h2": ["2rem", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "impact-h3": ["1.5rem", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "impact-h4": ["1.375rem", { lineHeight: "1.3", letterSpacing: "-0.02em" }],
+        "impact-h5": ["1.125rem", { lineHeight: "1.4", letterSpacing: "-0.02em" }],
+        "impact-h6": ["1rem", { lineHeight: "1.5", letterSpacing: "-0.02em" }],
+        "impact-h0-lg": ["5rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "impact-h1-lg": ["3.75rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "impact-h2-lg": ["3rem", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "impact-h3-lg": ["2.25rem", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "impact-h4-lg": ["2rem", { lineHeight: "1.3", letterSpacing: "-0.02em" }],
+        "impact-h5-lg": ["1.5rem", { lineHeight: "1.4", letterSpacing: "-0.02em" }],
+        "impact-h6-lg": ["1.25rem", { lineHeight: "1.5", letterSpacing: "-0.02em" }],
+      },
+      boxShadow: {
+        "impact-block": "0 18px 30px rgba(26, 26, 26, 0.1)",
+        "impact-sm": "0 2px 8px rgba(26, 26, 26, 0.1)",
+        "impact-md": "0 5px 15px rgba(26, 26, 26, 0.1)",
+        "impact-lg": "0 5px 30px rgba(26, 26, 26, 0.1)",
+      },
+      maxWidth: {
+        impact: "1600px",
+        "impact-narrow": "1350px",
+      },
+      spacing: {
+        "impact-section": "3rem",
+        "impact-section-md": "4rem",
+        "impact-section-lg": "4.5rem",
+        "impact-section-xl": "6rem",
+        "impact-gutter": "1.25rem",
+        "impact-gutter-md": "2rem",
+        "impact-gutter-lg": "3rem",
+        "safe-top": "env(safe-area-inset-top)",
+        "safe-bottom": "env(safe-area-inset-bottom)",
+        "safe-left": "env(safe-area-inset-left)",
+        "safe-right": "env(safe-area-inset-right)",
       },
       keyframes: {
         "accordion-down": {
@@ -71,7 +190,37 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      perspective: {
+        1000: "1000px",
+      },
+      height: {
+        12: "3rem",
+        14: "3.5rem",
+      },
+      minHeight: {
+        44: "2.75rem",
+        48: "3rem",
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-}; 
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities }) {
+      addUtilities({
+        ".scrollbar-hide": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+        },
+        ".touch-pan-x": {
+          "touch-action": "pan-x",
+        },
+        ".touch-pan-y": {
+          "touch-action": "pan-y",
+        },
+      })
+    },
+  ],
+}

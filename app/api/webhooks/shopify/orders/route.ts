@@ -7,6 +7,9 @@ import { syncShopifyOrder } from "@/lib/shopify/order-sync-utils"
 import { sendOrderConfirmationWithTracking } from "@/lib/notifications/order-confirmation"
 import { createRefundDeductionByVendor } from "@/lib/banking/refund-deduction"
 import { processWatchlistConversionOnOrder } from "@/lib/shop/edition-watchlist-conversion"
+import { getPrintFulfillmentConfig } from "@/lib/print-fulfillment/config"
+import { preparePrintFulfillmentForOrder } from "@/lib/print-fulfillment/orchestrator"
+import { normalizeShopifyOrderForPrintFulfillment } from "@/lib/print-fulfillment/shopify"
 
 /**
  * Shopify Order Webhook Handler
@@ -132,6 +135,12 @@ async function syncOrderToDatabase(order: any, supabase: any) {
         } catch (trackingError) {
           console.error(`[webhook] Error creating tracking link for order ${order.name}:`, trackingError)
         }
+
+        try {
+          await preparePrintFulfillmentFromWebhookOrder(order)
+        } catch (printFulfillmentError) {
+          console.error(`[webhook] Error preparing print fulfillment for order ${order.name}:`, printFulfillmentError)
+        }
       }
 
       // Process credit deposits for fulfilled line items
@@ -183,6 +192,26 @@ async function syncOrderToDatabase(order: any, supabase: any) {
   } catch (error) {
     console.error(`[webhook] Error syncing order ${order.name} to database:`, error)
   }
+}
+
+async function preparePrintFulfillmentFromWebhookOrder(order: any) {
+  const config = getPrintFulfillmentConfig()
+  if (!config.enabled) {
+    console.log(`[webhook] Print fulfillment disabled; skipping ${order.name}`)
+    return
+  }
+
+  const printOrder = normalizeShopifyOrderForPrintFulfillment(order)
+  const result = await preparePrintFulfillmentForOrder(printOrder, config)
+  console.log(`[webhook] Print fulfillment prepared for ${order.name}:`, {
+    folder: result.drivePackage.orderFolderUrl,
+    copiedAssets: result.copiedAssets.length,
+    missingAssets: result.missingAssets,
+    chinaDivision: result.chinaDivision.status,
+    whatsapp: result.whatsapp.status,
+    telegram: result.telegram.status,
+    dryRun: result.dryRun,
+  })
 }
 
 /**

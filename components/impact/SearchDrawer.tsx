@@ -270,7 +270,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                   No results found
                 </h3>
                 <p className="text-sm text-[#1a1a1a]/60">
-                  No results for "{query}"
+                  No results for {'"'}{query}{'"'}
                 </p>
                 <p className="text-sm text-[#1a1a1a]/50 mt-1">
                   Try different keywords or check your spelling
@@ -369,7 +369,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                       onClick={onClose}
                     >
                       <Button variant="outline" size="sm">
-                        View all results for "{query}"
+                        View all results for {'"'}{query}{'"'}
                       </Button>
                     </Link>
                   </div>

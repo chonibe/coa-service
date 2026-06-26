@@ -83,12 +83,12 @@ export default async function ShopifyPage({ params }: PageParams) {
 
 function PageContent({ title, body }: { title: string; body: string }) {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow">
           {/* Page Title with Scroll Reveal */}
           <ScrollReveal animation="fadeUp" duration={0.8}>
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-8">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-8">
               {title}
             </h1>
           </ScrollReveal>
@@ -98,11 +98,11 @@ function PageContent({ title, body }: { title: string; body: string }) {
             <SanitizedHtml
               html={body}
               className="prose prose-lg max-w-none
-                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
-                prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-                prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-[#1a1a1a]
-                prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
+                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-foreground
+                prose-p:text-muted-foreground prose-p:leading-relaxed
+                prose-a:text-experience-highlight prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-foreground
+                prose-ul:text-muted-foreground prose-ol:text-muted-foreground
                 prose-img:rounded-xl
               "
             />

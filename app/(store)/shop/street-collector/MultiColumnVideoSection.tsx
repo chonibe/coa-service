@@ -12,7 +12,7 @@ const VIDEO_ASPECT_RATIO = 4 / 5
 const stepGlassBadgeInlineClass = cn(
   'inline-flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full sm:size-[3.5rem] md:size-16',
   'font-body text-xl font-bold tabular-nums leading-none text-white sm:text-2xl md:text-2xl',
-  'border border-white/20 bg-white/12 backdrop-blur-md backdrop-saturate-150',
+  'border border-white/20 bg-card/12 backdrop-blur-md backdrop-saturate-150',
   'shadow-[0_4px_16px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]'
 )
 
@@ -26,7 +26,7 @@ const valuePropVideoOverlayBarClass = cn(
 /** Outer value-prop card — darker shell */
 const valuePropOuterCardClass = cn(
   'w-full max-w-full overflow-visible',
-  'rounded-2xl border border-[#ffba94]/[0.07] bg-[#0c0b0b]/95 shadow-[0_16px_48px_rgba(0,0,0,0.55)]',
+  'rounded-2xl border border-border bg-card/90 shadow-md',
   'p-4 sm:p-6 md:p-8'
 )
 
@@ -61,7 +61,7 @@ export function ValuePropVideoCard({ items }: { items: ValuePropItem[] }) {
                 <span className={stepGlassBadgeInlineClass} aria-hidden>
                   {i + 1}
                 </span>
-                <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-experience-title sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
                   <span className="sr-only">{`Step ${i + 1}: `}</span>
                   {prop.title}
                 </h3>
@@ -102,13 +102,13 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
     <section
       className={cn(
         'w-full py-6 sm:py-10 md:py-16',
-        'bg-[#171515] text-[#FFBA94]',
+        'bg-background text-foreground',
         className
       )}
     >
       <div className="section-stack w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-6 lg:px-8">
         {title && (
-          <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFBA94] tracking-tight text-center mb-6 sm:mb-8">
+          <h2 className="font-body font-medium text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-experience-title tracking-tight text-center mb-6 sm:mb-8">
             {title}
           </h2>
         )}
@@ -141,7 +141,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
                     <span className={stepGlassBadgeInlineClass} aria-hidden>
                       {i + 1}
                     </span>
-                    <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-[#FFBA94] sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
+                    <h3 className="line-clamp-1 min-w-0 max-w-[min(14rem,55vw)] text-left font-body text-sm font-semibold leading-tight text-experience-title sm:max-w-[16rem] sm:text-base md:max-w-[18rem] md:text-[0.95rem]">
                       <span className="sr-only">{`Step ${i + 1}: `}</span>
                       {prop.title}
                     </h3>
@@ -165,10 +165,10 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
               key={i}
               className={cn(
                 'flex flex-col gap-2 text-center items-center w-full',
-                'rounded-xl border border-[#ffba94]/15 bg-[#201c1c]/55 p-4 sm:p-5'
+                'rounded-xl border border-border bg-card/80 p-4 sm:p-5'
               )}
             >
-              <p className="font-body text-xs sm:text-sm leading-relaxed text-[#FFBA94]/80 max-w-none">
+              <p className="font-body text-xs sm:text-sm leading-relaxed text-muted-foreground max-w-none">
                 {prop.description}
               </p>
               <span className="sr-only">
@@ -183,7 +183,7 @@ export function MultiColumnVideoSection({ title, items, cue, cueHref = '/experie
           <div className="text-center mt-8 sm:mt-10 md:mt-12">
             <a
               href={cueHref}
-              className="font-body text-base sm:text-lg text-[#FFBA94]/80 hover:text-[#FFBA94] underline underline-offset-2 transition-colors"
+              className="font-body text-base sm:text-lg text-muted-foreground hover:text-experience-title underline underline-offset-2 transition-colors"
             >
               {cue}
             </a>

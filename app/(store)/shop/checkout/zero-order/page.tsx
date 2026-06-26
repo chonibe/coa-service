@@ -49,10 +49,10 @@ export default function ZeroOrderPage() {
 
   if (!sessionId) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
+      <main className="min-h-screen flex items-center justify-center bg-experience-surface p-4">
         <div className="text-center max-w-md">
-          <p className="text-neutral-600 mb-4">No session ID. Go back and try checkout again.</p>
-          <Link href="/experience" className="text-neutral-900 font-medium underline">
+          <p className="text-experience-text-muted mb-4">No session ID. Go back and try checkout again.</p>
+          <Link href="/experience" className="text-experience-text font-medium underline">
             Back to experience
           </Link>
         </div>
@@ -61,17 +61,17 @@ export default function ZeroOrderPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
-        <h1 className="text-xl font-semibold text-neutral-900 mb-2">Complete your $0 order</h1>
-        <p className="text-neutral-500 text-sm mb-6">
+    <main className="min-h-screen flex items-center justify-center bg-experience-surface p-4">
+      <div className="w-full max-w-md bg-experience-bg rounded-xl shadow-sm border border-experience-border p-6">
+        <h1 className="text-xl font-semibold text-experience-text mb-2">Complete your $0 order</h1>
+        <p className="text-experience-text-muted text-sm mb-6">
           This will create the order in Shopify admin. No payment is required.
         </p>
 
         {status === 'idle' && (
           <button
             onClick={handleComplete}
-            className="w-full h-12 rounded-lg bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition-colors"
+            className="w-full h-12 rounded-lg bg-experience-text text-experience-bg font-semibold hover:opacity-90 transition-opacity"
           >
             Create order in Shopify
           </button>
@@ -79,24 +79,24 @@ export default function ZeroOrderPage() {
 
         {status === 'loading' && (
           <div className="flex items-center justify-center gap-2 py-4">
-            <Loader2 className="w-5 h-5 animate-spin text-neutral-500" />
-            <span className="text-neutral-600">Creating order...</span>
+            <Loader2 className="w-5 h-5 animate-spin text-experience-text-muted" />
+            <span className="text-experience-text-secondary">Creating order...</span>
           </div>
         )}
 
         {status === 'success' && (
           <div className="flex flex-col items-center gap-3 py-4">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-            <span className="font-medium text-neutral-900">Order created in Shopify!</span>
+            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+            <span className="font-medium text-experience-text">Order created in Shopify!</span>
             {orderId && (
-              <span className="text-sm text-neutral-500">Order ID: {orderId}</span>
+              <span className="text-sm text-experience-text-muted">Order ID: {orderId}</span>
             )}
-            <p className="text-xs text-neutral-500 text-center">
+            <p className="text-xs text-experience-text-muted text-center">
               Check Shopify Admin → Orders (not Draft orders). Tag: headless, zero-dollar-test
             </p>
             <Link
               href="/experience"
-              className="text-sm font-medium text-neutral-900 underline mt-2"
+              className="text-sm font-medium text-experience-text underline mt-2"
             >
               Back to experience
             </Link>
@@ -105,12 +105,12 @@ export default function ZeroOrderPage() {
 
         {status === 'error' && (
           <div className="space-y-4">
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm">
               {error}
             </div>
             <button
               onClick={handleComplete}
-              className="w-full h-12 rounded-lg bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition-colors"
+              className="w-full h-12 rounded-lg bg-experience-text text-experience-bg font-semibold hover:opacity-90 transition-opacity"
             >
               Try again
             </button>
@@ -119,7 +119,7 @@ export default function ZeroOrderPage() {
 
         <Link
           href="/experience"
-          className="block text-center text-sm text-neutral-500 hover:text-neutral-700 mt-6"
+          className="block text-center text-sm text-experience-text-muted hover:text-experience-text-secondary mt-6"
         >
           Cancel and go back
         </Link>

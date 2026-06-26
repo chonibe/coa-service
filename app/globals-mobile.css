@@ -21,18 +21,18 @@
   margin-top: env(safe-area-inset-top);
 }
 
-/* Horizontal scroll with snap */
+/* Horizontal scroll rails — pan-x only so vertical page scroll passes through */
 .scroll-snap-x {
-  scroll-snap-type: x mandatory;
+  touch-action: pan-x;
   -webkit-overflow-scrolling: touch;
 }
 
 .scroll-snap-start {
-  scroll-snap-align: start;
+  /* legacy class name — snap removed; kept for callers that only need a marker */
 }
 
 .scroll-snap-center {
-  scroll-snap-align: center;
+  /* legacy class name — snap removed */
 }
 
 /* Frosted glass effect */

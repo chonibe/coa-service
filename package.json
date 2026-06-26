@@ -15,6 +15,7 @@
     "postbuild": "node scripts/setup-posthog-insights-conditional.js",
     "start": "next start",
     "lint": "next lint",
+    "lint:theme-tokens": "node scripts/lint-theme-tokens.mjs",
     "research:json": "python3 scripts/csv_to_artist_research_json.py",
     "research:refine:bios": "python3 scripts/refine_artist_research_bios_for_shop.py",
     "research:sync:csv-to-json-refine": "python3 scripts/csv_to_artist_research_json.py && python3 scripts/refine_artist_research_bios_for_shop.py",

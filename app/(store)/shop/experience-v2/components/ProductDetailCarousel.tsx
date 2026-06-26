@@ -597,7 +597,7 @@ export function ProductDetailCarousel({
               onClick={() => goToIndex(i)}
               className={cn(
                 'w-[4px] h-[4px] min-w-0 min-h-0 p-0 rounded-full transition-all shrink-0',
-                i === slideIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
+                i === slideIndex ? 'bg-card' : 'bg-card/50 hover:bg-card/70'
               )}
               style={{ width: 4, height: 4 }}
               aria-label={`Slide ${i + 1} of ${n}`}

@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useMemo, type RefObject } from 'react'
 import Image from 'next/image'
-import { ChevronRight, Eye, LayoutGrid, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, Eye, LayoutGrid, Trash2 } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -15,7 +15,6 @@ import {
 import { getMiniSplineEmbedUrl } from '@/lib/shop/experience-carousel-mini-spline'
 import type { CarouselStripLampSplineProps } from './CarouselStripLampSpline'
 import { CarouselStripLampSpline } from './CarouselStripLampSpline'
-import { CollectionArcLabel } from './CollectionArcLabel'
 
 /** Cap horizontal strip tiles so the bar + fixed + control do not crowd or clip the layout. */
 const MAX_CAROUSEL_STRIP_THUMBS = 7
@@ -78,7 +77,6 @@ export function ArtworkCarouselBar({
   onRemoveLampFromCarouselStrip,
 }: ArtworkCarouselBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const carouselWheelHostRef = useRef<HTMLDivElement>(null)
   const { theme } = useExperienceTheme()
   const { pickerEngaged, orderDrawerOpen, orderBarProps } = useExperienceOrder()
   const lampQuantityForJourney = orderBarProps?.lampQuantity ?? 0
@@ -147,48 +145,6 @@ export function ArtworkCarouselBar({
     }
   }, [isDesktop])
 
-  // Vertical wheel over the carousel (+ / thumb strip) scrolls the main reel; horizontal wheel scrolls the thumb strip only.
-  useEffect(() => {
-    const host = carouselWheelHostRef.current
-    const strip = scrollRef.current
-    if (!host || !experienceReelRef) return
-
-    const wheelDeltaY = (e: WheelEvent, scrollEl: HTMLElement) => {
-      let dy = e.deltaY
-      if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) dy *= 16
-      if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) dy *= scrollEl.clientHeight
-      return dy
-    }
-
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) return
-      if (!host.contains(e.target as Node)) return
-      const reel = experienceReelRef.current
-      if (!reel) return
-
-      const dy = wheelDeltaY(e, reel)
-      const dx = e.deltaX
-      const onStrip = strip?.contains(e.target as Node) ?? false
-
-      if (onStrip && Math.abs(dx) > Math.abs(dy)) {
-        return
-      }
-
-      if (dy === 0) return
-
-      const max = reel.scrollHeight - reel.clientHeight
-      if (max <= 0) return
-      const st = reel.scrollTop
-      if (dy < 0 && st <= 0) return
-      if (dy > 0 && st >= max - 1) return
-      reel.scrollTop += dy
-      e.preventDefault()
-    }
-
-    host.addEventListener('wheel', onWheel, { passive: false })
-    return () => host.removeEventListener('wheel', onWheel)
-  }, [experienceReelRef])
-
   const hasCarouselArtworks = selectedArtworks.length > 0
   const emptyCollectionStart = !hasCarouselArtworks && stripMode === 'collection'
 
@@ -244,55 +200,30 @@ export function ArtworkCarouselBar({
     'backdrop-blur-xl backdrop-saturate-150 shadow-lg',
     theme === 'light'
       ? [
-          'border-white/80 bg-white/45 text-neutral-800',
+          'border-white/80 bg-card/45 text-neutral-800',
           'shadow-[0_6px_24px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]',
-          'hover:bg-white/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
+          'hover:bg-card/60 hover:border-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)]',
         ]
       : [
-          'border-white/30 bg-white/18 text-white',
+          'border-white/30 bg-card/18 text-white',
           'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-          'hover:bg-white/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
-        ]
-  )
-
-  /** Opens artwork picker — purple CTA */
-  const pickerPlusButtonClass = cn(
-    'flex h-[4.5rem] w-12 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-200 active:scale-[0.95]',
-    'backdrop-blur-xl backdrop-saturate-150 shadow-lg text-white',
-    theme === 'light'
-      ? [
-          'border-violet-600 bg-violet-600',
-          'shadow-[0_6px_24px_rgba(124,58,237,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]',
-          'hover:bg-violet-700 hover:border-violet-700 hover:shadow-[0_8px_28px_rgba(124,58,237,0.42)]',
-        ]
-      : [
-          'border-violet-400/85 bg-violet-600',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]',
-          'hover:bg-violet-500 hover:border-violet-300',
+          'hover:bg-card/28 hover:border-white/45 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)]',
         ]
   )
 
   /** Empty lamp: primary entry to picker — labeled CTA instead of an unlabeled + control */
   const emptyCollectionCtaClass = cn(
     'relative flex w-full max-w-[min(100%,22rem)] items-center justify-center gap-2 rounded-2xl border px-5 py-4 text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98] min-h-[3.25rem]',
-    theme === 'light'
-      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
-      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400',
+    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover dark:text-neutral-900',
     journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
-  )
-
-  const pickerPlusWithJourney = cn(
-    pickerPlusButtonClass,
-    'animate-experience-collection-plus-prize-pulse',
-    journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
   /** Add-to-strip tiles: light glass caption — avoid black fills so the reel shows through */
   const stripAddTileCaptionClass = cn(
     'flex w-4/5 max-w-[80%] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 backdrop-blur-sm border shadow-sm',
     theme === 'light'
-      ? 'border-neutral-200/90 bg-white/90 text-neutral-900'
-      : 'border-white/35 bg-white/15 text-white'
+      ? 'border-neutral-200/90 bg-card/90 text-neutral-900'
+      : 'border-white/35 bg-card/15 text-white'
   )
 
   return (
@@ -306,7 +237,6 @@ export function ArtworkCarouselBar({
         <div className="relative z-[1] flex flex-col items-center gap-2 bg-transparent pointer-events-none">
           <div className="relative flex w-full flex-col gap-2 bg-transparent">
           <div
-            ref={carouselWheelHostRef}
             className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1.5 bg-transparent px-3 text-transparent"
           >
             {stripMode === 'watchlist' && onSwitchToCollection && (
@@ -350,8 +280,7 @@ export function ArtworkCarouselBar({
             onMouseDown={handleMouseDown}
             onClickCapture={handleClickCapture}
             className={cn(
-              /* justify-start + snap-start: snap-center/mandatory clips first/last tiles and blocks full scroll */
-              'touch-manipulation flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent text-transparent scrollbar-hide snap-x snap-proximity pb-3',
+              'touch-pan-x flex w-full min-w-0 items-center justify-start gap-4 overflow-x-auto bg-transparent text-transparent scrollbar-hide pb-3',
               'pl-2 pr-2 sm:pl-3 sm:pr-3 overscroll-x-contain',
               isDesktop && hasCarouselArtworks && 'cursor-grab active:cursor-grabbing select-none'
             )}
@@ -361,7 +290,7 @@ export function ArtworkCarouselBar({
               {showStripMiniLampSpline && onJumpToSpline ? (
                 <div
                   data-carousel-item
-                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                  className="flex shrink-0 flex-col items-center gap-1"
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     <button
@@ -394,7 +323,7 @@ export function ArtworkCarouselBar({
                       'shadow-none ring-0',
                       'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                       theme === 'light'
-                        ? 'focus-visible:outline-blue-600'
+                        ? 'focus-visible:outline-experience-highlight'
                         : 'focus-visible:outline-white/80'
                     )}
                     aria-label="Scroll to main lamp preview"
@@ -455,7 +384,7 @@ export function ArtworkCarouselBar({
                   <div
                     key={artwork.id}
                     data-carousel-item
-                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                    className="flex shrink-0 flex-col items-center gap-1"
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <button
@@ -490,7 +419,7 @@ export function ArtworkCarouselBar({
                           className={cn(
                             'pointer-events-none absolute left-1/2 top-1 z-20 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border shadow-md backdrop-blur-sm',
                             theme === 'light'
-                              ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+                              ? 'border-white/95 bg-card/95 text-neutral-800 shadow-black/15'
                               : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
                           )}
                         >
@@ -512,7 +441,7 @@ export function ArtworkCarouselBar({
                         ) : (
                           <div className={cn(
                             'w-full h-full flex items-center justify-center',
-                            theme === 'light' ? 'bg-neutral-200' : 'bg-white/10'
+                            theme === 'light' ? 'bg-neutral-200' : 'bg-foreground/10'
                           )}>
                             <span className={cn(
                               'text-xs',
@@ -529,7 +458,7 @@ export function ArtworkCarouselBar({
                 <div
                   key="strip-lamp-first-placeholder"
                   data-carousel-item
-                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                  className="flex shrink-0 flex-col items-center gap-1"
                 >
                   <div className="flex h-3.5 w-5 items-center justify-center" aria-hidden />
                   <button
@@ -585,7 +514,7 @@ export function ArtworkCarouselBar({
                   <div
                     key={`spotlight-placeholder-${artwork.id}`}
                     data-carousel-item
-                    className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
+                    className="flex shrink-0 flex-col items-center gap-1"
                   >
                     <div className="flex items-center justify-center w-5 h-3.5" aria-hidden />
                     <button
@@ -609,7 +538,7 @@ export function ArtworkCarouselBar({
                         ) : (
                           <div className={cn(
                             'w-full h-full flex items-center justify-center',
-                            theme === 'light' ? 'bg-neutral-200' : 'bg-white/10'
+                            theme === 'light' ? 'bg-neutral-200' : 'bg-foreground/10'
                           )}>
                             <span className={cn(
                               'text-xs',
@@ -636,28 +565,7 @@ export function ArtworkCarouselBar({
                   </div>
                 )
               })}
-              {stripMode === 'collection' && !emptyCollectionStart && !reserveCheckoutBar && (
-                <div
-                  data-carousel-item
-                  className="flex shrink-0 snap-start snap-always flex-col items-center gap-1"
-                >
-                  <div className="flex min-h-[1.25rem] items-end justify-center" aria-hidden>
-                    <CollectionArcLabel theme={theme} variant="strip" />
-                  </div>
-                  <div className="animate-experience-collection-plus-prize-float">
-                    <button
-                      type="button"
-                      onClick={onOpenPicker}
-                      className={pickerPlusWithJourney}
-                      aria-label="Open the collection picker"
-                      title="The Collection"
-                    >
-                      <Plus className="w-5 h-5" strokeWidth={2.25} />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {/* Spacer so last tile (+) can scroll fully into view past snap/edge clipping */}
+              {/* Spacer so last tile can scroll fully into view past snap/edge clipping */}
               <div className="shrink-0 w-3 sm:w-4" aria-hidden />
             </>
           </div>

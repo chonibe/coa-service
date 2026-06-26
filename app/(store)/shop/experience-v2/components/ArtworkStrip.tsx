@@ -28,7 +28,7 @@ const SPARKLE_COUNT = 8
 const SPARKLE_COLORS = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#facc15', '#fde047']
 
 const MERGE_CONFETTI_COUNT = 16
-const MERGE_CONFETTI_COLORS = ['#047AFF', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
+const MERGE_CONFETTI_COLORS = ['#C21350', '#3b82f6', '#60a5fa', '#22c55e', '#4ade80', '#facc15', '#fde047', '#ffffff']
 
 /** Match OrderBar / picker: bundle → lock → API ladder → Storefront ladder fallback → Shopify min variant. */
 function stripArtworkUnitUsd(
@@ -103,7 +103,7 @@ function SparkleCheck({ justAdded, className }: { justAdded: boolean; className?
       animate={tickGrow ? { scale: [1, 1.12, 1] } : { scale: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      <Check className="w-2 h-2 text-[#047AFF]" strokeWidth={2.5} />
+      <Check className="w-2 h-2 text-experience-highlight" strokeWidth={2.5} />
       <AnimatePresence>
         {sparkle && (
           <>
@@ -345,7 +345,7 @@ function ArtworkCard({
   }
 
   // Unified wizard highlight style for consistent visual affordance
-  const wizardHighlightClass = 'ring-1 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
+  const wizardHighlightClass = 'ring-1 ring-experience-highlight/90 shadow-[0_0_24px_color-mix(in_srgb,var(--experience-highlight)_95%,transparent)] animate-pulse'
 
   const isMerged = isInCart && (mergeWithLeft || mergeWithRight)
   const flushToSpine = isMerged || spinePairLayout
@@ -446,8 +446,8 @@ function ArtworkCard({
           className={cn(
             'absolute top-0.5 right-0.5 z-10 flex items-center justify-center transition-all duration-200',
             isFirstCard && showHighlightAnimation && highlightStep === 1
-              ? `w-5 h-5 rounded-md ${wizardHighlightClass} text-blue-50 bg-blue-500/70 dark:bg-blue-600/60`
-              : 'w-5 h-5 rounded-full bg-white/90 dark:bg-[#171515]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70'
+              ? `w-5 h-5 rounded-md ${wizardHighlightClass} text-white bg-experience-highlight/70 dark:bg-blue-600/60`
+              : 'w-5 h-5 rounded-full bg-card/85 backdrop-blur-sm text-neutral-700 text-foreground hover:text-neutral-900 hover:text-foreground hover:bg-card dark:hover:bg-black/70'
           )}
           aria-label="View artwork details"
         >
@@ -467,11 +467,11 @@ function ArtworkCard({
           <button
             type="button"
             onClick={handleWishlistToggle}
-            className="absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm touch-manipulation transition-all active:scale-95 hover:scale-105"
+            className="absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-card/90 backdrop-blur-sm shadow-sm touch-manipulation transition-all active:scale-95 hover:scale-105"
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart
-              className={cn('w-4 h-4', inWishlist ? 'fill-[#047AFF] text-[#047AFF]' : 'text-neutral-400 hover:text-[#0366d6]')}
+              className={cn('w-4 h-4', inWishlist ? 'fill-experience-highlight text-experience-highlight' : 'text-neutral-400 hover:text-experience-highlight-muted')}
               strokeWidth={1.5}
             />
           </button>
@@ -562,13 +562,13 @@ function ArtworkCard({
             className={cn(
               'flex items-center justify-center rounded-full transition-all duration-200',
               isFirstCard && showHighlightAnimation && highlightStep === 0
-                ? `w-5 h-5 ${wizardHighlightClass} text-blue-50 bg-blue-500/70`
+                ? `w-5 h-5 ${wizardHighlightClass} text-white bg-experience-highlight/70`
                 : 'w-4 h-4',
               !(isFirstCard && showHighlightAnimation && highlightStep === 0) && (
                 isLampSelection
-                  ? 'text-blue-500'
+                  ? 'text-experience-highlight'
                   : isInCart
-                    ? 'hover:bg-blue-200/40 dark:hover:bg-white/10 text-blue-700 dark:text-[#f0e8e8]/80 hover:text-blue-800 dark:hover:text-[#f0e8e8]'
+                    ? 'hover:bg-experience-highlight/20 dark:hover:bg-foreground/10 text-experience-highlight-muted text-foreground/80 hover:text-experience-highlight-muted hover:text-foreground'
                     : 'hover:bg-neutral-100 dark:hover:bg-[#262222] text-neutral-400 dark:text-[#c4a0a0] hover:text-neutral-600 dark:hover:text-[#e8d4d4]'
               )
             )}
@@ -594,7 +594,7 @@ function ArtworkCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStepTried?.(1); onViewDetail(product) }}
-            className="flex items-center justify-center w-4 h-4 rounded-full bg-white/90 dark:bg-[#171515]/85 backdrop-blur-sm text-neutral-700 dark:text-[#f0e8e8] hover:text-neutral-900 dark:hover:text-[#f0e8e8] hover:bg-white dark:hover:bg-black/70 transition-all shrink-0"
+            className="flex items-center justify-center w-4 h-4 rounded-full bg-card/85 backdrop-blur-sm text-neutral-700 text-foreground hover:text-neutral-900 hover:text-foreground hover:bg-card dark:hover:bg-black/70 transition-all shrink-0"
             title="View artwork details"
             aria-label="View artwork details"
           >
@@ -609,10 +609,10 @@ function ArtworkCard({
             className={cn(
               'flex items-center justify-center shrink-0 overflow-visible',
               'transition-[background-color,border-color,color,box-shadow,width,height,padding] duration-200 ease-out',
-              isFirstCard && showHighlightAnimation && highlightStep === 2 && `${wizardHighlightClass} text-blue-50 bg-blue-500/70 rounded-md`,
+              isFirstCard && showHighlightAnimation && highlightStep === 2 && `${wizardHighlightClass} text-white bg-experience-highlight/70 rounded-md`,
               isInCart && 'h-5 w-5 p-0',
-              !isInCart && 'h-5 px-2 rounded-md border border-white/40 dark:border-white/10 bg-white/60 dark:bg-[#262222]/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-white/80 dark:hover:bg-[#2c2828]/90',
-              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-[#047AFF]',
+              !isInCart && 'h-5 px-2 rounded-md border border-white/40 dark:border-white/10 bg-card/60 bg-muted/80 backdrop-blur-xl hover:border-neutral-400 dark:hover:border-[#4a4444] hover:bg-background/80 hover:bg-muted/90',
+              !(isFirstCard && showHighlightAnimation && highlightStep === 2) && isInCart && 'text-experience-highlight',
               !(isFirstCard && showHighlightAnimation && highlightStep === 2) && !isInCart && 'text-neutral-600 dark:text-[#e8d4d4]',
               isSoldOut && 'opacity-40 cursor-not-allowed'
             )}
@@ -962,7 +962,7 @@ export function ArtworkStrip({
                 >
                   <span
                     className={cn(
-                      'text-[10px] font-semibold text-neutral-700 dark:text-[#f0e8e8]/90 uppercase whitespace-nowrap [writing-mode:vertical-rl] rotate-180',
+                      'text-[10px] font-semibold text-neutral-700 text-foreground/90 uppercase whitespace-nowrap [writing-mode:vertical-rl] rotate-180',
                       shouldMerge ? 'py-0.5 tracking-wide' : 'py-2 tracking-widest'
                     )}
                   >

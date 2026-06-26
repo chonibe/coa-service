@@ -46,34 +46,34 @@ export default function ArtistSubmissionsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow" paddingX="gutter">
           <ScrollReveal animation="fadeUp" duration={0.8}>
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-8">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-8">
               Would You Like to Be Featured in Our Next Edition?
             </h1>
           </ScrollReveal>
 
           <ScrollReveal animation="fadeUp" delay={0.1} duration={0.8}>
             <div className="prose prose-lg max-w-none mb-12
-              prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
-              prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-              prose-ul:text-[#1a1a1a]/80 prose-li:my-1
+              prose-headings:font-heading prose-headings:font-semibold prose-headings:text-foreground
+              prose-p:text-muted-foreground prose-p:leading-relaxed
+              prose-ul:text-muted-foreground prose-li:my-1
             ">
               <p className="mb-6">
                 We&apos;re always on the lookout for bold, creative voices who challenge the status quo, push boundaries, and bring raw, powerful art to life. Whether you&apos;re an emerging artist or an established creator, this is your chance to have your work featured in our curated collection and displayed on lamps that bridge the gap between art, culture, and connection.
               </p>
 
-              <h2 className="text-xl font-semibold text-[#1a1a1a] mt-8 mb-4">How to Get Involved</h2>
-              <ol className="list-decimal list-inside space-y-2 text-[#1a1a1a]/80">
+              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">How to Get Involved</h2>
+              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
                 <li><strong>Submit Your Details:</strong> Share your portfolio and tell us about your journey, your inspiration, and why your work belongs in The Street Lamp collection.</li>
                 <li><strong>Enter Open Calls & Competitions:</strong> Stay tuned for opportunities to showcase your art in special edition collections or be featured as a highlighted artist.</li>
                 <li><strong>Be Part of Something Bigger:</strong> If selected, your art will be celebrated by a global community of seekers, collectors, and creators who value authenticity and connection.</li>
               </ol>
 
-              <h2 className="text-xl font-semibold text-[#1a1a1a] mt-8 mb-4">What We&apos;re Looking For</h2>
-              <ul className="list-disc list-inside space-y-1 text-[#1a1a1a]/80">
+              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">What We&apos;re Looking For</h2>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>Unique styles and fresh perspectives.</li>
                 <li>Art that tells a story or sparks a connection.</li>
                 <li>Work rooted in authenticity, creativity, and raw expression.</li>
@@ -88,7 +88,7 @@ export default function ArtistSubmissionsPage() {
             {status === 'success' ? (
               <div className="rounded-xl bg-[#00a341]/10 border border-[#00a341]/30 p-8 text-center">
                 <p className="text-lg font-medium text-[#00a341] mb-2">Thank you for your submission!</p>
-                <p className="text-[#1a1a1a]/80">We&apos;ll review your portfolio and get back to you soon.</p>
+                <p className="text-muted-foreground">We&apos;ll review your portfolio and get back to you soon.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">

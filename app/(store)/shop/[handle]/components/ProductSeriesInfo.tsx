@@ -53,10 +53,10 @@ export function ProductSeriesInfo({
       className={cn(
         'group relative overflow-hidden',
         'bg-gradient-to-br from-[#f5f5f5] to-[#fafafa]',
-        'border border-[#1a1a1a]/10',
+        'border border-border',
         'rounded-[16px]',
         'transition-all duration-300',
-        'hover:border-[#047AFF]/30 hover:shadow-md',
+        'hover:border-experience-highlight/30 hover:shadow-md',
         className
       )}
     >
@@ -64,7 +64,7 @@ export function ProductSeriesInfo({
         <div className="flex items-start gap-4">
           {/* Series Thumbnail */}
           {series.thumbnail_url && (
-            <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-[12px] overflow-hidden bg-white shadow-sm">
+            <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-[12px] overflow-hidden bg-card shadow-sm">
               <img
                 src={series.thumbnail_url}
                 alt={series.name}
@@ -77,20 +77,20 @@ export function ProductSeriesInfo({
           <div className="flex-1 min-w-0">
             {/* Badge */}
             <div className="flex items-center gap-2 mb-2">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#047AFF]/10 rounded-full">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-experience-highlight/10 rounded-full">
                 <svg
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#047AFF"
+                  stroke="currentColor"
                   strokeWidth="2"
                   className="flex-shrink-0"
                 >
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <span className="text-xs font-medium text-[#047AFF]">
+                <span className="text-xs font-medium text-experience-highlight">
                   Part of a Series
                 </span>
               </div>
@@ -105,12 +105,12 @@ export function ProductSeriesInfo({
             </div>
 
             {/* Series Name */}
-            <h3 className="font-heading text-base sm:text-lg font-semibold text-[#1a1a1a] mb-1 group-hover:text-[#047AFF] transition-colors">
+            <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground mb-1 group-hover:text-experience-highlight transition-colors">
               {series.name}
             </h3>
 
             {/* Stats — Different display for guests vs authenticated collectors */}
-            <div className="flex items-center flex-wrap gap-3 text-sm text-[#1a1a1a]/60">
+            <div className="flex items-center flex-wrap gap-3 text-sm text-muted-foreground">
               {isGuest ? (
                 /* Guest view: simple artwork count */
                 <span className="flex items-center gap-1.5">
@@ -137,7 +137,7 @@ export function ProductSeriesInfo({
 
                   {hasProgress && (
                     <>
-                      <span className="text-[#1a1a1a]/20">&bull;</span>
+                      <span className="text-muted-foreground">&bull;</span>
                       <span className="flex items-center gap-1.5 text-[#0a8754] font-medium">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -151,7 +151,7 @@ export function ProductSeriesInfo({
 
                   {!hasProgress && collectorProgress && (
                     <>
-                      <span className="text-[#1a1a1a]/20">&bull;</span>
+                      <span className="text-muted-foreground">&bull;</span>
                       <span className="text-[#f0c417] font-medium">
                         Start collecting this series
                       </span>
@@ -164,18 +164,18 @@ export function ProductSeriesInfo({
             {/* Progress Bar (authenticated collectors with progress) */}
             {hasProgress && collectorProgress!.owned_percentage > 0 && (
               <div className="mt-3">
-                <div className="relative h-1.5 bg-[#1a1a1a]/10 rounded-full overflow-hidden">
+                <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className={cn(
                       'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
                       isComplete
                         ? 'bg-gradient-to-r from-[#0a8754] to-[#0cc46e]'
-                        : 'bg-gradient-to-r from-[#047AFF] to-[#4a6cf7]'
+                        : 'bg-gradient-to-r from-experience-highlight to-experience-highlight-soft'
                     )}
                     style={{ width: `${collectorProgress!.owned_percentage}%` }}
                   />
                 </div>
-                <p className="text-xs text-[#1a1a1a]/50 mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {collectorProgress!.owned_percentage}% Complete
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function ProductSeriesInfo({
                   </div>
                 ))}
                 {seriesThumbnails.length > 5 && (
-                  <span className="text-xs text-[#1a1a1a]/50 ml-1">
+                  <span className="text-xs text-muted-foreground ml-1">
                     +{seriesThumbnails.length - 5} more
                   </span>
                 )}
@@ -210,7 +210,7 @@ export function ProductSeriesInfo({
             )}
 
             {/* View Collection Link */}
-            <div className="flex items-center gap-1.5 mt-3 text-sm font-medium text-[#047AFF] group-hover:gap-2 transition-all">
+            <div className="flex items-center gap-1.5 mt-3 text-sm font-medium text-experience-highlight group-hover:gap-2 transition-all">
               <span>{isGuest ? 'View Collection' : (hasProgress ? 'See Your Progress' : 'View Collection')}</span>
               <svg
                 width="16"

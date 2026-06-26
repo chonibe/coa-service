@@ -65,25 +65,25 @@ export function ExperienceV3EditionStrip({
           className="w-full"
           streetLadder={undefined}
         />
-        <div className="border-t border-white/[0.05] pt-2.5">
+        <div className="border-t border-border pt-2.5">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-center">
             {remainingCaption ? (
-              <span className="text-[11px] font-medium tabular-nums leading-snug text-white/55">
+              <span className="text-[11px] font-medium tabular-nums leading-snug text-muted-foreground">
                 {remainingCaption}
               </span>
             ) : null}
             {remainingCaption && stageLabel ? (
-              <span className="text-[10px] text-white/25" aria-hidden>
+              <span className="text-[10px] text-muted-foreground/50" aria-hidden>
                 ·
               </span>
             ) : null}
             {stageLabel ? (
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 {stageLabel}
               </span>
             ) : null}
             {(remainingCaption || stageLabel) ? (
-              <span className="text-[10px] text-white/25" aria-hidden>
+              <span className="text-[10px] text-muted-foreground/50" aria-hidden>
                 ·
               </span>
             ) : null}
@@ -113,7 +113,7 @@ export function ExperienceV3ProductInfoStack({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-white/[0.06] bg-[#111010]/60 md:hidden',
+        'overflow-hidden rounded-xl border border-border bg-experience-surface/60 md:hidden',
         className
       )}
     >

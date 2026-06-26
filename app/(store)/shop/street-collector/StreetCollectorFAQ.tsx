@@ -38,7 +38,7 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
     >
       <Container maxWidth="default" paddingX="gutter">
         <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-10">
-          <h1 className="font-serif text-3xl font-medium tracking-tight text-[#FFBA94] sm:text-4xl md:text-5xl lg:text-6xl">
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-experience-title sm:text-4xl md:text-5xl lg:text-6xl">
             {title}
           </h1>
         </div>
@@ -50,14 +50,14 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
             return (
               <section
                 key={groupKey}
-                className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0909] p-4 sm:rounded-2xl sm:p-5"
+                className="overflow-hidden rounded-xl border border-border bg-card p-4 sm:rounded-2xl sm:p-5"
               >
                 {group.title.trim() ? (
-                  <div className="mb-4 flex items-center justify-start gap-3 border-b border-white/[0.06] pb-4 text-left">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-[#FFBA94]">
+                  <div className="mb-4 flex items-center justify-start gap-3 border-b border-border pb-4 text-left">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-experience-highlight">
                       <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                     </div>
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-[#FFBA94] sm:text-base">
+                    <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-experience-title sm:text-base">
                       {group.title}
                     </h2>
                   </div>
@@ -69,22 +69,22 @@ export function StreetCollectorFAQ({ title, groups }: StreetCollectorFAQProps) {
                       key={item.question}
                       value={`${groupKey}-${idx}`}
                       className={cn(
-                        'border-b border-white/[0.06] last:border-b-0',
+                        'border-b border-border last:border-b-0',
                         'py-3.5 first:pt-0 last:pb-0 sm:py-4'
                       )}
                     >
                       <AccordionTrigger
                         className={cn(
                           'flex w-full flex-row items-center justify-between gap-3 py-0 text-left hover:no-underline',
-                          'text-sm font-medium text-[#FFBA94] sm:text-[15px]',
-                          '[&[data-state=open]]:text-[#FFBA94]',
-                          'hover:text-[#FFBA94]/90 transition-colors',
-                          '[&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0 [&>svg]:text-[#FFBA94]/70'
+                          'text-sm font-medium text-foreground sm:text-[15px]',
+                          '[&[data-state=open]]:text-foreground',
+                          'hover:text-foreground/90 transition-colors',
+                          '[&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground'
                         )}
                       >
                         <span className="min-w-0 flex-1 pr-2 text-left leading-snug">{item.question}</span>
                       </AccordionTrigger>
-                      <AccordionContent className="pb-1 pt-2 text-left text-[13px] leading-relaxed text-white/55 sm:text-sm">
+                      <AccordionContent className="pb-1 pt-2 text-left text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
                         {item.answer}
                       </AccordionContent>
                     </AccordionItem>

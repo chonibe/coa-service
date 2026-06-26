@@ -497,7 +497,7 @@ export function Configurator({
   const chevronButtonRef = useRef<HTMLButtonElement>(null)
   
   // Unified wizard highlight style for consistent visual affordance
-  const wizardHighlightClass = 'ring-2 ring-blue-400/90 shadow-[0_0_24px_rgba(59,130,246,0.95)] animate-pulse'
+  const wizardHighlightClass = 'ring-2 ring-experience-highlight/90 shadow-[0_0_24px_color-mix(in_srgb,var(--experience-highlight)_95%,transparent)] animate-pulse'
   const handleOpenFilter = useCallback(() => {
     setFilterOpen(true)
     setTriedSteps((prev) => {
@@ -1405,7 +1405,7 @@ export function Configurator({
 
   if (products.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-neutral-950 text-white">
+      <div className="flex h-full items-center justify-center bg-background text-foreground">
         <div className="text-center max-w-md px-6">
           <h1 className="text-2xl font-semibold mb-3 text-[#FFBA94]">Artworks unavailable</h1>
           <p className="text-neutral-400 mb-6">
@@ -1418,7 +1418,7 @@ export function Configurator({
               type="button"
               onClick={retryLoadArtworks}
               disabled={retryingArtworks}
-              className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="inline-block px-6 py-2.5 bg-background text-foreground rounded-full text-sm font-medium hover:bg-muted transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {retryingArtworks ? (
                 <>
@@ -1433,13 +1433,13 @@ export function Configurator({
               type="button"
               onClick={() => window.location.reload()}
               disabled={retryingArtworks}
-              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/10 transition-colors disabled:opacity-70"
+              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-foreground/10 transition-colors disabled:opacity-70"
             >
               Refresh page
             </button>
             <Link
               href="/shop"
-              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
+              className="inline-block px-6 py-2.5 bg-transparent border border-white/20 text-white rounded-full text-sm font-medium hover:bg-foreground/10 transition-colors"
             >
               Back to Shop
             </Link>
@@ -1450,7 +1450,7 @@ export function Configurator({
   }
 
   return (
-    <div className="flex flex-col md:flex-row md:flex-row-reverse h-full bg-white md:bg-transparent">
+    <div className="flex flex-col md:flex-row md:flex-row-reverse h-full bg-background md:bg-transparent">
       {/* 3D Lamp viewer — on mobile: size depends on selectorSheetState */}
       <motion.div
         data-wizard-spline
@@ -1458,7 +1458,7 @@ export function Configurator({
         className={cn(
           'relative overflow-hidden flex-shrink-0 transition-[height,min-height,flex-basis] duration-200 ease-out',
           'max-w-[100vw] max-h-[100dvh] min-w-0',
-          isArModeActive ? 'bg-transparent' : (theme === 'light' ? 'bg-[#F5F5F5]' : 'bg-[#171515]'),
+          isArModeActive ? 'bg-transparent' : 'bg-muted',
           /* Desktop: side-by-side, preview 60% — bigger (75%) when selector collapsed */
           'md:flex-none md:h-full md:min-h-0',
           selectorSheetState === 'collapsed' ? 'md:w-[75%]' : 'md:w-[60%]',
@@ -1545,7 +1545,7 @@ export function Configurator({
                 'inline-flex items-center justify-center p-2 rounded-lg backdrop-blur-sm transition-colors cursor-pointer',
                 arCameraOn
                   ? 'text-amber-600 dark:text-amber-400 bg-amber-500/20 dark:bg-amber-400/20 hover:bg-amber-500/30'
-                  : 'text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60',
+                  : 'text-neutral-600 hover:text-neutral-900 text-foreground/80 hover:text-foreground bg-background/80 hover:bg-background backdrop-blur-sm transition-colors cursor-pointer',
                 (cameraStatus === 'denied' || cameraStatus === 'error') && 'opacity-70'
               )}
             >
@@ -1560,7 +1560,7 @@ export function Configurator({
             type="button"
             onClick={() => setPreviewQuarterTurns((prev) => (prev + 3) % 4)}
             aria-label="Rotate preview 90 degrees"
-            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 text-foreground/80 hover:text-foreground bg-background/80 hover:bg-background backdrop-blur-sm transition-colors cursor-pointer"
             title="Rotate 90 degrees"
           >
             <RotateCw size={20} className="shrink-0" />
@@ -1569,7 +1569,7 @@ export function Configurator({
             type="button"
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 dark:text-[#f0e8e8]/80 dark:hover:text-[#f0e8e8] bg-white/80 dark:bg-[#171515]/70 hover:bg-white dark:hover:bg-black/60 backdrop-blur-sm transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 text-foreground/80 hover:text-foreground bg-background/80 hover:bg-background backdrop-blur-sm transition-colors cursor-pointer"
           >
             {theme === 'light' ? <Moon size={20} className="shrink-0" /> : <Sun size={20} className="shrink-0" />}
           </button>
@@ -1591,7 +1591,7 @@ export function Configurator({
             <div 
               ref={wizardCardRef}
               className={cn(
-                'bg-blue-500 dark:bg-blue-600 border border-blue-400 dark:border-blue-500 shadow-2xl transition-all duration-200',
+                'bg-experience-highlight dark:bg-blue-600 border border-experience-highlight-soft dark:border-blue-500 shadow-2xl transition-all duration-200',
                 // Mobile: positioned next to button
                 isMobile 
                   ? 'w-full max-w-[400px] mx-auto rounded-2xl px-4 py-3'
@@ -1627,7 +1627,7 @@ export function Configurator({
                       Tap{' '}
                       <span className={cn(
                         'inline-flex items-center justify-center rounded text-white shrink-0',
-                        isMobile ? 'px-2 py-1 text-xs font-medium bg-white/20' : 'px-1.5 py-0.5 text-[10px] font-medium bg-white/20'
+                        isMobile ? 'px-2 py-1 text-xs font-medium bg-card/20' : 'px-1.5 py-0.5 text-[10px] font-medium bg-card/20'
                       )}>
                         Add
                       </span>{' '}
@@ -1873,7 +1873,7 @@ export function Configurator({
               <button
                 type="button"
                 onClick={saveImagePosition}
-                className="w-full mt-1 py-1.5 rounded text-[10px] font-medium bg-white/20 hover:bg-white/30 text-white transition-colors"
+                className="w-full mt-1 py-1.5 rounded text-[10px] font-medium bg-card/20 hover:bg-card/30 text-white transition-colors"
               >
                 Save as default
               </button>
@@ -1909,7 +1909,7 @@ export function Configurator({
       <motion.div
         layout={false}
         className={cn(
-          'relative flex flex-col bg-white dark:bg-[#171515] overflow-hidden min-h-0 transition-[height,flex] duration-200 ease-out',
+          'relative flex flex-col bg-background overflow-hidden min-h-0 transition-[height,flex] duration-200 ease-out',
           /* Desktop: always full */
           'md:flex-1 md:h-full',
           /* Mobile: 2 states — when collapsed, keep expand tab visible (min 56px); 60/40 split when half */
@@ -1921,23 +1921,23 @@ export function Configurator({
         <>
         {/* Step indicator bar — mobile only; on desktop steps are in top toolbar (hidden) */}
         {false && selectorSheetState !== 'collapsed' && (
-          <div className="md:hidden flex-shrink-0 w-full flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-[#171515]">
+          <div className="md:hidden flex-shrink-0 w-full flex items-center justify-center gap-2 px-4 py-2 bg-background">
             {/* Step 1 */}
             <div className={cn('flex items-center gap-1.5', lampQuantity === 0 ? 'opacity-100' : 'opacity-60')}>
-              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity === 0 ? 'bg-[#047AFF] text-white' : 'bg-[#047AFF] text-white')}>
+              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity === 0 ? 'bg-experience-highlight text-white' : 'bg-experience-highlight text-white')}>
                 {lampQuantity > 0 ? <Check className="w-2.5 h-2.5" /> : '1'}
               </span>
-              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity === 0 ? 'text-[#047AFF]' : 'text-neutral-600 dark:text-neutral-400')}>
+              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity === 0 ? 'text-experience-highlight' : 'text-neutral-600 dark:text-neutral-400')}>
                 {lampQuantity === 0 ? 'Add Street Lamp' : ''}
               </span>
             </div>
             <ChevronRight className="w-3 h-3 text-neutral-400 dark:text-neutral-600 shrink-0" />
             {/* Step 2 */}
             <div className={cn('flex items-center gap-1.5', lampQuantity > 0 && cartOrder.length === 0 ? 'opacity-100' : lampQuantity > 0 && cartOrder.length > 0 ? 'opacity-60' : 'opacity-40')}>
-              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity > 0 && cartOrder.length === 0 ? 'bg-[#047AFF] text-white' : lampQuantity > 0 && cartOrder.length > 0 ? 'bg-[#047AFF] text-white' : 'bg-neutral-400 dark:bg-neutral-600 text-white')}>
+              <span className={cn('flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shrink-0', lampQuantity > 0 && cartOrder.length === 0 ? 'bg-experience-highlight text-white' : lampQuantity > 0 && cartOrder.length > 0 ? 'bg-experience-highlight text-white' : 'bg-neutral-400 dark:bg-neutral-600 text-white')}>
                 {lampQuantity > 0 && cartOrder.length > 0 ? <Check className="w-2.5 h-2.5" /> : '2'}
               </span>
-              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity > 0 && cartOrder.length === 0 ? 'text-[#047AFF]' : lampQuantity > 0 && cartOrder.length > 0 ? 'text-neutral-600 dark:text-neutral-400' : 'text-neutral-500 dark:text-neutral-500')}>
+              <span className={cn('text-xs font-semibold whitespace-nowrap', lampQuantity > 0 && cartOrder.length === 0 ? 'text-experience-highlight' : lampQuantity > 0 && cartOrder.length > 0 ? 'text-neutral-600 dark:text-neutral-400' : 'text-neutral-500 dark:text-neutral-500')}>
                 {lampQuantity === 0 ? 'Add your Art' : cartOrder.length === 0 ? '' : 'Artwork added'}
               </span>
             </div>
@@ -1953,8 +1953,8 @@ export function Configurator({
           className={cn(
             'relative flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5',
             selectorSheetState === 'collapsed' ? 'border-b-0 md:border-b' : (showLampPaywall ? 'border-b-0' : 'border-b border-neutral-100 dark:border-[#342e2e]'),
-            selectorSheetState === 'collapsed' && 'bg-white/70 dark:bg-[#1a1616]/90 backdrop-blur-xl backdrop-saturate-150 border-white/50 dark:border-white/10',
-            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-white/85 dark:active:bg-neutral-800/95 justify-center',
+            selectorSheetState === 'collapsed' && 'bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-border',
+            selectorSheetState === 'collapsed' && isMobile && 'cursor-pointer active:bg-background/85 justify-center',
           )}
           style={selectorSheetState === 'collapsed' ? { backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)' } : undefined}
           aria-label={selectorSheetState === 'collapsed' && isMobile ? 'Expand artworks' : undefined}
@@ -1982,14 +1982,14 @@ export function Configurator({
                     'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
                     hasActiveFilters(filters)
                       ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
-                      : 'bg-white dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#3e3838] hover:border-neutral-300 dark:hover:border-[#4a4444] hover:bg-neutral-50 dark:hover:bg-[#262222]',
+                      : 'bg-card dark:bg-[#201c1c] text-muted-foreground dark:text-[#d4b8b8] border-border border-border hover:border-border dark:hover:border-[#4a4444] hover:bg-muted dark:hover:bg-[#262222]',
                     showHighlightAnimation && highlightStep === 4 && wizardHighlightClass
                   )}
                   aria-label="Open filters"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   {activeFilterCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white dark:bg-[#2c2828] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#4a4444] text-[10px] flex items-center justify-center font-bold leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-card text-foreground ring-1 ring-border text-[10px] flex items-center justify-center font-bold leading-none">
                       {activeFilterCount}
                     </span>
                   )}
@@ -2009,7 +2009,7 @@ export function Configurator({
                     className={cn(
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season1'
-                        ? 'bg-white dark:bg-[#262222] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                        ? 'bg-card dark:bg-[#262222] text-foreground text-foreground shadow-sm'
                         : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                     )}
                   >
@@ -2021,7 +2021,7 @@ export function Configurator({
                     className={cn(
                       'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                       activeSeason === 'season2'
-                        ? 'bg-white dark:bg-[#262222] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                        ? 'bg-card dark:bg-[#262222] text-foreground text-foreground shadow-sm'
                         : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                     )}
                   >
@@ -2096,7 +2096,7 @@ export function Configurator({
                   '!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg text-[10px] font-medium leading-none flex-shrink-0',
                   initialFilters?.artists?.includes(a)
                     ? 'bg-neutral-900 dark:bg-[#262222] text-white hover:bg-neutral-800 dark:hover:bg-[#2c2828]'
-                    : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-neutral-900 dark:text-[#e8d4d4] hover:bg-neutral-50 dark:hover:bg-[#262222]'
+                    : 'bg-card dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-foreground dark:text-[#e8d4d4] hover:bg-muted dark:hover:bg-[#262222]'
                 )}
               >
                 {a} <X className="w-2 h-2" />
@@ -2106,7 +2106,7 @@ export function Configurator({
               <button
                 key={t}
                 onClick={() => setFilters({ ...filters, tags: filters.tags.filter((x) => x !== t) })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#262222] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-card dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-foreground dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-muted dark:hover:bg-[#262222] flex-shrink-0"
               >
                 {t} <X className="w-2 h-2" />
               </button>
@@ -2114,7 +2114,7 @@ export function Configurator({
             {filters.priceRange && (
               <button
                 onClick={() => setFilters({ ...filters, priceRange: null })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#262222] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-card dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-foreground dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-muted dark:hover:bg-[#262222] flex-shrink-0"
               >
                 {filters.priceRange[1] === Infinity ? `$${filters.priceRange[0]}+` : `$${filters.priceRange[0]}–$${filters.priceRange[1]}`}
                 <X className="w-2 h-2" />
@@ -2123,7 +2123,7 @@ export function Configurator({
             {filters.inStockOnly && (
               <button
                 onClick={() => setFilters({ ...filters, inStockOnly: false })}
-                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-neutral-900 dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-neutral-50 dark:hover:bg-[#262222] flex-shrink-0"
+                className="!min-h-6 h-6 m-0 flex items-center justify-center gap-1.5 px-2.5 py-0 rounded-lg bg-card dark:bg-[#201c1c] border border-neutral-900 dark:border-[#4a4444] text-foreground dark:text-[#e8d4d4] text-[10px] font-medium leading-none hover:bg-muted dark:hover:bg-[#262222] flex-shrink-0"
               >
                 In stock <X className="w-2 h-2" />
               </button>
@@ -2275,7 +2275,7 @@ export function Configurator({
             <div className={cn(
                 'flex flex-col gap-0 w-full overflow-hidden',
                 lampQuantity > 0
-                  ? 'bg-[#171515] rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
+                  ? 'bg-background rounded-t-none md:rounded-tr-lg md:rounded-br-lg md:rounded-tl-none md:rounded-bl-none'
                   : 'bg-neutral-100 rounded-lg'
               )}>
               <div className={cn(
@@ -2426,7 +2426,7 @@ export function Configurator({
                   {/* Dark tint */}
                   <div className="absolute inset-0 bg-[#0e0a0a]/70" />
                   {/* Hint chip */}
-                  <div className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 select-none">
+                  <div className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-foreground/10 border border-white/20 select-none">
                     <p className="text-xs font-medium text-white/80 tracking-wide">Tap to browse artworks</p>
                   </div>
                   {/* Scroll bounce hint */}
@@ -2454,7 +2454,7 @@ export function Configurator({
               <button
                 type="button"
                 onClick={() => setShowAllArtworks(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-200 dark:border-[#342e2e] bg-white dark:bg-[#1e1a1a] text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#262222] hover:border-neutral-300 dark:hover:border-[#4a4444] transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-card text-sm font-medium text-muted-foreground hover:bg-muted hover:border-border transition-colors"
               >
                 Show all artworks
               </button>
@@ -2468,18 +2468,18 @@ export function Configurator({
         {/* Bottom bar (mobile only): Filter far left, Search expands into space; Season tabs + Chevron right — when selector expanded */}
         {/* When ad preset active and not yet expanded: replace bottom bar with Show all artworks button */}
         {isMobile && selectorSheetState === 'half' && adPreset && !showAllArtworks && (
-          <div className="flex-shrink-0 w-full flex items-center justify-center px-4 py-2.5 border-t border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#1a1616]">
+          <div className="flex-shrink-0 w-full flex items-center justify-center px-4 py-2.5 border-t border-border bg-background">
             <button
               type="button"
               onClick={() => setShowAllArtworks(true)}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-neutral-200 dark:border-[#342e2e] bg-white dark:bg-[#1e1a1a] text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#262222] hover:border-neutral-300 dark:hover:border-[#4a4444] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-border bg-card text-sm font-medium text-muted-foreground hover:bg-muted hover:border-border transition-colors"
             >
               Show all artworks
             </button>
           </div>
         )}
         {isMobile && selectorSheetState === 'half' && (!adPreset || showAllArtworks) && (
-          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-neutral-200 dark:border-[#2c2828] bg-white dark:bg-[#1a1616]">
+          <div className="flex-shrink-0 w-full flex items-center gap-2 px-3 py-2.5 border-t border-border bg-background">
             {/* Left: Filter */}
             <div className="flex-shrink-0">
               <button
@@ -2489,14 +2489,14 @@ export function Configurator({
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 relative',
                   hasActiveFilters(filters)
                     ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
-                    : 'bg-white dark:bg-[#201c1c] text-neutral-700 dark:text-[#d4b8b8] border-neutral-200 dark:border-[#3e3838]',
+                    : 'bg-card text-muted-foreground border-border',
                   showHighlightAnimation && highlightStep === 4 && wizardHighlightClass
                 )}
                 aria-label="Open filters"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-white dark:bg-[#2c2828] text-neutral-900 dark:text-[#f0e8e8] ring-1 ring-neutral-200 dark:ring-[#4a4444] text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-card text-foreground ring-1 ring-border text-[9px] flex items-center justify-center font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -2505,7 +2505,7 @@ export function Configurator({
 
             {/* Center: Season tabs */}
             <div className="flex-1 min-w-0 flex items-center justify-center">
-              <div className="flex rounded-lg border border-neutral-200 dark:border-[#3e3838] p-0.5 bg-neutral-50 dark:bg-[#201c1c]/50 flex-shrink-0">
+              <div className="flex rounded-lg border border-neutral-200 border-border p-0.5 bg-neutral-50 dark:bg-[#201c1c]/50 flex-shrink-0">
               {false && (
               <AnimatePresence initial={false} mode="wait">
                 {searchExpanded ? (
@@ -2550,7 +2550,7 @@ export function Configurator({
                       'relative flex items-center justify-center w-9 h-9 rounded-lg border shrink-0',
                       searchQuery
                         ? 'bg-neutral-900 text-white border-neutral-900'
-                        : 'bg-white text-neutral-700 border-neutral-200'
+                        : 'bg-card text-muted-foreground border-border'
                     )}
                     aria-label="Search artworks"
                   >
@@ -2568,7 +2568,7 @@ export function Configurator({
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season1'
-                    ? 'bg-white dark:bg-[#262222] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                    ? 'bg-card dark:bg-[#262222] text-foreground text-foreground shadow-sm'
                     : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                 )}
               >
@@ -2580,7 +2580,7 @@ export function Configurator({
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                   activeSeason === 'season2'
-                    ? 'bg-white dark:bg-[#262222] text-neutral-900 dark:text-[#f0e8e8] shadow-sm'
+                    ? 'bg-card dark:bg-[#262222] text-foreground text-foreground shadow-sm'
                     : 'text-neutral-500 dark:text-[#c4a0a0] hover:text-neutral-700 dark:hover:text-[#e8d4d4]'
                 )}
               >
@@ -2597,8 +2597,8 @@ export function Configurator({
                 className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg border shrink-0 transition-colors',
                   showHighlightAnimation && highlightStep === 5 && isMobile
-                    ? `${wizardHighlightClass} border-blue-300/80 dark:border-blue-400/70 bg-blue-100/80 dark:bg-blue-900/40`
-                    : 'border-neutral-200 dark:border-[#3e3838] bg-white dark:bg-[#201c1c] text-neutral-600 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#262222] hover:text-neutral-900 dark:hover:text-[#f0e8e8]'
+                    ? `${wizardHighlightClass} border-experience-highlight-soft/80 dark:border-blue-400/70 bg-experience-highlight/15 dark:bg-blue-900/40`
+                    : 'border-border border-border bg-card dark:bg-[#201c1c] text-muted-foreground dark:text-[#d4b8b8] hover:bg-muted dark:hover:bg-[#262222] hover:text-foreground hover:text-foreground'
                 )}
                 aria-label={selectorSheetState === 'half' ? 'Expand to full' : 'Collapse selector'}
               >

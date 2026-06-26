@@ -12,7 +12,7 @@
   left: 0;
   width: 8px;
   height: 8px;
-  background: var(--peach);
+  background: var(--experience-highlight);
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
@@ -29,7 +29,7 @@
   left: 0;
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(255, 186, 148, 0.4);
+  border: 1px solid color-mix(in srgb, var(--experience-highlight) 40%, transparent);
   border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
@@ -44,7 +44,7 @@
   position: fixed;
   inset: 0;
   z-index: 500;
-  background: rgba(10, 9, 9, 0.96);
+  background: color-mix(in srgb, var(--experience-bg) 96%, transparent);
   backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
@@ -66,10 +66,10 @@
   overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--card);
+  background: var(--experience-surface-2);
   transform: scale(0.96);
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  border: 1px solid var(--border);
+  border: 1px solid var(--experience-border);
 }
 
 .lightboxOpen .lightboxInner {
@@ -109,19 +109,19 @@
   right: 20px;
   width: 40px;
   height: 40px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--experience-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   background: none;
   transition: all 0.2s;
   font-size: 18px;
 }
 
 .lightboxClose:hover {
-  border-color: var(--peach);
-  color: var(--peach);
+  border-color: var(--experience-highlight);
+  color: var(--experience-highlight);
 }
 
 .lbMeta {
@@ -144,7 +144,7 @@
 .lbStory {
   font-size: 14px;
   line-height: 1.85;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-bottom: 24px;
 }
 
@@ -158,7 +158,7 @@
 .lbArtworks {
   margin-bottom: 28px;
   padding-bottom: 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--experience-border);
 }
 
 .lbArtworksTitle {
@@ -166,7 +166,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-bottom: 14px;
 }
 
@@ -195,7 +195,7 @@
 .lbArtworkCard {
   display: flex;
   flex-direction: column;
-  background: var(--card2);
+  background: var(--experience-surface-3);
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -219,7 +219,7 @@
 .lbArtworkPlaceholder {
   width: 100%;
   aspect-ratio: 1;
-  background: linear-gradient(145deg, #2a1818 0%, #171515 100%);
+  background: linear-gradient(145deg, var(--experience-surface-2) 0%, var(--experience-bg) 100%);
 }
 
 .lbArtworkTitle {
@@ -227,7 +227,7 @@
   font-family: var(--font-landing-serif), Georgia, serif;
   font-size: 11px;
   line-height: 1.35;
-  color: var(--white);
+  color: var(--experience-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -238,8 +238,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: var(--peach);
-  color: var(--dark);
+  background: var(--experience-cta);
+  color: var(--experience-bg);
   font-family: var(--font-landing-mono), 'Courier New', monospace;
   font-size: 11px;
   font-weight: 500;
@@ -251,7 +251,7 @@
 }
 
 .lbCta:hover {
-  background: var(--peach2);
+  background: var(--experience-cta-hover);
 }
 
 .lbCtaOutline {
@@ -271,14 +271,14 @@
 }
 
 .lbCtaOutline:hover {
-  border-color: var(--white);
-  color: var(--white);
+  border-color: var(--experience-text);
+  color: var(--experience-text);
 }
 
 .lbRelated {
   margin-top: 28px;
   padding-top: 24px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
 }
 
 .lbRelatedTitle {
@@ -286,7 +286,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-bottom: 16px;
 }
 
@@ -297,7 +297,7 @@
 }
 
 .lbRelatedCard {
-  background: var(--card2);
+  background: var(--experience-surface-3);
   overflow: hidden;
   transition: opacity 0.2s;
   border: 0;
@@ -321,7 +321,7 @@
   padding: 8px;
   font-family: var(--font-landing-serif), Georgia, serif;
   font-size: 12px;
-  color: var(--white);
+  color: var(--experience-text);
 }
 
 /* ── HERO ── */
@@ -344,7 +344,7 @@
   z-index: 0;
   background:
     radial-gradient(ellipse 60% 80% at 70% 50%, rgba(255, 186, 148, 0.04) 0%, transparent 70%),
-    linear-gradient(to bottom, var(--dark) 0%, transparent 40%, transparent 60%, var(--dark) 100%);
+    linear-gradient(to bottom, var(--experience-bg) 0%, transparent 40%, transparent 60%, var(--experience-bg) 100%);
 }
 
 .heroContent {
@@ -359,7 +359,7 @@
   font-weight: 500;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
   margin-bottom: 28px;
   display: flex;
   align-items: center;
@@ -370,7 +370,7 @@
   content: '';
   width: 36px;
   height: 1px;
-  background: var(--peach);
+  background: var(--experience-highlight);
 }
 
 .heroH1 {
@@ -383,13 +383,13 @@
 
 .heroH1 em {
   font-style: italic;
-  color: var(--peach);
+  color: var(--experience-title);
 }
 
 .heroDesc {
   font-size: 14px;
   line-height: 1.85;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   max-width: 440px;
   margin-bottom: 48px;
   border-left: 2px solid rgba(255, 186, 148, 0.25);
@@ -401,7 +401,7 @@
   flex-wrap: wrap;
   gap: 28px 48px;
   padding-top: 32px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
 }
 
 .stat {
@@ -413,7 +413,7 @@
 .statN {
   font-family: var(--font-landing-display), Impact, sans-serif;
   font-size: 40px;
-  color: var(--peach);
+  color: var(--experience-title);
   line-height: 1;
   letter-spacing: 0.04em;
 }
@@ -424,7 +424,7 @@
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
 }
 
 .scrollHint {
@@ -439,14 +439,14 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   z-index: 2;
 }
 
 .scrollLine {
   width: 1px;
   height: 48px;
-  background: linear-gradient(to bottom, var(--peach), transparent);
+  background: linear-gradient(to bottom, var(--experience-highlight), transparent);
 }
 
 /* ── PHILOSOPHY ── */
@@ -454,9 +454,9 @@
   position: relative;
   z-index: 10;
   padding: 120px 72px;
-  background: var(--darker);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  background: var(--experience-surface);
+  border-top: 1px solid var(--experience-border);
+  border-bottom: 1px solid var(--experience-border);
   overflow: hidden;
 }
 
@@ -486,7 +486,7 @@
   font-size: 9px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
   margin-bottom: 40px;
   display: flex;
   align-items: center;
@@ -500,7 +500,7 @@
   flex: 1;
   max-width: 80px;
   height: 1px;
-  background: var(--peach);
+  background: var(--experience-highlight);
   opacity: 0.4;
 }
 
@@ -510,25 +510,25 @@
   font-weight: 400;
   font-style: italic;
   line-height: 1.3;
-  color: var(--white);
+  color: var(--experience-text);
   margin-bottom: 40px;
 }
 
 .philosophyQuote em {
-  color: var(--peach);
+  color: var(--experience-title);
   font-style: normal;
 }
 
 .philosophyBody {
   font-size: 12px;
   line-height: 2;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   max-width: 560px;
   margin: 0 auto;
 }
 
 .philosophyBody strong {
-  color: var(--peach);
+  color: var(--experience-highlight);
   font-weight: 400;
 }
 
@@ -537,13 +537,14 @@
   position: sticky;
   top: 57px;
   z-index: 100;
-  background: rgba(15, 14, 14, 0.96);
+  background: color-mix(in srgb, var(--experience-surface) 96%, transparent);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--experience-border);
   padding: 0 72px;
   display: flex;
   align-items: stretch;
   overflow-x: auto;
+  touch-action: pan-x;
 }
 
 .filterBar::-webkit-scrollbar {
@@ -557,7 +558,7 @@
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -566,19 +567,19 @@
 }
 
 .filterBtn:hover {
-  color: var(--white);
+  color: var(--experience-text);
 }
 
 .filterBtnActive {
-  color: var(--peach);
-  border-bottom-color: var(--peach);
+  color: var(--experience-highlight);
+  border-bottom-color: var(--experience-highlight);
 }
 
 .filterDot {
   display: inline-block;
   width: 5px;
   height: 5px;
-  background: var(--peach);
+  background: var(--experience-highlight);
   border-radius: 50%;
   margin-right: 7px;
   vertical-align: middle;
@@ -588,7 +589,7 @@
 .featuredSection {
   position: relative;
   z-index: 10;
-  background: var(--dark);
+  background: var(--experience-bg);
   padding: 80px 0 0;
 }
 
@@ -606,7 +607,7 @@
   font-size: 9px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -617,7 +618,7 @@
   content: '';
   width: 20px;
   height: 1px;
-  background: var(--peach);
+  background: var(--experience-highlight);
 }
 
 .featuredTitle {
@@ -630,7 +631,7 @@
 
 .featuredTitle em {
   font-style: italic;
-  color: var(--peach);
+  color: var(--experience-highlight);
 }
 
 .featuredRotate {
@@ -638,20 +639,20 @@
   font-size: 10px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
 }
 
 .featuredArtist {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 640px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
 }
 
 .featuredMedia {
   position: relative;
   overflow: hidden;
-  background: var(--card);
+  background: var(--experience-surface-2);
 }
 
 .featuredMediaImg {
@@ -693,7 +694,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--card);
+  background: var(--experience-surface-2);
   position: relative;
 }
 
@@ -704,7 +705,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(to bottom, transparent, var(--peach), transparent);
+  background: linear-gradient(to bottom, transparent, var(--experience-highlight), transparent);
 }
 
 .featuredMeta {
@@ -728,7 +729,7 @@
   font-family: var(--font-landing-serif), Georgia, serif;
   font-size: 19px;
   font-style: italic;
-  color: var(--white);
+  color: var(--experience-text);
   line-height: 1.5;
   margin-bottom: 24px;
 }
@@ -736,17 +737,17 @@
 .featuredBio {
   font-size: 14px;
   line-height: 1.8;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-bottom: 18px;
 }
 
 .featuredPullquote {
-  border-left: 2px solid var(--peach);
+  border-left: 2px solid var(--experience-highlight);
   padding-left: 20px;
   font-family: var(--font-landing-serif), Georgia, serif;
   font-size: 15px;
   font-style: italic;
-  color: var(--peach);
+  color: var(--experience-highlight);
   line-height: 1.6;
   margin-bottom: 36px;
 }
@@ -755,8 +756,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: var(--peach);
-  color: var(--dark);
+  background: var(--experience-cta);
+  color: var(--experience-bg);
   font-family: var(--font-landing-mono), 'Courier New', monospace;
   font-size: 11px;
   font-weight: 500;
@@ -769,7 +770,7 @@
 }
 
 .btnFeatured:hover {
-  background: var(--peach2);
+  background: var(--experience-cta-hover);
   transform: translateY(-1px);
 }
 
@@ -778,7 +779,7 @@
   position: relative;
   z-index: 10;
   padding: 80px 0 100px;
-  background: var(--dark);
+  background: var(--experience-bg);
 }
 
 .artistsHeader {
@@ -793,7 +794,7 @@
 .artistsHeaderNote {
   font-size: 12px;
   line-height: 1.8;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   max-width: 320px;
   text-align: right;
 }
@@ -807,7 +808,7 @@
 
 .artistCard {
   position: relative;
-  background: var(--card);
+  background: var(--experience-surface-2);
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transform-style: preserve-3d;
   will-change: transform;
@@ -820,7 +821,7 @@
 
 .artistCardMedia {
   aspect-ratio: 3 / 4;
-  background: var(--card2);
+  background: var(--experience-surface-3);
   overflow: hidden;
   position: relative;
 }
@@ -868,14 +869,14 @@
   font-family: var(--font-landing-serif), Georgia, serif;
   font-size: 22px;
   font-weight: 400;
-  color: var(--white);
+  color: var(--experience-text);
   line-height: 1;
   margin-bottom: 4px;
   transition: color 0.2s;
 }
 
 .artistCard:hover .artistCardName {
-  color: var(--peach);
+  color: var(--experience-highlight);
 }
 
 .artistCardCity {
@@ -883,7 +884,7 @@
   font-size: 9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-bottom: 12px;
 }
 
@@ -912,7 +913,7 @@
   padding: 12px 20px;
   background: rgba(15, 14, 14, 0.6);
   backdrop-filter: blur(4px);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
 }
 
 .editionsCount {
@@ -920,14 +921,14 @@
   font-size: 9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .editionsCount span {
-  color: var(--peach);
+  color: var(--experience-highlight);
 }
 
 .cardExploreLink {
@@ -936,7 +937,7 @@
   font-size: 9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -960,10 +961,10 @@
 .finalCta {
   position: relative;
   z-index: 10;
-  background: var(--darker);
+  background: var(--experience-surface);
   padding: 120px 72px;
   text-align: center;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
 }
 
 .finalTitle {
@@ -976,13 +977,13 @@
 
 .finalTitle em {
   font-style: italic;
-  color: var(--peach);
+  color: var(--experience-title);
 }
 
 .finalSub {
   font-size: 14px;
   line-height: 1.85;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   max-width: 520px;
   margin: 0 auto 48px;
 }
@@ -998,9 +999,9 @@
 .mapSection {
   position: relative;
   z-index: 10;
-  background: var(--darker);
+  background: var(--experience-surface);
   padding: 100px 72px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--experience-border);
   text-align: center;
 }
 
@@ -1009,7 +1010,7 @@
   font-size: 9px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -1022,7 +1023,7 @@
   content: '';
   width: 40px;
   height: 1px;
-  background: var(--peach);
+  background: var(--experience-highlight);
   opacity: 0.4;
 }
 
@@ -1035,7 +1036,7 @@
 }
 
 .mapTitle em {
-  color: var(--peach);
+  color: var(--experience-title);
   font-style: normal;
 }
 
@@ -1052,13 +1053,13 @@
   display: inline-flex;
   align-items: center;
   padding: 8px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--experience-border);
   border-radius: 999px;
   font-family: var(--font-landing-mono), 'Courier New', monospace;
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -1072,7 +1073,7 @@
 .mapStatN {
   font-family: var(--font-landing-display), Impact, sans-serif;
   font-size: 56px;
-  color: var(--peach);
+  color: var(--experience-title);
   display: block;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -1083,7 +1084,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
 }
 
 /* ── COLLECTOR VOICES ── */
@@ -1091,8 +1092,8 @@
   position: relative;
   z-index: 10;
   padding: 100px 56px;
-  background: var(--dark);
-  border-top: 1px solid var(--border);
+  background: var(--experience-bg);
+  border-top: 1px solid var(--experience-border);
 }
 
 .voicesHeader {
@@ -1114,7 +1115,7 @@
 
 .voicesTitle em {
   font-style: italic;
-  color: var(--peach);
+  color: var(--experience-highlight);
 }
 
 .voicesRating {
@@ -1123,7 +1124,7 @@
 
 .voicesStars {
   font-size: 22px;
-  color: var(--peach);
+  color: var(--experience-highlight);
   letter-spacing: 3px;
 }
 
@@ -1132,7 +1133,7 @@
   font-size: 9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-top: 4px;
 }
 
@@ -1143,9 +1144,9 @@
 }
 
 .voiceCard {
-  background: var(--card);
+  background: var(--experience-surface-2);
   padding: 40px 36px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--experience-border);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1180,7 +1181,7 @@
 }
 
 .voiceText em {
-  color: var(--peach);
+  color: var(--experience-highlight);
   font-style: normal;
 }
 
@@ -1189,11 +1190,11 @@
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--peach);
+  color: var(--experience-highlight);
 }
 
 .voiceLocation {
-  color: var(--muted);
+  color: var(--experience-text-muted);
   margin-top: 2px;
   font-size: 9px;
   letter-spacing: 0.12em;

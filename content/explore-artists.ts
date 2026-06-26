@@ -45,17 +45,15 @@ export const exploreArtistsContent: ExploreArtistsContent = {
   },
   philosophy: {
     eyebrow: 'Why the artists',
-    quoteHtml:
-      '“We don&apos;t license stock. We don&apos;t source prints.<br/>We find the people painting walls at <em>3am</em><br/>in cities that don&apos;t ask permission.”',
+    quoteHtml: '',
     bodyHtml:
-      'Every artist in this directory is independently sourced.<br/>Editions you see here are the runs we carry—built with the artist, not repackaged stock.<br/>When you buy a print, <strong>30% goes to the artist.</strong><br/>Fewer hands in the middle. More of the price reaches the person who made the work.',
+      'We work directly with independent street artists. No stock libraries, no middlemen.<br/><br/>When you buy a print, <strong>30% goes to the artist.</strong>',
   },
   featured: {
     eyebrow: 'In the spotlight',
     rotateLabel: 'Rotates weekly',
     title: 'In the spotlight.',
-    hook:
-      'Full profile: long-form story, history when we have it, and every edition in the shop—in one place.',
+    hook: 'View their complete story and collection.',
     ctaLabel: 'Open full profile',
   },
   collection: {

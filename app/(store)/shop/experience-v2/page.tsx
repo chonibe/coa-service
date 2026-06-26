@@ -71,15 +71,15 @@ export default async function ExperienceV2Page({ searchParams }: ExperienceV2Pag
 
   if (!lamp) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center max-w-md px-6">
-          <h1 className="text-2xl font-semibold mb-3 text-white">Unavailable</h1>
+          <h1 className="text-2xl font-semibold mb-3 text-foreground">Unavailable</h1>
           <p className="text-neutral-400 mb-6">
             Could not load the lamp product. Please try again later.
           </p>
           <Link
             href="/shop"
-            className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+            className="inline-block px-6 py-2.5 bg-background text-foreground rounded-full text-sm font-medium hover:bg-muted transition-colors"
           >
             Back to Shop
           </Link>

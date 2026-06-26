@@ -225,12 +225,12 @@ export function EditionWatchControl({
           'disabled:pointer-events-none disabled:opacity-50',
           !watching &&
             variant === 'default' &&
-            'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50 dark:bg-white/5 dark:text-[#f0e8e8] dark:ring-white/28 dark:hover:bg-white/10',
+            'bg-transparent text-foreground ring-border hover:bg-muted',
           !watching &&
             variant === 'well' &&
-            'bg-transparent text-neutral-800 ring-neutral-300 hover:bg-neutral-50/90 dark:bg-[#2c2626] dark:text-[#f4eeee] dark:ring-[#FFBA94]/28 dark:hover:bg-[#352e2e] dark:hover:ring-[#FFBA94]/40 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)]',
+            'bg-muted text-foreground ring-border hover:bg-accent dark:ring-experience-highlight/30 dark:hover:ring-experience-highlight/40',
           watching &&
-            'bg-amber-50/90 text-amber-950 ring-amber-800/25 hover:bg-amber-100/90 dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]'
+            'bg-experience-highlight-soft text-foreground ring-experience-highlight/40 hover:bg-experience-highlight-muted dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]'
         )}
       >
         {busy ? '…' : label}

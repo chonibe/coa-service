@@ -80,7 +80,7 @@ export const homeV2LandingContent = {
 
   hero: {
     eyebrow: 'Collect. Insert. Change.',
-    headlineHtml: '<em>A living art<br>collection.</em>',
+    headlineHtml: 'A living art<br><em>collection.</em>',
     /** Empty = no hero paragraph under the headline */
     description: '',
     pricingLine: { lampFrom: '$99', artworksFrom: '$40' },

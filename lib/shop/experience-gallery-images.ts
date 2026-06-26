@@ -1,0 +1,147 @@
+import type { ShopifyImage, ShopifyProduct } from '@/lib/shopify/storefront-client'
+import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+
+/** Hero column max CSS width ≈ min(72vh,820px)×3/4 (~615px); 2× retina ≈ 1230 — cap transfer size. */
+export const EXPERIENCE_GALLERY_HERO_PX = 1000
+
+/** Thumbnail rail: w-12 (48px) × 2 for retina. */
+export const EXPERIENCE_GALLERY_THUMB_PX = 96
+
+/** Zoom dialog — full viewport, still below raw Shopify master. */
+export const EXPERIENCE_GALLERY_LIGHTBOX_PX = 1800
+
+/** Spline texture — deferred idle load; keep moderate. */
+export const EXPERIENCE_GALLERY_SPLINE_PX = 1000
+
+export function getFirstProductImageUrl(product: ShopifyProduct | null | undefined): string | null {
+  if (!product) return null
+  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
+}
+
+/** Featured image first, then remaining photos in order. */
+export function collectProductImages(product: ShopifyProduct | null): ShopifyImage[] {
+  if (!product) return []
+  const edges = product.images?.edges?.map((e) => e.node) ?? []
+  const feat = product.featuredImage
+  if (feat?.url) {
+    const featUrl = feat.url
+    const rest = edges.filter((n) => n.url && n.url !== featUrl)
+    return [{ ...feat }, ...rest]
+  }
+  if (edges.length > 0) return edges
+  const u = getFirstProductImageUrl(product)
+  if (!u) return []
+  return [{ url: u, altText: product.title, width: null, height: null } as ShopifyImage]
+}
+
+/** Multi-image products default to index 1 (lifestyle); single image uses 0. */
+export function getDefaultGalleryIndex(imageCount: number): number {
+  return imageCount >= 2 ? 1 : 0
+}
+
+export function pickInitialPreviewProduct(
+  productsSeason1: ShopifyProduct[],
+  productsSeason2: ShopifyProduct[]
+): ShopifyProduct | null {
+  if (productsSeason2.length > 0) return productsSeason2[0] ?? null
+  return productsSeason1[0] ?? null
+}
+
+export function getGalleryHeroImageUrl(
+  product: ShopifyProduct | null,
+  galleryIndex?: number
+): string | null {
+  const images = collectProductImages(product)
+  if (images.length === 0) return null
+  const idx = galleryIndex ?? getDefaultGalleryIndex(images.length)
+  const node = images[idx] ?? images[0]
+  if (!node?.url) return null
+  return getShopifyImageUrl(node.url, EXPERIENCE_GALLERY_HERO_PX) ?? node.url
+}
+
+export function getGalleryThumbImageUrl(url: string | null | undefined): string | undefined {
+  return getShopifyImageUrl(url, EXPERIENCE_GALLERY_THUMB_PX) ?? url ?? undefined
+}
+
+export function getGalleryLightboxImageUrl(
+  product: ShopifyProduct | null,
+  galleryIndex: number
+): string | null {
+  const images = collectProductImages(product)
+  const node = images[galleryIndex] ?? images[0]
+  if (!node?.url) return null
+  return getShopifyImageUrl(node.url, EXPERIENCE_GALLERY_LIGHTBOX_PX) ?? node.url
+}
+
+export type GalleryImageUrlSet = {
+  thumb: string
+  hero: string
+  lightbox: string
+}
+
+/** Right-sized CDN URLs for every image in a product gallery. */
+export function buildGalleryImageUrlSets(images: ShopifyImage[]): GalleryImageUrlSet[] {
+  return images
+    .filter((im) => im.url)
+    .map((im) => ({
+      thumb: getShopifyImageUrl(im.url, EXPERIENCE_GALLERY_THUMB_PX) ?? im.url,
+      hero: getShopifyImageUrl(im.url, EXPERIENCE_GALLERY_HERO_PX) ?? im.url,
+      lightbox: getShopifyImageUrl(im.url, EXPERIENCE_GALLERY_LIGHTBOX_PX) ?? im.url,
+    }))
+}
+
+/** Warm browser cache for a list of image URLs (client-only). */
+export function prefetchImageUrls(
+  urls: string[],
+  priority: 'high' | 'low' | 'auto' = 'low'
+): void {
+  if (typeof window === 'undefined') return
+  const seen = new Set<string>()
+  for (const url of urls) {
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    const img = new window.Image()
+    if ('fetchPriority' in img) {
+      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = priority
+    }
+    img.decoding = 'async'
+    img.src = url
+  }
+}
+
+/** Inject `<link rel="preload">` for the first N hero URLs (highest LCP priority). */
+export function injectGalleryLinkPreloads(
+  heroUrls: string[],
+  maxCount = 4
+): () => void {
+  if (typeof document === 'undefined') return () => {}
+  const links: HTMLLinkElement[] = []
+  for (const href of heroUrls.slice(0, maxCount)) {
+    if (!href) continue
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = href
+    link.setAttribute('fetchpriority', links.length === 0 ? 'high' : 'low')
+    document.head.appendChild(link)
+    links.push(link)
+  }
+  return () => {
+    for (const link of links) {
+      try {
+        document.head.removeChild(link)
+      } catch {
+        // already removed
+      }
+    }
+  }
+}
+
+/** Indices to prefetch when navigating gallery (current + neighbors). */
+export function getAdjacentGalleryIndices(current: number, length: number): number[] {
+  if (length <= 0) return []
+  if (length === 1) return [0]
+  const prev = (current - 1 + length) % length
+  const next = (current + 1) % length
+  return Array.from(new Set([current, prev, next]))
+}

@@ -94,13 +94,13 @@ export default async function ArtistPage({ params, searchParams }: PageProps) {
       fallback={
         <main className="min-h-screen bg-[#171515] text-white">
           <div className="mx-auto max-w-4xl px-6 py-32 animate-pulse space-y-8">
-            <div className="h-10 w-48 rounded bg-white/10" />
+            <div className="h-10 w-48 rounded bg-foreground/10" />
             <div className="grid grid-cols-2 gap-4">
-              <div className="aspect-[4/5] rounded bg-white/5" />
+              <div className="aspect-[4/5] rounded bg-card/5" />
               <div className="space-y-4 pt-8">
-                <div className="h-16 w-full rounded bg-white/10" />
-                <div className="h-4 w-full rounded bg-white/5" />
-                <div className="h-4 w-3/4 rounded bg-white/5" />
+                <div className="h-16 w-full rounded bg-foreground/10" />
+                <div className="h-4 w-full rounded bg-card/5" />
+                <div className="h-4 w-3/4 rounded bg-card/5" />
               </div>
             </div>
           </div>

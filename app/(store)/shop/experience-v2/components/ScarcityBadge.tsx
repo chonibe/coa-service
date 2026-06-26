@@ -11,7 +11,7 @@ import { ExperienceThemeContext } from '../ExperienceThemeContext'
 /**
  * Visual break + soft panel below pricing / Street ladder for watch CTA + edition copy.
  * Uses {@link ExperienceThemeContext} when wrapped by {@link ExperienceThemeProvider} so
- * the panel is not stuck on `bg-white/70` when Tailwind `dark:` is not an ancestor match.
+ * the panel is not stuck on `bg-card/70` when Tailwind `dark:` is not an ancestor match.
  */
 export function ScarcityWatchRegion({
   children,
@@ -42,11 +42,11 @@ export function ScarcityWatchRegion({
         className={cn(
           'mx-auto flex w-full max-w-[19.5rem] flex-col items-center rounded-2xl px-4 py-3.5',
           isDark
-            ? 'border border-[#3d3636] bg-[#1f1b1b] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)]'
-            : 'border border-neutral-200/45 bg-white/70 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)] backdrop-blur-md backdrop-saturate-150',
+            ? 'border border-experience-border bg-experience-surface-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)]'
+            : 'border border-border bg-card shadow-sm backdrop-blur-md backdrop-saturate-150',
           // No experience provider: fall back to class-based dark (e.g. other shop layouts)
           theme === null &&
-            'dark:border-[#3d3636] dark:bg-[#1f1b1b] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)] dark:backdrop-blur-none'
+            'dark:border-experience-border dark:bg-experience-surface-2 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.75)] dark:backdrop-blur-none'
         )}
       >
         {children}
@@ -86,13 +86,13 @@ function ScarcityBarPanel({
   return (
     <div
       className={cn(
-        'rounded-xl border-2 border-neutral-200/90 dark:border-[#3d3636]',
-        'bg-gradient-to-b from-neutral-50 to-neutral-100/80 dark:from-[#242020] dark:to-[#181414]',
-        'px-4 pt-3 pb-4 shadow-md dark:shadow-black/35',
+        'rounded-xl border-2 border-border',
+        'bg-gradient-to-b from-card to-muted',
+        'px-4 pt-3 pb-4 shadow-md',
         className
       )}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-[#9a8888] text-center mb-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground text-center mb-3">
         {title}
       </p>
       {children}
@@ -159,7 +159,7 @@ export function ScarcityBadge({
     if (variant === 'compact') return null
     if (variant === 'bar') {
       const track = (
-        <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden" />
+        <div className="h-full bg-muted rounded-full overflow-hidden" />
       )
       if (unifiedSection) {
         return (
@@ -226,10 +226,10 @@ export function ScarcityBadge({
       editionSize > 0 &&
       typeof available === 'number'
     const editionCaption = showCaption ? (
-      <p className="text-center text-sm font-medium text-neutral-600 dark:text-[#b8a8a8] mt-3 tabular-nums leading-snug">
-        <span className="text-neutral-900 dark:text-[#f0e8e8]">{available}</span>
+      <p className="text-center text-sm font-medium text-muted-foreground mt-3 tabular-nums leading-snug">
+        <span className="text-foreground">{available}</span>
         {' of '}
-        <span className="text-neutral-800 dark:text-[#e8dcd8]">{editionSize}</span>
+        <span className="text-foreground">{editionSize}</span>
         {' remaining in this edition'}
       </p>
     ) : null
@@ -239,7 +239,7 @@ export function ScarcityBadge({
         return (
           <div className={cn('w-full', className)}>
             <div className="relative h-1.5 w-full max-w-md mx-auto rounded-full overflow-hidden">
-              <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full animate-pulse" />
+              <div className="h-full bg-muted rounded-full animate-pulse" />
             </div>
             {streetLadder ? (
               <StreetLadderStack block={streetLadder} addonClassName="mt-4" below={belowStreetLadder} />
@@ -259,21 +259,21 @@ export function ScarcityBadge({
             }
           >
             <div className="relative h-1.5 w-full max-w-md mx-auto">
-              <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
+              <div className="h-full bg-muted rounded-full overflow-hidden animate-pulse" />
             </div>
           </ScarcityBarPanel>
         )
       }
       return (
         <div className={cn('relative h-1.5', className)}>
-          <div className="h-full bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-hidden animate-pulse" />
+          <div className="h-full bg-muted rounded-full overflow-hidden animate-pulse" />
         </div>
       )
     }
 
     const barMotion = (
       <div className="relative w-3/4 h-full">
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-neutral-200 dark:bg-[#3a3434] rounded-full overflow-visible">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-muted rounded-full overflow-visible">
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-500 to-amber-400"
             initial={{ width: '100%' }}
@@ -362,8 +362,8 @@ export function ScarcityBadge({
     if (variant === 'full' && editionSize) {
       return (
         <div className={cn('space-y-2', className)}>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-50 rounded-md border border-neutral-100">
-            <span className="text-sm font-medium text-neutral-500">Limited Edition of {editionSize}</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-md border border-border">
+            <span className="text-sm font-medium text-muted-foreground">Limited Edition of {editionSize}</span>
           </div>
         </div>
       )
@@ -434,7 +434,7 @@ export function ScarcityBadge({
     ? 'bg-gradient-to-r from-red-500 to-red-400'
     : isLowStock
       ? 'bg-gradient-to-r from-amber-500 to-amber-400'
-      : 'bg-gradient-to-r from-blue-600 to-blue-500'
+      : 'bg-gradient-to-r from-experience-highlight to-experience-highlight-soft'
 
   const textColor = isVeryScarce
     ? 'text-red-600'
@@ -450,7 +450,7 @@ export function ScarcityBadge({
         </div>
       )}
 
-      <div className="relative h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+      <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
         <div
           className={cn('absolute inset-y-0 left-0 rounded-full transition-all duration-700', barColor)}
           style={{ width: `${Math.max(2, 100 - percentRemaining)}%` }}

@@ -424,7 +424,7 @@ export const MinifiedNavBar = React.forwardRef<HTMLDivElement, MinifiedNavBarPro
                   {cartCount > 0 && (
                     <span
                       ref={badgeRef}
-                      className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-[16px] sm:min-w-[18px] sm:h-[18px] px-1 sm:px-1.5 text-[9px] sm:text-[10px] font-bold bg-[#f0c417] text-[#1a1a1a] rounded-full pointer-events-none border-2 border-[#390000]"
+                      className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-[16px] sm:min-w-[18px] sm:h-[18px] px-1 sm:px-1.5 text-[9px] sm:text-[10px] font-bold bg-[#f0c417] text-foreground rounded-full pointer-events-none border-2 border-[#390000]"
                     >
                       {cartCount > 99 ? '99+' : cartCount}
                     </span>

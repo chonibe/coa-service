@@ -147,7 +147,7 @@ button.qty-stepper-compact {
 
 .pac-item:hover,
 .pac-item-selected {
-  background: rgba(4, 122, 255, 0.08) !important;
+  background: color-mix(in srgb, var(--experience-highlight) 8%, transparent) !important;
 }
 
 .pac-item-query {
@@ -187,45 +187,78 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
 
 @layer base {
   :root {
+    /* Cursor-inspired light palette — clean white canvas, neutral grays */
     --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
+    --foreground: 220 9% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 220 9% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 220 9% 12%;
 
     --primary: 212 100% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 9% 12%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 212 100% 51%;
 
     --radius: 0.5rem;
 
     --chart-1: 12 76% 61%;
-
     --chart-2: 173 58% 39%;
-
     --chart-3: 197 37% 24%;
-
     --chart-4: 43 74% 66%;
-
     --chart-5: 27 87% 67%;
+
+    /* Sidebar (shadcn) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Experience light tokens */
+    --experience-bg:            #ffffff;
+    --experience-surface:       #fafafa;
+    --experience-surface-2:     #f4f4f5;
+    --experience-surface-3:     #ececee;
+    --experience-overlay:       #e4e4e7;
+    --experience-overlay-2:     #d4d4d8;
+    --experience-border:        #e5e5e7;
+    --experience-border-strong: #d4d4d8;
+    --experience-text:          #1c1c1e;
+    --experience-text-secondary:#52525b;
+    --experience-text-muted:    #71717a;
+    --experience-text-subtle:   #a1a1aa;
+    --experience-highlight:     #C21350;
+    --experience-highlight-muted: #a01042;
+    --experience-highlight-soft: #d43a6a;
+    /* Titles + primary CTAs — footer maroon family (light only; dark uses peach via .dark) */
+    --experience-title:         #251212;
+    --experience-cta:           #251212;
+    --experience-cta-hover:       #390000;
+    /* Hero emphasis — burgundy from artwork / Impact header family (light mode) */
+    --experience-hero-accent:   #390000;
+    --experience-accent:          #251212;
+    --experience-accent-soft:     rgba(37, 18, 18, 0.08);
+    --experience-accent-hover:    #390000;
 
     /* =========================================================================
      * IMPACT THEME DESIGN TOKENS
@@ -560,6 +593,12 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --experience-highlight-muted:   #e8a87a;   /* softer highlight */
     --experience-highlight-soft:   #ffc9a8;   /* hover / bright */
 
+    /* Titles + primary CTAs — peach in dark (same family as highlight) */
+    --experience-title:         #FFBA94;
+    --experience-cta:           #FFBA94;
+    --experience-cta-hover:     #ffc9a8;
+    --experience-hero-accent:   #FFBA94;
+
     /* Accent / interactive */
     --experience-accent:        #c44;
     --experience-accent-soft:   rgba(180, 60, 60, 0.12);
@@ -584,6 +623,16 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
     --p-color-bg-critical-strong:    #5c1010;
     --p-color-bg-attention:          #3d3508;
     --p-color-bg-attention-strong:   #5c500c;
+
+    /* Sidebar dark */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 

@@ -225,8 +225,8 @@ export function ProductGallery({
                 }}
                 className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity hover:bg-black/30"
               >
-                <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#1a1a1a">
+                <div className="w-16 h-16 rounded-full bg-background/90 flex items-center justify-center shadow-lg">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
@@ -280,7 +280,7 @@ export function ProductGallery({
                 </svg>
               </div>
             )}
-            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-[#1a1a1a] shadow-lg">
+            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-foreground shadow-lg">
               3D Model
             </div>
           </div>
@@ -319,8 +319,8 @@ export function ProductGallery({
           'relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden transition-all',
           'border-2 bg-[#f5f5f5]',
           selectedIndex === index 
-            ? 'border-[#1a1a1a] ring-1 ring-[#1a1a1a]/10' 
-            : 'border-transparent hover:border-[#1a1a1a]/30'
+            ? 'border-foreground ring-1 ring-border' 
+            : 'border-transparent hover:border-border'
         )}
       >
         {thumbnailSrc ? (
@@ -351,7 +351,7 @@ export function ProductGallery({
           </div>
         )}
         {item.type === 'model_3d' && (
-          <div className="absolute bottom-1 right-1 bg-white/80 rounded px-1 text-[8px] font-bold">
+          <div className="absolute bottom-1 right-1 bg-background/80 rounded px-1 text-[8px] font-bold">
             3D
           </div>
         )}
@@ -379,9 +379,9 @@ export function ProductGallery({
               className={cn(
                 'absolute bottom-4 right-4',
                 'w-10 h-10 rounded-full',
-                'bg-white/90 backdrop-blur-sm shadow-lg',
+                'bg-background/90 backdrop-blur-sm shadow-lg',
                 'flex items-center justify-center',
-                'hover:bg-white transition-colors',
+                'hover:bg-background transition-colors',
                 'z-10'
               )}
               aria-label={isZoomed ? 'Zoom out' : 'Zoom in'}
@@ -428,9 +428,9 @@ export function ProductGallery({
               className={cn(
                 'absolute bottom-4 right-4',
                 'w-10 h-10 rounded-full',
-                'bg-white/90 backdrop-blur-sm shadow-lg',
+                'bg-background/90 backdrop-blur-sm shadow-lg',
                 'flex items-center justify-center',
-                'hover:bg-white transition-colors',
+                'hover:bg-background transition-colors',
                 'z-10'
               )}
               aria-label={isZoomed ? 'Zoom out' : 'Zoom in'}

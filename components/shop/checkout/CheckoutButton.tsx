@@ -27,12 +27,12 @@ export function CheckoutButton({
     variant === 'google_pay'
       ? {
           className:
-            'bg-black text-white hover:bg-neutral-800 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-xl active:shadow-md transition-all duration-200 ease-out',
+            'bg-experience-text text-experience-bg hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-xl active:shadow-md transition-all duration-200 ease-out',
         }
       : variant === 'paypal'
         ? {
             className:
-              'bg-neutral-200 dark:bg-[#262222] hover:bg-neutral-300 dark:hover:bg-[#2c2828] active:scale-[0.98] transition-all duration-200 ease-out border border-neutral-300 dark:border-[#3e3838]',
+              'bg-experience-surface-2 hover:bg-experience-surface-3 active:scale-[0.98] transition-all duration-200 ease-out border border-experience-border',
           }
         : {
             className:
@@ -66,7 +66,7 @@ export function CheckoutButton({
         'w-full py-3.5 rounded-lg text-base font-semibold flex items-center justify-center gap-2 mt-4',
         'transition-all duration-200',
         disabled
-          ? 'bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0] cursor-not-allowed'
+          ? 'bg-experience-surface-2 text-experience-text-muted cursor-not-allowed'
           : config.className,
         className
       )}

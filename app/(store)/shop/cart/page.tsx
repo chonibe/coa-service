@@ -194,7 +194,7 @@ function CartContentInner() {
           {items.map((item) => (
             <div 
               key={item.id}
-              className="flex gap-4 p-4 bg-white rounded-lg border border-slate-200 items-start"
+              className="flex gap-4 p-4 bg-card rounded-lg border border-slate-200 items-start"
             >
               {/* Image */}
               <div className="relative w-24 h-24 bg-slate-100 rounded-md overflow-hidden flex-shrink-0">
@@ -279,7 +279,7 @@ function CartContentInner() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-slate-200 p-6 sticky top-4">
+          <div className="bg-card rounded-lg border border-slate-200 p-6 sticky top-4">
             <CheckoutLayout
               subtotal={subtotal}
               discount={creditsDiscount}

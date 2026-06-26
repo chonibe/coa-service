@@ -14,18 +14,18 @@ const ArtistProfilePageClient = dynamic(
 
 function ArtistProfileEmbeddedSkeleton() {
   return (
-    <div className="animate-pulse space-y-4 rounded-xl border border-white/[0.08] bg-[#171515] p-5 text-left">
+    <div className="animate-pulse space-y-4 rounded-xl border border-border bg-background p-5 text-left">
       <div className="flex flex-col gap-4 md:flex-row">
-        <div className="aspect-[4/5] max-h-56 shrink-0 rounded-lg bg-white/10 md:w-2/5" />
+        <div className="aspect-[4/5] max-h-56 shrink-0 rounded-lg bg-muted md:w-2/5" />
         <div className="min-w-0 flex-1 space-y-3 pt-2">
-          <div className="h-6 w-40 rounded bg-white/10" />
-          <div className="h-3 w-full rounded bg-white/[0.06]" />
-          <div className="h-3 w-[92%] rounded bg-white/[0.06]" />
+          <div className="h-6 w-40 rounded bg-muted" />
+          <div className="h-3 w-full rounded bg-muted/60" />
+          <div className="h-3 w-[92%] rounded bg-muted/60" />
         </div>
       </div>
       <div className="flex flex-wrap gap-2 pt-2">
-        <div className="h-8 w-24 rounded-full bg-white/10" />
-        <div className="h-8 w-28 rounded-full bg-white/10" />
+        <div className="h-8 w-24 rounded-full bg-muted" />
+        <div className="h-8 w-28 rounded-full bg-muted" />
       </div>
     </div>
   )
@@ -69,7 +69,7 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
 
   if (phase === 'error' || !artist) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-[#171515]/80 px-5 py-6 text-center text-sm text-white/70">
+      <div className="rounded-xl border border-border bg-background/80 px-5 py-6 text-center text-sm text-muted-foreground">
         <p>Couldn&apos;t load this artist profile in the experience view.</p>
       </div>
     )
@@ -78,10 +78,10 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
   return (
     <div
       data-experience-v3-artist-profile=""
-      className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0909]"
+      className="overflow-hidden rounded-xl border border-border bg-card"
     >
-      <div className="border-b border-white/[0.06] px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">Artist profile</p>
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Artist profile</p>
       </div>
       <div className="-mx-[1px]">
         <ArtistProfilePageClient artist={artist} embedded />

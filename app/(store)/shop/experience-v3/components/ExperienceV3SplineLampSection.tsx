@@ -131,7 +131,7 @@ export function ExperienceV3SplineLampSection({
       <div className="mx-auto w-full max-w-[min(100%,1200px)] px-3 pb-6 pt-8 md:px-6 md:pb-10 md:pt-10">
         <h2
           id="experience-v3-lamp-heading"
-          className="mb-4 text-center font-serif text-xl font-semibold tracking-tight text-experience-highlight md:mb-6 md:text-2xl"
+          className="mb-4 text-center font-serif text-xl font-semibold tracking-tight text-experience-title md:mb-6 md:text-2xl"
         >
           Your Collection
         </h2>

@@ -13,14 +13,14 @@ const CAREERS_URL = process.env.NEXT_PUBLIC_CAREERS_URL
 
 export default function CareersPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow" paddingX="gutter">
           <ScrollReveal animation="fadeUp" duration={0.8}>
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-8">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-8">
               Join Street Collector
             </h1>
-            <p className="text-lg text-[#1a1a1a]/80 mb-8">
+            <p className="text-lg text-muted-foreground mb-8">
               We&apos;re building a team of passionate people who believe art belongs in the physical world—not just on screens. If you love contemporary art, storytelling, and bringing people together through collectible culture, we want to hear from you.
             </p>
           </ScrollReveal>
@@ -36,13 +36,13 @@ export default function CareersPage() {
                 >
                   View Open Positions
                 </a>
-                <p className="text-[#1a1a1a]/60 text-sm">
+                <p className="text-muted-foreground text-sm">
                   You&apos;ll be redirected to our careers portal to browse and apply for open roles.
                 </p>
               </div>
             ) : (
               <div className="rounded-2xl bg-[#f5f5f5] p-8">
-                <p className="text-[#1a1a1a]/80 mb-6">
+                <p className="text-muted-foreground mb-6">
                   We&apos;re always looking for talented individuals to join our team. To express your interest or learn about current openings, please reach out.
                 </p>
                 <a

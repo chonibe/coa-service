@@ -1,4 +1,5 @@
-import { getArtistImageByHandle, getCollectionInstagram } from '@/lib/shopify/artist-image'
+import { getCollectionInstagram } from '@/lib/shopify/artist-image'
+import { resolveArtistPortrait } from '@/lib/shopify/artist-collection-image'
 import {
   mergeResearchBio,
   mergeResearchIntoProfile,
@@ -43,6 +44,8 @@ export type ArtistProfileApiResponse = {
   slug: string
   bio?: string
   image?: string
+  /** CSS object-position for collection portrait cropping */
+  imageObjectPosition?: string
   instagram?: string
   instagramUrl?: string
   products: ShopifyProduct[]
@@ -109,7 +112,8 @@ export async function buildArtistProfileResponse(input: {
   slug: string
   name: string
   bio?: string
-  image?: string
+  /** Supabase vendor portrait — fallback after Shopify collection image */
+  fallbackImage?: string
   products: ShopifyProduct[]
   collection: ShopifyCollection | null
   vendorInstagramHandle?: string
@@ -150,25 +154,18 @@ export async function buildArtistProfileResponse(input: {
     }
   }
 
-  let image = input.image?.trim() || undefined
-  if (!image) {
-    image =
-      col?.image?.url ||
-      input.products.find((product) => product.featuredImage?.url)?.featuredImage?.url ||
-      input.products.find((product) => product.images?.edges?.[0]?.node?.url)?.images?.edges?.[0]?.node?.url ||
-      undefined
-  }
-  if (!image) {
-    const handlesToTry = [
-      input.slug,
-      ...(input.collectionHandlesToTry ?? []),
-      col?.handle,
-    ].filter(Boolean) as string[]
-    for (const handle of [...new Set(handlesToTry)]) {
-      image = await getArtistImageByHandle(handle)
-      if (image) break
-    }
-  }
+  const productThumb =
+    input.products.find((product) => product.featuredImage?.url)?.featuredImage?.url ||
+    input.products.find((product) => product.images?.edges?.[0]?.node?.url)?.images?.edges?.[0]?.node?.url ||
+    undefined
+
+  const portrait = await resolveArtistPortrait({
+    handle: input.slug,
+    collection: col,
+    extraHandles: input.collectionHandlesToTry,
+    supabaseUrl: input.fallbackImage,
+    productUrl: productThumb,
+  })
 
   const bio = mergeResearchBio(input.slug, input.bio)
   if (ig.handle && ig.url && !profile.instagramProfile) {
@@ -185,7 +182,8 @@ export async function buildArtistProfileResponse(input: {
     name: input.name,
     slug: input.slug,
     bio,
-    image,
+    image: portrait.url,
+    imageObjectPosition: portrait.objectPosition,
     instagram: ig.handle,
     instagramUrl: ig.url,
     products: input.products,

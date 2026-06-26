@@ -92,12 +92,12 @@ export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsPr
       {/* Series Completion Suggestions */}
       {seriesUpsells.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#047AFF" strokeWidth="2" className="flex-shrink-0">
+          <div className="flex items-center gap-2 text-experience-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
-            <h3 className="text-sm font-semibold text-[#047AFF] uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-experience-highlight uppercase tracking-wide">
               Complete the Series
             </h3>
           </div>
@@ -118,7 +118,7 @@ export function CartUpsells({ cartItems, onAddToCart, className }: CartUpsellsPr
       {/* General Recommendations */}
       {generalRecommendations.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-[#1a1a1a] uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
             You might also like
           </h3>
           
@@ -239,13 +239,13 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
           'group relative overflow-hidden rounded-lg bg-[#f5f5f5]',
           'hover:shadow-md transition-shadow duration-200',
           'cursor-pointer',
-          variant === 'series' && 'ring-1 ring-[#047AFF]/20'
+          variant === 'series' && 'ring-1 ring-experience-highlight/20'
         )}
       >
         {/* Series badge */}
         {variant === 'series' && product.seriesName && (
           <div className="absolute top-2 left-2 z-10">
-            <span className="text-[10px] font-medium text-white bg-[#047AFF] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium text-white bg-experience-highlight px-2 py-0.5 rounded-full">
               {product.seriesName}
             </span>
           </div>
@@ -261,7 +261,7 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-[#1a1a1a]/20">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-muted-foreground">
                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
               </svg>
             </div>
@@ -270,13 +270,13 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
         
         {/* Content */}
         <div className="p-2 space-y-1">
-          <p className="text-xs text-[#1a1a1a]/60 uppercase tracking-wide">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">
             {product.artistName}
           </p>
-          <h4 className="text-sm font-medium text-[#1a1a1a] line-clamp-1">
+          <h4 className="text-sm font-medium text-foreground line-clamp-1">
             {product.title}
           </h4>
-          <p className="text-sm font-semibold text-[#1a1a1a]">
+          <p className="text-sm font-semibold text-foreground">
             {product.price}
           </p>
         </div>
@@ -295,8 +295,8 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
               'disabled:opacity-50 disabled:cursor-not-allowed',
               'flex items-center justify-center gap-1',
               variant === 'series'
-                ? 'bg-[#047AFF] text-white hover:bg-[#0366d6]'
-                : 'bg-[#f0c417] text-[#1a1a1a] hover:bg-[#e0b415]'
+                ? 'bg-experience-highlight text-white hover:bg-experience-highlight-muted'
+                : 'bg-[#f0c417] text-foreground hover:bg-[#e0b415]'
             )}
           >
             {isAdding ? (
@@ -332,7 +332,7 @@ export function FreeShippingBar({ currentTotal, threshold = 75, className }: Fre
   return (
     <div className={cn('space-y-2', className)}>
       {/* Progress bar */}
-      <div className="h-2 bg-[#1a1a1a]/10 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div 
           className={cn(
             'h-full rounded-full transition-all duration-500',
@@ -357,13 +357,13 @@ export function FreeShippingBar({ currentTotal, threshold = 75, className }: Fre
           </>
         ) : (
           <>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-[#1a1a1a]/60 flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-muted-foreground flex-shrink-0">
               <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="9" cy="21" r="1" fill="currentColor" />
               <circle cx="20" cy="21" r="1" fill="currentColor" />
             </svg>
-            <span className="text-[#1a1a1a]/60">
-              Add <span className="font-semibold text-[#1a1a1a]">${remaining.toFixed(2)}</span> more for free shipping
+            <span className="text-muted-foreground">
+              Add <span className="font-semibold text-foreground">${remaining.toFixed(2)}</span> more for free shipping
             </span>
           </>
         )}

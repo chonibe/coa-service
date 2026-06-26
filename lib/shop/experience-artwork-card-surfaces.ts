@@ -7,13 +7,13 @@ const BG_EASE = 'duration-200 ease-out'
 export const experienceArtistRowMergeClass = cn(
   'transition-[background-color]',
   BG_EASE,
-  'bg-[#f0f9ff] dark:bg-[#2c2828]'
+  'bg-experience-surface-2'
 )
 
 export const experienceArtistRowDefaultClass = cn(
   'transition-[background-color]',
   BG_EASE,
-  'bg-white dark:bg-[#171515]'
+  'bg-background'
 )
 
 export type PickerArtworkCardSurfaces = {
@@ -23,14 +23,13 @@ export type PickerArtworkCardSurfaces = {
 }
 
 /** Picker sheet card: one source for shell / image well / footer meta backgrounds. */
-export function getPickerArtworkCardSurfaces(isSelected: boolean): PickerArtworkCardSurfaces {
+export function getPickerArtworkCardSurfaces(_isSelected: boolean): PickerArtworkCardSurfaces {
   const t = `transition-[background-color] ${BG_EASE}`
   const tm = `transition-[background-color,color] ${BG_EASE}`
   return {
-    // Selected: same tint on shell + well + meta so no horizontal “seam” next to the full-card ring.
-    shell: cn(t, isSelected && 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
-    imageWell: cn(t, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
-    meta: cn(tm, isSelected ? 'bg-[#f0f9ff] dark:bg-[#2c2828]' : 'bg-white dark:bg-[#171515]'),
+    shell: t,
+    imageWell: cn(t, 'bg-background'),
+    meta: cn(tm, 'bg-background'),
   }
 }
 
@@ -46,10 +45,30 @@ export type StripArtworkCardSurfaces = {
  * `isMerged` = in cart + spine pair + both sides selected styling (#f0f9ff / #2c2828).
  */
 
-/** Subtle inset ring on one card. `suppressIndividualRing` = both sides of a 2-up row selected (merged tint only). */
-export function getPickerCardSelectionChrome(isSelected: boolean, suppressIndividualRing: boolean): string {
-  if (!isSelected || suppressIndividualRing) return ''
-  return 'ring-1 ring-inset ring-[#FFBA94]/40 dark:ring-[#FFBA94]/30'
+/** Picker cards no longer use per-card selection chrome; in-cart state is shown on the quick-add FAB only. */
+export function getPickerCardSelectionChrome(_isSelected: boolean, _suppressIndividualRing: boolean): string {
+  return ''
+}
+
+/** 28px touch target — compact quick-add FAB on picker / artist-works cards. */
+export const experienceQuickAddFabSizeClass = 'h-7 w-7'
+
+/** Icon size paired with `experienceQuickAddFabSizeClass`. */
+export const experienceQuickAddFabIconClass = 'h-3 w-3'
+
+/**
+ * Brand peach quick-add FAB — literal #FFBA94 tokens (same as ExperienceV3 add CTAs).
+ * Do not use `bg-experience-highlight` here: `lib/` is outside Tailwind `content` paths.
+ */
+export function getExperienceQuickAddFabClass(isInCart: boolean): string {
+  return cn(
+    'flex items-center justify-center rounded-full border shadow-md transition-colors',
+    experienceQuickAddFabSizeClass,
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/70',
+    isInCart
+      ? 'border-[#FFBA94]/35 bg-[#FFBA94] text-neutral-900 cursor-default shadow-black/25'
+      : 'border-[#FFBA94]/35 bg-[#FFBA94] text-neutral-900 hover:bg-[#ffc9a8] shadow-black/25'
+  )
 }
 
 /** Previewing on main stage but not in cart — inset only (no outer ring / offset). */
@@ -75,24 +94,24 @@ export function getStripArtworkCardSurfaces(isMerged: boolean, isInCart: boolean
 
   if (isMerged) {
     return {
-      shell: cn(tShell, 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
-      imageWell: cn(tImg, 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
-      meta: cn(tm, 'bg-[#f0f9ff] dark:bg-[#2c2828]'),
+      shell: cn(tShell, 'bg-experience-surface-2'),
+      imageWell: cn(tImg, 'bg-experience-surface-2'),
+      meta: cn(tm, 'bg-experience-surface-2'),
       metaStyle: undefined,
     }
   }
   if (isInCart) {
     return {
       shell: cn(tShell, 'bg-[#e8f4ff] dark:bg-[#1a1616]'),
-      imageWell: cn(tImg, 'bg-[#e8f4ff] dark:bg-[#171515]'),
+      imageWell: cn(tImg, 'bg-experience-surface-2'),
       meta: cn(tm, 'bg-[#e8f4ff]/95 dark:bg-[#1a1616]/80 backdrop-blur-xl backdrop-saturate-150'),
       metaStyle: metaBlur,
     }
   }
   return {
     shell: tShell,
-    imageWell: cn(tImg, 'bg-neutral-100 dark:bg-[#201c1c]'),
-    meta: cn(tm, 'bg-white/60 dark:bg-[#201c1c]/80 backdrop-blur-xl backdrop-saturate-150'),
+    imageWell: cn(tImg, 'bg-muted dark:bg-experience-surface-2'),
+    meta: cn(tm, 'bg-card/60 dark:bg-experience-surface-2/80 backdrop-blur-xl backdrop-saturate-150'),
     metaStyle: metaBlur,
   }
 }

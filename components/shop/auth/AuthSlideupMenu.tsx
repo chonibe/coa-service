@@ -2,6 +2,7 @@
 
 import { useState, useLayoutEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient, SUPABASE_BROWSER_ENV_HINT } from '@/lib/supabase/client'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Sheet, Modal, Button, Input } from '@/components/ui'
@@ -255,7 +256,7 @@ export function AuthSlideupMenu({
           theme={theme}
           className={cn(
             'max-w-md border-neutral-200 shadow-xl',
-            isDark ? 'dark border-neutral-700' : 'bg-white'
+            isDark ? 'dark border-border bg-background' : 'bg-background'
           )}
         >
           {notice}
@@ -271,7 +272,7 @@ export function AuthSlideupMenu({
         theme={theme}
         className={cn(
           'max-h-[90vh] rounded-t-2xl border-t border-neutral-200',
-          isDark ? 'dark border-neutral-700' : 'bg-white'
+          isDark ? 'dark border-border bg-background' : 'bg-background'
         )}
       >
         {notice}
@@ -325,7 +326,7 @@ export function AuthSlideupMenu({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#201c1c] hover:bg-neutral-50 dark:hover:bg-[#262222] font-medium dark:text-[#f0e8e8]"
+                className="w-full h-12 border-border bg-background hover:bg-muted font-medium text-foreground"
                 onClick={() => handleOAuth('google')}
               >
                 <GoogleIcon className="h-5 w-5 mr-3" />
@@ -335,7 +336,7 @@ export function AuthSlideupMenu({
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 border-neutral-300 dark:border-white/20 bg-white dark:bg-[#201c1c] hover:bg-neutral-50 dark:hover:bg-[#262222] font-medium dark:text-[#f0e8e8]"
+                  className="w-full h-12 border-border bg-background hover:bg-muted font-medium text-foreground"
                   onClick={() => handleOAuth('facebook')}
                 >
                   <FacebookIcon className="h-5 w-5 mr-3" />
@@ -346,9 +347,9 @@ export function AuthSlideupMenu({
 
             <p className="text-xs text-neutral-500 dark:text-[#c4a0a0] mt-6 text-center">
               By signing up you agree to our{' '}
-              <a href="/terms" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Terms of Use</a>
+              <Link href="/terms" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Terms of Use</Link>
               {' '}and{' '}
-              <a href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Privacy Policy</a>.
+              <Link href="/privacy" className="underline hover:text-neutral-700 dark:hover:text-[#e8d4d4]">Privacy Policy</Link>.
             </p>
           </>
         ) : (
@@ -426,7 +427,7 @@ export function AuthSlideupMenu({
         theme={theme}
         className={cn(
           'max-w-md border-neutral-200 shadow-xl',
-          isDark ? 'dark border-neutral-700' : 'bg-white'
+          isDark ? 'dark border-border bg-background' : 'bg-background'
         )}
       >
         {content}
@@ -443,7 +444,7 @@ export function AuthSlideupMenu({
       theme={theme}
       className={cn(
         'max-h-[90vh] rounded-t-2xl border-t border-neutral-200',
-        isDark ? 'dark border-neutral-700' : 'bg-white'
+        isDark ? 'dark border-border bg-background' : 'bg-background'
       )}
     >
       {content}

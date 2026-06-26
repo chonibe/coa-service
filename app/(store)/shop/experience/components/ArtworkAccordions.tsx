@@ -83,7 +83,7 @@ function ArtworkCardHeading({
             'group inline-flex max-w-full items-center justify-center gap-1 rounded-lg px-2 py-1 -mx-2 -mt-1',
             'text-[11px] font-medium uppercase tracking-widest',
             'text-neutral-600 dark:text-[#c4a0a0]',
-            'hover:text-neutral-900 dark:hover:text-[#FFBA94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF]/40',
+            'hover:text-neutral-900 dark:hover:text-[#FFBA94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight/40',
             'transition-colors'
           )}
           aria-label="View artist details"
@@ -108,7 +108,7 @@ function ArtworkCardHeading({
       {productTitle ? (
         <h2
           className={cn(
-            'text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white',
+            'text-xl sm:text-2xl font-semibold text-neutral-900 text-foreground',
             artistLine ? 'mt-2' : 'mt-0'
           )}
         >
@@ -361,7 +361,7 @@ export function ArtworkAccordions({
             />
           </div>
           {editionSize != null && editionSize > 0 && (
-            <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-neutral-100 dark:border-white/10 pt-4">
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5 border-t border-border pt-4">
               <ScarcityBadge
                 quantityAvailable={firstVariantQty}
                 editionSize={editionSize}
@@ -420,7 +420,7 @@ export function ArtworkAccordions({
 
       {/* Artwork card + artist spotlight — horizontal gallery when both exist (Experience reel / Spline) */}
       {showArtworkArtistSectionGallery && artworkGalleryFirstSlide ? (
-        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+        <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
           <HorizontalTwoSlideGallery
             resetKey={product.id}
             ariaLabel="Artwork and artist"
@@ -428,7 +428,7 @@ export function ArtworkAccordions({
             second={
               artistLoading ? (
                 <div className="py-10 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                 </div>
               ) : spotlightForBanner ? (
                 <ArtistSpotlightBanner
@@ -443,11 +443,11 @@ export function ArtworkAccordions({
       ) : (
         <>
           {isContentOnly && description && (
-            <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+            <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowDescription((v) => !v)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-neutral-100/60 dark:hover:bg-white/[0.03]"
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-neutral-100/60 dark:hover:bg-card/[0.03]"
                 aria-expanded={showDescription}
               >
                 <div className="flex items-center gap-3">
@@ -481,7 +481,7 @@ export function ArtworkAccordions({
             </div>
           )}
           {artworkDetailsPanel && (
-            <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
+            <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 overflow-hidden">
               {artworkDetailsPanel}
             </div>
           )}
@@ -489,7 +489,7 @@ export function ArtworkAccordions({
             <div>
               {artistLoading ? (
                 <div className="py-4 flex justify-center">
-                  <div className="w-5 h-5 border-2 border-neutral-200 dark:border-[#3e3838] border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-neutral-200 border-border border-t-neutral-500 dark:border-t-white rounded-full animate-spin" />
                 </div>
               ) : spotlightForBanner ? (
                 <ArtistSpotlightBanner
@@ -504,7 +504,7 @@ export function ArtworkAccordions({
 
       {/* Lamp details — image only, no Shopify description */}
       {isLamp && firstImage?.url && (
-        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+        <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className={iconCls}>
               <ImageIcon className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
@@ -525,7 +525,7 @@ export function ArtworkAccordions({
 
       {/* What's included — always open */}
       {productIncludes && productIncludes.length > 0 && (
-        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+        <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className={iconCls}>
               <Package className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />
@@ -551,7 +551,7 @@ export function ArtworkAccordions({
 
       {/* Specifications — always open */}
       {productSpecs && productSpecs.length > 0 && (
-        <div className="rounded-xl border border-neutral-100 dark:border-white/10 bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
+        <div className="rounded-xl border border-border bg-neutral-50/50 dark:bg-[#201c1c]/50 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className={iconCls}>
               <List className="w-4 h-4 text-neutral-400 dark:text-[#d4b8b8]" />

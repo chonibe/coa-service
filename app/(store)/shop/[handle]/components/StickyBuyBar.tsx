@@ -66,7 +66,7 @@ export function StickyBuyBar({
         'bottom-0 left-0 right-0',
         'lg:bottom-6 lg:right-6 lg:left-auto lg:w-auto lg:max-w-sm',
         // Styling
-        'bg-white backdrop-blur-xl',
+        'bg-card backdrop-blur-xl',
         'shadow-[0_-4px_24px_rgba(0,0,0,0.12)] lg:shadow-2xl',
         'border-t lg:border-2 border-[#390000]',
         'lg:rounded-2xl',
@@ -91,18 +91,18 @@ export function StickyBuyBar({
 
           {/* Product Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-[#1a1a1a] text-sm truncate">
+            <h3 className="font-medium text-foreground text-sm truncate">
               {productTitle}
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
               <span className={cn(
                 'text-sm font-semibold',
-                compareAtPrice ? 'text-[#f83a3a]' : 'text-[#1a1a1a]'
+                compareAtPrice ? 'text-[#f83a3a]' : 'text-foreground'
               )}>
                 {price}
               </span>
               {compareAtPrice && (
-                <span className="text-xs text-[#1a1a1a]/50 line-through">
+                <span className="text-xs text-muted-foreground line-through">
                   {compareAtPrice}
                 </span>
               )}
@@ -115,7 +115,7 @@ export function StickyBuyBar({
             disabled={disabled || loading}
             className={cn(
               'px-6 py-2.5',
-              'bg-[#f0c417] text-[#1a1a1a]',
+              'bg-[#f0c417] text-foreground',
               'font-semibold text-sm',
               'rounded-full',
               'hover:bg-[#e0b415] transition-colors',
@@ -141,18 +141,18 @@ export function StickyBuyBar({
 
         {/* Product Info */}
         <div className="mb-3">
-          <h3 className="font-medium text-[#1a1a1a] text-sm mb-1 line-clamp-2">
+          <h3 className="font-medium text-foreground text-sm mb-1 line-clamp-2">
             {productTitle}
           </h3>
           <div className="flex items-center gap-2">
             <span className={cn(
               'text-base font-semibold',
-              compareAtPrice ? 'text-[#f83a3a]' : 'text-[#1a1a1a]'
+              compareAtPrice ? 'text-[#f83a3a]' : 'text-foreground'
             )}>
               {price}
             </span>
             {compareAtPrice && (
-              <span className="text-sm text-[#1a1a1a]/50 line-through">
+              <span className="text-sm text-muted-foreground line-through">
                 {compareAtPrice}
               </span>
             )}
@@ -160,10 +160,10 @@ export function StickyBuyBar({
         </div>
 
         {/* Quantity Selector */}
-        <div className="flex items-center justify-between border border-[#1a1a1a]/20 rounded-lg mb-3 overflow-hidden">
+        <div className="flex items-center justify-between border border-border rounded-lg mb-3 overflow-hidden">
           <button
             onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-            className="w-10 h-10 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors"
+            className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
             disabled={quantity <= 1}
             aria-label="Decrease quantity"
           >
@@ -174,7 +174,7 @@ export function StickyBuyBar({
           <span className="font-medium text-sm">{quantity}</span>
           <button
             onClick={() => onQuantityChange(quantity + 1)}
-            className="w-10 h-10 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors"
+            className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
             aria-label="Increase quantity"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -189,7 +189,7 @@ export function StickyBuyBar({
           disabled={disabled || loading}
           className={cn(
             'w-full px-4 py-3',
-            'bg-[#f0c417] text-[#1a1a1a]',
+            'bg-[#f0c417] text-foreground',
             'font-semibold text-sm',
             'rounded-full',
             'hover:bg-[#e0b415] transition-colors',

@@ -213,6 +213,7 @@ export function ExperienceV3Client({
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [pickerHasBeenOpened, setPickerHasBeenOpened] = useState(false)
   const [pickerLayoutDesktop, setPickerLayoutDesktop] = useState(false)
+  const [splineSectionInView, setSplineSectionInView] = useState(false)
   const cartCountWhenPickerOpenedRef = useRef(0)
 
   useEffect(() => {
@@ -1031,7 +1032,7 @@ export function ExperienceV3Client({
   }, [isPickerOpen, handleClosePicker, handleOpenPicker])
 
   useEffect(() => {
-    if (!pickerLayoutDesktop) {
+    if (!pickerLayoutDesktop || splineSectionInView) {
       setHeaderCenterContent(null)
       return () => setHeaderCenterContent(null)
     }
@@ -1042,9 +1043,9 @@ export function ExperienceV3Client({
         className={cn(
           'flex shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
           'focus-visible:ring-2 focus-visible:ring-offset-2',
-          'border-experience-highlight/50 bg-transparent text-experience-highlight hover:border-experience-highlight/75 hover:bg-experience-highlight/[0.08]',
-          'focus-visible:ring-experience-highlight focus-visible:ring-offset-background',
-          isPickerOpen && 'ring-2 ring-experience-highlight/70'
+          'border-experience-cta/50 bg-transparent text-experience-cta hover:border-experience-cta/75 hover:bg-experience-cta/[0.08]',
+          'focus-visible:ring-experience-cta focus-visible:ring-offset-background',
+          isPickerOpen && 'ring-2 ring-experience-cta/70'
         )}
         aria-label={isPickerOpen ? 'Close the collection picker' : 'Open the collection picker'}
         aria-expanded={isPickerOpen}
@@ -1062,6 +1063,7 @@ export function ExperienceV3Client({
     handleTogglePicker,
     setHeaderCenterContent,
     pickerLayoutDesktop,
+    splineSectionInView,
   ])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
@@ -1503,7 +1505,7 @@ export function ExperienceV3Client({
                     {editionArtistName}
                   </p>
                 )}
-                <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-experience-highlight lg:text-[1.65rem]">
+                <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-experience-title lg:text-[1.65rem]">
                   {previewDisplayTitle}
                 </h1>
                 {previewProduct.id !== lamp.id &&
@@ -1531,22 +1533,22 @@ export function ExperienceV3Client({
                 ) : null}
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                   {isSoldOut && (
-                    <span className="rounded bg-red-950/60 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+                    <span className="rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
                       Sold out
                     </span>
                   )}
                   {isNewDropPreview && !isSoldOut && (
-                    <span className="rounded bg-amber-950/50 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                    <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground ring-1 ring-border">
                       New drop
                     </span>
                   )}
                   {isEarlyAccessPreview && !isSoldOut && (
-                    <span className="rounded bg-violet-950/50 px-2 py-0.5 text-[11px] font-semibold text-violet-200">
+                    <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground ring-1 ring-border">
                       Early access
                     </span>
                   )}
                   {previewProduct.id !== lamp.id && spotlightData && productMatchesSpotlight(previewProduct, spotlightData) && (
-                    <span className="rounded bg-amber-500/12 px-2 py-0.5 text-[11px] font-medium text-amber-100/90">
+                    <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground ring-1 ring-border">
                       Featured artist
                     </span>
                   )}
@@ -1588,7 +1590,7 @@ export function ExperienceV3Client({
                       'flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold shadow-lg transition-colors',
                       isSoldOut
                         ? 'cursor-not-allowed bg-muted text-muted-foreground'
-                        : 'bg-experience-highlight text-white shadow-black/30 hover:bg-experience-highlight-soft dark:text-neutral-900'
+                        : 'bg-experience-cta text-white shadow-black/30 hover:bg-experience-cta-hover dark:text-neutral-900'
                     )}
                   >
                     {previewInCart && (
@@ -1654,6 +1656,7 @@ export function ExperienceV3Client({
           image2={splineImage2}
           splineBindings={experienceSplineBindings}
           onFrontSideSettled={handleFrontSideSettled}
+          onInViewChange={setSplineSectionInView}
           reelScrollContainerRef={experienceScrollRootRef}
           footer={
             <ExperienceCheckoutStickyBar
@@ -1664,6 +1667,7 @@ export function ExperienceV3Client({
               stripMode="collection"
               barPosition="inline"
               hideCollectionStrip
+              hideCheckoutPill
               onOpenPicker={handleOpenPicker}
               onViewLampDetail={() => {}}
               onSelectThumbnailForSpline={handleSplineStickyThumbSelect}
@@ -1816,7 +1820,7 @@ export function ExperienceV3Client({
         </RadixDialog.Portal>
       </RadixDialog.Root>
 
-      {!pickerLayoutDesktop ? (
+      {!pickerLayoutDesktop && !splineSectionInView ? (
         <ExperienceCheckoutStickyBar
           lamp={lamp}
           lampQuantity={lampQuantity}

@@ -73,7 +73,7 @@ function GiftCardSuccessContent() {
 
   if (status === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#171515]">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
           <p className="text-neutral-600 dark:text-[#c4a0a0]">Loading your gift card...</p>
@@ -84,12 +84,12 @@ function GiftCardSuccessContent() {
 
   if (status === 'pending') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#171515] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-amber-600 dark:text-amber-400" />
           </div>
-          <h1 className="text-2xl font-bold text-neutral-950 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-neutral-950 text-foreground mb-2">
             Almost ready
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
@@ -98,7 +98,7 @@ function GiftCardSuccessContent() {
           <p className="text-sm text-neutral-500 dark:text-[#b89090]">
             Check your email for the gift card code. If you don&apos;t see it within a few minutes, check your spam folder.
           </p>
-          <Link href="/shop" className="inline-block mt-6 text-[#047AFF] hover:underline font-medium">
+          <Link href="/shop" className="inline-block mt-6 text-experience-highlight hover:underline font-medium">
             Continue shopping
           </Link>
         </div>
@@ -108,9 +108,9 @@ function GiftCardSuccessContent() {
 
   if (status === 'error') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#171515] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
         <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-neutral-950 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-neutral-950 text-foreground mb-2">
             Something went wrong
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
@@ -127,12 +127,12 @@ function GiftCardSuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-[#171515] py-16 px-4">
+    <main className="min-h-screen bg-neutral-50 py-16 px-4">
       <div className="max-w-lg mx-auto text-center">
         <div className="w-20 h-20 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
           <Gift className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
-        <h1 className="text-3xl font-bold text-neutral-950 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-neutral-950 text-foreground mb-2">
           Gift card purchased!
         </h1>
         <p className="text-neutral-600 dark:text-[#c4a0a0] mb-8">
@@ -147,7 +147,7 @@ function GiftCardSuccessContent() {
               Gift card code
             </label>
             <div className="flex items-center justify-center gap-3">
-              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-white dark:bg-[#1a1616] border-2 border-neutral-200 dark:border-[#3e3838] rounded-lg text-neutral-950 dark:text-white">
+              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-card bg-card border-2 border-neutral-200 border-border rounded-lg text-neutral-950 text-foreground">
                 {data.code}
               </code>
               <button
@@ -157,7 +157,7 @@ function GiftCardSuccessContent() {
                   'p-3 rounded-lg border-2 transition-colors',
                   copied
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444]'
+                    : 'border-neutral-200 border-border hover:border-neutral-400 dark:hover:border-[#4a4444]'
                 )}
                 aria-label="Copy code"
               >
@@ -193,7 +193,7 @@ export default function GiftCardSuccessPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#171515]">
+        <main className="min-h-screen flex items-center justify-center bg-neutral-50">
           <Loader2 className="w-12 h-12 animate-spin text-neutral-400" />
         </main>
       }

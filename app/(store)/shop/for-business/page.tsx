@@ -153,15 +153,15 @@ export default function ForBusinessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       {/* Hero section: heading + description */}
       <SectionWrapper spacing="sm" background="default">
         <Container maxWidth="default" paddingX="gutter">
           <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-start mb-0">
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em]">
               For All Your Business Needs
             </h1>
-            <p className="text-lg text-[#1a1a1a]/80">
+            <p className="text-lg text-muted-foreground">
               Our special B2B packages offer special discounts and expert support.
             </p>
           </div>
@@ -192,8 +192,8 @@ export default function ForBusinessPage() {
                 className={cn(
                   'px-6 py-3 rounded-[60px] font-medium text-white transition-all',
                   activeTab === tab.id
-                    ? 'bg-white/90 text-[#1a1a1a] shadow-lg'
-                    : 'bg-[#1a1a1a]/60 hover:bg-[#1a1a1a]/80 backdrop-blur-sm'
+                    ? 'bg-background/90 text-foreground shadow-lg'
+                    : 'bg-foreground/60 hover:bg-foreground/80 backdrop-blur-sm'
                 )}
               >
                 {tab.label}
@@ -212,7 +212,7 @@ export default function ForBusinessPage() {
                 <p className="text-lg font-medium text-[#00a341] mb-2">
                   Thank you for your submission!
                 </p>
-                <p className="text-[#1a1a1a]/80">
+                <p className="text-muted-foreground">
                   {activeTab === 'gifting'
                     ? "Our B2B team will reach out soon with next steps."
                     : "One of our experts will get in touch soon."}
@@ -225,14 +225,14 @@ export default function ForBusinessPage() {
             <ScrollReveal animation="fadeUp" duration={0.8}>
               <form onSubmit={handleGiftingSubmit} className="space-y-8 max-w-2xl">
                 <div>
-                  <h2 className="text-2xl font-semibold text-[#1a1a1a] mb-4">
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">
                     Digital Gift Cards, Bulk Discount
                   </h2>
                   <div className="flex flex-wrap gap-3 mb-6">
                     {BULK_DISCOUNT_TIERS.map((tier) => (
                       <div
                         key={tier.discount}
-                        className="px-4 py-2 rounded-lg bg-[#1a1a1a]/5 text-[#1a1a1a] font-medium"
+                        className="px-4 py-2 rounded-lg bg-muted text-foreground font-medium"
                       >
                         {tier.discount}, {tier.minAmount}
                       </div>
@@ -241,7 +241,7 @@ export default function ForBusinessPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a1a] mb-3">
+                  <label className="block text-sm font-medium text-foreground mb-3">
                     Choose a card value
                   </label>
                   <div className="flex flex-wrap gap-2 mb-2">
@@ -254,8 +254,8 @@ export default function ForBusinessPage() {
                         className={cn(
                           'px-4 py-3 rounded-lg font-medium border-2 transition-colors',
                           giftingState.cardValue === preset
-                            ? 'border-[#ec4899] bg-pink-50 text-[#1a1a1a]'
-                            : 'border-[#1a1a1a]/12 bg-white hover:border-[#1a1a1a]/25 text-[#1a1a1a]'
+                            ? 'border-[#ec4899] bg-pink-50 text-foreground'
+                            : 'border-border bg-background hover:border-border text-foreground'
                         )}
                       >
                         {preset}
@@ -268,8 +268,8 @@ export default function ForBusinessPage() {
                       className={cn(
                         'px-4 py-3 rounded-lg font-medium border-2 transition-colors',
                         !giftingState.cardValue
-                          ? 'border-[#ec4899] bg-pink-50 text-[#1a1a1a]'
-                          : 'border-[#1a1a1a]/12 bg-white hover:border-[#1a1a1a]/25 text-[#1a1a1a]'
+                          ? 'border-[#ec4899] bg-pink-50 text-foreground'
+                          : 'border-border bg-background hover:border-border text-foreground'
                       )}
                     >
                       Custom
@@ -288,14 +288,14 @@ export default function ForBusinessPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-[#1a1a1a]">
+                    <label className="block text-sm font-medium text-foreground">
                       Employees to be gifted
                     </label>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={status === 'loading'}
-                      className="text-sm text-[#047AFF] hover:underline font-medium"
+                      className="text-sm text-experience-highlight hover:underline font-medium"
                     >
                       Upload CSV
                     </button>
@@ -317,7 +317,7 @@ export default function ForBusinessPage() {
                     value={giftingState.emails}
                     onChange={(e) => setGiftingState((s) => ({ ...s, emails: e.target.value }))}
                     rows={5}
-                    className="w-full rounded-[8px] border border-[#1a1a1a]/12 px-4 py-3 text-[#1a1a1a] placeholder:text-[#1a1a1a]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent disabled:opacity-50"
+                    className="w-full rounded-[8px] border border-border px-4 py-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent disabled:opacity-50"
                     disabled={status === 'loading'}
                   />
                 </div>
@@ -331,7 +331,7 @@ export default function ForBusinessPage() {
                     disabled={status === 'loading'}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-[#1a1a1a] mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       When should we send the gift card?
                     </label>
                     <div className="flex gap-2 flex-wrap">
@@ -346,7 +346,7 @@ export default function ForBusinessPage() {
                           }))
                         }}
                         disabled={status === 'loading'}
-                        className="flex-1 min-w-[120px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-[#1a1a1a]/12 bg-white text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF]"
+                        className="flex-1 min-w-[120px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight"
                       >
                         <option value="today">Today</option>
                         {Array.from({ length: 30 }, (_, i) => {
@@ -363,7 +363,7 @@ export default function ForBusinessPage() {
                         value={giftingState.sendTime}
                         onChange={(e) => setGiftingState((s) => ({ ...s, sendTime: e.target.value }))}
                         disabled={status === 'loading'}
-                        className="flex-1 min-w-[100px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-[#1a1a1a]/12 bg-white text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF]"
+                        className="flex-1 min-w-[100px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight"
                       >
                         <option value="now">Now</option>
                         {Array.from({ length: 24 }, (_, i) => (
@@ -377,7 +377,7 @@ export default function ForBusinessPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a1a] mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Gift message (optional)
                   </label>
                   <textarea
@@ -385,7 +385,7 @@ export default function ForBusinessPage() {
                     value={giftingState.giftMessage}
                     onChange={(e) => setGiftingState((s) => ({ ...s, giftMessage: e.target.value }))}
                     rows={4}
-                    className="w-full rounded-[8px] border border-[#1a1a1a]/12 px-4 py-3 text-[#1a1a1a] placeholder:text-[#1a1a1a]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent disabled:opacity-50"
+                    className="w-full rounded-[8px] border border-border px-4 py-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent disabled:opacity-50"
                     disabled={status === 'loading'}
                   />
                 </div>
@@ -400,7 +400,7 @@ export default function ForBusinessPage() {
 
           {(activeTab === 'hospitality' || activeTab === 'offices' || activeTab === 'galleries') && (
             <ScrollReveal animation="fadeUp" duration={0.8}>
-              <p className="text-[#1a1a1a]/80 mb-8">
+              <p className="text-muted-foreground mb-8">
                 Fill out this form and one of our experts will get in touch soon.
               </p>
               <form onSubmit={handleContactSubmit} className="space-y-6 max-w-xl">

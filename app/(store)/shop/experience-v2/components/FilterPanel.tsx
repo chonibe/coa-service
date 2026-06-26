@@ -6,28 +6,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, SlidersHorizontal } from 'lucide-react'
 import { formatPrice, type ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
-import { meetsStarFilter } from '@/lib/experience-artwork-ratings'
 import { cn } from '@/lib/utils'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { experienceVendorsLooselyEqual } from '@/lib/shop/experience-spotlight-match'
 
 export interface FilterState {
   artists: string[]
-  tags: string[]
-  priceRange: [number, number] | null
-  inStockOnly: boolean
   sortBy: 'featured' | 'pairs' | 'price-asc' | 'price-desc' | 'newest' | 'added-to-cart'
-  /** Min star rating (4 = "4+ stars"). Products must have user rating >= this. */
-  minStarRating: number | null
 }
 
 export const DEFAULT_FILTERS: FilterState = {
   artists: [],
-  tags: [],
-  priceRange: null,
-  inStockOnly: false,
   sortBy: 'featured',
-  minStarRating: null,
 }
 
 /** Optional CTA in the filter sheet: featured artist lamp + 2-print bundle (carousel / spotlight banner). */
@@ -49,11 +39,7 @@ export interface FilterPanelLampOffer {
 export function hasActiveFilters(f: FilterState): boolean {
   return (
     f.artists.length > 0 ||
-    f.tags.length > 0 ||
-    f.priceRange !== null ||
-    f.inStockOnly ||
-    f.sortBy !== 'featured' ||
-    f.minStarRating !== null
+    f.sortBy !== 'featured'
   )
 }
 
@@ -77,13 +63,6 @@ interface FilterPanelProps {
   artistCatalog?: [string, number][] | null
 }
 
-const PRICE_PRESETS: Array<{ label: string; range: [number, number] }> = [
-  { label: 'Under $50', range: [0, 50] },
-  { label: '$50 – $100', range: [50, 100] },
-  { label: '$100 – $200', range: [100, 200] },
-  { label: '$200+', range: [200, Infinity] },
-]
-
 const SORT_OPTIONS: Array<{ value: FilterState['sortBy']; label: string }> = [
   { value: 'featured', label: 'Featured' },
   { value: 'pairs', label: 'Pairs first' },
@@ -101,11 +80,7 @@ function applyFilterAndTrack(
   captureFunnelEvent(FunnelEvents.experience_filter_applied, {
     filter_type: changeType,
     has_artists: next.artists.length > 0,
-    has_tags: next.tags.length > 0,
-    has_price_range: next.priceRange !== null,
     sort_by: next.sortBy,
-    in_stock_only: next.inStockOnly,
-    min_star_rating: next.minStarRating ?? undefined,
   })
   onChange(next)
 }
@@ -154,40 +129,12 @@ export function FilterPanel({
       })
   }, [artistCatalog, products])
 
-  const allTags = useMemo(() => {
-    const map = new Map<string, number>()
-    products.forEach((p) => {
-      p.tags?.forEach((t) => {
-        const tag = t.trim().toLowerCase()
-        if (tag) map.set(tag, (map.get(tag) || 0) + 1)
-      })
-    })
-    return Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-  }, [products])
 
   const toggleArtist = (artist: string) => {
     const next = filters.artists.includes(artist)
       ? filters.artists.filter((a) => a !== artist)
       : [...filters.artists, artist]
     applyFilterAndTrack(onChange, { ...filters, artists: next }, 'artists')
-  }
-
-  const toggleTag = (tag: string) => {
-    const next = filters.tags.includes(tag)
-      ? filters.tags.filter((t) => t !== tag)
-      : [...filters.tags, tag]
-    applyFilterAndTrack(onChange, { ...filters, tags: next }, 'tags')
-  }
-
-  const setPriceRange = (range: [number, number] | null) => {
-    const isSame =
-      filters.priceRange &&
-      range &&
-      filters.priceRange[0] === range[0] &&
-      filters.priceRange[1] === range[1]
-    applyFilterAndTrack(onChange, { ...filters, priceRange: isSame ? null : range }, 'price_range')
   }
 
   const clearAll = () => applyFilterAndTrack(onChange, DEFAULT_FILTERS, 'clear')
@@ -208,10 +155,10 @@ export function FilterPanel({
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-white dark:bg-[#171515] shadow-xl flex flex-col"
+            className="fixed left-0 top-0 bottom-0 z-[69] w-full max-w-sm bg-popover text-popover-foreground shadow-xl flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-white/10 flex-shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-neutral-500 dark:text-[#c4a0a0]" />
                 <h3 className="text-sm font-semibold text-[#FFBA94]">Filters</h3>
@@ -245,7 +192,7 @@ export function FilterPanel({
                         'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
                         filters.sortBy === opt.value
                           ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                          : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
+                          : 'bg-card dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 text-foreground hover:bg-neutral-50 dark:hover:bg-[#262222]'
                       )}
                     >
                       {opt.label}
@@ -279,7 +226,7 @@ export function FilterPanel({
                       })()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-neutral-900 dark:text-[#f0e8e8]">
+                      <p className="truncate text-sm font-semibold text-neutral-900 text-foreground">
                         {filterPanelLamp.product.title}
                       </p>
                       {filterPanelLamp.product.priceRange?.minVariantPrice ? (
@@ -325,7 +272,7 @@ export function FilterPanel({
                           type="checkbox"
                           checked={filters.artists.includes(artist)}
                           onChange={() => toggleArtist(artist)}
-                          className="w-4 h-4 rounded border-neutral-300 dark:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8] focus:ring-neutral-500 dark:focus:ring-neutral-400"
+                          className="w-4 h-4 rounded border-neutral-300 dark:border-[#4a4444] text-neutral-900 text-foreground focus:ring-neutral-500 dark:focus:ring-neutral-400"
                         />
                         <span className="text-sm text-neutral-700 dark:text-[#d4b8b8] group-hover:text-neutral-900 dark:group-hover:text-white transition-colors flex-1">{artist}</span>
                         <span className="text-xs text-neutral-400 dark:text-[#b89090]">{count}</span>
@@ -335,81 +282,10 @@ export function FilterPanel({
                 </section>
               )}
 
-              {/* Tags — hidden for now */}
-              {false && allTags.length > 0 && (
-                <section>
-                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Tags</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map(([tag, count]) => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={cn(
-                          'h-5 px-2 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
-                          filters.tags.includes(tag)
-                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                            : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
-                        )}
-                      >
-                        {tag} ({count})
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Price range */}
-              <section>
-                <h4 className="text-xs font-semibold text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider mb-2">Price</h4>
-                <div className="flex flex-wrap gap-2">
-                  {PRICE_PRESETS.map((preset) => {
-                    const isActive =
-                      filters.priceRange?.[0] === preset.range[0] &&
-                      filters.priceRange?.[1] === preset.range[1]
-                    return (
-                      <button
-                        key={preset.label}
-                        onClick={() => setPriceRange(preset.range)}
-                        className={cn(
-                          'h-5 px-2.5 flex items-center rounded-lg text-[10px] font-medium leading-none transition-colors',
-                          isActive
-                            ? 'bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
-                            : 'bg-white dark:bg-[#201c1c] border border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#f0e8e8] hover:bg-neutral-50 dark:hover:bg-[#262222]'
-                        )}
-                      >
-                        {preset.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* Availability */}
-              <section>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.inStockOnly}
-                    onChange={(e) => applyFilterAndTrack(onChange, { ...filters, inStockOnly: e.target.checked }, 'in_stock_only')}
-                    className="sr-only"
-                  />
-                  <span className={cn(
-                    'relative inline-block w-10 h-5 flex-shrink-0 rounded-full border transition-colors duration-200',
-                    filters.inStockOnly ? 'bg-neutral-900 dark:bg-[#f0e8e8] border-neutral-900 dark:border-[#f0e8e8]' : 'bg-neutral-200 dark:bg-[#262222] border-neutral-200 dark:border-[#2c2828]'
-                  )}>
-                    <span className={cn(
-                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white dark:bg-[#1a1616] shadow-sm transition-transform duration-200',
-                      filters.inStockOnly ? 'translate-x-5' : 'translate-x-0'
-                    )} />
-                  </span>
-                  <span className="text-sm text-neutral-700 dark:text-[#d4b8b8]">In stock only</span>
-                </label>
-              </section>
-
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 p-4 border-t border-neutral-100 dark:border-white/10">
+            <div className="flex-shrink-0 p-4 border-t border-border">
               <button
                 onClick={onClose}
                 className="w-full h-10 rounded-lg bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] text-sm font-semibold hover:bg-neutral-800 dark:hover:bg-[#4a4444] transition-colors"
@@ -446,28 +322,6 @@ export function applyFilters(
     result = result.filter((p) =>
       filters.artists.some((sel) => experienceVendorsLooselyEqual(sel, p.vendor))
     )
-  }
-
-  if (filters.tags.length > 0) {
-    result = result.filter((p) =>
-      filters.tags.some((t) => p.tags?.map((pt) => pt.toLowerCase()).includes(t))
-    )
-  }
-
-  if (filters.priceRange) {
-    const [min, max] = filters.priceRange
-    result = result.filter((p) => {
-      const price = parseFloat(p.priceRange?.minVariantPrice?.amount || '0')
-      return price >= min && price <= max
-    })
-  }
-
-  if (filters.inStockOnly) {
-    result = result.filter((p) => p.availableForSale)
-  }
-
-  if (filters.minStarRating !== null) {
-    result = result.filter((p) => meetsStarFilter(p.id, filters.minStarRating!))
   }
 
   switch (filters.sortBy) {

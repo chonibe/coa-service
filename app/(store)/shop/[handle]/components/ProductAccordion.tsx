@@ -53,7 +53,7 @@ export function ProductAccordion({
   }
   
   return (
-    <div className={cn('divide-y divide-[#1a1a1a]/10', className)}>
+    <div className={cn('divide-y divide-border', className)}>
       {items.map((item) => (
         <AccordionItemComponent
           key={item.id}
@@ -94,9 +94,9 @@ function AccordionItemComponent({ item, isOpen, onToggle }: AccordionItemCompone
       >
         <div className="flex items-center gap-3">
           {item.icon && (
-            <span className="text-[#1a1a1a]/60">{item.icon}</span>
+            <span className="text-muted-foreground">{item.icon}</span>
           )}
-          <span className="font-medium text-[#1a1a1a]">{item.title}</span>
+          <span className="font-medium text-foreground">{item.title}</span>
         </div>
         <span
           className={cn(
@@ -127,7 +127,7 @@ function AccordionItemComponent({ item, isOpen, onToggle }: AccordionItemCompone
         style={{ height }}
       >
         <div ref={contentRef} className="pb-4">
-          <div className="text-sm text-[#1a1a1a]/70 leading-relaxed">
+          <div className="text-sm text-muted-foreground leading-relaxed">
             {item.content}
           </div>
         </div>
@@ -192,7 +192,7 @@ export const streetLampAccordionItems: AccordionItem[] = [
           so you can enjoy your artwork with confidence.
         </p>
         <div>
-          <p className="font-medium text-[#1a1a1a] mb-2">Our 1-year warranty covers:</p>
+          <p className="font-medium text-foreground mb-2">Our 1-year warranty covers:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Manufacturing defects in the lamp body or components.</li>
             <li>Issues with the light source or dimmer functionality.</li>
@@ -201,7 +201,7 @@ export const streetLampAccordionItems: AccordionItem[] = [
         </div>
         <p>If any of these issues arise within the first year of your purchase, we&apos;ll repair or replace your lamp at no cost to you.</p>
         <div>
-          <p className="font-medium text-[#1a1a1a] mb-2">What&apos;s Not Covered?</p>
+          <p className="font-medium text-foreground mb-2">What&apos;s Not Covered?</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Normal wear and tear.</li>
             <li>Damage caused by misuse, accidents, or improper installation.</li>

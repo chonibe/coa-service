@@ -15,12 +15,12 @@ import {
 // Loading fallback
 function CheckoutSuccessLoading() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="default">
         <Container maxWidth="narrow">
           <div className="text-center py-12">
-            <div className="animate-spin inline-block w-8 h-8 border-4 border-[#047AFF]/20 border-t-[#047AFF] rounded-full mb-4"></div>
-            <p className="text-[#1a1a1a]/60">Loading order details...</p>
+            <div className="animate-spin inline-block w-8 h-8 border-4 border-experience-highlight/20 border-t-experience-highlight rounded-full mb-4"></div>
+            <p className="text-muted-foreground">Loading order details...</p>
           </div>
         </Container>
       </SectionWrapper>

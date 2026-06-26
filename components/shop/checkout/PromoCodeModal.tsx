@@ -79,7 +79,7 @@ export function PromoCodeModal({
         <Dialog.Content
           className={cn(
             'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col',
-            theme === 'dark' ? 'bg-[#171515]' : 'bg-white',
+            'bg-background',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -130,7 +130,7 @@ export function PromoCodeModal({
                     data-testid="applied-custom-code"
                     className={cn(
                       'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                      'bg-white dark:bg-[#1a1616] border-rose-400/50 dark:border-rose-500/50 shadow-sm'
+                      'bg-card border-rose-400/50 dark:border-rose-500/50 shadow-sm'
                     )}
                   >
                     <span className={cn('h-5 w-5 shrink-0 rounded-full flex items-center justify-center', ACCENT_BG, 'text-white')}>
@@ -156,7 +156,7 @@ export function PromoCodeModal({
                       data-testid={p.code}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors',
-                        'bg-white dark:bg-[#1a1616]',
+                        'bg-card',
                         isSelected
                           ? 'border-rose-400/50 dark:border-rose-500/50 shadow-sm'
                           : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-300 dark:hover:border-[#4a4444]'

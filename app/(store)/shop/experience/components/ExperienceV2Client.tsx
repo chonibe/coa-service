@@ -1378,9 +1378,9 @@ export function ExperienceV2Client({
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors',
           theme === 'light'
             ? 'text-neutral-800 hover:bg-black/5'
-            : 'text-white/90 hover:bg-white/10',
+            : 'text-white/90 hover:bg-foreground/10',
           carouselStripMode === 'watchlist' &&
-            (theme === 'light' ? 'bg-black/10 ring-1 ring-black/10' : 'bg-white/15 ring-1 ring-white/20')
+            (theme === 'light' ? 'bg-black/10 ring-1 ring-black/10' : 'bg-card/15 ring-1 ring-white/20')
         )}
         aria-label={
           carouselStripMode === 'watchlist'
@@ -1687,6 +1687,7 @@ export function ExperienceV2Client({
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
         stripMode={carouselStripMode}
+        hideCollectionStrip={splineInView}
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
         suppressCartThumbnails={false}

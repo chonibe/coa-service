@@ -28,6 +28,26 @@ const INTERNAL_NOTE_PATTERNS = [
   /\bprior exhibitions cell\b/i,
   /\bindexed sources\b/i,
 ]
+/** Research-sheet / AI summary lines that must never appear on the shop profile. */
+const SYSTEM_RESEARCH_PATTERNS = [
+  /\breferenced in\b/i,
+  /\b(?:commissions|features|following)\s+(?:from|by)\b.*\bmentioned\b/i,
+  /\bmentioned\.?\s*$/i,
+  /\bconfirm availability on\b/i,
+  /\barticle notes\b/i,
+  /\bno museum survey cited\b/i,
+  /\bretail stockist context\b/i,
+  /\bsee source article\b/i,
+  /\bpost embedded in\b/i,
+  /\binstagram permalink\b/i,
+  /\bpermalink to @\b/i,
+  /\bprofile; .* listings describe\b/i,
+  /\blistings describe .* presence\b/i,
+  /\bverify auto-extracted\b/i,
+  /\bartist page — —\b/i,
+  /\bfeel-good feature on\b/i,
+]
+const GENERIC_PROCESS_LABELS = /^(portfolio|process|studio|work in progress|wip)$/i
 const SCRAPE_BOILERPLATE_PATTERNS = [
   /behance sign in explore jobs resources/i,
   /download on the app store/i,
@@ -86,7 +106,12 @@ function sanitizeInlineText(value: string | undefined): string | undefined {
 function sanitizeStoryHook(value: string | undefined): string | undefined {
   const cleaned = sanitizeInlineText(value)
   if (!cleaned) return undefined
-  return cleaned.replace(/\s*\(@[a-z0-9._]+\)\s*$/i, '').trim() || undefined
+  return (
+    cleaned
+      .replace(/\s*\(@[a-z0-9._]+\)\s*$/i, '')
+      .replace(/\s*\([a-z0-9._]{3,}\)\s*$/i, '')
+      .trim() || undefined
+  )
 }
 
 function sanitizeActiveSince(value: string | undefined): string | undefined {
@@ -99,11 +124,66 @@ function sanitizeActiveSince(value: string | undefined): string | undefined {
   return cleaned
 }
 
+function looksLikeSystemResearchNote(value: string): boolean {
+  if (!value?.trim()) return true
+  return SYSTEM_RESEARCH_PATTERNS.some((pattern) => pattern.test(value))
+}
+
 function looksLikeInternalOrScrapedParagraph(value: string): boolean {
   if (!value) return true
+  if (looksLikeSystemResearchNote(value)) return true
   if (INTERNAL_NOTE_PATTERNS.some((pattern) => pattern.test(value))) return true
   if (SCRAPE_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(value))) return true
   return false
+}
+
+function sanitizeLocation(value: string | undefined): string | undefined {
+  const cleaned = sanitizeInlineText(value)
+  if (!cleaned) return undefined
+  const withoutParens = cleaned.replace(/\s*\([^)]*(?:profile|listings|article|observer|interview|source|verify|cited)[^)]*\)\s*/gi, ' ')
+  const compact = withoutParens.replace(/\s+/g, ' ').trim()
+  return compact || undefined
+}
+
+function sanitizeProcessLabel(value: string | undefined): string | undefined {
+  const cleaned = sanitizeInlineText(value)
+  if (!cleaned) return undefined
+  if (looksLikeSystemResearchNote(cleaned)) return undefined
+  if (GENERIC_PROCESS_LABELS.test(cleaned)) return undefined
+  return cleaned
+}
+
+function sanitizeCalloutText(value: string | undefined): string | undefined {
+  const cleaned = sanitizeNarrativeText(value)
+  if (!cleaned) return undefined
+  if (looksLikeSystemResearchNote(cleaned)) return undefined
+  return cleaned
+}
+
+function sanitizeExhibitionRow(row: ExhibitionRow): ExhibitionRow | undefined {
+  const title = sanitizeInlineText(
+    (row.title || '')
+      .replace(/\s*\([^)]*retail stockist context[^)]*\)/gi, '')
+      .replace(/\s*\([^)]*stockist context[^)]*\)/gi, '')
+  )
+  const venue = sanitizeInlineText(row.venue)
+  const city = sanitizeInlineText(row.city)
+  const type = sanitizeInlineText(row.type) || 'Exhibition'
+  if (!Number.isFinite(row.year)) return undefined
+  const combined = `${title || ''}${venue || ''}${city || ''}`.trim()
+  if (!combined || looksLikeSystemResearchNote(combined)) return undefined
+  return { year: row.year, type, title: title || combined, venue: venue || '', city: city || '' }
+}
+
+function isUsablePressCard(card: PressCard): boolean {
+  const outlet = card.outlet?.trim()
+  const quote = card.quote?.trim()
+  if (!outlet && !quote) return false
+  if (quote && looksLikeSystemResearchNote(quote)) return false
+  if (quote && /^see source article$/i.test(quote)) return false
+  if (quote && quote.length < 12 && !card.url) return false
+  if (outlet && looksLikeSystemResearchNote(outlet)) return false
+  return Boolean(outlet || (quote && quote.length >= 12))
 }
 
 function sanitizeNarrativeText(value: string | undefined): string | undefined {
@@ -190,6 +270,13 @@ function parseExhibitionRest(rest: string): Pick<ExhibitionRow, 'type' | 'title'
     return { type, title, venue, city }
   }
 
+  if (commas.length >= 4) {
+    const title = commas[0]
+    const city = commas.slice(-2).join(', ')
+    const venue = commas.slice(1, -2).join(', ')
+    return { type: 'Exhibition', title, venue, city }
+  }
+
   if (commas.length === 3) {
     return { type: 'Exhibition', title: commas[0], venue: commas[1], city: commas[2] }
   }
@@ -204,12 +291,17 @@ function parseExhibitions(text: string): ExhibitionRow[] {
   const rows: ExhibitionRow[] = []
   const cleaned = fixLikelyMojibake(text)
   for (const line of cleaned.split('\n').map((l) => l.trim()).filter(Boolean)) {
-    const m = line.match(/^(\d{4})\s*[-–—]\s*(.+)$/)
-    if (!m) continue
+    const withoutUrl = line.replace(/\s*[-–—]\s*https?:\/\/\S+\s*$/i, '').trim()
+    const m = withoutUrl.match(/^(\d{4})\s*[-–—]\s*(.+)$/)
+    if (!m) {
+      if (looksLikeSystemResearchNote(line)) continue
+      continue
+    }
     const year = Number.parseInt(m[1], 10)
     if (!Number.isFinite(year)) continue
     const parsed = parseExhibitionRest(m[2])
-    rows.push({ year, ...parsed })
+    const row = sanitizeExhibitionRow({ year, ...parsed })
+    if (row) rows.push(row)
   }
   return rows
 }
@@ -218,7 +310,8 @@ function parsePress(text: string): PressCard[] {
   const cards: PressCard[] = []
   const cleaned = fixLikelyMojibake(text)
   for (const line of cleaned.split('\n').map((l) => l.trim()).filter(Boolean)) {
-    const parts = line.split(/\s+[-–—]\s+/).map((p) => p.trim())
+    if (looksLikeSystemResearchNote(line)) continue
+    const parts = line.split(/\s+[-–—]\s+/).map((p) => p.trim()).filter(Boolean)
     if (parts.length < 2) continue
     const outlet = sanitizeInlineText(parts[0]) || parts[0]
     let year: string | undefined
@@ -234,8 +327,10 @@ function parsePress(text: string): PressCard[] {
       url = last
       end = parts.length - 1
     }
-    const quote = sanitizeInlineText(parts.slice(i, end).join(' — ')) || outlet
-    cards.push({ outlet, year, quote, url })
+    const quoteRaw = sanitizeInlineText(parts.slice(i, end).join(' — ')) || outlet
+    const quote = quoteRaw?.replace(/^[-–—]\s+/, '').trim() || outlet
+    const card: PressCard = { outlet, year, quote, url }
+    if (isUsablePressCard(card)) cards.push(card)
   }
   return cards
 }
@@ -256,7 +351,7 @@ function processGalleryFromRaw(raw: RawArtistResearchRow): ProcessGalleryItem[] 
     const k = processGalleryDedupeKey(u)
     if (seen.has(k)) continue
     seen.add(k)
-    items.push({ url: u, label: sanitizeInlineText(label) })
+    items.push({ url: u, label: sanitizeProcessLabel(label) })
   }
   return items
 }
@@ -288,9 +383,9 @@ function exhibitionKey(r: ExhibitionRow): string {
 }
 
 function mergeExhibitionRows(shopify: ExhibitionRow[] | undefined, research: ExhibitionRow[]): ExhibitionRow[] | undefined {
-  const fromShop = (shopify ?? []).filter(
-    (r) => r && Number.isFinite(r.year) && `${r.title || ''}${r.venue || ''}${r.city || ''}`.trim().length > 0
-  )
+  const fromShop = (shopify ?? [])
+    .map((r) => sanitizeExhibitionRow(r))
+    .filter((r): r is ExhibitionRow => Boolean(r))
   const keys = new Set(fromShop.map(exhibitionKey))
   const out = [...fromShop]
   for (const r of research) {
@@ -309,10 +404,11 @@ function pressKey(c: PressCard): string {
 }
 
 function mergePressCards(shopify: PressCard[] | undefined, research: PressCard[]): PressCard[] | undefined {
-  const fromShop = (shopify ?? []).filter((c) => c && (c.outlet?.trim() || c.quote?.trim()))
+  const fromShop = (shopify ?? []).filter((c) => c && isUsablePressCard(c))
   const keys = new Set(fromShop.map(pressKey))
   const out = [...fromShop]
   for (const c of research) {
+    if (!isUsablePressCard(c)) continue
     const k = pressKey(c)
     if (!keys.has(k)) {
       out.push(c)
@@ -342,7 +438,9 @@ function mergeProcessGalleries(
   shopify: ProcessGalleryItem[] | undefined,
   research: ProcessGalleryItem[]
 ): ProcessGalleryItem[] | undefined {
-  const fromShop = (shopify ?? []).filter((x) => x?.url?.trim())
+  const fromShop = (shopify ?? [])
+    .filter((x) => x?.url?.trim())
+    .map((x) => ({ ...x, label: sanitizeProcessLabel(x.label) }))
   const keys = new Set(fromShop.map((x) => processGalleryDedupeKey(x.url)))
   const out = [...fromShop]
   for (const r of research) {
@@ -382,13 +480,16 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
   if (!raw) {
     return {
       ...shopify,
-      location: sanitizeInlineText(shopify.location),
+      location: sanitizeLocation(shopify.location),
       alias: sanitizeInlineText(shopify.alias),
       storyHook: sanitizeStoryHook(shopify.storyHook),
       pullquote: sanitizeInlineText(shopify.pullquote),
       activeSince: sanitizeActiveSince(shopify.activeSince),
-      impactCallout: sanitizeNarrativeText(shopify.impactCallout),
-      exclusiveCallout: sanitizeNarrativeText(shopify.exclusiveCallout),
+      impactCallout: sanitizeCalloutText(shopify.impactCallout),
+      exclusiveCallout: sanitizeCalloutText(shopify.exclusiveCallout),
+      processGallery: mergeProcessGalleries(shopify.processGallery, []),
+      exhibitions: mergeExhibitionRows(shopify.exhibitions, []),
+      press: mergePressCards(shopify.press, []),
     }
   }
 
@@ -398,7 +499,7 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
   const instagramShowcase = instagramShowcaseFromRaw(raw)
 
   return {
-    location: sanitizeInlineText(shopify.location) || sanitizeInlineText(raw.location),
+    location: sanitizeLocation(shopify.location) || sanitizeLocation(raw.location),
     alias: sanitizeInlineText(shopify.alias),
     storyHook: sanitizeStoryHook(shopify.storyHook) || sanitizeStoryHook(raw.heroHook),
     pullquote: sanitizeInlineText(shopify.pullquote) || sanitizeInlineText(raw.pullQuote),
@@ -407,8 +508,8 @@ export function mergeResearchIntoProfile(shopify: ArtistProfileRich, slug: strin
     press: mergePressCards(shopify.press, pressParsed),
     instagramShowcase: mergeInstagramShowcaseItems(shopify.instagramShowcase, instagramShowcase),
     activeSince: sanitizeActiveSince(shopify.activeSince) || sanitizeActiveSince(raw.activeSince),
-    impactCallout: sanitizeNarrativeText(shopify.impactCallout) || sanitizeNarrativeText(raw.impactCallout),
-    exclusiveCallout: sanitizeNarrativeText(shopify.exclusiveCallout) || sanitizeNarrativeText(raw.exclusiveCallout),
+    impactCallout: sanitizeCalloutText(shopify.impactCallout) || sanitizeCalloutText(raw.impactCallout),
+    exclusiveCallout: sanitizeCalloutText(shopify.exclusiveCallout) || sanitizeCalloutText(raw.exclusiveCallout),
   }
 }
 

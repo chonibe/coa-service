@@ -19,8 +19,8 @@ export interface KeyboardShortcutHintProps {
 
 export function KeyboardShortcutHint({ shortcut, description, className }: KeyboardShortcutHintProps) {
   return (
-    <div className={cn('inline-flex items-center gap-2 text-sm text-[#1a1a1a]/60', className)}>
-      <kbd className="px-2 py-0.5 text-xs font-semibold bg-[#1a1a1a]/5 border border-[#1a1a1a]/10 rounded">
+    <div className={cn('inline-flex items-center gap-2 text-sm text-muted-foreground', className)}>
+      <kbd className="px-2 py-0.5 text-xs font-semibold bg-muted border border-border rounded">
         {shortcut}
       </kbd>
       <span>{description}</span>
@@ -96,15 +96,15 @@ export function KeyboardShortcutsModal() {
       {/* Modal */}
       <div
         ref={modalRef}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-card rounded-2xl shadow-2xl p-6"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading text-xl font-semibold text-[#1a1a1a]">
+          <h2 className="font-heading text-xl font-semibold text-foreground">
             Keyboard Shortcuts
           </h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -116,18 +116,18 @@ export function KeyboardShortcutsModal() {
           {shortcuts.map((shortcut) => (
             <div
               key={shortcut.key}
-              className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#1a1a1a]/5 transition-colors"
+              className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted transition-colors"
             >
-              <span className="text-[#1a1a1a]">{shortcut.description}</span>
-              <kbd className="px-3 py-1.5 text-sm font-semibold bg-[#1a1a1a]/10 border border-[#1a1a1a]/20 rounded-lg">
+              <span className="text-foreground">{shortcut.description}</span>
+              <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted border border-border rounded-lg">
                 {shortcut.key}
               </kbd>
             </div>
           ))}
         </div>
         
-        <p className="mt-6 text-xs text-center text-[#1a1a1a]/50">
-          Press <kbd className="px-1.5 py-0.5 bg-[#1a1a1a]/5 rounded">Esc</kbd> to close
+        <p className="mt-6 text-xs text-center text-muted-foreground">
+          Press <kbd className="px-1.5 py-0.5 bg-muted rounded">Esc</kbd> to close
         </p>
       </div>
     </>

@@ -49,7 +49,7 @@ export const EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS =
  * Payment row / Done: draw attention with typography and color only (no pulse or shine frame).
  */
 export const EXPERIENCE_JOURNEY_PAYMENT_TEXT_HIGHLIGHT_CLASS =
-  'font-semibold text-[#047AFF] dark:text-[#60A5FA]'
+  'font-semibold text-experience-highlight'
 
 /**
  * Returns the highest-priority incomplete funnel step, or null if none apply (e.g. onboarding quiz).

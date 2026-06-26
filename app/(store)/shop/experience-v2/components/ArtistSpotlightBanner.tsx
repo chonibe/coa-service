@@ -116,8 +116,8 @@ export function ArtistSpotlightBanner({
           embedded
             ? 'rounded-none bg-transparent'
             : 'rounded-xl bg-neutral-100 dark:bg-[#201c1c]/80',
-          !embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#262222]/80 transition-colors',
-          embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-white/5 transition-colors'
+          !embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-50 hover:bg-muted/80 transition-colors',
+          embedded && isCollapsible && 'cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-card/5 transition-colors'
         )}
       >
         {isExpanded ? (
@@ -135,7 +135,7 @@ export function ArtistSpotlightBanner({
                   'absolute right-1 top-1 z-10 sm:right-2 sm:top-2',
                   'inline-flex items-center justify-center p-2 transition-colors',
                   'text-neutral-500 hover:text-neutral-900 active:opacity-80',
-                  'dark:text-[#b8a0a0] dark:hover:text-[#f0e8e8]',
+                  'dark:text-[#b8a0a0] hover:text-foreground',
                   spotlight.unlisted &&
                     'text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200'
                 )}

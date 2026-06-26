@@ -150,18 +150,18 @@ export function CircularCarousel({
   }, { dependencies: [activeIndex, products.length], scope: circleRef })
 
   return (
-    <section className={cn('relative py-16 lg:py-24 bg-white overflow-hidden', className)}>
+    <section className={cn('relative py-16 lg:py-24 bg-background overflow-hidden', className)}>
       <div className="container mx-auto px-4">
         {/* Header Text */}
         {(title || description) && (
           <div className="text-center mb-12 lg:mb-16">
             {title && (
-              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+              <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-semibold text-foreground tracking-[-0.02em] mb-4">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="text-lg sm:text-xl text-[#1a1a1a]/70">
+              <p className="text-lg sm:text-xl text-muted-foreground">
                 {description}
               </p>
             )}
@@ -222,8 +222,8 @@ export function CircularCarousel({
                   'transition-all duration-300',
                   'border-2',
                   index === activeIndex
-                    ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
-                    : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-foreground border-border hover:border-foreground/40'
                 )}
               >
                 {product.title}
@@ -272,7 +272,7 @@ function CircleCard({ product, isActive }: CircleCardProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#1a1a1a]/20">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-muted-foreground">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <path d="M21 15l-5-5L5 21" />

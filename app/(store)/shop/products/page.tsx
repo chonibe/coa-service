@@ -149,7 +149,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   // Show error state if API failed
   if (apiError) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md" background="default">
           <Container maxWidth="default">
             <div className="text-center py-12">
@@ -160,10 +160,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-4">
+              <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-foreground tracking-[-0.02em] mb-4">
                 Shop Unavailable
               </h1>
-              <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Unable to load products from the store. This may be due to a configuration issue with the Shopify Storefront API.
               </p>
               <p className="text-sm text-[#f83a3a] mb-6 font-mono bg-[#f83a3a]/5 py-2 px-4 rounded-lg inline-block">
@@ -185,7 +185,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <ProductListingJsonLd
         products={products}
         name={collectionHandle ? `${title} limited edition art prints` : 'Street Collector limited edition art prints'}
@@ -213,10 +213,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <SectionWrapper spacing="sm" background="default">
           <Container maxWidth="default">
             <div className="text-center py-4 sm:py-8">
-              <p className="text-sm uppercase tracking-wider text-[#1a1a1a]/50 mb-2">
+              <p className="text-sm uppercase tracking-wider text-muted-foreground mb-2">
                 Products
               </p>
-              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em]">
                 {title}
               </h1>
             </div>
@@ -230,7 +230,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <Container maxWidth="default">
             <Link
               href="/shop/products"
-              className="inline-flex items-center gap-1 py-2 text-sm text-[#047AFF] hover:underline"
+              className="inline-flex items-center gap-1 py-2 text-sm text-experience-highlight hover:underline"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -258,10 +258,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <SectionWrapper spacing="sm" background="default">
           <Container maxWidth="default">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] tracking-[-0.01em]">
+              <h3 className="font-heading text-lg font-semibold text-foreground tracking-[-0.01em]">
                 Browse by Series
               </h3>
-              <Link href="/shop/series" className="text-sm font-medium text-[#047AFF] hover:underline">
+              <Link href="/shop/series" className="text-sm font-medium text-experience-highlight hover:underline">
                 View all series
               </Link>
             </div>
@@ -273,7 +273,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   className="flex-shrink-0 group"
                 >
                   <div className="w-28 sm:w-36">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-[#1a1a1a]/5 group-hover:ring-[#047AFF]/30 transition-all">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-border group-hover:ring-experience-highlight/30 transition-all">
                       {series.thumbnail_url ? (
                         <img
                           src={series.thumbnail_url}
@@ -281,7 +281,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
@@ -289,8 +289,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         </div>
                       )}
                     </div>
-                    <p className="text-xs sm:text-sm font-medium text-[#1a1a1a] line-clamp-1">{series.name}</p>
-                    <p className="text-[10px] sm:text-xs text-[#1a1a1a]/50">{series.total_artworks} artworks</p>
+                    <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-1">{series.name}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{series.total_artworks} artworks</p>
                   </div>
                 </Link>
               ))}
@@ -304,18 +304,18 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <Container maxWidth="default">
           {products.length === 0 ? (
             <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-6">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <rect x="3" y="3" width="7" height="7" rx="1" />
                   <rect x="14" y="3" width="7" height="7" rx="1" />
                   <rect x="14" y="14" width="7" height="7" rx="1" />
                   <rect x="3" y="14" width="7" height="7" rx="1" />
                 </svg>
               </div>
-              <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+              <h2 className="font-heading text-2xl font-semibold text-foreground mb-2">
                 No products found
               </h2>
-              <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Try adjusting your filters or search terms
               </p>
               <Link href="/shop/products">
@@ -325,7 +325,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           ) : (
             <>
               {/* Product count */}
-              <div className="mb-6 text-sm text-[#1a1a1a]/60">
+              <div className="mb-6 text-sm text-muted-foreground">
                 Showing {products.length} {products.length === 1 ? 'product' : 'products'}
               </div>
               
@@ -345,7 +345,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
               {/* Pagination - styled with Previous/Next buttons */}
               {(hasNextPage || currentPage > 1) && (
-                <div className="flex items-center justify-center gap-2 sm:gap-4 mt-10 sm:mt-12 pt-8 border-t border-[#1a1a1a]/10">
+                <div className="flex items-center justify-center gap-2 sm:gap-4 mt-10 sm:mt-12 pt-8 border-t border-border">
                   {currentPage > 1 ? (
                     <Link
                       href={`/shop/products?${new URLSearchParams({
@@ -353,7 +353,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         sort,
                         page: String(currentPage - 1),
                       }).toString()}`}
-                      className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-[#1a1a1a] border border-[#1a1a1a]/20 rounded-full hover:border-[#1a1a1a]/40 transition-colors"
+                      className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-foreground border border-border rounded-full hover:border-foreground/40 transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -361,7 +361,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       <span className="hidden sm:inline">Previous</span>
                     </Link>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-[#1a1a1a]/30 border border-[#1a1a1a]/10 rounded-full cursor-not-allowed">
+                    <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-full cursor-not-allowed">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -369,7 +369,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     </span>
                   )}
                   
-                  <span className="text-sm text-[#1a1a1a]/60 px-2">
+                  <span className="text-sm text-muted-foreground px-2">
                     Page {currentPage}
                   </span>
                   
@@ -380,7 +380,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         sort,
                         page: String(currentPage + 1),
                       }).toString()}`}
-                      className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-[#1a1a1a] border border-[#1a1a1a]/20 rounded-full hover:border-[#1a1a1a]/40 transition-colors"
+                      className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-foreground border border-border rounded-full hover:border-foreground/40 transition-colors"
                     >
                       <span className="hidden sm:inline">Next</span>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -388,7 +388,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       </svg>
                     </Link>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-[#1a1a1a]/30 border border-[#1a1a1a]/10 rounded-full cursor-not-allowed">
+                    <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-full cursor-not-allowed">
                       <span className="hidden sm:inline">Next</span>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

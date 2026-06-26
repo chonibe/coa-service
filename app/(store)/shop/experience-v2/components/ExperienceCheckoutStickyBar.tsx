@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo } from 'react'
 import Image from 'next/image'
-import { ChevronRight, Eye, Plus } from 'lucide-react'
+import { ChevronRight, Eye, LayoutGrid, Plus } from 'lucide-react'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
@@ -50,11 +50,24 @@ export interface ExperienceCheckoutStickyBarProps {
   hidePickerOnDesktop?: boolean
   /** Hide “Your Collection” checkout pill on lg+. */
   hideCheckoutOnDesktop?: boolean
+  /** Hide the checkout pill at all breakpoints (e.g. experience v3 spline footer — thumbnails only). */
+  hideCheckoutPill?: boolean
   /**
    * When true, hide the collection picker strip (arc label + add-artwork FAB) and the empty-collection CTA.
    * Checkout pill still shows when there is at least one artwork. Used when the shell opens the picker elsewhere (e.g. experience v3 header).
    */
   hideCollectionStrip?: boolean
+  /**
+   * Experience v3 mobile: single outline “The Collection” button (no thumbnails, checkout pill, or FAB).
+   * Desktop shells keep `default`; pair with header toolbar on lg+.
+   */
+  bottomBarVariant?: 'default' | 'collectionButtonOnly'
+  /** Picker open state for `collectionButtonOnly` toggle styling and aria. */
+  collectionPickerOpen?: boolean
+  /** Toggle handler for `collectionButtonOnly` (open/close picker). */
+  onCollectionButtonClick?: () => void
+  /** `fixed` (default) pins to viewport; `inline` flows inside a parent section (e.g. experience v3 lamp block). */
+  barPosition?: 'fixed' | 'inline'
 }
 
 function firstImageUrl(product: ShopifyProduct): string | null {
@@ -86,7 +99,7 @@ function LampPreviewEyeBadge({ theme }: { theme: 'light' | 'dark' }) {
       className={cn(
         'pointer-events-none flex h-4 w-4 shrink-0 items-center justify-center rounded-full border shadow-md backdrop-blur-sm sm:h-[1.125rem] sm:w-[1.125rem]',
         theme === 'light'
-          ? 'border-white/95 bg-white/95 text-neutral-800 shadow-black/15'
+          ? 'border-white/95 bg-card/95 text-neutral-800 shadow-black/15'
           : 'border-white/35 bg-[#2a2626]/95 text-[#f0e8e8] shadow-black/50'
       )}
     >
@@ -126,7 +139,7 @@ function StickyThumb({
     frame,
     'm-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
     'transition-transform duration-200 active:scale-[0.95]',
-    'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
+    'outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
   )
 
   const thumbImage = (
@@ -182,7 +195,7 @@ function StickyThumb({
           frame,
           'relative m-0 cursor-pointer border-0 bg-transparent p-0 text-left touch-manipulation',
           'transition-opacity hover:opacity-90',
-          'outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
+          'outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:focus-visible:ring-[#60A5FA]'
         )}
       >
         {thumbImage}
@@ -217,7 +230,12 @@ export function ExperienceCheckoutStickyBar({
   lampPreviewProductIds = [],
   hidePickerOnDesktop = false,
   hideCheckoutOnDesktop = false,
+  hideCheckoutPill = false,
   hideCollectionStrip = false,
+  bottomBarVariant = 'default',
+  collectionPickerOpen = false,
+  onCollectionButtonClick,
+  barPosition = 'fixed',
 }: ExperienceCheckoutStickyBarProps) {
   const { openOrderBar, promoDiscount, pickerEngaged, orderDrawerOpen } = useExperienceOrder()
   const { theme } = useExperienceTheme()
@@ -240,23 +258,39 @@ export function ExperienceCheckoutStickyBar({
   const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
   /** Lamp in experience cart but user still needs to pick artwork(s). */
   const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
-  const visible = hideCollectionStrip ? hasArtworks : hasArtworks || showEmptyCollectionCta
-  const showPickerStrip = Boolean(onOpenPicker) && !hideCollectionStrip
+  const isCollectionButtonOnly = bottomBarVariant === 'collectionButtonOnly'
+  const showThumbnails = !suppressCartThumbnails && hasArtworks
+  const showCheckoutPill = !hideCheckoutPill
+  const visible = isCollectionButtonOnly
+    ? Boolean(onCollectionButtonClick ?? onOpenPicker)
+    : hideCollectionStrip && hideCheckoutPill
+      ? showThumbnails
+      : hideCollectionStrip
+        ? hasArtworks
+        : hasArtworks || showEmptyCollectionCta
+  const showPickerStrip = Boolean(onOpenPicker) && !hideCollectionStrip && !isCollectionButtonOnly
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
+
+  const collectionOutlineButtonClass = cn(
+    'flex w-full shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-3 sm:text-sm',
+    'focus-visible:ring-2 focus-visible:ring-offset-2',
+    'border-experience-cta/50 bg-transparent text-experience-cta hover:border-experience-cta/75 hover:bg-experience-cta/[0.08]',
+    'focus-visible:ring-experience-cta focus-visible:ring-offset-background',
+    collectionPickerOpen && 'ring-2 ring-experience-cta/70'
+  )
+
+  const experiencePrimaryFillCtaClass =
+    'border-experience-cta bg-experience-cta text-white shadow-experience-cta/30 hover:bg-experience-cta-hover hover:border-experience-cta-hover dark:text-neutral-900'
 
   const createBundleCtaClass = cn(
     'relative flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
-    theme === 'light'
-      ? 'border-blue-600 bg-blue-600 text-white shadow-blue-600/30 hover:bg-blue-700 hover:border-blue-700'
-      : 'border-blue-500 bg-blue-600 text-white shadow-black/40 hover:bg-blue-500 hover:border-blue-400',
+    experiencePrimaryFillCtaClass,
     journeyNext === 'create_bundle' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
 
   const chooseArtworksAfterLampClass = cn(
     'relative flex min-h-[3.25rem] min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-left text-base font-semibold leading-tight tracking-tight shadow-lg transition-all duration-200 active:scale-[0.98]',
-    theme === 'light'
-      ? 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700'
-      : 'border-violet-500 bg-violet-600 text-white shadow-black/40 hover:bg-violet-500 hover:border-violet-400',
+    experiencePrimaryFillCtaClass,
     (journeyNext === 'choose_artworks' || lampInCartNeedsArtwork) && 'animate-experience-artwork-cta-pulse',
     journeyNext === 'choose_artworks' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
   )
@@ -271,9 +305,8 @@ export function ExperienceCheckoutStickyBar({
   )
 
   const checkoutPillClass = cn(
-    'relative z-[3] flex w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold shadow-md transition-transform active:scale-[0.98] md:px-8',
-    'bg-[#047AFF] text-white hover:bg-[#0366d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]',
-    journeyNext === 'open_checkout' && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
+    'relative z-[3] flex w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform active:scale-[0.98] md:px-8',
+    'bg-experience-cta text-white hover:bg-experience-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-cta dark:text-neutral-900'
   )
 
   const slots = useMemo<Slot[]>(() => {
@@ -301,15 +334,58 @@ export function ExperienceCheckoutStickyBar({
     return `Your collection summary: ${parts.join(', ')}`
   }, [lampQuantity, selectedArtworks.length, hasArtworks, stripMode])
 
+  const barShellClass =
+    barPosition === 'inline'
+      ? cn(
+          'relative z-[5] w-full border-t border-border bg-background/95 text-foreground backdrop-blur-md'
+        )
+      : cn(
+          'fixed bottom-0 left-0 right-0 z-[52]',
+          barPosition === 'fixed' && 'bg-transparent text-foreground',
+          isCollectionButtonOnly &&
+            'border-t border-border bg-background/95 text-foreground backdrop-blur-md'
+        )
+
+  const barShellStyle =
+    barPosition === 'inline'
+      ? { paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }
+      : { paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }
+
   if (!visible) return null
+
+  if (isCollectionButtonOnly) {
+    const handleCollectionClick = onCollectionButtonClick ?? onOpenPicker
+    if (!handleCollectionClick) return null
+
+    return (
+      <div
+        className={barShellClass}
+        style={barShellStyle}
+        role="region"
+        aria-label="Collection picker"
+      >
+        <div className="mx-auto max-w-2xl px-4 py-3">
+          <button
+            type="button"
+            onClick={handleCollectionClick}
+            className={collectionOutlineButtonClass}
+            aria-label={
+              collectionPickerOpen ? 'Close the collection picker' : 'Open the collection picker'
+            }
+            aria-expanded={collectionPickerOpen}
+          >
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+            The Collection
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
-      className={cn(
-        'fixed bottom-0 left-0 right-0 z-[52] bg-transparent',
-        theme === 'light' ? 'text-neutral-900' : 'text-white'
-      )}
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      className={cn(barShellClass)}
+      style={barShellStyle}
       role="region"
       aria-label={summaryLabel}
     >
@@ -336,17 +412,17 @@ export function ExperienceCheckoutStickyBar({
           <div
             className={cn(
               'flex w-full min-w-0 flex-col',
-              showPickerStrip || !suppressCartThumbnails ? 'gap-3' : 'gap-0'
+              (showPickerStrip || showThumbnails) && showCheckoutPill ? 'gap-3' : 'gap-0'
             )}
           >
-            {showPickerStrip || !suppressCartThumbnails ? (
+            {showPickerStrip || showThumbnails ? (
               <div
                 className={cn(
                   'flex w-full min-w-0 items-center gap-3',
                   suppressCartThumbnails && showPickerStrip ? 'justify-end' : ''
                 )}
               >
-                {!suppressCartThumbnails ? (
+                {showThumbnails ? (
                   <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide pt-1">
                     <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
                       {slots.map((slot, index) => {
@@ -412,19 +488,21 @@ export function ExperienceCheckoutStickyBar({
                 ) : null}
               </div>
             ) : null}
-            <button
-              type="button"
-              onClick={openOrderBar}
-              className={cn(checkoutPillClass, hideCheckoutOnDesktop && 'lg:hidden')}
-              aria-label={`Open your collection, total ${finalTotal.toFixed(2)} dollars`}
-            >
-              <span className="whitespace-nowrap">
-                Your Collection · ${formatPriceCompact(finalTotal)}
-              </span>
-              <span aria-hidden className="text-base leading-none">
-                →
-              </span>
-            </button>
+            {showCheckoutPill ? (
+              <button
+                type="button"
+                onClick={openOrderBar}
+                className={cn(checkoutPillClass, hideCheckoutOnDesktop && 'lg:hidden')}
+                aria-label={`Open your collection, total ${finalTotal.toFixed(2)} dollars`}
+              >
+                <span className="whitespace-nowrap">
+                  Your Collection · ${formatPriceCompact(finalTotal)}
+                </span>
+                <span aria-hidden className="text-base leading-none">
+                  →
+                </span>
+              </button>
+            ) : null}
           </div>
         )}
       </div>

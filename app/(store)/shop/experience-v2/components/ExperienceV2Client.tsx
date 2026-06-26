@@ -1297,12 +1297,11 @@ export function ExperienceV2Client({
       setHeaderCenterContent(
         <div
           className={cn(
-            'text-center min-w-0 max-w-[200px] md:max-w-[320px] mx-auto pointer-events-none',
-            theme === 'light' ? 'text-neutral-900' : 'text-white'
+            'text-center min-w-0 max-w-[200px] md:max-w-[320px] mx-auto pointer-events-none text-foreground'
           )}
         >
-          <p className={cn('text-sm font-semibold truncate', theme === 'light' ? 'text-neutral-900' : 'text-white')}>
-            Start your Collection
+          <p className="text-sm font-semibold truncate text-foreground">
+            Choose your Art
           </p>
         </div>
       )
@@ -1319,15 +1318,14 @@ export function ExperienceV2Client({
         type="button"
         onClick={() => handleViewDetail(displayedProduct)}
         className={cn(
-          'text-center min-w-0 max-w-[200px] md:max-w-[280px] truncate block mx-auto',
-          theme === 'light' ? 'text-neutral-900' : 'text-white'
+          'text-center min-w-0 max-w-[200px] md:max-w-[280px] truncate block mx-auto text-foreground'
         )}
       >
-        <p className={cn('text-sm font-semibold truncate', theme === 'light' ? 'text-neutral-900' : 'text-white')}>
+        <p className="text-sm font-semibold truncate text-foreground">
           {title}
         </p>
         {artist && (
-          <p className={cn('text-xs truncate', theme === 'light' ? 'text-neutral-500' : 'text-white/70')}>
+          <p className="text-xs truncate text-muted-foreground">
             by {artist}
           </p>
         )}
@@ -1402,7 +1400,7 @@ export function ExperienceV2Client({
             onRotate={onRotate}
             hideTitle={isDesktop}
             suppressReelSync={isCollectionStart}
-            heroTitleOverride={isCollectionStart ? 'Start your Collection' : null}
+            heroTitleOverride={isCollectionStart ? 'Choose your Art' : null}
           />
         )}
         galleryImages={galleryImages}
@@ -1689,6 +1687,7 @@ export function ExperienceV2Client({
         selectedArtworks={selectedArtworks}
         orderSubtotal={orderTotal}
         stripMode="collection"
+        hideCollectionStrip={splineInView}
         onOpenPicker={handleOpenPicker}
         onViewLampDetail={() => setDetailProduct(lamp)}
         suppressCartThumbnails={false}

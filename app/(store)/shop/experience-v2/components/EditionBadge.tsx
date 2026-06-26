@@ -27,9 +27,9 @@ function EditionStageLeadIcon({
   flat?: boolean
 }) {
   const lucideClass = cn(
-    'shrink-0 text-neutral-100 opacity-90 dark:text-[#f6f2f2] dark:opacity-100',
+    'shrink-0 text-current opacity-90',
     !flat &&
-      'drop-shadow-[0_0_1px_rgba(0,0,0,0.5)] dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.25)]',
+      'drop-shadow-[0_0_1px_rgba(0,0,0,0.35)] dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.25)]',
     compact ? 'h-3 w-3' : 'h-3.5 w-3.5'
   )
   switch (kind) {
@@ -39,14 +39,8 @@ function EditionStageLeadIcon({
           className={cn(
             'shrink-0 select-none text-[0.92em] leading-none',
             compact
-              ? cn(
-                  'text-white/95',
-                  !flat && 'drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]'
-                )
-              : cn(
-                  'text-neutral-300 dark:text-[#ebe6e6] opacity-95 dark:opacity-100',
-                  !flat && 'dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]'
-                )
+              ? cn('text-current opacity-95', !flat && 'drop-shadow-[0_0_2px_rgba(0,0,0,0.35)]')
+              : cn('text-current opacity-95', !flat && 'dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.2)]')
           )}
           aria-hidden
         >
@@ -134,10 +128,9 @@ export function EditionBadge({
           className={cn(
             'inline-flex max-w-full min-w-0 items-center justify-center gap-1 font-semibold uppercase',
             'rounded-lg px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.06em]',
-            'text-white',
-            'border border-white/25 dark:border-white/20',
-            'bg-black/35 backdrop-blur-md backdrop-saturate-150',
-            'dark:bg-black/45'
+            'border border-border/60 text-foreground',
+            'bg-card/85 backdrop-blur-md backdrop-saturate-150',
+            'dark:border-white/20 dark:bg-black/45 dark:text-white'
           )}
           title={copy.badge}
         >
@@ -152,14 +145,14 @@ export function EditionBadge({
     <>
       <span
         className={cn(
-          'inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 font-semibold uppercase text-neutral-100',
+          'inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 font-semibold uppercase',
           unifiedSection &&
-            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-neutral-800/95 text-neutral-100 dark:bg-[#2e2a2a] dark:text-[#f4f0f0] dark:ring-1 dark:ring-white/12',
+            'rounded-md px-3 py-1 text-xs tracking-[0.07em] bg-muted text-foreground ring-1 ring-border',
           !unifiedSection &&
             (prominent
-              ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-neutral-950 ring-1 ring-black/20 dark:bg-[#2c2828] dark:ring-white/15'
+              ? 'rounded-md px-3 py-1.5 text-[11px] tracking-[0.08em] shadow-inner bg-foreground text-background ring-1 ring-border'
               : cn(
-                  'rounded-sm px-1.5 py-0.5 bg-neutral-900 tracking-[0.06em] dark:bg-[#2a2626] dark:text-[#f0ecec] dark:ring-1 dark:ring-white/12',
+                  'rounded-sm px-1.5 py-0.5 bg-foreground text-background tracking-[0.06em] ring-1 ring-border',
                   compact ? 'text-[8px]' : 'text-[9px]'
                 ))
         )}
@@ -171,12 +164,12 @@ export function EditionBadge({
         className={cn(
           'leading-snug max-w-[22rem] mx-auto',
           unifiedSection &&
-            'text-sm text-neutral-600 dark:text-[#b0a0a0] px-1 mt-0.5 font-normal leading-snug',
+            'text-sm text-muted-foreground px-1 mt-0.5 font-normal leading-snug',
           !unifiedSection &&
             (prominent
-              ? 'text-sm font-medium text-neutral-800 dark:text-[#ece4e4] px-1 mt-1'
+              ? 'text-sm font-medium text-foreground px-1 mt-1'
               : cn(
-                  'text-neutral-600 dark:text-[#a89898]',
+                  'text-muted-foreground',
                   compact ? 'text-[9px]' : 'text-[10px]',
                   'max-w-[18rem] px-0.5'
                 ))
@@ -188,12 +181,12 @@ export function EditionBadge({
         className={cn(
           'leading-snug max-w-[22rem] mx-auto',
           unifiedSection &&
-            'text-[11px] text-neutral-500 dark:text-[#908080] px-1 font-normal',
+            'text-[11px] text-muted-foreground px-1 font-normal',
           !unifiedSection &&
             (prominent
-              ? 'text-xs font-medium text-amber-900/90 dark:text-[#FFBA94] px-1'
+              ? 'text-xs font-medium text-experience-highlight px-1'
               : cn(
-                  'text-neutral-500 dark:text-[#948888]',
+                  'text-muted-foreground',
                   compact ? 'text-[8px]' : 'text-[9px]',
                   'max-w-[18rem] px-0.5 leading-tight'
                 ))
@@ -209,14 +202,13 @@ export function EditionBadge({
     return (
       <div
         className={cn(
-          'w-full rounded-xl border-2 border-neutral-200/90 dark:border-[#3d3636]',
-          'bg-gradient-to-b from-white via-neutral-50/95 to-neutral-100/80',
-          'dark:from-[#221e1e] dark:via-[#1a1616] dark:to-[#141010]',
-          'px-4 py-4 shadow-md dark:shadow-black/40',
+          'w-full rounded-xl border-2 border-border',
+          'bg-gradient-to-b from-card via-muted/50 to-muted',
+          'px-4 py-4 shadow-md',
           className
         )}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-[#9a8888] text-center mb-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground text-center mb-3">
           Edition status
         </p>
         <div className="flex flex-col items-center text-center gap-2">{inner}</div>

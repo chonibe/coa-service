@@ -142,7 +142,7 @@ export function HorizontalTwoSlideGallery({
         onClick={goPrev}
         disabled={index === 0}
         className={cn(
-          'absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-white/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
+          'absolute left-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-card/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
           index === 0 && 'pointer-events-none opacity-25'
         )}
         aria-label="Previous slide"
@@ -154,7 +154,7 @@ export function HorizontalTwoSlideGallery({
         onClick={goNext}
         disabled={index === 1}
         className={cn(
-          'absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-white/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
+          'absolute right-1 top-1/2 -translate-y-1/2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200/70 bg-card/85 text-neutral-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#1f1b1b]/80 dark:text-[#d8c8c8] transition-opacity touch-manipulation',
           index === 1 && 'pointer-events-none opacity-25'
         )}
         aria-label="Next slide"

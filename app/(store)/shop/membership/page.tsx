@@ -79,7 +79,7 @@ function MembershipContent() {
       <section className="py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Join the Collector's Circle
+            Join the Collector&apos;s Circle
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Unlock exclusive benefits, earn credits that appreciate over time, 
@@ -94,7 +94,7 @@ function MembershipContent() {
 
           {user?.isMember && (
             <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
-              You're already a {user.membershipTier} member!{' '}
+              You&apos;re already a {user.membershipTier} member!{' '}
               <button 
                 onClick={() => router.push('/collector/membership')}
                 className="underline font-medium"
@@ -127,8 +127,8 @@ function MembershipContent() {
                   className={cn(
                     'relative rounded-2xl p-8 transition-all duration-300',
                     tier.highlighted 
-                      ? 'bg-white shadow-2xl ring-2 ring-violet-500 scale-105' 
-                      : 'bg-white shadow-lg hover:shadow-xl',
+                      ? 'bg-card shadow-2xl ring-2 ring-violet-500 scale-105' 
+                      : 'bg-card shadow-lg hover:shadow-xl',
                     isCurrentTier && 'ring-2 ring-green-500'
                   )}
                 >
@@ -285,7 +285,7 @@ function MembershipContent() {
           </h2>
           
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-card p-6 rounded-lg shadow">
               <h3 className="font-semibold text-slate-900 mb-2">
                 How do credits work?
               </h3>
@@ -296,7 +296,7 @@ function MembershipContent() {
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-card p-6 rounded-lg shadow">
               <h3 className="font-semibold text-slate-900 mb-2">
                 Can I change my tier?
               </h3>
@@ -307,13 +307,13 @@ function MembershipContent() {
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-card p-6 rounded-lg shadow">
               <h3 className="font-semibold text-slate-900 mb-2">
                 What happens to my credits if I cancel?
               </h3>
               <p className="text-slate-600">
                 Your credits remain in your account even after cancellation. 
-                You can use them anytime, though they won't appreciate without 
+                You can use them anytime, though they won&apos;t appreciate without 
                 an active subscription.
               </p>
             </div>
@@ -334,7 +334,7 @@ function MembershipContent() {
             <Button
               onClick={() => handleSubscribe('curator')}
               disabled={isSubscribing}
-              className="bg-white text-slate-900 hover:bg-slate-100 px-8 py-6 text-lg font-semibold"
+              className="bg-card text-foreground hover:bg-muted px-8 py-6 text-lg font-semibold"
             >
               {isSubscribing ? (
                 <>

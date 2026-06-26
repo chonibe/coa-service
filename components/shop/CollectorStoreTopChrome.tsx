@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { Menu, Moon, Sun } from 'lucide-react'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { cn } from '@/lib/utils'
-import { useLandingAppearance } from '@/app/(store)/shop/street-collector/LandingThemeProvider'
+import { useTheme } from 'next-themes'
 import { streetLampProductPath } from '@/lib/shop/street-lamp-handle'
 import { streetCollectorContent } from '@/content/street-collector'
 
@@ -41,7 +41,8 @@ export function CollectorStoreTopChrome({
   embedded = false,
 }: CollectorStoreTopChromeProps) {
   const pathname = usePathname() || ''
-  const landingAppearance = useLandingAppearance()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const resolvedPromo =
     promoLine === undefined ? DEFAULT_TRUST_PROMO : promoLine.trim() === '' ? null : promoLine
   const [menuOpen, setMenuOpen] = useState(false)
@@ -64,7 +65,7 @@ export function CollectorStoreTopChrome({
   const promoBlock =
     resolvedPromo != null ? (
       <div
-        className="flex w-full items-center justify-center border-b border-stone-200/90 bg-white/95 px-3 py-1.5 text-center text-[10px] font-medium leading-snug text-balance text-stone-600 dark:border-white/[0.08] dark:bg-[#0f0e0e] dark:text-[#FFBA94]/75 sm:text-[11px] md:text-xs"
+        className="flex w-full items-center justify-center border-b border-border bg-background px-3 py-1.5 text-center text-[10px] font-medium leading-snug text-balance text-muted-foreground shadow-none sm:text-[11px] md:text-xs [filter:none]"
         style={
           embedded
             ? undefined
@@ -80,14 +81,14 @@ export function CollectorStoreTopChrome({
   const navRow = (
     <div
       className={cn(
-        'flex w-full flex-wrap items-center justify-between gap-2 border-b border-stone-200/60 bg-white/90 px-3 py-2 backdrop-blur-md dark:border-white/10 dark:bg-[#171515]/90 sm:px-4',
+        'flex w-full flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 shadow-none [filter:none] sm:px-4',
         embedded ? 'relative z-0' : 'relative'
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:flex-none">
         <Link
           href="/shop/street-collector"
-          className="-m-1 inline-flex shrink-0 items-center gap-2 rounded-md p-1 text-sm font-medium tracking-tight text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40"
+          className="-m-1 inline-flex shrink-0 items-center gap-2 rounded-md p-1 text-sm font-medium tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Street Collector home"
         >
           <img
@@ -103,7 +104,7 @@ export function CollectorStoreTopChrome({
           type="button"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
-          className="inline-flex md:hidden items-center justify-center rounded-md p-1.5 text-stone-600 hover:bg-stone-100 dark:text-[#FFBA94]/80 dark:hover:bg-white/10"
+          className="inline-flex md:hidden items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent"
         >
           <Menu className="h-5 w-5" strokeWidth={1.75} />
         </button>
@@ -111,13 +112,13 @@ export function CollectorStoreTopChrome({
           <SlideoutMenu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
-            theme={landingAppearance?.appearance === 'dark' ? 'dark' : 'light'}
+            theme={isDark ? 'dark' : 'light'}
             authRedirectTo={pathname || '/shop/street-collector'}
             logoHref="/shop/street-collector"
           />
         )}
         <nav
-          className="hidden md:flex items-center gap-5 text-sm text-stone-600 dark:text-[#FFBA94]/75"
+          className="hidden md:flex items-center gap-5 text-sm text-muted-foreground"
           aria-label="Shop"
         >
           {NAV.map(({ href, label }) => {
@@ -131,8 +132,8 @@ export function CollectorStoreTopChrome({
                 href={href}
                 prefetch={false}
                 className={cn(
-                  'rounded-md px-1 py-0.5 transition-colors hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:hover:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40',
-                  active && 'font-medium text-stone-900 dark:text-[#FFBA94]'
+                  'rounded-md px-1 py-0.5 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  active && 'font-medium text-foreground'
                 )}
               >
                 {label}
@@ -143,35 +144,29 @@ export function CollectorStoreTopChrome({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {landingAppearance ? (
-          <button
-            type="button"
-            onClick={landingAppearance.toggleAppearance}
-            aria-label={
-              landingAppearance.appearance === 'dark'
-                ? 'Switch to light mode'
-                : 'Switch to dark mode'
-            }
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/80 bg-white/90 text-stone-800 dark:border-white/15 dark:bg-[#201c1c]/80 dark:text-[#FFBA94]"
-          >
-            {landingAppearance.appearance === 'dark' ? (
-              <Sun className="h-4 w-4" strokeWidth={1.75} />
-            ) : (
-              <Moon className="h-4 w-4" strokeWidth={1.75} />
-            )}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground"
+        >
+          {isDark ? (
+            <Sun className="h-4 w-4" strokeWidth={1.75} />
+          ) : (
+            <Moon className="h-4 w-4" strokeWidth={1.75} />
+          )}
+        </button>
         <Link
           href="/shop/account"
           prefetch={false}
-          className="hidden rounded-md px-1 py-0.5 text-sm text-stone-600 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/70 dark:text-[#FFBA94]/70 dark:hover:text-[#FFBA94] dark:focus-visible:ring-[#FFBA94]/40 sm:inline"
+          className="hidden rounded-md px-1 py-0.5 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline"
         >
           Sign in
         </Link>
         <Link
           href="/shop/artists"
           prefetch={false}
-          className="inline-flex items-center justify-center rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-[#FFBA94] dark:text-[#171515] dark:focus-visible:ring-[#FFBA94] dark:focus-visible:ring-offset-[#171515] sm:px-4 sm:text-sm"
+          className="inline-flex items-center justify-center rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-none transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 sm:text-sm"
         >
           Follow artists
         </Link>
@@ -190,7 +185,7 @@ export function CollectorStoreTopChrome({
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[122] flex flex-col"
+      className="fixed top-0 left-0 right-0 z-[122] flex flex-col shadow-none [filter:none]"
       style={resolvedPromo ? undefined : { paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       {promoBlock}

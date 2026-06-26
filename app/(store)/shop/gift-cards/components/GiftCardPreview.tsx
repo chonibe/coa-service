@@ -10,7 +10,7 @@ const designStyles = {
     amount: 'text-amber-400 font-serif',
   },
   minimal: {
-    card: 'bg-white border-2 border-neutral-200 shadow-lg',
+    card: 'bg-card border-2 border-neutral-200 shadow-lg',
     accent: 'border-neutral-300',
     text: 'text-neutral-800',
     amount: 'text-neutral-950 font-semibold',

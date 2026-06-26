@@ -52,7 +52,7 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
     <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-[#1a1a1a] mb-1">
+          <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
             Name
           </label>
           <input
@@ -62,13 +62,13 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#1a1a1a]/20 rounded bg-white text-[#1a1a1a] placeholder-[#1a1a1a]/50 focus:outline-none focus:border-[#047AFF]"
+            className="w-full px-4 py-2 border border-border rounded bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-experience-highlight"
             placeholder="Your name"
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[#1a1a1a] mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
             Email
           </label>
           <input
@@ -78,13 +78,13 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#1a1a1a]/20 rounded bg-white text-[#1a1a1a] placeholder-[#1a1a1a]/50 focus:outline-none focus:border-[#047AFF]"
+            className="w-full px-4 py-2 border border-border rounded bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-experience-highlight"
             placeholder="your@email.com"
           />
         </div>
 
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-[#1a1a1a] mb-1">
+          <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-1">
             Subject
           </label>
           <input
@@ -94,13 +94,13 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
             value={formData.subject}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#1a1a1a]/20 rounded bg-white text-[#1a1a1a] placeholder-[#1a1a1a]/50 focus:outline-none focus:border-[#047AFF]"
+            className="w-full px-4 py-2 border border-border rounded bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-experience-highlight"
             placeholder="What is this about?"
           />
         </div>
 
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-[#1a1a1a] mb-1">
+          <label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">
             Message
           </label>
           <textarea
@@ -109,7 +109,7 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
             value={formData.message}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#1a1a1a]/20 rounded bg-white text-[#1a1a1a] placeholder-[#1a1a1a]/50 focus:outline-none focus:border-[#047AFF]"
+            className="w-full px-4 py-2 border border-border rounded bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-experience-highlight"
             placeholder="Tell us what's on your mind..."
             rows={5}
           />
@@ -130,7 +130,7 @@ export function ContactFormClient({ contactEmail }: ContactFormClientProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full px-6 py-2 bg-[#1a1a1a] text-white font-medium rounded hover:bg-[#1a1a1a]/90 disabled:opacity-50 transition"
+          className="w-full px-6 py-2 bg-foreground text-background font-medium rounded hover:bg-foreground/90 disabled:opacity-50 transition"
         >
           {isSubmitting ? 'Sending...' : 'Send Message'}
         </button>

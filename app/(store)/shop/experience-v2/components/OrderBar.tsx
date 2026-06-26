@@ -14,6 +14,7 @@ import { captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
+import { streetCollectorCtaClass } from '@/lib/shop/street-collector-cta'
 import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
 import {
   experienceArtworkUnitUsd,
@@ -26,10 +27,6 @@ import {
   lampVolumeDiscountPercentForAllocated,
 } from '@/lib/shop/lamp-artwork-volume-discount'
 import { useShopDiscountFlags } from './ShopDiscountFlagsContext'
-import {
-  EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS,
-  resolveExperienceNextAction,
-} from '@/lib/shop/experience-journey-next-action'
 import type { CartEditionHold } from '@/lib/shop/cart-edition-hold-types'
 import { EditionHoldCartSummary, EditionHoldIndicator } from './EditionHoldIndicator'
 
@@ -162,7 +159,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const [error, setError] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const { promoDiscount, promoCode, pickerEngaged, setOrderDrawerOpen } = useExperienceOrder()
+  const { promoDiscount, promoCode, setOrderDrawerOpen } = useExperienceOrder()
   const { user } = useShopAuthContext()
   const pathname = usePathname()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
@@ -491,23 +488,13 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     setDrawerOpen(false)
   }
 
-  const journeyNextAction = React.useMemo(
-    () =>
-      resolveExperienceNextAction({
-        lampQuantity,
-        artworkCount: selectedArtworks.length,
-        pickerEngaged,
-        orderDrawerOpen: drawerOpen,
-        hasAddress: false,
-        hasPaymentSelection: false,
-        paymentSectionExpanded: false,
-        paymentStripeUnlocked: false,
-        stripeHostedInDrawer: true,
-      }),
-    [lampQuantity, selectedArtworks.length, pickerEngaged, drawerOpen]
+  const handleArtworkSelect = useCallback(
+    (product: ShopifyProduct) => {
+      onSelectArtwork?.(product)
+      setDrawerOpen(false)
+    },
+    [onSelectArtwork]
   )
-
-  const journeyHighlight = EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
 
   /* ─── Order summary & cart ─── */
   const lampOriginalTotal = lampQuantity * lampPrice
@@ -537,7 +524,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
                   className={cn(
                     'shrink-0 rounded-lg p-0.5 -m-0.5 transition-colors',
                     'text-neutral-400 dark:text-[#d4b8b8]',
-                    'hover:text-[#047AFF] dark:hover:text-[#60A5FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047AFF]'
+                    'hover:text-experience-highlight dark:hover:text-[#60A5FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-highlight'
                   )}
                   aria-label="View Street Lamp product details"
                 >
@@ -596,32 +583,74 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <div key={`${art.id}-${runStartIndex}`} className="space-y-0.5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 items-center text-sm">
             <div className="flex items-center gap-2 min-w-0 justify-self-start">
-              <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
-                {art.featuredImage?.url ? (
-                  <Image
-                    src={art.featuredImage.url}
-                    alt={art.title}
-                    width={28}
-                    height={28}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-[#b89090] text-sm">
-                    —
+              {onSelectArtwork ? (
+                <button
+                  type="button"
+                  onClick={() => handleArtworkSelect(art)}
+                  className={cn(
+                    'flex min-w-0 items-center gap-2 rounded-lg p-0.5 -m-0.5 text-left transition-colors',
+                    'hover:text-experience-highlight dark:hover:text-[#60A5FA]',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-highlight'
+                  )}
+                  aria-label={`Review artwork: ${art.title}`}
+                >
+                  <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
+                    {art.featuredImage?.url ? (
+                      <Image
+                        src={art.featuredImage.url}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-[#b89090] text-sm">
+                        —
+                      </div>
+                    )}
+                    {collected && (
+                      <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center" title="Already in your collection">
+                        <Package className="w-2 h-2 text-white" strokeWidth={2.5} />
+                      </div>
+                    )}
                   </div>
-                )}
-                {collected && (
-                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center" title="Already in your collection">
-                    <Package className="w-2 h-2 text-white" strokeWidth={2.5} />
+                  <span className={cn('truncate min-w-0 text-sm text-neutral-900 dark:text-[#f0e8e8]', !art.availableForSale && 'line-through text-neutral-500 dark:text-[#c4a0a0]')}>
+                    {art.title}
+                    {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
+                  </span>
+                </button>
+              ) : (
+                <>
+                  <div className="relative w-7 h-7 shrink-0 rounded overflow-hidden bg-neutral-100 dark:bg-[#201c1c]">
+                    {art.featuredImage?.url ? (
+                      <Image
+                        src={art.featuredImage.url}
+                        alt={art.title}
+                        width={28}
+                        height={28}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-[#b89090] text-sm">
+                        —
+                      </div>
+                    )}
+                    {collected && (
+                      <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center" title="Already in your collection">
+                        <Package className="w-2 h-2 text-white" strokeWidth={2.5} />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <span className={cn('truncate min-w-0 text-sm text-neutral-900 dark:text-[#f0e8e8]', !art.availableForSale && 'line-through text-neutral-500 dark:text-[#c4a0a0]')}>
-                {art.title}
-                {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
-              </span>
+                  <span className={cn('truncate min-w-0 text-sm text-neutral-900 dark:text-[#f0e8e8]', !art.availableForSale && 'line-through text-neutral-500 dark:text-[#c4a0a0]')}>
+                    {art.title}
+                    {collected && <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-500">(Collected)</span>}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center justify-center gap-0.5 shrink-0 justify-self-center">
               <button
@@ -660,7 +689,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
           <button
             type="button"
             onClick={() => onLampQuantityChange(1)}
-            className="flex items-center gap-2 text-sm text-[#047AFF] dark:text-[#60A5FA] font-medium hover:text-[#0366d6] dark:hover:text-[#93C5FD]"
+            className="flex items-center gap-2 text-sm text-experience-highlight dark:text-[#60A5FA] font-medium hover:text-experience-highlight-muted dark:hover:text-[#93C5FD]"
           >
               <svg viewBox="0 0 306 400" fill="currentColor" className="w-4 h-5 text-neutral-600 dark:text-[#c4a0a0] shrink-0" xmlns="http://www.w3.org/2000/svg">
               <path d="M174.75 0C176.683 0 178.25 1.567 178.25 3.5V5.5H243C277.794 5.5 306 33.7061 306 68.5V336.5C306 371.294 277.794 399.5 243 399.5H63C28.2061 399.5 0 371.294 0 336.5V68.5C0 33.7061 28.2061 5.5 63 5.5H152.25V3.5C152.25 1.567 153.817 0 155.75 0H174.75ZM44.6729 362.273C42.0193 359.894 37.9386 360.115 35.5586 362.769C33.1786 365.422 33.4002 369.503 36.0537 371.883L41.5078 376.774C44.1614 379.154 48.2421 378.933 50.6221 376.279C53.002 373.626 52.7795 369.545 50.126 367.165L44.6729 362.273ZM111 28.5C88.3563 28.5 70 46.8563 70 69.5V335.5C70 358.144 88.3563 376.5 111 376.5H243C265.644 376.5 284 358.144 284 335.5V69.5C284 46.8563 265.644 28.5 243 28.5H111Z" />
@@ -692,10 +721,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       amount={finalTotal}
       disabled={checkoutButtonDisabled}
       onClick={handleContinueToHostedCheckout}
-      className={cn(
-        'text-sm relative',
-        journeyNextAction === 'place_order' && journeyHighlight
-      )}
+      className={cn('text-sm relative', streetCollectorCtaClass, 'shadow-experience-cta/30')}
     >
       {isCheckingOut ? (
         <>
@@ -725,7 +751,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       {/* Drawer — CSS slide from right */}
       <div
         className={cn(
-          'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full md:w-[480px] bg-white dark:bg-[#171515] shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
+          'checkout-sheet right-drawer fixed top-0 right-0 bottom-0 z-[92] w-full md:w-[480px] bg-popover text-popover-foreground shadow-2xl flex flex-col pointer-events-auto pr-[env(safe-area-inset-right,0px)]',
           'transition-transform duration-300',
           drawerOpen ? 'translate-x-0' : 'translate-x-full'
         )}

@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
+import { streetCollectorCtaStickyClass } from '@/lib/shop/street-collector-cta'
 
 type MobileStickyCtaProps = {
   href: string
@@ -31,7 +33,7 @@ export function MobileStickyCta({ href, label, ariaLabel, breakpoint = 'md' }: M
         href={href}
         prefetch={false}
         aria-label={ariaLabel ?? label}
-        className="flex min-h-[52px] w-full max-w-md items-center justify-center rounded-lg bg-[#ffba94] px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#171515] shadow-[0_10px_30px_rgba(0,0,0,0.45)] transition-colors hover:bg-[#e09060]"
+        className={cn(streetCollectorCtaStickyClass, 'uppercase tracking-[0.12em]')}
       >
         {label}
       </Link>

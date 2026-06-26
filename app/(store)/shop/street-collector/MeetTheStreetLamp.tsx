@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { LazyVideo } from '@/components/LazyVideo'
+import { streetCollectorCtaLgClass } from '@/lib/shop/street-collector-cta'
 
 export interface MeetTheLampStage {
   title: string
@@ -18,9 +19,9 @@ export interface MeetTheLampStage {
 const pricingGlassClass = cn(
   'inline-flex max-w-[min(100%,22rem)] items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-center font-semibold',
   'text-[11px] leading-snug sm:px-3.5 sm:py-2 sm:text-sm sm:leading-normal',
-  'text-white',
-  'border border-white/20 bg-white/10 backdrop-blur-xl backdrop-saturate-150',
-  'shadow-[0_6px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
+  'text-foreground',
+  'border border-border bg-card/80 backdrop-blur-xl backdrop-saturate-150',
+  'shadow-sm'
 )
 
 function pricingLabelFromChips(chips?: string[]): string | null {
@@ -179,7 +180,7 @@ export function MeetTheStreetLamp({
     const secondaryTaglines = taglinesAreTitle ? lines.slice(2) : showHeading ? lines : []
 
     const titleHeadingClass = cn(
-      'font-serif font-medium tracking-tight text-[#FFBA94]',
+      'font-serif font-medium tracking-tight text-experience-title',
       spacing === 'stacked' &&
         'text-center text-[1.65rem] leading-[1.15] sm:text-4xl sm:leading-tight md:text-5xl',
       spacing === 'desktopLeft' &&
@@ -239,7 +240,7 @@ export function MeetTheStreetLamp({
           {secondaryTaglines.map((line, i) => (
             <p
               key={`${i}-${line}`}
-              className="text-[0.95rem] font-normal leading-snug text-[#FFBA94]/90 sm:text-lg md:text-xl"
+              className="text-[0.95rem] font-normal leading-snug text-muted-foreground sm:text-lg md:text-xl"
             >
               {line}
             </p>
@@ -277,16 +278,13 @@ export function MeetTheStreetLamp({
           <Link
             href={primaryCta.href}
             prefetch={false}
-            className={cn(
-              'inline-flex min-h-[48px] items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors',
-              'bg-[#047AFF] hover:bg-[#0366d6] hover:opacity-95'
-            )}
+            className={streetCollectorCtaLgClass}
           >
             {primaryCta.label}
           </Link>
         ) : null}
         {trustMicroItems && trustMicroItems.length > 0 ? (
-          <p className="max-w-md text-xs leading-relaxed text-[#FFBA94]/75 sm:text-sm">
+          <p className="max-w-md text-xs leading-relaxed text-muted-foreground sm:text-sm">
             {trustMicroItems.join(' · ')}
           </p>
         ) : null}
@@ -315,7 +313,7 @@ export function MeetTheStreetLamp({
         >
           <h3
             className={cn(
-              'mb-1.5 font-semibold leading-tight text-[#FFBA94] sm:mb-2',
+              'mb-1.5 font-semibold leading-tight text-experience-title sm:mb-2',
               opts.variant === 'mobile' && 'text-xl sm:text-2xl',
               opts.variant === 'desktop' && 'text-xl leading-snug lg:text-2xl'
             )}
@@ -324,7 +322,7 @@ export function MeetTheStreetLamp({
           </h3>
           <p
             className={cn(
-              'text-pretty leading-relaxed text-[#FFBA94]/80',
+              'text-pretty leading-relaxed text-muted-foreground',
               opts.variant === 'mobile' && 'text-[0.9375rem] sm:text-base',
               opts.variant === 'desktop' && 'text-sm leading-relaxed lg:text-base'
             )}
@@ -334,7 +332,7 @@ export function MeetTheStreetLamp({
         </div>
         <div
           className={cn(
-            'mt-4 w-full max-w-[140px] rounded-full bg-[#FFBA94]/20 sm:mt-5',
+            'mt-4 w-full max-w-[140px] rounded-full bg-experience-highlight/20 sm:mt-5',
             opts.variant === 'mobile' && 'mx-auto',
             opts.variant === 'desktop' && 'max-w-[10rem] md:mt-5 lg:mt-6'
           )}
@@ -342,7 +340,7 @@ export function MeetTheStreetLamp({
           aria-hidden
         >
           <div
-            className="h-full rounded-full bg-[#FFBA94] transition-[width] duration-75 ease-linear"
+            className="h-full rounded-full bg-experience-highlight transition-[width] duration-75 ease-linear"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -353,7 +351,7 @@ export function MeetTheStreetLamp({
   return (
     <section
       className={cn(
-        'w-full bg-[#171515] py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-5.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
+        'w-full bg-background py-8 sm:py-10 md:flex md:min-h-[calc(100dvh-5.5rem)] md:flex-col md:py-0 md:pb-8 lg:pb-10',
         className
       )}
     >
@@ -392,7 +390,7 @@ export function MeetTheStreetLamp({
         >
           <div
             className={cn(
-              'relative min-h-0 w-full min-w-0 max-w-lg overflow-hidden rounded-2xl bg-neutral-800 md:max-w-none md:flex-[0.58] lg:flex-[0.6]',
+              'relative min-h-0 w-full min-w-0 max-w-lg overflow-hidden rounded-2xl bg-muted md:max-w-none md:flex-[0.58] lg:flex-[0.6]',
               'md:self-stretch'
             )}
           >
@@ -430,7 +428,7 @@ export function MeetTheStreetLamp({
           <div className="mt-8 text-center md:mt-10">
             <a
               href={cueHref}
-              className="text-base text-[#FFBA94]/80 underline underline-offset-2 transition-colors hover:text-[#FFBA94] sm:text-lg"
+              className="text-base text-muted-foreground underline underline-offset-2 transition-colors hover:text-experience-title sm:text-lg"
             >
               {cue}
             </a>

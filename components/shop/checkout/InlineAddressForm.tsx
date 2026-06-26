@@ -168,16 +168,18 @@ export function InlineAddressForm({
     onSubmit(form)
   }
 
+  const labelClass = 'text-xs text-experience-text-muted'
+
   return (
     <form onSubmit={handleSubmit} className={cn('space-y-3', compact && 'space-y-2')}>
       {error && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
           {error}
         </div>
       )}
 
       <div>
-        <Label htmlFor="inline-email" className="text-xs text-neutral-600">Email</Label>
+        <Label htmlFor="inline-email" className={labelClass}>Email</Label>
         <Input
           id="inline-email"
           type="email"
@@ -189,7 +191,7 @@ export function InlineAddressForm({
       </div>
 
       <div>
-        <Label htmlFor="inline-fullname" className="text-xs text-neutral-600">Full name</Label>
+        <Label htmlFor="inline-fullname" className={labelClass}>Full name</Label>
         <Input
           id="inline-fullname"
           type="text"
@@ -201,7 +203,7 @@ export function InlineAddressForm({
       </div>
 
       <div>
-        <Label htmlFor="inline-country" className="text-xs text-neutral-600">Country</Label>
+        <Label htmlFor="inline-country" className={labelClass}>Country</Label>
         <Select value={form.country} onValueChange={handleCountryChange}>
           <SelectTrigger id="inline-country" className="mt-1 h-9 text-sm">
             <SelectValue placeholder="Select country" />
@@ -222,7 +224,7 @@ export function InlineAddressForm({
       </div>
 
       <div>
-        <Label htmlFor="inline-addr1" className="text-xs text-neutral-600">Address</Label>
+        <Label htmlFor="inline-addr1" className={labelClass}>Address</Label>
         <Input
           id="inline-addr1"
           type="text"
@@ -234,7 +236,7 @@ export function InlineAddressForm({
       </div>
 
       <div>
-        <Label htmlFor="inline-addr2" className="text-xs text-neutral-600">Apt / Suite (optional)</Label>
+        <Label htmlFor="inline-addr2" className={labelClass}>Apt / Suite (optional)</Label>
         <Input
           id="inline-addr2"
           type="text"
@@ -247,7 +249,7 @@ export function InlineAddressForm({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label htmlFor="inline-city" className="text-xs text-neutral-600">City</Label>
+          <Label htmlFor="inline-city" className={labelClass}>City</Label>
           <Input
             id="inline-city"
             type="text"
@@ -259,7 +261,7 @@ export function InlineAddressForm({
         </div>
         {hasStateDropdown ? (
           <div>
-            <Label htmlFor="inline-state" className="text-xs text-neutral-600">State</Label>
+            <Label htmlFor="inline-state" className={labelClass}>State</Label>
             <Select value={form.state || ''} onValueChange={(v) => setForm((p) => ({ ...p, state: v }))}>
               <SelectTrigger id="inline-state" className="mt-1 h-9 text-sm">
                 <SelectValue placeholder="State" />
@@ -275,7 +277,7 @@ export function InlineAddressForm({
           </div>
         ) : form.country ? (
           <div>
-            <Label htmlFor="inline-state" className="text-xs text-neutral-600">State / Province</Label>
+            <Label htmlFor="inline-state" className={labelClass}>State / Province</Label>
             <Input
               id="inline-state"
               type="text"
@@ -287,7 +289,7 @@ export function InlineAddressForm({
           </div>
         ) : null}
         <div className={(hasStateDropdown || form.country) ? 'col-span-2' : ''}>
-          <Label htmlFor="inline-postal" className="text-xs text-neutral-600">Postal code</Label>
+          <Label htmlFor="inline-postal" className={labelClass}>Postal code</Label>
           <Input
             id="inline-postal"
             type="text"
@@ -300,7 +302,7 @@ export function InlineAddressForm({
       </div>
 
       <div>
-        <Label className="text-xs text-neutral-600">Phone number</Label>
+        <Label className={labelClass}>Phone number</Label>
         <div className="mt-1 flex gap-1.5">
           <Select
             value={form.phoneCountryCode}
@@ -332,7 +334,7 @@ export function InlineAddressForm({
           <button
             type="button"
             onClick={onBack}
-            className="flex-1 rounded-lg border border-neutral-200 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex-1 rounded-lg border border-experience-border py-2.5 text-sm font-medium text-experience-text-secondary hover:bg-experience-surface transition-colors"
           >
             Back
           </button>
@@ -340,7 +342,7 @@ export function InlineAddressForm({
         <button
           type="submit"
           className={cn(
-            'rounded-lg bg-neutral-950 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors',
+            'rounded-lg bg-experience-text py-2.5 text-sm font-semibold text-experience-bg hover:opacity-90 transition-opacity',
             onBack && !compact ? 'flex-1' : 'w-full'
           )}
         >

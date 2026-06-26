@@ -136,7 +136,7 @@ export function CarouselStripLampSpline({
           interactive={false}
           idleSpinEnabled
           cameraFeedMode
-          cameraFeedCssBackdrop={theme === 'light' ? '#F5F5F5' : '#171515'}
+          cameraFeedCssBackdrop={theme === 'light' ? 'var(--experience-surface)' : 'var(--experience-bg)'}
           className="relative h-full w-full min-h-0 min-w-0"
           swapLampSides
           flipForSide="B"

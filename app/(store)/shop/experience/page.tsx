@@ -4,11 +4,13 @@ import type { Metadata } from 'next'
 import { buildShopExperienceMetadata } from '@/lib/seo/experience-metadata'
 import {
   getExperienceLampAndSeasonCollections,
+  getProduct,
   type ShopifyCollection,
   type ShopifyProduct,
 } from '@/lib/shopify/storefront-client'
-import { ExperienceV3ClientLoader } from '../experience-v3/components/ExperienceV3ClientLoader'
+import { getGalleryHeroImageUrl, pickInitialPreviewProduct } from '@/lib/shop/experience-gallery-images'
 import { getShopDiscountSettings } from '@/lib/shop/get-shop-discount-flags'
+import { ExperienceV3ClientLoader } from '../experience-v3/components/ExperienceV3ClientLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,13 +67,13 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
 
   if (!lamp) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center max-w-md px-6">
-          <h1 className="text-2xl font-semibold mb-3 text-white">Unavailable</h1>
-          <p className="text-neutral-400 mb-6">Could not load the lamp product. Please try again later.</p>
+          <h1 className="text-2xl font-semibold mb-3 text-foreground">Unavailable</h1>
+          <p className="text-muted-foreground mb-6">Could not load the lamp product. Please try again later.</p>
           <Link
             href="/shop"
-            className="inline-block px-6 py-2.5 bg-white text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+            className="inline-block px-6 py-2.5 bg-card text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
           >
             Back to Shop
           </Link>
@@ -85,15 +87,27 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
 
   const shopDiscountSettings = await getShopDiscountSettings()
 
+  const initialPreviewProduct = pickInitialPreviewProduct(productsSeason2, productsSeason1)
+  const initialGalleryProduct = initialPreviewProduct?.handle
+    ? ((await getProduct(initialPreviewProduct.handle).catch(() => null)) ?? initialPreviewProduct)
+    : null
+  const initialHeroPreloadUrl = getGalleryHeroImageUrl(initialGalleryProduct ?? initialPreviewProduct)
+
   return (
-    <ExperienceV3ClientLoader
-      lamp={lamp}
-      productsSeason1={productsSeason1}
-      productsSeason2={productsSeason2}
-      pageInfoSeason1={pageInfoSeason1}
-      pageInfoSeason2={pageInfoSeason2}
-      initialArtistSlug={initialArtistSlug}
-      shopDiscountSettings={shopDiscountSettings}
-    />
+    <>
+      {initialHeroPreloadUrl ? (
+        <link rel="preload" as="image" href={initialHeroPreloadUrl} fetchPriority="high" />
+      ) : null}
+      <ExperienceV3ClientLoader
+        lamp={lamp}
+        productsSeason1={productsSeason1}
+        productsSeason2={productsSeason2}
+        pageInfoSeason1={pageInfoSeason1}
+        pageInfoSeason2={pageInfoSeason2}
+        initialArtistSlug={initialArtistSlug}
+        shopDiscountSettings={shopDiscountSettings}
+        initialGalleryProduct={initialGalleryProduct}
+      />
+    </>
   )
 }

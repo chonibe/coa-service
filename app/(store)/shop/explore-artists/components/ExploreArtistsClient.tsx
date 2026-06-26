@@ -6,11 +6,17 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import type { ExploreArtistRow } from '@/lib/shop/explore-artists-order'
+import { artistPortraitCoverStyle } from '@/lib/shopify/artist-collection-image'
 import landingStyles from '../../home-v2/landing.module.css'
 import exploreStyles from '../explore-artists.module.css'
 import { useLandingScrollReveal } from '../../home-v2/hooks/useLandingScrollReveal'
 import { exploreArtistsContent } from '@/content/explore-artists'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
+import { ShopUnifiedTopBar } from '@/components/shop/navigation/ShopUnifiedTopBar'
+import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollectionCartChip'
+import { shopUnifiedTopBarPaddingTopClass } from '@/lib/shop/shop-unified-top-bar-layout'
+import { Users } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import {
   TRUST_STAT_PLACEHOLDERS,
   formatTrustStatWithSuffix,
@@ -112,6 +118,8 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
   const isFinePointer = useIsFinePointer()
   const reducedMotion = usePrefersReducedMotion()
+  const { resolvedTheme } = useTheme()
+  const menuTheme = resolvedTheme === 'light' ? 'light' : 'dark'
 
   const [cursor, setCursor] = React.useState({ x: 0, y: 0, rx: 0, ry: 0 })
   React.useEffect(() => {
@@ -141,6 +149,28 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
 
   return (
     <>
+      <ShopUnifiedTopBar
+        position="fixed"
+        menuTheme={menuTheme}
+        centerContent={
+          <span
+            className={cn(
+              'flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
+              'border-experience-cta/50 bg-transparent text-experience-cta'
+            )}
+            aria-current="page"
+          >
+            <Users className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
+            The Artists
+          </span>
+        }
+        rightSlot={<ShopCollectionCartChip experienceHref={experienceUrl} />}
+        menuProps={{
+          authRedirectTo: '/shop/explore-artists',
+          logoHref: '/',
+        }}
+      />
+      <div className={shopUnifiedTopBarPaddingTopClass} aria-hidden />
       {isFinePointer && !reducedMotion ? (
         <>
           <div
@@ -162,8 +192,9 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
           <div className={exploreStyles.heroContent}>
             <div className={exploreStyles.heroEyebrow}>The Artists</div>
             <h1 className={exploreStyles.heroH1}>
-              Every piece has
-              <br />a <em>street.</em>
+              Meet the artists
+              <br />
+              behind the <em>collection.</em>
             </h1>
             <p className={exploreStyles.heroDesc}>
               {formatTrustStatWithSuffix(artists.length, TRUST_STAT_PLACEHOLDERS.artists)} independent artists across{' '}
@@ -209,21 +240,11 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
             <div className={cn(landingStyles.landingStagger, exploreStyles.philosophyEyebrow)} style={{ ['--stagger' as string]: 0 }}>
               Why the artists
             </div>
-            <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyQuote)} style={{ ['--stagger' as string]: 1 }}>
-              &ldquo;We don&apos;t license stock. We don&apos;t source prints.
+            <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyBody)} style={{ ['--stagger' as string]: 1 }}>
+              We work directly with independent street artists. No stock libraries, no middlemen.
               <br />
-              We find the people painting walls at <em>3am</em>
-              <br />
-              in cities that don&apos;t ask permission.&rdquo;
-            </p>
-            <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyBody)} style={{ ['--stagger' as string]: 2 }}>
-              Every artist in this directory is independently sourced.
-              <br />
-              Editions you see here are the runs we carry, built with the artist, not repackaged stock.
               <br />
               When you buy a print, <strong>30% goes to the artist.</strong>
-              <br />
-              Fewer hands in the middle. More of the price reaches the person who made the work.
             </p>
           </div>
         </section>
@@ -274,7 +295,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                     fill
                     sizes="(max-width: 960px) 100vw, 50vw"
                     priority
-                    style={{ objectFit: 'cover' }}
+                    style={artistPortraitCoverStyle(spotlight.imageObjectPosition)}
                   />
                 ) : null}
                 <div className={exploreStyles.featuredMediaOverlay} aria-hidden />
@@ -286,7 +307,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 <div className={exploreStyles.featuredMeta}>{spotlightMeta || 'Street Collector · Limited editions'}</div>
                 <h3 className={exploreStyles.featuredName}>{spotlight.name}</h3>
                 <p className={exploreStyles.featuredHook}>
-                  Full profile: long-form story, history when we have it, and every edition in the shop, in one place.
+                  View their complete story and collection.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 {spotlightPullQuote ? (
@@ -350,14 +371,14 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                             fill
                             sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 25vw"
                             loading={idx < 6 ? 'eager' : 'lazy'}
-                            style={{ objectFit: 'cover' }}
+                            style={artistPortraitCoverStyle(spotlight.imageObjectPosition)}
                           />
                         ) : (
                           <div
                             className="flex h-full w-full items-center justify-center text-5xl"
                             style={{
                               background: 'linear-gradient(145deg, #2a1818 0%, #171515 100%)',
-                              color: 'var(--peach)',
+                              color: 'var(--experience-title)',
                               fontFamily: 'var(--font-landing-serif), Georgia, serif',
                             }}
                             aria-hidden

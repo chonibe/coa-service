@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 
 const NEXT_CHIP_CLASS =
-  'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5 border border-neutral-200 dark:border-white/10 bg-neutral-50/95 dark:bg-white/5 text-[11px] leading-tight text-neutral-700 dark:text-neutral-200 font-medium normal-case tracking-normal text-center tabular-nums'
+  'inline-flex max-w-full min-w-0 justify-center items-center rounded-md px-2 py-0.5 border border-border bg-muted text-[11px] leading-tight text-foreground font-medium normal-case tracking-normal text-center tabular-nums'
 
 export function StreetLadderScarcityAddon({
   block,
@@ -16,20 +16,20 @@ export function StreetLadderScarcityAddon({
   return (
     <div
       className={cn(
-        'mt-3 w-full space-y-2 border-t border-neutral-200/55 pt-3.5 dark:border-white/[0.08]',
+        'mt-3 w-full space-y-2 border-t border-border pt-3.5',
         className
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-[#9a8a8a] text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">
         {block.stageLabel}
       </p>
       {block.listActive && block.listPricePrimary && block.listPricePrimary !== 'Free' ? (
         <div className="flex justify-center items-baseline gap-1.5 flex-wrap">
-          <span className="text-sm font-semibold tabular-nums text-neutral-900 dark:text-white">
+          <span className="text-sm font-semibold tabular-nums text-foreground">
             {block.listPricePrimary}
           </span>
           {block.listPriceCompareAt ? (
-            <span className="text-[11px] line-through text-neutral-400 dark:text-neutral-500 tabular-nums">
+            <span className="text-[11px] line-through text-muted-foreground tabular-nums">
               {block.listPriceCompareAt}
             </span>
           ) : null}

@@ -67,6 +67,9 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => setHasMounted(true), [])
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
+  /** Pages that render their own unified shop top bar (no global BackBar). */
+  const hasOwnUnifiedTopBar =
+    pathname?.startsWith('/shop/explore-artists') ?? false
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
@@ -132,13 +135,15 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         'flex min-h-screen flex-col',
-        isLandingOrStreetCollector && 'bg-background dark:bg-[#171515]'
+        isLandingOrStreetCollector && 'bg-background'
       )}
     >
       <Suspense fallback={null}>
         <AffiliatePersistence />
       </Suspense>
-      {pathnameReady && !isLandingOrStreetCollector && <BackBar href="/" label="Back" />}
+      {pathnameReady && !isLandingOrStreetCollector && !hasOwnUnifiedTopBar && (
+        <BackBar href="/" label="Back" />
+      )}
       {pathnameReady && showLandingChatIcon && <ChatIconScrollReveal />}
       {hasMounted && !isExperiencePage && (
         <LocalCartDrawer
@@ -160,7 +165,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
         className={cn(
           /* flex-none + #171515 shell (same as experience page). Kill global main pb-5rem on mobile (globals.css). */
           isLandingOrStreetCollector
-            ? 'flex-none bg-background dark:bg-[#171515] max-md:!pb-0'
+            ? 'flex-none bg-background max-md:!pb-0'
             : 'flex-1'
         )}
       >

@@ -72,32 +72,32 @@ export function ProductInfo({
         vendorHandle ? (
           <Link 
             href={`/shop?collection=${vendorHandle}`}
-            className="text-sm text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {vendor}
           </Link>
         ) : (
-          <p className="text-sm text-[#1a1a1a]/60">{vendor}</p>
+          <p className="text-sm text-muted-foreground">{vendor}</p>
         )
       )}
       
       {/* Title */}
-      <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+      <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground tracking-[-0.02em]">
         {title}
       </h1>
       
       {/* Price */}
       <div className="space-y-1">
-        <p className="text-sm text-[#1a1a1a]/60">Sale price</p>
+        <p className="text-sm text-muted-foreground">Sale price</p>
         <div className="flex items-center gap-3">
           <span className={cn(
             'text-2xl font-semibold',
-            compareAtPrice ? 'text-[#f83a3a]' : 'text-[#1a1a1a]'
+            compareAtPrice ? 'text-[#f83a3a]' : 'text-foreground'
           )}>
             {price}
           </span>
           {compareAtPrice && (
-            <span className="text-lg text-[#1a1a1a]/50 line-through">
+            <span className="text-lg text-muted-foreground line-through">
               {compareAtPrice}
             </span>
           )}
@@ -107,22 +107,22 @@ export function ProductInfo({
       {/* Rating */}
       {rating !== undefined && reviewCount !== undefined && reviewCount > 0 && (
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 text-foreground">
             {[1, 2, 3, 4, 5].map((star) => (
               <svg
                 key={star}
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
-                fill={star <= Math.round(rating) ? '#1a1a1a' : 'none'}
-                stroke="#1a1a1a"
+                fill={star <= Math.round(rating) ? 'currentColor' : 'none'}
+                stroke="currentColor"
                 strokeWidth="2"
               >
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
             ))}
           </div>
-          <span className="text-sm text-[#1a1a1a]/60">
+          <span className="text-sm text-muted-foreground">
             {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
           </span>
         </div>
@@ -130,20 +130,20 @@ export function ProductInfo({
       
       {/* Edition Number */}
       {editionNumber && editionTotal && (
-        <p className="text-sm text-[#1a1a1a]/60">
+        <p className="text-sm text-muted-foreground">
           Edition #{editionNumber} of {editionTotal}
         </p>
       )}
       
       {/* Quantity Selector */}
       <div className="space-y-2">
-        <label className="text-sm text-[#1a1a1a]/60">Quantity:</label>
+        <label className="text-sm text-muted-foreground">Quantity:</label>
         <div className="flex items-center gap-3">
-          <div className="flex items-center border border-[#1a1a1a]/20 rounded-lg overflow-hidden">
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
             <button
               onClick={decrementQuantity}
               disabled={quantity <= 1}
-              className="w-10 h-10 flex items-center justify-center text-[#1a1a1a] hover:bg-[#1a1a1a]/5 disabled:opacity-30 transition-colors"
+              className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
               aria-label="Decrease quantity"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -153,7 +153,7 @@ export function ProductInfo({
             <span className="w-12 text-center font-medium">{quantity}</span>
             <button
               onClick={incrementQuantity}
-              className="w-10 h-10 flex items-center justify-center text-[#1a1a1a] hover:bg-[#1a1a1a]/5 transition-colors"
+              className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               aria-label="Increase quantity"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -173,7 +173,7 @@ export function ProductInfo({
           disabled={isAddingToCart}
           className={cn(
             'w-full py-4 px-6',
-            'bg-[#f0c417] text-[#1a1a1a]',
+            'bg-[#f0c417] text-foreground',
             'font-semibold text-base',
             'rounded-full',
             'hover:bg-[#e0b415] transition-colors',
@@ -204,7 +204,7 @@ export function ProductInfo({
         
         {/* More payment options */}
         <button
-          className="w-full text-center text-sm text-[#1a1a1a]/60 underline hover:text-[#1a1a1a] transition-colors"
+          className="w-full text-center text-sm text-muted-foreground underline hover:text-foreground transition-colors"
         >
           More payment options
         </button>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { SunIcon, MoonIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline"
+import { SunIcon, MoonIcon } from "@heroicons/react/24/outline"
 import { useTheme } from "next-themes"
 
 import {
@@ -61,12 +61,6 @@ export function ThemeToggle() {
             <MoonIcon className="h-5 w-5" />
           </Icon>
           <span>Dark</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")} className="flex items-center gap-2 cursor-pointer">
-          <Icon size="sm">
-            <ComputerDesktopIcon className="h-5 w-5" />
-          </Icon>
-          <span>System</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

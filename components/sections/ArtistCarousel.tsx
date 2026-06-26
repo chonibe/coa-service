@@ -26,6 +26,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Container, SectionWrapper, SectionHeader, Button } from '@/components/impact'
+import { streetCollectorAccentButtonFocusClass } from '@/lib/shop/street-collector-cta'
 
 export interface Artist {
   handle: string
@@ -607,10 +608,12 @@ export function ArtistCarousel({
                     {namePosition === 'overlay' && (
                       <div
                         className={cn(
-                          'absolute bottom-0 left-0 right-0 bg-gradient-to-t p-4 sm:p-5 text-[#FFBA94]',
-                          isExperienceCanvas
-                            ? 'from-black/90 via-black/50 to-transparent'
-                            : 'from-[#390000]/90 via-[#390000]/50 to-transparent',
+                          'absolute bottom-0 left-0 right-0 bg-gradient-to-t p-4 sm:p-5',
+                          isStreetExperience
+                            ? 'from-stone-900/80 via-stone-900/45 to-transparent text-white dark:from-black/90 dark:via-black/50 dark:text-[#FFBA94]'
+                            : isExperienceCanvas
+                              ? 'from-black/90 via-black/50 to-transparent text-[#FFBA94]'
+                              : 'from-[#390000]/90 via-[#390000]/50 to-transparent text-[#FFBA94]',
                           mobileAvatarStyle && 'hidden sm:block'
                         )}
                       >
@@ -628,14 +631,21 @@ export function ArtistCarousel({
                         showInfoSheet
                           ? 'group-data-[revealed=true]:opacity-100'
                           : 'group-hover:opacity-100',
-                        isExperienceCanvas ? 'bg-black/70' : 'bg-[#390000]/70',
+                        isStreetExperience
+                          ? 'bg-white/92 backdrop-blur-[2px] dark:bg-black/70'
+                          : isExperienceCanvas
+                            ? 'bg-black/70'
+                            : 'bg-[#390000]/70',
                         mobileAvatarStyle && 'max-sm:hidden'
                       )}
                     />
                     {showInfoSheet && artist.description ? (
                       <div
                         className={cn(
-                          'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 text-[#FFBA94] transition-opacity duration-300',
+                          'absolute inset-0 flex flex-col justify-start p-4 sm:p-5 transition-opacity duration-300',
+                          isStreetExperience
+                            ? 'text-stone-800 dark:text-[#FFBA94]'
+                            : 'text-[#FFBA94]',
                           'opacity-0 group-data-[revealed=true]:opacity-100',
                           mobileAvatarStyle && 'max-sm:hidden sm:flex'
                         )}
@@ -673,9 +683,20 @@ export function ArtistCarousel({
                       )}
                     >
                       {revealedCardKey === `${artist.handle}-${index}` && (
-                        <p className="text-[10px] leading-snug whitespace-pre-line max-h-32 overflow-y-auto hide-scrollbar">
-                          {artist.description}
-                        </p>
+                        <div
+                          className={cn(
+                            'rounded-lg border p-2',
+                            isStreetExperience
+                              ? 'border-stone-200/90 bg-white/95 dark:border-[#ffba94]/20 dark:bg-[#201c1c]/55'
+                              : isExperienceCanvas
+                                ? 'border-[#ffba94]/15 bg-[#201c1c]/55'
+                                : 'border-[#390000]/20 bg-[#390000]/10'
+                          )}
+                        >
+                          <p className="text-[10px] leading-snug whitespace-pre-line max-h-32 overflow-y-auto hide-scrollbar">
+                            {artist.description}
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -763,6 +784,7 @@ export function ArtistCarousel({
                     'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4',
                     'w-12 h-12 flex items-center justify-center rounded-full shadow-lg',
                     'hover:opacity-90 hidden sm:flex',
+                    streetCollectorAccentButtonFocusClass,
                     arrowButtonClassName ??
                       (isExperienceCanvas
                         ? 'bg-[#FFBA94] text-[#390000]'
@@ -782,6 +804,7 @@ export function ArtistCarousel({
                     'absolute right-0 top-1/2 -translate-y-1/2 translate-x-4',
                     'w-12 h-12 flex items-center justify-center rounded-full shadow-lg',
                     'hover:opacity-90 hidden sm:flex',
+                    streetCollectorAccentButtonFocusClass,
                     arrowButtonClassName ??
                       (isExperienceCanvas
                         ? 'bg-[#FFBA94] text-[#390000]'

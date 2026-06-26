@@ -71,7 +71,7 @@ const badgeVariants = cva(
         
         // New/limited badge - for special items
         new: [
-          'bg-gradient-to-r from-[#047AFF] to-[#803cee] text-white',
+          'bg-gradient-to-r from-experience-highlight to-[#803cee] text-white',
         ].join(' '),
         
         // Low stock badge

@@ -301,15 +301,15 @@ export function CheckoutSuccessContent() {
   // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md">
           <Container maxWidth="narrow">
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#f5f5f5] animate-pulse" />
               {paypalProcessing ? (
                 <>
-                  <p className="text-lg font-medium text-[#1a1a1a] mb-2">We&apos;re processing your order&hellip;</p>
-                  <p className="text-sm text-[#1a1a1a]/60">This usually takes just a moment. Please don&apos;t close this page.</p>
+                  <p className="text-lg font-medium text-foreground mb-2">We&apos;re processing your order&hellip;</p>
+                  <p className="text-sm text-muted-foreground">This usually takes just a moment. Please don&apos;t close this page.</p>
                 </>
               ) : (
                 <>
@@ -327,7 +327,7 @@ export function CheckoutSuccessContent() {
   // Error state
   if (error || !order) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md">
           <Container maxWidth="narrow">
             <div className="text-center py-12">
@@ -338,10 +338,10 @@ export function CheckoutSuccessContent() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h1 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-2">
+              <h1 className="font-heading text-2xl font-semibold text-foreground mb-2">
                 Something went wrong
               </h1>
-              <p className="text-[#1a1a1a]/60 mb-6">
+              <p className="text-muted-foreground mb-6">
                 {error || 'Unable to load your order details.'}
               </p>
               <Link href="/shop">
@@ -373,12 +373,12 @@ export function CheckoutSuccessContent() {
                 <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-2">
+            <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-foreground tracking-[-0.02em] mb-2">
               Thank you for your order!
             </h1>
-            <p className="text-lg text-[#1a1a1a]/60">
+            <p className="text-lg text-muted-foreground">
               We&apos;ve sent a confirmation email to{' '}
-              <span className="font-medium text-[#1a1a1a]">{order.customerEmail}</span>
+              <span className="font-medium text-foreground">{order.customerEmail}</span>
             </p>
           </div>
 
@@ -390,7 +390,7 @@ export function CheckoutSuccessContent() {
             />
             <CardContent className="mt-6">
               {/* Line Items */}
-              <div className="space-y-4 pb-6 border-b border-[#1a1a1a]/10">
+              <div className="space-y-4 pb-6 border-b border-border">
                 {order.lineItems?.map((item, index) => (
                   <div key={index} className="flex items-center gap-4">
                     {item.imageUrl && (
@@ -403,10 +403,10 @@ export function CheckoutSuccessContent() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[#1a1a1a]">{item.description}</p>
-                      <p className="text-sm text-[#1a1a1a]/60">Qty: {item.quantity}</p>
+                      <p className="font-medium text-foreground">{item.description}</p>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-semibold text-[#1a1a1a] flex-shrink-0">
+                    <p className="font-semibold text-foreground flex-shrink-0">
                       {formatPrice(item.amount, order.currency)}
                     </p>
                   </div>
@@ -415,8 +415,8 @@ export function CheckoutSuccessContent() {
 
               {/* Total */}
               <div className="flex items-center justify-between pt-4">
-                <p className="text-lg font-medium text-[#1a1a1a]">Total</p>
-                <p className="text-xl font-bold text-[#1a1a1a]">
+                <p className="text-lg font-medium text-foreground">Total</p>
+                <p className="text-xl font-bold text-foreground">
                   {formatPrice(order.amountTotal, order.currency)}
                 </p>
               </div>
@@ -430,18 +430,18 @@ export function CheckoutSuccessContent() {
             <Card variant="flat" padding="md" className="mb-6">
               <CardHeader title="Shipping Address" />
               <CardContent className="mt-4">
-                <p className="text-[#1a1a1a]">{order.shippingDetails.name}</p>
-                <p className="text-[#1a1a1a]/70">
+                <p className="text-foreground">{order.shippingDetails.name}</p>
+                <p className="text-muted-foreground">
                   {order.shippingDetails.address.line1}
                   {order.shippingDetails.address.line2 && (
                     <>, {order.shippingDetails.address.line2}</>
                   )}
                 </p>
-                <p className="text-[#1a1a1a]/70">
+                <p className="text-muted-foreground">
                   {order.shippingDetails.address.city}, {order.shippingDetails.address.state}{' '}
                   {order.shippingDetails.address.postal_code}
                 </p>
-                <p className="text-[#1a1a1a]/70">{order.shippingDetails.address.country}</p>
+                <p className="text-muted-foreground">{order.shippingDetails.address.country}</p>
               </CardContent>
             </Card>
           )}
@@ -451,34 +451,34 @@ export function CheckoutSuccessContent() {
             <CardHeader title="What's Next?" />
             <CardContent className="mt-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#047AFF]">1</span>
+                <div className="w-8 h-8 rounded-full bg-experience-highlight/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-experience-highlight">1</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#1a1a1a]">Order Confirmation</p>
-                  <p className="text-sm text-[#1a1a1a]/60">
+                  <p className="font-medium text-foreground">Order Confirmation</p>
+                  <p className="text-sm text-muted-foreground">
                     You&apos;ll receive an email confirmation shortly.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#047AFF]">2</span>
+                <div className="w-8 h-8 rounded-full bg-experience-highlight/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-experience-highlight">2</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#1a1a1a]">Production</p>
-                  <p className="text-sm text-[#1a1a1a]/60">
+                  <p className="font-medium text-foreground">Production</p>
+                  <p className="text-sm text-muted-foreground">
                     Your artwork will be carefully prepared by our team.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#047AFF]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-[#047AFF]">3</span>
+                <div className="w-8 h-8 rounded-full bg-experience-highlight/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-experience-highlight">3</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#1a1a1a]">Shipping</p>
-                  <p className="text-sm text-[#1a1a1a]/60">
+                  <p className="font-medium text-foreground">Shipping</p>
+                  <p className="text-sm text-muted-foreground">
                     We&apos;ll email you tracking information once shipped.
                   </p>
                 </div>
@@ -503,9 +503,9 @@ export function CheckoutSuccessContent() {
           </div>
 
           {/* Support */}
-          <p className="text-center text-sm text-[#1a1a1a]/50 mt-8">
+          <p className="text-center text-sm text-muted-foreground mt-8">
             Questions about your order?{' '}
-            <a href="mailto:support@thestreetcollector.com" className="text-[#047AFF] hover:underline">
+            <a href="mailto:support@thestreetcollector.com" className="text-experience-highlight hover:underline">
               Contact us
             </a>
           </p>

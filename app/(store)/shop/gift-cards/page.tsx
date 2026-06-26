@@ -156,7 +156,7 @@ function GiftCardsPageContent() {
                   className={cn(
                     'flex-1 py-3 px-4 rounded-lg border-2 text-center font-medium transition-colors',
                     design === d.id
-                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
+                      ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-background'
                       : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                   )}
                 >
@@ -186,7 +186,7 @@ function GiftCardsPageContent() {
                     className={cn(
                       'py-3 px-4 rounded-lg border-2 text-center font-semibold transition-colors',
                       selectedAmount === cents
-                        ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]'
+                        ? 'border-neutral-900 dark:border-white bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-background'
                         : 'border-neutral-200 dark:border-[#3e3838] hover:border-neutral-400 dark:hover:border-[#4a4444] text-neutral-900 dark:text-[#f0e8e8]'
                     )}
                   >
@@ -220,7 +220,7 @@ function GiftCardsPageContent() {
               value={giftMessage}
               onChange={(e) => setGiftMessage(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-neutral-200 dark:border-[#3e3838] bg-white dark:bg-[#1a1616] px-4 py-3 text-neutral-900 dark:text-[#f0e8e8] placeholder:text-[#b89090]"
+              className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
@@ -283,7 +283,7 @@ function GiftCardsPageContent() {
               !isValid ||
               isCheckingOut
             }
-            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
+            className="w-full py-4 text-lg font-semibold bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-background hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]"
           >
             {isCheckingOut ? (
               <>

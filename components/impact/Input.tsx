@@ -22,7 +22,7 @@ const inputVariants = cva(
     'rounded-[8px]', // Impact theme input border radius
     'transition-all duration-200 ease-in-out',
     'placeholder:text-[#1a1a1a]/50',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
     'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ].join(' '),
@@ -79,7 +79,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || React.useId()
+    const generatedId = React.useId()
+    const inputId = id ?? generatedId
     const errorId = `${inputId}-error`
     const hintId = `${inputId}-hint`
     
@@ -158,7 +159,7 @@ const textareaVariants = cva(
     'px-4 py-3',
     'transition-all duration-200 ease-in-out',
     'placeholder:text-[#1a1a1a]/50',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
     'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
     'resize-y',
   ].join(' '),
@@ -186,7 +187,8 @@ export interface TextareaProps
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, variant, label, error, hint, id, ...props }, ref) => {
-    const textareaId = id || React.useId()
+    const generatedId = React.useId()
+    const textareaId = id ?? generatedId
     const errorId = `${textareaId}-error`
     const hintId = `${textareaId}-hint`
     
@@ -243,7 +245,8 @@ export interface SelectProps
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, hint, options, placeholder, id, ...props }, ref) => {
-    const selectId = id || React.useId()
+    const generatedId = React.useId()
+    const selectId = id ?? generatedId
     const errorId = `${selectId}-error`
     const hintId = `${selectId}-hint`
     
@@ -269,7 +272,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               'rounded-[8px]',
               'h-[2.625rem] px-4 pr-10 sm:h-[3.125rem]',
               'transition-all duration-200 ease-in-out',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047AFF] focus-visible:border-transparent',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
               'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
               error && 'border-[#f83a3a] focus-visible:ring-[#f83a3a]',
               className

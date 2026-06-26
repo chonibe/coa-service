@@ -10,6 +10,7 @@ import {
   SectionHeader,
 } from '@/components/impact'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
+import { artistPortraitCoverStyle } from '@/lib/shopify/artist-collection-image'
 
 /**
  * Artists Listing Page
@@ -22,6 +23,7 @@ interface Artist {
   slug: string
   productCount: number
   image?: string
+  imageObjectPosition?: string
 }
 
 export default function ArtistsPage() {
@@ -48,7 +50,7 @@ export default function ArtistsPage() {
   
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="lg" background="default">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
@@ -69,7 +71,7 @@ export default function ArtistsPage() {
   }
   
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="lg" background="default">
         <Container maxWidth="default">
           <SectionHeader
@@ -92,6 +94,7 @@ export default function ArtistsPage() {
                       src={getProxiedImageUrl(artist.image)}
                       alt={artist.name}
                       className="h-full w-full object-cover"
+                      style={artistPortraitCoverStyle(artist.imageObjectPosition)}
                       loading="lazy"
                       decoding="async"
                     />
@@ -105,12 +108,12 @@ export default function ArtistsPage() {
                 </div>
                 
                 {/* Artist Name */}
-                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
+                <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-experience-highlight transition-colors">
                   {artist.name}
                 </h3>
                 
                 {/* Artwork Count */}
-                <p className="text-sm text-[#1a1a1a]/60 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {artist.productCount} {artist.productCount === 1 ? 'artwork' : 'artworks'}
                 </p>
               </Link>
@@ -119,7 +122,7 @@ export default function ArtistsPage() {
           
           {artists.length === 0 && !loading && (
             <div className="text-center py-12">
-              <p className="text-[#1a1a1a]/60">No artists found</p>
+              <p className="text-muted-foreground">No artists found</p>
             </div>
           )}
         </Container>

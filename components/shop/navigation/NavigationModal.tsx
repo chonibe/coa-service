@@ -176,7 +176,7 @@ export const NavigationModal = React.forwardRef<HTMLDivElement, NavigationModalP
           className={cn(
             'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50',
             'w-[calc(100%-2rem)] max-w-4xl h-[calc(100%-8rem)] max-h-[700px]',
-            'bg-white rounded-3xl shadow-2xl',
+            'bg-background rounded-3xl shadow-2xl',
             'overflow-hidden',
             'opacity-0 invisible pointer-events-none',
             className
@@ -187,15 +187,15 @@ export const NavigationModal = React.forwardRef<HTMLDivElement, NavigationModalP
         >
           <div ref={contentRef} className="h-full flex flex-col">
             {/* Header */}
-            <div className="stagger-item flex items-center justify-between px-6 py-5 border-b border-[#1a1a1a]/5">
-              <h2 className="text-lg font-semibold text-[#1a1a1a]">Menu</h2>
+            <div className="stagger-item flex items-center justify-between px-6 py-5 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground">Menu</h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 hover:bg-[#f5f5f5] rounded-full transition-colors"
+                className="p-2 hover:bg-accent rounded-full transition-colors"
                 aria-label="Close menu"
               >
-                <X size={20} className="text-[#1a1a1a]" />
+                <X size={20} className="text-foreground" />
               </button>
             </div>
 
@@ -212,7 +212,7 @@ export const NavigationModal = React.forwardRef<HTMLDivElement, NavigationModalP
 
                 {/* Navigation Menu */}
                 <div className="stagger-item">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-[#1a1a1a]/50 mb-3 px-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-2">
                     Browse
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -233,8 +233,8 @@ export const NavigationModal = React.forwardRef<HTMLDivElement, NavigationModalP
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-xl transition-colors"
                     >
-                      <User size={20} className="text-[#1a1a1a]/60" />
-                      <span className="font-medium text-[#1a1a1a]">My Account</span>
+                      <User size={20} className="text-muted-foreground" />
+                      <span className="font-medium text-foreground">My Account</span>
                     </button>
                   </div>
                 )}
@@ -268,11 +268,11 @@ function NavMenuItem({ item, onNavigate }: NavMenuItemProps) {
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center justify-between w-full text-left mb-2"
         >
-          <span className="font-semibold text-[#1a1a1a]">{item.label}</span>
+          <span className="font-semibold text-foreground">{item.label}</span>
           <ChevronDown
             size={16}
             className={cn(
-              'text-[#1a1a1a]/60 transition-transform duration-200',
+              'text-muted-foreground transition-transform duration-200',
               isExpanded && 'rotate-180'
             )}
           />
@@ -284,7 +284,7 @@ function NavMenuItem({ item, onNavigate }: NavMenuItemProps) {
                 key={child.href}
                 href={child.href}
                 onClick={onNavigate}
-                className="block px-3 py-2 text-sm text-[#1a1a1a]/70 hover:text-[#1a1a1a] hover:bg-white rounded-lg transition-colors"
+                className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-background rounded-lg transition-colors"
               >
                 {child.label}
               </Link>
@@ -301,7 +301,7 @@ function NavMenuItem({ item, onNavigate }: NavMenuItemProps) {
       onClick={onNavigate}
       className="block bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-xl p-4 transition-colors"
     >
-      <span className="font-semibold text-[#1a1a1a]">{item.label}</span>
+      <span className="font-semibold text-foreground">{item.label}</span>
     </Link>
   )
 }

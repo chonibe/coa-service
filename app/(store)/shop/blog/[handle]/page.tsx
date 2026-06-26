@@ -230,7 +230,7 @@ function ArticleContent({
       : null
   
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <JsonLd id={`article-${handle}-jsonld`} data={articleJsonLd} />
       {faqJsonLd ? <JsonLd id={`article-${handle}-faq-jsonld`} data={faqJsonLd} /> : null}
       {/* Reading Progress Bar */}
@@ -267,7 +267,7 @@ function ArticleContent({
                   <Link
                     key={tag}
                     href={`/shop/blog?tag=${encodeURIComponent(tag)}`}
-                    className="text-xs font-medium text-[#047AFF] uppercase tracking-wider hover:underline"
+                    className="text-xs font-medium text-experience-highlight uppercase tracking-wider hover:underline"
                   >
                     {tag}
                   </Link>
@@ -276,12 +276,12 @@ function ArticleContent({
             )}
             
             {/* Title */}
-            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] tracking-[-0.02em] mb-6">
+            <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-6">
               {title}
             </h1>
             
             {/* Meta */}
-            <div className="flex items-center gap-4 text-sm text-[#1a1a1a]/60 mb-8 pb-8 border-b border-[#1a1a1a]/10">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
               <span>{formattedDate}</span>
               <span>·</span>
               <span>{readingTime} min read</span>
@@ -299,20 +299,20 @@ function ArticleContent({
             <SanitizedHtml
               html={contentHtml}
               className={`prose prose-lg max-w-none
-                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#1a1a1a]
-                prose-p:text-[#1a1a1a]/80 prose-p:leading-relaxed
-                prose-a:text-[#047AFF] prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-[#1a1a1a]
-                prose-ul:text-[#1a1a1a]/80 prose-ol:text-[#1a1a1a]/80
+                prose-headings:font-heading prose-headings:font-semibold prose-headings:text-foreground
+                prose-p:text-muted-foreground prose-p:leading-relaxed
+                prose-a:text-experience-highlight prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-foreground
+                prose-ul:text-muted-foreground prose-ol:text-muted-foreground
                 prose-img:rounded-xl
-                prose-blockquote:border-l-[#047AFF] prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-                [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse [&_th]:border [&_td]:border [&_th]:border-[#1a1a1a]/15 [&_td]:border-[#1a1a1a]/15 [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_th]:text-left [&_td]:align-top [&_thead]:bg-[#f5f5f5]
+                prose-blockquote:border-l-experience-highlight prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
+                [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse [&_th]:border [&_td]:border [&_th]:border-border [&_td]:border-border [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_th]:text-left [&_td]:align-top [&_thead]:bg-[#f5f5f5]
               `}
             />
           </ScrollReveal>
           
           {/* Share & Back */}
-          <div className="mt-12 pt-8 border-t border-[#1a1a1a]/10 flex items-center justify-between">
+          <div className="mt-12 pt-8 border-t border-border flex items-center justify-between">
             <Link href="/shop/blog">
               <Button variant="outline">
                 ← Back to Blog
@@ -327,7 +327,7 @@ function ArticleContent({
         <SectionWrapper spacing="md" background="muted">
           <Container maxWidth="default">
             <ScrollReveal animation="fadeUp">
-              <h2 className="font-heading text-2xl font-semibold text-[#1a1a1a] mb-8">
+              <h2 className="font-heading text-2xl font-semibold text-foreground mb-8">
                 Related Articles
               </h2>
             </ScrollReveal>
@@ -357,11 +357,11 @@ function ArticleContent({
                           </div>
                         )}
                       </div>
-                      <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] group-hover:text-[#047AFF] transition-colors">
+                      <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-experience-highlight transition-colors">
                         {article.title}
                       </h3>
                       {article.excerpt && (
-                        <p className="mt-2 text-sm text-[#1a1a1a]/60 line-clamp-2">
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                           {article.excerpt}
                         </p>
                       )}

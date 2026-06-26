@@ -12,7 +12,7 @@ import { OrderBar } from './OrderBar'
 const Configurator = dynamic(() => import('./Configurator').then((m) => ({ default: m.Configurator })), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-950">
+    <div className="flex h-full w-full items-center justify-center bg-background">
       <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
     </div>
   ),
@@ -53,14 +53,14 @@ function ExperienceConfiguratorWithBoundary(
       key={retryKey}
       componentName="Configurator"
       fallback={
-        <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-950 px-6">
+        <div className="flex h-full flex-col items-center justify-center gap-4 bg-background px-6">
           <p className="text-center text-white/80">
             Something went wrong loading the configurator.
           </p>
           <button
             type="button"
             onClick={() => setRetryKey((k) => k + 1)}
-            className="rounded-full bg-white px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-100 transition-colors"
+            className="rounded-full bg-card px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-100 transition-colors"
           >
             Try again
           </button>
@@ -327,7 +327,7 @@ export function ExperienceClient({
   const waitingForAB = !fromOnboardingLogin && abVariant === null
   if (!mounted || redirectingToOnboarding || waitingForAB) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-950">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
       </div>
     )

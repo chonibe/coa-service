@@ -264,7 +264,7 @@ export function ArtworkInfoBar({
           const thumbnails = (
             <div className="flex flex-col gap-1.5">
               {imagesLoading ? (
-                <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-white/10')} />
+                <div className={cn('w-8 h-8 rounded-md animate-pulse', theme === 'light' ? 'bg-neutral-200' : 'bg-foreground/10')} />
               ) : (
                 <>
                   {/* Edition reel jump — inline strip only; right-rail stack omits (edition block no longer first-class in reel) */}
@@ -284,11 +284,11 @@ export function ArtworkInfoBar({
                         'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
                         currentSlide === editionSlide
                           ? theme === 'light'
-                            ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
-                            : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                            ? 'border-experience-highlight bg-experience-highlight/10'
+                            : 'border-experience-highlight bg-experience-highlight/10'
                           : theme === 'light'
                             ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
-                            : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                            : 'border-transparent bg-foreground/10 opacity-80 hover:opacity-100'
                       )}
                     >
                       <Award className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} strokeWidth={2} />
@@ -309,11 +309,11 @@ export function ArtworkInfoBar({
                       'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
                     currentSlide === splineSlide
                       ? theme === 'light'
-                        ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
-                        : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                        ? 'border-experience-highlight bg-experience-highlight/10'
+                        : 'border-experience-highlight bg-experience-highlight/10'
                         : theme === 'light'
                           ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
-                          : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                          : 'border-transparent bg-foreground/10 opacity-80 hover:opacity-100'
                     )}
                   >
                     {currentSlide === splineSlide && onRotate ? (
@@ -335,12 +335,10 @@ export function ArtworkInfoBar({
                     className={cn(
                       'relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2',
                       currentSlide === detailSlide
-                        ? theme === 'light'
-                          ? 'border-[#FFBA94] bg-[#FFBA94]/10 dark:border-[#FFBA94] dark:bg-[#FFBA94]/10'
-                          : 'border-[#FFBA94] bg-[#FFBA94]/10'
+                        ? 'border-experience-highlight bg-experience-highlight/10'
                         : theme === 'light'
                           ? 'border-transparent bg-neutral-200 opacity-80 hover:opacity-100'
-                          : 'border-transparent bg-white/10 opacity-80 hover:opacity-100'
+                          : 'border-transparent bg-foreground/10 opacity-80 hover:opacity-100'
                     )}
                   >
                     <Info className={cn('w-4 h-4', theme === 'light' ? 'text-neutral-600' : 'text-white/80')} />
@@ -365,7 +363,7 @@ export function ArtworkInfoBar({
                         className={cn(
                           'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
                           galleryStackThumbActive
-                            ? 'border-[#FFBA94]'
+                            ? 'border-experience-highlight'
                             : theme === 'light'
                               ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
                               : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
@@ -394,7 +392,7 @@ export function ArtworkInfoBar({
                                 <div
                                   className={cn(
                                     'absolute inset-0 flex items-center justify-center',
-                                    theme === 'light' ? 'bg-neutral-300' : 'bg-white/15'
+                                    theme === 'light' ? 'bg-neutral-300' : 'bg-card/15'
                                   )}
                                   aria-hidden
                                 >
@@ -445,7 +443,7 @@ export function ArtworkInfoBar({
                           className={cn(
                             'relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden transition-all border-2',
                             currentSlide === slideForImageThumb(idx)
-                              ? 'border-[#FFBA94]'
+                              ? 'border-experience-highlight'
                               : theme === 'light'
                                 ? 'border-transparent opacity-80 hover:opacity-100 hover:border-neutral-300'
                                 : 'border-transparent opacity-80 hover:opacity-100 hover:border-white/30'
@@ -465,7 +463,7 @@ export function ArtworkInfoBar({
                             <div
                               className={cn(
                                 'absolute inset-0 flex items-center justify-center',
-                                theme === 'light' ? 'bg-neutral-300' : 'bg-white/15'
+                                theme === 'light' ? 'bg-neutral-300' : 'bg-card/15'
                               )}
                               aria-hidden
                             >

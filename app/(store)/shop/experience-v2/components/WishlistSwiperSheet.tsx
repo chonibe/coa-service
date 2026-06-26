@@ -562,7 +562,7 @@ export function WishlistSwiperSheet({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
-          'fixed z-[70] flex flex-col bg-white',
+          'fixed z-[70] flex flex-col bg-popover text-popover-foreground',
           desktopOverlay ? '' : 'inset-0'
         )}
         style={positionStyle}
@@ -585,7 +585,7 @@ export function WishlistSwiperSheet({
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.95 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl p-6 max-w-sm shadow-xl space-y-4"
+                className="bg-card text-card-foreground rounded-2xl p-6 max-w-sm shadow-xl space-y-4"
               >
                 <h3 className="text-lg font-semibold text-neutral-900">How to rate</h3>
                 <ul className="space-y-3 text-sm text-neutral-600">
@@ -672,7 +672,7 @@ export function WishlistSwiperSheet({
                       setSelectedArtist(v || null)
                       setRatingMode('artist')
                     }}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-neutral-900 bg-white"
+                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-neutral-900 bg-card"
                   >
                     <option value="">Select artist</option>
                     {artists.map((a) => (
@@ -997,7 +997,7 @@ export function WishlistSwiperSheet({
                           </div>
                         )}
                         {inWishlist && (
-                          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/90 flex items-center justify-center">
                             <Heart className="w-4 h-4 fill-red-500 text-red-500" />
                           </div>
                         )}

@@ -161,8 +161,8 @@ const FlickCard = React.forwardRef<HTMLDivElement, FlickCardComponentProps>(
 
     const tagVariants = {
       new: 'bg-[#803cee] text-white',
-      limited: 'bg-[#f0c417] text-[#1a1a1a]',
-      'sold-out': 'bg-[#1a1a1a] text-white',
+      limited: 'bg-[#f0c417] text-foreground',
+      'sold-out': 'bg-foreground text-background',
     }
 
     return (

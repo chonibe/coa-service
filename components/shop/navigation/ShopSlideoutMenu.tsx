@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
-import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Ruler, Palette } from 'lucide-react'
+import { Gift, TicketPercent, Clock, HelpCircle, MessageCircle, User, Moon, Sun, Ruler, Palette, Users } from 'lucide-react'
 import { Sheet } from '@/components/ui'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { PromoCodeModal } from '@/components/shop/checkout/PromoCodeModal'
@@ -12,6 +13,8 @@ import { validatePromo } from '@/lib/shop/useValidatePromo'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { useExperienceTheme } from '@/app/(store)/shop/experience-v2/ExperienceThemeContext'
 import { openTawkChat } from '@/lib/tawk'
+
+const THE_ARTISTS_HREF = '/shop/explore-artists'
 
 const MENU_ITEMS = [
   { label: 'Buy Gift Card', href: '/shop/gift-cards', icon: Gift },
@@ -93,6 +96,11 @@ export function ShopSlideoutMenu({
   chooseYourArtLabel = 'Choose your Art',
   chooseYourArtIcon: ChooseYourArtIcon = Palette,
 }: ShopSlideoutMenuProps) {
+  const pathname = usePathname()
+  const isOnExploreArtists =
+    pathname === '/explore-artists' ||
+    pathname === '/shop/explore-artists' ||
+    pathname?.startsWith('/shop/explore-artists/')
   const [authOpen, setAuthOpen] = useState(false)
   const { theme: experienceTheme, setTheme: setExperienceTheme } = useExperienceTheme()
   const [promoModalOpen, setPromoModalOpen] = useState(false)
@@ -146,8 +154,8 @@ export function ShopSlideoutMenu({
         className="!p-0 !h-[92vh] !top-[4vh] !bottom-auto"
         theme={theme}
       >
-        <div className="flex flex-col h-full bg-white dark:bg-[#171515]">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/10">
+        <div className="flex flex-col h-full bg-background">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3 shrink-0">
               <Link
                 href={logoHref ?? '/'}
@@ -166,7 +174,7 @@ export function ShopSlideoutMenu({
               <Link
                 href="/"
                 onClick={onClose}
-                className="flex items-center self-center text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-[#f0e8e8]/60 dark:hover:text-[#f0e8e8] transition-colors whitespace-nowrap leading-none"
+                className="flex items-center self-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap leading-none"
               >
                 Back to Home
               </Link>
@@ -175,7 +183,7 @@ export function ShopSlideoutMenu({
               type="button"
               onClick={onClose}
               aria-label="Close menu"
-              className="p-2 -m-2 text-neutral-500 hover:text-neutral-900 dark:text-[#c4a0a0] dark:hover:text-[#f0e8e8] rounded-lg hover:bg-neutral-100 dark:hover:bg-[#201c1c] transition-colors"
+              className="p-2 -m-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -183,15 +191,15 @@ export function ShopSlideoutMenu({
             </button>
           </div>
 
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-[#171515]">
+          <div className="px-6 py-4 border-b border-border bg-background">
             {!loading && isAuthenticated && user ? (
               <>
-                <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
+                <p className="text-foreground text-[15px] leading-snug mb-3">
                   <span className="font-semibold">
                     Welcome back{user.firstName ? `, ${user.firstName}` : ''}!
                   </span>
                   <br />
-                  <span className="text-neutral-600 dark:text-[#c4a0a0] text-sm">Your progress is saved.</span>
+                  <span className="text-muted-foreground text-sm">Your progress is saved.</span>
                 </p>
                 <Link
                   href="/shop/account"
@@ -204,7 +212,7 @@ export function ShopSlideoutMenu({
               </>
             ) : (
               <>
-                <p className="text-neutral-900 dark:text-white text-[15px] leading-snug mb-3">
+                <p className="text-foreground text-[15px] leading-snug mb-3">
                   {quizName && (
                     <span className="font-semibold">Hi {quizName} 👋</span>
                   )}
@@ -229,18 +237,18 @@ export function ShopSlideoutMenu({
           </div>
 
           {showThemeToggle && (
-            <div className="px-6 py-3 border-b border-neutral-200 dark:border-white/10">
+            <div className="px-6 py-3 border-b border-border">
               <button
                 type="button"
                 onClick={() => setExperienceTheme(experienceTheme === 'light' ? 'dark' : 'light')}
-                className="flex w-full items-center gap-4 px-2 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors text-left"
+                className="flex w-full items-center gap-4 px-2 py-2.5 rounded-lg hover:bg-accent transition-colors text-left"
               >
                 {experienceTheme === 'light' ? (
-                  <Moon size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                  <Moon size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
                 ) : (
-                  <Sun size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
+                  <Sun size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
                 )}
-                <span className="text-neutral-900 dark:text-white font-medium">
+                <span className="text-foreground font-medium">
                   {experienceTheme === 'light' ? 'Dark mode' : 'Light mode'}
                 </span>
               </button>
@@ -248,6 +256,18 @@ export function ShopSlideoutMenu({
           )}
 
           <nav className="flex flex-col py-4">
+            {!isOnExploreArtists && (
+              <Link
+                href={THE_ARTISTS_HREF}
+                onClick={onClose}
+                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border"
+              >
+                <span className="flex items-center gap-4">
+                  <Users size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="text-foreground font-medium">The Artists</span>
+                </span>
+              </Link>
+            )}
             {onSpecifications && (
               <button
                 type="button"
@@ -255,11 +275,11 @@ export function ShopSlideoutMenu({
                   onClose()
                   onSpecifications()
                 }}
-                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10"
+                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border"
               >
                 <span className="flex items-center gap-4">
-                  <Ruler size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
-                  <span className="text-neutral-900 dark:text-white font-medium">Specifications</span>
+                  <Ruler size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="text-foreground font-medium">Specifications</span>
                 </span>
               </button>
             )}
@@ -270,11 +290,11 @@ export function ShopSlideoutMenu({
                   onClose()
                   onChooseYourArt()
                 }}
-                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10"
+                className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border"
               >
                 <span className="flex items-center gap-4">
-                  <ChooseYourArtIcon size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
-                  <span className="text-neutral-900 dark:text-white font-medium">{chooseYourArtLabel}</span>
+                  <ChooseYourArtIcon size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="text-foreground font-medium">{chooseYourArtLabel}</span>
                 </span>
               </button>
             )}
@@ -282,8 +302,8 @@ export function ShopSlideoutMenu({
               const Icon = item.icon
               const content = (
                 <span className="flex items-center gap-4">
-                  <Icon size={22} className="shrink-0 text-neutral-700 dark:text-[#d4b8b8]" strokeWidth={1.5} />
-                  <span className="text-neutral-900 dark:text-white font-medium">{item.label}</span>
+                  <Icon size={22} className="shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="text-foreground font-medium">{item.label}</span>
                 </span>
               )
               if ('openPromoModal' in item && item.openPromoModal) {
@@ -295,7 +315,7 @@ export function ShopSlideoutMenu({
                       onClose()
                       setPromoModalOpen(true)
                     }}
-                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0"
                   >
                     {content}
                   </button>
@@ -310,7 +330,7 @@ export function ShopSlideoutMenu({
                       item.onClick!()
                       onClose()
                     }}
-                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                    className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0"
                   >
                     {content}
                   </button>
@@ -321,7 +341,7 @@ export function ShopSlideoutMenu({
                   key={item.label}
                   href={'href' in item ? item.href : '#'}
                   onClick={onClose}
-                  className="flex w-full items-center px-6 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors border-b border-neutral-100 dark:border-white/10 last:border-b-0"
+                  className="flex w-full items-center px-6 py-3.5 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0"
                 >
                   {content}
                 </Link>

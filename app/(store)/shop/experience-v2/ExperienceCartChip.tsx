@@ -91,7 +91,7 @@ export function ExperienceCartChip({
           : `View your collection (${itemCount} items)`
       }
       className={cn(
-        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-[#047AFF] hover:bg-[#0366d6] text-white self-center shrink-0 !min-h-0',
+        'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-experience-cta hover:bg-experience-cta-hover text-white dark:text-neutral-900 self-center shrink-0 !min-h-0',
         className
       )}
       initial={
