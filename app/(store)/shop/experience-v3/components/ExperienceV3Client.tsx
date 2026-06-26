@@ -6,8 +6,21 @@ import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import Image from 'next/image'
-import type { ShopifyImage, ShopifyProduct } from '@/lib/shopify/storefront-client'
+import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
+import {
+  buildGalleryImageUrlSets,
+  collectProductImages,
+  EXPERIENCE_GALLERY_SPLINE_PX,
+  EXPERIENCE_GALLERY_THUMB_PX,
+  getAdjacentGalleryIndices,
+  getDefaultGalleryIndex,
+  getFirstProductImageUrl,
+  injectGalleryLinkPreloads,
+  pickInitialPreviewProduct,
+  prefetchImageUrls,
+} from '@/lib/shop/experience-gallery-images'
+import { useGalleryProductHydration } from '@/lib/shop/use-gallery-product-hydration'
 import { useExperienceOpenArtPicker, useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
@@ -39,7 +52,6 @@ import { useShopDiscountSettings } from '../../experience-v2/components/ShopDisc
 import type { FeaturedBundleFilterOffer } from '../../experience-v2/components/FilterPanel'
 import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { streetEditionRowFromStorefrontProduct } from '@/lib/shop/street-edition-from-storefront'
-import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import {
   ExperienceV3EditionStrip,
   ExperienceV3ProductInfoStack,
@@ -62,18 +74,12 @@ import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-pri
 import type { ExperienceV3ArtistProfileTarget } from './ExperienceV3ArtistProfileSection'
 import { ExperienceV3ArtistWorksSlider } from './ExperienceV3ArtistWorksSlider'
 import { ExperienceV3LampBundleCard } from './ExperienceV3LampBundleCard'
+import { ExperienceV3StickyAddPanel } from './ExperienceV3StickyAddPanel'
 import { ExperienceV3ProductInfoTabs } from './ExperienceV3ProductInfoTabs'
+import { ExperienceV3SplineLampSection } from './ExperienceV3SplineLampSection'
 import { useCartEditionHolds } from '@/lib/shop/use-cart-edition-holds'
 import { computeReservedEditionNumber } from '@/lib/shop/compute-cart-edition-reserve'
 import { EditionHoldIndicator } from '../../experience-v2/components/EditionHoldIndicator'
-
-const Spline3DPreview = dynamic(
-  () =>
-    import('@/app/template-preview/components/spline-3d-preview').then((m) => ({
-      default: m.Spline3DPreview,
-    })),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-[#0f0d0d]" /> }
-)
 
 const OrderBar = dynamic(() => import('../../experience-v2/components/OrderBar').then((m) => m.OrderBar), {
   ssr: false,
@@ -101,12 +107,11 @@ const ExperienceV3ArtistProfileSection = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="animate-pulse rounded-xl border border-white/[0.06] bg-[#171515]/60 p-8" />
+      <div className="animate-pulse rounded-xl border border-border bg-experience-surface/60 p-8" />
     ),
   }
 )
 
-const MEDIA_MODE_KEY = 'sc-experience-v3-media-mode'
 const SEASON_1_HANDLE = 'season-1'
 const SEASON_2_HANDLE = '2025-edition'
 const LOAD_MORE_PAGE_SIZE = 36
@@ -118,27 +123,6 @@ interface PageInfo {
   endCursor: string | null
 }
 
-function getFirstImage(product: ShopifyProduct | null | undefined): string | null {
-  if (!product) return null
-  return product.featuredImage?.url ?? product.images?.edges?.[0]?.node?.url ?? null
-}
-
-/** Featured image first (primary artwork), then remaining photos in order. */
-function collectProductImages(product: ShopifyProduct | null): ShopifyImage[] {
-  if (!product) return []
-  const edges = product.images?.edges?.map((e) => e.node) ?? []
-  const feat = product.featuredImage
-  if (feat?.url) {
-    const featUrl = feat.url
-    const rest = edges.filter((n) => n.url && n.url !== featUrl)
-    return [{ ...feat }, ...rest]
-  }
-  if (edges.length > 0) return edges
-  const u = getFirstImage(product)
-  if (!u) return []
-  return [{ url: u, altText: product.title, width: null, height: null } as ShopifyImage]
-}
-
 interface ExperienceV3ClientProps {
   lamp: ShopifyProduct
   productsSeason1: ShopifyProduct[]
@@ -146,6 +130,8 @@ interface ExperienceV3ClientProps {
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
   initialArtistSlug?: string
+  /** Full Storefront product for the first preview — avoids a client round-trip for the hero gallery. */
+  initialGalleryProduct?: ShopifyProduct | null
 }
 
 export function ExperienceV3Client({
@@ -155,6 +141,7 @@ export function ExperienceV3Client({
   pageInfoSeason1: initialPageInfo1,
   pageInfoSeason2: initialPageInfo2,
   initialArtistSlug,
+  initialGalleryProduct = null,
 }: ExperienceV3ClientProps) {
   const searchParams = useSearchParams()
   const { setOrderSummary, setOrderBarProps, setPickerEngaged, setHeaderCenterContent } = useExperienceOrder()
@@ -182,20 +169,31 @@ export function ExperienceV3Client({
 
   const [initialCart] = useState(() => loadExperienceCart())
   const [cartOrder, setCartOrder] = useState<string[]>(() => initialCart.cartOrder)
+  const [lampPreviewOrder, setLampPreviewOrder] = useState<string[]>(() => initialCart.lampPreviewOrder)
   const [lampQuantity, setLampQuantity] = useState(() => initialCart.lampQuantity)
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
+  const [rotateToSide, setRotateToSide] = useState<'A' | 'B' | null>(null)
+  const [rotateTrigger, setRotateTrigger] = useState(0)
+  const [resetTrigger, setResetTrigger] = useState(0)
+  const [lampSplineFocusProductId, setLampSplineFocusProductId] = useState<string | null>(null)
 
-  const [previewProduct, setPreviewProduct] = useState<ShopifyProduct | null>(null)
-  const [galleryIndex, setGalleryIndex] = useState(0)
+  const [previewProduct, setPreviewProduct] = useState<ShopifyProduct | null>(() =>
+    pickInitialPreviewProduct(initialSeason1, initialSeason2)
+  )
+  const galleryProduct = useGalleryProductHydration(previewProduct, {
+    initialFullProduct: initialGalleryProduct,
+  })
+  const [galleryIndex, setGalleryIndex] = useState(() => {
+    const initial =
+      initialGalleryProduct ??
+      pickInitialPreviewProduct(initialSeason1, initialSeason2)
+    return getDefaultGalleryIndex(collectProductImages(initial).length)
+  })
   const [galleryZoomOpen, setGalleryZoomOpen] = useState(false)
-  const [splineReady, setSplineReady] = useState(false)
-  const [splineThumbReady, setSplineThumbReady] = useState(false)
-
-  const [mediaMode, setMediaMode] = useState<'gallery' | 'spline'>('gallery')
-  const mediaModeLoaded = useRef(false)
 
   const artworkScrollRef = useRef<HTMLDivElement | null>(null)
   const experienceScrollRootRef = useRef<HTMLDivElement | null>(null)
+  const heroSectionRef = useRef<HTMLElement | null>(null)
   const artistBioSectionRef = useRef<HTMLElement | null>(null)
   const currentFrontSideRef = useRef<'A' | 'B'>('A')
   const handleFrontSideSettled = useCallback((side: 'A' | 'B') => {
@@ -242,27 +240,8 @@ export function ExperienceV3Client({
   }, [])
 
   useEffect(() => {
-    if (mediaModeLoaded.current) return
-    mediaModeLoaded.current = true
-    try {
-      const v = sessionStorage.getItem(MEDIA_MODE_KEY)
-      if (v === 'gallery' || v === 'spline') setMediaMode(v)
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(MEDIA_MODE_KEY, mediaMode)
-    } catch {
-      // ignore
-    }
-  }, [mediaMode])
-
-  useEffect(() => {
-    saveExperienceCart(cartOrder, lampQuantity, [])
-  }, [cartOrder, lampQuantity])
+    saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
+  }, [cartOrder, lampQuantity, lampPreviewOrder])
 
   useEffect(() => {
     setProductsSeason1(initialSeason1)
@@ -379,10 +358,38 @@ export function ExperienceV3Client({
     return out
   }, [allProducts])
 
-  const filteredProducts = useMemo(
-    () => applyFilters(productsForActiveSeason, filters, '', cartOrder),
-    [productsForActiveSeason, filters, cartOrder]
-  )
+  const filteredProductsCrossSeason = useMemo(() => {
+    if (filters.artists.length === 0) {
+      return { season1: [], season2: [], combined: [] }
+    }
+    const season1Filtered = applyFilters(productsSeason1, filters, '', cartOrder)
+    const season2Filtered = applyFilters(productsSeason2, filters, '', cartOrder)
+    return {
+      season1: season1Filtered,
+      season2: season2Filtered,
+      combined: [...season2Filtered, ...season1Filtered],
+    }
+  }, [productsSeason1, productsSeason2, filters, cartOrder])
+
+  const filteredProducts = useMemo(() => {
+    if (filters.artists.length === 0) {
+      return applyFilters(productsForActiveSeason, filters, '', cartOrder)
+    }
+    return activeSeason === 'season1' ? filteredProductsCrossSeason.season1 : filteredProductsCrossSeason.season2
+  }, [productsForActiveSeason, filters, cartOrder, activeSeason, filteredProductsCrossSeason])
+
+  useEffect(() => {
+    if (filters.artists.length === 0) return
+    const season1Count = filteredProductsCrossSeason.season1.length
+    const season2Count = filteredProductsCrossSeason.season2.length
+    if (season2Count > 0 && season1Count === 0 && activeSeason !== 'season2') {
+      setActiveSeason('season2')
+    } else if (season1Count > 0 && season2Count === 0 && activeSeason !== 'season1') {
+      setActiveSeason('season1')
+    } else if (season2Count > 0 && season1Count > 0 && activeSeason === 'season1' && season2Count > season1Count) {
+      setActiveSeason('season2')
+    }
+  }, [filters.artists, filteredProductsCrossSeason, activeSeason])
 
   useEffect(() => {
     if (previewProduct) return
@@ -398,74 +405,88 @@ export function ExperienceV3Client({
     trackViewItem({ ...storefrontProductToItem(previewProduct, variant, 1), item_list_name: 'experience-v3' })
   }, [previewProduct?.id])
 
-  const galleryImages = useMemo(() => collectProductImages(previewProduct), [previewProduct])
+  const galleryImages = useMemo(() => collectProductImages(galleryProduct), [galleryProduct])
+
+  const galleryUrlSets = useMemo(
+    () => buildGalleryImageUrlSets(galleryImages),
+    [galleryImages]
+  )
 
   useLayoutEffect(() => {
-    setGalleryIndex(galleryImages.length >= 2 ? 1 : 0)
+    setGalleryIndex(getDefaultGalleryIndex(galleryImages.length))
   }, [previewProduct?.id, galleryImages.length])
 
   const heroImageUrl = useMemo(() => {
-    const imgs = galleryImages
-    const node = imgs[galleryIndex] ?? imgs[0]
-    if (!node?.url) return null
-    return getShopifyImageUrl(node.url, 1600) ?? node.url
-  }, [galleryImages, galleryIndex])
+    const set = galleryUrlSets[galleryIndex] ?? galleryUrlSets[0]
+    return set?.hero ?? null
+  }, [galleryUrlSets, galleryIndex])
 
   const heroImageUrlLightbox = useMemo(() => {
-    const imgs = galleryImages
-    const node = imgs[galleryIndex] ?? imgs[0]
-    if (!node?.url) return null
-    return getShopifyImageUrl(node.url, 2400) ?? node.url
-  }, [galleryImages, galleryIndex])
+    const set = galleryUrlSets[galleryIndex] ?? galleryUrlSets[0]
+    return set?.lightbox ?? null
+  }, [galleryUrlSets, galleryIndex])
+
+  /** Preload entire gallery hero + thumb set as soon as product images are known. */
+  useEffect(() => {
+    if (galleryUrlSets.length === 0) return
+    const heroUrls = galleryUrlSets.map((s) => s.hero)
+    const thumbUrls = galleryUrlSets.map((s) => s.thumb)
+    const removeLinks = injectGalleryLinkPreloads(heroUrls, heroUrls.length)
+    prefetchImageUrls(heroUrls, 'high')
+    prefetchImageUrls(thumbUrls, 'auto')
+    return () => {
+      removeLinks()
+    }
+  }, [galleryProduct?.id, galleryUrlSets])
+
+  /** Keep current + adjacent hero/lightbox URLs warm when navigating the rail. */
+  useEffect(() => {
+    if (galleryUrlSets.length === 0) return
+    const indices = getAdjacentGalleryIndices(galleryIndex, galleryUrlSets.length)
+    const heroUrls = indices.map((i) => galleryUrlSets[i]?.hero).filter(Boolean) as string[]
+    const lightboxUrls = indices.map((i) => galleryUrlSets[i]?.lightbox).filter(Boolean) as string[]
+    prefetchImageUrls(heroUrls, 'high')
+    prefetchImageUrls(lightboxUrls, 'low')
+  }, [galleryIndex, galleryUrlSets])
+
+  /** Warm lightbox assets when zoom opens. */
+  useEffect(() => {
+    if (!galleryZoomOpen || galleryUrlSets.length === 0) return
+    prefetchImageUrls(
+      galleryUrlSets.map((s) => s.lightbox),
+      'high'
+    )
+  }, [galleryZoomOpen, galleryUrlSets])
 
   const heroLayoutWidth = 3
   const heroLayoutHeight = 4
 
+  const sideAProduct = useMemo(() => {
+    const fromPreview = lampPreviewOrder[0] ? findProductByCartId(lampPreviewOrder[0]) : null
+    if (fromPreview && fromPreview.id !== lamp.id) return fromPreview
+    if (previewProduct && previewProduct.id !== lamp.id) return previewProduct
+    return null
+  }, [lampPreviewOrder, findProductByCartId, previewProduct, lamp.id])
+
+  const sideBProduct = useMemo(() => {
+    const fromPreview = lampPreviewOrder[1] ? findProductByCartId(lampPreviewOrder[1]) : null
+    return fromPreview && fromPreview.id !== lamp.id ? fromPreview : null
+  }, [lampPreviewOrder, findProductByCartId, lamp.id])
+
   const splineImage1 = useMemo(() => {
-    const u = getFirstImage(previewProduct)
-    return u ? (getShopifyImageUrl(u, 1600) ?? u) : null
-  }, [previewProduct])
+    if (!sideAProduct) return null
+    const u = getFirstProductImageUrl(sideAProduct)
+    return u ? (getShopifyImageUrl(u, EXPERIENCE_GALLERY_SPLINE_PX) ?? u) : null
+  }, [sideAProduct])
 
   const splineImage2 = useMemo(() => {
-    const imgs = galleryImages
-    const second = imgs[1]?.url ?? imgs[0]?.url
-    if (!second) return splineImage1
-    return getShopifyImageUrl(second, 1600) ?? second
-  }, [galleryImages, splineImage1])
-
-  /** After `splineImage1` exists, schedule idle (`requestIdleCallback` / `setTimeout(0)`) so Spline can mount off-thread without blocking LCP. */
-  const splineIdleScheduledRef = useRef(false)
-  useEffect(() => {
-    if (!splineImage1 || splineIdleScheduledRef.current) return
-    splineIdleScheduledRef.current = true
-    const schedule = (cb: () => void) =>
-      typeof requestIdleCallback !== 'undefined'
-        ? requestIdleCallback(cb, { timeout: 3000 })
-        : (setTimeout(cb, 0) as unknown as number)
-    const cancel = (id: number) =>
-      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
-    const id = schedule(() => setSplineReady(true))
-    return () => cancel(id)
-  }, [splineImage1])
-
-  useEffect(() => {
-    if (!splineReady) {
-      setSplineThumbReady(false)
-      return
+    if (sideBProduct) {
+      const u = getFirstProductImageUrl(sideBProduct)
+      return u ? (getShopifyImageUrl(u, EXPERIENCE_GALLERY_SPLINE_PX) ?? u) : null
     }
-    const schedule = (cb: () => void) =>
-      typeof requestIdleCallback !== 'undefined'
-        ? requestIdleCallback(cb, { timeout: 4000 })
-        : (setTimeout(cb, 80) as unknown as number)
-    const cancel = (id: number) =>
-      typeof cancelIdleCallback !== 'undefined' ? cancelIdleCallback(id) : clearTimeout(id)
-    /* Stagger after main viewer so first canvas/scene load stays on critical path; if double-WebGL proves unstable on low-end devices, fall back to a static poster (`splineImage1`) here instead. */
-    const id = schedule(() => setSplineThumbReady(true))
-    return () => {
-      cancel(id)
-      setSplineThumbReady(false)
-    }
-  }, [splineReady])
+    // Single artwork on lamp: both physical sides use the product's first image (never gallery image 2).
+    return splineImage1
+  }, [sideBProduct, splineImage1])
 
   const experienceSplineBindings = useMemo(
     () => ({
@@ -475,7 +496,7 @@ export function ExperienceV3Client({
       side2ObjectId: '2e33392b-21d8-441d-87b0-11527f3a8b70',
       minimal: true as const,
       animate: true as const,
-      interactive: false as const,
+      interactive: true as const,
       idleSpinEnabled: true as const,
       swapLampSides: true as const,
       flipForSide: 'B' as const,
@@ -490,9 +511,9 @@ export function ExperienceV3Client({
       imageOffsetYB,
       imageScaleXB,
       imageScaleYB,
-      resetTrigger: 0,
-      rotateToSide: null as const,
-      rotateTrigger: 0,
+      resetTrigger,
+      rotateToSide,
+      rotateTrigger,
       previewQuarterTurns: 0,
     }),
     [
@@ -508,7 +529,77 @@ export function ExperienceV3Client({
       imageOffsetYB,
       imageScaleXB,
       imageScaleYB,
+      resetTrigger,
+      rotateToSide,
+      rotateTrigger,
     ]
+  )
+
+  const getSideToShowForProduct = useCallback((order: string[], productId: string): 'A' | 'B' => {
+    const productIndex = order.indexOf(productId)
+    if (productIndex === 0) return 'B'
+    if (productIndex === 1) return 'A'
+    return 'A'
+  }, [])
+
+  const assignProductToLampPreview = useCallback(
+    (productId: string) => {
+      setLampPreviewOrder((prev) => {
+        const idx = prev.indexOf(productId)
+        if (idx >= 0) {
+          const sideToShow = getSideToShowForProduct(prev, productId)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+          setLampSplineFocusProductId(productId)
+          return prev
+        }
+        const newOrder =
+          prev.length >= 2
+            ? currentFrontSideRef.current === 'A'
+              ? [productId, prev[1]!]
+              : [prev[0]!, productId]
+            : [...prev, productId]
+        const sideToShow = getSideToShowForProduct(newOrder, productId)
+        setRotateTrigger((t) => t + 1)
+        setRotateToSide(sideToShow)
+        setLampSplineFocusProductId(productId)
+        return newOrder
+      })
+    },
+    [getSideToShowForProduct]
+  )
+
+  const removeProductFromLampPreview = useCallback(
+    (productId: string, nextCart: string[]) => {
+      setLampPreviewOrder((prevLamp) => {
+        const next = prevLamp.filter((id) => id !== productId)
+        if (next.length === 0) {
+          setRotateToSide(null)
+          setLampSplineFocusProductId(null)
+          return []
+        }
+        if (next.length < prevLamp.length) {
+          const remainingId = next[0]!
+          const sideToShow = getSideToShowForProduct(next, remainingId)
+          setRotateTrigger((t) => t + 1)
+          setRotateToSide(sideToShow)
+          setLampSplineFocusProductId(remainingId)
+        } else if (!nextCart.includes(lampSplineFocusProductId ?? '')) {
+          setLampSplineFocusProductId(next[0] ?? null)
+        }
+        return next
+      })
+    },
+    [getSideToShowForProduct, lampSplineFocusProductId]
+  )
+
+  const handleSplineStickyThumbSelect = useCallback(
+    (product: ShopifyProduct) => {
+      if (product.id === lamp.id) return
+      assignProductToLampPreview(product.id)
+      setPreviewProduct(product)
+    },
+    [assignProductToLampPreview, lamp.id]
   )
 
   const selectedArtworks = useMemo(
@@ -682,6 +773,8 @@ export function ExperienceV3Client({
         const [a, b] = pair
         setLampQuantity(1)
         setCartOrder([a.id, b.id])
+        setLampPreviewOrder([a.id, b.id])
+        setLampSplineFocusProductId(a.id)
         setSpotlightExpanded(true)
         setFilterOpen(false)
       },
@@ -720,11 +813,12 @@ export function ExperienceV3Client({
       if (prev.includes(product.id)) return prev
       const next = [...prev, product.id]
       setLastAddedProductId(product.id)
+      assignProductToLampPreview(product.id)
       const variant = product.variants?.edges?.[0]?.node
       trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3' })
       return next
     })
-  }, [])
+  }, [assignProductToLampPreview])
 
   const handleAddPreviewWithLamp = useCallback(() => {
     if (!previewProduct || previewProduct.id === lamp.id || previewProduct.availableForSale === false) return
@@ -735,11 +829,22 @@ export function ExperienceV3Client({
   const handleAddPreviewArtworkOnly = useCallback(() => {
     if (!previewProduct || previewProduct.id === lamp.id) return
     if (cartOrder.includes(previewProduct.id)) {
-      setCartOrder((prev) => prev.filter((id) => id !== previewProduct.id))
+      setCartOrder((prev) => {
+        const filtered = prev.filter((id) => id !== previewProduct.id)
+        if (filtered.length === 0) {
+          setResetTrigger((t) => t + 1)
+          setRotateToSide(null)
+          setLampPreviewOrder([])
+          setLampSplineFocusProductId(null)
+        } else {
+          removeProductFromLampPreview(previewProduct.id, filtered)
+        }
+        return filtered
+      })
       return
     }
     addArtworkToCart(previewProduct)
-  }, [previewProduct, lamp.id, cartOrder, addArtworkToCart])
+  }, [previewProduct, lamp.id, cartOrder, addArtworkToCart, removeProductFromLampPreview])
 
   const handleAdjustArtworkQuantity = useCallback((runStartIndex: number, delta: 1 | -1) => {
     if (delta === -1) {
@@ -749,7 +854,20 @@ export function ExperienceV3Client({
       let end = runStartIndex
       while (end < prev.length && prev[end] === id) end++
       if (end <= runStartIndex) return
-      setCartOrder((o) => o.filter((_, i) => i !== end - 1))
+      const removeIndex = end - 1
+      setCartOrder((o) => {
+        const filtered = o.filter((_, i) => i !== removeIndex)
+        if (filtered.length === 0) {
+          setResetTrigger((t) => t + 1)
+          setRotateToSide(null)
+          setLampPreviewOrder([])
+          setLampSplineFocusProductId(null)
+        } else {
+          const removedId = o[removeIndex]
+          if (removedId) removeProductFromLampPreview(removedId, filtered)
+        }
+        return filtered
+      })
       return
     }
     setCartOrder((prev) => {
@@ -759,46 +877,49 @@ export function ExperienceV3Client({
       while (end < prev.length && prev[end] === id) end++
       const next = [...prev]
       next.splice(end, 0, id)
+      assignProductToLampPreview(id)
       return next
     })
-  }, [cartOrder])
+  }, [cartOrder, removeProductFromLampPreview, assignProductToLampPreview])
 
   const handleToggleSelect = useCallback(
     (product: ShopifyProduct) => {
       setCartOrder((prev) => {
         const exists = prev.includes(product.id)
         if (exists) {
-          return prev.filter((id) => id !== product.id)
+          const filtered = prev.filter((id) => id !== product.id)
+          if (filtered.length === 0) {
+            setResetTrigger((t) => t + 1)
+            setRotateToSide(null)
+            setLampPreviewOrder([])
+            setLampSplineFocusProductId(null)
+          } else {
+            removeProductFromLampPreview(product.id, filtered)
+          }
+          return filtered
         }
         const next = [...prev, product.id]
         setLastAddedProductId(product.id)
+        assignProductToLampPreview(product.id)
         const variant = product.variants?.edges?.[0]?.node
         trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3' })
         return next
       })
     },
-    []
+    [assignProductToLampPreview, removeProductFromLampPreview]
   )
-
-  const handlePreviewFromPicker = useCallback((product: ShopifyProduct) => {
-    setPreviewProduct(product)
-  }, [])
-
-  const handleSplineStickyThumbSelect = useCallback((product: ShopifyProduct) => {
-    setPreviewProduct(product)
-    setMediaMode('spline')
-  }, [])
 
   const handleQuickAddFromPicker = useCallback((product: ShopifyProduct) => {
     if (product.availableForSale === false) return
     setCartOrder((prev) => {
       if (prev.includes(product.id)) return prev
+      assignProductToLampPreview(product.id)
       return [...prev, product.id]
     })
     setLastAddedProductId(product.id)
     const variant = product.variants?.edges?.[0]?.node
     trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3-quick' })
-  }, [])
+  }, [assignProductToLampPreview])
 
   const loadMoreForSeason = useCallback(
     async (season: SeasonTab) => {
@@ -866,24 +987,64 @@ export function ExperienceV3Client({
     setIsPickerOpen(false)
   }, [cartOrder.length])
 
+  const scrollToArtworkPreview = useCallback(() => {
+    experienceScrollRootRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  const handlePreviewFromPicker = useCallback(
+    (product: ShopifyProduct) => {
+      setPreviewProduct(product)
+      if (isPickerOpen) {
+        handleClosePicker()
+      }
+      requestAnimationFrame(() => scrollToArtworkPreview())
+    },
+    [isPickerOpen, handleClosePicker, scrollToArtworkPreview]
+  )
+
+  const handleSelectArtworkFromCart = useCallback(
+    (product: ShopifyProduct) => {
+      const inSeason1 = productsSeason1.some((p) => p.id === product.id)
+      if (inSeason1 && activeSeason !== 'season1') setActiveSeason('season1')
+      else if (!inSeason1 && activeSeason !== 'season2') setActiveSeason('season2')
+      setPreviewProduct(product)
+      if (isPickerOpen) {
+        handleClosePicker()
+      }
+      requestAnimationFrame(() => scrollToArtworkPreview())
+    },
+    [
+      productsSeason1,
+      activeSeason,
+      isPickerOpen,
+      handleClosePicker,
+      scrollToArtworkPreview,
+    ]
+  )
+
+  const handleTogglePicker = useCallback(() => {
+    if (isPickerOpen) {
+      handleClosePicker()
+    } else {
+      handleOpenPicker()
+    }
+  }, [isPickerOpen, handleClosePicker, handleOpenPicker])
+
   useEffect(() => {
+    if (!pickerLayoutDesktop) {
+      setHeaderCenterContent(null)
+      return () => setHeaderCenterContent(null)
+    }
     setHeaderCenterContent(
       <button
         type="button"
-        onClick={() => (isPickerOpen ? handleClosePicker() : handleOpenPicker())}
+        onClick={handleTogglePicker}
         className={cn(
           'flex shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
           'focus-visible:ring-2 focus-visible:ring-offset-2',
-          theme === 'light'
-            ? [
-                'border-neutral-800/70 bg-transparent text-[#FFBA94] hover:border-neutral-900 hover:bg-neutral-900/[0.06]',
-                'focus-visible:ring-neutral-800 focus-visible:ring-offset-white',
-              ]
-            : [
-                'border-[#FFBA94]/50 bg-transparent text-[#FFBA94] hover:border-[#FFBA94]/75 hover:bg-[#FFBA94]/[0.08]',
-                'focus-visible:ring-[#FFBA94] focus-visible:ring-offset-[#0f0d0d]',
-              ],
-          isPickerOpen && (theme === 'light' ? 'ring-2 ring-neutral-700' : 'ring-2 ring-[#FFBA94]/70')
+          'border-experience-highlight/50 bg-transparent text-experience-highlight hover:border-experience-highlight/75 hover:bg-experience-highlight/[0.08]',
+          'focus-visible:ring-experience-highlight focus-visible:ring-offset-background',
+          isPickerOpen && 'ring-2 ring-experience-highlight/70'
         )}
         aria-label={isPickerOpen ? 'Close the collection picker' : 'Open the collection picker'}
         aria-expanded={isPickerOpen}
@@ -898,7 +1059,9 @@ export function ExperienceV3Client({
     isPickerOpen,
     handleOpenPicker,
     handleClosePicker,
+    handleTogglePicker,
     setHeaderCenterContent,
+    pickerLayoutDesktop,
   ])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
@@ -913,6 +1076,7 @@ export function ExperienceV3Client({
       lampQuantity,
       onLampQuantityChange: handleLampQuantityChange,
       onAdjustArtworkQuantity: handleAdjustArtworkQuantity,
+      onSelectArtwork: handleSelectArtworkFromCart,
       onViewLampDetail: () => {},
       isGift: false,
       lampPrice,
@@ -946,6 +1110,7 @@ export function ExperienceV3Client({
     cartEditionHoldSoonestExpiry,
     handleLampQuantityChange,
     handleAdjustArtworkQuantity,
+    handleSelectArtworkFromCart,
     setOrderBarProps,
   ])
 
@@ -1107,7 +1272,7 @@ export function ExperienceV3Client({
   useEffect(() => {
     autoRotatePauseUntil.current = 0
     const len = galleryImages.length
-    setGalleryIndex(len > 1 ? 1 : 0)
+    setGalleryIndex(getDefaultGalleryIndex(len))
   }, [previewProduct?.id, galleryImages])
 
   const touchGalleryInteraction = useCallback(() => {
@@ -1127,43 +1292,38 @@ export function ExperienceV3Client({
   }, [galleryImages.length, touchGalleryInteraction])
 
   useEffect(() => {
-    if (mediaMode !== 'gallery' || galleryImages.length <= 1) return
+    if (galleryImages.length <= 1) return
     const id = window.setInterval(() => {
       if (Date.now() < autoRotatePauseUntil.current) return
       setGalleryIndex((i) => (i + 1) % galleryImages.length)
     }, 5000)
     return () => clearInterval(id)
-  }, [mediaMode, galleryImages.length, previewProduct?.id])
+  }, [galleryImages.length, previewProduct?.id])
 
   useEffect(() => {
     setGalleryZoomOpen(false)
   }, [previewProduct?.id])
 
-  useEffect(() => {
-    if (mediaMode !== 'gallery') setGalleryZoomOpen(false)
-  }, [mediaMode])
-
   const artistCatalogForFilters = useExperienceArtistCatalog()
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col bg-[#0f0d0d] text-[#f0e8e8]">
+    <div className="relative flex h-full min-h-0 w-full flex-col bg-background text-foreground">
       <div className="flex min-h-0 flex-1 min-w-0 flex-row">
         <div
           ref={experienceScrollRootRef}
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden',
             /* Main column scroll — distinct from nested product column overflow-y-auto */
-            'snap-y snap-proximity overflow-y-auto overscroll-y-contain',
-            /* Keep snap points clear of fixed bottom checkout UI */
-            '[scroll-padding-bottom:max(8rem,env(safe-area-inset-bottom))]'
+            'touch-pan-y overflow-y-auto overscroll-y-contain'
           )}
-          data-experience-v3-scroll-snap-root=""
         >
         <section
+          ref={heroSectionRef}
+          id="experience-v3-hero"
           aria-labelledby="experience-v3-hero-heading"
           className={cn(
             /* grow-0: hero height stays content-driven so artist section stacks below in normal flow */
-            'flex min-h-0 w-full max-w-full shrink-0 grow-0 snap-start flex-col',
+            'flex min-h-0 w-full max-w-full shrink-0 grow-0 flex-col',
             /* Mobile: stack gallery then titles in normal flow. Desktop: side-by-side; no max-h trap (artist bio scrolls below). */
             'min-w-0 max-md:max-h-none md:flex-row md:items-stretch md:justify-center'
           )}
@@ -1171,7 +1331,7 @@ export function ExperienceV3Client({
         <h2 id="experience-v3-hero-heading" className="sr-only">
           Artwork and details
         </h2>
-        {/* Left: thumbnail strip + controls, then hero / 3D */}
+        {/* Left: thumbnail strip + controls, then hero image */}
         <div
           className={cn(
             'flex min-h-0 min-w-0 w-full flex-col',
@@ -1180,27 +1340,27 @@ export function ExperienceV3Client({
           )}
         >
           <div className="mx-auto flex w-full max-w-[min(96vw,720px)] flex-col px-2 pt-3 md:max-w-[min(100%,720px)] md:px-2 md:pr-2 md:pt-4">
-            {/* md+: vertical left rail; mobile: horizontal thumb strip (images + 3D) above hero */}
-            <div className="mb-2 flex min-h-0 w-full flex-col gap-3 bg-[#0f0d0d] md:mb-0 md:flex-row md:items-stretch md:gap-3">
+            {/* md+: vertical left rail; mobile: horizontal thumb strip above hero */}
+            <div className="mb-2 flex min-h-0 w-full flex-col gap-3 bg-background md:mb-0 md:flex-row md:items-stretch md:gap-3">
               <div className="flex min-h-0 w-full shrink-0 md:w-[4.25rem] md:flex-col md:flex-nowrap md:items-center md:self-stretch">
-                {(galleryImages.length > 0 || splineImage1) && (
+                {galleryImages.length > 0 && (
                   <div
                     className={cn(
                       'order-first flex min-w-0 gap-1.5 [scrollbar-width:thin]',
-                      'min-h-0 w-full flex-1 flex-row overflow-x-auto overflow-y-hidden pb-1',
+                      'touch-pan-x min-h-0 w-full flex-1 flex-row overflow-x-auto overflow-y-hidden pb-1',
                       'md:h-full md:max-h-[min(72vh,820px)] md:w-full md:flex-col md:items-center md:overflow-x-hidden md:overflow-y-auto md:pb-0'
                     )}
                   >
                     {galleryImages.map((im, i) => {
-                      const u = getShopifyImageUrl(im.url, 120) ?? im.url
-                      const selected = mediaMode === 'gallery' && galleryIndex === i
+                      const u = galleryUrlSets[i]?.thumb ?? (getShopifyImageUrl(im.url, EXPERIENCE_GALLERY_THUMB_PX) ?? im.url)
+                      const selected = galleryIndex === i
+                      const isNearActive = Math.abs(i - galleryIndex) <= 2 || (galleryIndex === 0 && i <= 3)
                       return (
                         <button
                           key={`${im.url}-${i}`}
                           type="button"
                           onClick={() => {
                             touchGalleryInteraction()
-                            setMediaMode('gallery')
                             setGalleryIndex(i)
                           }}
                           className={cn(
@@ -1210,76 +1370,29 @@ export function ExperienceV3Client({
                               : 'opacity-70'
                           )}
                         >
-                          <Image src={u} alt="" fill className="object-contain" unoptimized />
+                          <Image
+                            src={u}
+                            alt=""
+                            fill
+                            className="object-contain"
+                            sizes="48px"
+                            loading="eager"
+                            fetchPriority={selected || isNearActive ? 'high' : 'auto'}
+                            unoptimized
+                          />
                         </button>
                       )
                     })}
-                    {splineImage1 ? (
-                      <button
-                        type="button"
-                        onClick={() => setMediaMode('spline')}
-                        aria-pressed={mediaMode === 'spline'}
-                        aria-label="Show 3D preview"
-                        className={cn(
-                          'relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#0f0d0d] ring-2 transition-[opacity,box-shadow]',
-                          mediaMode === 'spline'
-                            ? 'opacity-100 shadow-[0_6px_18px_rgba(255,186,148,0.42)] ring-[#FFBA94]/80'
-                            : 'opacity-70 ring-transparent'
-                        )}
-                      >
-                        {splineThumbReady ? (
-                          <div className="pointer-events-none absolute inset-0 z-0">
-                            <ComponentErrorBoundary
-                              componentName="Spline3DThumbnail"
-                              fallback={
-                                <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 bg-[#0f0d0d]">
-                                  <span className="text-[9px] font-semibold uppercase tracking-wide text-[#FFBA94]">
-                                    3D
-                                  </span>
-                                </div>
-                              }
-                            >
-                              <Spline3DPreview
-                                {...experienceSplineBindings}
-                                key={`v3-spline-thumb-${previewProduct?.id ?? 'unknown'}`}
-                                image1={splineImage1}
-                                image2={splineImage2 ?? splineImage1}
-                                parentScrollMode="isolate"
-                                className="relative z-0 h-full min-h-[3rem] w-full min-w-[3rem]"
-                              />
-                            </ComponentErrorBoundary>
-                          </div>
-                        ) : (
-                          <div
-                            className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[#0f0d0d]"
-                            aria-hidden
-                          >
-                            <div className="h-5 w-5 animate-pulse rounded bg-white/15" />
-                            <span className="text-[8px] font-semibold uppercase tracking-wide text-white/85">
-                              3D
-                            </span>
-                          </div>
-                        )}
-                        <span className="pointer-events-none absolute bottom-0 left-0 right-0 z-[1] bg-transparent py-1 text-center text-[8px] font-semibold uppercase tracking-wide text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
-                          3D
-                        </span>
-                      </button>
-                    ) : null}
                   </div>
                 )}
               </div>
 
               <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col">
+                <div className="relative isolate w-full max-md:overflow-visible">
+              {heroImageUrl && (
                 <div
                   className={cn(
-                    'relative isolate w-full max-md:overflow-visible',
-                    mediaMode === 'spline' && splineImage1 && 'min-h-[min(52vh,500px)]'
-                  )}
-                >
-              {mediaMode === 'gallery' && heroImageUrl && (
-                <div
-                  className={cn(
-                    'relative z-[2] mx-auto aspect-[3/4] overflow-hidden rounded-lg bg-[#0a0909]',
+                    'relative z-[2] mx-auto aspect-[3/4] overflow-hidden rounded-lg bg-experience-surface',
                     'w-[min(100%,calc(min(52dvh,560px)*3/4))]',
                     'md:w-[min(100%,calc(min(72vh,820px)*3/4))]'
                   )}
@@ -1293,13 +1406,15 @@ export function ExperienceV3Client({
                     <ZoomIn className="h-5 w-5" strokeWidth={2} />
                   </button>
                   <Image
+                    key={`${galleryProduct?.id ?? 'gallery'}-${galleryIndex}`}
                     src={heroImageUrl}
                     alt={heroImageAlt}
                     fill
                     className="object-contain"
-                    sizes="(max-width:1023px) 96vw, 720px"
+                    sizes="(max-width: 767px) min(84vw, 420px), min(615px, 54vw)"
                     unoptimized
-                    priority={galleryImages.length > 1 ? galleryIndex === 1 : galleryIndex === 0}
+                    priority={galleryIndex === getDefaultGalleryIndex(galleryImages.length)}
+                    fetchPriority="high"
                   />
                   {galleryImages.length > 1 && (
                     <>
@@ -1325,7 +1440,7 @@ export function ExperienceV3Client({
                             key={i}
                             className={cn(
                               'h-1.5 rounded-full transition-all',
-                              i === galleryIndex ? 'w-5 bg-[#FFBA94]' : 'w-1.5 bg-white/35'
+                              i === galleryIndex ? 'w-5 bg-experience-highlight' : 'w-1.5 bg-muted-foreground/35'
                             )}
                             aria-hidden
                           />
@@ -1336,62 +1451,15 @@ export function ExperienceV3Client({
                 </div>
               )}
 
-              {mediaMode === 'gallery' && !heroImageUrl && (
+              {!heroImageUrl && (
                 <div
                   className={cn(
-                    'mx-auto flex aspect-[3/4] items-center justify-center rounded-lg bg-[#0a0909] px-6 text-center text-sm text-white/50',
+                    'mx-auto flex aspect-[3/4] items-center justify-center rounded-lg bg-experience-surface px-6 text-center text-sm text-muted-foreground',
                     'w-[min(100%,calc(min(52dvh,560px)*3/4))]',
                     'md:w-[min(100%,calc(min(72vh,820px)*3/4))]'
                   )}
                 >
                   No images for this artwork yet.
-                </div>
-              )}
-
-              {/* Preload: mount Spline under gallery (invisible) after idle so switching to 3D avoids wait. */}
-              {splineImage1 && splineReady && (
-                <div
-                  className={cn(
-                    'absolute inset-0 flex min-h-[min(52vh,500px)] flex-col bg-[#0f0d0d]',
-                    mediaMode === 'gallery' &&
-                      'pointer-events-none z-[1] select-none opacity-0',
-                    mediaMode === 'spline' && 'z-[6]'
-                  )}
-                  aria-hidden={mediaMode === 'gallery'}
-                >
-                  <ComponentErrorBoundary
-                    componentName="Spline3DPreview"
-                    fallback={
-                      <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-white/70">
-                        3D preview unavailable — switch to gallery.
-                      </div>
-                    }
-                  >
-                    <Spline3DPreview
-                      {...experienceSplineBindings}
-                      image1={splineImage1}
-                      image2={splineImage2 ?? splineImage1}
-                      parentScrollMode="contain"
-                      reelScrollContainerRef={artworkScrollRef}
-                      onFrontSideSettled={handleFrontSideSettled}
-                      className="relative h-full min-h-0 min-w-0 w-full"
-                    />
-                  </ComponentErrorBoundary>
-                </div>
-              )}
-
-              {mediaMode === 'spline' && splineImage1 && !splineReady && (
-                <div className="absolute inset-0 z-[6] flex min-h-[min(52vh,500px)] flex-col bg-[#0f0d0d]">
-                  <div className="flex flex-1 items-center justify-center">
-                    <Image
-                      src={splineImage1}
-                      alt=""
-                      width={800}
-                      height={800}
-                      className="max-h-full w-auto max-w-full object-contain p-4"
-                      unoptimized
-                    />
-                  </div>
                 </div>
               )}
                 </div>
@@ -1400,7 +1468,7 @@ export function ExperienceV3Client({
 
             {editionStripProps ? (
               <div className="mx-auto hidden w-full max-w-[min(96vw,720px)] px-2 pb-3 md:block md:max-w-[min(100%,720px)] md:px-2">
-                <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111010]/60">
+                <div className="overflow-hidden rounded-xl border border-border bg-experience-surface/60">
                   <ExperienceV3EditionStrip {...editionStripProps} />
                 </div>
               </div>
@@ -1414,7 +1482,7 @@ export function ExperienceV3Client({
           data-experience-artwork-scroll
           className={cn(
             'flex w-full shrink-0 flex-col overflow-x-hidden',
-            'relative z-10 max-md:flex-none max-md:bg-[#0f0d0d]',
+            'relative z-10 max-md:flex-none max-md:bg-background',
             'max-md:overflow-visible',
             'md:min-h-0 md:w-[min(100%,392px)] md:overflow-visible'
           )}
@@ -1426,16 +1494,16 @@ export function ExperienceV3Client({
                   <button
                     type="button"
                     onClick={scrollToArtistBio}
-                    className="mx-auto block text-[11px] font-medium uppercase tracking-widest text-white/55 underline-offset-4 transition-colors hover:text-[#FFBA94]/90 hover:underline"
+                    className="mx-auto block text-[11px] font-medium uppercase tracking-widest text-muted-foreground underline-offset-4 transition-colors hover:text-experience-highlight hover:underline"
                   >
                     {editionArtistName}
                   </button>
                 ) : (
-                  <p className="text-[11px] font-medium uppercase tracking-widest text-white/55">
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                     {editionArtistName}
                   </p>
                 )}
-                <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-[#FFBA94] lg:text-[1.65rem]">
+                <h1 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-experience-highlight lg:text-[1.65rem]">
                   {previewDisplayTitle}
                 </h1>
                 {previewProduct.id !== lamp.id &&
@@ -1443,19 +1511,19 @@ export function ExperienceV3Client({
                   previewArtworkUnitUsd > 0) ? (
                   <div className="space-y-1 pt-0.5">
                     <p className="flex items-center justify-center gap-2">
-                      <span className="text-lg font-semibold tabular-nums text-white">
+                      <span className="text-lg font-semibold tabular-nums text-foreground">
                         {streetLadderBlock?.listPricePrimary
                           ? streetLadderBlock.listPricePrimary
                           : `$${formatPriceCompact(previewArtworkUnitUsd)}`}
                       </span>
                       {streetLadderBlock?.listPriceCompareAt ? (
-                        <span className="text-sm tabular-nums text-white/40 line-through">
+                        <span className="text-sm tabular-nums text-muted-foreground line-through">
                           {streetLadderBlock.listPriceCompareAt}
                         </span>
                       ) : null}
                     </p>
                     {streetLadderBlock?.nextStepChip ? (
-                      <p className="text-[10px] font-medium tabular-nums text-white/40">
+                      <p className="text-[10px] font-medium tabular-nums text-muted-foreground">
                         {streetLadderBlock.nextStepChip}
                       </p>
                     ) : null}
@@ -1485,7 +1553,7 @@ export function ExperienceV3Client({
                 </div>
               </header>
 
-              <div className="sticky bottom-0 z-[5] -mx-5 bg-[#0f0d0d]/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md md:static md:mx-0 md:mt-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
+              <div className="sticky bottom-0 z-[5] -mx-5 bg-background/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md md:static md:mx-0 md:mt-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
                 {previewInCart && previewCartEditionHold ? (
                   <div className="mb-3">
                     <EditionHoldIndicator
@@ -1519,8 +1587,8 @@ export function ExperienceV3Client({
                     className={cn(
                       'flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold shadow-lg transition-colors',
                       isSoldOut
-                        ? 'cursor-not-allowed bg-white/10 text-white/40'
-                        : 'bg-[#FFBA94] text-neutral-900 shadow-black/30 hover:bg-[#ffc9a8]'
+                        ? 'cursor-not-allowed bg-muted text-muted-foreground'
+                        : 'bg-experience-highlight text-white shadow-black/30 hover:bg-experience-highlight-soft dark:text-neutral-900'
                     )}
                   >
                     {previewInCart && (
@@ -1549,9 +1617,9 @@ export function ExperienceV3Client({
           id="experience-v3-artist-bio"
           aria-labelledby="experience-v3-artist-heading"
           className={cn(
-            'relative z-0 w-full max-w-full shrink-0 snap-start',
-            'mt-6 border-t border-white/[0.04] pt-8 pb-10',
-            'bg-[#0a0909]',
+            'relative z-0 w-full max-w-full shrink-0',
+            'mt-6 border-t border-border pt-8 pb-10',
+            'bg-experience-surface',
             'md:mt-8 md:pt-10 md:pb-12',
             'scroll-mt-[max(4.5rem,env(safe-area-inset-top))]'
           )}
@@ -1567,11 +1635,11 @@ export function ExperienceV3Client({
                 vendor={artistProfileTarget.vendor}
               />
             ) : (
-              <p className="py-4 text-center text-[11px] leading-relaxed text-white/35">
+              <p className="py-4 text-center text-[11px] leading-relaxed text-muted-foreground">
                 Select an artwork to see the artist profile, or browse{' '}
                 <Link
                   href="/shop/explore-artists"
-                  className="text-[#FFBA94]/80 underline-offset-4 hover:text-[#FFBA94] hover:underline"
+                  className="text-experience-highlight/80 underline-offset-4 hover:text-experience-highlight hover:underline"
                 >
                   all artists
                 </Link>
@@ -1580,6 +1648,30 @@ export function ExperienceV3Client({
             )}
           </div>
         </section>
+
+        <ExperienceV3SplineLampSection
+          image1={splineImage1}
+          image2={splineImage2}
+          splineBindings={experienceSplineBindings}
+          onFrontSideSettled={handleFrontSideSettled}
+          reelScrollContainerRef={experienceScrollRootRef}
+          footer={
+            <ExperienceCheckoutStickyBar
+              lamp={lamp}
+              lampQuantity={lampQuantity}
+              selectedArtworks={selectedArtworks}
+              orderSubtotal={orderTotal}
+              stripMode="collection"
+              barPosition="inline"
+              hideCollectionStrip
+              onOpenPicker={handleOpenPicker}
+              onViewLampDetail={() => {}}
+              onSelectThumbnailForSpline={handleSplineStickyThumbSelect}
+              previewSelectedProductId={lampSplineFocusProductId ?? previewProduct?.id ?? null}
+              lampPreviewProductIds={lampPreviewOrder}
+            />
+          }
+        />
 
         {previewProduct && previewProduct.id !== lamp.id ? (
           <ExperienceV3ArtistWorksSlider
@@ -1614,7 +1706,7 @@ export function ExperienceV3Client({
               onClose={handleClosePicker}
               products={filteredProducts}
               selectedArtworks={selectedArtworks}
-              lampPreviewOrder={[]}
+              lampPreviewOrder={lampPreviewOrder}
               onToggleSelect={handleToggleSelect}
               lastAddedProductId={lastAddedProductId}
               hasMore={hasMore}
@@ -1656,7 +1748,7 @@ export function ExperienceV3Client({
           onClose={handleClosePicker}
           products={filteredProducts}
           selectedArtworks={selectedArtworks}
-          lampPreviewOrder={[]}
+          lampPreviewOrder={lampPreviewOrder}
           onToggleSelect={handleToggleSelect}
           lastAddedProductId={lastAddedProductId}
           hasMore={hasMore}
@@ -1730,17 +1822,36 @@ export function ExperienceV3Client({
           lampQuantity={lampQuantity}
           selectedArtworks={selectedArtworks}
           orderSubtotal={orderTotal}
-          stripMode="collection"
+          bottomBarVariant="collectionButtonOnly"
+          collectionPickerOpen={isPickerOpen}
+          onCollectionButtonClick={handleTogglePicker}
           onOpenPicker={handleOpenPicker}
           onViewLampDetail={() => {}}
-          suppressCartThumbnails={mediaMode !== 'spline'}
-          onSelectThumbnailForSpline={
-            mediaMode === 'spline' ? handleSplineStickyThumbSelect : undefined
-          }
-          previewSelectedProductId={previewProduct?.id ?? null}
-          lampPreviewProductIds={[]}
         />
       ) : null}
+
+      <ExperienceV3StickyAddPanel
+        scrollRootRef={experienceScrollRootRef}
+        heroSectionRef={heroSectionRef}
+        previewProduct={previewProduct}
+        lamp={lamp}
+        heroImageUrl={heroImageUrl}
+        previewDisplayTitle={previewDisplayTitle}
+        previewArtworkUnitUsd={previewArtworkUnitUsd}
+        previewLampUnitUsd={previewLampUnitUsd}
+        listPricePrimary={streetLadderBlock?.listPricePrimary}
+        listPriceCompareAt={streetLadderBlock?.listPriceCompareAt}
+        showLampBundleCard={showLampBundleCard}
+        addButtonLabel={addButtonLabel}
+        previewInCart={previewInCart}
+        isSoldOut={isSoldOut}
+        onAddWithLamp={handleAddPreviewWithLamp}
+        onArtworkOnly={handleAddPreviewArtworkOnly}
+        onPrimaryAction={() => {
+          if (!previewProduct || previewProduct.id === lamp.id) return
+          handleAddPreviewArtworkOnly()
+        }}
+      />
 
       <OrderBar
         lamp={lamp}
@@ -1748,6 +1859,7 @@ export function ExperienceV3Client({
         lampQuantity={lampQuantity}
         onLampQuantityChange={handleLampQuantityChange}
         onAdjustArtworkQuantity={handleAdjustArtworkQuantity}
+        onSelectArtwork={handleSelectArtworkFromCart}
         onViewLampDetail={() => {}}
         isGift={false}
         lockedArtworkPrices={lockedArtworkPrices}

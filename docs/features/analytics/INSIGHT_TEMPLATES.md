@@ -63,7 +63,15 @@ Suggested ordered steps (tune to your questions):
 
 ---
 
+## Meta paid traffic
+
+Full funnel, trend, cohort, and replay specs for Facebook/Instagram ads: **[Meta Ads — POSTHOG_META_FUNNEL.md](../meta-ads/POSTHOG_META_FUNNEL.md)**.
+
+Requires deployed UTM person properties from [`lib/posthog.ts`](../../lib/posthog.ts) (`initial_utm_*`, `initial_fbclid`).
+
+---
+
 ## Version
 
-- **lastUpdated:** 2026-03-23
-- **version:** 1.0.0
+- **lastUpdated:** 2026-06-25
+- **version:** 1.1.0

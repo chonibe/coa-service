@@ -48,13 +48,37 @@ Add these environment variables in your Vercel Dashboard → Settings → Enviro
 - ⚠️ `WHATSAPP_WEBHOOK_SECRET` - **REQUIRED** for webhook signature verification when using WhatsApp webhook
   - Use your WhatsApp App Secret from Meta Developer Console
   - Without this, POST webhook requests will be rejected with 401
+- `WHATSAPP_ACCESS_TOKEN` - Required for outbound WhatsApp Cloud API messages
+- `WHATSAPP_PHONE_NUMBER_ID` - Required for outbound WhatsApp Cloud API messages
+- `WHATSAPP_GRAPH_API_VERSION` - Optional, defaults to `v23.0`
+- `PRINT_WHATSAPP_ENABLED` - Set to `true` to send Heidi print fulfillment notifications
+- `PRINT_WHATSAPP_DRY_RUN` - Keep `true` until the first message test is confirmed
+- `PRINT_HEIDI_WHATSAPP_TO` - Heidi's WhatsApp number in international format, digits only
+- `PRINT_WHATSAPP_TEMPLATE_NAME` - Optional approved WhatsApp utility template for proactive notifications
+- `PRINT_WHATSAPP_TEMPLATE_LANGUAGE` - Optional, defaults to `en_US`
+- `TELEGRAM_BOT_TOKEN` - Required for outbound Telegram Bot API messages
+- `PRINT_TELEGRAM_ENABLED` - Set to `true` to send print fulfillment notifications to Telegram
+- `PRINT_TELEGRAM_DRY_RUN` - Keep `true` until the first Telegram message test is confirmed
+- `PRINT_TELEGRAM_CHAT_ID` - Telegram private group/channel/chat ID for print fulfillment notifications
+- `PRINT_CHINADIVISION_ENABLED` - Set to `true` to create the receiving order and upload the shipping slip
+- `PRINT_CHINADIVISION_API_KEY` or `CHINADIVISION_API_KEY` - ChinaDivision/Ucenter API key
+- `PRINT_CHINADIVISION_CUSTOMER_ID` - ChinaDivision customer ID, e.g. `14051`
+- `PRINT_CHINADIVISION_WAREHOUSE_ID` - Receiving warehouse ID, `2` for Shenzhen China or `3` for Yiwu China
+- `PRINT_CHINADIVISION_UCENTER_BASE_URL` - Optional, defaults to `https://stapi.cnstorm.com`
 
 ### 8. CRM Webhook (Attio)
 - ⚠️ `CRM_WEBHOOK_SECRET` or `ATTIO_WEBHOOK_SECRET` - **REQUIRED** for inbound CRM webhook signature verification
   - Use your webhook secret from Attio Developer Settings
   - Without this, inbound webhook requests will be rejected with 401
 
-### 9. CORS – Allowed origins (optional)
+### 10. Meta Ads & Pipeboard (measurement / MCP)
+- `NEXT_PUBLIC_META_PIXEL_ID` - **REQUIRED for ads** — use Website Events dataset `1315234756106483` (not legacy pixel `334303304351060`)
+- `META_DATASET_API_KEY`, `META_DATASET_ID` - Conversions API (see [analytics README](./features/analytics/README.md))
+- `PIPEBOARD_API_TOKEN` - **REQUIRED for Pipeboard MCP** — non-empty API key from [pipeboard.co](https://pipeboard.co). Rotate if exposed in chat/logs.
+- `META_TEST_EVENT_CODE` - Optional — Events Manager test events during CAPI smoke tests
+
+See [meta-ads README](./features/meta-ads/README.md) for measurement checklist.
+
 - `ALLOWED_ORIGINS` – Optional. Comma-separated list of origins allowed for CORS (e.g. `https://admin.example.com,https://portal.example.com`).
 - **Production:** Use **explicit origins only**. Do not set to `*`. Wildcard subdomain entries (e.g. `*.example.com`) from this variable are **ignored** in production; only full URLs are used.
 - **Recommended for production:** Set to explicit URLs if you have additional frontends (e.g. `https://admin.thestreetcollector.com`). If unset, the app URL, `https://app.thestreetcollector.com`, and `https://thestreetcollector.com` are already allowed by default.
@@ -146,6 +170,3 @@ If "Shopify Storefront API Not Configured" appears:
 4. Ensure both are enabled for Production
 5. Redeploy (Vercel → Deployments → … → Redeploy)
 6. For local dev: copy these to `.env.local`
-
-
-

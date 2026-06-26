@@ -19,6 +19,7 @@ function toPostHog() {
       captureAddPaymentInfo?: (paymentType: string, items: unknown, value?: number, currency?: string) => void
       capturePurchase?: (payload: unknown) => void
       captureSearch?: (searchTerm: string) => void
+      identifyCheckoutPurchaser?: (email: string) => void
     }
   } catch {
     return null
@@ -458,6 +459,9 @@ export const trackBeginCheckout = (
   userData: MetaUserData = {}
 ) => {
   try {
+    if (userData.em) {
+      toPostHog()?.identifyCheckoutPurchaser?.(userData.em)
+    }
     toPostHog()?.captureBeginCheckout?.(items, value, currency)
   } catch {
     // ignore
@@ -549,6 +553,9 @@ export const trackAddPaymentInfo = (
 // Track purchase completion
 export const trackPurchase = (purchaseData: PurchaseData, userData: MetaUserData = {}, eventId?: string) => {
   try {
+    if (userData.em) {
+      toPostHog()?.identifyCheckoutPurchaser?.(userData.em)
+    }
     toPostHog()?.capturePurchase?.({
       ...purchaseData,
       items_count: purchaseData.items.length,

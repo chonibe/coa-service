@@ -7,8 +7,112 @@
  */
 
 import posthog from "posthog-js"
+import { getStoredAffiliateSession } from "@/lib/affiliate-tracking"
 
-/** localStorage key for persisted experience quiz (must match ExperienceClient). */
+const META_FBCLID_COOKIE = "sc_fbclid"
+
+/** Set by PostHogIdentify when a shop user is logged in — skip guest email identify. */
+let shopUserIdentified = false
+
+export function setPostHogShopUserIdentified(value: boolean) {
+  shopUserIdentified = value
+}
+
+function readFbclidFromCookie(): string | undefined {
+  if (typeof document === "undefined") return undefined
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${META_FBCLID_COOKIE}=([^;]*)`))
+    const value = match?.[1] ? decodeURIComponent(match[1]).trim() : ""
+    return value || undefined
+  } catch {
+    return undefined
+  }
+}
+
+function readUtmParamsFromUrl(): {
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  fbclid?: string
+} {
+  if (typeof window === "undefined") return {}
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const pick = (key: string) => params.get(key)?.trim() || undefined
+    return {
+      utm_source: pick("utm_source"),
+      utm_medium: pick("utm_medium"),
+      utm_campaign: pick("utm_campaign"),
+      utm_content: pick("utm_content"),
+      fbclid: pick("fbclid"),
+    }
+  } catch {
+    return {}
+  }
+}
+
+function resolveAttributionParams() {
+  const stored = getStoredAffiliateSession()
+  const fromUrl = readUtmParamsFromUrl()
+  return {
+    utm_source: stored?.utm_source || fromUrl.utm_source,
+    utm_medium: stored?.utm_medium || fromUrl.utm_medium,
+    utm_campaign: stored?.utm_campaign || fromUrl.utm_campaign,
+    utm_content: stored?.utm_content || fromUrl.utm_content,
+    fbclid: stored?.fbclid || fromUrl.fbclid || readFbclidFromCookie(),
+  }
+}
+
+/** Current-session UTM + fbclid for commerce event properties. */
+export function getSessionUtmEventProperties(): Record<string, string> {
+  const { utm_source, utm_medium, utm_campaign, utm_content, fbclid } = resolveAttributionParams()
+  const out: Record<string, string> = {}
+  if (utm_source) out.utm_source = utm_source
+  if (utm_medium) out.utm_medium = utm_medium
+  if (utm_campaign) out.utm_campaign = utm_campaign
+  if (utm_content) out.utm_content = utm_content
+  if (fbclid) out.fbclid = fbclid
+  return out
+}
+
+/**
+ * Set once-only first-touch UTM person properties ($set_once).
+ * Safe to call on init and when affiliate params are persisted later in the session.
+ */
+export function captureInitialUtmPersonProperties() {
+  const ph = getPostHog()
+  if (!ph) return
+
+  const { utm_source, utm_medium, utm_campaign, utm_content, fbclid } = resolveAttributionParams()
+  const once: Record<string, string> = {}
+  if (utm_source) once.initial_utm_source = utm_source
+  if (utm_medium) once.initial_utm_medium = utm_medium
+  if (utm_campaign) once.initial_utm_campaign = utm_campaign
+  if (utm_content) once.initial_utm_content = utm_content
+  if (fbclid) once.initial_fbclid = fbclid
+  if (Object.keys(once).length === 0) return
+
+  ph.setPersonProperties({}, once)
+}
+
+/**
+ * Identify guest checkout users by email so client funnels merge with server-side purchase events.
+ * Skips when PostHogIdentify already bound the session to a logged-in shop account.
+ */
+export function identifyCheckoutPurchaser(email: string) {
+  const ph = getPostHog()
+  if (!ph || shopUserIdentified) return
+
+  const normalized = email.toLowerCase().trim()
+  if (!normalized.includes("@")) return
+  if (ph.get_distinct_id() === normalized) return
+
+  ph.identify(normalized, {
+    email: normalized,
+    collector_identifier: normalized,
+  })
+}
 const EXPERIENCE_QUIZ_STORAGE_KEY = "sc-experience-quiz"
 const EXPERIENCE_AB_COOKIE = "sc_experience_ab"
 
@@ -203,6 +307,7 @@ export function captureSessionContext() {
     /** Latest tab entry path — useful for person-based “landed on X” cohorts */
     last_session_entry_path: sessionProps.session_entry_path,
   })
+  captureInitialUtmPersonProperties()
 }
 
 /** E-commerce: mirror GA4-style events to PostHog for funnel analysis. */
@@ -238,7 +343,12 @@ export function captureRemoveFromCart(item: PostHogProductItem) {
 }
 
 export function captureBeginCheckout(items: PostHogProductItem[], value?: number, currency = "USD") {
-  captureWithSessionActivity("begin_checkout", { items, value, currency })
+  captureWithSessionActivity("begin_checkout", {
+    items,
+    value,
+    currency,
+    ...getSessionUtmEventProperties(),
+  })
 }
 
 export function captureAddPaymentInfo(
@@ -267,7 +377,10 @@ export function capturePurchase(props: {
   if (ph) {
     ph.setPersonProperties({ has_purchased: true })
   }
-  captureWithSessionActivity("purchase", props)
+  captureWithSessionActivity("purchase", {
+    ...props,
+    ...getSessionUtmEventProperties(),
+  })
 }
 
 export function captureSearch(searchTerm: string) {

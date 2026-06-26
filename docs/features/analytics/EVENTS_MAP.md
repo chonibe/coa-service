@@ -8,6 +8,24 @@ Map of GA4 and **PostHog** events by page and component so we can track user act
 
 PostHog is initialized in [`app/providers.tsx`](../../app/providers.tsx) with **session replay**, **heatmaps**, **autocapture**, **pageleave**, **dead clicks**, and **rageclick**. Logged-in shop users are **identified** via `PostHogIdentify` (same file). E-commerce events are mirrored from GA4 to PostHog in [`lib/google-analytics.ts`](../../lib/google-analytics.ts); funnel events are in [`lib/posthog.ts`](../../lib/posthog.ts).
 
+### Attribution (Meta / paid social)
+
+Set on first touch via [`captureInitialUtmPersonProperties`](../../lib/posthog.ts) (`AffiliatePersistence`, `captureSessionContext`). Guest checkout calls [`identifyCheckoutPurchaser`](../../lib/posthog.ts) so server CAPI `purchase` merges with session funnels.
+
+| Person property | When set | Use |
+|-----------------|----------|-----|
+| `initial_utm_source` | First visit with UTM | Paid vs organic cohorts |
+| `initial_utm_medium` | First visit with UTM | `paid` filter |
+| `initial_utm_campaign` | First visit with UTM | Match Meta campaign name |
+| `initial_utm_content` | First visit with UTM | Creative / ad name |
+| `initial_fbclid` | First visit with `fbclid` | Meta click attribution |
+
+| Event property | Events | Use |
+|----------------|--------|-----|
+| `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `fbclid` | `begin_checkout`, `purchase` | Session-level conversion attribution |
+
+PostHog insight templates: [POSTHOG_META_FUNNEL.md](../meta-ads/POSTHOG_META_FUNNEL.md).
+
 ### Experience v2 shell vs onboarding (where events fire)
 
 - **Live configurator:** `/shop/experience` and `/shop/experience-v2` load [`ExperienceV2Client`](../../app/(store)/shop/experience-v2/components/ExperienceV2Client.tsx). That shell fires `experience_started` (once per tab), A/B resolution, affiliate/direct entry, picker/carousel events, and artwork preview tracking.

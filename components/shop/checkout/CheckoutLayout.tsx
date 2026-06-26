@@ -15,7 +15,7 @@ import { PaymentMethodModal } from './PaymentMethodModal'
 import { PromoCodeModal } from './PromoCodeModal'
 import { useShippingCountries } from '@/lib/shop/useShippingCountries'
 import { ShippingCountryNotListedLink } from '@/components/shop/checkout/ShippingCountryNotListedLink'
-import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo, setUserProperty } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, captureAddShippingInfo, captureAddPaymentInfo, setUserProperty, identifyCheckoutPurchaser } from '@/lib/posthog'
 import { EARLY_ACCESS_CART_REFRESH_EVENT } from '@/lib/early-access-constants'
 import {
   computeEarlyAccessCartDiscount,
@@ -316,7 +316,7 @@ export function CheckoutLayout({
             'flex w-full items-center justify-center gap-3 rounded-lg py-4 text-base font-semibold transition-colors active:scale-[0.98]',
             isCheckingOut || disabled
               ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0]'
-              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
+              : 'bg-foreground text-background hover:opacity-90 dark:bg-experience-highlight dark:text-experience-bg'
           )}
         >
           {isCheckingOut ? (
@@ -351,6 +351,9 @@ export function CheckoutLayout({
             setAddress(addr)
             if (sameAsShipping) setBillingAddress(addr)
             closeModals()
+            if (addr.email?.trim()) {
+              identifyCheckoutPurchaser(addr.email)
+            }
             captureAddShippingInfo([], total, addr.country)
             captureFunnelEvent(FunnelEvents.checkout_step_viewed, { step_name: 'address_saved' })
           }}

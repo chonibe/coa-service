@@ -77,6 +77,7 @@ export type AffiliateSessionData = {
   utm_medium?: string
   utm_campaign?: string
   utm_content?: string
+  fbclid?: string
 }
 
 /**

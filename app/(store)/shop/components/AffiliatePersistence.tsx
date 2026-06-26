@@ -7,6 +7,7 @@ import {
   setStoredAffiliateArtist,
   setStoredAffiliateSession,
 } from '@/lib/affiliate-tracking'
+import { captureInitialUtmPersonProperties } from '@/lib/posthog'
 
 /**
  * Persists affiliate/artist from URL (artist, utm_campaign) to sessionStorage
@@ -26,7 +27,8 @@ export function AffiliatePersistence() {
     const utmMedium = searchParams.get('utm_medium') ?? undefined
     const utmCampaign = searchParams.get('utm_campaign') ?? undefined
     const utmContent = searchParams.get('utm_content') ?? undefined
-    const hasAffiliate = artist || utmSource || utmMedium || utmCampaign || utmContent
+    const fbclid = searchParams.get('fbclid') ?? undefined
+    const hasAffiliate = artist || utmSource || utmMedium || utmCampaign || utmContent || fbclid
 
     if (artist) {
       setStoredAffiliateArtist(artist)
@@ -39,7 +41,9 @@ export function AffiliatePersistence() {
         utm_medium: utmMedium,
         utm_campaign: utmCampaign,
         utm_content: utmContent,
+        fbclid,
       })
+      captureInitialUtmPersonProperties()
     }
   }, [searchParams])
 

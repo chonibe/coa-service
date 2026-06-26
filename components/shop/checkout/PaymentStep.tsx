@@ -8,9 +8,10 @@ import {
 } from '@stripe/react-stripe-js/checkout'
 import { Loader2, ChevronDown, ChevronUp, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useExperienceTheme } from '@/app/(store)/shop/experience-v2/ExperienceThemeContext'
+import { useTheme } from 'next-themes'
 import type { Stripe } from '@stripe/stripe-js'
-import { captureFunnelEvent, FunnelEvents } from '@/lib/posthog'
+import { captureFunnelEvent, FunnelEvents, identifyCheckoutPurchaser } from '@/lib/posthog'
+import { getStripeCheckoutAppearance } from '@/lib/shop/stripe-appearance'
 
 /** Lazy-load Stripe only when payment UI mounts (avoids loading on landing page prefetch) */
 function useStripePromise() {
@@ -75,63 +76,6 @@ export interface PaymentStepProps {
   onPromoApplied?: (code: string) => void
   /** Pre-applied promo code (passed from parent context) */
   promoCode?: string
-}
-
-/** Mixtiles-inspired: PayPal blue, rectangular, 52px-style payment options */
-const appearanceLight = {
-  theme: 'stripe' as const,
-  variables: {
-    borderRadius: '4px',
-    colorPrimary: '#0070ba',
-    colorBackground: '#ffffff',
-    colorText: '#171717',
-    colorDanger: '#dc2626',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    spacingUnit: '4px',
-    buttonColorBackground: '#0070ba',
-    accessibleColorOnColorPrimary: '#ffffff',
-  },
-  rules: {
-    '.Tab': {
-      borderRadius: '4px',
-      padding: '14px 16px',
-    },
-    '.Tab--selected': {
-      borderColor: '#0070ba',
-      boxShadow: '0 0 0 2px #0070ba',
-    },
-  },
-}
-
-/** Dark mode appearance for Stripe card inputs – lighter backgrounds so PayPal/buttons stay visible */
-const appearanceDark = {
-  theme: 'stripe' as const,
-  variables: {
-    borderRadius: '4px',
-    colorPrimary: '#0070ba',
-    colorBackground: '#262626',
-    colorText: '#ffffff',
-    colorTextSecondary: '#a3a3a3',
-    colorDanger: '#f87171',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    spacingUnit: '4px',
-    buttonColorBackground: '#0070ba',
-    accessibleColorOnColorPrimary: '#ffffff',
-  },
-  rules: {
-    '.Tab': {
-      borderRadius: '4px',
-      padding: '14px 16px',
-      backgroundColor: '#2d2d2d',
-    },
-    '.Tab--selected': {
-      borderColor: '#0070ba',
-      boxShadow: '0 0 0 2px #0070ba',
-    },
-    '.Block': {
-      backgroundColor: '#262626',
-    },
-  },
 }
 
 async function logCheckoutError(payload: {
@@ -253,6 +197,7 @@ function PaymentFormInner({
     setPaymentError(null)
 
     try {
+      identifyCheckoutPurchaser(email)
       // PayPal requires email to be set via updateEmail() before confirmation
       // This is required even if customer_email was set during session creation
       if (email && typeof checkout.updateEmail === 'function') {
@@ -437,7 +382,7 @@ function PaymentFormInner({
 
   if (checkoutState.type === 'loading') {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500 dark:text-[#c4a0a0]">
+      <div className="flex items-center justify-center gap-2 py-12 text-experience-text-muted">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading checkout...</span>
       </div>
@@ -496,11 +441,11 @@ function PaymentFormInner({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Promo code - collapsible */}
-      <div className="border border-neutral-200 dark:border-white/20 rounded-lg overflow-hidden">
+      <div className="border border-experience-border rounded-lg overflow-hidden">
         <button
           type="button"
           onClick={() => setPromoOpen(!promoOpen)}
-          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors"
+          className="flex w-full items-center justify-between px-3 py-2.5 text-sm text-experience-text-secondary hover:bg-experience-surface transition-colors"
         >
           <span className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5" />
@@ -525,13 +470,13 @@ function PaymentFormInner({
                   }
                 }}
                 placeholder="Enter code"
-                className="flex-1 h-8 rounded-md border border-neutral-200 dark:border-white/20 px-2.5 text-sm bg-transparent dark:bg-[#1a1616] dark:text-[#f0e8e8] focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-[#4a4444]"
+                className="flex-1 h-8 rounded-md border border-experience-border px-2.5 text-sm bg-experience-bg text-experience-text focus:outline-none focus:ring-1 focus:ring-experience-border-strong"
               />
               <button
                 type="button"
                 onClick={applyPromo}
                 disabled={promoLoading || !promoInput.trim()}
-                className="h-8 px-3 rounded-md bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515] text-xs font-medium hover:bg-neutral-800 dark:hover:bg-[#e8d4d4] transition-colors disabled:opacity-50"
+                className="h-8 px-3 rounded-md bg-experience-text text-experience-bg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {promoLoading ? 'Checking…' : 'Apply'}
               </button>
@@ -546,26 +491,26 @@ function PaymentFormInner({
       {/* Order summary */}
       <div className="space-y-1.5 text-sm">
         <div className="flex justify-between">
-          <span className="text-neutral-600 dark:text-[#c4a0a0]">
+          <span className="text-experience-text-muted">
             Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})
           </span>
-          <span className="font-medium text-neutral-950 dark:text-white">${subtotal.toFixed(2)}</span>
+          <span className="font-medium text-experience-text">${subtotal.toFixed(2)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between">
-            <span className="text-neutral-600 dark:text-[#c4a0a0]">Discount</span>
+            <span className="text-experience-text-muted">Discount</span>
             <span className="font-medium text-green-700 dark:text-green-400">-${discount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-neutral-600 dark:text-[#c4a0a0]">Shipping</span>
-          <span className="font-medium text-neutral-950 dark:text-white">
+          <span className="text-experience-text-muted">Shipping</span>
+          <span className="font-medium text-experience-text">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
         </div>
-        <div className="flex items-center justify-between pt-1.5 border-t border-neutral-200 dark:border-white/10">
-          <span className="font-semibold text-neutral-950 dark:text-white">Total</span>
-          <span className="text-lg font-bold text-neutral-950 dark:text-white">
+        <div className="flex items-center justify-between pt-1.5 border-t border-experience-border">
+          <span className="font-semibold text-experience-text">Total</span>
+          <span className="text-lg font-bold text-experience-text">
             {renderTotal ? renderTotal(total) : `$${total.toFixed(2)}`}
           </span>
         </div>
@@ -620,7 +565,7 @@ function PaymentFormInner({
           <button
             type="button"
             onClick={onBack}
-            className="flex-shrink-0 rounded-lg border border-neutral-200 dark:border-white/20 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-[#d4b8b8] hover:bg-neutral-50 dark:hover:bg-[#201c1c]/50 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-experience-border px-4 py-3 text-sm font-medium text-experience-text-secondary hover:bg-experience-surface transition-colors"
           >
             Back
           </button>
@@ -631,8 +576,8 @@ function PaymentFormInner({
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors',
             loading
-              ? 'cursor-not-allowed bg-neutral-200 dark:bg-[#201c1c] text-neutral-500 dark:text-[#c4a0a0]'
-              : 'bg-neutral-950 dark:bg-[#f0e8e8] text-white dark:text-[#171515] hover:bg-neutral-800 dark:hover:bg-[#e8d4d4]'
+              ? 'cursor-not-allowed bg-experience-surface-2 text-experience-text-muted'
+              : 'bg-experience-text text-experience-bg hover:opacity-90'
           )}
         >
           {loading ? (
@@ -651,7 +596,8 @@ function PaymentFormInner({
 
 export function PaymentStep(props: PaymentStepProps) {
   const stripePromise = useStripePromise()
-  const { theme } = useExperienceTheme()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme !== 'light'
   const { preloadedClientSecret, promoCode, onPromoApplied, ...restProps } = props
   const [clientSecret, setClientSecret] = React.useState<string | null>(
     () => preloadedClientSecret ?? null
@@ -719,6 +665,8 @@ export function PaymentStep(props: PaymentStepProps) {
       })
   }, [hasRequiredAddress, props.items, props.customerEmail, props.shippingAddress, retryKey, preloadedClientSecret, appliedPromo])
 
+  const appearance = React.useMemo(() => getStripeCheckoutAppearance(isDark), [isDark])
+
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
     return (
       <p className="text-sm text-amber-600 p-4">
@@ -728,7 +676,7 @@ export function PaymentStep(props: PaymentStepProps) {
   }
   if (!stripePromise) {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+      <div className="flex items-center justify-center gap-2 py-12 text-experience-text-muted">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading payment...</span>
       </div>
@@ -743,7 +691,7 @@ export function PaymentStep(props: PaymentStepProps) {
           <button
             type="button"
             onClick={resetAndRetry}
-            className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            className="rounded-lg border border-experience-border px-4 py-2 text-sm font-medium text-experience-text-secondary hover:bg-experience-surface"
           >
             Try again
           </button>
@@ -751,7 +699,7 @@ export function PaymentStep(props: PaymentStepProps) {
             <button
               type="button"
               onClick={props.onBack}
-              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded-lg border border-experience-border px-4 py-2 text-sm font-medium text-experience-text-secondary hover:bg-experience-surface"
             >
               Back
             </button>
@@ -763,7 +711,7 @@ export function PaymentStep(props: PaymentStepProps) {
 
   if (!clientSecret) {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-neutral-500">
+      <div className="flex items-center justify-center gap-2 py-12 text-experience-text-muted">
         {!hasRequiredAddress ? (
           <span className="text-sm">Add your email and address above to continue</span>
         ) : (
@@ -775,8 +723,6 @@ export function PaymentStep(props: PaymentStepProps) {
       </div>
     )
   }
-
-  const appearance = theme === 'dark' ? appearanceDark : appearanceLight
 
   return (
     <CheckoutProvider

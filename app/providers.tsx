@@ -10,6 +10,7 @@ import {
   ensureSessionEntryForAnalytics,
   getPostHogIdentifyTraitsFromClientStorage,
   getSessionActivityProperties,
+  setPostHogShopUserIdentified,
 } from "@/lib/posthog"
 
 // Conditionally import React Query to avoid build errors if not installed
@@ -179,7 +180,12 @@ function PostHogIdentify() {
   const posthog = usePostHog()
 
   useEffect(() => {
-    if (!posthog || !user) return
+    if (!posthog) return
+    if (!user) {
+      setPostHogShopUserIdentified(false)
+      return
+    }
+    setPostHogShopUserIdentified(true)
     const filterEmails = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_EMAILS)
     const filterDistinctIds = parseFilterList(process.env.NEXT_PUBLIC_POSTHOG_FILTER_DISTINCT_IDS)
     const isInternal =
