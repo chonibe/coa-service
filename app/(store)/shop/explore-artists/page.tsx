@@ -42,9 +42,15 @@ export const metadata: Metadata = {
 
 export const revalidate = 600
 
-export default async function ExploreArtistsPage() {
+type ExploreArtistsPageProps = {
+  searchParams: Promise<{ artist?: string }>
+}
+
+export default async function ExploreArtistsPage({ searchParams }: ExploreArtistsPageProps) {
+  const resolvedSearchParams = await searchParams
   const raw = await getShopArtistsList()
   const artists = orderArtistsForExplore(raw)
+  const requestedArtistSlug = resolvedSearchParams.artist?.trim().toLowerCase() || ''
 
   return (
     <div className={`${landingFontVariables} ${landingStyles.page}`}>
@@ -56,7 +62,11 @@ export default async function ExploreArtistsPage() {
           location: a.location,
         }))}
       />
-      <ExploreArtistsClient artists={artists} experienceUrl={homeV2LandingContent.urls.experience} />
+      <ExploreArtistsClient
+        artists={artists}
+        experienceUrl={homeV2LandingContent.urls.experience}
+        requestedArtistSlug={requestedArtistSlug}
+      />
     </div>
   )
 }

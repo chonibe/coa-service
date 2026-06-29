@@ -17,7 +17,6 @@ import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollect
 import { shopUnifiedTopBarPaddingTopClass } from '@/lib/shop/shop-unified-top-bar-layout'
 import { Users } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useSearchParams } from 'next/navigation'
 import {
   TRUST_STAT_PLACEHOLDERS,
   formatTrustStatWithSuffix,
@@ -35,6 +34,7 @@ function shortBio(s: string | undefined, max = 220): string | undefined {
 type Props = {
   artists: ExploreArtistRow[]
   experienceUrl: string
+  requestedArtistSlug?: string
 }
 
 type FilterKey = 'all' | 'featured' | 'withBio'
@@ -63,8 +63,7 @@ function usePrefersReducedMotion() {
   return reduced
 }
 
-export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
-  const searchParams = useSearchParams()
+export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSlug = '' }: Props) {
   const displayArtistCount = resolveTrustStatCount(
     artists.length,
     TRUST_STAT_PLACEHOLDERS.artists
@@ -91,7 +90,6 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [artists])
   const [filter, setFilter] = React.useState<FilterKey>('all')
-  const requestedArtistSlug = searchParams.get('artist')?.trim().toLowerCase() || ''
 
   const featured = artists.slice(0, featuredCount)
   const spotlightIndex = React.useMemo(() => {
