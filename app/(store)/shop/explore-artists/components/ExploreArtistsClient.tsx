@@ -17,11 +17,13 @@ import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollect
 import { shopUnifiedTopBarPaddingTopClass } from '@/lib/shop/shop-unified-top-bar-layout'
 import { Users } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useSearchParams } from 'next/navigation'
 import {
   TRUST_STAT_PLACEHOLDERS,
   formatTrustStatWithSuffix,
   resolveTrustStatCount,
 } from '@/lib/shop/trust-stat-placeholders'
+import { buildArtistExploreUrl } from '@/lib/shop/collector-route-helpers'
 
 function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
@@ -62,6 +64,7 @@ function usePrefersReducedMotion() {
 }
 
 export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
+  const searchParams = useSearchParams()
   const displayArtistCount = resolveTrustStatCount(
     artists.length,
     TRUST_STAT_PLACEHOLDERS.artists
@@ -88,6 +91,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [artists])
   const [filter, setFilter] = React.useState<FilterKey>('all')
+  const requestedArtistSlug = searchParams.get('artist')?.trim().toLowerCase() || ''
 
   const featured = artists.slice(0, featuredCount)
   const spotlightIndex = React.useMemo(() => {
@@ -106,7 +110,13 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
         ? artists.filter((a) => !!a.bio)
         : artists
 
-  const spotlight = featured[spotlightIndex] ?? featured[0]
+  const spotlight = React.useMemo(() => {
+    if (requestedArtistSlug) {
+      const matched = artists.find((artist) => artist.slug.toLowerCase() === requestedArtistSlug)
+      if (matched) return matched
+    }
+    return featured[spotlightIndex] ?? featured[0]
+  }, [artists, featured, requestedArtistSlug, spotlightIndex])
   const spotlightBio = shortBio(spotlight?.bio)
   const spotlightMeta = [spotlight?.location, spotlight?.productCount ? `${spotlight.productCount} works` : null]
     .filter(Boolean)
@@ -320,7 +330,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                     ) : null}
                   </blockquote>
                 ) : null}
-                <Link href={`/shop/artists/${spotlight.slug}`} className={exploreStyles.btnFeatured}>
+                <Link href={buildArtistExploreUrl(spotlight.slug)} className={exploreStyles.btnFeatured}>
                   {exploreArtistsContent.featured.ctaLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -342,7 +352,7 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
               </h2>
             </div>
             <p className={exploreStyles.artistsHeaderNote}>
-              Open any card to go straight into the full artist profile with story, press, and works.
+              Open any card to center that artist here, then jump into the experience to collect their work.
             </p>
           </div>
 
@@ -357,10 +367,10 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                 >
                   <div className={exploreStyles.artistCardInner}>
                     <Link
-                      href={`/shop/artists/${artist.slug}`}
+                      href={buildArtistExploreUrl(artist.slug)}
                       prefetch={false}
                       className={exploreStyles.artistCardMediaButton}
-                      aria-label={`Open ${artist.name} profile`}
+                      aria-label={`Focus ${artist.name} in the artist directory`}
                     >
                       <div className={exploreStyles.artistCardMedia}>
                         {artist.image ? (
@@ -399,10 +409,10 @@ export function ExploreArtistsClient({ artists, experienceUrl }: Props) {
                         <span>{artist.productCount}</span> editions
                       </div>
                       <Link
-                        href={`/shop/artists/${artist.slug}`}
+                        href={buildArtistExploreUrl(artist.slug)}
                         prefetch={false}
                         className={exploreStyles.cardExploreLink}
-                        aria-label={`Open ${artist.name} profile`}
+                        aria-label={`Focus ${artist.name} in the artist directory`}
                       >
                         Open profile
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

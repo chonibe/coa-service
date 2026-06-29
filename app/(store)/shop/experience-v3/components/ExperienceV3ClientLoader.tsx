@@ -17,6 +17,7 @@ interface ExperienceV3ClientLoaderProps {
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
   initialArtistSlug?: string
+  initialSelectedArtwork?: ShopifyProduct | null
   shopDiscountSettings: ShopDiscountSettings
   initialGalleryProduct?: ShopifyProduct | null
 }

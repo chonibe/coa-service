@@ -13,6 +13,7 @@ import {
   AFFILIATE_PRODUCT_COOKIE_NAME,
   buildAffiliateQueryString,
 } from '@/lib/affiliate-tracking'
+import { buildArtistExploreUrl, buildExperienceUrl } from '@/lib/shop/collector-route-helpers'
 
 function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
   from.cookies.getAll().forEach(({ name, value, options }) =>
@@ -36,6 +37,35 @@ const LEGACY_NON_ARTIST_COLLECTION_HANDLES = new Set([
   'frontpage',
   'season-1',
   'season-2',
+])
+const SHOP_ROUTE_RESERVED_HANDLES = new Set([
+  'account',
+  'artist-submissions',
+  'artists',
+  'blog',
+  'careers',
+  'cart',
+  'checkout',
+  'collab',
+  'contact',
+  'drops',
+  'experience',
+  'experience-v2',
+  'experience-v3',
+  'explore-artists',
+  'faq',
+  'for-business',
+  'gift-cards',
+  'home',
+  'home-v2',
+  'membership',
+  'osmo-demo',
+  'pages',
+  'products',
+  'reserve',
+  'series',
+  'street-collector',
+  'wholesale',
 ])
 const NOINDEX_PATH_PREFIXES = [
   '/admin',
@@ -302,6 +332,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`/shop/explore-artists${search}`, request.url), 308)
   }
 
+  if (pathname === '/shop/artists' || pathname === '/shop/artists/') {
+    return NextResponse.redirect(new URL(`/shop/explore-artists${search}`, request.url), 308)
+  }
+
+  if (pathname.startsWith('/shop/artists/')) {
+    const artistSlug = pathname.slice('/shop/artists/'.length).replace(/\/.*$/, '').trim()
+    if (artistSlug) {
+      const token = searchParams.get('token')?.trim() || ''
+      const ref = searchParams.get('ref')?.trim() || ''
+      const earlyAccess = searchParams.get('early_access')?.trim() || ''
+      const unlisted = searchParams.get('unlisted')?.trim() || ''
+      const hasCommerceIntent = Boolean(token || ref || earlyAccess || unlisted || affiliateSlug)
+      const destinationPath = hasCommerceIntent
+        ? buildExperienceUrl({
+            artistSlug,
+            ref: ref || affiliateSlug || null,
+            token: token || null,
+            earlyAccess: earlyAccess || null,
+            unlisted: unlisted || null,
+          })
+        : buildArtistExploreUrl(artistSlug, { ref: ref || null })
+      const dest = new URL(destinationPath, request.url)
+      const redirect = NextResponse.redirect(dest, 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug || artistSlug) {
+        setAffiliateCookie(redirect, affiliateSlug || artistSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (affiliateQueryString || artistSlug) {
+        setAffiliateSessionCookie(
+          redirect,
+          affiliateQueryString || buildAffiliateQueryString({ artist: artistSlug })
+        )
+      }
+      return redirect
+    }
+  }
+
   // Supabase auth: email link expired or invalid — redirect to login with friendly error
   const authError = searchParams.get('error')
   const authErrorCode = searchParams.get('error_code')
@@ -338,7 +406,10 @@ export async function middleware(request: NextRequest) {
     const normalizedProductHandle = productHandle.toLowerCase()
     const destinationPath = LEGACY_STREET_LAMP_PRODUCT_HANDLES.has(normalizedProductHandle)
       ? '/shop/street_lamp'
-      : '/'
+      : buildExperienceUrl({
+          artistSlug: affiliateSlug || null,
+          artworkHandle: productHandle || null,
+        })
     const dest = new URL(destinationPath, request.url)
     const redirect = NextResponse.redirect(dest, 308)
     setMetaAttributionCookies(redirect, fbclid)
@@ -366,7 +437,7 @@ export async function middleware(request: NextRequest) {
     const slugFromPath = rest && rest.length <= 200 ? rest : undefined
     const destinationPath =
       slugFromPath && !LEGACY_NON_ARTIST_COLLECTION_HANDLES.has(slugFromPath)
-        ? `/shop/artists/${slugFromPath}`
+        ? buildExperienceUrl({ artistSlug: slugFromPath })
         : '/shop/products'
     const dest = new URL(destinationPath, request.url)
     const redirect = NextResponse.redirect(dest, 308)
@@ -383,6 +454,42 @@ export async function middleware(request: NextRequest) {
       )
     }
     return redirect
+  }
+
+  if (pathname.startsWith('/shop/')) {
+    const rest = pathname.slice('/shop/'.length)
+    const firstSegment = rest.replace(/\/.*$/, '').trim()
+    const hasNestedPath = rest.includes('/')
+    if (
+      firstSegment &&
+      !hasNestedPath &&
+      !SHOP_ROUTE_RESERVED_HANDLES.has(firstSegment) &&
+      !LEGACY_STREET_LAMP_PRODUCT_HANDLES.has(firstSegment.toLowerCase())
+    ) {
+      const dest = new URL(
+        buildExperienceUrl({
+          artistSlug: affiliateSlug || null,
+          artworkHandle: firstSegment,
+        }),
+        request.url
+      )
+      const redirect = NextResponse.redirect(dest, 308)
+      setMetaAttributionCookies(redirect, fbclid)
+      if (affiliateSlug) {
+        setAffiliateCookie(redirect, affiliateSlug)
+        clearDismissedCookie(redirect)
+      }
+      if (firstSegment.length <= 200) {
+        redirect.cookies.set(AFFILIATE_PRODUCT_COOKIE_NAME, firstSegment, {
+          path: '/',
+          maxAge: AFFILIATE_COOKIE_MAX_AGE,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        })
+      }
+      if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+      return redirect
+    }
   }
 
   const supabaseResponse = await updateSession(request)

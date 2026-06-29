@@ -17,7 +17,6 @@ import { useCart } from '@/lib/shop/CartContext'
 import { trackAddToCart } from '@/lib/google-analytics'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
-import { CollectorStoreTopChrome } from '@/components/shop/CollectorStoreTopChrome'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
 import {
@@ -25,6 +24,7 @@ import {
   ladderStageShortLabel,
 } from '@/lib/shop/collector-ladder-styles'
 import type { StreetPricingStageKey } from '@/lib/shop/street-collector-pricing-stages'
+import { buildArtistExploreUrl, buildExperienceUrl } from '@/lib/shop/collector-route-helpers'
 
 type TabId = 'overview' | 'works' | 'exhibitions'
 
@@ -370,8 +370,6 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
   return (
     <div className={cn(styles.root, embedded && styles.rootEmbedded, embedded && styles.embedded)}>
       <div className={styles.inner}>
-        {!embedded ? <CollectorStoreTopChrome /> : null}
-
         <section
           className={cn(styles.profileHero, embedded && styles.profileHeroEmbedded)}
           aria-label="Artist hero"
@@ -804,7 +802,10 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                     : 0
                 return (
                   <div key={product.id} className={cn(styles.workItem, !product.availableForSale && styles.workSoldOut)}>
-                    <Link href={`/shop/${product.handle}`} className={styles.workMedia}>
+                    <Link
+                      href={buildExperienceUrl({ artistSlug: artist.slug, artworkHandle: product.handle })}
+                      className={styles.workMedia}
+                    >
                       {product.featuredImage?.url ? (
                         <Image
                           className={styles.workImg}
@@ -853,7 +854,10 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                               Add to cart
                             </button>
                           ) : null}
-                          <Link href="/experience" className={cn(styles.workCta, styles.workCtaSecondary)}>
+                          <Link
+                            href={buildExperienceUrl({ artistSlug: artist.slug, artworkHandle: product.handle })}
+                            className={cn(styles.workCta, styles.workCtaSecondary)}
+                          >
                             Add to lamp
                           </Link>
                         </div>
@@ -976,7 +980,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                 key={a.slug}
                 type="button"
                 className={styles.relatedCard}
-                onClick={() => router.push(`/shop/artists/${a.slug}`)}
+                onClick={() => router.push(buildArtistExploreUrl(a.slug))}
               >
                 <div className={styles.relatedMedia} style={{ position: 'relative' }}>
                   {a.image ? (
@@ -1018,7 +1022,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
             doesn&apos;t return. Add what you want to your Street Lamp while stock lasts.
           </p>
           <div className={styles.ctaBtns}>
-            <Link href="/experience" className={styles.btnPrimary}>
+            <Link href={buildExperienceUrl({ artistSlug: artist.slug })} className={styles.btnPrimary}>
               Add to your lamp
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1029,7 +1033,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
         ) : null}
       </div>
       {!embedded ? (
-        <MobileStickyCta href="/experience" label={`Collect ${artist.name}`} />
+        <MobileStickyCta href={buildExperienceUrl({ artistSlug: artist.slug })} label={`Collect ${artist.name}`} />
       ) : null}
     </div>
   )

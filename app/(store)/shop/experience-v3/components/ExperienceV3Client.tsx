@@ -130,6 +130,7 @@ interface ExperienceV3ClientProps {
   pageInfoSeason1: PageInfo
   pageInfoSeason2: PageInfo
   initialArtistSlug?: string
+  initialSelectedArtwork?: ShopifyProduct | null
   /** Full Storefront product for the first preview — avoids a client round-trip for the hero gallery. */
   initialGalleryProduct?: ShopifyProduct | null
 }
@@ -141,6 +142,7 @@ export function ExperienceV3Client({
   pageInfoSeason1: initialPageInfo1,
   pageInfoSeason2: initialPageInfo2,
   initialArtistSlug,
+  initialSelectedArtwork = null,
   initialGalleryProduct = null,
 }: ExperienceV3ClientProps) {
   const searchParams = useSearchParams()
@@ -250,6 +252,23 @@ export function ExperienceV3Client({
     setPageInfoSeason1(initialPageInfo1)
     setPageInfoSeason2(initialPageInfo2)
   }, [initialSeason1, initialSeason2, initialPageInfo1, initialPageInfo2])
+
+  useEffect(() => {
+    if (!initialSelectedArtwork) return
+    const selectedId = normalizeShopifyProductId(initialSelectedArtwork.id) ?? initialSelectedArtwork.id
+    const existsInSeason1 = initialSeason1.some((p) => (normalizeShopifyProductId(p.id) ?? p.id) === selectedId)
+    const existsInSeason2 = initialSeason2.some((p) => (normalizeShopifyProductId(p.id) ?? p.id) === selectedId)
+    if (!existsInSeason1 && !existsInSeason2) {
+      setProductsSeason2((prev) => {
+        const alreadyExists = prev.some((p) => (normalizeShopifyProductId(p.id) ?? p.id) === selectedId)
+        return alreadyExists ? prev : [initialSelectedArtwork, ...prev]
+      })
+    }
+    setPreviewProduct(initialSelectedArtwork)
+    if (initialSelectedArtwork.availableForSale !== false) {
+      setLampSplineFocusProductId(initialSelectedArtwork.id)
+    }
+  }, [initialSelectedArtwork, initialSeason1, initialSeason2])
 
   useEffect(() => {
     const forceUnlisted = ['1', 'true', 'yes'].includes((searchParams.get('unlisted') ?? '').toLowerCase())

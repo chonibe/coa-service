@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
+import { buildExperienceUrl } from "@/lib/shop/collector-route-helpers"
 
 /**
  * Short affiliate link redirect.
- * /r/artist-slug → /shop/artists/artist-slug?ref=artist-slug
+ * /r/artist-slug → /shop/experience?artist=artist-slug&ref=artist-slug
  * Use for compact affiliate URLs (e.g. link-in-bio, Instagram).
  */
 export default async function AffiliateRedirect({
@@ -12,6 +13,10 @@ export default async function AffiliateRedirect({
 }) {
   const { slug } = await params
   const trimmed = slug.trim()
-  const encoded = encodeURIComponent(trimmed)
-  redirect(`/shop/artists/${encoded}?ref=${encoded}`)
+  redirect(
+    buildExperienceUrl({
+      artistSlug: trimmed,
+      ref: trimmed,
+    })
+  )
 }

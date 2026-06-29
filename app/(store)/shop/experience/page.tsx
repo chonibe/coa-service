@@ -24,7 +24,7 @@ const getCachedExperienceBundle = unstable_cache(
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ artist?: string; vendor?: string; unlisted?: string }>
+  searchParams: Promise<{ artist?: string; vendor?: string; artwork?: string; unlisted?: string }>
 }): Promise<Metadata> {
   return buildShopExperienceMetadata(searchParams, '/shop/experience')
 }
@@ -51,12 +51,13 @@ function buildProductsFromSeasons(
 }
 
 type ExperiencePageProps = {
-  searchParams: Promise<{ artist?: string; vendor?: string }>
+  searchParams: Promise<{ artist?: string; vendor?: string; artwork?: string }>
 }
 
 export default async function ExperiencePage({ searchParams }: ExperiencePageProps) {
   const resolved = await searchParams
   const initialArtistSlug = resolved?.artist?.trim() || resolved?.vendor?.trim() || undefined
+  const initialArtworkHandle = resolved?.artwork?.trim() || undefined
 
   const bundle = await getCachedExperienceBundle().catch(() => ({
     lamp: null as ShopifyProduct | null,
@@ -87,7 +88,10 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
 
   const shopDiscountSettings = await getShopDiscountSettings()
 
-  const initialPreviewProduct = pickInitialPreviewProduct(productsSeason2, productsSeason1)
+  const initialSelectedArtwork = initialArtworkHandle
+    ? await getProduct(initialArtworkHandle).catch(() => null)
+    : null
+  const initialPreviewProduct = initialSelectedArtwork ?? pickInitialPreviewProduct(productsSeason2, productsSeason1)
   const initialGalleryProduct = initialPreviewProduct?.handle
     ? ((await getProduct(initialPreviewProduct.handle).catch(() => null)) ?? initialPreviewProduct)
     : null
@@ -105,6 +109,7 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
         pageInfoSeason1={pageInfoSeason1}
         pageInfoSeason2={pageInfoSeason2}
         initialArtistSlug={initialArtistSlug}
+        initialSelectedArtwork={initialSelectedArtwork}
         shopDiscountSettings={shopDiscountSettings}
         initialGalleryProduct={initialGalleryProduct}
       />
