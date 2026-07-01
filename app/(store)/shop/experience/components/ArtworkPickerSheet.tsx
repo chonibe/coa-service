@@ -989,7 +989,8 @@ export function ArtworkPickerSheet({
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          'flex h-full min-h-0 w-full flex-col overflow-hidden shadow-2xl border-l border-border bg-popover text-popover-foreground'
+          'flex h-full min-h-0 w-full flex-col overflow-hidden border-l border-border bg-popover text-popover-foreground shadow-2xl',
+          'lg:w-[min(440px,42vw)] lg:max-w-[min(440px,42vw)]'
         )}
       >
         {renderPickerPanelBody()}

@@ -51,7 +51,7 @@ import {
   reelGalleryItemsSignature,
   type ExperienceReelGalleryItem,
 } from '@/lib/shop/experience-reel-gallery'
-import { Heart } from 'lucide-react'
+import { Heart, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { EXPERIENCE_WATCHLIST_UPDATED } from '@/lib/shop/experience-watchlist-events'
 import { loadExperienceCart, saveExperienceCart } from '@/lib/shop/experience-cart-persistence'
 import { dispatchEarlyAccessCartRefresh } from '@/lib/shop/early-access-cart'
@@ -202,6 +202,8 @@ export function ExperienceV2Client({
   const [detailProductFull, setDetailProductFull] = useState<ShopifyProduct | null>(null)
   const [detailProductLoading, setDetailProductLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false)
+  const [desktopPickerCollapsed, setDesktopPickerCollapsed] = useState(false)
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null)
   const [galleryImages, setGalleryImages] = useState<ExperienceReelGalleryItem[]>([])
   const [displayedProduct, setDisplayedProduct] = useState<ShopifyProduct | null>(null)
@@ -431,6 +433,20 @@ export function ExperienceV2Client({
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)')
+    const sync = () => setIsDesktopLayout(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
+    if (!isDesktopLayout) return
+    setPickerHasBeenOpened(true)
+    setIsPickerOpen(!desktopPickerCollapsed)
+  }, [isDesktopLayout, desktopPickerCollapsed])
 
   // Fetch early access coupon when visiting via early access link (?artist=...&token=...)
   useEffect(() => {
@@ -1247,6 +1263,7 @@ export function ExperienceV2Client({
   const handleOpenPicker = useCallback(() => {
     cartCountWhenPickerOpenedRef.current = cartOrder.length
     setPickerHasBeenOpened(true)
+    if (isDesktopLayout) setDesktopPickerCollapsed(false)
     setSpotlightExpanded(false)
     if (spotlightData?.vendorName) {
       const vendorKey = spotlightArtistVendorForFilter || spotlightData.vendorName
@@ -1260,7 +1277,7 @@ export function ExperienceV2Client({
       }))
     }
     setIsPickerOpen(true)
-  }, [cartOrder.length, spotlightData?.vendorName, spotlightArtistVendorForFilter])
+  }, [cartOrder.length, isDesktopLayout, spotlightData?.vendorName, spotlightArtistVendorForFilter])
 
   useExperienceOpenArtPicker(handleOpenPicker)
 
@@ -1268,9 +1285,12 @@ export function ExperienceV2Client({
     if (cartOrder.length > cartCountWhenPickerOpenedRef.current) {
       triggerPriceBump()
     }
+    if (isDesktopLayout) {
+      setDesktopPickerCollapsed(true)
+    }
     setIsPickerOpen(false)
     if (isAuthenticated) void refreshWatchlist()
-  }, [cartOrder.length, triggerPriceBump, isAuthenticated, refreshWatchlist])
+  }, [cartOrder.length, triggerPriceBump, isAuthenticated, refreshWatchlist, isDesktopLayout])
 
   const handleViewDetail = useCallback(
     (product: ShopifyProduct) => {
@@ -1443,7 +1463,7 @@ export function ExperienceV2Client({
   }, [detailProduct, lamp.id, streetEditionByProductId])
 
   return (
-    <div className="relative w-full h-full min-h-0 min-w-0 flex flex-col">
+    <div className="relative flex w-full h-full min-h-0 min-w-0 flex-col lg:flex-row">
       <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
       <SplineFullScreen
         className={cn('min-h-0 w-full flex-1')}
@@ -1553,6 +1573,29 @@ export function ExperienceV2Client({
 
       </div>
 
+      {isDesktopLayout && (
+        <button
+          type="button"
+          onClick={() => {
+            if (isPickerOpen) {
+              handleClosePicker()
+              return
+            }
+            handleOpenPicker()
+          }}
+          className={cn(
+            'absolute right-0 top-1/2 z-30 hidden -translate-y-1/2 rounded-l-xl border border-r-0 px-2 py-3 shadow-lg transition-colors lg:flex',
+            theme === 'light'
+              ? 'bg-white/95 text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+              : 'bg-[#1f1a1a]/95 text-[#f0e8e8] border-[#3a3030] hover:bg-[#2a2323]'
+          )}
+          aria-label={isPickerOpen ? 'Collapse collection panel' : 'Open collection panel'}
+          title={isPickerOpen ? 'Collapse collection panel' : 'Open collection panel'}
+        >
+          {isPickerOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+        </button>
+      )}
+
       {pickerHasBeenOpened && (
       <ArtworkPickerSheet
         isOpen={isPickerOpen}
@@ -1590,6 +1633,9 @@ export function ExperienceV2Client({
         onCloseLampPickerDetail={() => {
           setDetailProduct((p) => (p?.id === lamp.id ? null : p))
         }}
+        sheetVariant={isDesktopLayout ? 'rightRail' : 'bottomSheet'}
+        presentation={isDesktopLayout ? 'pushPanel' : 'modal'}
+        showDoneButton={!isDesktopLayout}
       />
       )}
 
