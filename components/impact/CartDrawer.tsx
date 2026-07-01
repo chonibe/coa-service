@@ -143,8 +143,8 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           aria-label="Shopping cart"
           className={cn(
             'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
-            'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
-            'border border-[#1a1a1a]/10',
+            'bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl',
+            'border border-border',
             'invisible pointer-events-none translate-x-full'
           )}
           style={{
@@ -155,11 +155,11 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
         >
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a]/10">
-              <h2 className="font-heading text-xl font-semibold text-[#1a1a1a]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h2 className="font-heading text-xl font-semibold text-foreground">
                 Your Cart
                 {cart && cart.totalQuantity > 0 && (
-                  <span className="ml-2 text-sm font-normal text-[#1a1a1a]/60">
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
                     ({cart.totalQuantity} {cart.totalQuantity === 1 ? 'item' : 'items'})
                   </span>
                 )}
@@ -167,7 +167,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 -mr-2 text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+                className="p-2 -mr-2 transition-colors text-muted-foreground hover:text-foreground"
                 aria-label="Close cart"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -187,10 +187,10 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex gap-4 animate-pulse">
-                      <div className="w-20 h-20 bg-[#f5f5f5] rounded-[12px]" />
+                      <div className="w-20 h-20 rounded-[12px] bg-muted" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-[#f5f5f5] rounded w-3/4" />
-                        <div className="h-4 bg-[#f5f5f5] rounded w-1/4" />
+                        <div className="w-3/4 h-4 rounded bg-muted" />
+                        <div className="w-1/4 h-4 rounded bg-muted" />
                       </div>
                     </div>
                   ))}
@@ -202,7 +202,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                     height="64"
                     viewBox="0 0 24 24"
                     fill="none"
-                    className="text-[#1a1a1a]/20 mb-4"
+                    className="mb-4 text-muted-foreground/40"
                   >
                     <path
                       d="M5.5 10L3 21H21L18.5 10"
@@ -218,10 +218,10 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                       strokeLinecap="round"
                     />
                   </svg>
-                  <p className="text-lg font-medium text-[#1a1a1a]">
+                  <p className="text-lg font-medium text-foreground">
                     Your cart is empty
                   </p>
-                  <p className="mt-1 text-sm text-[#1a1a1a]/60">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Add some artworks to get started
                   </p>
                   <Button
@@ -256,7 +256,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
 
             {/* Footer */}
             {!isEmpty && (
-              <div className="border-t border-[#1a1a1a]/10 px-6 py-4 space-y-4">
+              <div className="px-6 py-4 space-y-4 border-t border-border">
                 {/* Order Notes */}
                 {onOrderNotesChange && (
                   <div className="space-y-2">

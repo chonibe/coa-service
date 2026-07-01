@@ -34,19 +34,19 @@ export function EmptyState({
     <div className={cn('text-center py-16', className)}>
       {/* Icon */}
       {icon && (
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-[#f5f5f5] rounded-full mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-muted text-muted-foreground">
           {icon}
         </div>
       )}
       
       {/* Title */}
-      <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] mb-2">
+      <h3 className="mb-2 font-heading text-xl font-semibold text-foreground">
         {title}
       </h3>
       
       {/* Description */}
       {description && (
-        <p className="text-[#1a1a1a]/60 mb-6 max-w-md mx-auto">
+        <p className="max-w-md mx-auto mb-6 text-muted-foreground">
           {description}
         </p>
       )}
@@ -79,8 +79,8 @@ export function LoadingState({ rows = 3, className }: LoadingStateProps) {
     <div className={cn('animate-pulse space-y-4', className)}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="space-y-3">
-          <div className="h-4 bg-[#f5f5f5] rounded w-3/4" />
-          <div className="h-4 bg-[#f5f5f5] rounded w-1/2" />
+          <div className="w-3/4 h-4 rounded bg-muted" />
+          <div className="w-1/2 h-4 rounded bg-muted" />
         </div>
       ))}
     </div>

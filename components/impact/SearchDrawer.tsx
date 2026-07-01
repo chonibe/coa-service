@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from './Button'
-import { Input } from './Input'
 import Link from 'next/link'
 import { useSmoothDrawer } from '@/lib/animations/navigation-animations'
 
@@ -140,7 +139,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
       }, 300)
 
       return () => clearTimeout(timer)
-    }, [query, onSearch])
+    }, [query, onSearch, saveToRecentSearches])
 
     // Focus input when opened
     React.useEffect(() => {
@@ -199,7 +198,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
           aria-label="Search"
           className={cn(
             'fixed top-4 left-4 right-4 z-50 max-h-[calc(100%-2rem)] w-[calc(100%-2rem)]',
-            'bg-white shadow-2xl rounded-2xl',
+            'bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-border',
             'overflow-hidden flex flex-col',
             'invisible pointer-events-none translate-x-full',
             className
@@ -209,7 +208,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
           }}
         >
           {/* Search input */}
-          <div className="flex items-center gap-4 p-4 border-b border-[#1a1a1a]/10">
+          <div className="flex items-center gap-4 p-4 border-b border-border">
             <div className="flex-1 relative">
               <input
                 ref={inputRef}
@@ -219,10 +218,10 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 placeholder={placeholder}
                 className={cn(
                   'w-full h-12 pl-12 pr-4',
-                  'font-body text-base text-[#1a1a1a]',
-                  'bg-[#f5f5f5]',
+                  'font-body text-base text-foreground',
+                  'bg-muted',
                   'border-0 rounded-[60px]',
-                  'placeholder:text-[#1a1a1a]/50',
+                  'placeholder:text-muted-foreground',
                   'focus:outline-none focus:ring-2 focus:ring-[#047AFF]'
                 )}
               />
@@ -231,9 +230,9 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#1a1a1a"
+                stroke="currentColor"
                 strokeWidth="2"
-                className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M16 16l4 4" />
@@ -247,7 +246,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+              className="p-2 transition-colors text-muted-foreground hover:text-foreground"
               aria-label="Close search"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

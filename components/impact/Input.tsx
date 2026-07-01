@@ -16,14 +16,14 @@ import { cn } from '@/lib/utils'
 const inputVariants = cva(
   [
     'flex w-full',
-    'font-body text-base text-[#1a1a1a]',
-    'bg-white',
-    'border border-[#1a1a1a]/12',
+    'font-body text-base text-foreground',
+    'bg-background',
+    'border border-border',
     'rounded-[8px]', // Impact theme input border radius
     'transition-all duration-200 ease-in-out',
-    'placeholder:text-[#1a1a1a]/50',
+    'placeholder:text-muted-foreground',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
+    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ].join(' '),
   {
@@ -35,8 +35,8 @@ const inputVariants = cva(
       },
       variant: {
         default: '',
-        error: 'border-[#f83a3a] focus-visible:ring-[#f83a3a]',
-        success: 'border-[#00a341] focus-visible:ring-[#00a341]',
+        error: 'border-destructive focus-visible:ring-destructive',
+        success: 'border-green-600 focus-visible:ring-green-600',
       },
       fullWidth: {
         true: 'w-full',
@@ -92,7 +92,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-[#1a1a1a]"
+            className="text-sm font-medium text-foreground"
           >
             {label}
           </label>
@@ -100,7 +100,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         
         <div className="relative">
           {leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1a1a1a]/50">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               {leftIcon}
             </span>
           )}
@@ -123,20 +123,20 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           />
           
           {rightIcon && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1a1a1a]/50">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               {rightIcon}
             </span>
           )}
         </div>
         
         {error && (
-          <p id={errorId} className="text-sm text-[#f83a3a]">
+          <p id={errorId} className="text-sm text-destructive">
             {error}
           </p>
         )}
         
         {hint && !error && (
-          <p id={hintId} className="text-sm text-[#1a1a1a]/60">
+          <p id={hintId} className="text-sm text-muted-foreground">
             {hint}
           </p>
         )}
@@ -152,23 +152,23 @@ Input.displayName = 'Input'
 const textareaVariants = cva(
   [
     'flex w-full min-h-[120px]',
-    'font-body text-base text-[#1a1a1a]',
-    'bg-white',
-    'border border-[#1a1a1a]/12',
+    'font-body text-base text-foreground',
+    'bg-background',
+    'border border-border',
     'rounded-[8px]',
     'px-4 py-3',
     'transition-all duration-200 ease-in-out',
-    'placeholder:text-[#1a1a1a]/50',
+    'placeholder:text-muted-foreground',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
+    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
     'resize-y',
   ].join(' '),
   {
     variants: {
       variant: {
         default: '',
-        error: 'border-[#f83a3a] focus-visible:ring-[#f83a3a]',
-        success: 'border-[#00a341] focus-visible:ring-[#00a341]',
+        error: 'border-destructive focus-visible:ring-destructive',
+        success: 'border-green-600 focus-visible:ring-green-600',
       },
     },
     defaultVariants: {
@@ -199,7 +199,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="text-sm font-medium text-[#1a1a1a]"
+            className="text-sm font-medium text-foreground"
           >
             {label}
           </label>
@@ -215,13 +215,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         />
         
         {error && (
-          <p id={errorId} className="text-sm text-[#f83a3a]">
+          <p id={errorId} className="text-sm text-destructive">
             {error}
           </p>
         )}
         
         {hint && !error && (
-          <p id={hintId} className="text-sm text-[#1a1a1a]/60">
+          <p id={hintId} className="text-sm text-muted-foreground">
             {hint}
           </p>
         )}
@@ -255,7 +255,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="text-sm font-medium text-[#1a1a1a]"
+            className="text-sm font-medium text-foreground"
           >
             {label}
           </label>
@@ -266,15 +266,15 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             className={cn(
               'flex w-full appearance-none',
-              'font-body text-base text-[#1a1a1a]',
-              'bg-white',
-              'border border-[#1a1a1a]/12',
+              'font-body text-base text-foreground',
+              'bg-background',
+              'border border-border',
               'rounded-[8px]',
               'h-[2.625rem] px-4 pr-10 sm:h-[3.125rem]',
               'transition-all duration-200 ease-in-out',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#f5f5f5]',
-              error && 'border-[#f83a3a] focus-visible:ring-[#f83a3a]',
+              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
+              error && 'border-destructive focus-visible:ring-destructive',
               className
             )}
             ref={ref}
@@ -299,7 +299,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           
           {/* Dropdown arrow */}
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#1a1a1a]/50">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
             <svg
               width="16"
               height="16"
@@ -319,13 +319,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         </div>
         
         {error && (
-          <p id={errorId} className="text-sm text-[#f83a3a]">
+          <p id={errorId} className="text-sm text-destructive">
             {error}
           </p>
         )}
         
         {hint && !error && (
-          <p id={hintId} className="text-sm text-[#1a1a1a]/60">
+          <p id={hintId} className="text-sm text-muted-foreground">
             {hint}
           </p>
         )}

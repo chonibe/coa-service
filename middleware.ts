@@ -13,7 +13,7 @@ import {
   AFFILIATE_PRODUCT_COOKIE_NAME,
   buildAffiliateQueryString,
 } from '@/lib/affiliate-tracking'
-import { buildArtistExploreUrl, buildExperienceUrl } from '@/lib/shop/collector-route-helpers'
+import { buildExperienceUrl } from '@/lib/shop/collector-route-helpers'
 
 function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
   from.cookies.getAll().forEach(({ name, value, options }) =>
@@ -336,38 +336,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`/shop/explore-artists${search}`, request.url), 308)
   }
 
-  if (pathname.startsWith('/shop/artists/')) {
-    const artistSlug = pathname.slice('/shop/artists/'.length).replace(/\/.*$/, '').trim()
-    if (artistSlug) {
-      const token = searchParams.get('token')?.trim() || ''
-      const ref = searchParams.get('ref')?.trim() || ''
-      const earlyAccess = searchParams.get('early_access')?.trim() || ''
-      const unlisted = searchParams.get('unlisted')?.trim() || ''
-      const hasCommerceIntent = Boolean(token || ref || earlyAccess || unlisted || affiliateSlug)
-      const destinationPath = hasCommerceIntent
-        ? buildExperienceUrl({
-            artistSlug,
-            ref: ref || affiliateSlug || null,
-            token: token || null,
-            earlyAccess: earlyAccess || null,
-            unlisted: unlisted || null,
-          })
-        : buildArtistExploreUrl(artistSlug, { ref: ref || null })
-      const dest = new URL(destinationPath, request.url)
-      const redirect = NextResponse.redirect(dest, 308)
-      setMetaAttributionCookies(redirect, fbclid)
-      if (affiliateSlug || artistSlug) {
-        setAffiliateCookie(redirect, affiliateSlug || artistSlug)
-        clearDismissedCookie(redirect)
-      }
-      if (affiliateQueryString || artistSlug) {
-        setAffiliateSessionCookie(
-          redirect,
-          affiliateQueryString || buildAffiliateQueryString({ artist: artistSlug })
-        )
-      }
-      return redirect
+  // Shopify customer order authenticate links → account order history
+  if (/^\/\d+\/orders\/[^/]+\/authenticate\/?$/.test(pathname)) {
+    const dest = new URL('/shop/account', request.url)
+    const redirect = NextResponse.redirect(dest, 308)
+    setMetaAttributionCookies(redirect, fbclid)
+    if (affiliateSlug) {
+      setAffiliateCookie(redirect, affiliateSlug)
+      clearDismissedCookie(redirect)
     }
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    return redirect
+  }
+
+  // Legacy catalog/index surfaces should not be public entry points.
+  if (
+    pathname === '/shop/products' ||
+    pathname === '/shop/products/' ||
+    pathname.startsWith('/shop/series/')
+    || pathname === '/shop/series'
+    || pathname === '/shop/series/'
+  ) {
+    const dest = new URL('/shop/experience', request.url)
+    const redirect = NextResponse.redirect(dest, 308)
+    setMetaAttributionCookies(redirect, fbclid)
+    if (affiliateSlug) {
+      setAffiliateCookie(redirect, affiliateSlug)
+      clearDismissedCookie(redirect)
+    }
+    if (affiliateQueryString) setAffiliateSessionCookie(redirect, affiliateQueryString)
+    return redirect
   }
 
   // Supabase auth: email link expired or invalid — redirect to login with friendly error

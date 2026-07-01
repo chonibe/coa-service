@@ -22,8 +22,6 @@ import {
   formatTrustStatWithSuffix,
   resolveTrustStatCount,
 } from '@/lib/shop/trust-stat-placeholders'
-import { buildArtistExploreUrl } from '@/lib/shop/collector-route-helpers'
-
 function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
   const t = s.trim().replace(/\s+/g, ' ')
@@ -328,7 +326,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                     ) : null}
                   </blockquote>
                 ) : null}
-                <Link href={buildArtistExploreUrl(spotlight.slug)} className={exploreStyles.btnFeatured}>
+                <Link href={`/shop/artists/${spotlight.slug}`} className={exploreStyles.btnFeatured}>
                   {exploreArtistsContent.featured.ctaLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -350,7 +348,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
               </h2>
             </div>
             <p className={exploreStyles.artistsHeaderNote}>
-              Open any card to center that artist here, then jump into the experience to collect their work.
+              Open any card to go straight into the full artist profile with story, press, and works.
             </p>
           </div>
 
@@ -365,10 +363,10 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                 >
                   <div className={exploreStyles.artistCardInner}>
                     <Link
-                      href={buildArtistExploreUrl(artist.slug)}
+                      href={`/shop/artists/${artist.slug}`}
                       prefetch={false}
                       className={exploreStyles.artistCardMediaButton}
-                      aria-label={`Focus ${artist.name} in the artist directory`}
+                      aria-label={`Open ${artist.name} profile`}
                     >
                       <div className={exploreStyles.artistCardMedia}>
                         {artist.image ? (
@@ -407,10 +405,10 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                         <span>{artist.productCount}</span> editions
                       </div>
                       <Link
-                        href={buildArtistExploreUrl(artist.slug)}
+                        href={`/shop/artists/${artist.slug}`}
                         prefetch={false}
                         className={exploreStyles.cardExploreLink}
-                        aria-label={`Focus ${artist.name} in the artist directory`}
+                        aria-label={`Open ${artist.name} profile`}
                       >
                         Open profile
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

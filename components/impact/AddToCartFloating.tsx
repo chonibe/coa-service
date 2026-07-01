@@ -41,8 +41,6 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
     },
     ref
   ) => {
-    const [isOpen, setIsOpen] = React.useState(false)
-
     if (!isVisible) return null
 
     return (
@@ -52,10 +50,9 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
           ref={ref}
           className={cn(
             'hidden lg:block fixed bottom-6 right-6 z-40',
-            'w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl',
-            'border border-[#1a1a1a]/10 p-6',
-            'transition-all duration-300 ease-out',
-            isOpen ? 'opacity-100 scale-100' : 'opacity-100 scale-100',
+            'w-80 bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl',
+            'border border-border p-6',
+            'opacity-100 scale-100 transition-all duration-300 ease-out',
             className
           )}
           style={{
@@ -65,17 +62,17 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
         >
           {/* Product Info */}
           {productTitle && (
-            <div className="mb-4 pb-4 border-b border-[#1a1a1a]/10">
-              <h3 className="font-semibold text-[#1a1a1a] line-clamp-2">
+            <div className="pb-4 mb-4 border-b border-border">
+              <h3 className="font-semibold line-clamp-2 text-foreground">
                 {productTitle}
               </h3>
               {selectedVariant && (
-                <p className="text-xs text-[#1a1a1a]/60 mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {selectedVariant.title}
                 </p>
               )}
               {price && (
-                <p className="text-lg font-bold text-[#1a1a1a] mt-2">
+                <p className="mt-2 text-lg font-bold text-foreground">
                   {price}
                 </p>
               )}
@@ -85,13 +82,13 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
           {/* Quantity Controls */}
           {onQuantityChange && (
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-sm text-[#1a1a1a]/60">Qty:</span>
+              <span className="text-sm text-muted-foreground">Qty:</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1 || loading}
-                  className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 transition-colors border rounded border-border text-foreground hover:border-foreground/40 disabled:opacity-30"
                 >
                   −
                 </button>
@@ -102,7 +99,7 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
                   type="button"
                   onClick={() => onQuantityChange(quantity + 1)}
                   disabled={loading}
-                  className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 transition-colors border rounded border-border text-foreground hover:border-foreground/40 disabled:opacity-30"
                 >
                   +
                 </button>
@@ -127,7 +124,7 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
         <div
           className={cn(
             'lg:hidden fixed bottom-0 left-0 right-0 z-40',
-            'bg-white/95 backdrop-blur-xl border-t border-[#1a1a1a]/10',
+            'bg-background/95 backdrop-blur-xl border-t border-border',
             'px-4 py-4 transition-all duration-300 ease-out'
           )}
           style={{
@@ -143,7 +140,7 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
                   type="button"
                   onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1 || loading}
-                  className="w-8 h-8 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 transition-colors text-sm"
+                  className="flex items-center justify-center w-8 h-8 text-sm transition-colors border rounded border-border text-foreground hover:border-foreground/40 disabled:opacity-30"
                 >
                   −
                 </button>
@@ -154,7 +151,7 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
                   type="button"
                   onClick={() => onQuantityChange(quantity + 1)}
                   disabled={loading}
-                  className="w-8 h-8 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 transition-colors text-sm"
+                  className="flex items-center justify-center w-8 h-8 text-sm transition-colors border rounded border-border text-foreground hover:border-foreground/40 disabled:opacity-30"
                 >
                   +
                 </button>

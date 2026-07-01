@@ -186,7 +186,7 @@ function OrderShipmentAccordion({
 
   return (
     <Collapsible open={open} onOpenChange={handleOpenChange} className="pt-4 border-t border-border">
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left py-2 rounded-lg hover:bg-black/[0.03] px-2 -mx-2 transition-colors">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-2 py-2 -mx-2 text-left rounded-lg transition-colors hover:bg-muted/70">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-sm font-semibold text-foreground">Shipment &amp; tracking</span>
           {showStatusOnShipmentRow && orderStatus ? (
@@ -223,12 +223,12 @@ function OrderShipmentAccordion({
       <CollapsibleContent className="pt-3 space-y-4">
         {!state || state.kind === 'loading' ? (
           <div className="space-y-2 animate-pulse py-2">
-            <div className="h-4 bg-[#f5f5f5] rounded w-3/4" />
-            <div className="h-4 bg-[#f5f5f5] rounded w-1/2" />
-            <div className="h-24 bg-[#f5f5f5] rounded-[12px]" />
+            <div className="w-3/4 h-4 rounded bg-muted" />
+            <div className="w-1/2 h-4 rounded bg-muted" />
+            <div className="h-24 rounded-[12px] bg-muted" />
           </div>
         ) : state.kind === 'error' ? (
-          <div className="rounded-[12px] border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-900">
+          <div className="px-4 py-3 text-sm border rounded-[12px] border-destructive/30 bg-destructive/10 text-destructive">
             <p>{state.message}</p>
             <Button variant="outline" size="sm" className="mt-3" type="button" onClick={() => {
               loadedSuccessfullyRef.current = false
@@ -274,7 +274,7 @@ function OrderShipmentAccordion({
               />
             </div>
 
-            <div className="rounded-[12px] border border-border bg-[#fafafa] px-4 py-3">
+            <div className="rounded-[12px] border border-border bg-muted/40 px-4 py-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -374,26 +374,6 @@ export default function AccountPage() {
       fetchAddresses()
     }
   }, [isAuthenticated, activeTab, fetchAddresses])
-
-  /** Convert order address format to CheckoutAddress for use as initial value in AddressModal */
-  const orderAddrToCheckout = (
-    addr: Order['shippingAddress'],
-    email: string
-  ): CheckoutAddress | null => {
-    if (!addr?.address1 || !addr.city || !addr.postalCode || !addr.country) return null
-    return {
-      email,
-      fullName: addr.name || '',
-      country: addr.country,
-      addressLine1: addr.address1,
-      addressLine2: addr.address2,
-      city: addr.city,
-      state: addr.province,
-      postalCode: addr.postalCode,
-      phoneCountryCode: '+1',
-      phoneNumber: '',
-    }
-  }
 
   const handleAddressSave = async (address: CheckoutAddress) => {
     setAddressesLoading(true)
@@ -495,7 +475,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f5f5f5]">
+      <main className="min-h-screen bg-background">
         <SectionWrapper spacing="md" background="muted">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-6">
@@ -513,12 +493,12 @@ export default function AccountPage() {
   if (!isAuthenticated) {
     return (
       <>
-        <main className="min-h-screen bg-[#f5f5f5]">
+        <main className="min-h-screen bg-background">
           <SectionWrapper spacing="md" background="muted">
             <Container maxWidth="narrow">
               <Card variant="default" padding="lg" className="text-center">
                 <div className="py-8">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-muted text-muted-foreground">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
@@ -542,7 +522,7 @@ export default function AccountPage() {
                   </div>
                   {process.env.NODE_ENV === 'development' && (
                     <p className="mt-4 text-xs text-muted-foreground">
-                      <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-amber-600 hover:underline">
+                      <Link href="/api/dev/mock-login?email=streets@streets.com&redirect=/shop/account" className="text-experience-highlight hover:underline">
                         Dev: View as mock user (streets@streets.com)
                       </Link>
                     </p>
@@ -562,7 +542,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5]">
+    <main className="min-h-screen bg-background">
       <SectionWrapper spacing="md" background="muted">
         <Container maxWidth="default">
           {/* Header */}
@@ -579,7 +559,7 @@ export default function AccountPage() {
               {user?.isMockUser && (
                 <Link
                   href="/api/dev/mock-logout?redirect=/login?redirect=%2Fshop%2Faccount"
-                  className="text-xs text-amber-600 hover:underline"
+                  className="text-xs text-experience-highlight hover:underline"
                 >
                   Dev: End mock session
                 </Link>
@@ -638,14 +618,14 @@ export default function AccountPage() {
               {ordersLoading && orders.length === 0 ? (
                 <Card variant="default" padding="lg" className="text-center">
                   <div className="py-8 animate-pulse">
-                    <div className="h-6 bg-[#f5f5f5] rounded w-1/3 mx-auto mb-4" />
-                    <div className="h-4 bg-[#f5f5f5] rounded w-1/2 mx-auto" />
+                    <div className="w-1/3 h-6 mx-auto mb-4 rounded bg-muted" />
+                    <div className="w-1/2 h-4 mx-auto rounded bg-muted" />
                   </div>
                 </Card>
               ) : orders.length === 0 ? (
                 <Card variant="default" padding="lg" className="text-center">
                   <div className="py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                    <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-muted text-muted-foreground">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3">
                         <path d="M5.5 10L3 21H21L18.5 10" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M8 10V8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8V10" strokeLinecap="round" />
@@ -692,7 +672,7 @@ export default function AccountPage() {
                     <div className="py-4 space-y-3">
                       {(order.lineItems || []).map((item) => (
                         <div key={item.id} className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-[12px] overflow-hidden bg-[#f5f5f5] flex-shrink-0">
+                          <div className="w-16 h-16 rounded-[12px] overflow-hidden bg-muted flex-shrink-0">
                             {item.imageUrl ? (
                               <img
                                 src={item.imageUrl}
@@ -885,7 +865,7 @@ export default function AccountPage() {
                             size="sm"
                             onClick={() => handleDeleteAddress(id)}
                             disabled={addressesLoading}
-                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            className="border-destructive/30 text-destructive hover:bg-destructive/10"
                           >
                             Delete
                           </Button>
