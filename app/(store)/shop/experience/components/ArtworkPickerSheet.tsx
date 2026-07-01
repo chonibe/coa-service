@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo, type CSSProperties }
 import { useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import Image from 'next/image'
-import { Check, Plus, SlidersHorizontal } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -17,7 +17,6 @@ import {
 import { LampSelectorPromoBanner } from '../../experience-v2/components/LampSelectorPromoBanner'
 import {
   FilterPanel,
-  hasActiveFilters,
   type FeaturedBundleFilterOffer,
   type FilterPanelLampOffer,
   type FilterState,
@@ -435,7 +434,7 @@ export function ArtworkPickerSheet({
   filters,
   onFiltersChange,
   filterOpen = false,
-  onFilterOpen,
+  onFilterOpen: _onFilterOpen,
   onFilterClose,
   spotlightData,
   spotlightProducts = [],
@@ -547,14 +546,6 @@ export function ArtworkPickerSheet({
       : pickerLamp
         ? parseFloat(pickerLamp.priceRange?.minVariantPrice?.amount ?? '0')
         : 0
-
-  const activeFilterCount = useMemo(() => {
-    if (!filters) return 0
-    let n = 0
-    if (filters.artists?.length) n += filters.artists.length
-    if (filters.sortBy !== 'featured') n += 1
-    return n
-  }, [filters])
 
   useEffect(() => {
     if (!isOpen || !onLoadMore || !hasMore) return
@@ -673,28 +664,6 @@ export function ArtworkPickerSheet({
                     Season 2
                   </button>
                 </div>
-              )}
-              {onFilterOpen && onFilterClose && filters && onFiltersChange && (
-                <button
-                  type="button"
-                  onClick={onFilterOpen}
-                  className={cn(
-                    'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0 md:hidden',
-                    hasActiveFilters(filters)
-                      ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
-                      : theme === 'light'
-                        ? 'bg-card text-muted-foreground border-border hover:border-border hover:bg-muted'
-                        : 'bg-[#201c1c] text-[#d4b8b8] border-[#3e3838] hover:border-[#4a4444] hover:bg-[#262222]'
-                  )}
-                  aria-label="Open filters"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-card text-foreground ring-1 ring-border text-[10px] flex items-center justify-center font-bold leading-none">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
               )}
               {showDoneButton && (
               <button
@@ -894,7 +863,7 @@ export function ArtworkPickerSheet({
             </div>
 
             {/* Mobile bottom bar: Season 1/2 + Filter */}
-            {(onSeasonChange || (onFilterOpen && onFilterClose && filters && onFiltersChange)) && (
+            {onSeasonChange && (
               <div className={cn(
                 'md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 border-t border-border bg-experience-surface/80 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]'
               )}>
@@ -938,28 +907,6 @@ export function ArtworkPickerSheet({
                       Season 2
                     </button>
                   </div>
-                )}
-                {onFilterOpen && onFilterClose && filters && onFiltersChange && (
-                  <button
-                    type="button"
-                    onClick={onFilterOpen}
-                    className={cn(
-                      'relative flex items-center justify-center w-11 h-11 rounded-lg text-sm font-medium transition-colors border flex-shrink-0',
-                      hasActiveFilters(filters)
-                        ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
-                        : theme === 'light'
-                          ? 'bg-card text-muted-foreground border-border hover:border-border hover:bg-muted'
-                          : 'bg-[#201c1c] text-[#d4b8b8] border-[#3e3838] hover:border-[#4a4444] hover:bg-[#262222]'
-                    )}
-                    aria-label="Open filters"
-                  >
-                    <SlidersHorizontal className="w-5 h-5" />
-                    {activeFilterCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] px-1 rounded-full bg-card text-foreground ring-1 ring-border text-[11px] flex items-center justify-center font-bold leading-none">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
                 )}
               </div>
             )}
