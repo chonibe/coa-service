@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
@@ -54,11 +54,21 @@ export function ShopUnifiedTopBar({
     null
   )
 
+  const ensureSlideoutMenuLoaded = useCallback(() => {
+    if (SlideoutMenu) return
+    import('./ShopSlideoutMenu').then((m) => setSlideoutMenu(() => m.ShopSlideoutMenu))
+  }, [SlideoutMenu])
+
   useEffect(() => {
     if (menuOpen && !SlideoutMenu) {
-      import('./ShopSlideoutMenu').then((m) => setSlideoutMenu(() => m.ShopSlideoutMenu))
+      ensureSlideoutMenuLoaded()
     }
-  }, [menuOpen, SlideoutMenu])
+  }, [menuOpen, SlideoutMenu, ensureSlideoutMenuLoaded])
+
+  useEffect(() => {
+    const id = window.setTimeout(() => ensureSlideoutMenuLoaded(), 150)
+    return () => window.clearTimeout(id)
+  }, [ensureSlideoutMenuLoaded])
 
   const header = (
     <header
@@ -85,7 +95,12 @@ export function ShopUnifiedTopBar({
         </Link>
         <button
           type="button"
-          onClick={() => setMenuOpen(true)}
+          onClick={() => {
+            ensureSlideoutMenuLoaded()
+            setMenuOpen(true)
+          }}
+          onMouseEnter={ensureSlideoutMenuLoaded}
+          onTouchStart={ensureSlideoutMenuLoaded}
           aria-label="Open menu"
           className="inline-flex items-center justify-center p-2 -m-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
         >

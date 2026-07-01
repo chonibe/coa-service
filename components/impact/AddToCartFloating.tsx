@@ -49,7 +49,7 @@ const AddToCartFloating = React.forwardRef<HTMLDivElement, AddToCartFloatingProp
         <div
           ref={ref}
           className={cn(
-            'hidden lg:block fixed bottom-6 right-6 z-40',
+            'hidden lg:block fixed bottom-6 left-6 z-40',
             'w-80 bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl',
             'border border-border p-6',
             'opacity-100 scale-100 transition-all duration-300 ease-out',

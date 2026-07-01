@@ -1180,6 +1180,35 @@ export function ExperienceV2Client({
     [activeStripProducts, handleLampSelect, lamp.id, carouselStripMode, bumpReelAlign]
   )
 
+  const handleBundlePreviewArtworkSelect = useCallback(
+    (product: ShopifyProduct) => {
+      bumpReelAlign()
+      setPreviewSlideIndex(1)
+      setDisplayedProduct(product)
+
+      const idx = activeStripProducts.findIndex((p) => p.id === product.id)
+      if (idx >= 0) setActiveCarouselIndex(idx)
+
+      setLampPreviewOrder((prevLamp) => {
+        const newOrder =
+          prevLamp.length >= 2
+            ? currentFrontSideRef.current === 'A'
+              ? [product.id, prevLamp[1]!]
+              : [prevLamp[0]!, product.id]
+            : prevLamp.length === 1
+              ? currentFrontSideRef.current === 'A'
+                ? [product.id, prevLamp[0]!]
+                : [prevLamp[0]!, product.id]
+              : [product.id]
+        const sideToShow = getSideToShowForProduct(newOrder, product.id)
+        setRotateTrigger((t) => t + 1)
+        setRotateToSide(sideToShow)
+        return newOrder
+      })
+    },
+    [activeStripProducts, bumpReelAlign, getSideToShowForProduct]
+  )
+
   const handleBundleStripItemPress = useCallback(
     (index: number, product: ShopifyProduct) => {
       const isLampSlot = index === 0 || product.id === lamp.id
@@ -1204,17 +1233,15 @@ export function ExperienceV2Client({
         handleFeaturedBundleThumbAddArtwork(product)
         return
       }
-      const idx = activeStripProducts.findIndex((p) => p.id === product.id)
-      if (idx >= 0) handleTapCarouselItem(idx)
+      handleBundlePreviewArtworkSelect(product)
     },
     [
       lamp,
       lampQuantity,
       cartOrder,
-      activeStripProducts,
       handleFeaturedBundleThumbAddLamp,
       handleFeaturedBundleThumbAddArtwork,
-      handleTapCarouselItem,
+      handleBundlePreviewArtworkSelect,
       bumpReelAlign,
     ]
   )
