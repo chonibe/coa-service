@@ -679,7 +679,7 @@ export function ArtworkPickerSheet({
                   type="button"
                   onClick={onFilterOpen}
                   className={cn(
-                    'hidden md:flex relative items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0',
+                    'relative flex items-center justify-center w-9 h-9 rounded-lg text-xs font-medium transition-colors border flex-shrink-0 md:hidden',
                     hasActiveFilters(filters)
                       ? 'bg-neutral-900 dark:bg-[#262222] text-white border-neutral-900 dark:border-[#2c2828]'
                       : theme === 'light'

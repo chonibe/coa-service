@@ -1584,14 +1584,18 @@ export function ExperienceV2Client({
             handleOpenPicker()
           }}
           className={cn(
-            'absolute right-0 top-1/2 z-30 hidden -translate-y-1/2 rounded-l-xl border border-r-0 px-2 py-3 shadow-lg transition-colors lg:flex',
+            'absolute top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 px-3 py-3 shadow-lg transition-[right,background-color,color,border-color] duration-200 lg:flex',
             theme === 'light'
               ? 'bg-white/95 text-neutral-700 border-neutral-200 hover:bg-neutral-50'
               : 'bg-[#1f1a1a]/95 text-[#f0e8e8] border-[#3a3030] hover:bg-[#2a2323]'
           )}
+          style={{ right: isPickerOpen ? 'min(440px, 42vw)' : '0px' }}
           aria-label={isPickerOpen ? 'Collapse collection panel' : 'Open collection panel'}
           title={isPickerOpen ? 'Collapse collection panel' : 'Open collection panel'}
         >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">
+            Collection
+          </span>
           {isPickerOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
         </button>
       )}
