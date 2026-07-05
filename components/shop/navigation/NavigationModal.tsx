@@ -231,7 +231,7 @@ export const NavigationModal = React.forwardRef<HTMLDivElement, NavigationModalP
                         onAccountClick()
                         onClose()
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-3 bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-xl transition-colors"
+                      className="flex items-center gap-3 w-full px-4 py-3 bg-muted hover:bg-[#e5e5e5] rounded-xl transition-colors"
                     >
                       <User size={20} className="text-muted-foreground" />
                       <span className="font-medium text-foreground">My Account</span>
@@ -262,7 +262,7 @@ function NavMenuItem({ item, onNavigate }: NavMenuItemProps) {
 
   if (hasChildren) {
     return (
-      <div className="bg-[#f5f5f5] rounded-xl p-4">
+      <div className="bg-muted rounded-xl p-4">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -299,7 +299,7 @@ function NavMenuItem({ item, onNavigate }: NavMenuItemProps) {
     <Link
       href={item.href}
       onClick={onNavigate}
-      className="block bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-xl p-4 transition-colors"
+      className="block bg-muted hover:bg-[#e5e5e5] rounded-xl p-4 transition-colors"
     >
       <span className="font-semibold text-foreground">{item.label}</span>
     </Link>

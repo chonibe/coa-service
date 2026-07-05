@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 const TITLE = 'Blog — street art stories, drops & Street Collector updates'
 const DESCRIPTION =
-  'Stories behind the art, collector tips, limited edition drops, and updates from Street Collector — illuminated street art prints and independent artists.'
+  'Street art stories, artist notes, drop updates, and collector guidance from Street Collector.'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),

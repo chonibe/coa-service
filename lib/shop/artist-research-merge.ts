@@ -214,6 +214,39 @@ function sanitizeNarrativeText(value: string | undefined): string | undefined {
   return joined || undefined
 }
 
+const DE_AI_BIO_DROP_PATTERNS = [
+  /^the common thread is\b/i,
+  /^the materials change; the voice stays consistent\.?$/i,
+  /^the result is\b/i,
+  /^the transparency is part of the appeal\b/i,
+  /^the invitation is always the same:\b/i,
+  /^graphic, but never cold\.?$/i,
+  /^popular art in the best sense\b/i,
+  /^coastal confidence is built into everything\b/i,
+  /^people describe it like music you can see\.?$/i,
+  /^the work is genuinely\b/i,
+]
+
+function deAiNarrativeBio(value: string | undefined): string | undefined {
+  const cleaned = sanitizeNarrativeText(value)
+  if (!cleaned) return undefined
+
+  const paragraphs = cleaned
+    .split(/\n\s*\n+/)
+    .map((paragraph) => {
+      const sentences = paragraph
+        .split(/(?<=[.!?])\s+/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean)
+        .filter((sentence) => !DE_AI_BIO_DROP_PATTERNS.some((pattern) => pattern.test(sentence)))
+
+      return sentences.join(' ').trim()
+    })
+    .filter(Boolean)
+
+  return paragraphs.join('\n\n').trim() || cleaned
+}
+
 export function lookupArtistResearch(slug: string): RawArtistResearchRow | undefined {
   if (bySlug[slug]) return bySlug[slug]
   const base = slug.replace(/-\d+$/, '')
@@ -533,22 +566,22 @@ export function mergeShopifyCollectionBioWithResearch(
   const history = sanitizeNarrativeText(additionalHistory) || ''
   const researchBlock = story || history
 
-  if (!collection) return researchBlock || undefined
-  if (!researchBlock) return collection || undefined
+  if (!collection) return deAiNarrativeBio(researchBlock)
+  if (!researchBlock) return deAiNarrativeBio(collection)
 
   const cN = normalizeBioForDedup(collection)
   const rN = normalizeBioForDedup(researchBlock)
-  if (cN === rN) return researchBlock
-  if (rN.includes(cN)) return researchBlock
-  if (cN.includes(rN)) return collection.length >= researchBlock.length ? collection : researchBlock
+  if (cN === rN) return deAiNarrativeBio(researchBlock)
+  if (rN.includes(cN)) return deAiNarrativeBio(researchBlock)
+  if (cN.includes(rN)) return deAiNarrativeBio(collection.length >= researchBlock.length ? collection : researchBlock)
 
   const prefixLen = Math.min(120, cN.length)
   if (prefixLen >= 40 && cN.slice(0, prefixLen).length > 0) {
     const prefix = cN.slice(0, prefixLen)
-    if (rN.includes(prefix)) return researchBlock
+    if (rN.includes(prefix)) return deAiNarrativeBio(researchBlock)
   }
 
-  return `${researchBlock}\n\n${collection}`
+  return deAiNarrativeBio(`${researchBlock}\n\n${collection}`)
 }
 
 export function mergeResearchBio(slug: string, existingBio: string | undefined): string | undefined {

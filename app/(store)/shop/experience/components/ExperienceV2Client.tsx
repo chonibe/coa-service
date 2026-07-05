@@ -1613,7 +1613,7 @@ export function ExperienceV2Client({
           className={cn(
             'fixed top-24 z-[140] hidden items-center gap-2 rounded-l-2xl border border-r-0 px-4 py-3 shadow-2xl transition-[right,background-color,color,border-color,transform] duration-200 lg:flex',
             theme === 'light'
-              ? 'bg-white text-neutral-800 border-neutral-300 hover:bg-neutral-50'
+              ? 'bg-background text-neutral-800 border-neutral-300 hover:bg-neutral-50'
               : 'bg-[#1f1a1a] text-[#f5ecec] border-[#4a3b3b] hover:bg-[#2a2323]'
           )}
           style={{ right: isPickerOpen ? 'min(440px, 42vw)' : '0px' }}

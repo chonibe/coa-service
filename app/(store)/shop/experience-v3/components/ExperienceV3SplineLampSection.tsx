@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import { Info } from 'lucide-react'
 import { ComponentErrorBoundary } from '@/components/error-boundaries'
 import { cn } from '@/lib/utils'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
@@ -135,6 +136,10 @@ export function ExperienceV3SplineLampSection({
         >
           Your Collection
         </h2>
+        <div className="mb-4 flex items-center justify-center gap-2 text-center text-xs font-medium text-muted-foreground md:-mt-2 md:mb-6">
+          <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>click artwork tile to preview on lamp</span>
+        </div>
         <div className="relative mx-auto min-h-[min(64svh,680px)] w-full max-w-[min(100%,720px)] overflow-hidden rounded-xl bg-background md:min-h-[min(72svh,820px)]">
           {!splineReady ? (
             <button

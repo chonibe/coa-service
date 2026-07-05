@@ -23,6 +23,8 @@ export interface ExperienceCheckoutStickyBarProps {
   lampQuantity: number
   /** Artworks in the experience cart (excludes lamp). */
   selectedArtworks: ShopifyProduct[]
+  /** Currently presented artwork on the product preview, shown separately until added to cart. */
+  presentedProduct?: ShopifyProduct | null
   /** Lamp + artworks subtotal before promo (same basis as OrderBar). */
   orderSubtotal: number
   /** Opens the artwork picker; **empty collection** row uses it for “Create your own bundle”; **≥1 artwork** uses centered FAB. */
@@ -220,6 +222,7 @@ export function ExperienceCheckoutStickyBar({
   lamp,
   lampQuantity,
   selectedArtworks,
+  presentedProduct = null,
   orderSubtotal,
   onOpenPicker,
   onViewLampDetail,
@@ -255,6 +258,14 @@ export function ExperienceCheckoutStickyBar({
   }, [orderDrawerOpen, pickerEngaged, lampQuantity, selectedArtworks.length])
 
   const hasArtworks = selectedArtworks.length >= 1
+  const presentedArtwork =
+    presentedProduct && presentedProduct.id !== lamp.id
+      ? presentedProduct
+      : null
+  const presentedArtworkInCart = presentedArtwork
+    ? selectedArtworks.some((product) => product.id === presentedArtwork.id)
+    : false
+  const showPresentedArtwork = Boolean(presentedArtwork && !presentedArtworkInCart)
   const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
   /** Lamp in experience cart but user still needs to pick artwork(s). */
   const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
@@ -264,10 +275,10 @@ export function ExperienceCheckoutStickyBar({
   const visible = isCollectionButtonOnly
     ? Boolean(onCollectionButtonClick ?? onOpenPicker)
     : hideCollectionStrip && hideCheckoutPill
-      ? showThumbnails
+      ? showThumbnails || showPresentedArtwork
       : hideCollectionStrip
-        ? hasArtworks
-        : hasArtworks || showEmptyCollectionCta
+        ? hasArtworks || showPresentedArtwork
+        : hasArtworks || showPresentedArtwork || showEmptyCollectionCta
   const showPickerStrip = Boolean(onOpenPicker) && !hideCollectionStrip && !isCollectionButtonOnly
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
 
@@ -415,7 +426,7 @@ export function ExperienceCheckoutStickyBar({
               (showPickerStrip || showThumbnails) && showCheckoutPill ? 'gap-3' : 'gap-0'
             )}
           >
-            {showPickerStrip || showThumbnails ? (
+            {showPickerStrip || showThumbnails || showPresentedArtwork ? (
               <div
                 className={cn(
                   'flex w-full min-w-0 items-center gap-3',
@@ -423,45 +434,73 @@ export function ExperienceCheckoutStickyBar({
                 )}
               >
                 {showThumbnails ? (
-                  <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide pt-1">
-                    <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
-                      {slots.map((slot, index) => {
-                        const showLampPreviewEye =
-                          !slot.isLamp &&
-                          lampPreviewProductIds.length > 0 &&
-                          lampPreviewProductIds.includes(slot.product.id)
-                        return (
-                          <Fragment key={slot.key}>
-                            {index > 0 && <PlusSep theme={theme} />}
-                            <div className="flex shrink-0 flex-col items-center gap-0.5">
-                              <div className="flex h-[15px] w-full shrink-0 items-end justify-center">
-                                {showLampPreviewEye ? <LampPreviewEyeBadge theme={theme} /> : null}
-                              </div>
-                              <StickyThumb
-                                product={slot.product}
-                                isLamp={slot.isLamp}
-                                theme={theme}
-                                onSplinePreviewPress={
-                                  onSelectThumbnailForSpline
-                                    ? () => onSelectThumbnailForSpline(slot.product)
-                                    : undefined
-                                }
-                                isSplinePreviewSelected={
-                                  !!previewSelectedProductId &&
-                                  previewSelectedProductId === slot.product.id
-                                }
-                                onDetailPress={
-                                  onSelectThumbnailForSpline
-                                    ? undefined
-                                    : slot.isLamp && onViewLampDetail
-                                      ? () => onViewLampDetail(slot.product)
+                  <div className="min-w-0 flex-1 rounded-2xl border border-experience-cta/60 bg-background/80 px-3 py-2">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-experience-cta">
+                      Your selected items
+                    </div>
+                    <div className="min-w-0 overflow-x-auto scrollbar-hide pt-1">
+                      <div className="flex w-max max-w-full min-w-0 items-center gap-1.5 pr-1">
+                        {slots.map((slot, index) => {
+                          const showLampPreviewEye =
+                            !slot.isLamp &&
+                            lampPreviewProductIds.length > 0 &&
+                            lampPreviewProductIds.includes(slot.product.id)
+                          return (
+                            <Fragment key={slot.key}>
+                              {index > 0 && <PlusSep theme={theme} />}
+                              <div className="flex shrink-0 flex-col items-center gap-0.5">
+                                <div className="flex h-[15px] w-full shrink-0 items-end justify-center">
+                                  {showLampPreviewEye ? <LampPreviewEyeBadge theme={theme} /> : null}
+                                </div>
+                                <StickyThumb
+                                  product={slot.product}
+                                  isLamp={slot.isLamp}
+                                  theme={theme}
+                                  onSplinePreviewPress={
+                                    onSelectThumbnailForSpline
+                                      ? () => onSelectThumbnailForSpline(slot.product)
                                       : undefined
-                                }
-                              />
-                            </div>
-                          </Fragment>
-                        )
-                      })}
+                                  }
+                                  isSplinePreviewSelected={
+                                    !!previewSelectedProductId &&
+                                    previewSelectedProductId === slot.product.id
+                                  }
+                                  onDetailPress={
+                                    onSelectThumbnailForSpline
+                                      ? undefined
+                                      : slot.isLamp && onViewLampDetail
+                                        ? () => onViewLampDetail(slot.product)
+                                        : undefined
+                                  }
+                                />
+                              </div>
+                            </Fragment>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {showPresentedArtwork && presentedArtwork ? (
+                  <div className="shrink-0 rounded-2xl border border-border/70 bg-background/80 px-2.5 py-2">
+                    <div className="flex items-center gap-2">
+                      <StickyThumb
+                        product={presentedArtwork}
+                        isLamp={false}
+                        theme={theme}
+                        onSplinePreviewPress={
+                          onSelectThumbnailForSpline
+                            ? () => onSelectThumbnailForSpline(presentedArtwork)
+                            : undefined
+                        }
+                        isSplinePreviewSelected={
+                          !!previewSelectedProductId &&
+                          previewSelectedProductId === presentedArtwork.id
+                        }
+                      />
+                      <span className="max-w-[140px] truncate rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground ring-1 ring-border/70">
+                        {presentedArtwork.title}
+                      </span>
                     </div>
                   </div>
                 ) : null}

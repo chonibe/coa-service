@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Buy a Gift Card',
   description:
-    'Give the gift of art. Digital gift cards from The Street Collector are redeemable at checkout when purchasing artwork.',
+    'Digital gift cards for Street Collector, redeemable at checkout for artworks and related products.',
   alternates: { canonical: '/shop/gift-cards' },
 }
 

@@ -39,7 +39,7 @@ export const experienceV3ArtworkInfoTabs: ExperienceV3ProductInfoTab[] = [
     id: 'edition',
     label: 'Edition',
     paragraphs: [
-      'Street Collector releases artworks in strictly limited runs. Once an edition closes, it is never reprinted.',
+      'Street Collector releases artworks in limited runs and closes them for good. When an edition is done here, it is done.',
     ],
     bullets: [
       'Typically 44 editions per design',
@@ -52,7 +52,7 @@ export const experienceV3ArtworkInfoTabs: ExperienceV3ProductInfoTab[] = [
     id: 'guarantee',
     label: 'Guarantee',
     paragraphs: [
-      'We stand behind every order from checkout to your wall.',
+      'If something is wrong, we handle it. You should not be left negotiating with a dead tracking page and a damaged box.',
     ],
     bullets: [
       '12-month guarantee on The Street Lamp hardware',

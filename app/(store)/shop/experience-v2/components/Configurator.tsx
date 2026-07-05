@@ -2288,7 +2288,7 @@ export function Configurator({
                   </svg>
                 </div>
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                  <span className={cn('text-xs font-semibold truncate', lampQuantity > 0 ? 'text-white' : 'text-neutral-950')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
+                  <span className={cn('text-xs font-semibold truncate', lampQuantity > 0 ? 'text-white' : 'text-foreground')}>Street {lampQuantity > 1 ? 'Lamps' : 'Lamp'}</span>
                   <button
                     type="button"
                     onClick={() => setDetailProduct(lamp)}

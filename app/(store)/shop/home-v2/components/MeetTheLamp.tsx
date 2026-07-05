@@ -64,7 +64,7 @@ export function MeetTheLamp() {
       >
         <div className={styles.eyebrow}>{meetLamp.eyebrow}</div>
         <h2 className={styles.sectionTitle}>
-          Designed for
+          Built to live
           <br />
           <em>{meetLamp.titleEmphasis}</em>
         </h2>
@@ -107,4 +107,3 @@ export function MeetTheLamp() {
     </section>
   )
 }
-

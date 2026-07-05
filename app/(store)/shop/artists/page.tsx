@@ -54,12 +54,12 @@ export default function ArtistsPage() {
         <SectionWrapper spacing="lg" background="default">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
-              <div className="h-12 bg-[#f5f5f5] rounded w-1/3 mx-auto" />
+              <div className="h-12 bg-muted rounded w-1/3 mx-auto" />
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div key={i} className="space-y-3">
-                    <div className="aspect-square bg-[#f5f5f5] rounded-full" />
-                    <div className="h-4 bg-[#f5f5f5] rounded w-2/3 mx-auto" />
+                    <div className="aspect-square bg-muted rounded-full" />
+                    <div className="h-4 bg-muted rounded w-2/3 mx-auto" />
                   </div>
                 ))}
               </div>
@@ -76,7 +76,7 @@ export default function ArtistsPage() {
         <Container maxWidth="default">
           <SectionHeader
             title="Our Artists"
-            subtitle="Discover the talented artists behind our limited edition artworks"
+            subtitle="Meet the artists behind the limited editions"
             alignment="center"
           />
           
@@ -88,7 +88,7 @@ export default function ArtistsPage() {
                 className="group text-center"
               >
                 {/* Artist Image */}
-                <div className="aspect-square rounded-full overflow-hidden bg-[#f5f5f5] mb-4 mx-auto max-w-[200px] ring-4 ring-transparent group-hover:ring-[#f0c417]/50 transition-all duration-300">
+                <div className="aspect-square rounded-full overflow-hidden bg-muted mb-4 mx-auto max-w-[200px] ring-4 ring-transparent group-hover:ring-[#f0c417]/50 transition-all duration-300">
                   {artist.image ? (
                     <img
                       src={getProxiedImageUrl(artist.image)}

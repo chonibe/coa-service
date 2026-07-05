@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Membership | Street Collector',
   description:
-    'Street Collector membership tiers, perks, and support for collectors. Compare plans and benefits.',
+    'Compare Street Collector membership plans, included perks, and collector support.',
   alternates: { canonical: '/shop/membership' },
 }
 

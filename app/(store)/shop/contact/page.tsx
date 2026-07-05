@@ -6,7 +6,7 @@ import { ContactFormClient } from './ContactFormClient'
 export const metadata: Metadata = {
   title: 'Contact Us',
   description:
-    'Get in touch with Street Collector. Questions about your order, our stores, or current collections? Our team is here and ready to help.',
+    'Contact Street Collector for order questions, support, and general inquiries.',
   alternates: { canonical: '/shop/contact' },
 }
 
@@ -23,7 +23,7 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="text-lg text-muted-foreground mb-10">
-              We love to hear from you. If you&apos;d like to get in touch about your online order, our stores, or current collections, our team is here and ready to help.
+              If you need help with an order, have a question about the collection, or just need the right person, write to us here.
             </p>
           </ScrollReveal>
 
@@ -39,7 +39,7 @@ export default function ContactPage() {
                     {CONTACT_EMAIL}
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">
-                    The quickest way to reach us. We aim to respond within 24 hours during business days.
+                    Usually the fastest way to reach us. We aim to reply within one business day.
                   </p>
                 </div>
                 <div>
@@ -48,13 +48,13 @@ export default function ContactPage() {
                     Monday to Friday: 8am – 8:30pm
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Average response time: 24h
+                    Typical response time: within 24 hours
                   </p>
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground mb-2">Personal Data Requests</h2>
                   <p className="text-muted-foreground">
-                    Our customer service team can also handle your personal data requests in relation to your rights stated in our Privacy Notice. You can write to us at the email above. If you wish to contact our Data Protection Officer, please include &quot;DPO&quot; in the subject line.
+                    You can also use this inbox for personal data requests covered by our Privacy Notice. If your message is for our Data Protection Officer, include &quot;DPO&quot; in the subject line.
                   </p>
                 </div>
               </div>

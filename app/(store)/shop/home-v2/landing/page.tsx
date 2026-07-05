@@ -19,7 +19,7 @@ import { JsonLd } from '@/components/seo/JsonLd'
 const LANDING_TITLE =
   'Street Collector — Not Just a Lamp. A Living Art Collection.'
 const LANDING_DESCRIPTION =
-  'A premium backlit lamp with interchangeable street art prints from artists worldwide. Collect. Swap. Own something truly original.'
+  'A backlit lamp built for interchangeable street art prints. Collect, swap, and build the collection over time.'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
@@ -118,4 +118,3 @@ export default function HomeV2LandingPage() {
     </div>
   )
 }
-

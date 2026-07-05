@@ -48,9 +48,9 @@ export function ButtonRotate({
   // Variant styles (matching Osmo's theme variants)
   const variantClasses = {
     primary: 'bg-[#1a1a1a] text-white hover:bg-[#2c2c2c]',
-    secondary: 'bg-[#f5f5f5] text-[#1a1a1a] hover:bg-[#e5e5e5]',
-    outline: 'bg-transparent border-2 border-[#1a1a1a] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white',
-    neutral: 'bg-[#e5e5e5] text-[#1a1a1a] hover:bg-[#d5d5d5]',
+    secondary: 'bg-muted text-foreground hover:bg-accent',
+    outline: 'border-2 border-border bg-transparent text-foreground hover:bg-foreground hover:text-background',
+    neutral: 'bg-accent text-foreground hover:bg-accent/80',
     electric: 'bg-[#6840ff] text-white hover:bg-[#5830ee]',
     purple: 'bg-[#803cee] text-white hover:bg-[#6b2fd4]',
     coral: 'bg-[#ff6b6b] text-white hover:bg-[#ee5555]',

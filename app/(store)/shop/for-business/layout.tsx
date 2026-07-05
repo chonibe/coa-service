@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'For Business - B2B Gifting & Custom Photo Tiles | Street Collector',
   description:
-    'Special B2B packages for gifting, hospitality, offices, and galleries. Custom photo tiles with bulk discounts and expert support.',
+    'Business orders for gifting, hospitality, offices, and galleries, with custom pieces and bulk support.',
   alternates: { canonical: '/shop/for-business' },
 }
 

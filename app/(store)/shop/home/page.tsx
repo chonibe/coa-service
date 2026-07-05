@@ -24,8 +24,8 @@ import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Street Collector - One Lamp, Endless Inspiration',
-  description: 'Discover limited edition artworks for the Street Lamp. Collect, swap, and inspire with illuminated art from artists worldwide.',
+  title: 'Street Collector - One Lamp, Endless Rotation',
+  description: 'Browse limited edition artworks for the Street Lamp and build a collection you can swap over time.',
   alternates: { canonical: '/shop/home' },
 }
 

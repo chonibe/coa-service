@@ -726,7 +726,7 @@ export function AddressModal({
 
             {/* Drag handle — mobile only */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-              <div className={cn('w-10 h-1 rounded-full', isDark ? 'bg-white/20' : 'bg-neutral-300')} />
+              <div className={cn('w-10 h-1 rounded-full', isDark ? 'bg-background/20' : 'bg-neutral-300')} />
             </div>
 
             {/* Header */}
@@ -748,7 +748,7 @@ export function AddressModal({
               >
                 <X className="h-5 w-5" />
               </button>
-              <Dialog.Title className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-neutral-950')}>
+              <Dialog.Title className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-foreground')}>
                 Add Address
               </Dialog.Title>
               <div className="w-9" />
@@ -859,11 +859,11 @@ export function AddressModal({
 
               {/* Divider */}
               <div className="flex items-center gap-3 mb-4">
-                <div className={cn('flex-1 h-px', isDark ? 'bg-white/10' : 'bg-neutral-200')} />
+                <div className={cn('flex-1 h-px', isDark ? 'bg-background/10' : 'bg-neutral-200')} />
                 <span className={cn('text-xs shrink-0', isDark ? 'text-[#b89090]' : 'text-neutral-400')}>
                   or enter below
                 </span>
-                <div className={cn('flex-1 h-px', isDark ? 'bg-white/10' : 'bg-neutral-200')} />
+                <div className={cn('flex-1 h-px', isDark ? 'bg-background/10' : 'bg-neutral-200')} />
               </div>
 
               {/* Validation error banner */}
@@ -1359,7 +1359,7 @@ export function AddressModal({
               >
                 <X className="h-5 w-5" />
               </button>
-              <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-neutral-950')}>
+              <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-foreground')}>
                 Select country
               </span>
             </div>
@@ -1451,7 +1451,7 @@ export function AddressModal({
                 >
                   <X className="h-5 w-5" />
                 </button>
-                <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-neutral-950')}>
+                <span className={cn('text-base font-semibold', isDark ? 'text-white' : 'text-foreground')}>
                   Phone country code
                 </span>
               </div>

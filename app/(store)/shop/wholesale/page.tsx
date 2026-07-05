@@ -6,7 +6,7 @@ import { Check } from 'lucide-react'
 export const metadata: Metadata = {
   title: 'Wholesale',
   description:
-    'Partner with Street Collector. We collaborate with concept stores, museum shops, galleries, and design-led spaces. Wholesale partnerships reviewed by alignment.',
+    'Wholesale partnerships for concept stores, museum shops, galleries, and design-led retail spaces.',
   alternates: { canonical: '/shop/wholesale' },
 }
 

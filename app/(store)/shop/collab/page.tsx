@@ -6,7 +6,7 @@ import { MutedVideo } from '@/components/MutedVideo'
 export const metadata: Metadata = {
   title: 'Affiliate Program',
   description:
-    'Collect culture. Earn with it. Join the Street Collector affiliate program—start with 10% commission. Top performers unlock higher tiers.',
+    'Join the Street Collector affiliate program. Start at 10% commission, with higher tiers for stronger partners.',
   alternates: { canonical: '/shop/collab' },
 }
 
@@ -85,7 +85,7 @@ export default function CollabPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-[#f5f5f5] p-8 sm:p-10 text-center">
+            <div className="rounded-2xl bg-muted p-8 sm:p-10 text-center">
               <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                 Street Collector
               </p>

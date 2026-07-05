@@ -69,7 +69,7 @@ export function NavCart({
 
       {/* Free Shipping Progress — only when admin tiered shipping is enabled */}
       {!isEmpty && showTieredFreeShippingBar && remainingForFreeShipping > 0 && (
-        <div className="mb-4 p-3 bg-[#f5f5f5] rounded-xl">
+        <div className="mb-4 p-3 bg-muted rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground">
               {remainingForFreeShipping > 0
@@ -92,7 +92,7 @@ export function NavCart({
       {/* Empty State */}
       {isEmpty && (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#f5f5f5] rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
             <ShoppingBag className="text-muted-foreground" size={28} />
           </div>
           <h4 className="font-semibold text-foreground mb-1">Your cart is empty</h4>
@@ -176,7 +176,7 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
       {/* Image */}
       <Link
         href={`/shop/${item.handle}`}
-        className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-[#f5f5f5]"
+        className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted"
       >
         {item.image && (
           <img
@@ -213,7 +213,7 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
             <button
               type="button"
               onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
-              className="p-1 hover:bg-[#f5f5f5] rounded transition-colors"
+              className="p-1 hover:bg-muted rounded transition-colors"
               aria-label="Decrease quantity"
             >
               <Minus size={14} className="text-muted-foreground" />
@@ -230,7 +230,7 @@ function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
                 )
               }
               disabled={item.maxQuantity ? item.quantity >= item.maxQuantity : false}
-              className="p-1 hover:bg-[#f5f5f5] rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-1 hover:bg-muted rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
             >
               <Plus size={14} className="text-muted-foreground" />

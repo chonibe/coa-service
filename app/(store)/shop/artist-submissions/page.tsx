@@ -62,24 +62,24 @@ export default function ArtistSubmissionsPage() {
               prose-ul:text-muted-foreground prose-li:my-1
             ">
               <p className="mb-6">
-                We&apos;re always on the lookout for bold, creative voices who challenge the status quo, push boundaries, and bring raw, powerful art to life. Whether you&apos;re an emerging artist or an established creator, this is your chance to have your work featured in our curated collection and displayed on lamps that bridge the gap between art, culture, and connection.
+                We look for artists with a clear point of view and work that holds up beyond a single image. If your practice fits the Street Collector roster, send it through. We review both emerging and established artists.
               </p>
 
               <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">How to Get Involved</h2>
               <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li><strong>Submit Your Details:</strong> Share your portfolio and tell us about your journey, your inspiration, and why your work belongs in The Street Lamp collection.</li>
-                <li><strong>Enter Open Calls & Competitions:</strong> Stay tuned for opportunities to showcase your art in special edition collections or be featured as a highlighted artist.</li>
-                <li><strong>Be Part of Something Bigger:</strong> If selected, your art will be celebrated by a global community of seekers, collectors, and creators who value authenticity and connection.</li>
+                <li><strong>Submit your details:</strong> Send your portfolio and a short note about your work.</li>
+                <li><strong>Watch for open calls:</strong> Some editions and features are built through specific calls or competitions.</li>
+                <li><strong>If selected:</strong> We will reach out about fit, timing, and how the work would enter the collection.</li>
               </ol>
 
               <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">What We&apos;re Looking For</h2>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Unique styles and fresh perspectives.</li>
-                <li>Art that tells a story or sparks a connection.</li>
-                <li>Work rooted in authenticity, creativity, and raw expression.</li>
+                <li>A distinct visual language.</li>
+                <li>Work that still feels strong in edition form.</li>
+                <li>Artists with a real practice behind the images.</li>
               </ul>
               <p className="mt-6">
-                We believe art is about more than just aesthetics—it&apos;s about bridging the gap between people, cultures, and experiences. If your work embodies this vision, we want to hear from you.
+                If the work feels right for the platform, we want to see it.
               </p>
             </div>
           </ScrollReveal>
@@ -88,7 +88,7 @@ export default function ArtistSubmissionsPage() {
             {status === 'success' ? (
               <div className="rounded-xl bg-[#00a341]/10 border border-[#00a341]/30 p-8 text-center">
                 <p className="text-lg font-medium text-[#00a341] mb-2">Thank you for your submission!</p>
-                <p className="text-muted-foreground">We&apos;ll review your portfolio and get back to you soon.</p>
+                <p className="text-muted-foreground">We&apos;ll review it and get back to you if there&apos;s a fit.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">

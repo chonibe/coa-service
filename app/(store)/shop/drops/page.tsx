@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
   title: 'All drops — limited edition street art | Street Collector',
   description:
-    'Browse every active drop: ladder stage, pricing, and availability. Limited edition prints from independent street artists.',
+    'Browse active drops by stage, price, and availability. Limited edition prints from independent artists.',
   alternates: { canonical: '/shop/drops' },
   openGraph: {
     title: 'All drops | Street Collector',
-    description: 'Limited edition street art drops — filter by ladder stage and discover artists.',
+    description: 'Browse limited edition drops by stage, price, and availability.',
     url: '/shop/drops',
     siteName: 'Street Collector',
     type: 'website',

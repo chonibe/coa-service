@@ -65,7 +65,7 @@ export function StepsSection() {
       >
         <div className={styles.eyebrow}>{steps.eyebrow}</div>
         <h2 className={styles.sectionTitle}>
-          Bringing art into
+          Real art,
           <br />
           <em>{steps.titleEmphasis}</em>
         </h2>
@@ -143,4 +143,3 @@ export function StepsSection() {
     </section>
   )
 }
-

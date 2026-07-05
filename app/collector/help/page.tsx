@@ -19,25 +19,25 @@ const helpArticles = [
   {
     id: "1",
     title: "Getting Started with Your Collector Account",
-    content: "Welcome to Street Collector! Start by exploring our marketplace to find artworks you love. Each purchase earns you credits that you can use to customize your InkOGatchi avatar or unlock exclusive perks.",
+    content: "Start by browsing the collection and saving or buying the pieces you want to keep track of. Purchases add credits to your account, which you can use for InkOGatchi items and collector perks.",
     category: "Getting Started",
   },
   {
     id: "2",
     title: "Understanding Credits and Rewards",
-    content: "You earn 10 credits for every dollar you spend on artworks. Credits can be used to purchase avatar items for your InkOGatchi or saved for future perks. Complete series to earn bonus credits!",
+    content: "You earn 10 credits for every dollar spent on artworks. Keep them for InkOGatchi items, use them on perks, or build them up by completing a full series.",
     category: "Credits",
   },
   {
     id: "3",
     title: "Setting Up Your InkOGatchi Avatar",
-    content: "Your InkOGatchi avatar evolves as you collect. Start as a Rookie Can and progress through Tagger, Artist, and Legend stages. Customize your avatar with items from the shop using credits.",
+    content: "Your InkOGatchi changes as your collection grows. You start small, move through the stages over time, and can customize the avatar with items bought using credits.",
     category: "InkOGatchi",
   },
   {
     id: "4",
     title: "Authenticating Physical Artworks",
-    content: "When you receive a physical artwork, use the NFC tag to authenticate it. Simply scan the tag with your device to verify ownership and unlock digital certificates. You'll earn 500 bonus credits for each authentication!",
+    content: "When a physical artwork arrives, scan the NFC tag with your device to verify ownership and unlock its digital certificate. Each completed authentication adds 500 bonus credits to your account.",
     category: "Authentication",
   },
 ]
@@ -45,32 +45,32 @@ const helpArticles = [
 const faqs: FAQ[] = [
   {
     question: "What are credits?",
-    answer: "Credits are rewards you earn for purchases and activities. You get 10 credits per dollar spent. Use them to customize your InkOGatchi avatar or unlock exclusive perks like free lamps and proof prints.",
+    answer: "Credits are the rewards tied to your account activity. You earn 10 per dollar spent, then use them on InkOGatchi items or collector perks such as proof prints and lamps.",
     category: "Credits",
   },
   {
     question: "How do I authenticate physical artworks?",
-    answer: "Physical artworks come with NFC tags. Use your device to scan the tag, which will verify your ownership and generate a digital certificate. Each authentication earns you 500 bonus credits!",
+    answer: "Physical artworks come with NFC tags. Scan the tag with your device to verify ownership and generate the digital certificate. Each authentication also adds 500 bonus credits.",
     category: "Authentication",
   },
   {
     question: "What happens when I complete a series?",
-    answer: "When you collect all artworks in a series, you'll automatically receive 1,000 bonus credits! Series completion is tracked automatically, and you can view your progress in the Series Binder section of your dashboard.",
+    answer: "Once you collect every artwork in a series, the account adds a 1,000-credit bonus automatically. You can track progress in the Series Binder on your dashboard.",
     category: "Series",
   },
   {
     question: "How do perks work?",
-    answer: "Perks are exclusive rewards unlocked based on your total credits earned. For example, unlock a free lamp at 2,550 credits or a free proof print at 240 credits. Check your perks page to see what's available.",
+    answer: "Perks unlock as your credit total grows. For example, certain thresholds can open rewards like a free proof print or a lamp. Your perks page shows what is currently available to claim.",
     category: "Perks",
   },
   {
     question: "Can I share my collection?",
-    answer: "Yes! You can share your collection with friends. Use the share feature on your profile page to generate a referral link. When friends sign up with your link, you both get bonus credits!",
+    answer: "Yes. Use the share option on your profile to generate a referral link. If someone signs up through it, both of you receive bonus credits.",
     category: "Sharing",
   },
   {
     question: "How do I contact support?",
-    answer: "You can contact support by emailing support@thestreetcollector.com. We typically respond within 24 hours during business days. You can also check this help center for answers to common questions.",
+    answer: "Email support@thestreetcollector.com and we will usually get back to you within one business day. For quicker answers, it is also worth checking this help center first.",
     category: "Support",
   },
 ]
@@ -98,7 +98,7 @@ export default function CollectorHelpPage() {
     <PageContainer maxWidth="6xl" padding="lg">
       <PageHeader
         title="Help Center"
-        description="Find answers to common questions and learn how to make the most of your collection"
+        description="Answers to common collector questions, account help, and support details"
       />
 
       <div className="space-y-8 mt-8">
@@ -168,6 +168,7 @@ export default function CollectorHelpPage() {
             <CardContent className="py-12 text-center">
               <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">Video tutorials coming soon!</p>
+              
             </CardContent>
           </Card>
         </section>
@@ -177,7 +178,7 @@ export default function CollectorHelpPage() {
           <Card>
             <CardHeader>
               <CardTitle>Still Need Help?</CardTitle>
-              <CardDescription>Can't find what you're looking for? Contact our support team</CardDescription>
+              <CardDescription>If the answer is not here, send us a note and we will point you in the right direction.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">

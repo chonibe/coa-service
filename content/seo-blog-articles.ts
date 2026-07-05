@@ -39,12 +39,12 @@ function artistSpotlight(
     `${artistName} limited edition prints`,
     `Artist spotlight on ${artistName}: ${visualAngle} Browse the Street Collector profile and current limited edition works.`,
     ['Artist Spotlights', 'Limited Editions', 'Street Collector Artists'],
-    `<p><strong>${artistName} is an artist in the Street Collector roster based in ${location}.</strong> Their Street Collector profile is the place to browse current limited edition works, read the artist context, and understand why the work belongs in a collection rather than a generic decor feed.</p>
+    `<p><strong>${artistName} is an artist in the Street Collector roster based in ${location}.</strong> Their Street Collector profile is where the editions, biography, and current works stay tied together instead of getting flattened into another decor grid.</p>
 <blockquote><p><strong>At a glance:</strong> Start on the <a href="/shop/artists/${relatedSlug}">${artistName} artist page</a> for biography and SKU-level editions, widen discovery via <a href="/shop/explore-artists">artist directory</a> / <a href="/shop/products">available artworks</a>, and route display through <a href="/backlit-art-lamp">the backlit lamp</a> if you rotate prints over time.</p></blockquote>
 <p>${visualAngle}</p>
 <h2>What makes the work distinct?</h2>
 <p>${practice}</p>
-<p>The point is not only that the image looks strong in a product grid. The point is that the work carries a repeatable visual language: a way of using line, color, rhythm, surface, or character that lets a collector recognize the artist beyond a single release.</p>
+<p>What matters is whether the work stays recognizable beyond one good thumbnail. A real visual language survives repetition: line, rhythm, color, surface, character, whatever the artist keeps returning to until it becomes unmistakably theirs.</p>
 <h2>Why it works as a print</h2>
 <p>${collectorReason}</p>
 <p>Street Collector is built for this kind of translation. The artist page keeps the biography, works, and edition context together, while the lamp gives the print a physical display format that can rotate as the collection grows.</p>
@@ -141,15 +141,15 @@ const rawSeoBlogArticles: SyncedArticle[] = [
     'What Is an Illuminated Art Display?',
     'An illuminated art display presents artwork through light instead of only lighting it from the room. Street Collector uses the format for swappable limited edition prints.',
     ['Illuminated Art Display', 'Backlit Art Lamp', 'Street Collector'],
-    `<p><strong>An illuminated art display is a physical display that uses light as part of how the artwork is experienced.</strong> Instead of hanging a print and hoping the room lighting does the work, the display brings light into the object itself.</p>
+    `<p><strong>An illuminated art display uses light as part of the artwork instead of treating light as something that just happens to the room.</strong> You are not hanging a print and hoping the lamp across the room is kind to it. The light is built into the encounter.</p>
 <blockquote><p><strong>At a glance:</strong> Built-in light changes how ink and pigment read at night versus a passive frame—pair the idea with Street Collector&apos;s <a href="/backlit-art-lamp">backlit lamp</a> plus <a href="/interchangeable-art-prints">interchangeable prints</a> when you want rotation without new hardware.</p></blockquote>
-<p>Street Collector uses this idea for limited edition prints. The lamp is the display system; the artwork is the collectible layer that can change over time.</p>
+<p>Street Collector applies that idea to limited edition prints. The lamp is the display system. The artwork is the collectible part that can change over time.</p>
 <h2>How does an illuminated art display work?</h2>
-<p>The artwork sits in front of a light source, so color, line, and contrast are pushed forward from behind. This is especially effective for graphic art, street-influenced illustration, bold color fields, and artworks designed to hold attention after dark.</p>
+<p>The artwork sits in front of a light source, so color, line, and contrast are pushed from behind instead of relying on daylight or ceiling fixtures. Graphic work, street-influenced illustration, bold color fields, and high-contrast compositions tend to benefit most because they keep reading after dark.</p>
 <h2>Why is it different from a normal frame?</h2>
-<p>A frame protects and presents a print. An illuminated display changes the atmosphere of the print. The work becomes closer to a small installation: still collectible, still physical, but more active in the room.</p>
+<p>A frame presents a print. An illuminated display changes its behavior. The work feels closer to a small installation: still physical, still collectible, but more active in the room and less dependent on where the nearest lamp happens to be.</p>
 <h2>Why Street Collector uses a swappable format</h2>
-<p>Collectors change. Rooms change. Taste changes. Street Collector keeps the display reusable while letting collectors rotate limited edition prints by independent artists. That makes the first purchase feel less final and makes the collection easier to keep alive.</p>
+<p>Taste changes faster than furniture does. Street Collector keeps one display in play while collectors rotate limited edition prints by independent artists. The first purchase still matters, but it does not have to pin the room to one mood forever.</p>
 <p>Explore the <a href="/backlit-art-lamp">backlit art lamp</a>, browse <a href="/interchangeable-art-prints">interchangeable art prints</a>, or see <a href="/shop/products">current artworks</a>.</p>
 <h2>FAQ</h2>
 <h3>What is an illuminated art display?</h3>
@@ -164,17 +164,17 @@ const rawSeoBlogArticles: SyncedArticle[] = [
     'What Is a Backlit Art Lamp?',
     'A backlit art lamp is an illuminated display for artwork. Street Collector uses the format for swappable limited edition street art prints.',
     ['Backlit Art Lamp', 'Collecting Guides', 'Street Collector'],
-    `<p><strong>A backlit art lamp is an illuminated display that lights artwork from behind, turning a print into a glowing physical object.</strong> Street Collector uses this format for limited edition street art prints, so collectors can buy one lamp and rotate artworks by independent artists over time.</p>
+    `<p><strong>A backlit art lamp lights the artwork from behind, which changes the print from something you hang near a light source into something that makes its own presence.</strong> Street Collector uses that format for limited edition street art prints, so one lamp can keep pace with a changing collection.</p>
 <blockquote><p><strong>At a glance:</strong> Hardware stays fixed, artwork swaps—browse <a href="/shop/products">compatible editions</a>, map taste via <a href="/shop/explore-artists">artist pages</a>, and read SKU notes before assuming lamp fit.</p></blockquote>
-<p>Most people think about art in two familiar formats: framed prints on a wall or decorative lamps on a table. A backlit art lamp sits between those categories. It gives the artwork presence, color, and atmosphere while keeping the object useful in everyday rooms.</p>
+<p>Most people split these objects into two buckets: framed art on the wall, useful lamp on the table. A backlit art lamp lives in the overlap. It gives the print atmosphere without asking it to stop being art, and it keeps the object useful without reducing it to furniture.</p>
 <h2>How a backlit art lamp works</h2>
-<p>The artwork is placed in front of a light source, so color and detail are pushed forward instead of depending only on the light in the room. This can make strong shapes, linework, gradients, and high-contrast street art feel more vivid at night.</p>
-<p>Street Collector is designed around this idea: the lamp is the display system, and the artwork is the collectible layer. You can start with one print, then add new editions as your taste changes.</p>
+<p>The artwork sits in front of a light source, so color and detail stay visible even when the room gets dim. Strong shapes, linework, gradients, and high-contrast street art usually gain the most because they were already built to hit fast.</p>
+<p>Street Collector is built around that logic: the lamp is the display system, and the artwork is the collectible layer. Start with one print, then keep rotating as your taste shifts or the room asks for something else.</p>
 <h2>Why collectors use it instead of a normal frame</h2>
-<p>A frame is stable and traditional. A backlit art lamp is more flexible. It makes sense for collectors who want to live with physical art but also enjoy rotation, seasonal changes, new artists, and new moods in the same room.</p>
+<p>A frame is stable, which is good until stability starts feeling like inertia. A backlit art lamp is better suited to collectors who want to live with physical art but keep changing artists, moods, and seasonal placements without redoing the whole setup.</p>
 <p>The format is especially useful for street art, illustration, pop art, and graphic work because those styles often depend on color impact and immediate visual energy.</p>
 <h2>How Street Collector is different from a decor lamp</h2>
-<p>Street Collector is not only a lighting object. It is a collecting platform for limited edition artworks by independent artists. The lamp gives the work a display format, while the artist pages, product pages, and Certificate of Authenticity process help preserve the collecting context.</p>
+<p>Street Collector sells a lighting object, but it also keeps the collecting context intact. The lamp handles display; the artist pages, product records, and Certificate of Authenticity layer keep the work tied to its source instead of flattening it into anonymous decor.</p>
 <p>Collectors can browse the <a href="/shop/products">available artworks</a>, explore the <a href="/shop/explore-artists">artist directory</a>, and learn more about the format on the <a href="/backlit-art-lamp">backlit art lamp</a> category page.</p>
 <h2>Who is it for?</h2>
 <p>A backlit art lamp works well for people who want a first art collection, a compact display for a small apartment, a gift for someone visual, or a way to support independent artists without needing a gallery budget.</p>
@@ -196,7 +196,7 @@ const rawSeoBlogArticles: SyncedArticle[] = [
 <p>One thoughtfully chosen edition beats a pile of interchangeable posters. Spend your first budget proving you can articulate why the artist matters to you—not chasing resale stories that no serious platform guarantees.</p>
 <h2>Start with the artist, not only the jpeg</h2>
 <p>Street art inherits cities, symbolism, typography, humor, politics, and hand-drawn texture. Useful questions before you spend: Which motif repeats across the artist's catalogue? Does the biography match what you hear in the brush or vector choices? Would you still notice the piece after dinner when the room is quieter?</p>
-<p>The <a href="/shop/explore-artists">Street Collector artist directory</a> pushes that enquiry forward: biography, curated works, edition context, then product detail in one coherent path.</p>
+<p>The <a href="/shop/explore-artists">Street Collector artist directory</a> keeps that research in one place: biography, selected works, edition context, then the product page itself.</p>
 <h2>Treat edition data as mandatory reading</h2>
 <p>Limited editions spell out scarcity. Fifty prints behave differently than five hundred or an open-ended run. Signing, numbering, and proof notation change what you own—they are not ornamental footnotes.</p>
 <p>If you need terminology, pairing this guide with <a href="/shop/blog/what-is-a-limited-edition-print">the limited edition print explainer</a> keeps facts straight before purchase.</p>
@@ -219,15 +219,15 @@ const rawSeoBlogArticles: SyncedArticle[] = [
     'What Is a Certificate of Authenticity for Art?',
     'A Certificate of Authenticity records the essential facts about an artwork, including artist, title, edition, and provenance details.',
     ['Certificate of Authenticity', 'Art Provenance', 'Limited Editions'],
-    `<p><strong>A Certificate of Authenticity for art is a document that records the key facts that connect an artwork to its artist, edition, and ownership history.</strong> For limited edition prints, a COA helps collectors preserve provenance and understand exactly what they bought.</p>
+    `<p><strong>A Certificate of Authenticity records the facts that tie an artwork to its artist, edition, and buying trail.</strong> For limited edition prints, it matters because collectors should not have to rely on memory or screenshots to prove what they bought.</p>
 <blockquote><p><strong>At a glance:</strong> Treat the COA as one pillar—keep it beside receipts and product URLs. Offering depends on SKU; inspect each <a href="/shop/products">listing</a> for current documentation language.</p></blockquote>
-<p>Street Collector uses Certificate of Authenticity documentation where eligible because trust matters. A collector should not have to guess whether a print is part of an edition, who made it, or how to identify it later.</p>
+<p>Street Collector uses Certificate of Authenticity documentation where eligible because trust falls apart quickly when the records are vague. A collector should be able to tell who made the work, what edition it belongs to, and how to identify it later without starting a scavenger hunt.</p>
 <h2>What a good art certificate should include</h2>
-<p>A useful COA should identify the artist, artwork title, edition information, medium or format, date or release context, and the issuer. For numbered editions, the certificate should match the edition details shown on the product or artwork record.</p>
-<p>It should also be specific. A vague certificate that says only "authentic artwork" is weaker than a document tied to a clear artist, title, edition, and platform.</p>
+<p>A useful COA should identify the artist, the artwork title, the edition information, the format or medium, the release context, and the issuer. For numbered editions, it should match the product record exactly.</p>
+<p>Specificity is the difference between a useful certificate and a decorative one. “Authentic artwork” on its own does not help much. A named artist, named work, edition number, and linked record do.</p>
 <h2>Why certificates matter for limited edition prints</h2>
-<p>Limited edition prints depend on clarity. Collectors want to know how many were produced, whether the edition is finite, and how the work can be identified in the future. A COA is part of that trust layer.</p>
-<p>It does not replace the artwork itself, the artist story, or the buying record. It supports them. The strongest provenance comes from consistent records across the product page, receipt, certificate, and artist context.</p>
+<p>Limited edition prints depend on clarity. Collectors want to know how many were produced, whether the run is finite, and how the work can be tracked later. A COA is one part of that structure.</p>
+<p>A COA does not replace the artwork, the receipt, or the artist story. It works best when all of them line up and none of them contradict the others.</p>
 <h2>How Street Collector uses the trust layer</h2>
 <p>Street Collector connects <a href="/shop/products">product pages</a>, <a href="/shop/explore-artists">artist profiles</a>, edition details, and Certificate of Authenticity documentation into one collector journey. That matters for humans and for search systems trying to understand the entity behind each artwork.</p>
 <p>If you are new to collecting, start with the <a href="/limited-edition-street-art-prints">limited edition street art prints</a> hub and compare how each work is described.</p>
@@ -354,21 +354,21 @@ const rawSeoBlogArticles: SyncedArticle[] = [
 <h2>Berlin, London, Montreal comparisons</h2>
 <p>Pair him with <a href="/shop/blog/berlin-street-art-artists-street-collector">Berlin's graphic abrasion</a>, <a href="/shop/blog/london-street-art-artists-street-collector">London's portrait draftsmen</a>, or <a href="/shop/blog/amsterdam-street-art-and-illustration-artists">Amsterdam's design-led illustrators</a> when you want geographic contrast without leaving the roster.</p>
 <h2>Where to buy Ori Toor editions today</h2>
-<p>Start at the <a href="/shop/artists/ori-toor">Ori Toor artist page</a> for live inventory, numbering, Certificates of Authenticity where applicable. Broaden discovery through the <a href="/shop/explore-artists">artist directory</a> or curated <a href="/shop/products">available artworks feed</a>.</p>
+<p>Start at the <a href="/shop/artists/ori-toor">Ori Toor artist page</a> for live inventory, numbering, and Certificates of Authenticity where applicable. Broaden discovery through the <a href="/shop/explore-artists">artist directory</a> or the <a href="/shop/products">available artworks feed</a>.</p>
 <h2>FAQ</h2>
 <h3>Where can I buy Ori Toor prints?</h3>
 <p>Through Ori Toor's Street Collector storefront profile, linked above, where product cards echo the same edition storytelling you see in editorials.</p>
 <h3>Are Ori Toor releases limited editions?</h3>
 <p>Street Collector concentrates on finite artist-led runs. Exact counts, numbering, proofs live on individual listings—never assume scarcity without clicking into the SKU.</p>
 <h3>Why collect Ori Toor here versus scrolling social feeds?</h3>
-<p>Because the marketplace couples provenance tooling, interchangeable display hardware, SEO-ready editorial context—not just a transactional checkout.</p>`,
+<p>Because the marketplace keeps the work connected to provenance, artist context, and a display system built for repeat collecting instead of stopping at checkout.</p>`,
   ),
   artistSpotlight(
     'moritz-adam-schmitt-limited-edition-prints',
     'Moritz Adam Schmitt',
     'Cologne, Germany',
     'Moritz Adam Schmitt turns discipline into graphic force: bold outlines, flat color, and images that feel as direct as a good street poster.',
-    'His visual language grew from sustained daily practice, including a year-long icon project, and moved into illustration and design work with a precise vector finish. The result is clean without becoming cold.',
+    'His visual language grew from sustained daily practice, including a year-long icon project, and moved into illustration and design work with a precise vector finish. The surfaces stay clean, but the work never loses its pulse.',
     'Moritz Adam Schmitt prints carry immediate impact at lamp or wall scale. The forms read quickly, the colors hold their shape, and the work keeps the confidence of poster art without becoming anonymous.',
     'moritz-adam-schmitt',
   ),
@@ -442,9 +442,9 @@ const rawSeoBlogArticles: SyncedArticle[] = [
 <blockquote><p><strong>At a glance:</strong> Stable hardware (<a href="/backlit-art-lamp">Street Collector lamp</a>) plus <a href="/interchangeable-art-prints">interchangeable editions</a> keeps collecting elastic—verify each SKU for lamp compatibility inside listings.</p></blockquote>
 <p>This matters because taste changes. Rooms change. A first apartment becomes a different home. A collector who loves one print now may want a different mood later without replacing the whole object.</p>
 <h2>What problem does swappable art solve?</h2>
-<p>Traditional framing can make every print feel like a permanent decision. Swappable art lowers the friction. You can start with one artwork, then add new editions by other artists without needing a new frame, new wall plan, or new lighting setup each time.</p>
+<p>Traditional framing can make every print feel like a permanent decision. Swappable art loosens that pressure. Start with one artwork, then add new editions by other artists without redrawing the wall plan or buying another display every time.</p>
 <h2>How Street Collector makes art swappable</h2>
-<p>The Street Collector lamp is the stable display. The print is the changing layer. That means the product is not just one image; it is a system for living with a rotating collection of limited edition works.</p>
+<p>The Street Collector lamp stays fixed. The print changes. What you end up with is less a single object than a rotating collection that can keep pace with the room and with your taste.</p>
 <h2>Is swappable art still collectible?</h2>
 <p>Yes, if the works themselves are artist-led, editioned, and documented. Swapping the display does not make the print disposable. It simply means the collector can rotate what is visible while preserving the works they own.</p>
 <p>Explore <a href="/interchangeable-art-prints">interchangeable art prints</a>, the <a href="/backlit-art-lamp">backlit art lamp</a>, or browse <a href="/shop/explore-artists">Street Collector artists</a>.</p>
@@ -612,7 +612,7 @@ const rawSeoBlogArticles: SyncedArticle[] = [
     'Berlin Street Art Artists Through Street Collector',
     'Collect Berlin through Dima Korma and NASCA Uno roster pages—not mural tourism—paired with interchangeable limited editions.',
     ['City Guides', 'Street Collector Artists', 'Urban Art'],
-    `<p><strong>This is a collector-facing cut through Berlin, not another “Top 10 murals” checklist.</strong> Street Collector binds you to practitioners whose prints ship with finite editions, Certificates of Authenticity when applicable, and the same narratives you browse on curated artist hubs.</p>
+    `<p><strong>This is a collector-facing cut through Berlin, not another “Top 10 murals” checklist.</strong> Street Collector keeps the work tied to finite editions, Certificates of Authenticity where applicable, and the same artist context you see across the roster pages.</p>
 <blockquote><p><strong>Key takeaways:</strong> Anchor on <a href="/shop/artists/dima-korma">Dima Korma</a> when you crave scraped-paint collage energy. Pivot to <a href="/shop/artists/nasca-uno">NASCA Uno</a> for contemporary street figuration detached from souvenir photography. Logistics stay inside <a href="/shop/products">current artworks</a> so scarcity claims map to Shopify truth.</p></blockquote>
 <p>Berlin’s myth still sells wall tours; your collection should trade in studio facts: what each artist repeats in texture, typography, fragmentation, dusk palette. That specificity is why we stay inside verified roster bios instead of speculating about every wheatpaste alley.</p>
 <h2>Dima Korma: abrasion as collage</h2>
@@ -792,7 +792,7 @@ const rawSeoBlogArticles: SyncedArticle[] = [
     'Emerging Street Artists to Collect Through Street Collector',
     'A careful guide to discovering emerging and under-the-radar Street Collector artists without making hype-based investment claims.',
     ['Curations', 'Emerging Artists', 'Artist Spotlights'],
-    `<p><strong>Emerging artists are worth collecting when the work has a clear visual language, a credible practice, and a price that makes sense for the buyer.</strong> The point is not speculation. The point is discovering work early enough to build a personal connection.</p>
+    `<p><strong>Emerging artists are worth collecting when the work has a clear visual language, a credible practice, and a price that makes sense for the buyer.</strong> The better reason is not speculation. It is getting close enough to the work early on that the relationship still feels personal.</p>
 <blockquote><p><strong>At a glance:</strong> Reward momentum in studio output, catalogue cohesion, truthful pricing-not follower counts alone. Pivot to PDP proof before interpreting this list as buy advice.</p></blockquote>
 <h2>How to evaluate an emerging artist</h2>
 <p>Look for consistency, not fame. Does the artist return to certain forms, colors, symbols, or subjects? Does the work feel intentional across multiple pieces? Is there enough context to understand the practice?</p>

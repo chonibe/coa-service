@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Art series | Street Collector',
   description:
-    'Browse artwork series on Street Collector — track progress, discover collections, and shop limited editions.',
+    'Browse Street Collector series and follow grouped releases across limited editions.',
   alternates: { canonical: '/shop/series' },
 }
 

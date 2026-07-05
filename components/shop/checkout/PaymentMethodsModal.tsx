@@ -167,7 +167,7 @@ export function PaymentMethodsModal({
             />
             {showBillingSection && (
               <div className="mt-6 border-t border-neutral-200 dark:border-white/10 pt-6">
-                <h3 className="text-sm font-medium text-neutral-950 dark:text-white">Billing address</h3>
+                <h3 className="text-sm font-medium text-foreground">Billing address</h3>
                 <div className="mt-3 flex items-center gap-2">
                   <Checkbox
                     id="same-as-address"

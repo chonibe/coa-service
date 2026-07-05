@@ -99,7 +99,7 @@ export function PromoCodeModal({
               >
                 <X className="h-5 w-5" />
               </button>
-              <Dialog.Title className="text-lg font-semibold text-neutral-950 dark:text-white">Promo Codes</Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold text-foreground">Promo Codes</Dialog.Title>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -139,7 +139,7 @@ export function PromoCodeModal({
                       </svg>
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-neutral-950 dark:text-white">{appliedCode} (applied)</p>
+                      <p className="font-medium text-foreground">{appliedCode} (applied)</p>
                       {appliedDiscount > 0 && (
                         <p className="text-xs text-neutral-500 dark:text-[#c4a0a0]">-${appliedDiscount.toFixed(2)}</p>
                       )}
@@ -175,7 +175,7 @@ export function PromoCodeModal({
                         )}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-neutral-950 dark:text-white">
+                        <p className="font-medium text-foreground">
                           {p.code}{p.isDefault ? ' (default)' : ''}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-[#c4a0a0]">{p.description}</p>

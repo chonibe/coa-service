@@ -71,10 +71,10 @@ export default function SeriesPage() {
         <SectionWrapper spacing="md">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
-              <div className="h-32 bg-[#f5f5f5] rounded-[24px]" />
+              <div className="h-32 bg-muted rounded-[24px]" />
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="aspect-square bg-[#f5f5f5] rounded-[24px]" />
+                  <div key={i} className="aspect-square bg-muted rounded-[24px]" />
                 ))}
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function SeriesPage() {
                     />
                   ) : (
                     // Placeholder for upcoming artwork
-                    <div className="aspect-square rounded-[24px] bg-[#f5f5f5] overflow-hidden">
+                    <div className="aspect-square rounded-[24px] bg-muted overflow-hidden">
                       {artwork.image_url ? (
                         <img
                           src={artwork.image_url}

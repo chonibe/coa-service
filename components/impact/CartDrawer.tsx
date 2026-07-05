@@ -142,10 +142,10 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
           aria-modal="true"
           aria-label="Shopping cart"
           className={cn(
-            'fixed bottom-4 right-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
+            'fixed bottom-4 left-4 z-50 h-[calc(100%-2rem)] w-full max-w-md',
             'bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl',
             'border border-border',
-            'invisible pointer-events-none translate-x-full'
+            'invisible pointer-events-none -translate-x-full'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
@@ -260,18 +260,18 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                 {/* Order Notes */}
                 {onOrderNotesChange && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#1a1a1a]">
+                    <label className="text-sm font-medium text-foreground">
                       Order notes (optional)
                     </label>
                     <textarea
                       value={orderNotes}
                       onChange={(e) => onOrderNotesChange(e.target.value)}
                       placeholder="Special instructions for your order..."
-                      className="w-full px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-experience-highlight resize-none"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-experience-highlight resize-none"
                       rows={3}
                       maxLength={500}
                     />
-                    <p className="text-xs text-[#1a1a1a]/50 text-right">
+                    <p className="text-xs text-muted-foreground text-right">
                       {orderNotes.length}/500
                     </p>
                   </div>
@@ -280,7 +280,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                 {/* Promo Code */}
                 {onPromoCodeChange && onApplyPromo && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-[#1a1a1a]">
+                    <label className="text-sm font-medium text-foreground">
                       Promo code
                     </label>
                     <div className="flex gap-2">
@@ -289,7 +289,7 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
                         value={promoCode}
                         onChange={(e) => onPromoCodeChange(e.target.value.toUpperCase())}
                         placeholder="Enter code"
-                        className="flex-1 px-3 py-2 text-sm border border-[#1a1a1a]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-experience-highlight focus:border-transparent"
+                        className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-experience-highlight focus:border-transparent"
                       />
                       <button
                         type="button"
@@ -307,14 +307,14 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
 
                 {/* Subtotal */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[#1a1a1a]/60">Subtotal</span>
-                  <span className="text-lg font-semibold text-[#1a1a1a]">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-lg font-semibold text-foreground">
                     {cart ? formatPrice(cart.cost.subtotalAmount) : '-'}
                   </span>
                 </div>
 
                 {/* Shipping note */}
-                <p className="text-xs text-[#1a1a1a]/50">
+                <p className="text-xs text-muted-foreground">
                   Shipping and taxes calculated at checkout
                 </p>
 
@@ -363,7 +363,7 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
   return (
     <div className={cn('flex gap-4', updating && 'opacity-50')}>
       {/* Image */}
-      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-[12px] bg-[#f5f5f5]">
+      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-[12px] bg-muted">
         {merchandise.image ? (
           <img
             src={merchandise.image.url}
@@ -371,7 +371,7 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
@@ -383,15 +383,15 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
 
       {/* Details */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-[#1a1a1a] line-clamp-2">
+        <h3 className="font-medium text-foreground line-clamp-2">
           {merchandise.product.title}
         </h3>
         {merchandise.title !== 'Default Title' && (
-          <p className="text-sm text-[#1a1a1a]/60 mt-0.5">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {merchandise.title}
           </p>
         )}
-        <p className="text-sm font-semibold text-[#1a1a1a] mt-1">
+        <p className="mt-1 text-sm font-semibold text-foreground">
           {formatPrice(merchandise.price)}
         </p>
 
@@ -401,7 +401,7 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
             type="button"
             onClick={() => onUpdateQuantity(line.id, Math.max(0, quantity - 1))}
             disabled={updating || quantity <= 1}
-            className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded border border-border text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Decrease quantity"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -413,7 +413,7 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
             type="button"
             onClick={() => onUpdateQuantity(line.id, quantity + 1)}
             disabled={updating}
-            className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded border border-border text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Increase quantity"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -426,7 +426,7 @@ function CartLineItem({ line, onUpdateQuantity, onRemove, updating }: CartLineIt
             type="button"
             onClick={() => onRemove(line.id)}
             disabled={updating}
-            className="ml-auto p-1.5 text-[#1a1a1a]/40 hover:text-[#f83a3a] disabled:opacity-30 transition-colors"
+            className="ml-auto p-1.5 text-muted-foreground hover:text-[#f83a3a] disabled:opacity-30 transition-colors"
             aria-label="Remove item"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -460,7 +460,7 @@ const MiniCart = React.forwardRef<HTMLButtonElement, MiniCartProps>(
         ref={ref}
         type="button"
         onClick={onClick}
-        className="relative p-2 text-[#1a1a1a] hover:text-experience-highlight transition-colors"
+        className="relative p-2 text-foreground hover:text-experience-highlight transition-colors"
         aria-label={`Cart with ${count} items`}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -479,7 +479,7 @@ const MiniCart = React.forwardRef<HTMLButtonElement, MiniCartProps>(
           />
         </svg>
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-[#1a1a1a] rounded-full">
+          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-foreground rounded-full">
             {count > 99 ? '99+' : count}
           </span>
         )}

@@ -19,7 +19,7 @@ import { homepageContent } from '@/content/homepage'
 
 export const metadata: Metadata = {
   title: 'Osmo-Inspired Components - Street Collector',
-  description: 'Demo of Osmo-inspired GSAP components',
+  description: 'Component demo for Street Collector motion, cards, and FAQ patterns.',
   alternates: { canonical: '/shop/osmo-demo' },
 }
 
@@ -62,7 +62,7 @@ export default async function OsmoDemoPage() {
         {
           id: 'ship-1',
           question: 'Do you ship internationally?',
-          answer: 'Yes! We ship to most countries worldwide. Shipping costs and delivery times vary by location.',
+          answer: 'Yes. We ship to most countries, and shipping times and costs depend on the destination.',
           defaultOpen: true,
         },
         {
@@ -100,7 +100,7 @@ export default async function OsmoDemoPage() {
         {
           id: 'prod-1',
           question: 'Are your artworks limited edition?',
-          answer: 'Yes, all artworks are limited edition prints with certificates of authenticity.',
+          answer: 'Yes. The artworks are released as limited editions and include certificates of authenticity.',
         },
         {
           id: 'prod-2',

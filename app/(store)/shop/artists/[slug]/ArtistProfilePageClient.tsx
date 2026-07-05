@@ -71,6 +71,55 @@ function seasonFromTags(tags: string[]): string | undefined {
   return undefined
 }
 
+type ArtworkGalleryItem = {
+  url: string
+  label: string
+}
+
+function isLikelyNonArtworkAsset(value: string | undefined | null): boolean {
+  const hay = (value ?? '').toLowerCase()
+  if (!hay) return false
+  return [
+    'logo',
+    'icon',
+    'favicon',
+    'avatar',
+    'profile',
+    'brandmark',
+    'wordmark',
+    'badge',
+    'emoji',
+    'symbol',
+  ].some((token) => hay.includes(token))
+}
+
+function selectArtistArtworkGallery(
+  products: ShopifyProduct[],
+  fallbackGallery: Array<{ url: string; label?: string }> | undefined
+): ArtworkGalleryItem[] {
+  const seen = new Set<string>()
+  const fromProducts: ArtworkGalleryItem[] = []
+
+  for (const product of products) {
+    const url = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    fromProducts.push({ url, label: product.title })
+    if (fromProducts.length >= 2) return fromProducts
+  }
+
+  const fromFallback: ArtworkGalleryItem[] = []
+  for (const item of fallbackGallery ?? []) {
+    if (!item?.url || seen.has(item.url)) continue
+    if (isLikelyNonArtworkAsset(item.url) || isLikelyNonArtworkAsset(item.label)) continue
+    seen.add(item.url)
+    fromFallback.push({ url: item.url, label: item.label || 'Artwork' })
+    if (fromProducts.length + fromFallback.length >= 2) break
+  }
+
+  return [...fromProducts, ...fromFallback].slice(0, 2)
+}
+
 function bioParagraphs(bio: string | undefined): string[] {
   if (!bio?.trim()) return []
   const noTags = bio.replace(/<[^>]*>/g, ' ')
@@ -304,10 +353,13 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
     return [...map.entries()].sort((a, b) => b[0] - a[0])
   }, [profile.exhibitions])
 
-  const paragraphs = bioParagraphs(artist.bio)
-  const hasProcessGallery = (profile.processGallery?.length ?? 0) > 0
-  const hasImpactCallout = Boolean(profile.impactCallout?.trim())
-  const hasExclusiveCallout = Boolean(profile.exclusiveCallout?.trim())
+  const narrativeBio = artist.bio?.trim() || buildArtistAnswerFirstLead(artist)
+  const paragraphs = bioParagraphs(narrativeBio)
+  const artworkGallery = React.useMemo(
+    () => selectArtistArtworkGallery(artist.products, profile.processGallery),
+    [artist.products, profile.processGallery]
+  )
+  const hasProcessGallery = artworkGallery.length > 0
   const hasExhibitions = exhibitionsByYear.length > 0
   const hasPress = (profile.press?.length ?? 0) > 0
   const faqPairs = buildArtistFaqPairs(artist)
@@ -322,8 +374,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
       hasInstagramStats(mergedInstagramProfile)
   )
   const showInstagramSection = showInstagramProfileCard || hasInstagramShowcase
-  const showOverviewProcessColumn =
-    hasProcessGallery || hasExclusiveCallout || showInstagramSection
+  const showOverviewProcessColumn = hasProcessGallery || showInstagramSection
 
   const heroImage = artist.image
   const heroPortraitStyle = artistPortraitCoverStyle(artist.imageObjectPosition)
@@ -457,13 +508,11 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
             <div className={styles.overviewGrid}>
               <div className={styles.overviewStory}>
                 <div className={styles.storyEyebrow}>The Story</div>
-                {paragraphs.length
-                  ? paragraphs.map((p, idx) => (
-                      <p key={idx} className={styles.storyBody}>
-                        {p}
-                      </p>
-                    ))
-                  : null}
+                {paragraphs.map((p, idx) => (
+                  <p key={idx} className={styles.storyBody}>
+                    {p}
+                  </p>
+                ))}
                 {profile.pullquote ? (() => {
                   const parsed = parsePullQuote(profile.pullquote)
                   if (!parsed) return null
@@ -476,24 +525,13 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                     </blockquote>
                   )
                 })() : null}
-                {hasImpactCallout ? (
-                  <div className={styles.bioCard}>
-                    <div className={styles.bioCardText}>
-                      {profile.impactCallout!.split('\n').map((line, li) => (
-                        <p key={li} style={{ margin: '0 0 0.5em' }}>
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
               </div>
               {showOverviewProcessColumn ? (
               <div className={styles.overviewProcess}>
                 {hasProcessGallery ? (
                   <div className={styles.overviewProcessGallery}>
                     <div className={styles.processGrid}>
-                      {profile.processGallery!.slice(0, 4).map((item, i) => {
+                      {artworkGallery.map((item, i) => {
                         const igEmbed = getInstagramEmbedSrc(item.url)
                         return (
                           <div key={`${item.url}-${i}`} className={styles.processImg}>
@@ -707,17 +745,6 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                       ) : null}
                     </div>
                   </section>
-                ) : null}
-                {hasExclusiveCallout ? (
-                  <div className={styles.bioCard} style={{ marginTop: hasProcessGallery ? undefined : 'auto' }}>
-                    <div className={styles.bioCardText}>
-                      {profile.exclusiveCallout!.split('\n').map((line, li) => (
-                        <p key={li} style={{ margin: '0 0 0.5em' }}>
-                          {line}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
                 ) : null}
               </div>
               ) : null}

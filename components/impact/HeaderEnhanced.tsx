@@ -54,7 +54,7 @@ export function HeaderEnhanced({
       ref={navRef}
       className={cn(
         'fixed top-0 left-0 right-0 z-50',
-        'bg-white/95 backdrop-blur-sm',
+        'bg-background/95 text-foreground backdrop-blur-sm',
         className
       )}
     >
@@ -73,18 +73,18 @@ export function HeaderEnhanced({
               <div className="nav-menu__hamburger relative w-6 h-5 flex flex-col justify-between">
                 <div 
                   className={cn(
-                    "nav-menu__hamburger-bar h-0.5 bg-[#1a1a1a] transition-all duration-300 origin-center",
+                    "nav-menu__hamburger-bar h-0.5 bg-foreground transition-all duration-300 origin-center",
                     menuOpen && "rotate-45 translate-y-2"
                   )}
                 />
                 <div 
                   className={cn(
-                    "nav-menu__hamburger-bar h-0.5 bg-[#1a1a1a] transition-all duration-300",
+                    "nav-menu__hamburger-bar h-0.5 bg-foreground transition-all duration-300",
                     menuOpen && "-rotate-45 -translate-y-2"
                   )}
                 />
               </div>
-              <span className="nav-menu__label text-sm font-medium text-[#1a1a1a] hidden sm:inline">
+              <span className="nav-menu__label hidden text-sm font-medium text-foreground sm:inline">
                 Menu
               </span>
             </button>
@@ -130,14 +130,14 @@ export function HeaderEnhanced({
               {onLoginClick ? (
                 <button
                   onClick={onLoginClick}
-                  className="relative overflow-hidden px-5 py-2.5 rounded-full bg-[#e5e5e5] text-[#1a1a1a] text-sm font-medium transition-all duration-300 hover:bg-[#d5d5d5] group"
+                  className="group relative overflow-hidden rounded-full bg-muted px-5 py-2.5 text-sm font-medium text-foreground transition-all duration-300 hover:bg-accent"
                 >
                   <span className="relative z-10">{loginText}</span>
                 </button>
               ) : (
                 <Link
                   href={loginHref}
-                  className="relative overflow-hidden px-5 py-2.5 rounded-full bg-[#e5e5e5] text-[#1a1a1a] text-sm font-medium transition-all duration-300 hover:bg-[#d5d5d5] group"
+                  className="group relative overflow-hidden rounded-full bg-muted px-5 py-2.5 text-sm font-medium text-foreground transition-all duration-300 hover:bg-accent"
                 >
                   <span className="relative z-10">{loginText}</span>
                 </Link>
@@ -166,7 +166,7 @@ export function HeaderEnhanced({
         </div>
 
         {/* Bottom line separator */}
-        <div className="nav-bar__line mt-4 h-px bg-[#1a1a1a]/10" />
+        <div className="nav-bar__line mt-4 h-px bg-border" />
       </div>
     </div>
   )

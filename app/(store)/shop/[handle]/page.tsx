@@ -252,11 +252,11 @@ export default function ProductPage() {
           <Container maxWidth="default">
             <div className="animate-pulse">
               <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-                <div className="aspect-square bg-[#f5f5f5] rounded-[24px]" />
+                <div className="aspect-square bg-muted rounded-[24px]" />
                 <div className="space-y-4">
-                  <div className="h-8 bg-[#f5f5f5] rounded w-3/4" />
-                  <div className="h-6 bg-[#f5f5f5] rounded w-1/4" />
-                  <div className="h-24 bg-[#f5f5f5] rounded" />
+                  <div className="h-8 bg-muted rounded w-3/4" />
+                  <div className="h-6 bg-muted rounded w-1/4" />
+                  <div className="h-24 bg-muted rounded" />
                 </div>
               </div>
             </div>

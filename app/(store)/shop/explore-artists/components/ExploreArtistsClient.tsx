@@ -247,7 +247,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
               Why the artists
             </div>
             <p className={cn(landingStyles.landingStagger, exploreStyles.philosophyBody)} style={{ ['--stagger' as string]: 1 }}>
-              We work directly with independent street artists. No stock libraries, no middlemen.
+              We work directly with independent street artists. No stock libraries, no anonymous image feed.
               <br />
               <br />
               When you buy a print, <strong>30% goes to the artist.</strong>
@@ -313,7 +313,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                 <div className={exploreStyles.featuredMeta}>{spotlightMeta || 'Street Collector · Limited editions'}</div>
                 <h3 className={exploreStyles.featuredName}>{spotlight.name}</h3>
                 <p className={exploreStyles.featuredHook}>
-                  View their complete story and collection.
+                  Open the full profile, story, and works.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 {spotlightPullQuote ? (
@@ -477,9 +477,9 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                 Collector Voices
               </div>
               <h2 className={cn(landingStyles.landingStagger, exploreStyles.voicesTitle)} style={{ ['--stagger' as string]: 1 }}>
-                The story lives
+                The work lands
                 <br />
-                <em>in your Street Lamp.</em>
+                <em>in real rooms.</em>
               </h2>
             </div>
             <div className={cn(landingStyles.landingStagger, exploreStyles.voicesRating)} style={{ ['--stagger' as string]: 2 }}>
@@ -514,7 +514,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
 
         <section className={exploreStyles.finalCta} aria-label="Final CTA">
           <div className={exploreStyles.philosophyEyebrow} style={{ marginBottom: 24 }}>
-            Your Collection Awaits
+            Ready when you are
           </div>
           <h2 className={exploreStyles.finalTitle}>
             You&apos;ve met the artists.

@@ -233,6 +233,12 @@ export function ExperienceV2Client({
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  useEffect(() => {
+    if (isMobile) return
+    setPickerHasBeenOpened(true)
+    setIsPickerOpen(true)
+  }, [isMobile])
+
   // PostHog: shell entry, affiliate / direct params (once per mount)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)

@@ -23,7 +23,7 @@ const inputVariants = cva(
     'transition-all duration-200 ease-in-out',
     'placeholder:text-muted-foreground',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
+    'disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:border-border',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium',
   ].join(' '),
   {
@@ -160,7 +160,7 @@ const textareaVariants = cva(
     'transition-all duration-200 ease-in-out',
     'placeholder:text-muted-foreground',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-    'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
+    'disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:border-border',
     'resize-y',
   ].join(' '),
   {
@@ -273,7 +273,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               'h-[2.625rem] px-4 pr-10 sm:h-[3.125rem]',
               'transition-all duration-200 ease-in-out',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight focus-visible:border-transparent',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
+              'disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:border-border',
               error && 'border-destructive focus-visible:ring-destructive',
               className
             )}

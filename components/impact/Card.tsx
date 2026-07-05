@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 const cardVariants = cva(
   [
     'relative',
-    'bg-white',
+    'bg-card text-card-foreground',
     'overflow-hidden',
     'transition-all duration-200 ease-in-out',
   ].join(' '),
@@ -38,14 +38,14 @@ const cardVariants = cva(
         // Flat card without shadow
         flat: [
           'rounded-[24px]',
-          'border border-[#1a1a1a]/12',
+          'border border-border',
         ].join(' '),
         
         // Outlined card
         outline: [
           'rounded-[24px]',
-          'border-2 border-[#1a1a1a]/12',
-          'hover:border-[#1a1a1a]/24',
+          'border-2 border-border',
+          'hover:border-foreground/20',
         ].join(' '),
         
         // Ghost card (minimal)
@@ -132,12 +132,12 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
         {(title || subtitle || children) && (
           <div className="flex-1 min-w-0">
             {title && (
-              <h3 className="font-heading text-xl font-semibold text-[#1a1a1a] tracking-[-0.02em]">
+              <h3 className="font-heading text-xl font-semibold text-card-foreground tracking-[-0.02em]">
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="mt-1 text-sm text-[#1a1a1a]/60">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {subtitle}
               </p>
             )}
@@ -292,7 +292,7 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
           {/* Image Container */}
           <div className={cn(
             'relative aspect-square overflow-hidden rounded-[24px]',
-            transparentBackground ? 'bg-transparent' : 'bg-[#f5f5f5]'
+            transparentBackground ? 'bg-transparent' : 'bg-muted'
           )}>
             {/* Primary Image */}
             <img
@@ -335,7 +335,7 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
                   disabled={quickAddLoading}
                   className={cn(
                     'w-full py-3 px-4',
-                    'bg-[#f0c417] text-[#1a1a1a]',
+                    'bg-[#f0c417] text-foreground',
                     'font-semibold text-sm',
                     'rounded-full',
                     'hover:bg-[#e0b415] transition-colors',
@@ -367,28 +367,28 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
                 <a 
                   href={vendorHref}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs text-[#1a1a1a]/60 uppercase tracking-wider mb-1 hover:text-[#1a1a1a] transition-colors inline-block"
+                  className="mb-1 inline-block text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {vendor}
                 </a>
               ) : (
-                <p className="text-xs text-[#1a1a1a]/60 uppercase tracking-wider mb-1">
+                <p className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
                   {vendor}
                 </p>
               )
             )}
-            <h3 className="font-heading text-lg font-medium text-[#1a1a1a] tracking-[-0.02em] line-clamp-2">
+            <h3 className="font-heading text-lg font-medium text-foreground tracking-[-0.02em] line-clamp-2">
               {title}
             </h3>
             <div className="mt-2 flex items-center justify-center gap-2">
               <span className={cn(
                 'text-base font-semibold',
-                compareAtPrice ? 'text-[#f83a3a]' : 'text-[#1a1a1a]'
+                compareAtPrice ? 'text-[#f83a3a]' : 'text-foreground'
               )}>
                 {price}
               </span>
               {compareAtPrice && (
-                <span className="text-sm text-[#1a1a1a]/50 line-through">
+                <span className="text-sm text-muted-foreground line-through">
                   {compareAtPrice}
                 </span>
               )}

@@ -67,7 +67,7 @@ import {
   DEFAULT_SIDE_POSITION,
   DEFAULT_SIDE_B_POSITION,
 } from '@/lib/experience-image-position'
-import { ChevronLeft, ChevronRight, LayoutGrid, Package, ZoomIn, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Package, ZoomIn, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getVendorCollectionHandle } from '@/lib/shopify/vendor-collection-handle'
 import { experienceArtworkUnitUsd } from '@/lib/shop/experience-artwork-unit-price'
@@ -241,6 +241,12 @@ export function ExperienceV3Client({
     q.addEventListener('change', sync)
     return () => q.removeEventListener('change', sync)
   }, [])
+
+  useEffect(() => {
+    if (!pickerLayoutDesktop) return
+    setPickerHasBeenOpened(true)
+    setIsPickerOpen(true)
+  }, [pickerLayoutDesktop])
 
   useEffect(() => {
     saveExperienceCart(cartOrder, lampQuantity, lampPreviewOrder)
@@ -516,7 +522,7 @@ export function ExperienceV3Client({
       side2ObjectId: '2e33392b-21d8-441d-87b0-11527f3a8b70',
       minimal: true as const,
       animate: true as const,
-      interactive: true as const,
+      interactive: false as const,
       idleSpinEnabled: true as const,
       swapLampSides: true as const,
       flipForSide: 'B' as const,
@@ -617,7 +623,6 @@ export function ExperienceV3Client({
     (product: ShopifyProduct) => {
       if (product.id === lamp.id) return
       assignProductToLampPreview(product.id)
-      setPreviewProduct(product)
     },
     [assignProductToLampPreview, lamp.id]
   )
@@ -1014,12 +1019,12 @@ export function ExperienceV3Client({
   const handlePreviewFromPicker = useCallback(
     (product: ShopifyProduct) => {
       setPreviewProduct(product)
-      if (isPickerOpen) {
+      if (isPickerOpen && !pickerLayoutDesktop) {
         handleClosePicker()
       }
       requestAnimationFrame(() => scrollToArtworkPreview())
     },
-    [isPickerOpen, handleClosePicker, scrollToArtworkPreview]
+    [isPickerOpen, handleClosePicker, scrollToArtworkPreview, pickerLayoutDesktop]
   )
 
   const handleSelectArtworkFromCart = useCallback(
@@ -1028,7 +1033,7 @@ export function ExperienceV3Client({
       if (inSeason1 && activeSeason !== 'season1') setActiveSeason('season1')
       else if (!inSeason1 && activeSeason !== 'season2') setActiveSeason('season2')
       setPreviewProduct(product)
-      if (isPickerOpen) {
+      if (isPickerOpen && !pickerLayoutDesktop) {
         handleClosePicker()
       }
       requestAnimationFrame(() => scrollToArtworkPreview())
@@ -1039,6 +1044,7 @@ export function ExperienceV3Client({
       isPickerOpen,
       handleClosePicker,
       scrollToArtworkPreview,
+      pickerLayoutDesktop,
     ]
   )
 
@@ -1051,39 +1057,9 @@ export function ExperienceV3Client({
   }, [isPickerOpen, handleClosePicker, handleOpenPicker])
 
   useEffect(() => {
-    if (!pickerLayoutDesktop || splineSectionInView) {
-      setHeaderCenterContent(null)
-      return () => setHeaderCenterContent(null)
-    }
-    setHeaderCenterContent(
-      <button
-        type="button"
-        onClick={handleTogglePicker}
-        className={cn(
-          'flex shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm',
-          'focus-visible:ring-2 focus-visible:ring-offset-2',
-          'border-experience-cta/50 bg-transparent text-experience-cta hover:border-experience-cta/75 hover:bg-experience-cta/[0.08]',
-          'focus-visible:ring-experience-cta focus-visible:ring-offset-background',
-          isPickerOpen && 'ring-2 ring-experience-cta/70'
-        )}
-        aria-label={isPickerOpen ? 'Close the collection picker' : 'Open the collection picker'}
-        aria-expanded={isPickerOpen}
-      >
-        <LayoutGrid className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-        The Collection
-      </button>
-    )
+    setHeaderCenterContent(null)
     return () => setHeaderCenterContent(null)
-  }, [
-    theme,
-    isPickerOpen,
-    handleOpenPicker,
-    handleClosePicker,
-    handleTogglePicker,
-    setHeaderCenterContent,
-    pickerLayoutDesktop,
-    splineSectionInView,
-  ])
+  }, [setHeaderCenterContent])
 
   const orderItemCount = selectedArtworks.length + lampQuantity
   useEffect(() => {
@@ -1682,12 +1658,12 @@ export function ExperienceV3Client({
               lamp={lamp}
               lampQuantity={lampQuantity}
               selectedArtworks={selectedArtworks}
+              presentedProduct={previewProduct}
               orderSubtotal={orderTotal}
               stripMode="collection"
               barPosition="inline"
               hideCollectionStrip
               hideCheckoutPill
-              onOpenPicker={handleOpenPicker}
               onViewLampDetail={() => {}}
               onSelectThumbnailForSpline={handleSplineStickyThumbSelect}
               previewSelectedProductId={lampSplineFocusProductId ?? previewProduct?.id ?? null}

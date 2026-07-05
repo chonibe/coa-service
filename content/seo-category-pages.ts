@@ -33,7 +33,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Discover the Street Collector backlit art lamp: a rechargeable illuminated display for swappable limited edition street art prints from independent artists.',
     h1: 'Backlit art lamp for living with collectible art',
     answer:
-      'Street Collector is a backlit art lamp made for collectors who want physical art that can change over time. Buy the lamp once, then collect and swap limited edition street art prints from independent artists worldwide.',
+      'Street Collector is a backlit art lamp for people who want to keep living with physical art without locking the room into one image forever. You buy the lamp once, then rotate limited edition prints by independent artists as your collection changes.',
     proof: [
       'Lamp starts at $99 and artworks start from $40.',
       '100+ artists from cities including Tel Aviv, London, Berlin, Barcelona, Montreal, and beyond.',
@@ -44,17 +44,17 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'Why a backlit lamp changes the artwork',
         body:
-          'Backlighting deepens color, reveals detail, and gives the artwork a presence that ordinary framed prints often lose in low light. The lamp turns the print into an object you live with, not just an image on a wall.',
+          'Backlighting changes the print at the moment people actually notice it: at night, in side light, across a room. Colors hold longer, line stays sharper, and the work feels less like a flat rectangle and more like an object with its own atmosphere.',
       },
       {
         heading: 'Built for swapping, not replacing',
         body:
-          'The lamp is designed around interchangeable prints. As your collection grows, the display stays useful: slide in a new work, rotate the mood of the room, and keep the physical ritual of collecting intact.',
+          'You should not need a new frame every time your taste shifts. The lamp stays put. The print changes. Collecting keeps moving, and the first purchase does not have to lock the room in place.',
       },
       {
         heading: 'A better fit for street art collectors',
         body:
-          'Street art is visual, immediate, and atmospheric. A backlit display gives editioned prints the glow and presence of a small installation while preserving the accessibility of collecting prints.',
+          'Street art often depends on immediacy: color that hits fast, line that reads from distance, a mood that survives low light. A backlit display gives editioned prints some of the charge of a small installation without asking collectors to leave print collecting behind.',
       },
     ],
     faqs: [
@@ -96,7 +96,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Shop limited edition street art prints by independent artists. Small edition runs, Certificate of Authenticity, worldwide shipping, and display-ready art for the Street Collector lamp.',
     h1: 'Limited edition street art prints from independent artists',
     answer:
-      'Street Collector offers limited edition street art prints by independent artists, designed to be collected, displayed in a backlit lamp, or framed like traditional prints. Each edition is finite, with clear artist context and Certificate of Authenticity documentation where eligible.',
+      'Street Collector offers limited edition street art prints by independent artists, with the artist context kept close to the work. The editions are finite, the prints can be displayed in the lamp or framed traditionally, and eligible releases include Certificate of Authenticity documentation.',
     proof: [
       'Editioned works from 100+ independent artists.',
       'Prints are designed for the Street Collector lamp and can also be collected as physical art.',
@@ -107,17 +107,17 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'What makes a print collectible',
         body:
-          'Collectibility comes from scarcity, artist authorship, visible quality, documentation, and cultural context. Street Collector combines limited runs with artist stories and collection pages so buyers understand what they are collecting.',
+          'Scarcity matters, but not by itself. A print becomes collectible when the artist matters, the image carries a recognizable voice, the run is finite, and the documentation is clear enough that you know what you are holding five years later.',
       },
       {
         heading: 'Street art without the gallery barrier',
         body:
-          'Limited edition prints give new collectors access to street-influenced work without needing to buy a large original painting. The format keeps the artist voice central while making collecting easier to start.',
+          'Limited edition prints let collectors enter the work without needing a gallery budget or a wall big enough for an original. The format keeps the artist’s voice intact while lowering the threshold for starting a real collection.',
       },
       {
         heading: 'How to choose your first print',
         body:
-          'Start with the artist, not only the image. Look for a visual language you want to live with, read the artist profile, then check edition details and availability before buying.',
+          'Start with the artist before you start comparing thumbnails. Find a visual language you can imagine seeing often, read the profile, then check the edition size, availability, and documentation. The image should still win, but not alone.',
       },
     ],
     faqs: [
@@ -181,7 +181,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Browse urban art prints and street-influenced limited editions from independent artists across the world, collected through Street Collector.',
     h1: 'Urban art prints with artist context and collectible editions',
     answer:
-      'Street Collector curates urban art prints from independent artists working across illustration, mural culture, graphic art, collage, and contemporary street-influenced styles. The prints are editioned works, not generic wall decor.',
+      'Street Collector curates urban art prints by independent artists working across murals, illustration, collage, graphic art, and other street-influenced practices. These are editioned works with artist context attached, not anonymous wall filler.',
     proof: [
       'Global artist directory with biographies and collection pages.',
       'Artists work across murals, illustration, graphic design, pop art, and contemporary street art.',
@@ -192,17 +192,17 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'Urban art is broader than graffiti',
         body:
-          'Urban art includes muralists, illustrators, poster artists, digital collage makers, painters, and designers shaped by public space and visual culture. Street Collector reflects that range through artist-led releases.',
+          'Urban art is wider than graffiti lettering alone. It includes muralists, poster artists, illustrators, painters, digital collage makers, and designers whose work carries the visual logic of the city even when it leaves the wall.',
       },
       {
         heading: 'Why artist pages matter',
         body:
-          'AI and search systems need clear entity signals. Artist pages, biographies, locations, works, and internal links help connect each print to the person and practice behind it.',
+          'Collectors need more than a product tile, and search systems do too. Artist pages, locations, bios, and linked works keep each print tied to the person behind it instead of flattening it into decor search results.',
       },
       {
         heading: 'Collect by city, style, or mood',
         body:
-          'Collectors can explore artists by visual style, geography, and emotional tone. This creates future content clusters around Tel Aviv artists, European muralists, playful illustration, abstract urban art, and more.',
+          'Some collectors start with a city. Others start with a palette, a line style, or the feeling a piece leaves in the room. The catalogue needs to support all of those entries, because people rarely collect by one rule for long.',
       },
     ],
     faqs: [
@@ -258,7 +258,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Collect interchangeable art prints for the Street Collector lamp. Swap limited edition street art prints in seconds and refresh your space without replacing the display.',
     h1: 'Interchangeable art prints for a collection that can change',
     answer:
-      'Street Collector makes art interchangeable: the lamp stays in your space, while the prints can be swapped as you collect new limited editions. It is a way to keep physical art fresh without treating it like disposable decor.',
+      'Street Collector makes art interchangeable without making it disposable. The lamp stays in the room, while the prints rotate as you collect new limited editions, revisit older favorites, or simply want the space to feel different.',
     proof: [
       'Swappable print system for one lamp and many artworks.',
       'Limited edition releases support independent artists.',
@@ -269,17 +269,17 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'Why interchangeable art works',
         body:
-          'Most wall art is static. Interchangeable prints let collectors change the feeling of a room while keeping a consistent display object and growing a real collection over time.',
+          'Most wall art asks for commitment the minute it goes up. Interchangeable prints loosen that pressure. You keep one display object, but the room can still shift as the collection grows.',
       },
       {
         heading: 'A collection, not a single purchase',
         body:
-          'Street Collector is designed around repeat discovery. A buyer can start with one lamp and one print, then add new artists, styles, or themes as their collection evolves.',
+          'This works best when the first purchase is not the end of the story. One lamp can start with one print, then pick up new artists, cities, moods, or themes over time without asking for new hardware every time.',
       },
       {
         heading: 'Good for gifts and small spaces',
         body:
-          'The format works especially well for people who want meaningful art but do not have unlimited wall space. A single display can hold a rotating collection.',
+          'The format especially suits smaller apartments, desks, shelves, and gifts for people who care about art but do not have infinite wall space. A single display can still carry a rotating collection with some actual range in it.',
       },
     ],
     faqs: [

@@ -5,7 +5,7 @@ import { shopFaqGroups } from '@/content/shop-faq'
 export const metadata: Metadata = {
   title: 'Questions?',
   description:
-    'Frequently asked questions about shipping, artworks, and The Street Lamp. Production time, delivery, tracking, limited editions, authenticity, and more.',
+    'Answers about shipping, artworks, the Street Lamp, tracking, editions, and order details.',
   alternates: { canonical: '/shop/faq' },
 }
 

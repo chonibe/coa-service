@@ -236,7 +236,7 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
         ref={cardRef}
         data-upsell-card
         className={cn(
-          'group relative overflow-hidden rounded-lg bg-[#f5f5f5]',
+          'group relative overflow-hidden rounded-lg bg-muted',
           'hover:shadow-md transition-shadow duration-200',
           'cursor-pointer',
           variant === 'series' && 'ring-1 ring-experience-highlight/20'
@@ -260,7 +260,7 @@ function UpsellCard({ product, onAddToCart, variant = 'general' }: UpsellCardPro
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
+            <div className="w-full h-full flex items-center justify-center bg-muted">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-muted-foreground">
                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
               </svg>

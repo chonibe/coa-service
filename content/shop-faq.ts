@@ -80,7 +80,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'What material are the prints made from?',
         answer:
-          'Our prints are crafted on premium 1mm polycarbonate vinyl using state-of-the-art high-definition printing technology. This durable, lightweight material allows the artwork to beautifully illuminate when displayed on The Street Lamp while remaining easy to handle and swap.',
+          'The prints are made from 1mm polycarbonate vinyl. It is light, durable, and lets the artwork hold the light well while still being easy to swap in and out.',
       },
       {
         question: 'What does "Limited Edition" mean?',
@@ -110,12 +110,12 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Can I upload my art to customize a lamp?',
         answer:
-          'While we don\'t offer custom artwork options, we love collaborating with new and emerging artists. If you\'re an artist—or know one—interested in being part of our journey, we invite you to leave your details through our artist submission page or participate in our open calls and competitions. It\'s an incredible opportunity to be featured on our lamps and connect with art lovers everywhere. The Street Lamp is more than a marketplace; it\'s a bridge between the artist, the art, and the collector.',
+          'We do not offer custom upload orders right now. If you are an artist, or know one, use the artist submission page or our open calls. That is how new work gets onto the lamp: through real collaborations, not one-off file uploads.',
       },
       {
         question: 'How much do artists earn from each sale?',
         answer:
-          'Artists receive 25% of every artwork sale—significantly higher than most platforms (10-15%) and traditional galleries. Your purchase directly supports independent street artists worldwide.',
+          'Artists receive 25% of each artwork sale. The split is designed to pay artists more directly than the usual platform or gallery model.',
       },
     ],
   },
@@ -130,7 +130,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Can I mount the lamp on a wall?',
         answer:
-          'The Street Lamp is designed to adapt to your space. Magnetic Landscape Mounting: Built-in magnets on one side of the lamp\'s cover allow you to effortlessly hang it in a horizontal, landscape orientation. Portrait Wall Mount Accessory: For a vertical display, the optional Wall Mount Accessory securely screws into the lamp\'s frame, enabling a portrait orientation. With these mounting options, The Street Lamp ensures your art fits perfectly into your space—whether it\'s on a desk, a wall, or a shelf.',
+          'Yes. You can hang it in landscape using the built-in magnets on one side of the cover. If you want a portrait setup, there is an optional wall-mount accessory that screws into the frame. It also works well on a desk or shelf.',
       },
       {
         question: 'How long does it take to fully charge the lamp?',

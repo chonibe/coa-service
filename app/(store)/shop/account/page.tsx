@@ -616,14 +616,14 @@ export default function AccountPage() {
           {activeTab === 'orders' && (
             <div className="space-y-4">
               {ordersLoading && orders.length === 0 ? (
-                <Card variant="default" padding="lg" className="text-center">
+                <Card variant="default" padding="lg" className="bg-card text-card-foreground text-center">
                   <div className="py-8 animate-pulse">
                     <div className="w-1/3 h-6 mx-auto mb-4 rounded bg-muted" />
                     <div className="w-1/2 h-4 mx-auto rounded bg-muted" />
                   </div>
                 </Card>
               ) : orders.length === 0 ? (
-                <Card variant="default" padding="lg" className="text-center">
+                <Card variant="default" padding="lg" className="bg-card text-card-foreground text-center">
                   <div className="py-8">
                     <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-muted text-muted-foreground">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3">
@@ -631,7 +631,7 @@ export default function AccountPage() {
                         <path d="M8 10V8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8V10" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+                    <h2 className="font-heading text-xl font-semibold text-card-foreground mb-2">
                       No orders yet
                     </h2>
                     <p className="text-muted-foreground mb-6">
@@ -645,7 +645,7 @@ export default function AccountPage() {
               ) : (
                 <>
                   {orders.map((order) => (
-                    <Card key={order.id} variant="default" padding="md">
+                    <Card key={order.id} variant="default" padding="md" className="bg-card text-card-foreground">
                     {/* Order Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-border">
                       <div>
@@ -775,7 +775,7 @@ export default function AccountPage() {
           {/* Profile Tab */}
           {activeTab === 'profile' && profile && (
             <div className="space-y-6">
-              <Card variant="default" padding="lg">
+              <Card variant="default" padding="lg" className="bg-card text-card-foreground">
                 <CardHeader title="Profile Information" />
                 <CardContent className="mt-6">
                   <form
@@ -828,7 +828,7 @@ export default function AccountPage() {
               </Card>
 
               {/* Addresses Section - multiple saved addresses */}
-              <Card variant="default" padding="lg">
+              <Card variant="default" padding="lg" className="bg-card text-card-foreground">
                 <CardHeader title="Saved Addresses" />
                 <CardContent className="mt-6">
                   <p className="text-sm text-muted-foreground mb-4">
@@ -838,7 +838,7 @@ export default function AccountPage() {
                     {(savedAddresses?.addresses ?? []).map(({ id, address: addr }) => (
                       <div
                         key={id}
-                        className="flex items-start justify-between gap-4 rounded-lg border border-border p-4"
+                        className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background p-4"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground">{addr.fullName}</p>

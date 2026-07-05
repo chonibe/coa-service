@@ -63,11 +63,11 @@ export default function SeriesListingPage() {
         <SectionWrapper spacing="lg" background="default">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
-              <div className="h-12 bg-[#f5f5f5] rounded w-1/3 mx-auto" />
-              <div className="h-6 bg-[#f5f5f5] rounded w-2/3 mx-auto" />
+              <div className="h-12 bg-muted rounded w-1/3 mx-auto" />
+              <div className="h-6 bg-muted rounded w-2/3 mx-auto" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-64 bg-[#f5f5f5] rounded-[24px]" />
+                  <div key={i} className="h-64 bg-muted rounded-[24px]" />
                 ))}
               </div>
             </div>
@@ -84,7 +84,7 @@ export default function SeriesListingPage() {
         <Container maxWidth="default">
           <SectionHeader
             title="Artwork Series"
-            subtitle="Explore curated collections of artworks. Collect a complete series to unlock exclusive rewards."
+            subtitle="Browse grouped runs of related works and track what it takes to complete the set."
             alignment="center"
           />
         </Container>
@@ -141,7 +141,7 @@ function SeriesCard({ series }: { series: SeriesItem }) {
       className="group block overflow-hidden bg-background border border-border rounded-[24px] hover:border-experience-highlight/30 hover:shadow-lg transition-all duration-300"
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f5f5]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {series.thumbnail_url ? (
           <img
             src={series.thumbnail_url}

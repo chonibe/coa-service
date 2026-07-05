@@ -170,7 +170,7 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
             {image && (
               <div
                 ref={imageRef}
-                className="w-16 h-16 rounded-lg overflow-hidden bg-[#f5f5f5] flex-shrink-0"
+                className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0"
                 style={{
                   transformStyle: 'preserve-3d',
                   perspective: '500px',
@@ -232,7 +232,7 @@ export const AddToCartNotification = React.forwardRef<HTMLDivElement, AddToCartN
                 'py-2.5 px-4 rounded-xl',
                 'border border-border text-foreground',
                 'font-medium text-sm',
-                'hover:bg-[#f5f5f5] transition-colors duration-200'
+                'hover:bg-muted transition-colors duration-200'
               )}
             >
               Continue

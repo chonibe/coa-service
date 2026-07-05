@@ -16,7 +16,7 @@ import type ScrollTrigger from 'gsap/ScrollTrigger'
 /**
  * useSmoothDrawer
  * 
- * Creates smooth GSAP-powered drawer animations.
+ * Creates smooth GSAP-powered drawer animations from the left edge.
  * Usage: const { openDrawer, closeDrawer } = useSmoothDrawer(drawerRef, backdropRef)
  */
 export function useSmoothDrawer(
@@ -34,8 +34,8 @@ export function useSmoothDrawer(
       pointerEvents: 'none',
       visibility: 'hidden'
     })
-    gsap.set(drawerRef.current, { 
-      x: 'calc(100% + 1rem)',
+    gsap.set(drawerRef.current, {
+      x: 'calc(-100% - 1rem)',
       pointerEvents: 'none',
       visibility: 'hidden'
     })
@@ -56,10 +56,10 @@ export function useSmoothDrawer(
       0
     )
 
-    // Drawer slide from right (300ms)
+    // Drawer slide from left (300ms)
     timelineRef.current.fromTo(
       drawerRef.current,
-      { x: 'calc(100% + 1rem)', pointerEvents: 'none', visibility: 'hidden' },
+      { x: 'calc(-100% - 1rem)', pointerEvents: 'none', visibility: 'hidden' },
       { x: '0%', pointerEvents: 'auto', visibility: 'visible', duration: 0.3, ease: 'power2.out' },
       0
     )

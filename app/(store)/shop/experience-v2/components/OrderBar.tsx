@@ -701,11 +701,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       <div className="space-y-2 text-sm pt-3">
         <div data-testid="delivery-summary-item" className="flex justify-between text-sm">
           <span className="text-neutral-600 dark:text-[#c4a0a0]">Shipping</span>
-          <span className="font-medium text-neutral-950 dark:text-[#f0e8e8]">Free</span>
+          <span className="font-medium text-foreground dark:text-[#f0e8e8]">Free</span>
         </div>
         <div data-testid="total-summary-item" className="flex justify-between pt-2 text-sm">
-          <span className="font-semibold text-neutral-950 dark:text-[#f0e8e8]">Total</span>
-          <span className="font-bold text-neutral-950 dark:text-[#f0e8e8] tabular-nums">
+          <span className="font-semibold text-foreground dark:text-[#f0e8e8]">Total</span>
+          <span className="font-bold text-foreground dark:text-[#f0e8e8] tabular-nums">
             <AnimatedPrice value={Math.max(0, total - promoDiscount)} />
           </span>
         </div>
@@ -773,7 +773,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
         <div className="checkout-content right-drawer flex-1 min-h-0 overflow-y-auto overflow-x-hidden text-sm font-normal scrollbar-prominent">
           <div className="px-6 pb-6">
             <div className="pb-3">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-[#FFBA94] mb-4">Your Collection</h3>
+              <h3 className="text-lg font-semibold text-foreground dark:text-[#FFBA94] mb-4">Your Collection</h3>
             </div>
             <div className="border-t border-neutral-200 dark:border-white/10 pt-5">
               {orderSummary}

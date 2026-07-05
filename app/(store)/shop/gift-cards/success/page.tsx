@@ -89,7 +89,7 @@ function GiftCardSuccessContent() {
           <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-amber-600 dark:text-amber-400" />
           </div>
-          <h1 className="text-2xl font-bold text-neutral-950 text-foreground mb-2">
+          <h1 className="text-2xl font-bold text-foreground text-foreground mb-2">
             Almost ready
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
@@ -110,7 +110,7 @@ function GiftCardSuccessContent() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
         <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-neutral-950 text-foreground mb-2">
+          <h1 className="text-2xl font-bold text-foreground text-foreground mb-2">
             Something went wrong
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
@@ -132,7 +132,7 @@ function GiftCardSuccessContent() {
         <div className="w-20 h-20 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
           <Gift className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
-        <h1 className="text-3xl font-bold text-neutral-950 text-foreground mb-2">
+        <h1 className="text-3xl font-bold text-foreground text-foreground mb-2">
           Gift card purchased!
         </h1>
         <p className="text-neutral-600 dark:text-[#c4a0a0] mb-8">
@@ -147,7 +147,7 @@ function GiftCardSuccessContent() {
               Gift card code
             </label>
             <div className="flex items-center justify-center gap-3">
-              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-card bg-card border-2 border-neutral-200 border-border rounded-lg text-neutral-950 text-foreground">
+              <code className="text-2xl font-mono font-bold tracking-wider px-6 py-4 bg-card bg-card border-2 border-neutral-200 border-border rounded-lg text-foreground text-foreground">
                 {data.code}
               </code>
               <button

@@ -13,7 +13,7 @@ const designStyles = {
     card: 'bg-card border-2 border-neutral-200 shadow-lg',
     accent: 'border-neutral-300',
     text: 'text-neutral-800',
-    amount: 'text-neutral-950 font-semibold',
+    amount: 'text-foreground font-semibold',
   },
   festive: {
     card: 'bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 border-2 border-emerald-400/50 shadow-xl',

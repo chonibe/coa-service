@@ -238,7 +238,7 @@ function ArticleContent({
       
       {/* Hero: image or branded fallback (plan: every URL has meaningful header) */}
       {imageUrl ? (
-        <div className="w-full bg-[#f5f5f5] overflow-hidden">
+        <div className="w-full bg-muted overflow-hidden">
           <div className="max-w-[1400px] mx-auto">
             <ParallaxLayer speed={0.5}>
               <div className="relative aspect-[21/9] sm:aspect-[16/7] overflow-hidden">
@@ -305,8 +305,8 @@ function ArticleContent({
                 prose-strong:text-foreground
                 prose-ul:text-muted-foreground prose-ol:text-muted-foreground
                 prose-img:rounded-xl
-                prose-blockquote:border-l-experience-highlight prose-blockquote:bg-[#f5f5f5] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-                [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse [&_th]:border [&_td]:border [&_th]:border-border [&_td]:border-border [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_th]:text-left [&_td]:align-top [&_thead]:bg-[#f5f5f5]
+                prose-blockquote:border-l-experience-highlight prose-blockquote:bg-muted prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
+                [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse [&_th]:border [&_td]:border [&_th]:border-border [&_td]:border-border [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_th]:text-left [&_td]:align-top [&_thead]:bg-muted
               `}
             />
           </ScrollReveal>
@@ -339,7 +339,7 @@ function ArticleContent({
                       href={`/shop/blog/${article.handle}`}
                       className="group block"
                     >
-                      <div className="aspect-[16/9] relative rounded-[24px] overflow-hidden bg-[#f5f5f5] mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <div className="aspect-[16/9] relative rounded-[24px] overflow-hidden bg-muted mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                         {article.imageUrl ? (
                           <Image
                             src={article.imageUrl}

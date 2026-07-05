@@ -184,12 +184,11 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
           aria-modal="true"
           aria-label="Shopping cart"
           className={cn(
-            'fixed bottom-4 right-4 z-50 w-full',
+            'fixed bottom-4 left-4 z-50 w-full',
             'h-[70vh] max-h-[600px] max-w-md',
             'lg:h-auto lg:max-h-[480px] lg:max-w-lg',
-            'bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl',
-            'border border-[#1a1a1a]/10',
-            'invisible pointer-events-none translate-x-full'
+            'rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl text-foreground',
+            'invisible pointer-events-none -translate-x-full'
           )}
           style={{
             backdropFilter: 'blur(20px) saturate(180%)',
@@ -199,11 +198,11 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
         >
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a]/10">
-              <h2 className="font-heading text-xl font-semibold text-[#1a1a1a]">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="font-heading text-xl font-semibold text-foreground">
                 Your Cart
                 {safeItems.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-[#1a1a1a]/60">
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
                     ({safeItems.length} {safeItems.length === 1 ? 'item' : 'items'})
                   </span>
                 )}
@@ -211,7 +210,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 -mr-2 text-[#1a1a1a]/60 hover:text-[#1a1a1a] transition-colors"
+                className="p-2 -mr-2 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Close cart"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -234,7 +233,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                     height="64"
                     viewBox="0 0 24 24"
                     fill="none"
-                    className="text-[#1a1a1a]/20 mb-4"
+                    className="mb-4 text-muted-foreground/40"
                   >
                     <path
                       d="M5.5 10L3 21H21L18.5 10"
@@ -250,10 +249,10 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                       strokeLinecap="round"
                     />
                   </svg>
-                  <p className="text-lg font-medium text-[#1a1a1a]">
+                  <p className="text-lg font-medium text-foreground">
                     Your cart is empty
                   </p>
-                  <p className="mt-1 text-sm text-[#1a1a1a]/60">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Add some artworks to get started
                   </p>
                   <Button
@@ -288,7 +287,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
 
             {/* Footer */}
             {!isEmpty && (
-              <div className="border-t border-[#1a1a1a]/10 px-6 py-4 space-y-4">
+              <div className="space-y-4 border-t border-border px-6 py-4">
                 <CheckoutLayout
                   subtotal={subtotal}
                   discount={creditsDiscount}
@@ -303,7 +302,7 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
                   hideTitle
                   shippingOutreachOrderSummary={shippingOutreachOrderSummary}
                 >
-                  <p className="text-xs text-[#1a1a1a]/50 py-2">
+                  <p className="py-2 text-xs text-muted-foreground">
                     Shipping and taxes calculated at checkout
                   </p>
                 </CheckoutLayout>
@@ -349,7 +348,7 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
   return (
     <div className="flex gap-4">
       {/* Image */}
-      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-[12px] bg-[#f5f5f5]">
+      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-[12px] bg-muted">
         {item.image ? (
           <img
             src={item.image}
@@ -357,7 +356,7 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#1a1a1a]/20">
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
@@ -369,15 +368,15 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
 
       {/* Details */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-[#1a1a1a] line-clamp-2">
+        <h3 className="font-medium text-foreground line-clamp-2">
           {item.title}
         </h3>
         {item.variantTitle && (
-          <p className="text-sm text-[#1a1a1a]/60 mt-0.5">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {item.variantTitle}
           </p>
         )}
-        <p className="text-sm font-semibold text-[#1a1a1a] mt-1">
+        <p className="mt-1 text-sm font-semibold text-foreground">
           ${displayUnitPrice.toFixed(2)}
         </p>
 
@@ -387,7 +386,7 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
             type="button"
             onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
             disabled={item.quantity <= 1}
-            className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded border border-border text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Decrease quantity"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -398,7 +397,7 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
           <button
             type="button"
             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-            className="w-7 h-7 flex items-center justify-center rounded border border-[#1a1a1a]/20 hover:border-[#1a1a1a]/40 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded border border-border text-foreground hover:border-foreground/40 transition-colors"
             aria-label="Increase quantity"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -410,7 +409,7 @@ function CartLineItem({ item, displayUnitPrice, onUpdateQuantity, onRemove }: Ca
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="ml-auto p-1.5 text-[#1a1a1a]/40 hover:text-[#f83a3a] transition-colors"
+            className="ml-auto p-1.5 text-muted-foreground transition-colors hover:text-[#f83a3a]"
             aria-label="Remove item"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

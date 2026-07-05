@@ -300,7 +300,7 @@ export function FeaturedArtistBundleSection({
             'active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
             theme === 'light'
               ? 'bg-neutral-900 text-white shadow-black/20 hover:bg-neutral-800'
-              : 'bg-[#FFBA94] text-neutral-950 shadow-black/30 hover:bg-[#ffc4a8]'
+              : 'bg-[#FFBA94] text-foreground shadow-black/30 hover:bg-[#ffc4a8]'
           )}
         >
           Add to cart

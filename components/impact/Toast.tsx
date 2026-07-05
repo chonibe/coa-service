@@ -46,7 +46,7 @@ export function Toast({ id, message, type = 'info', duration = 3000, onClose }: 
   const typeStyles = {
     success: 'bg-[#0a8754] text-white',
     error: 'bg-[#f83a3a] text-white',
-    warning: 'bg-[#f0c417] text-[#1a1a1a]',
+    warning: 'bg-[#f0c417] text-foreground',
     info: 'bg-[#1a1a1a] text-white',
   }
 

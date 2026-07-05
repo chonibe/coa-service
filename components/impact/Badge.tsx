@@ -40,7 +40,7 @@ const badgeVariants = cva(
         
         // Secondary badge - yellow (#f0c417)
         secondary: [
-          'bg-[#f0c417] text-[#1a1a1a]',
+          'bg-[#f0c417] text-foreground',
         ].join(' '),
         
         // Success badge - green (#00a341)
@@ -50,7 +50,7 @@ const badgeVariants = cva(
         
         // Warning badge - orange (#ffb74a)
         warning: [
-          'bg-[#ffb74a] text-[#1a1a1a]',
+          'bg-[#ffb74a] text-foreground',
         ].join(' '),
         
         // Error badge - red (#f83a3a)
@@ -60,13 +60,12 @@ const badgeVariants = cva(
         
         // Outline badge - transparent with border
         outline: [
-          'bg-transparent text-[#1a1a1a]',
-          'border border-[#1a1a1a]/20',
+          'border border-border bg-transparent text-foreground',
         ].join(' '),
         
         // Subdued badge - light gray
         subdued: [
-          'bg-[#1a1a1a]/5 text-[#1a1a1a]/80',
+          'bg-muted text-muted-foreground',
         ].join(' '),
         
         // New/limited badge - for special items

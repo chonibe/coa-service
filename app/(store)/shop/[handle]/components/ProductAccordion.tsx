@@ -223,8 +223,8 @@ export const artworkAccordionItems: AccordionItem[] = [
     defaultOpen: true,
     content: (
       <p>
-        Each artwork is printed on premium vinyl material, designed specifically for The Street Lamp. 
-        The print is made to showcase vibrant colors when illuminated, bringing your art to life.
+        Each artwork is printed on premium vinyl made specifically for The Street Lamp.
+        The material holds color well under light and stays easy to swap.
       </p>
     ),
   },
@@ -233,8 +233,8 @@ export const artworkAccordionItems: AccordionItem[] = [
     title: 'Buy a Print Support an Artist',
     content: (
       <p>
-        When you purchase an artwork, a portion of the sale goes directly to the artist. 
-        We believe in supporting the creative community and ensuring artists are fairly compensated for their work.
+        Part of every artwork sale goes directly to the artist behind the piece.
+        The model is meant to keep the support visible and straightforward.
       </p>
     ),
   },

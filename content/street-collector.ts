@@ -51,7 +51,7 @@ export const streetCollectorContent = {
       {
         title: 'Set the light',
         description:
-          'One tap. Multiple brightness levels. Colors deepen, details surface.',
+          'One tap changes the room. Dimmer light softens it; brighter light pulls new detail forward.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/641b66e529c04d84969f55385b986a3e.mp4',
         mobileVideo:
@@ -60,7 +60,7 @@ export const streetCollectorContent = {
       {
         title: 'Rotate anytime',
         description:
-          'Two artworks, back to back. Swap perspectives whenever the mood shifts.',
+          'Two artworks, back to back. Turn the lamp and the room takes a different side of the collection.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/1bdeb33fb073460d9e50a64b49e10089.mp4',
         mobileVideo:
@@ -69,7 +69,7 @@ export const streetCollectorContent = {
       {
         title: 'Slide it in',
         description:
-          'Press, click, done. No tools, no hassle — new art in seconds.',
+          'Press, click, done. No tools, no long setup, no reason to postpone changing the piece.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/0347e65039e84d04920d3dffad235bf6.mp4',
         mobileVideo:
@@ -77,7 +77,7 @@ export const streetCollectorContent = {
       },
       {
         title: 'Mount it',
-        description: 'Magnetic. Wall-ready. Makes a statement.',
+        description: 'Magnetic. Wall-ready. Strong enough to hold its own even when the lamp is off.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
         mobileVideo:
@@ -85,7 +85,7 @@ export const streetCollectorContent = {
       },
       {
         title: 'Choose your art',
-        description: 'Hundreds of artists. One piece that\'s yours.',
+        description: 'Hundreds of artists, and eventually one piece that starts to feel like it picked the room itself.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
         mobileVideo:
@@ -101,29 +101,29 @@ export const streetCollectorContent = {
     ] as const,
   },
   /** Value props with video + poster from thestreetcollector.com multi-column section */
-  valuePropsSectionTitle: 'Bringing art into everyday life.',
+  valuePropsSectionTitle: 'Real art, lived with daily.',
   valueProps: [
     {
-      title: 'Collect original Art.',
+      title: 'Collect real artwork.',
       description:
-        'No AI. No screens. Just original art, delivered to your door.',
+        'No AI filler. No endless feed. Just original work by real artists, shipped to your door.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
       video: 'https://cdn.shopify.com/videos/c/o/v/dc4d553853cc40b998a292ced715e802.mp4',
     },
     {
-      title: 'Transform any space instantly.',
+      title: 'Change the room fast.',
       description:
-        'Slide it in. Light it up. Swap in seconds. Art that evolves with you.',
+        'Slide in a new print, switch on the light, and the room changes faster than the furniture ever will.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/78fe4304b80245be921122d1cc75f389.thumbnail.0000000000_small.jpg?v=1770018285',
       video:
         'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
     },
     {
-      title: 'Support Artists directly.',
+      title: 'Support artists directly.',
       description:
-        'Every piece fuels the next one. Your purchase keeps culture alive.',
+        'Every purchase helps fund the next piece, the next drop, the next stretch of work that probably would not happen on likes alone.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
       video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
@@ -132,7 +132,7 @@ export const streetCollectorContent = {
   valuePropsCue: '',
   /** Testimonials with media (video/image) from thestreetcollector.com AI testimonial carousel */
   testimonials: {
-    title: 'Join 3000+ Collectors',
+    title: 'In 3,000+ collector homes',
     subtitle: '',
     /** Decorative wide image behind the testimonial carousel (same asset as the old value-prop banner) */
     sectionBackdropImage:
@@ -177,7 +177,7 @@ export const streetCollectorContent = {
         id: '4',
         author: 'Debra G.',
         content:
-          'The ritual of turning them on every morning, dimming them down at night and changing them out for a fresh perspective, served to be a unique and unexpected comfort through sometimes daily turmoil, muck and mud.',
+          'Turning them on in the morning, dimming them at night, and swapping in a different piece became a small steady ritual for me when everything else felt noisy.',
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg?v=1770570908&width=800' },
       },
@@ -185,7 +185,7 @@ export const streetCollectorContent = {
         id: '5',
         author: 'Gabriel M.',
         content:
-          "Everything about it from the design to the concept is just perfect. Through this project, I discovered some truly exceptional artists, and I'm blown away by the talent featured. Honestly, every artist involved is astounding.",
+          "The design pulled me in first, but the artist roster is what kept me looking. I ended up discovering work I probably would have missed otherwise.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_4.webp?v=1770560487&width=800' },
       },
@@ -193,7 +193,7 @@ export const streetCollectorContent = {
         id: '6',
         author: 'David G.',
         content:
-          "I thought the idea was great and was happy to participate in the Kickstarter project. I'd say the main critic that I have would be that there are so many beautiful artworks to choose from that it makes it hard to decide which one to order 😊 I'm very very happy with the result and the lamp that I now have !",
+          "I backed the Kickstarter because the idea felt strong from the start. The hardest part was choosing the first artwork. Now that the lamp is here, I'm really happy I went for it.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_9.webp?v=1770565576&width=800' },
       },
@@ -209,7 +209,7 @@ export const streetCollectorContent = {
         id: '8',
         author: 'Maayan F.',
         content:
-          "Such prestige and chiq with this product! Every single bit lovely and lushhhh and the concept innovative I can't wait to see where they get to and watch them grow I'm sure they will! And am so honored to be in on it getting the first edition:)))\nAlso super easy process getting it♥️",
+          "The whole thing feels thoughtfully made, and I liked getting in early on the first edition. It was also a very easy buying process.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_8.webp?v=1770560501&width=800' },
       },
@@ -217,7 +217,7 @@ export const streetCollectorContent = {
         id: '9',
         author: 'Lir P.',
         content:
-          "An amazing product, full of elegant style, sophisticated and of course designed to a high standard. When I first saw the product at the exhibition, I already knew I wanted one!",
+          "I saw it at the exhibition and knew pretty quickly that I wanted one. It has a strong presence in person and still feels carefully resolved up close.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/526673363_768940875492834_8870128180377304790_n.jpg?v=1770565371&width=800' },
       },
@@ -255,7 +255,7 @@ export const streetCollectorContent = {
         id: '14',
         author: 'Camila V.',
         content:
-          "My lamp arrived, it's beautiful! \nI finally opened the box! It's incredible, I love it! Everything is so well packaged. It's amazing!",
+          "My lamp arrived and the whole unboxing felt carefully done. Once I turned it on, I knew it was staying.",
         rating: 5,
         media: {
           type: 'video' as const,
@@ -274,11 +274,11 @@ export const streetCollectorContent = {
     ],
   },
   /** Displayed above the shipping / guarantee / returns row */
-  trustBarTitle: "We've got you Covered",
+  trustBarTitle: "We've got you covered",
   trustBar: [
-    { label: 'Free worldwide shipping', description: 'We cover delivery to any destination.', icon: 'shipping' },
-    { label: '12 month guarantee', description: 'Full coverage on your lamp.', icon: 'guarantee' },
-    { label: 'Easy 30 days returns', description: 'No hassle if you change your mind.', icon: 'returns' },
+    { label: 'Free worldwide shipping', description: 'Delivery is on us.', icon: 'shipping' },
+    { label: '12 month guarantee', description: 'Your lamp is covered for the first year.', icon: 'guarantee' },
+    { label: 'Easy 30 days returns', description: 'Send it back within 30 days if it is not right.', icon: 'returns' },
   ],
   featuredArtistsCue: '',
   featuredArtistsScarcity: '', // Hidden for now: 'Editions are limited. Once sold out, they do not return.'
@@ -297,7 +297,7 @@ export const streetCollectorContent = {
     },
   },
   featuredArtists: {
-    title: '100+ Artists. Every corner of the world.',
+    title: '100+ Artists. Across the full roster.',
     subtitle: '',
     afterCarousel: '',
     description: '',
@@ -356,7 +356,7 @@ export const streetCollectorContent = {
   },
   funnelBridge: {
     title: 'What happens next',
-    subtitle: 'Build your Street Lamp in minutes with a guided flow.',
+    subtitle: 'Build your Street Lamp with a short guided flow.',
     steps: [
       'Choose your lamp',
       'Preview and select artworks',

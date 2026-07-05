@@ -17,7 +17,7 @@ export const heroSection = {
     externalUrl: 'https://www.youtube.com/watch?v=_9VUPq3SxOc', // fallback
   },
   content: {
-    headline: 'One lamp, Endless Inspiration..',
+    headline: 'One lamp, endless rotation.',
     subheadline: '',
   },
   cta: {
@@ -140,7 +140,7 @@ export const pressQuotesSection1 = {
     },
     {
       author: '@mysunbeam',
-      content: "I personally got really stoked about this medium because I not only love creating new illustration for print but collecting troves from artists I love. It gets to the point where I have these great prints but too lazy to find the right frame…So seeing this medium where switching out new designs is super easy and the frame is now this gorgeous lit up box, I fell in love with the concept.",
+      content: "I was drawn to it right away because it solves a real collector problem. You build up prints you love, then they sit waiting for the right frame. Here, swapping work in and out is easy, and the lit frame makes the whole thing feel alive.",
       rating: 5,
     },
     {
@@ -150,7 +150,7 @@ export const pressQuotesSection1 = {
     },
     {
       author: '@Dimakorma',
-      content: "I'm fascinated by how my art interacts with the light, especially watching how abstract forms and textures start to change with the different opacity and temperatures of the lamps light.",
+      content: "I love seeing what the light does to the work. Abstract forms and textures shift as the brightness and temperature change, so the piece never sits exactly the same way twice.",
       rating: 5,
     },
     {
@@ -160,7 +160,7 @@ export const pressQuotesSection1 = {
     },
     {
       author: '@_marcdavid_',
-      content: "I had never worked with light before, creating something illuminated was incredibly exciting. The way the light enhances my work is special as it's suddenly visible even when it's dark around it.",
+      content: "I had never worked with light before, so seeing the piece illuminate for the first time was a real jolt. It stays present in the room even when everything around it drops into shadow.",
       rating: 5,
     },
   ],
@@ -172,32 +172,32 @@ export const pressQuotesSection2 = {
   quotes: [
     {
       author: '@Igaltalianski',
-      content: "The Street Lamp has a unique advantage over traditional printing, I can display my art on a light that's not another screen. The lamp's sleek design perfectly complements the digital nature of my art, creating a cohesive and contemporary look. while letting me experiment with different lighting modes.",
+      content: "What I like most is that the work glows without becoming another screen. It keeps the digital feel of the piece, but turns it into something physical in the room that I can keep changing with the light modes.",
       rating: 5,
     },
     {
       author: '@antonialev',
-      content: "It is important for me that my works could become part of people's everyday lives. I personally adore aesthetic interiors, creative details in the houses and I believe that the ethics of our actions grows out of the aesthetics of everyday life.",
+      content: "It matters to me when a work becomes part of daily life rather than staying at a distance. I care about interiors, small details, and the way a home slowly teaches you what you want to live around.",
       rating: 5,
     },
     {
       author: '@psoman_ptk',
-      content: "I love the idea of being like a double-sided illuminated canvas. It reminds me of vintage light-up signs! Working on this is an exciting challenge, as I usually work on walls. It definitely puts the artwork in the spotlight.",
+      content: "I liked the idea of treating it like a double-sided illuminated canvas. It has a little of the feel of an old light-up sign, but with the focus fully on the artwork.",
       rating: 5,
     },
     {
       author: '@Alinmor',
-      content: "A lamp allows light to be exuded through the artwork, which to me, gives a feeling that something beyond its colors and shapes, can be conveyed.",
+      content: "When the light comes through the artwork, it carries more than color and shape. It adds atmosphere, and that changes the way the piece speaks.",
       rating: 5,
     },
     {
       author: '@maxdiamond52',
-      content: "Earlier this year I had these pieces in a gallery show and as they were on the wall I thought these would look even better if the light in the scene could be illuminated from behind. Lo and behold these pieces finally found they light I had been searching for with the Street Lamp.",
+      content: "Earlier this year I showed these pieces in a gallery and kept thinking they wanted light behind them. The Street Lamp gave them exactly that. It felt like the work had finally found the setting it was asking for.",
       rating: 5,
     },
     {
       author: '@zivsameach',
-      content: "Using light is like using the background color. It's like the white of the paper or the wood's color, through which you can feel the empty space that adds depth to the drawing or painting.",
+      content: "Using light feels a lot like choosing a background color. It becomes part of the composition, the same way paper tone or wood grain can open up space inside a drawing.",
       rating: 5,
     },
   ],
@@ -230,11 +230,11 @@ export const faqSection = {
     },
     {
       question: 'Do you ship overseas?',
-      answer: 'Yes, we ship all over the world. Shipping costs will apply, and will be added at checkout. We run discounts and promotions all year, so stay tuned for exclusive deals.',
+      answer: 'Yes. We ship worldwide, and shipping is calculated at checkout based on your destination.',
     },
     {
       question: 'How long will it take to get my orders?',
-      answer: "You can expect the first orders to begin shipping in April, as production is still ongoing. Depending on your location, delivery times may vary. We're working hard to ensure everything arrives as quickly and smoothly as possible.",
+      answer: 'Delivery timing depends on what you order and where it is headed. Once your order is on the way, you will receive tracking so you can follow it from dispatch to delivery.',
     },
   ],
 } as const

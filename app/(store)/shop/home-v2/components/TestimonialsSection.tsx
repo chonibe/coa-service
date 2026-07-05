@@ -87,9 +87,9 @@ export function TestimonialsSection() {
           <div>
             <div className={styles.eyebrow}>{testimonials.eyebrow}</div>
             <h2 className={styles.sectionTitle}>
-              Join <em>{testimonials.titleEmphasis}</em>
+              Seen in <em>{testimonials.titleEmphasis}</em>
               <br />
-              collectors worldwide.
+              collector homes.
             </h2>
           </div>
           <div

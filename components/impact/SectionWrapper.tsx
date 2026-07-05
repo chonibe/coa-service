@@ -48,7 +48,7 @@ const sectionVariants = cva(
         header: 'bg-[#390000] text-[#ffba94]',
         headerSubtle: 'bg-[#390000]/10 text-[#390000]',
         primary: 'bg-[#047AFF] text-white',
-        secondary: 'bg-[#f0c417] text-[#1a1a1a]',
+        secondary: 'bg-[#f0c417] text-foreground',
         transparent: 'bg-transparent',
         gradient: 'bg-gradient-to-b from-white to-[#f5f5f5]',
       },
@@ -207,16 +207,16 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
             >
               <TitleTag className={cn(
                 'font-heading font-semibold tracking-[-0.02em]',
-                titleClassName ?? 'text-[#1a1a1a]',
+                titleClassName ?? 'text-foreground',
                 titleTag === 'h5' ? h5SizeClasses : titleSizeClasses[titleSize]
               )}>
                 {title}
               </TitleTag>
-              {showSquiggle && <TitleSquiggle className="mt-1 text-[#1a1a1a]/40" />}
+              {showSquiggle && <TitleSquiggle className="mt-1 text-muted-foreground/50" />}
             </div>
             {subtitle && (
               <p className={cn(
-                'mt-3 text-base sm:text-lg text-[#1a1a1a]/60 max-w-2xl',
+                'mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg',
                 alignment === 'center' && 'mx-auto',
               )}>
                 {subtitle}

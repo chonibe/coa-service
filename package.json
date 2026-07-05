@@ -237,7 +237,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3",
-    "vercel": "^39.0.0",
+    "vercel": "^54.18.7",
     "whatwg-fetch": "^3.6.20"
   },
   "overrides": {

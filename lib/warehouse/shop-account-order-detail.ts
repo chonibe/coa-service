@@ -25,6 +25,18 @@ type WarehouseOrderRow = {
   raw_data: Record<string, unknown> | null
 }
 
+type WarehouseRawTrackingSnapshot = {
+  tracking_number?: string
+  carrier?: string
+  last_mile_tracking?: string
+  track_status?: number
+  track_status_name?: string
+  status?: number
+  status_name?: string
+  sys_order_id?: string
+  order_id?: string
+}
+
 export type FormattedShopTracking = {
   tracking_number?: string
   track_list?: Array<[string, string]>
@@ -146,6 +158,38 @@ async function fetchLiveChinaDivisionOrder(
   }
 }
 
+function readWarehouseRawTracking(row: WarehouseOrderRow | null): WarehouseRawTrackingSnapshot {
+  const raw = row?.raw_data
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+
+  const obj = raw as Record<string, unknown>
+  const readString = (key: string): string | undefined => {
+    const value = obj[key]
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined
+  }
+  const readNumber = (key: string): number | undefined => {
+    const value = obj[key]
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) return parsed
+    }
+    return undefined
+  }
+
+  return {
+    tracking_number: readString('tracking_number'),
+    carrier: readString('carrier'),
+    last_mile_tracking: readString('last_mile_tracking'),
+    track_status: readNumber('track_status'),
+    track_status_name: readString('track_status_name'),
+    status: readNumber('status'),
+    status_name: readString('status_name'),
+    sys_order_id: readString('sys_order_id'),
+    order_id: readString('order_id'),
+  }
+}
+
 function enrichOrderWithProductNames(
   order: ChinaDivisionOrderInfo | null,
   productNameMap: Map<string, string>,
@@ -192,6 +236,7 @@ export async function getShopAccountWarehouseDetail(
     order_number: order.order_number,
   })
   const warehouseRow = warehouseRows[0] ?? null
+  const warehouseRawTracking = readWarehouseRawTracking(warehouseRow)
 
   const chinaClient = createChinaDivisionClient()
   let chinaDivisionOrder = await fetchLiveChinaDivisionOrder(chinaClient, warehouseRow, {
@@ -220,30 +265,58 @@ export async function getShopAccountWarehouseDetail(
 
   chinaDivisionOrder = enrichOrderWithProductNames(chinaDivisionOrder, productNameMap)
 
+  if (!chinaDivisionOrder && warehouseRow) {
+    chinaDivisionOrder = {
+      order_id: warehouseRawTracking.order_id || warehouseRow.order_id || '',
+      sys_order_id: warehouseRawTracking.sys_order_id || warehouseRow.id,
+      tracking_number: warehouseRawTracking.tracking_number || warehouseRow.tracking_number || undefined,
+      last_mile_tracking: warehouseRawTracking.last_mile_tracking,
+      carrier: warehouseRawTracking.carrier,
+      track_status: warehouseRawTracking.track_status,
+      track_status_name: warehouseRawTracking.track_status_name,
+      status: warehouseRawTracking.status,
+      status_name: warehouseRawTracking.status_name,
+      info: [],
+    } as ChinaDivisionOrderInfo
+  }
+
   let tracking: FormattedShopTracking | null = null
   try {
     const stone = createSTONE3PLClient()
-    const platformOrderId =
-      chinaDivisionOrder?.sys_order_id ||
-      chinaDivisionOrder?.order_id ||
-      warehouseRow?.id ||
-      warehouseRow?.order_id ||
-      ''
-
     const trackingNumber =
       chinaDivisionOrder?.tracking_number ||
       warehouseRow?.tracking_number ||
+      warehouseRawTracking.tracking_number ||
       chinaDivisionOrder?.info?.find((p) => p.tracking_number)?.tracking_number ||
       undefined
 
-    if (platformOrderId) {
-      const raw = await stone.getTracking(platformOrderId, trackingNumber)
-      const timeline = stone.getTrackingTimeline(raw)
-      tracking = {
-        ...raw,
-        timeline,
-        parsed_events: stone.parseTrackingEvents(raw.track_list),
-        status_info: stone.getStatusInfo(raw.track_status),
+    const trackingOrderIds = [
+      chinaDivisionOrder?.order_id,
+      warehouseRow?.order_id,
+      warehouseRawTracking.order_id,
+      order.order_name,
+      order.order_number != null ? String(order.order_number) : undefined,
+      chinaDivisionOrder?.sys_order_id,
+      warehouseRawTracking.sys_order_id,
+      warehouseRow?.id,
+    ].filter((value, index, arr): value is string => Boolean(value) && arr.indexOf(value) === index)
+
+    for (const candidateOrderId of trackingOrderIds) {
+      try {
+        const raw = await stone.getTracking(candidateOrderId, trackingNumber)
+        const timeline = stone.getTrackingTimeline(raw)
+        tracking = {
+          ...raw,
+          carrier: raw.carrier || chinaDivisionOrder?.carrier || warehouseRawTracking.carrier,
+          last_mile_tracking:
+            raw.last_mile_tracking || chinaDivisionOrder?.last_mile_tracking || warehouseRawTracking.last_mile_tracking,
+          timeline,
+          parsed_events: stone.parseTrackingEvents(raw.track_list),
+          status_info: stone.getStatusInfo(raw.track_status),
+        }
+        break
+      } catch {
+        // Try the next known warehouse/platform order identifier.
       }
     }
   } catch {

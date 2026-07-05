@@ -14,7 +14,7 @@ export interface AddressSuggestion {
 }
 
 const inputBase =
-  'flex h-10 w-full rounded-lg border border-neutral-200 dark:!border-neutral-600 bg-white dark:!bg-neutral-900 px-3 py-2 text-sm text-neutral-900 dark:!text-white placeholder:text-neutral-500 dark:placeholder:!text-neutral-400 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
+  'flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
 
 export interface GooglePlacesAddressInputProps {
   id: string

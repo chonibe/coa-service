@@ -61,13 +61,13 @@ export default function BlogPage() {
         <SectionWrapper spacing="md" background="default">
           <Container maxWidth="default">
             <div className="animate-pulse space-y-8">
-              <div className="h-12 bg-[#f5f5f5] rounded w-1/3" />
+              <div className="h-12 bg-muted rounded w-1/3" />
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map(i => (
                   <div key={i} className="space-y-4">
-                    <div className="aspect-[16/9] bg-[#f5f5f5] rounded-xl" />
-                    <div className="h-6 bg-[#f5f5f5] rounded w-3/4" />
-                    <div className="h-4 bg-[#f5f5f5] rounded w-1/2" />
+                    <div className="aspect-[16/9] bg-muted rounded-xl" />
+                    <div className="h-6 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
                   </div>
                 ))}
               </div>
@@ -157,7 +157,7 @@ function ArticleCard({
         className="group block"
       >
         {/* Image */}
-        <div className="aspect-[16/9] relative rounded-[24px] overflow-hidden bg-[#f5f5f5] mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+        <div className="aspect-[16/9] relative rounded-[24px] overflow-hidden bg-muted mb-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
           {article.imageUrl ? (
             <Image
               src={article.imageUrl}

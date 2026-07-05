@@ -7,12 +7,16 @@ import { execSync } from 'node:child_process'
 
 const PATTERNS = [
   'text-\\[#1a1a1a\\]',
+  'border-\\[#1a1a1a\\]',
+  'bg-\\[#f5f5f5\\]',
+  'bg-white/?',
   'dark:bg-\\[#171515\\]',
   'bg-neutral-950',
+  'text-neutral-950',
   'min-h-screen bg-white',
 ]
 
-const PATHS = ['"app/(store)"', '"components/shop"']
+const PATHS = ['"app/(store)"', '"components/shop"', '"components/impact"']
 
 let failed = false
 

@@ -56,12 +56,12 @@ export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
   title: 'What is Street Collector? | Backlit lamp & limited edition street art prints',
   description:
-    'Street Collector pairs a premium illuminated display with swappable limited-edition street art prints from independent artists. Editioned works, Certificate of Authenticity, worldwide shipping.',
+    'Street Collector pairs a backlit display with swappable limited edition street art prints from independent artists.',
   alternates: { canonical: '/shop/street-collector' },
   openGraph: {
     title: 'Street Collector — illuminated art & limited edition prints',
     description:
-      'Collect limited edition street art prints and display them in a backlit Street Collector lamp. Small runs, COA, ships worldwide.',
+      'Collect limited edition street art prints and display them in a backlit Street Collector lamp.',
     url: '/shop/street-collector',
     siteName: 'Street Collector',
     type: 'website',

@@ -418,7 +418,7 @@ function WishlistItemCard({ item, index, isOpen, onRemove, onAddToCart }: Wishli
       <div className="flex gap-3">
         {/* Image */}
         <div 
-          className="relative w-20 h-20 flex-shrink-0 bg-[#f5f5f5] rounded-lg overflow-hidden cursor-pointer"
+          className="relative w-20 h-20 flex-shrink-0 bg-muted rounded-lg overflow-hidden cursor-pointer"
           onClick={() => window.location.href = `/shop/${item.handle}`}
         >
           {item.image ? (

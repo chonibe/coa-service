@@ -51,7 +51,7 @@ const PAYMENT_OPTIONS: { id: PaymentMethodType; label: string; icon: React.React
   {
     id: 'card',
     label: 'Credit Card',
-    icon: <CreditCard className="h-5 w-5 text-neutral-600" />,
+    icon: <CreditCard className="h-5 w-5 text-muted-foreground" />,
   },
 ]
 
@@ -118,7 +118,7 @@ export function PaymentMethodModal({
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col bg-white',
+            'fixed inset-x-0 bottom-0 top-0 z-[101] flex flex-col bg-background text-foreground',
             'max-h-[100dvh] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90vh] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:shadow-xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -126,16 +126,16 @@ export function PaymentMethodModal({
             'sm:data-[state=closed]:slide-out-to-bottom-4 sm:data-[state=open]:slide-in-from-bottom-4'
           )}
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-5">
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-5">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
             </button>
-            <Dialog.Title className="text-lg font-semibold text-neutral-950">Payment Method</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold text-foreground">Payment Method</Dialog.Title>
             <div className="w-9" />
           </div>
 
@@ -153,22 +153,22 @@ export function PaymentMethodModal({
                   className={cn(
                     'flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors',
                     selectedMethod === opt.id
-                      ? 'border-neutral-900 bg-neutral-50'
-                      : 'border-neutral-200 hover:bg-neutral-50'
+                      ? 'border-foreground bg-muted'
+                      : 'border-border hover:bg-muted'
                   )}
                 >
                   <div className="flex h-10 w-10 items-center justify-center">{opt.icon}</div>
-                  <span className="font-medium text-neutral-950">{opt.label}</span>
+                  <span className="font-medium text-foreground">{opt.label}</span>
                   {selectedMethod === opt.id && (
-                    <span className="ml-auto text-sm text-neutral-600">Selected</span>
+                    <span className="ml-auto text-sm text-muted-foreground">Selected</span>
                   )}
                 </button>
               ))}
             </div>
 
             {showCardInput && (
-              <div ref={cardSectionRef} className="mt-6 border-t border-neutral-200 pt-6 shrink-0">
-                <h3 className="text-sm font-medium text-neutral-950 mb-3">Enter card details</h3>
+              <div ref={cardSectionRef} className="mt-6 shrink-0 border-t border-border pt-6">
+                <h3 className="mb-3 text-sm font-medium text-foreground">Enter card details</h3>
                 {cardError && (
                   <p className="text-sm text-red-500 mb-3">{cardError}</p>
                 )}
@@ -183,23 +183,23 @@ export function PaymentMethodModal({
                     onError={setCardError}
                   />
                 ) : (
-                  <div className="flex items-center gap-2 py-4 text-neutral-500">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
+                  <div className="flex items-center gap-2 py-4 text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-foreground" />
                     <span className="text-sm">Loading payment form...</span>
                   </div>
                 )}
               </div>
             )}
 
-            <div className="mt-6 border-t border-neutral-200 pt-6 shrink-0">
-              <h3 className="text-sm font-medium text-neutral-950">Billing address</h3>
+            <div className="mt-6 shrink-0 border-t border-border pt-6">
+              <h3 className="text-sm font-medium text-foreground">Billing address</h3>
               <div className="mt-3 flex items-center gap-2">
                 <Checkbox
                   id="same-as-shipping"
                   checked={sameAsShipping}
                   onCheckedChange={(c) => handleSameAsChange(!!c)}
                 />
-                <Label htmlFor="same-as-shipping" className="text-sm text-neutral-700 cursor-pointer">
+                <Label htmlFor="same-as-shipping" className="cursor-pointer text-sm text-muted-foreground">
                   Same as Address
                 </Label>
               </div>
@@ -208,7 +208,7 @@ export function PaymentMethodModal({
                   <button
                     type="button"
                     onClick={() => setBillingModalOpen(true)}
-                    className="w-full rounded-lg border border-neutral-200 px-4 py-3 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+                    className="w-full rounded-lg border border-border px-4 py-3 text-left text-sm text-muted-foreground hover:bg-muted"
                   >
                     {billingAddress
                       ? `${billingAddress.addressLine1}, ${billingAddress.city}`

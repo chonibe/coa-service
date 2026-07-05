@@ -74,7 +74,7 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
           <p className="text-muted-foreground mb-6">Could not load the lamp product. Please try again later.</p>
           <Link
             href="/shop"
-            className="inline-block px-6 py-2.5 bg-card text-neutral-950 rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
+            className="inline-block px-6 py-2.5 bg-card text-foreground rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
           >
             Back to Shop
           </Link>

@@ -185,7 +185,7 @@ export function CheckoutLayout({
   return (
     <div className="flex flex-col px-6">
       {!hideTitle && (
-        <h3 className="text-lg font-semibold text-neutral-950 dark:text-white">Checkout</h3>
+        <h3 className="text-lg font-semibold text-foreground">Checkout</h3>
       )}
 
       {topSection && <div className="mt-4">{topSection}</div>}
@@ -203,13 +203,13 @@ export function CheckoutLayout({
         <div className="min-w-0 flex-1">
           {addressDisplay ? (
             <>
-              <p className="truncate font-medium text-neutral-950 dark:text-white">{addressDisplay}</p>
+              <p className="truncate font-medium text-foreground">{addressDisplay}</p>
               {countryName && (
                 <p className="text-xs text-neutral-600 dark:text-[#c4a0a0]">{countryName}</p>
               )}
             </>
           ) : (
-            <p className={cn('font-medium', isAddressComplete ? 'text-neutral-950 dark:text-white' : 'text-amber-700 dark:text-amber-400')}>
+            <p className={cn('font-medium', isAddressComplete ? 'text-foreground' : 'text-amber-700 dark:text-amber-400')}>
               Add Address
             </p>
           )}
@@ -234,7 +234,7 @@ export function CheckoutLayout({
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <PaymentButtonIcon method={paymentMethod} />
-          <span className="font-medium text-neutral-950">
+          <span className="font-medium text-foreground">
             {savedCard && (paymentMethod === 'card' || paymentMethod === 'link')
               ? `${savedCard.brand.charAt(0).toUpperCase() + savedCard.brand.slice(1)} ending in ${savedCard.last4}`
               : getPaymentMethodLabel(paymentMethod)}
@@ -258,7 +258,7 @@ export function CheckoutLayout({
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Tag className="h-5 w-5 shrink-0 text-neutral-600 dark:text-[#c4a0a0]" />
-          <span className="font-medium text-neutral-950 dark:text-white">
+          <span className="font-medium text-foreground">
             {promoCode ? promoCode : 'Add promo code'}
           </span>
         </div>
@@ -286,18 +286,18 @@ export function CheckoutLayout({
         )}
         <div className="flex justify-between text-sm">
           <span className="text-neutral-600 dark:text-[#c4a0a0]">Shipping</span>
-          <span className="font-medium text-neutral-950 dark:text-white">
+          <span className="font-medium text-foreground">
             {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
           </span>
         </div>
         <div className="flex items-center justify-between pt-2">
-          <span className="font-semibold text-neutral-950 dark:text-white">
+          <span className="font-semibold text-foreground">
             Total
             {itemCount != null
               ? ` (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`
               : ''}
           </span>
-          <span className="text-lg font-bold text-neutral-950 dark:text-white">
+          <span className="text-lg font-bold text-foreground">
             {renderTotal ? renderTotal(finalTotal) : `$${Math.max(0, finalTotal).toFixed(2)}`}
           </span>
         </div>

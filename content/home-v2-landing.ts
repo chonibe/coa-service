@@ -106,8 +106,8 @@ export const homeV2LandingContent = {
 
   meetLamp: {
     eyebrow: 'Meet the Lamp',
-    title: 'Designed for\n every moment.',
-    titleEmphasis: 'every moment.',
+    title: 'Built to live\nwith the room.',
+    titleEmphasis: 'with the room.',
     defaultVideoUrl:
       'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
     features: [
@@ -141,15 +141,15 @@ export const homeV2LandingContent = {
 
   steps: {
     eyebrow: 'How It Works',
-    title: 'Bringing art into\n everyday life.',
-    titleEmphasis: 'everyday life.',
+    title: 'Real art,\nworked into the day.',
+    titleEmphasis: 'worked into the day.',
     items: [
       {
-        tabTitle: 'Collect original Art.',
+        tabTitle: 'Collect real artwork.',
         bodyTitle: 'Browse 100+ original works.',
         bodyTitleEmphasis: 'Own a piece of the street.',
         bodyText:
-          'Every artwork in our collection is a limited edition created by an independent street artist from around the world. Each print is numbered — and as editions sell out, the remaining pieces appreciate in value.',
+          'Every work here comes from an independent street artist, not a stock library and not a print dump. Editions are numbered, runs stay tight, and once a piece starts disappearing from the shelf, you feel it.',
         details: [
           {
             text: '100+ artists from 40+ countries — Stuttgart, Galicia, Austin, Tel Aviv and beyond.',
@@ -165,21 +165,21 @@ export const homeV2LandingContent = {
           'https://cdn.shopify.com/videos/c/o/v/dc4d553853cc40b998a292ced715e802.mp4',
       },
       {
-        tabTitle: 'Transform any space instantly.',
+        tabTitle: 'Change the room fast.',
         bodyTitle: 'Set the light.',
-        bodyTitleEmphasis: 'Transform any space instantly.',
+        bodyTitleEmphasis: 'Change the room fast.',
         bodyText:
-          'One tap. Multiple brightness levels. Colors deepen, details surface as the room changes mood. Swap prints in seconds — no tools, no clips. A living room that changes whenever you do.',
+          'One tap shifts the room. Low light pulls out one set of colors, brighter light wakes up another, and swapping the print takes less time than choosing what to play next.',
           details: [],
         videoUrl:
           'https://cdn.shopify.com/videos/c/o/v/c31886010f654a50a6245dc9ab6cc301.mp4',
       },
       {
-        tabTitle: 'Support Artists directly.',
+        tabTitle: 'Support artists directly.',
         bodyTitle: 'Every purchase goes',
         bodyTitleEmphasis: 'straight to the artist.',
         bodyText:
-          'Street Collector is built on a simple idea: artists deserve to be paid. Every artwork you collect puts money directly into the hands of the creator — no galleries, no middlemen, no markups.',
+          'When you collect here, the money does not disappear into layers of gallery math. A real share goes to the artist whose work you brought home, which is the point.',
         details: [
           // Secondary texts removed per design update
         ],
@@ -191,8 +191,8 @@ export const homeV2LandingContent = {
 
   artistsWall: {
     eyebrow: 'The Collection',
-    title: '100+ Artists.\n Every corner of the world.',
-    titleEmphasis: 'Every corner of the world.',
+    title: '100+ Artists.\nAcross the roster.',
+    titleEmphasis: 'Across the roster.',
     ctaLabel: 'View all artists',
     /** Short clips in the carousel above the image grid (deduped URLs) */
     carouselVideos: [
@@ -461,7 +461,7 @@ export const homeV2LandingContent = {
 
   testimonials: {
     eyebrow: 'What collectors say',
-    title: 'Join 3,000+\ncollectors worldwide.',
+    title: 'Seen in 3,000+\ncollector homes.',
     titleEmphasis: '3,000+',
     ratingLabel: '5.0 · Verified reviews',
     videos: [
@@ -495,7 +495,7 @@ export const homeV2LandingContent = {
         author: 'Debra G.',
         featured: true,
         quote:
-          'In an immensely difficult year, where any sense of ease or peace often proved elusive, I found a unique and unexpected comfort—through sometimes daily turmoil.',
+          'During a rough stretch, this became one of the few objects in the room that actually settled me. Turning it on helped mark a different mood for the evening.',
         imageUrl:
           'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg',
       },
@@ -509,7 +509,7 @@ export const homeV2LandingContent = {
       {
         author: 'Maayan F.',
         quote:
-          'Such prestige and chic with this product! Every single bit lovely and lush and the concept innovative. So honored to be on the first edition.',
+          'The concept felt fresh right away, and the final object really holds its own in the room. I was glad to get in on the first edition.',
       },
     ] satisfies TestimonialText[],
   },
@@ -518,17 +518,17 @@ export const homeV2LandingContent = {
     {
       icon: '✈',
       title: 'Free Worldwide Shipping',
-      body: 'We cover delivery to any destination. Your collection arrives safely, wherever you are.',
+      body: 'Delivery is on us, wherever you are ordering from.',
     },
     {
       icon: '⬡',
       title: '12-Month Guarantee',
-      body: 'Full coverage on your lamp for the first year. If anything goes wrong, we make it right. No questions asked.',
+      body: 'Your lamp is covered for the first year. If something goes wrong, we fix it with you.',
     },
     {
       icon: '↩',
       title: 'Easy 30-Day Returns',
-      body: "Not what you expected? Return within 30 days, no hassle. We're confident you'll love it.",
+      body: 'If it is not right for your space, you have 30 days to send it back.',
     },
   ] satisfies GuaranteeItem[],
 
@@ -540,32 +540,32 @@ export const homeV2LandingContent = {
       {
         question: 'How big are the Street Lamps?',
         answer:
-          'The Street Lamps are designed as statement pieces without overwhelming a room — perfectly sized for desks, shelves, and side tables. They make a beautifully proportioned centrepiece in any space.',
+          'They are sized to sit comfortably on a desk, shelf, or side table without disappearing into the room or taking it over.',
       },
       {
         question: 'Is it easy to swap the artworks?',
         answer:
-          'Completely effortless. No tools, no clips. Slide the old print out, slide the new one in. The whole process takes under 10 seconds — changing your space really is instant.',
+          'Yes. No tools, no clips. Slide one print out, slide the next one in, and you are done in a few seconds.',
       },
       {
         question: 'How long does the charge last?',
         answer:
-          'With normal daily use — on in the morning, off at night — you can expect multiple days of charge before needing to plug in again.',
+          'With normal daily use, you should get a few days before it needs to be charged again.',
       },
       {
         question: 'How long does shipping take?',
         answer:
-          'Most orders arrive within 5–10 business days. Every order includes full tracking so you can follow your collection on its way.',
+          'Most orders arrive within 5 to 10 business days. You will get tracking once the order is on the way.',
       },
       {
         question: 'Do artwork prices change as editions sell?',
         answer:
-          'Yes — as an edition sells out, remaining prints increase in value. Early collectors get the best prices. Your collection is both beautiful and a genuine investment in art.',
+          'Yes. As editions move, the remaining works can increase in price, so earlier collectors usually get the best entry point.',
       },
       {
         question: 'Do you ship internationally?',
         answer:
-          'Absolutely — we ship worldwide, completely free, to every destination. Our collectors span 40+ countries.',
+          'Yes. We ship worldwide, and shipping is free.',
       },
     ] satisfies FaqItem[],
   },
@@ -574,7 +574,7 @@ export const homeV2LandingContent = {
     title: 'Your room deserves\nreal art.',
     titleEmphasis: 'real art.',
     subtitle:
-      'Start with the lamp. Grow your collection. Support independent artists from every corner of the world. From $99.',
+      'Start with the lamp. Add work over time. Support independent artists across the roster. From $99.',
     primaryCta: 'Start your collection',
     secondaryCta: 'Explore the artists',
     backgroundImages: [

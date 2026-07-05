@@ -189,7 +189,7 @@ export function ProductGallery({
   
   if (galleryItems.length === 0 && (!images || images.length === 0)) {
     return (
-      <div className={cn('aspect-square bg-[#f5f5f5] rounded-[16px] flex items-center justify-center', className)}>
+      <div className={cn('aspect-square bg-muted rounded-[16px] flex items-center justify-center', className)}>
         <span className="text-gray-400">No image available</span>
       </div>
     )
@@ -272,7 +272,7 @@ export function ProductGallery({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
+              <div className="w-full h-full flex items-center justify-center bg-muted">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                   <polyline points="3.27,6.96 12,12.01 20.73,6.96" />
@@ -317,7 +317,7 @@ export function ProductGallery({
         }}
         className={cn(
           'relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden transition-all',
-          'border-2 bg-[#f5f5f5]',
+          'border-2 bg-muted',
           selectedIndex === index 
             ? 'border-foreground ring-1 ring-border' 
             : 'border-transparent hover:border-border'

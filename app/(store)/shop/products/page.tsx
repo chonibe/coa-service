@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
   title: 'Street art prints & limited editions | Shop | Street Collector',
   description:
-    'Buy limited edition street art prints and urban art for the Street Collector lamp. Certificate of Authenticity, small runs, worldwide shipping. Browse artworks by independent artists.',
+    'Browse limited edition street art prints and artworks for the Street Collector lamp.',
   alternates: { canonical: '/shop/products' },
 }
 
@@ -193,7 +193,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       />
       {/* Collection Header with Image (for collection pages) */}
       {collectionHandle && collectionImage && (
-        <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden bg-[#f5f5f5]">
+        <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden bg-muted">
           <img
             src={collectionImage}
             alt={title}
@@ -273,7 +273,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   className="flex-shrink-0 group"
                 >
                   <div className="w-28 sm:w-36">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-[#f5f5f5] mb-2 ring-1 ring-border group-hover:ring-experience-highlight/30 transition-all">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-muted mb-2 ring-1 ring-border group-hover:ring-experience-highlight/30 transition-all">
                       {series.thumbnail_url ? (
                         <img
                           src={series.thumbnail_url}

@@ -298,7 +298,7 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
                 {cartCount > 0 && (
                   <span 
                     ref={badgeRef as React.RefObject<HTMLSpanElement>}
-                    className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-[#1a1a1a] rounded-full"
+                    className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-[#f0c417] text-foreground rounded-full"
                   >
                     {cartCount > 99 ? '99+' : cartCount}
                   </span>

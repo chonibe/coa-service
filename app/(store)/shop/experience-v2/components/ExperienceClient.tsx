@@ -60,7 +60,7 @@ function ExperienceConfiguratorWithBoundary(
           <button
             type="button"
             onClick={() => setRetryKey((k) => k + 1)}
-            className="rounded-full bg-card px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-100 transition-colors"
+            className="rounded-full bg-card px-6 py-2.5 text-sm font-medium text-foreground hover:bg-neutral-100 transition-colors"
           >
             Try again
           </button>

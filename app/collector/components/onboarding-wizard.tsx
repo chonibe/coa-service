@@ -499,7 +499,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 <div className="text-center py-8">
                   <h2 className="text-2xl font-bold mb-4">Your First Mission</h2>
                   <p className="text-muted-foreground mb-6">
-                    Explore our marketplace and discover amazing street art
+                    Start browsing the collection and see what pulls you in
                   </p>
                 </div>
 
@@ -509,7 +509,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Browse our curated collection of street art from talented artists around the world. Each purchase earns you credits and brings you closer to unlocking exclusive rewards.
+                      Browse original works, start your collection, and earn credits as you go. Every piece you pick moves you closer to member rewards.
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">

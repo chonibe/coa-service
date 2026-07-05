@@ -187,7 +187,7 @@ export function ProductSeriesInfo({
                 {seriesThumbnails.slice(0, 5).map((thumb) => (
                   <div
                     key={thumb.id}
-                    className="w-8 h-8 rounded-md overflow-hidden bg-[#f5f5f5] border border-white shadow-sm"
+                    className="w-8 h-8 rounded-md overflow-hidden bg-muted border border-white shadow-sm"
                     title={thumb.title}
                   >
                     {thumb.image_url ? (

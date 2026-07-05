@@ -213,7 +213,7 @@ function CrateCard({ product, index, isActive, onClick }: CrateCardProps) {
         )}
       >
         {/* Image */}
-        <div className="relative aspect-square bg-[#f5f5f5]">
+        <div className="relative aspect-square bg-muted">
           {image ? (
             <img
               src={image}
@@ -313,7 +313,7 @@ export function CrateDiggingCarouselSimple({
       <div className="max-w-md mx-auto">
         {/* Card */}
         <div className="relative rounded-2xl overflow-hidden bg-card shadow-xl border-4 border-white">
-          <div className="relative aspect-square bg-[#f5f5f5]">
+          <div className="relative aspect-square bg-muted">
             {image && (
               <img
                 src={image}

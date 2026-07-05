@@ -105,7 +105,7 @@ function GiftCardsPageContent() {
           <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-[#201c1c] flex items-center justify-center mb-4">
             <Gift className="w-8 h-8 text-neutral-700 dark:text-[#d4b8b8]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-neutral-950 dark:text-[#f0e8e8] text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground dark:text-[#f0e8e8] text-center">
             Digital Gift Card
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mt-2 text-center">

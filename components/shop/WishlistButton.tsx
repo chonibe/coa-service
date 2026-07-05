@@ -125,8 +125,8 @@ export function WishlistButton({
   }
   
   const variantClasses = {
-    default: 'bg-white/90 backdrop-blur-sm hover:bg-white shadow-md',
-    ghost: 'bg-transparent hover:bg-white/10',
+    default: 'border border-border/60 bg-background/90 shadow-md backdrop-blur-sm hover:bg-background',
+    ghost: 'bg-transparent hover:bg-muted/80',
   }
   
   return (
@@ -137,7 +137,7 @@ export function WishlistButton({
         'group relative rounded-full',
         'flex items-center justify-center',
         'transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-[#f0c417] focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-[#f0c417] focus:ring-offset-2 focus:ring-offset-background',
         sizeClasses[size],
         variantClasses[variant],
         className

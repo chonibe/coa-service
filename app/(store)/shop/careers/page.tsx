@@ -41,9 +41,9 @@ export default function CareersPage() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-2xl bg-[#f5f5f5] p-8">
+              <div className="rounded-2xl bg-muted p-8">
                 <p className="text-muted-foreground mb-6">
-                  We&apos;re always looking for talented individuals to join our team. To express your interest or learn about current openings, please reach out.
+                  If you think you would be a strong fit for Street Collector, send us a note. We&apos;re happy to hear from people who want to help shape what we&apos;re building.
                 </p>
                 <a
                   href="mailto:info@thestreetlamp.com?subject=Careers%20Inquiry"

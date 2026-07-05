@@ -305,7 +305,7 @@ export function CheckoutSuccessContent() {
         <SectionWrapper spacing="md">
           <Container maxWidth="narrow">
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#f5f5f5] animate-pulse" />
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-muted animate-pulse" />
               {paypalProcessing ? (
                 <>
                   <p className="text-lg font-medium text-foreground mb-2">We&apos;re processing your order&hellip;</p>
@@ -313,8 +313,8 @@ export function CheckoutSuccessContent() {
                 </>
               ) : (
                 <>
-                  <div className="h-8 bg-[#f5f5f5] rounded w-2/3 mx-auto mb-4 animate-pulse" />
-                  <div className="h-4 bg-[#f5f5f5] rounded w-1/2 mx-auto animate-pulse" />
+                  <div className="h-8 bg-muted rounded w-2/3 mx-auto mb-4 animate-pulse" />
+                  <div className="h-4 bg-muted rounded w-1/2 mx-auto animate-pulse" />
                 </>
               )}
             </div>
@@ -355,7 +355,7 @@ export function CheckoutSuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5]">
+    <main className="min-h-screen bg-muted">
       <SectionWrapper spacing="md" background="muted">
         <Container maxWidth="narrow">
           {/* Demo mode banner — only when ?demo=1 */}

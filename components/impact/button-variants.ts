@@ -31,18 +31,18 @@ export const buttonVariants = cva(
           'shadow-impact-sm hover:shadow-impact-md',
         ].join(' '),
         secondary: [
-          'bg-[#f0c417] text-[#1a1a1a]',
+          'bg-[#f0c417] text-foreground',
           'rounded-[60px]',
           'hover:opacity-[0.85]',
           'focus-visible:ring-[#f0c417]',
           'shadow-impact-sm hover:shadow-impact-md',
         ].join(' '),
         outline: [
-          'bg-transparent text-[#1a1a1a]',
+          'bg-transparent text-foreground',
           'rounded-[60px]',
           'border-2 border-current',
-          'hover:bg-[#1a1a1a] hover:text-white',
-          'focus-visible:ring-[#1a1a1a]',
+          'hover:bg-foreground hover:text-background',
+          'focus-visible:ring-foreground',
         ].join(' '),
         'outline-primary': [
           'bg-transparent text-[#047AFF]',
@@ -52,10 +52,10 @@ export const buttonVariants = cva(
           'focus-visible:ring-[#047AFF]',
         ].join(' '),
         ghost: [
-          'bg-transparent text-[#1a1a1a]',
+          'bg-transparent text-foreground',
           'rounded-[60px]',
-          'hover:bg-[#1a1a1a]/5',
-          'focus-visible:ring-[#1a1a1a]',
+          'hover:bg-muted',
+          'focus-visible:ring-foreground',
         ].join(' '),
         link: [
           'bg-transparent text-[#047AFF]',
@@ -64,10 +64,10 @@ export const buttonVariants = cva(
           'focus-visible:ring-[#047AFF]',
         ].join(' '),
         subdued: [
-          'bg-[#1a1a1a]/5 text-[#1a1a1a]',
+          'bg-muted text-foreground',
           'rounded-[60px]',
-          'hover:bg-[#1a1a1a]/10',
-          'focus-visible:ring-[#1a1a1a]',
+          'hover:bg-accent',
+          'focus-visible:ring-foreground',
         ].join(' '),
         header: [
           'bg-transparent text-[#ffba94]',

@@ -200,7 +200,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
             'fixed top-4 left-4 right-4 z-50 max-h-[calc(100%-2rem)] w-[calc(100%-2rem)]',
             'bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-border',
             'overflow-hidden flex flex-col',
-            'invisible pointer-events-none translate-x-full',
+            'invisible pointer-events-none -translate-x-full',
             className
           )}
           style={{
@@ -259,19 +259,19 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
           <div className="max-h-[60vh] overflow-y-auto">
             {hasSearched && !hasResults && !loading && (
               <div className="p-8 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a]/5 rounded-full mb-4">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5">
+                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
                     <circle cx="11" cy="11" r="8" />
                     <path d="M21 21l-4.35-4.35" />
                   </svg>
                 </div>
-                <h3 className="font-heading text-lg font-semibold text-[#1a1a1a] mb-2">
+                <h3 className="mb-2 font-heading text-lg font-semibold text-foreground">
                   No results found
                 </h3>
-                <p className="text-sm text-[#1a1a1a]/60">
+                <p className="text-sm text-muted-foreground">
                   No results for {'"'}{query}{'"'}
                 </p>
-                <p className="text-sm text-[#1a1a1a]/50 mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Try different keywords or check your spelling
                 </p>
               </div>
@@ -280,7 +280,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
             {hasResults && (
               <div className="p-4">
                 {/* Results count */}
-                <div className="mb-4 text-sm text-[#1a1a1a]/60">
+                <div className="mb-4 text-sm text-muted-foreground">
                   {results.products.length + results.collections.length === 1
                     ? `1 result for "${query}"`
                     : `${results.products.length + results.collections.length} results for "${query}"`}
@@ -289,7 +289,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 {/* Collections */}
                 {results.collections.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50 mb-3">
+                    <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Collections ({results.collections.length})
                     </h3>
                     <div className="space-y-2">
@@ -298,10 +298,10 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                           key={collection.id}
                           href={`/shop?collection=${collection.handle}`}
                           onClick={onClose}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#f5f5f5] transition-colors"
+                          className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted"
                         >
                           {collection.image && (
-                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#f5f5f5]">
+                            <div className="h-12 w-12 overflow-hidden rounded-lg bg-muted">
                               <img
                                 src={collection.image.url}
                                 alt={collection.image.altText || collection.title}
@@ -309,7 +309,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                               />
                             </div>
                           )}
-                          <span className="font-medium text-[#1a1a1a]">
+                          <span className="font-medium text-foreground">
                             {collection.title}
                           </span>
                         </Link>
@@ -321,7 +321,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 {/* Products */}
                 {results.products.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50 mb-3">
+                    <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Artworks ({results.products.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -332,7 +332,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                           onClick={onClose}
                           className="group"
                         >
-                          <div className="aspect-square rounded-[16px] overflow-hidden bg-[#f5f5f5] mb-2">
+                          <div className="mb-2 aspect-square overflow-hidden rounded-[16px] bg-muted">
                             {product.image && (
                               <img
                                 src={product.image.url}
@@ -342,15 +342,15 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                             )}
                           </div>
                           {product.vendor && (
-                            <p className="text-xs text-[#1a1a1a]/50 uppercase tracking-wider">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
                               {product.vendor}
                             </p>
                           )}
-                          <h4 className="text-sm font-medium text-[#1a1a1a] line-clamp-2">
+                          <h4 className="text-sm font-medium text-foreground line-clamp-2">
                             {product.title}
                           </h4>
                           {product.price && (
-                            <p className="text-sm font-semibold text-[#1a1a1a] mt-1">
+                            <p className="mt-1 text-sm font-semibold text-foreground">
                               {product.price}
                             </p>
                           )}
@@ -383,13 +383,13 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                 {recentSearches.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50">
+                      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         Recent Searches
                       </h3>
                       <button
                         type="button"
                         onClick={clearRecentSearches}
-                        className="text-xs text-[#1a1a1a]/50 hover:text-[#f83a3a] transition-colors"
+                        className="text-xs text-muted-foreground transition-colors hover:text-[#f83a3a]"
                       >
                         Clear
                       </button>
@@ -400,13 +400,13 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                           key={idx}
                           type="button"
                           onClick={() => setQuery(term)}
-                          className="flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-[#f5f5f5] rounded-lg transition-colors group"
+                          className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted"
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#1a1a1a]/30 group-hover:text-[#1a1a1a]/50">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/60 group-hover:text-muted-foreground">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 6v6l4 2" />
                           </svg>
-                          <span className="text-sm text-[#1a1a1a]">{term}</span>
+                          <span className="text-sm text-foreground">{term}</span>
                         </button>
                       ))}
                     </div>
@@ -415,7 +415,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
 
                 {/* Popular Searches */}
                 <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/50 mb-3">
+                  <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Popular Searches
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -424,7 +424,7 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
                         key={term}
                         type="button"
                         onClick={() => setQuery(term)}
-                        className="px-4 py-2 text-sm bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-full transition-colors"
+                        className="rounded-full bg-muted px-4 py-2 text-sm transition-colors hover:bg-accent"
                       >
                         {term}
                       </button>

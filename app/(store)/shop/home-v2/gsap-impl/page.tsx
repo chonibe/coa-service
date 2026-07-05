@@ -29,7 +29,7 @@ import { HomeProductCard } from '../../home/HomeProductCard'
 
 export const metadata: Metadata = {
   title: 'Street Collector - Enhanced Experience',
-  description: 'Experience our immersive shop with GSAP-powered animations and interactions.',
+  description: 'Street Collector shop demo with GSAP-based motion and interaction patterns.',
   alternates: { canonical: '/shop/home-v2/gsap-impl' },
 }
 
@@ -262,7 +262,7 @@ export default async function ShopHomeV2GsapPage() {
           <Container maxWidth="default" paddingX="gutter">
             <ArtistCarousel
               title="Featured Artists"
-              subtitle="Explore collections from artists worldwide"
+              subtitle="Browse work from artists across the roster"
               artists={featuredArtists}
               autoScroll={true}
               showArrows={true}
@@ -379,4 +379,3 @@ export default async function ShopHomeV2GsapPage() {
     </>
   )
 }
-

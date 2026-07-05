@@ -184,7 +184,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
     const socialBtn = landingDualTone
       ? cn(
           'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors',
-          'border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:bg-stone-50',
+          'border-stone-300 bg-background text-stone-800 hover:border-stone-400 hover:bg-stone-50',
           'dark:border-[#ffba94]/25 dark:bg-[#ffba94]/10 dark:text-[#ffba94] dark:hover:border-[#ffba94]/40 dark:hover:bg-[#ffba94]/15'
         )
       : socialIconButtonClass
@@ -386,7 +386,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                     className={cn(
                       'box-border h-10 min-w-0 flex-1 rounded-full border px-4 text-sm leading-none transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2',
                       landingDualTone
-                        ? 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:ring-experience-highlight/35 dark:border-[#ffba94]/20 dark:bg-[#ffba94]/10 dark:text-[#ffba94] dark:placeholder:text-[#ffba94]/50 dark:focus:ring-[#ffba94]/50'
+                        ? 'border-stone-300 bg-background text-stone-900 placeholder:text-stone-400 focus:ring-experience-highlight/35 dark:border-[#ffba94]/20 dark:bg-[#ffba94]/10 dark:text-[#ffba94] dark:placeholder:text-[#ffba94]/50 dark:focus:ring-[#ffba94]/50'
                         : 'border-[#ffba94]/20 bg-[#ffba94]/10 text-[#ffba94] placeholder:text-[#ffba94]/50 focus:ring-[#ffba94]/50'
                     )}
                   />
