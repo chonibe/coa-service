@@ -9,8 +9,8 @@ import {
   getDiscountPercentage,
   type ShopifyProduct
 } from '@/lib/shopify/storefront-client'
-import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { trackViewItem } from '@/lib/google-analytics'
+import { storefrontProductToItem, trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import { useState } from 'react'
 
 /**
@@ -107,9 +107,8 @@ export function ProductCardItem({
         artistName: product.vendor,
       })
 
-      // E-commerce: track add_to_cart (stage: products grid)
-      const item = storefrontProductToItem(product, variant, 1)
-      trackAddToCart({ ...item, item_list_name: 'products' })
+      // E-commerce: view_item + add_to_cart (grid quick-add skips PDP)
+      trackQuickAddToCart(product, variant, 'products')
 
       // Brief delay for visual feedback
       setTimeout(() => {

@@ -3,8 +3,8 @@
 import { VinylArtworkCard } from '@/components/vinyl'
 import { ProductBadge, Badge } from '@/components/impact'
 import { useCart } from '@/lib/shop/CartContext'
-import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { trackViewItem } from '@/lib/google-analytics'
+import { storefrontProductToItem, trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import { useState } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 
@@ -106,9 +106,8 @@ export function HomeProductCard({ product, compact = false, disableTilt = false 
         artistName: product.vendor,
       })
 
-      // E-commerce: track add_to_cart (stage: home)
-      const item = storefrontProductToItem(product, variant, 1)
-      trackAddToCart({ ...item, item_list_name: 'home' })
+      // E-commerce: view_item + add_to_cart (grid quick-add skips PDP)
+      trackQuickAddToCart(product, variant, 'home')
 
       // Brief delay for visual feedback
       setTimeout(() => {

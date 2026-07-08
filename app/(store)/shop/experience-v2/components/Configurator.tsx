@@ -94,8 +94,8 @@ import { useExperienceOrder } from '../ExperienceOrderContext'
 import { resolveExperienceNextAction } from '@/lib/shop/experience-journey-next-action'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
-import { trackViewItem, trackAddToCart, trackSearch, trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { trackViewItem, trackSearch, trackEnhancedEvent, isGAEnabled } from '@/lib/google-analytics'
+import { storefrontProductToItem, trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import { useShopAuth } from '@/lib/shop/useShopAuth'
 import { useRatingSync } from '@/lib/experience/useRatingSync'
 import { setAffiliateDismissedCookie } from '@/lib/affiliate-tracking'
@@ -1339,7 +1339,7 @@ export function Configurator({
     })
     if (isAdding) {
       const variant = product.variants?.edges?.[0]?.node
-      trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience' })
+      trackQuickAddToCart(product, variant, 'experience')
       setLastAddedProductId(product.id)
       setLampPreviewOrder((prev) => {
         const idx = prev.indexOf(product.id)

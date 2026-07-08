@@ -6,8 +6,8 @@ import dynamic from 'next/dynamic'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { useExperienceOpenArtPicker, useExperienceOrder } from '../ExperienceOrderContext'
-import { trackAddToCart, trackEnhancedEvent, trackViewItem, isGAEnabled } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { trackEnhancedEvent, trackViewItem, isGAEnabled } from '@/lib/google-analytics'
+import { storefrontProductToItem, trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import {
   applyFilters,
   DEFAULT_FILTERS,
@@ -1014,7 +1014,7 @@ export function ExperienceV2Client({
         setPreviewSlideIndex(0)
         setDisplayedProduct(product)
         const variant = product.variants?.edges?.[0]?.node
-        trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
+        trackQuickAddToCart(product, variant, 'experience-v2')
         setLampPreviewOrder((prevLamp) => {
           const idx = prevLamp.indexOf(product.id)
           if (idx >= 0) {
@@ -1060,7 +1060,7 @@ export function ExperienceV2Client({
         setPreviewSlideIndex(0)
         setDisplayedProduct(product)
         const variant = product.variants?.edges?.[0]?.node
-        trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v2' })
+        trackQuickAddToCart(product, variant, 'experience-v2')
         setLampPreviewOrder((prevLamp) => {
           const idx = prevLamp.indexOf(product.id)
           if (idx >= 0) {

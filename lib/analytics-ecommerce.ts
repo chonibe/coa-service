@@ -4,7 +4,7 @@
  * across shop (storefront) and experience.
  */
 
-import type { ProductItem } from './google-analytics'
+import { trackViewItem, trackAddToCart, type ProductItem } from './google-analytics'
 import type { CartItem } from './shop/CartContext'
 
 /** Storefront product shape (variants.edges) */
@@ -60,4 +60,19 @@ export function cartItemsToProductItems(items: CartItem[]): ProductItem[] {
     quantity: i.quantity,
     currency: 'USD',
   }))
+}
+
+/**
+ * Quick-add from a grid/card without visiting PDP or opening a detail sheet.
+ * Fires view_item immediately before add_to_cart so funnel steps stay ordered.
+ */
+export function trackQuickAddToCart(
+  product: StorefrontProductLike,
+  variant: { id: string; title?: string; price?: { amount: string } } | null | undefined,
+  item_list_name: string,
+  quantity = 1
+) {
+  const item = { ...storefrontProductToItem(product, variant, quantity), item_list_name }
+  trackViewItem(item)
+  trackAddToCart(item)
 }

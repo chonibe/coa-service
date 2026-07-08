@@ -24,7 +24,7 @@ import { useGalleryProductHydration } from '@/lib/shop/use-gallery-product-hydra
 import { useExperienceOpenArtPicker, useExperienceOrder } from '../../experience-v2/ExperienceOrderContext'
 import { useExperienceTheme } from '../../experience-v2/ExperienceThemeContext'
 import { trackAddToCart, trackViewItem } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { storefrontProductToItem, trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import { applyFilters, DEFAULT_FILTERS, type FilterState } from '../../experience-v2/components/FilterPanel'
 import type { SpotlightData } from '../../experience-v2/components/ArtistSpotlightBanner'
 import { capitalizeFirstLetter, cn, formatPriceCompact } from '@/lib/utils'
@@ -943,7 +943,7 @@ export function ExperienceV3Client({
     })
     setLastAddedProductId(product.id)
     const variant = product.variants?.edges?.[0]?.node
-    trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'experience-v3-quick' })
+    trackQuickAddToCart(product, variant, 'experience-v3-quick')
   }, [assignProductToLampPreview])
 
   const loadMoreForSeason = useCallback(

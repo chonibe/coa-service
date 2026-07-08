@@ -14,8 +14,7 @@ import { buildArtistAnswerFirstLead } from '@/lib/seo/artist-meta'
 import { buildArtistFaqPairs } from '@/lib/seo/artist-faqs'
 import { parsePullQuote } from '@/lib/shop/parse-pull-quote'
 import { useCart } from '@/lib/shop/CartContext'
-import { trackAddToCart } from '@/lib/google-analytics'
-import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
+import { trackQuickAddToCart } from '@/lib/analytics-ecommerce'
 import styles from './artist-profile.module.css'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 import { normalizeShopifyProductId } from '@/lib/shop/shopify-product-id'
@@ -415,7 +414,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
       image: product.featuredImage?.url,
       artistName: product.vendor,
     })
-    trackAddToCart({ ...storefrontProductToItem(product, variant, 1), item_list_name: 'artist_profile' })
+    trackQuickAddToCart(product, variant, 'artist_profile')
   }
 
   return (
