@@ -298,9 +298,7 @@ export function FeaturedArtistBundleSection({
           className={cn(
             'mt-4 w-full rounded-xl px-4 py-3.5 text-center text-base font-semibold tracking-tight shadow-md transition-all duration-200',
             'active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
-            theme === 'light'
-              ? 'bg-neutral-900 text-white shadow-black/20 hover:bg-neutral-800'
-              : 'bg-[#FFBA94] text-foreground shadow-black/30 hover:bg-[#ffc4a8]'
+            'bg-experience-cta text-white shadow-black/20 hover:bg-experience-cta-hover dark:text-neutral-900 dark:shadow-black/30'
           )}
         >
           Add to cart

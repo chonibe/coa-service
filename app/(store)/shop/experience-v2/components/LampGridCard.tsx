@@ -41,14 +41,14 @@ export function LampGridCard({ onAddLamp, className, highlightPrimary }: LampGri
           onClick={onAddLamp}
           style={{ touchAction: 'manipulation' }}
           className={cn(
-            'relative flex items-center justify-center w-11 h-11 rounded-full bg-[#FFBA94] hover:bg-[#ffcaaa] active:scale-[0.98] text-[#1a0e08] transition-all shadow-md shadow-[#FFBA94]/10',
+            'relative flex items-center justify-center w-11 h-11 rounded-full bg-experience-cta hover:bg-experience-cta-hover active:scale-[0.98] text-white dark:text-neutral-900 transition-all shadow-md shadow-black/15',
             highlightPrimary && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
           )}
-          aria-label="Start collecting"
+          aria-label="Browse collection"
         >
           <Plus className="w-5 h-5 shrink-0" />
         </button>
-        <p className="text-sm font-semibold text-[#FFBA94] leading-none">Start Collecting</p>
+        <p className="text-sm font-semibold text-[#FFBA94] leading-none">Browse collection</p>
       </div>
     </motion.div>
   )

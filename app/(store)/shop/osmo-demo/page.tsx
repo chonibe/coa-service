@@ -15,7 +15,7 @@ import { FlickCards } from '@/components/shop/FlickCards'
 import { AccordionFAQ } from '@/components/sections/AccordionFAQ'
 import { CircularCarousel } from '@/components/shop/CircularCarousel'
 import { getCollection } from '@/lib/shopify/storefront-client'
-import { homepageContent } from '@/content/homepage'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 export const metadata: Metadata = {
   title: 'Osmo-Inspired Components - Street Collector',
@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 }
 
 export const dynamic = 'force-dynamic'
+const homepageContent = getStorePageContent('home')
 
 export default async function OsmoDemoPage() {
   // Fetch products for demos

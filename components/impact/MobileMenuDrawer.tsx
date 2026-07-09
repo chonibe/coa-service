@@ -66,18 +66,6 @@ const MobileMenuDrawer = React.forwardRef<HTMLDivElement, MobileMenuDrawerProps>
       return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, onClose])
 
-    // Prevent scroll when open
-    React.useEffect(() => {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
-      return () => {
-        document.body.style.overflow = ''
-      }
-    }, [isOpen])
-
     const toggleExpanded = (href: string) => {
       const newExpanded = new Set(expandedItems)
       if (newExpanded.has(href)) {

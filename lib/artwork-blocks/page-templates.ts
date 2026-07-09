@@ -26,7 +26,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
   {
     id: "minimal",
     name: "Minimal",
-    description: "Simple and clean - just the essentials",
+    description: "Simple layout with the essentials",
     icon: "✨",
     blocks: [
       { 
@@ -36,14 +36,14 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { 
         type: "Artwork Text Block", 
         title: "About This Work", 
-        placeholder: "Tell the story behind your artwork..." 
+        placeholder: "Write a short note about the artwork..." 
       }
     ]
   },
   {
     id: "story",
     name: "Story",
-    description: "Share the journey behind the artwork",
+    description: "Build a page around the artwork and its context",
     icon: "📖",
     blocks: [
       { 
@@ -53,7 +53,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { 
         type: "Artwork Artist Note Block", 
         title: "Artist's Note",
-        placeholder: "A personal message to collectors" 
+        placeholder: "A note for collectors" 
       },
       { 
         type: "Artwork Process Gallery Block", 
@@ -63,7 +63,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { 
         type: "Artwork Text Block", 
         title: "Final Thoughts", 
-        placeholder: "Wrap up the story..." 
+        placeholder: "Add anything else you want collectors to know..." 
       }
     ]
   },
@@ -85,7 +85,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { 
         type: "Artwork Inspiration Block", 
         title: "Inspiration",
-        placeholder: "What inspired this piece?" 
+        placeholder: "What influenced this piece?" 
       },
       { 
         type: "Artwork Image Block", 
@@ -94,7 +94,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       { 
         type: "Artwork Soundtrack Block", 
         title: "Soundtrack",
-        placeholder: "Music that connects to this work" 
+        placeholder: "Music connected to this work" 
       }
     ]
   }

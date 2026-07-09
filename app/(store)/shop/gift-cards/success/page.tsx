@@ -55,7 +55,7 @@ function GiftCardSuccessContent() {
       } catch {
         if (!cancelled) {
           setStatus('error')
-          setError('Something went wrong')
+          setError('Please try again.')
         }
       }
     }
@@ -99,7 +99,7 @@ function GiftCardSuccessContent() {
             Check your email for the gift card code. If you don&apos;t see it within a few minutes, check your spam folder.
           </p>
           <Link href="/shop" className="inline-block mt-6 text-experience-highlight hover:underline font-medium">
-            Continue shopping
+            Browse collection
           </Link>
         </div>
       </main>
@@ -111,14 +111,14 @@ function GiftCardSuccessContent() {
       <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
         <div className="max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-foreground text-foreground mb-2">
-            Something went wrong
+            Unable to load gift card details
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mb-6">
             {error}
           </p>
           <Link href="/shop/contact">
             <Button className="bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]">
-              Contact Support
+              Email support
             </Button>
           </Link>
         </div>
@@ -133,12 +133,12 @@ function GiftCardSuccessContent() {
           <Gift className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
         <h1 className="text-3xl font-bold text-foreground text-foreground mb-2">
-          Gift card purchased!
+          Gift card ready
         </h1>
         <p className="text-neutral-600 dark:text-[#c4a0a0] mb-8">
           {data?.recipientEmail
             ? `A $${((data?.amountCents ?? 0) / 100).toFixed(2)} gift card has been sent to ${data.recipientEmail}`
-            : `Your $${((data?.amountCents ?? 0) / 100).toFixed(2)} gift card code is below. We've also sent it to your email.`}
+            : `Your $${((data?.amountCents ?? 0) / 100).toFixed(2)} gift card code is below. We also sent it to your email.`}
         </p>
 
         {data?.code && (
@@ -174,13 +174,13 @@ function GiftCardSuccessContent() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/shop">
             <Button className="w-full sm:w-auto bg-neutral-900 dark:bg-[#f0e8e8] text-white dark:text-[#171515]">
-              Continue shopping
+              Browse collection
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
           <Link href="/shop/gift-cards">
             <Button variant="outline" className="w-full sm:w-auto">
-              Buy another gift card
+              Buy another card
             </Button>
           </Link>
         </div>

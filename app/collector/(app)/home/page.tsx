@@ -6,6 +6,7 @@ import { ContentCard, ContentCardHeader } from '@/components/app-shell'
 import { ProgressRing } from '@/components/app-shell'
 import { Gem, ShoppingBag, ArrowRight, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Home Tab
@@ -32,6 +33,8 @@ interface RecentPurchase {
   authenticated: boolean
   orderId: string
 }
+
+const appHomeContent = getCollectorPageContent('appHome')
 
 export default function CollectorHomePage() {
   const [products, setProducts] = useState<ShopProduct[]>([])
@@ -121,7 +124,7 @@ export default function CollectorHomePage() {
             <Sparkles className="w-4 h-4 text-[#ffba94]" />
           </ProgressRing>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#ffba94] font-body">Level {stats.level}</p>
+            <p className="text-xs font-bold text-[#ffba94] font-body">{appHomeContent.status.level(stats.level)}</p>
             <div className="h-1 bg-[#ffba94]/20 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-[#ffba94] rounded-full transition-all duration-700"
@@ -144,12 +147,12 @@ export default function CollectorHomePage() {
       {purchases.length > 0 && (
         <div>
           <div className="flex items-center justify-between px-4 mb-3">
-            <h2 className="text-sm font-bold text-gray-900 font-body">Your Recent Purchases</h2>
+            <h2 className="text-sm font-bold text-gray-900 font-body">{appHomeContent.recentPurchases.title}</h2>
             <Link
               href="/collector/collection"
               className="text-xs font-semibold text-impact-primary font-body flex items-center gap-1"
             >
-              View all <ArrowRight className="w-3 h-3" />
+              {appHomeContent.recentPurchases.viewAll} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="flex gap-3 px-4 overflow-x-auto scrollbar-none">
@@ -179,12 +182,12 @@ export default function CollectorHomePage() {
       {/* Shop Products — New Releases */}
       <div>
         <div className="flex items-center justify-between px-4 mb-3">
-          <h2 className="text-sm font-bold text-gray-900 font-body">New Releases</h2>
+          <h2 className="text-sm font-bold text-gray-900 font-body">{appHomeContent.newReleases.title}</h2>
           <Link
             href="/shop"
             className="text-xs font-semibold text-impact-primary font-body flex items-center gap-1"
           >
-            Shop all <ArrowRight className="w-3 h-3" />
+            {appHomeContent.newReleases.viewAll} <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
         {loading ? (
@@ -202,7 +205,7 @@ export default function CollectorHomePage() {
             <ContentCard padding="lg">
               <div className="text-center py-8">
                 <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 font-body">No products available right now</p>
+                <p className="text-sm text-gray-400 font-body">{appHomeContent.newReleases.empty}</p>
               </div>
             </ContentCard>
           </div>

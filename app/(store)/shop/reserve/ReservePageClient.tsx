@@ -17,13 +17,13 @@ const BENEFITS = [
   {
     n: '1',
     title: '48-hour early access',
-    body: 'Every drop goes live for Reserve members two days before the public. Buy at ground floor before the ladder moves.',
+    body: 'Every drop goes live for Reserve members two days before the public. Buy at the opening price before the ladder moves.',
     ring: 'bg-[#EEEDFE] text-[#26215C]',
   },
   {
     n: '2',
     title: 'Priority allocation',
-    body: 'When a drop is in high demand, Reserve members who follow that artist get first allocation before general release.',
+    body: 'When a drop is in high demand, Reserve members who follow that artist are handled first before the general release opens.',
     ring: 'bg-[#E1F5EE] text-[#04342C]',
   },
   {
@@ -35,7 +35,7 @@ const BENEFITS = [
   {
     n: '4',
     title: 'Ground-floor price lock',
-    body: 'Lock the ground-floor price on any edition for 30 days, even as the ladder climbs. Buy when you’re ready.',
+    body: 'Hold the opening price on any edition for 30 days, even as the ladder climbs. Buy when you are ready.',
     ring: 'bg-[#FAECE7] text-[#4A1B0C]',
   },
 ] as const
@@ -43,7 +43,7 @@ const BENEFITS = [
 const TIMELINE = [
   { day: 'Day 1', text: 'Your $20 credit lands. You’re following the artists you care about on the roster.' },
   { day: 'Day 9', text: 'An artist announces a new drop for Thursday. You get the early-access window 48 hours before everyone else.' },
-  { day: 'Day 11', text: 'Edition goes live for Reserve. You buy at ground-floor $40. $20 credit applied — you pay $20 net.' },
+  { day: 'Day 11', text: 'Edition goes live for Reserve. You buy at the opening $40 price. $20 credit is applied, so you pay $20 net.' },
   { day: 'Day 13', text: 'Public drop opens. The edition is already at Rising tier ($52). You paid less than the next collector.' },
 ] as const
 
@@ -135,8 +135,8 @@ function ReserveInner() {
           </div>
           <div className="mx-auto max-w-2xl px-6 pb-16 text-center sm:px-10">
             <p className={exploreStyles.philosophyBody}>
-              Never miss an artist you love. First access to every drop from the artists you follow — before they go
-              public — at ground-floor pricing, with rolling credit toward what you collect next.
+              Never miss an artist you love. See each drop from the artists you follow before it goes public, hold the
+              opening price, and keep monthly credit ready for the next piece you want.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <button

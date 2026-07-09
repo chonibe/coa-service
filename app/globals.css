@@ -1001,12 +1001,41 @@ body[data-pac-dark="true"] .pac-container .pac-item-query {
   animation: experience-carousel-mini-turntable-spin 18s linear infinite;
 }
 
+/**
+ * Bundle offer "Artwork only" card: continuous left-right tilt matching the Spline lamp's own
+ * idle yaw swing (see `spline-3d-preview.tsx` idleSwingRad/idleSwingPeriodSec — ±15°, one full
+ * cycle every 9s) so the flat artwork card and the live 3D lamp preview feel like they're
+ * moving in sync even though one is a WebGL scene and the other a flat image.
+ */
+@keyframes experience-bundle-artwork-tilt {
+  0%,
+  100% {
+    transform: perspective(900px) rotateY(0deg);
+  }
+  25% {
+    transform: perspective(900px) rotateY(15deg);
+  }
+  50% {
+    transform: perspective(900px) rotateY(0deg);
+  }
+  75% {
+    transform: perspective(900px) rotateY(-15deg);
+  }
+}
+
+.experience-bundle-artwork-tilt {
+  animation: experience-bundle-artwork-tilt 9s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .experience-carousel-mini-turntable {
     animation: none;
   }
   .animate-experience-collection-plus-prize-pulse,
   .animate-experience-collection-plus-prize-float {
+    animation: none;
+  }
+  .experience-bundle-artwork-tilt {
     animation: none;
   }
 }

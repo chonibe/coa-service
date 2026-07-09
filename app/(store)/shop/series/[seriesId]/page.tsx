@@ -105,7 +105,7 @@ export default function SeriesPage() {
                 The series you&apos;re looking for doesn&apos;t exist or has been removed.
               </p>
               <Link href="/shop">
-                <Button variant="primary">Back to Shop</Button>
+                <Button variant="primary">Back to shop</Button>
               </Link>
             </div>
           </Container>

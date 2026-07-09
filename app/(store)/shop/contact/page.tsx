@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { Container, SectionWrapper } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
 import { ContactFormClient } from './ContactFormClient'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 }
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'info@thestreetlamp.com'
+const contactContent = getStorePageContent('contact')
 
 export default function ContactPage() {
 
@@ -20,10 +22,10 @@ export default function ContactPage() {
         <Container maxWidth="narrow" paddingX="gutter">
           <ScrollReveal animation="fadeUp" duration={0.8}>
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-6">
-              Contact Us
+              {contactContent.hero.title}
             </h1>
             <p className="text-lg text-muted-foreground mb-10">
-              If you need help with an order, have a question about the collection, or just need the right person, write to us here.
+              {contactContent.hero.subtitle}
             </p>
           </ScrollReveal>
 
@@ -31,7 +33,7 @@ export default function ContactPage() {
             <ScrollReveal animation="fadeUp" delay={0.1} duration={0.8}>
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-2">Email</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">{contactContent.sidebar.emailTitle}</h2>
                   <a
                     href={`mailto:${CONTACT_EMAIL}`}
                     className="text-experience-highlight hover:underline font-medium"
@@ -39,22 +41,22 @@ export default function ContactPage() {
                     {CONTACT_EMAIL}
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Usually the fastest way to reach us. We aim to reply within one business day.
+                    {contactContent.sidebar.emailBody}
                   </p>
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-2">Support Hours</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">{contactContent.sidebar.hoursTitle}</h2>
                   <p className="text-muted-foreground">
-                    Monday to Friday: 8am – 8:30pm
+                    {contactContent.sidebar.hoursBody}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Typical response time: within 24 hours
+                    {contactContent.sidebar.hoursHint}
                   </p>
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-2">Personal Data Requests</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">{contactContent.sidebar.dataTitle}</h2>
                   <p className="text-muted-foreground">
-                    You can also use this inbox for personal data requests covered by our Privacy Notice. If your message is for our Data Protection Officer, include &quot;DPO&quot; in the subject line.
+                    {contactContent.sidebar.dataBody}
                   </p>
                 </div>
               </div>

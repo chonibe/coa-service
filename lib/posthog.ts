@@ -331,8 +331,8 @@ export function captureAddToCart(item: PostHogProductItem) {
   if (ph) {
     ph.setPersonProperties({ has_added_to_cart: true })
     const list = item.item_list_name ?? ""
-    if (list === "experience-v2" || list === "experience") {
-      ph.setPersonProperties({ has_used_experience_v2_cart: true })
+    if (list === "experience-v2" || list === "experience" || list === "experience-v3" || list === "experience-v3-quick") {
+      ph.setPersonProperties({ has_used_experience_v2_cart: true, has_used_experience_v3_cart: list.startsWith("experience-v3") })
     }
   }
   captureWithSessionActivity("add_to_cart", { ...item, currency: item.currency ?? "USD" })
@@ -424,6 +424,9 @@ export const FunnelEvents = {
   experience_onboarding_login_clicked: "experience_onboarding_login_clicked",
   experience_redirected_to_onboarding: "experience_redirected_to_onboarding",
   experience_started: "experience_started",
+  order_bar_opened: "order_bar_opened",
+  order_bar_closed: "order_bar_closed",
+  checkout_clicked: "checkout_clicked",
   /** V2 shell: artwork picker sheet */
   experience_picker_opened: "experience_picker_opened",
   experience_picker_closed: "experience_picker_closed",
@@ -472,6 +475,7 @@ const EXP_STARTED_COUNT_KEY = "sc_ph_experience_started_count"
 export function trackExperienceV2ConfiguratorEntry(options?: {
   initialArtistSlug?: string
   directEntry?: boolean
+  surface?: "v2_configurator" | "v3_configurator"
 }) {
   if (typeof window === "undefined") return
   try {
@@ -493,7 +497,7 @@ export function trackExperienceV2ConfiguratorEntry(options?: {
     /* ignore */
   }
   captureFunnelEvent(FunnelEvents.experience_started, {
-    surface: "experience_v2_configurator",
+    surface: options?.surface === "v3_configurator" ? "experience_v3_configurator" : "experience_v2_configurator",
     device_type: getDeviceType(),
     owns_lamp: ownsLamp ?? false,
     purpose: purpose === "gift" || purpose === "self" ? purpose : "self",
@@ -512,7 +516,7 @@ export function trackExperienceV2ConfiguratorEntry(options?: {
   }
   ph.setPersonProperties({
     experience_configurator_visited: true,
-    last_experience_surface: "v2_configurator",
+    last_experience_surface: options?.surface ?? "v2_configurator",
     experience_started_count: n,
   })
 }

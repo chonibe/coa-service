@@ -245,7 +245,7 @@ export function FilterPanel({
                         'flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
                         filterPanelLamp.quantity >= 1
                           ? 'cursor-default bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
-                          : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                          : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
                       )}
                     >
                       {filterPanelLamp.quantity >= 1 ? (

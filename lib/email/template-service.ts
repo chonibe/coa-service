@@ -43,7 +43,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h1 style="color: #8217ff;">Thank You for Your Order!</h1>
   <p>Hi {{customerName}}, your order {{orderName}} has been confirmed.</p>
-  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track Your Order</a></p>
+  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track your order</a></p>
 </body>
 </html>`,
   },
@@ -71,10 +71,10 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #8217ff;">🚚 Your Package Is In Transit</h1>
+  <h1 style="color: #8217ff;">🚚 Your package is in transit</h1>
   <p>Your package for order {{orderName}} is moving through the delivery network.</p>
   <p>Tracking: {{trackingNumber}}</p>
-  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track Your Order</a></p>
+  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track your order</a></p>
 </body>
 </html>`,
   },
@@ -84,10 +84,10 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #f59e0b;">🏃 Out for Delivery Today!</h1>
-  <p>Exciting news! Your order {{orderName}} is out for delivery.</p>
+  <h1 style="color: #f59e0b;">🏃 Out for delivery today</h1>
+  <p>Your order {{orderName}} is out for delivery.</p>
   <p>Tracking: {{trackingNumber}}</p>
-  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track Your Order</a></p>
+  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Track your order</a></p>
 </body>
 </html>`,
   },
@@ -97,9 +97,9 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #22c55e;">✅ Your Package Has Been Delivered!</h1>
+  <h1 style="color: #22c55e;">✅ Your package has been delivered</h1>
   <p>Your order {{orderName}} has arrived. We hope you love it!</p>
-  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Order Details</a></p>
+  <p><a href="{{trackingUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Open order details</a></p>
 </body>
 </html>`,
   },
@@ -109,10 +109,10 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #ef4444;">⚠️ Delivery Alert</h1>
+  <h1 style="color: #ef4444;">⚠️ Delivery alert</h1>
   <p>There's an update about your order {{orderName}} that may require your attention.</p>
   <p>Tracking: {{trackingNumber}}</p>
-  <p><a href="{{trackingUrl}}" style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Details</a></p>
+  <p><a href="{{trackingUrl}}" style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Open details</a></p>
 </body>
 </html>`,
   },
@@ -139,21 +139,21 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 </html>`,
   },
   post_purchase_artist_story_day5: {
-    subject: 'The story of the artist behind {{artworkTitle}}',
+    subject: 'About the artist behind {{artworkTitle}}',
     html: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background:#f4f4f2; margin:0; padding:24px;">
   <div style="max-width:600px; margin:0 auto; background:#ffffff; border:1px solid #e7e5df; border-radius:12px; padding:28px;">
-    <p style="margin:0 0 8px; letter-spacing:0.08em; text-transform:uppercase; color:#6b6b6b; font-size:11px;">Artist Story</p>
-    <h1 style="margin:0 0 14px; color:#111111; font-size:26px;">The story of the artist behind your artwork</h1>
-    <p style="color:#2a2a2a;">Hi {{customerName}}, while your order <strong>{{orderName}}</strong> moves through the studio, here is the story of the artist behind <strong>{{artworkTitle}}</strong>.</p>
+    <p style="margin:0 0 8px; letter-spacing:0.08em; text-transform:uppercase; color:#6b6b6b; font-size:11px;">Artist Notes</p>
+    <h1 style="margin:0 0 14px; color:#111111; font-size:26px;">About the artist behind your artwork</h1>
+    <p style="color:#2a2a2a;">Hi {{customerName}}, while your order <strong>{{orderName}}</strong> moves through the studio, here is a closer look at the artist behind <strong>{{artworkTitle}}</strong>.</p>
     <img src="{{lampArtImageUrl}}" alt="Lamp with {{artworkTitle}}" style="max-width:100%; border-radius:10px; border:1px solid #eceae5; margin:8px 0 10px;" />
     <p style="color:#1f1f1f; margin:0 0 8px;"><strong>{{artistName}}</strong></p>
     <p style="color:#2a2a2a; margin:0 0 12px;">{{artistStorySnippet}}</p>
     <p style="color:#2a2a2a; margin:0 0 12px;">{{artistPressSnippet}}</p>
     <p style="color:#2a2a2a; margin:0 0 16px;">{{artworkNarrative}}</p>
-    <a href="{{collectionUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin-right:8px;">View your collection</a>
+    <a href="{{collectionUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin-right:8px;">Open dashboard</a>
     <a href="{{instagramUrl}}" style="background:#f2f2f0; color:#111111; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block;">Follow {{artistName}} on Instagram</a>
   </div>
 </body>
@@ -203,7 +203,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
         <a href="{{lampVideoUrl}}" style="color:#111111;">Watch the Street Lamp video</a>
       </p>
     </div>
-    <a href="{{dashboardUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block;">Open collector dashboard</a>
+    <a href="{{dashboardUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block;">Open dashboard</a>
   </div>
 </body>
 </html>`,
@@ -223,7 +223,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
     <p style="color:#2a2a2a;">Reply to this email with your feedback, or share a photo of your setup.</p>
     <img src="{{lampArtImageUrl}}" alt="Lamp and artwork in space" style="max-width:100%; border-radius:10px; border:1px solid #eceae5; margin:8px 0 12px;" />
     <p style="color:#7a7a7a; font-size:12px; margin:0 0 14px;">A look at the lamp and artwork in your space</p>
-    <a href="{{dashboardUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin-top:14px;">Open collector dashboard</a>
+    <a href="{{dashboardUrl}}" style="background:#111111; color:#ffffff; padding:12px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin-top:14px;">Open dashboard</a>
   </div>
 </body>
 </html>`,
@@ -259,8 +259,8 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; html: string }> = {
 <head><meta charset="utf-8"></head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h1 style="color: #8217ff;">🎨 Welcome to Street Collector!</h1>
-  <p>Hi {{customerName}}, welcome to the Street Collector community!</p>
-  <p><a href="{{dashboardUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Your Collection</a></p>
+  <p>Hi {{customerName}}, your collector account is ready.</p>
+  <p><a href="{{dashboardUrl}}" style="background: #8217ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Open Dashboard</a></p>
 </body>
 </html>`,
   },
@@ -317,7 +317,7 @@ export const SAMPLE_DATA: Record<string, Record<string, string>> = {
     artworkTitle: 'Midnight Echoes',
     artistName: 'A. Smith',
     artistStorySnippet: 'A contemporary street artist exploring identity through layered textures.',
-    artistPressSnippet: 'Featured in editorial coverage and collector highlights for bold visual storytelling.',
+    artistPressSnippet: 'Featured in editorial coverage and collector updates.',
     artworkNarrative: 'This piece reflects movement, resilience, and late-night city energy.',
     artworkImageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1200',
     lampArtImageUrl: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/Instagram_post_-_11.png?v=1766164695',

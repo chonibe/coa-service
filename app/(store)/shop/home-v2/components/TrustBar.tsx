@@ -2,8 +2,10 @@
 
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 function TrustIcon({ kind }: { kind: 'check' | 'shield' | 'return' | 'clock' }) {
   const common = { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none' as const, stroke: 'currentColor', strokeWidth: 2 }
@@ -53,4 +55,3 @@ export function TrustBar() {
     </div>
   )
 }
-

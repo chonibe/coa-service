@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { Container, SectionWrapper, SectionHeader, Button } from '@/components/impact'
 import { FAQSection, ScrollingText } from '@/components/sections'
 import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
-import { homepageContent } from '@/content/homepage'
+import { getStorePageContent } from '@/lib/content/site-content'
 import {
   getCollection,
   getProduct,
@@ -34,6 +34,7 @@ export const metadata: Metadata = {
 }
 
 export const dynamic = 'force-dynamic'
+const homepageContent = getStorePageContent('home')
 
 export default async function ShopHomeV2GsapPage() {
   const apiConfigured = isStorefrontConfigured()
@@ -226,7 +227,7 @@ export default async function ShopHomeV2GsapPage() {
               <p className="text-sm text-slate-500 mb-3">Preview artwork live on the 3D lamp</p>
               <Link href="/experience">
                 <Button variant="default" size="lg">
-                  Customize Your Lamp
+                  Preview the lamp
                 </Button>
               </Link>
             </div>

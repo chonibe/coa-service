@@ -34,7 +34,7 @@ export function buildArtistDescription(
     workCount > 0
       ? `${workCount} limited edition artwork${workCount === 1 ? '' : 's'}.`
       : 'Limited edition artworks.',
-    'Artist context, finite releases, worldwide shipping.',
+    'Artist details, finite releases, worldwide shipping.',
   ]
   return truncate(parts.join(' '), MAX_DESC)
 }

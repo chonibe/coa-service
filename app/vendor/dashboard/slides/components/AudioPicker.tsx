@@ -211,7 +211,7 @@ export function AudioPicker({
                 <Mic className="w-10 h-10 text-red-500" />
               </div>
               <p className="text-white/60 text-sm mb-4">
-                Record a personal message for your collectors
+                Record a short note about the work
               </p>
               <Button
                 className="bg-red-500 hover:bg-red-600"

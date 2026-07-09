@@ -1,0 +1,494 @@
+.page {
+  --bg: var(--experience-bg);
+  --surface: var(--experience-surface);
+  --surface-2: var(--experience-surface-2);
+  --surface-3: var(--experience-surface-3);
+  --text: var(--experience-text);
+  --muted: var(--experience-text-muted);
+  --accent: var(--experience-highlight);
+  --accent-soft: var(--experience-highlight-muted);
+  --title: var(--experience-title);
+  --border: var(--experience-border);
+  --cta: var(--experience-cta);
+  --cta-hover: var(--experience-cta-hover);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 22%),
+    linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--surface) 72%, var(--bg)) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  font-family: var(--font-landing-sans), Arial, sans-serif;
+}
+
+.page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.02;
+  mix-blend-mode: overlay;
+}
+
+.heroTitle,
+.sectionTitle,
+.finalTitle,
+.featureCard h3,
+.merchCard h3,
+.stepCard h3 {
+  font-family: var(--font-landing-serif), Georgia, serif;
+  font-weight: 400;
+}
+
+.heroTitle em,
+.sectionTitle em,
+.finalTitle em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 32px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.navLinks a {
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  transition: color 0.2s;
+}
+
+.navLinks a:hover {
+  color: var(--text);
+}
+
+.navCta,
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 14px 24px;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  transition: transform 0.2s, background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.navCta,
+.primaryButton {
+  background: var(--cta);
+  color: #171515;
+}
+
+.navCta:hover,
+.primaryButton:hover {
+  background: var(--cta-hover);
+  transform: translateY(-1px);
+}
+
+.secondaryButton {
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
+}
+
+.secondaryButton:hover {
+  border-color: color-mix(in srgb, var(--accent) 46%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 94%, transparent);
+  transform: translateY(-1px);
+}
+
+.hero,
+.featureSection,
+.videoBand,
+.merchSection,
+.artistSection,
+.stepsSection,
+.quoteSection,
+.finalSection {
+  padding: 88px 32px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(360px, 48vw);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.heroMedia {
+  position: relative;
+  overflow: hidden;
+  min-height: 700px;
+  background: #000;
+}
+
+.heroMedia::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--bg) 18%, transparent), transparent 34%),
+    linear-gradient(to top, rgba(12, 10, 10, 0.28), transparent 42%);
+}
+
+.heroMedia video,
+.videoCard video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 560px;
+}
+
+.eyebrow,
+.cardEyebrow,
+.stepNumber,
+.artistMeta {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+}
+
+.eyebrow {
+  margin-bottom: 16px;
+}
+
+.heroTitle {
+  margin: 0 0 20px;
+  color: var(--title);
+  font-size: clamp(46px, 6vw, 82px);
+  line-height: 0.98;
+}
+
+.heroBody,
+.featureCard p,
+.merchCard p,
+.stepCard p,
+.quoteCard p,
+.sectionIntro p,
+.finalContent p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.heroPricing {
+  margin: 24px 0 28px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+}
+
+.heroPricing strong {
+  color: var(--accent);
+}
+
+.heroActions,
+.finalActions,
+.artistCta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.heroNote {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.trustRail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 32px;
+  padding: 18px 32px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+}
+
+.trustRail span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.sectionIntro,
+.videoBandHeader,
+.merchHeader {
+  max-width: 620px;
+  margin-bottom: 28px;
+}
+
+.sectionTitle,
+.finalTitle {
+  margin: 0 0 16px;
+  color: var(--title);
+  font-size: clamp(32px, 4.5vw, 60px);
+  line-height: 1.04;
+}
+
+.featureGrid,
+.videoGrid,
+.merchGrid,
+.artistGrid,
+.stepGrid,
+.quoteGrid {
+  display: grid;
+  gap: 18px;
+}
+
+.featureGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.featureCard,
+.merchCard,
+.stepCard,
+.quoteCard {
+  padding: 30px 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 92%, transparent), color-mix(in srgb, var(--surface) 96%, transparent));
+}
+
+.featureCard h3,
+.merchCard h3,
+.stepCard h3 {
+  margin: 0 0 12px;
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--title);
+}
+
+.videoBand {
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+
+.videoGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.videoCard {
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: #000;
+}
+
+.videoCard video {
+  filter: brightness(0.95) saturate(1.04);
+}
+
+.merchGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.merchCard {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 90%, transparent), color-mix(in srgb, var(--surface) 96%, transparent));
+}
+
+.merchCard a {
+  margin-top: auto;
+}
+
+.artistSection {
+  background: linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--surface) 94%, transparent) 100%);
+}
+
+.artistGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.artistCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.artistImageWrap {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.artistImageWrap img {
+  transition: transform 0.35s ease;
+}
+
+.artistCard:hover .artistImageWrap img {
+  transform: scale(1.04);
+}
+
+.artistMeta {
+  color: var(--muted);
+}
+
+.stepGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.quoteSection {
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+
+.quoteGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.quoteCard p {
+  margin: 0 0 18px;
+}
+
+.quoteCard span {
+  color: var(--accent-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.finalSection {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.finalBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--accent) 18%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 68%, transparent), color-mix(in srgb, var(--bg) 100%, transparent));
+  pointer-events: none;
+}
+
+.finalContent {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.finalContent p {
+  margin: 0 auto;
+}
+
+.finalActions {
+  justify-content: center;
+  margin-top: 28px;
+}
+
+@media (max-width: 1180px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCopy {
+    max-width: 100%;
+  }
+
+  .featureGrid,
+  .stepGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artistGrid,
+  .quoteGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .navLinks {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero,
+  .featureSection,
+  .videoBand,
+  .merchSection,
+  .artistSection,
+  .stepsSection,
+  .quoteSection,
+  .finalSection {
+    padding: 72px 24px;
+  }
+
+  .featureGrid,
+  .videoGrid,
+  .merchGrid,
+  .artistGrid,
+  .stepGrid,
+  .quoteGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroMedia {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroActions,
+  .finalActions,
+  .artistCta {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .navCta {
+    width: 100%;
+  }
+}

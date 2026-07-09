@@ -729,7 +729,7 @@ export function WishlistSwiperSheet({
                     if (totalRated < MIN_RATINGS_FOR_CREW) {
                       return (
                         <span className="text-neutral-500">
-                          Rate 15+ artworks to discover your crew
+                          Rate 15+ artworks to see your crew
                         </span>
                       )
                     }

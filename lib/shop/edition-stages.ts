@@ -22,7 +22,7 @@ export const editionStages = {
     cta: 'Get in while the edition still feels wide open',
     emailSubject: 'Wide open edition — {artist}',
     emailBody:
-      'Edition {n} of {total}. The count is still mostly yours for the taking. Early collectors shape the story.',
+      'Edition {n} of {total}. Most of the run is still available. Early collectors set the pace.',
   },
   early: {
     percentRange: [7, 10] as const,
@@ -62,7 +62,7 @@ export const editionStages = {
   },
   breakthrough: {
     percentRange: [26, 50] as const,
-    badge: 'Half the story told',
+    badge: 'Mid-run',
     subline: '{x} of {total} claimed — consensus is forming among collectors',
     cta: 'Still time to own a piece before the back half tightens',
     emailSubject: "Mid-run energy — don't sleep on it",
@@ -82,7 +82,7 @@ export const editionStages = {
     percentRange: [76, 90] as const,
     badge: 'Closing the run',
     subline: "{remaining} remain — we're in the final stretch of this edition",
-    cta: 'One of the last meaningful chances to collect',
+    cta: 'One of the last chances to collect from this run',
     emailSubject: 'Final stretch — edition closing',
     emailBody:
       'Edition {n} of {total}. The run is almost closed. Collectors who wait past this point rarely get a second shot.',

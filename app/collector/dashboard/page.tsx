@@ -206,11 +206,11 @@ export default function CollectorDashboardPage() {
   // Helper functions for progressive empty state messaging
   const getEmptyStateTitle = () => {
     // For now, use a simple message. Can be enhanced with profile.created_at later
-    return "Your Journey Begins Here"
+    return "Your Collection Starts Here"
   }
 
   const getEmptyStateDescription = () => {
-    return "Start collecting street art and watch your collection grow. Each piece tells a story."
+    return "Start collecting street art and build the account around the work you keep."
   }
 
   if (isLoading) {
@@ -233,7 +233,7 @@ export default function CollectorDashboardPage() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         <Alert variant="destructive">
           <AlertTitle>Unable to load dashboard</AlertTitle>
-          <AlertDescription>{error || "Something went wrong"}</AlertDescription>
+          <AlertDescription>{error || "Please try again."}</AlertDescription>
         </Alert>
         <div className="mt-4 flex flex-wrap gap-3">
           <a href="/api/auth/shopify?redirect=/collector/dashboard" className="inline-flex">
@@ -425,7 +425,7 @@ export default function CollectorDashboardPage() {
                                   title={getEmptyStateTitle()}
                                   description={getEmptyStateDescription()}
                                   action={{
-                                    label: "Discover Artwork",
+                                    label: "Browse collection",
                                     onClick: () => window.open("https://www.thestreetcollector.com", "_blank")
                                   }}
                                 />
@@ -561,4 +561,3 @@ export default function CollectorDashboardPage() {
     </div>
   )
 }
-

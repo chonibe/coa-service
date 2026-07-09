@@ -218,7 +218,7 @@ export function IntroQuiz({ onComplete, step: urlStep, partialAnswers, onNext, o
             <div className="text-center">
               <p className="text-sm uppercase tracking-widest text-[#FFBA94]/60 mb-3">Step 1 of 3</p>
               <h1 className="text-3xl sm:text-4xl font-semibold text-[#FFBA94] tracking-tight">
-                Let&rsquo;s get started
+                Start here
               </h1>
               <p className="text-[#FFBA94]/50 mt-2 text-lg">Do you already have a Street Lamp?</p>
             </div>

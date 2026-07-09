@@ -55,7 +55,7 @@ function ExperienceConfiguratorWithBoundary(
       fallback={
         <div className="flex h-full flex-col items-center justify-center gap-4 bg-background px-6">
           <p className="text-center text-white/80">
-            Something went wrong loading the configurator.
+            We could not load the configurator.
           </p>
           <button
             type="button"
@@ -68,7 +68,7 @@ function ExperienceConfiguratorWithBoundary(
             href="/shop"
             className="text-sm text-white/50 hover:text-white/70 transition-colors"
           >
-            Back to Shop
+            Back to shop
           </Link>
         </div>
       }

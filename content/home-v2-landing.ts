@@ -459,6 +459,16 @@ export const homeV2LandingContent = {
     ] satisfies ArtistTile[],
   },
 
+  bestSellers: {
+    eyebrow: 'Best sellers',
+    title: 'Collector favorites',
+    titleEmphasis: 'On the lamp.',
+    collectionHandle: 'season-1',
+    productsCount: 16,
+    viewAllLabel: 'Browse all artworks',
+    viewAllHref: '/experience',
+  },
+
   testimonials: {
     eyebrow: 'What collectors say',
     title: 'Seen in 3,000+\ncollector homes.',
@@ -490,28 +500,8 @@ export const homeV2LandingContent = {
           'https://cdn.shopify.com/videos/c/o/v/e4c389d4b826457b91d26a849ddb61be.mp4',
       },
     ] satisfies TestimonialVideo[],
-      images: [
-      {
-        author: 'Debra G.',
-        featured: true,
-        quote:
-          'During a rough stretch, this became one of the few objects in the room that actually settled me. Turning it on helped mark a different mood for the evening.',
-        imageUrl:
-          'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th_6.jpg',
-      },
-    ] satisfies TestimonialImage[],
-    texts: [
-      {
-        author: 'Andiva B.',
-        quote:
-          'One of my favorite pieces in the apartment! It really adds something special. Friends always notice it and have something nice to say.',
-      },
-      {
-        author: 'Maayan F.',
-        quote:
-          'The concept felt fresh right away, and the final object really holds its own in the room. I was glad to get in on the first edition.',
-      },
-    ] satisfies TestimonialText[],
+    images: [] satisfies TestimonialImage[],
+    texts: [] satisfies TestimonialText[],
   },
 
   guarantee: [

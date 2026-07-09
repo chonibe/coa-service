@@ -67,14 +67,14 @@ export default function UnlockReveal({ artworkName, onComplete }: UnlockRevealPr
         >
           <div className="flex items-center justify-center gap-2">
             <Sparkles className="w-6 h-6 text-green-500" />
-            <h2 className="text-3xl font-bold text-white">Authenticated!</h2>
+            <h2 className="text-3xl font-bold text-white">Authenticated</h2>
             <Sparkles className="w-6 h-6 text-green-500" />
           </div>
           <p className="text-lg text-gray-300">
             {artworkName}
           </p>
           <p className="text-sm text-gray-400">
-            Exclusive content unlocked
+            Extra content is now available
           </p>
         </motion.div>
       </motion.div>

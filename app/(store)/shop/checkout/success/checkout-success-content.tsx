@@ -25,7 +25,7 @@ import {
  * Shows:
  * - Order summary
  * - Credits earned from purchase
- * - Sign in CTA (if guest) and Continue Shopping
+ * - Sign in CTA (if guest) and Browse Collection
  * 
  * @see app/api/stripe/webhook/route.ts - Post-purchase bridge
  * @see lib/auth/claim-token.ts - Claim tokens
@@ -278,7 +278,7 @@ export function CheckoutSuccessContent() {
         setOrder(data.session)
         setSeriesProgress(data.seriesProgress || [])
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Something went wrong'
+        const message = err instanceof Error ? err.message : 'Please try again.'
         setError(message)
         captureFunnelEvent(FunnelEvents.payment_error, { error_message: message, source: 'checkout_success' })
         tagSessionForReplay('payment-error')
@@ -339,13 +339,13 @@ export function CheckoutSuccessContent() {
                 </svg>
               </div>
               <h1 className="font-heading text-2xl font-semibold text-foreground mb-2">
-                Something went wrong
+                Unable to load order details
               </h1>
               <p className="text-muted-foreground mb-6">
                 {error || 'Unable to load your order details.'}
               </p>
               <Link href="/shop">
-                <Button variant="primary">Back to Shop</Button>
+                <Button variant="primary">Back to shop</Button>
               </Link>
             </div>
           </Container>
@@ -479,7 +479,7 @@ export function CheckoutSuccessContent() {
                 <div>
                   <p className="font-medium text-foreground">Shipping</p>
                   <p className="text-sm text-muted-foreground">
-                    We&apos;ll email you tracking information once shipped.
+                    We will email you tracking information once shipped.
                   </p>
                 </div>
               </div>
@@ -497,7 +497,7 @@ export function CheckoutSuccessContent() {
             )}
             <Link href="/shop/experience">
               <Button variant={isAuthenticated ? 'primary' : 'outline'} size="lg">
-                Continue Shopping
+                Browse collection
               </Button>
             </Link>
           </div>
@@ -506,7 +506,7 @@ export function CheckoutSuccessContent() {
           <p className="text-center text-sm text-muted-foreground mt-8">
             Questions about your order?{' '}
             <a href="mailto:support@thestreetcollector.com" className="text-experience-highlight hover:underline">
-              Contact us
+              Email support
             </a>
           </p>
         </Container>

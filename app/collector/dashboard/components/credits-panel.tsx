@@ -12,9 +12,9 @@ interface CreditsPanelProps {
 export function CreditsPanel({ collectorIdentifier }: CreditsPanelProps) {
   if (!collectorIdentifier) {
     return (
-      <Card>
+        <Card>
         <CardHeader>
-          <CardTitle>Credits & subscriptions</CardTitle>
+          <CardTitle>Credits</CardTitle>
           <CardDescription>Sign in with your collector account to manage credits.</CardDescription>
         </CardHeader>
       </Card>
@@ -27,7 +27,7 @@ export function CreditsPanel({ collectorIdentifier }: CreditsPanelProps) {
       <Card>
         <CardHeader>
           <CardTitle>Subscriptions</CardTitle>
-          <CardDescription>Automate credits or perks for your collection.</CardDescription>
+          <CardDescription>Manage recurring credits and membership options for your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <SubscriptionManager collectorIdentifier={collectorIdentifier} />
@@ -36,4 +36,3 @@ export function CreditsPanel({ collectorIdentifier }: CreditsPanelProps) {
     </div>
   )
 }
-

@@ -84,9 +84,9 @@ export const shopLocale = {
       `Showing ${showing} of ${total} products`,
     
     // Empty state
-    emptyCollection: 'No products found',
-    emptyDescription: 'Try adjusting your filters or search terms',
-    continueShopping: 'Continue shopping',
+    emptyCollection: 'No artworks found',
+    emptyDescription: 'Try different filters or a different search term',
+    continueShopping: 'Browse collection',
     
     // Filters
     filterAndSort: 'Filter and sort',
@@ -125,8 +125,8 @@ export const shopLocale = {
     
     // Empty state
     empty: 'Your cart is empty',
-    emptyDescription: 'Add items to get started',
-    continueShopping: 'Continue shopping',
+    emptyDescription: 'Add an artwork when you are ready',
+    continueShopping: 'Browse collection',
     
     // Actions
     updateCart: 'Update cart',
@@ -175,7 +175,7 @@ export const shopLocale = {
     
     // Free shipping progress
     freeShippingProgress: (remaining: string) => `Add ${remaining} more for free shipping`,
-    freeShippingUnlocked: 'You unlocked free shipping!',
+    freeShippingUnlocked: 'Free shipping is now active!',
   },
   
   search: {
@@ -199,7 +199,7 @@ export const shopLocale = {
     
     // Empty state
     noResults: 'No results found',
-    noResultsDescription: 'Try different keywords or check your spelling',
+    noResultsDescription: 'Try another keyword or check the spelling',
     popularSearches: 'Popular searches:',
     suggestions: 'Suggestions:',
     
@@ -264,14 +264,14 @@ export const shopLocale = {
     discountApplied: 'Discount code applied',
     
     // Error
-    error: 'Something went wrong',
+    error: 'Please try again.',
     errorAddToCart: 'Failed to add to cart',
     errorRemoveFromCart: 'Failed to remove item',
     errorLoadProducts: 'Failed to load products',
     tryAgain: 'Please try again',
     
     // Info
-    freeShippingUnlocked: 'Free shipping unlocked!',
+    freeShippingUnlocked: 'Free shipping is now active!',
     itemLowStock: (count: number) => `Only ${count} left in stock`,
   },
   
@@ -280,7 +280,7 @@ export const shopLocale = {
     pageNotFound: 'Page not found',
     productNotFound: 'Product not found',
     collectionNotFound: 'Collection not found',
-    somethingWentWrong: 'Something went wrong',
+    somethingWentWrong: 'Please try again.',
     
     // Network errors
     networkError: 'Unable to connect',

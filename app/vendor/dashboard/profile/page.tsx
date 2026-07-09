@@ -1199,7 +1199,7 @@ export default function VendorProfilePage() {
                           <Label htmlFor="artist_history">Artist History</Label>
                           <Textarea
                             id="artist_history"
-                            placeholder="Share your artistic journey, background, achievements..."
+                            placeholder="Add background, past work, exhibitions, or anything else collectors should know..."
                             value={profileFormState.artist_history}
                             onChange={(e) =>
                               setProfileFormState({ ...profileFormState, artist_history: e.target.value })

@@ -58,7 +58,7 @@ export function FilterSidebar({
     <Card>
       <CardHeader>
         <CardTitle>Filters</CardTitle>
-        <CardDescription>Refine your search</CardDescription>
+        <CardDescription>Narrow the list by artist, series, or price.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -125,5 +125,4 @@ export function FilterSidebar({
     </Card>
   )
 }
-
 

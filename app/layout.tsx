@@ -48,7 +48,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   verification: {
-    google: "3RAzDAjg1ezZ5lD97Q7cIWR7CJxkgZJ0-RqL7wMMsxk",
+    // Search Console + Merchant Center (King george lamps / thestreetlamp.com)
+    google: [
+      "3RAzDAjg1ezZ5lD97Q7cIWR7CJxkgZJ0-RqL7wMMsxk",
+      "agKpOub4tPLDNF4vNqc9lQdrErp5RMe2_QiZ0hxh0HI",
+    ],
   },
 }
 

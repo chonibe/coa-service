@@ -17,17 +17,17 @@ export function ProgressBar({ current, total, unlockType, className }: ProgressB
   const getUnlockTypeLabel = (type: string) => {
     switch (type) {
       case 'any_purchase':
-        return 'Open Collection'
+        return 'Open collection'
       case 'sequential':
-        return 'Sequential Collection'
+        return 'Sequential collection'
       case 'threshold':
-        return 'Threshold Collection'
+        return 'Threshold collection'
       case 'time_based':
-        return 'Time-Based Collection'
+        return 'Timed release'
       case 'vip':
-        return 'VIP Exclusive'
+        return 'Member access'
       case 'nfc':
-        return 'NFC Unlock'
+        return 'NFC access'
       default:
         return type.replace(/_/g, ' ')
     }
@@ -36,7 +36,7 @@ export function ProgressBar({ current, total, unlockType, className }: ProgressB
   return (
     <div className={cn("bg-card rounded-2xl p-4 border border-border", className)}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Your Progress</h2>
+        <h2 className="text-lg font-semibold">Your progress</h2>
         <span className="text-2xl font-bold text-primary">
           {current}/{total}
         </span>

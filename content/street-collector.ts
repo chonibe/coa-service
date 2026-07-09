@@ -19,7 +19,7 @@ export const streetCollectorContent = {
     /** Third line under headline in VideoPlayer overlay */
     heroSubtext: 'One lamp. Endless art. Swap in seconds.',
     cta: {
-      text: 'Start your collection',
+      text: 'Browse collection',
       url: EXPERIENCE_URL,
     },
     /** Hero video from thestreetcollector.com CTA section */
@@ -77,7 +77,7 @@ export const streetCollectorContent = {
       },
       {
         title: 'Mount it',
-        description: 'Magnetic. Wall-ready. Strong enough to hold its own even when the lamp is off.',
+        description: 'Magnetic, ready to hang, and solid even when the lamp is off.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/25762ae2b9754cae89e1c6590c805061.mp4',
         mobileVideo:
@@ -85,7 +85,7 @@ export const streetCollectorContent = {
       },
       {
         title: 'Choose your art',
-        description: 'Hundreds of artists, and eventually one piece that starts to feel like it picked the room itself.',
+        description: 'Browse the roster until one piece feels right for the room.',
         desktopVideo:
           'https://cdn.shopify.com/videos/c/o/v/c605e496caed4a33b8ccbe3c11689bbb.mp4',
         mobileVideo:
@@ -93,7 +93,7 @@ export const streetCollectorContent = {
       },
     ],
     cue: '',
-    primaryCta: { label: 'Start your collection', href: EXPERIENCE_URL },
+    primaryCta: { label: 'Browse collection', href: EXPERIENCE_URL },
     trustMicroItems: [
       'Free worldwide shipping',
       '12-month guarantee',
@@ -101,12 +101,12 @@ export const streetCollectorContent = {
     ] as const,
   },
   /** Value props with video + poster from thestreetcollector.com multi-column section */
-  valuePropsSectionTitle: 'Real art, lived with daily.',
+  valuePropsSectionTitle: 'Real art, part of the room.',
   valueProps: [
     {
-      title: 'Collect real artwork.',
+      title: 'Collect original artwork.',
       description:
-        'No AI filler. No endless feed. Just original work by real artists, shipped to your door.',
+        'No AI filler. No endless feed. Just original work by artists, shipped to your door.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/026dcfa99353451aa897d2ca139ca81e.thumbnail.0000000000_small.jpg?v=1770018244',
       video: 'https://cdn.shopify.com/videos/c/o/v/dc4d553853cc40b998a292ced715e802.mp4',
@@ -123,7 +123,7 @@ export const streetCollectorContent = {
     {
       title: 'Support artists directly.',
       description:
-        'Every purchase helps fund the next piece, the next drop, the next stretch of work that probably would not happen on likes alone.',
+        'Every purchase helps fund the next piece, the next drop, and more time for the artist to keep working.',
       poster:
         'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/preview_images/c000242048854bb49b49204261d425ec.thumbnail.0000000000_small.jpg?v=1770018276',
       video: 'https://cdn.shopify.com/videos/c/o/v/907f900637204a35850037a1ffbbb70c.mp4',
@@ -185,7 +185,7 @@ export const streetCollectorContent = {
         id: '5',
         author: 'Gabriel M.',
         content:
-          "The design pulled me in first, but the artist roster is what kept me looking. I ended up discovering work I probably would have missed otherwise.",
+          "The design pulled me in first, but the artist roster kept me around. I found work here that I probably would have missed otherwise.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/unnamed_4.webp?v=1770560487&width=800' },
       },
@@ -217,7 +217,7 @@ export const streetCollectorContent = {
         id: '9',
         author: 'Lir P.',
         content:
-          "I saw it at the exhibition and knew pretty quickly that I wanted one. It has a strong presence in person and still feels carefully resolved up close.",
+          "I saw it at the exhibition and knew pretty quickly that I wanted one. It has real presence in person and still feels carefully resolved up close.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/526673363_768940875492834_8870128180377304790_n.jpg?v=1770565371&width=800' },
       },
@@ -232,7 +232,7 @@ export const streetCollectorContent = {
         id: '11',
         author: 'Andiva B',
         content:
-          "One of my favorite pieces in the apartment! I first came across it on Kickstarter and was drawn to the design right away. Now that it's here, it really adds something special to the space. Friends always notice it and have something nice to say.",
+          "One of my favorite pieces in the apartment. I first saw it on Kickstarter and liked the design right away. Now that it's here, the room feels better for it, and people always notice it.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/525311351_18376112389131295_7956798693182725256_n_1.webp?v=1770569671&width=800' },
       },
@@ -240,14 +240,14 @@ export const streetCollectorContent = {
         id: '12',
         author: 'Debra G.',
         content:
-          "I received my package today and can say that it was one of the most exciting unboxing experiences that I've had in quite some time. The lamp and artworks are stunning-absolutely exceeded my expectations. It is a straight-up honor to have this incredible art in my home.",
+          "I received my package today and the whole setup landed immediately. The lamp and artworks look great, and it feels good having this work at home.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/In_an_immensely_difficult_year_where_any_sense_of_ease_or_peace_often_proved_elusive_I_found_th.jpg?v=1770570885&width=800' },
       },
       {
         id: '13',
         author: 'Jerome M.',
-        content: "New toy in the house. Thank you!\nJust received the lamp and I'm so happy with it!",
+        content: "The lamp just arrived, and I am really happy with it. It settled into the room right away.",
         rating: 5,
         media: { type: 'image' as const, src: 'https://cdn.shopify.com/s/files/1/0659/7925/2963/files/618474944_25709629031983045_2543883703158680136_n.jpg?v=1770208979&width=800' },
       },
@@ -278,7 +278,7 @@ export const streetCollectorContent = {
   trustBar: [
     { label: 'Free worldwide shipping', description: 'Delivery is on us.', icon: 'shipping' },
     { label: '12 month guarantee', description: 'Your lamp is covered for the first year.', icon: 'guarantee' },
-    { label: 'Easy 30 days returns', description: 'Send it back within 30 days if it is not right.', icon: 'returns' },
+    { label: 'Easy 30-day returns', description: 'Send it back within 30 days if it is not right.', icon: 'returns' },
   ],
   featuredArtistsCue: '',
   featuredArtistsScarcity: '', // Hidden for now: 'Editions are limited. Once sold out, they do not return.'
@@ -301,7 +301,7 @@ export const streetCollectorContent = {
     subtitle: '',
     afterCarousel: '',
     description: '',
-    linkText: 'Start your collection',
+    linkText: 'Browse collection',
     linkHref: EXPERIENCE_URL,
     collections: [
       { handle: 'jerome-masi', location: 'Annecy', collectionHref: 'https://thestreetcollector.com/collections/jerome-masi' },
@@ -362,14 +362,14 @@ export const streetCollectorContent = {
       'Preview and select artworks',
       'Review your setup and checkout',
     ],
-    reassurance: 'Takes about 2 minutes. No account required to explore.',
+    reassurance: 'Takes about 2 minutes. No account required to browse.',
     cta: {
-      text: 'Start your collection',
+      text: 'Browse collection',
       url: EXPERIENCE_URL,
     },
   },
   faq: {
-    title: 'Questions?',
+    title: 'Common Questions',
     groups: [
       {
         /** Empty title: home FAQ renders as a single centered list (no category chips). */
@@ -388,12 +388,12 @@ export const streetCollectorContent = {
           {
             question: 'How long does the charge last?',
             answer:
-              'On a full charge you’re looking at roughly 8 hours of run time from the 2500 mAh battery. Plug it in with USB-C or the magnetic cable and it’ll usually be good to go again in about 3–4 hours. Prefer to leave it on? No problem. You can run it plugged in all the time too.',
+              'A full charge lasts about 8 hours on the 2500 mAh battery. Recharge it with USB-C or the magnetic cable and it is usually ready again in about 3 to 4 hours. You can also leave it plugged in while it runs.',
           },
           {
             question: 'Is it easy to swap the artworks on the lamp?',
             answer:
-              'Super easy. Pieces slide in and out with a simple press-and-click mechanism, no tools needed. Swap them whenever you want to brighten the mood, refresh your space, or let a new piece inspire the room around you.',
+              'Yes. Pieces slide in and out with a simple press-and-click mechanism, and no tools are needed. Swap them anytime you want to change the room.',
           },
           {
             question: 'Do you ship internationally?',
@@ -412,7 +412,7 @@ export const streetCollectorContent = {
     headline: 'Not just a lamp. A living Art Collection',
     subheadline: '',
     cta: {
-      text: 'Start your collection',
+      text: 'Browse collection',
       url: EXPERIENCE_URL,
     },
   },

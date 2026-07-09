@@ -102,13 +102,13 @@ export default function SeriesListingPage() {
                 </svg>
               </div>
               <h2 className="font-heading text-2xl font-semibold text-foreground mb-2">
-                No Series Available
+                No series available
               </h2>
               <p className="text-muted-foreground mb-6">
                 Check back soon for new artwork series.
               </p>
               <Link href="/shop">
-                <Button variant="primary">Browse Artworks</Button>
+                <Button variant="primary">Browse collection</Button>
               </Link>
             </div>
           ) : (

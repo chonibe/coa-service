@@ -54,7 +54,7 @@ export async function initializeDefaultExperience(
         vendor_name: vendorName,
         benefit_type_id: typeMap.get("Artwork Artist Note Block"),
         title: "Artist's Note",
-        description: "Share your thoughts, inspiration, and story behind this artwork",
+        description: "Add a note about the artwork, its background, or anything collectors should know.",
         block_config: {
           note_text: "",
           voice_note_url: null,
@@ -68,7 +68,7 @@ export async function initializeDefaultExperience(
         vendor_name: vendorName,
         benefit_type_id: typeMap.get("Artwork Process Gallery Block"),
         title: "Behind the Scenes",
-        description: "Show collectors your creative process and how this artwork came to life",
+        description: "Show sketches, drafts, or process images connected to this artwork.",
         block_config: {
           images: [],
         },
@@ -81,7 +81,7 @@ export async function initializeDefaultExperience(
         vendor_name: vendorName,
         benefit_type_id: typeMap.get("Artwork Inspiration Block"),
         title: "Inspiration Board",
-        description: "Share the references, mood, and inspiration that influenced this piece",
+        description: "Add references, mood images, or other sources connected to this piece.",
         block_config: {
           images: [],
         },

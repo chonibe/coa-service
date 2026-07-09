@@ -21,7 +21,7 @@ export const heroSection = {
     subheadline: '',
   },
   cta: {
-    text: 'Shop Now',
+    text: 'Browse collection',
     url: '/shop/street_lamp',
     style: 'outline',
     size: 'lg',
@@ -208,7 +208,7 @@ export const pressQuotesSection2 = {
 // =============================================================================
 
 export const scrollingTextSection = {
-  text: 'One Lamp, Endless Inspiration.',
+  text: 'One lamp, endless rotation.',
   textSize: 'small',
   textStyle: 'fill',
   scrollingMode: 'auto',
@@ -221,12 +221,12 @@ export const scrollingTextSection = {
 // =============================================================================
 
 export const faqSection = {
-  title: 'Questions?',
+  title: 'Common Questions',
   fullWidth: false,
   items: [
     {
       question: 'Are the artworks interchangeable?',
-      answer: 'Absolutely! Imagine the lamp like a record player and the artworks as vinyl records. You can easily collect and swap out the artwork to match your mood or style.',
+      answer: 'Yes. The lamp is made for swapping artworks, so you can change the piece whenever your mood, room, or collection changes.',
     },
     {
       question: 'Do you ship overseas?',
@@ -336,7 +336,7 @@ export const simplyGiftModal = {
 
 export const simplyGiftBanner = {
   urlParameter: 'simplygift',
-  message: '🎉 Special offer activated! Use your exclusive voucher code at checkout.',
+  message: '🎉 Offer activated! Use your voucher code at checkout.',
   showCta: true,
   ctaText: 'Shop now',
   ctaLink: '/collections/season-1',

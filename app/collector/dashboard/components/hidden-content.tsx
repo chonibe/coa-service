@@ -18,14 +18,14 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
 
   if (hiddenSeries.length === 0 && bonusContent.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No hidden content yet</CardTitle>
+        <Card>
+          <CardHeader>
+          <CardTitle>No extra content yet</CardTitle>
           <CardDescription>
-            Hidden series and bonus content unlocked through your purchases will appear here.
+            Hidden series and extra content tied to your purchases will appear here.
           </CardDescription>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
     )
   }
 
@@ -36,12 +36,11 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-600" />
-            <h2 className="text-2xl font-bold">Hidden Series</h2>
+            <h2 className="text-2xl font-bold">Hidden series</h2>
             <Badge variant="secondary">{hiddenSeries.length}</Badge>
           </div>
           <p className="text-muted-foreground">
-            Exclusive series unlocked through your purchases. These are only available to collectors who own specific
-            artworks.
+            These series open only when you own the related artworks.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {hiddenSeries.map((series) => (
@@ -90,11 +89,11 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
                   <div className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Unlocked: {format(new Date(series.unlockedAt), "MMM d, yyyy")}
+                      Unlocked {format(new Date(series.unlockedAt), "MMM d, yyyy")}
                     </div>
                   </div>
                   <div className="p-3 bg-muted rounded-lg text-sm">
-                    <div className="font-medium mb-1">Unlocked via:</div>
+                    <div className="font-medium mb-1">Unlocked via</div>
                     <div className="text-muted-foreground">{series.unlockedVia.artworkName}</div>
                   </div>
                   <Button
@@ -102,7 +101,7 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
                     className="w-full"
                     onClick={() => (window.location.href = `/collector/series/${series.id}`)}
                   >
-                    View Series
+                    Open series
                     <ExternalLink className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -117,11 +116,11 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-blue-600" />
-            <h2 className="text-2xl font-bold">Bonus Content</h2>
+            <h2 className="text-2xl font-bold">Bonus content</h2>
             <Badge variant="secondary">{bonusContent.length}</Badge>
           </div>
           <p className="text-muted-foreground">
-            Exclusive bonus content, digital files, and special access unlocked through your purchases.
+            Bonus files and access items tied to artworks you have already bought.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {bonusContent.map((content) => (
@@ -141,17 +140,17 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Unlocked: {format(new Date(content.unlockedAt), "MMM d, yyyy")}
+                      Unlocked {format(new Date(content.unlockedAt), "MMM d, yyyy")}
                     </div>
                     {content.expiresAt && (
                       <div className="flex items-center gap-2 text-amber-600">
                         <Calendar className="h-4 w-4" />
-                        Expires: {format(new Date(content.expiresAt), "MMM d, yyyy")}
+                        Expires {format(new Date(content.expiresAt), "MMM d, yyyy")}
                       </div>
                     )}
                   </div>
                   <div className="p-3 bg-muted rounded-lg text-sm">
-                    <div className="font-medium mb-1">Unlocked via:</div>
+                    <div className="font-medium mb-1">Unlocked via</div>
                     <div className="text-muted-foreground">{content.unlockedVia.artworkName}</div>
                     <div className="text-xs text-muted-foreground mt-1">by {content.unlockedVia.vendorName}</div>
                   </div>
@@ -161,13 +160,13 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
                       className="w-full"
                       onClick={() => window.open(content.contentUrl!, "_blank")}
                     >
-                      Access Content
+                      Open content
                       <ExternalLink className="h-4 w-4 ml-2" />
                     </Button>
                   )}
                   {content.accessCode && (
                     <div className="p-3 bg-primary/10 rounded-lg">
-                      <div className="text-xs font-medium mb-1">Access Code:</div>
+                      <div className="text-xs font-medium mb-1">Access code</div>
                       <code className="text-sm font-mono">{content.accessCode}</code>
                     </div>
                   )}
@@ -180,6 +179,4 @@ export function HiddenContentComponent({ hiddenContent }: HiddenContentProps) {
     </div>
   )
 }
-
-
 

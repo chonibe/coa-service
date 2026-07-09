@@ -55,11 +55,10 @@ export function AuthenticationQueue({ items }: AuthenticationQueueProps) {
                 {item.nfcTagId ? "NFC tag detected" : "NFC tag missing"}
               </p>
             </div>
-            <Button onClick={() => (window.location.href = "/pages/authenticate")}>Authenticate</Button>
+            <Button onClick={() => (window.location.href = "/pages/authenticate")}>Verify artwork</Button>
           </div>
         ))}
       </CardContent>
     </Card>
   )
 }
-

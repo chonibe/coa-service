@@ -33,7 +33,7 @@ export function ArtworkCard({ artwork }: ArtworkCardProps) {
           />
           {isNew && (
             <Badge className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md">
-              New Drop!
+              New drop
             </Badge>
           )}
         </div>
@@ -52,7 +52,7 @@ export function ArtworkCard({ artwork }: ArtworkCardProps) {
           </span>
           <Button variant="secondary" size="sm" asChild>
             <a href={shopifyUrl} target="_blank" rel="noopener noreferrer">
-              View on Shopify
+              View details
             </a>
           </Button>
         </div>
@@ -60,5 +60,4 @@ export function ArtworkCard({ artwork }: ArtworkCardProps) {
     </Card>
   )
 }
-
 

@@ -89,7 +89,7 @@ export default function BlogPage() {
                 Blog
               </h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Stories, insights, and inspiration from the world of street art and contemporary design.
+                Writing on street art, collecting, and contemporary design.
               </p>
             </div>
           </ScrollReveal>

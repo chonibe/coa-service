@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import * as React from 'react'
 import Image from 'next/image'
@@ -237,6 +237,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
   }, [instagramHandle, instagramProfile, instagramProfileUrl, seedInstagramProfile])
 
   React.useEffect(() => {
+    if (embedded) return
     const handle = instagramHandle?.trim()
     if (!handle) return
     if (hasInstagramStats(mergedInstagramProfile)) return
@@ -262,6 +263,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
       cancelled = true
     }
   }, [
+    embedded,
     instagramHandle,
     mergedInstagramProfile?.followersCount,
     mergedInstagramProfile?.followsCount,
@@ -373,7 +375,22 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
       hasInstagramStats(mergedInstagramProfile)
   )
   const showInstagramSection = showInstagramProfileCard || hasInstagramShowcase
-  const showOverviewProcessColumn = hasProcessGallery || showInstagramSection
+  const hasAnyInstagramStatValue = Boolean(
+    formatCompactCount(mergedInstagramProfile?.mediaCount) ||
+      formatCompactCount(mergedInstagramProfile?.followersCount) ||
+      formatCompactCount(mergedInstagramProfile?.followsCount)
+  )
+  const isAwaitingInstagramStats =
+    !embedded &&
+    instagramProfileLoading &&
+    Boolean(instagramHandle) &&
+    !hasInstagramStats(mergedInstagramProfile)
+  // Live Instagram stats depend on an external fetch that can fail (rate limiting, missing
+  // Business Discovery permissions, etc.) — only render the stats card when there's something
+  // to show or actively loading, so a failed fetch doesn't leave an empty box on the page.
+  const showInstagramStatsCard = hasAnyInstagramStatValue || isAwaitingInstagramStats
+  const showOverviewArtworkGallery = hasProcessGallery && !embedded
+  const showOverviewProcessColumn = showOverviewArtworkGallery || showInstagramSection
 
   const heroImage = artist.image
   const heroPortraitStyle = artistPortraitCoverStyle(artist.imageObjectPosition)
@@ -527,7 +544,7 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
               </div>
               {showOverviewProcessColumn ? (
               <div className={styles.overviewProcess}>
-                {hasProcessGallery ? (
+                {showOverviewArtworkGallery ? (
                   <div className={styles.overviewProcessGallery}>
                     <div className={styles.processGrid}>
                       {artworkGallery.map((item, i) => {
@@ -631,35 +648,35 @@ export function ArtistProfilePageClient({ artist, embedded = false }: Props) {
                             {mergedInstagramProfile?.biography ? (
                               <p className={styles.storyBody}>{mergedInstagramProfile.biography}</p>
                             ) : null}
-                            <div className={styles.instagramProfileStatsCard}>
-                              <div className={styles.instagramProfileStats}>
-                                {formatCompactCount(mergedInstagramProfile?.mediaCount) ? (
-                                  <div className={styles.instagramStat}>
-                                    <strong>{formatCompactCount(mergedInstagramProfile?.mediaCount)}</strong>
-                                    <span>posts</span>
-                                  </div>
-                                ) : null}
-                                {formatCompactCount(mergedInstagramProfile?.followersCount) ? (
-                                  <div className={styles.instagramStat}>
-                                    <strong>{formatCompactCount(mergedInstagramProfile?.followersCount)}</strong>
-                                    <span>followers</span>
-                                  </div>
-                                ) : null}
-                                {formatCompactCount(mergedInstagramProfile?.followsCount) ? (
-                                  <div className={styles.instagramStat}>
-                                    <strong>{formatCompactCount(mergedInstagramProfile?.followsCount)}</strong>
-                                    <span>following</span>
-                                  </div>
-                                ) : null}
-                                {instagramProfileLoading &&
-                                instagramHandle &&
-                                !hasInstagramStats(mergedInstagramProfile) ? (
-                                  <span className={styles.instagramStatLoading} aria-live="polite">
-                                    Loading stats…
-                                  </span>
-                                ) : null}
+                            {showInstagramStatsCard ? (
+                              <div className={styles.instagramProfileStatsCard}>
+                                <div className={styles.instagramProfileStats}>
+                                  {formatCompactCount(mergedInstagramProfile?.mediaCount) ? (
+                                    <div className={styles.instagramStat}>
+                                      <strong>{formatCompactCount(mergedInstagramProfile?.mediaCount)}</strong>
+                                      <span>posts</span>
+                                    </div>
+                                  ) : null}
+                                  {formatCompactCount(mergedInstagramProfile?.followersCount) ? (
+                                    <div className={styles.instagramStat}>
+                                      <strong>{formatCompactCount(mergedInstagramProfile?.followersCount)}</strong>
+                                      <span>followers</span>
+                                    </div>
+                                  ) : null}
+                                  {formatCompactCount(mergedInstagramProfile?.followsCount) ? (
+                                    <div className={styles.instagramStat}>
+                                      <strong>{formatCompactCount(mergedInstagramProfile?.followsCount)}</strong>
+                                      <span>following</span>
+                                    </div>
+                                  ) : null}
+                                  {isAwaitingInstagramStats ? (
+                                    <span className={styles.instagramStatLoading} aria-live="polite">
+                                      Loading stats…
+                                    </span>
+                                  ) : null}
+                                </div>
                               </div>
-                            </div>
+                            ) : null}
                           </div>
                           {instagramProfileUrl ? (
                             <a

@@ -32,6 +32,7 @@ import {
 import { Button } from '@/components/ui'
 import { MEMBERSHIP_TIERS, APPRECIATION_SCHEDULE, type MembershipTierId } from '@/lib/membership/tiers'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 interface MembershipStatus {
   isMember: boolean
@@ -74,6 +75,8 @@ const tierIcons = {
   founding: Crown,
 }
 
+const membershipContent = getCollectorPageContent('membership')
+
 export default function MembershipDashboardPage() {
   const router = useRouter()
   const [status, setStatus] = useState<MembershipStatus | null>(null)
@@ -88,7 +91,7 @@ export default function MembershipDashboardPage() {
   const fetchStatus = async () => {
     try {
       const res = await fetch('/api/membership/status')
-      if (!res.ok) throw new Error('Failed to fetch membership status')
+      if (!res.ok) throw new Error(membershipContent.errors.fetchStatus)
       const data = await res.json()
       setStatus(data)
     } catch (err: any) {
@@ -99,7 +102,7 @@ export default function MembershipDashboardPage() {
   }
 
   const handleCancelSubscription = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? Your credits will remain available.')) {
+    if (!confirm(membershipContent.notices.cancelConfirm)) {
       return
     }
 
@@ -114,9 +117,9 @@ export default function MembershipDashboardPage() {
       if (!res.ok) throw new Error(data.error)
       
       await fetchStatus()
-      alert('Subscription will cancel at end of billing period. You can reactivate anytime before then.')
+      alert(membershipContent.notices.cancelSuccess)
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel subscription')
+      alert(err.message || membershipContent.notices.cancelError)
     } finally {
       setActionLoading(null)
     }
@@ -132,9 +135,9 @@ export default function MembershipDashboardPage() {
       if (!res.ok) throw new Error(data.error)
       
       await fetchStatus()
-      alert('Subscription reactivated!')
+      alert(membershipContent.notices.reactivateSuccess)
     } catch (err: any) {
-      alert(err.message || 'Failed to reactivate subscription')
+      alert(err.message || membershipContent.notices.reactivateError)
     } finally {
       setActionLoading(null)
     }
@@ -163,13 +166,13 @@ export default function MembershipDashboardPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
         <h1 className="text-3xl font-bold text-slate-900 mb-4">
-          Become a Member
+          {membershipContent.nonMember.hero.title}
         </h1>
         <p className="text-slate-600 mb-8">
-          You don't have an active membership. Join now to start earning credits!
+          {membershipContent.nonMember.hero.subtitle}
         </p>
         <Link href="/shop/membership">
-          <Button size="lg">View Membership Options</Button>
+          <Button size="lg">{membershipContent.nonMember.ctaLabel}</Button>
         </Link>
       </div>
     )
@@ -185,13 +188,13 @@ export default function MembershipDashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Membership</h1>
-          <p className="text-slate-600">Manage your subscription and credits</p>
+          <h1 className="text-3xl font-bold text-slate-900">{membershipContent.header.title}</h1>
+          <p className="text-slate-600">{membershipContent.header.subtitle}</p>
         </div>
         
         <div className="flex items-center gap-4">
           <Link href="/shop">
-            <Button variant="outline">Shop Now</Button>
+            <Button variant="outline">{membershipContent.header.secondaryCta}</Button>
           </Link>
         </div>
       </div>
@@ -202,7 +205,7 @@ export default function MembershipDashboardPage() {
           <div className="flex items-center gap-2 text-amber-800">
             <AlertCircle className="w-5 h-5" />
             <span>
-              Your subscription will end on {periodEnd.toLocaleDateString()}
+              {membershipContent.notices.endingOn(periodEnd.toLocaleDateString())}
             </span>
           </div>
           <Button
@@ -214,7 +217,7 @@ export default function MembershipDashboardPage() {
             {actionLoading === 'reactivate' ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : null}
-            Reactivate
+            {membershipContent.notices.reactivateCta}
           </Button>
         </div>
       )}
@@ -224,15 +227,15 @@ export default function MembershipDashboardPage() {
         <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <p className="text-slate-400 text-sm mb-1">Credit Balance</p>
+              <p className="text-slate-400 text-sm mb-1">{membershipContent.credits.title}</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold">
                   {status.credits.balance.toLocaleString()}
                 </span>
-                <span className="text-slate-400">credits</span>
+                <span className="text-slate-400">{membershipContent.credits.unit}</span>
               </div>
               <p className="text-slate-400 text-sm mt-1">
-                ${status.credits.valueUsd.toFixed(2)} value
+                {membershipContent.credits.value(status.credits.valueUsd)}
               </p>
             </div>
             <div className="p-3 bg-amber-500/20 rounded-xl">
@@ -244,10 +247,10 @@ export default function MembershipDashboardPage() {
           <div className="bg-white/10 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-5 h-5 text-green-400" />
-              <span className="font-medium">Credit Appreciation</span>
+              <span className="font-medium">{membershipContent.credits.appreciationTitle}</span>
             </div>
             <p className="text-sm text-slate-300 mb-3">
-              Hold your credits longer to earn bonus value
+              {membershipContent.credits.appreciationBody}
             </p>
             <div className="flex gap-2 flex-wrap">
               {APPRECIATION_SCHEDULE.slice(1).map(schedule => (
@@ -281,7 +284,7 @@ export default function MembershipDashboardPage() {
 
           <div className="space-y-3 mb-6">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Status</span>
+              <span className="text-slate-500">{membershipContent.subscription.status}</span>
               <span className={cn(
                 'font-medium',
                 subscription.status === 'active' ? 'text-green-600' : 'text-amber-600'
@@ -290,11 +293,11 @@ export default function MembershipDashboardPage() {
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Monthly Credits</span>
+              <span className="text-slate-500">{membershipContent.subscription.monthlyCredits}</span>
               <span className="font-medium">{tier.monthlyCredits}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Next Billing</span>
+              <span className="text-slate-500">{membershipContent.subscription.nextBilling}</span>
               <span className="font-medium">
                 {periodEnd.toLocaleDateString()}
               </span>
@@ -305,7 +308,7 @@ export default function MembershipDashboardPage() {
             <Link href="/shop/membership">
               <Button variant="outline" className="w-full">
                 <ArrowUp className="w-4 h-4 mr-2" />
-                Change Tier
+                {membershipContent.subscription.changeTier}
               </Button>
             </Link>
             {!subscription.cancelAtPeriodEnd && (
@@ -318,7 +321,7 @@ export default function MembershipDashboardPage() {
                 {actionLoading === 'cancel' ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                Cancel Subscription
+                {membershipContent.subscription.cancelCta}
               </Button>
             )}
           </div>
@@ -329,13 +332,13 @@ export default function MembershipDashboardPage() {
           <div className="p-6 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <History className="w-5 h-5 text-slate-400" />
-              <h3 className="font-semibold text-slate-900">Recent Transactions</h3>
+              <h3 className="font-semibold text-slate-900">{membershipContent.transactions.title}</h3>
             </div>
           </div>
 
           {status.recentTransactions.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
-              No transactions yet
+              {membershipContent.transactions.empty}
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -387,7 +390,7 @@ export default function MembershipDashboardPage() {
         {/* Tier Features */}
         <div className="lg:col-span-3">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            Your {tier.name} Benefits
+            {membershipContent.benefits.title(tier.name)}
           </h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tier.features.map((feature, index) => (

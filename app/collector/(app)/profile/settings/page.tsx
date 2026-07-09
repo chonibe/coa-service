@@ -3,22 +3,25 @@
 import { ContentCard } from '@/components/app-shell'
 import { ChevronRight, User, Bell as BellIcon, Shield, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Settings Page
 // ============================================================================
 
 const settingsItems = [
-  { label: 'Edit Profile', icon: User, href: '#' },
+  { label: 'Edit profile', icon: User, href: '#' },
   { label: 'Notification Preferences', icon: BellIcon, href: '#' },
   { label: 'Privacy & Security', icon: Shield, href: '#' },
-  { label: 'Sign Out', icon: LogOut, href: '/collector/signout', destructive: true },
+  { label: 'Sign out', icon: LogOut, href: '/collector/signout', destructive: true },
 ]
+
+const appSettingsContent = getCollectorPageContent('appSettings')
 
 export default function CollectorSettingsPage() {
   return (
     <div className="px-4 py-4">
-      <h1 className="text-lg font-heading font-semibold text-gray-900 mb-4">Settings</h1>
+      <h1 className="text-lg font-heading font-semibold text-gray-900 mb-4">{appSettingsContent.title}</h1>
       <ContentCard padding="none">
         {settingsItems.map((item, index) => (
           <a

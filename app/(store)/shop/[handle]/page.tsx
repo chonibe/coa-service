@@ -291,7 +291,7 @@ export default function ProductPage() {
               </p>
               <div className="flex items-center justify-center gap-4">
                 <Link href="/shop">
-                  <Button variant="primary">Back to Shop</Button>
+                  <Button variant="primary">Back to shop</Button>
                 </Link>
               </div>
             </div>
@@ -645,7 +645,7 @@ export default function ProductPage() {
 
       {/* Scrolling Text Banner */}
       <ScrollingText
-        text="One Lamp, Endless Inspiration"
+        text="One lamp, endless rotation"
         textSize="large"
         scrollingSpeed={6}
         textColor="hsl(var(--foreground))"
@@ -726,7 +726,7 @@ export default function ProductPage() {
             {/* View all link */}
             <div className="mt-8 text-center">
               <Link href="/shop">
-                <Button variant="outline">View All Artworks</Button>
+                <Button variant="outline">View all artworks</Button>
               </Link>
             </div>
           </Container>

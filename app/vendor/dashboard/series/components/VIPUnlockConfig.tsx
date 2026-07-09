@@ -48,8 +48,8 @@ export function VIPUnlockConfig({
           VIP Unlock Configuration
         </CardTitle>
         <CardDescription>
-          Reward loyalty and make owning earlier pieces matter. Build a hierarchy that keeps
-          collectors inside the ecosystem.
+          Reward loyalty and make owning earlier pieces matter. Give returning collectors
+          something extra to unlock.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -173,4 +173,3 @@ export function VIPUnlockConfig({
     </Card>
   )
 }
-

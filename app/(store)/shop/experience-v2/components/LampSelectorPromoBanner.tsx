@@ -132,8 +132,7 @@ export function LampSelectorPromoBanner({
             }
             className={cn(
               'relative w-full rounded-lg px-3 py-2.5 text-center text-xs font-semibold transition-colors sm:text-sm',
-              'bg-neutral-900 text-white hover:bg-neutral-800',
-              'dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]',
+              'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
               highlightAddCta && EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS
             )}
           >

@@ -5,6 +5,7 @@ import { ContentCard } from '@/components/app-shell'
 import { ProgressRing } from '@/components/app-shell'
 import { Gem, Gift, Sparkles, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Credits & Subscriptions Page
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils'
 
 const LAMP_THRESHOLD_CREDITS = 2550
 const PROOF_PRINT_THRESHOLD_CREDITS = 240
+const appCreditsContent = getCollectorPageContent('appCredits')
 
 export default function CollectorCreditsPage() {
   const [data, setData] = useState<any>(null)
@@ -52,14 +54,14 @@ export default function CollectorCreditsPage() {
 
   return (
     <div className="px-4 py-4 space-y-4">
-      <h1 className="text-lg font-heading font-semibold text-gray-900">Credits & Subscriptions</h1>
+      <h1 className="text-lg font-heading font-semibold text-gray-900">{appCreditsContent.title}</h1>
 
       {/* Balance hero */}
       <ContentCard padding="lg">
         <div className="text-center">
           <Gem className="w-8 h-8 text-amber-500 mx-auto mb-2" />
           <p className="text-3xl font-bold text-gray-900 font-body">{balance.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 font-body">Available Credits</p>
+          <p className="text-sm text-gray-500 font-body">{appCreditsContent.available}</p>
           <p className="text-xs text-gray-400 font-body mt-1">${(balance / 100).toFixed(2)} value</p>
         </div>
         <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-gray-100">
@@ -67,19 +69,19 @@ export default function CollectorCreditsPage() {
             <p className="text-lg font-semibold text-impact-success font-body">
               +{totalEarned.toLocaleString()}
             </p>
-            <p className="text-[11px] text-gray-500 font-body uppercase tracking-wide">Total Earned</p>
+            <p className="text-[11px] text-gray-500 font-body uppercase tracking-wide">{appCreditsContent.totalEarned}</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-semibold text-impact-error font-body">
               -{totalSpent.toLocaleString()}
             </p>
-            <p className="text-[11px] text-gray-500 font-body uppercase tracking-wide">Total Spent</p>
+            <p className="text-[11px] text-gray-500 font-body uppercase tracking-wide">{appCreditsContent.totalSpent}</p>
           </div>
         </div>
       </ContentCard>
 
       {/* Perk Progress */}
-      <h2 className="text-sm font-bold text-gray-900 font-body uppercase tracking-wider">Perk Progress</h2>
+      <h2 className="text-sm font-bold text-gray-900 font-body uppercase tracking-wider">{appCreditsContent.perkProgress}</h2>
       <div className="space-y-3">
         <ContentCard padding="md" hoverable>
           <div className="flex items-center gap-4">
@@ -92,11 +94,11 @@ export default function CollectorCreditsPage() {
               <Gift className={cn('w-5 h-5', proofProgress >= 100 ? 'text-impact-success' : 'text-impact-primary')} />
             </ProgressRing>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900 font-body">Free Proof Print</p>
+              <p className="text-sm font-semibold text-gray-900 font-body">{appCreditsContent.proofReward}</p>
               <p className="text-xs text-gray-500 font-body">
                 {proofProgress >= 100
-                  ? 'Unlocked — you can redeem this perk!'
-                  : `${Math.round(proofProgress)}% — spend $${Math.max(0, PROOF_PRINT_THRESHOLD_CREDITS / 10 - totalEarned / 10).toFixed(0)} more`}
+                  ? appCreditsContent.readyToRedeem
+                  : appCreditsContent.spendMore(proofProgress, Math.max(0, PROOF_PRINT_THRESHOLD_CREDITS / 10 - totalEarned / 10))}
               </p>
             </div>
           </div>
@@ -113,11 +115,11 @@ export default function CollectorCreditsPage() {
               <Sparkles className={cn('w-5 h-5', lampProgress >= 100 ? 'text-impact-success' : 'text-amber-500')} />
             </ProgressRing>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900 font-body">Free Lamp</p>
+              <p className="text-sm font-semibold text-gray-900 font-body">{appCreditsContent.lampReward}</p>
               <p className="text-xs text-gray-500 font-body">
                 {lampProgress >= 100
-                  ? 'Unlocked — you can redeem this perk!'
-                  : `${Math.round(lampProgress)}% — spend $${Math.max(0, LAMP_THRESHOLD_CREDITS / 10 - totalEarned / 10).toFixed(0)} more`}
+                  ? appCreditsContent.readyToRedeem
+                  : appCreditsContent.spendMore(lampProgress, Math.max(0, LAMP_THRESHOLD_CREDITS / 10 - totalEarned / 10))}
               </p>
             </div>
           </div>
@@ -128,25 +130,15 @@ export default function CollectorCreditsPage() {
       <ContentCard padding="md">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="w-4 h-4 text-impact-primary" />
-          <h3 className="text-sm font-bold text-gray-900 font-body">How to earn credits</h3>
+          <h3 className="text-sm font-bold text-gray-900 font-body">{appCreditsContent.howItWorks}</h3>
         </div>
         <ul className="space-y-2 text-xs text-gray-600 font-body">
-          <li className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-gray-400" />
-            <span>Earn <strong>10 credits per $1 spent</strong> on any purchase</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-gray-400" />
-            <span>Earn <strong>500 credits</strong> for each NFC authentication scan</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-gray-400" />
-            <span>Earn <strong>1,000 credits</strong> for completing a series</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-gray-400" />
-            <span>Earn <strong>bonus credits</strong> from referrals and special events</span>
-          </li>
+          {appCreditsContent.rules.map((rule) => (
+            <li key={rule} className="flex items-start gap-2">
+              <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-gray-400" />
+              <span>{rule}</span>
+            </li>
+          ))}
         </ul>
       </ContentCard>
     </div>

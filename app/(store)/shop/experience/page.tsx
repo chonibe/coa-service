@@ -76,7 +76,7 @@ export default async function ExperiencePage({ searchParams }: ExperiencePagePro
             href="/shop"
             className="inline-block px-6 py-2.5 bg-card text-foreground rounded-full text-sm font-medium hover:bg-neutral-100 transition-colors"
           >
-            Back to Shop
+            Back to shop
           </Link>
         </div>
       </div>

@@ -30,13 +30,13 @@ export function NextUnlock({ nextArtwork, unlockType, className }: NextUnlockPro
           <div className="w-12 h-12 rounded-full bg-primary/20 mx-auto mb-3 flex items-center justify-center">
             <Check className="w-6 h-6 text-primary" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">Collection Complete!</h3>
+          <h3 className="text-lg font-semibold mb-1">Series complete</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            You've collected all artworks in this series
+            You have collected every artwork in this series.
           </p>
           <Button variant="outline" className="w-full" asChild>
             <Link href="/collector/dashboard">
-              View Your Collection
+              Open dashboard
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
@@ -48,11 +48,11 @@ export function NextUnlock({ nextArtwork, unlockType, className }: NextUnlockPro
   const getUnlockMessage = () => {
     switch (unlockType) {
       case 'sequential':
-        return `Collect #${nextArtwork.displayOrder + 1} to continue your journey`
+        return `Collect #${nextArtwork.displayOrder + 1} to keep moving through this series`
       case 'threshold':
-        return 'Collect more artworks to unlock the next piece'
+        return 'Collect more artworks to open the next piece'
       case 'vip':
-        return 'Available for VIP collectors'
+        return 'Available with member access'
       case 'time_based':
         return 'Coming soon in this series'
       default:

@@ -81,7 +81,7 @@ export default async function ExperienceV2Page({ searchParams }: ExperienceV2Pag
             href="/shop"
             className="inline-block px-6 py-2.5 bg-background text-foreground rounded-full text-sm font-medium hover:bg-muted transition-colors"
           >
-            Back to Shop
+            Back to shop
           </Link>
         </div>
       </div>

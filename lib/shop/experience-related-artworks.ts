@@ -64,6 +64,8 @@ export type BuildRelatedArtworkSliderParams = {
   /** Extra products for same artist (e.g. artist profile API). */
   artistProducts?: ShopifyProduct[]
   limit?: number
+  /** When true, only include works from the same artist (no tag-similar picks). */
+  artistOnly?: boolean
 }
 
 /**
@@ -78,6 +80,7 @@ export function buildExperienceRelatedArtworkSlider({
   artistBio,
   artistProducts = [],
   limit = 16,
+  artistOnly = false,
 }: BuildRelatedArtworkSliderParams): RelatedArtworkSliderItem[] {
   const vendor = artistVendor.trim()
   const styleTags = mergeArtistStyleTags(artistBio, [
@@ -123,7 +126,7 @@ export function buildExperienceRelatedArtworkSlider({
         matchedTags,
         score: score + 20,
       })
-    } else if (matchedTags.length > 0 && score > 0) {
+    } else if (!artistOnly && matchedTags.length > 0 && score > 0) {
       similar.push({
         product,
         reason: 'similar_tags',
@@ -136,7 +139,7 @@ export function buildExperienceRelatedArtworkSlider({
   sameArtist.sort((a, b) => b.score - a.score)
   similar.sort((a, b) => b.score - a.score)
 
-  for (const row of [...sameArtist, ...similar]) {
+  for (const row of artistOnly ? sameArtist : [...sameArtist, ...similar]) {
     if (items.length >= limit) break
     if (used.has(row.product.id)) continue
     items.push(row)

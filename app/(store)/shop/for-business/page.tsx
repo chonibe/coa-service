@@ -11,12 +11,7 @@ import {
 import { ScrollReveal } from '@/components/blocks'
 import { MutedVideo } from '@/components/MutedVideo'
 import { cn } from '@/lib/utils'
-
-const BULK_DISCOUNT_TIERS = [
-  { discount: '5% off', minAmount: '₪5,600+' },
-  { discount: '10% off', minAmount: '₪11,100+' },
-  { discount: '15% off', minAmount: '₪36,700+' },
-]
+import { getStorePageContent } from '@/lib/content/site-content'
 
 const CARD_VALUE_PRESETS = [
   '₪100',
@@ -30,12 +25,7 @@ const CARD_VALUE_PRESETS = [
 
 type TabType = 'gifting' | 'hospitality' | 'offices' | 'galleries'
 
-const tabs: { id: TabType; label: string }[] = [
-  { id: 'gifting', label: 'Gifting' },
-  { id: 'hospitality', label: 'Hospitality' },
-  { id: 'offices', label: 'Office' },
-  { id: 'galleries', label: 'Galleries' },
-]
+const businessContent = getStorePageContent('forBusiness')
 
 export default function ForBusinessPage() {
   const [activeTab, setActiveTab] = useState<TabType>('gifting')
@@ -91,7 +81,7 @@ export default function ForBusinessPage() {
       const data = await res.json()
       if (!res.ok) {
         setStatus('error')
-        setErrorMessage(data.error || 'Failed to submit')
+        setErrorMessage(data.error || businessContent.messages.errorFallback)
         return
       }
       setStatus('success')
@@ -109,7 +99,7 @@ export default function ForBusinessPage() {
       })
     } catch {
       setStatus('error')
-      setErrorMessage('An unexpected error occurred. Please try again.')
+      setErrorMessage(businessContent.messages.errorFallback)
     }
   }
 
@@ -134,7 +124,7 @@ export default function ForBusinessPage() {
       const data = await res.json()
       if (!res.ok) {
         setStatus('error')
-        setErrorMessage(data.error || 'Failed to submit')
+        setErrorMessage(data.error || businessContent.messages.errorFallback)
         return
       }
       setStatus('success')
@@ -148,7 +138,7 @@ export default function ForBusinessPage() {
       })
     } catch {
       setStatus('error')
-      setErrorMessage('An unexpected error occurred. Please try again.')
+      setErrorMessage(businessContent.messages.errorFallback)
     }
   }
 
@@ -159,10 +149,10 @@ export default function ForBusinessPage() {
         <Container maxWidth="default" paddingX="gutter">
           <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-start mb-0">
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em]">
-              For All Your Business Needs
+              {businessContent.hero.title}
             </h1>
             <p className="text-lg text-muted-foreground">
-              Our special B2B packages offer special discounts and expert support.
+              {businessContent.hero.subtitle}
             </p>
           </div>
         </Container>
@@ -180,7 +170,7 @@ export default function ForBusinessPage() {
           />
           {/* Tab pills overlaid at bottom center */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2">
-            {tabs.map((tab) => (
+            {businessContent.tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -210,12 +200,12 @@ export default function ForBusinessPage() {
             <ScrollReveal animation="fadeUp">
               <div className="rounded-xl bg-[#00a341]/10 border border-[#00a341]/30 p-8 text-center mb-10">
                 <p className="text-lg font-medium text-[#00a341] mb-2">
-                  Thank you for your submission!
+                  {businessContent.messages.success.title}
                 </p>
                 <p className="text-muted-foreground">
                   {activeTab === 'gifting'
-                    ? "Our B2B team will reach out soon with next steps."
-                    : "One of our experts will get in touch soon."}
+                    ? businessContent.messages.success.giftingBody
+                    : businessContent.messages.success.contactBody}
                 </p>
               </div>
             </ScrollReveal>
@@ -226,10 +216,10 @@ export default function ForBusinessPage() {
               <form onSubmit={handleGiftingSubmit} className="space-y-8 max-w-2xl">
                 <div>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">
-                    Digital Gift Cards, Bulk Discount
+                    {businessContent.gifting.title}
                   </h2>
                   <div className="flex flex-wrap gap-3 mb-6">
-                    {BULK_DISCOUNT_TIERS.map((tier) => (
+                    {businessContent.gifting.discountTiers.map((tier) => (
                       <div
                         key={tier.discount}
                         className="px-4 py-2 rounded-lg bg-muted text-foreground font-medium"
@@ -242,7 +232,7 @@ export default function ForBusinessPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-3">
-                    Choose a card value
+                    {businessContent.gifting.cardValueLabel}
                   </label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {CARD_VALUE_PRESETS.map((preset) => (
@@ -272,12 +262,12 @@ export default function ForBusinessPage() {
                           : 'border-border bg-background hover:border-border text-foreground'
                       )}
                     >
-                      Custom
+                      {businessContent.gifting.customCardValue.label}
                     </button>
                   </div>
                   {!giftingState.cardValue && (
                     <Input
-                      placeholder="e.g. ₪500"
+                      placeholder={businessContent.gifting.customCardValue.placeholder}
                       value={giftingState.customCardValue}
                       onChange={(e) => setGiftingState((s) => ({ ...s, customCardValue: e.target.value }))}
                       disabled={status === 'loading'}
@@ -289,7 +279,7 @@ export default function ForBusinessPage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-foreground">
-                      Employees to be gifted
+                      {businessContent.gifting.employeesLabel}
                     </label>
                     <button
                       type="button"
@@ -297,7 +287,7 @@ export default function ForBusinessPage() {
                       disabled={status === 'loading'}
                       className="text-sm text-experience-highlight hover:underline font-medium"
                     >
-                      Upload CSV
+                      {businessContent.gifting.uploadCsvLabel}
                     </button>
                   </div>
                   <input
@@ -313,7 +303,7 @@ export default function ForBusinessPage() {
                     className="hidden"
                   />
                   <textarea
-                    placeholder="Add emails"
+                    placeholder={businessContent.gifting.emailsPlaceholder}
                     value={giftingState.emails}
                     onChange={(e) => setGiftingState((s) => ({ ...s, emails: e.target.value }))}
                     rows={5}
@@ -324,15 +314,15 @@ export default function ForBusinessPage() {
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <Input
-                    label="Company"
-                    placeholder="Company name"
+                    label={businessContent.gifting.company.label}
+                    placeholder={businessContent.gifting.company.placeholder}
                     value={giftingState.company}
                     onChange={(e) => setGiftingState((s) => ({ ...s, company: e.target.value }))}
                     disabled={status === 'loading'}
                   />
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      When should we send the gift card?
+                      {businessContent.gifting.sendWhenLabel}
                     </label>
                     <div className="flex gap-2 flex-wrap">
                       <select
@@ -348,7 +338,7 @@ export default function ForBusinessPage() {
                         disabled={status === 'loading'}
                         className="flex-1 min-w-[120px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight"
                       >
-                        <option value="today">Today</option>
+                        <option value="today">{businessContent.gifting.sendTodayLabel}</option>
                         {Array.from({ length: 30 }, (_, i) => {
                           const d = new Date()
                           d.setDate(d.getDate() + i + 1)
@@ -365,7 +355,7 @@ export default function ForBusinessPage() {
                         disabled={status === 'loading'}
                         className="flex-1 min-w-[100px] h-[2.625rem] sm:h-[3.125rem] px-4 rounded-[8px] border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-highlight"
                       >
-                        <option value="now">Now</option>
+                        <option value="now">{businessContent.gifting.sendNowLabel}</option>
                         {Array.from({ length: 24 }, (_, i) => (
                           <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>
                             {`${i.toString().padStart(2, '0')}:00`}
@@ -378,10 +368,10 @@ export default function ForBusinessPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Gift message (optional)
+                    {businessContent.gifting.giftMessage.label}
                   </label>
                   <textarea
-                    placeholder="Add a personal note for recipients"
+                    placeholder={businessContent.gifting.giftMessage.placeholder}
                     value={giftingState.giftMessage}
                     onChange={(e) => setGiftingState((s) => ({ ...s, giftMessage: e.target.value }))}
                     rows={4}
@@ -392,7 +382,9 @@ export default function ForBusinessPage() {
 
                 {errorMessage && <p className="text-sm text-[#f83a3a]">{errorMessage}</p>}
                 <Button type="submit" variant="primary" size="lg" disabled={status === 'loading'}>
-                  {status === 'loading' ? 'Submitting...' : 'Submit B2B Gift Card Request'}
+                  {status === 'loading'
+                    ? businessContent.gifting.submit.submitLoading
+                    : businessContent.gifting.submit.submitIdle}
                 </Button>
               </form>
             </ScrollReveal>
@@ -401,53 +393,53 @@ export default function ForBusinessPage() {
           {(activeTab === 'hospitality' || activeTab === 'offices' || activeTab === 'galleries') && (
             <ScrollReveal animation="fadeUp" duration={0.8}>
               <p className="text-muted-foreground mb-8">
-                Fill out this form and one of our experts will get in touch soon.
+                {businessContent.contact.intro}
               </p>
               <form onSubmit={handleContactSubmit} className="space-y-6 max-w-xl">
                 <Input
-                  label="Your name *"
+                  label={businessContent.contact.fields.name.label}
                   required
-                  placeholder="Your name"
+                  placeholder={businessContent.contact.fields.name.placeholder}
                   value={contactState.name}
                   onChange={(e) => setContactState((s) => ({ ...s, name: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Company name *"
+                  label={businessContent.contact.fields.companyName.label}
                   required
-                  placeholder="Company name"
+                  placeholder={businessContent.contact.fields.companyName.placeholder}
                   value={contactState.companyName}
                   onChange={(e) => setContactState((s) => ({ ...s, companyName: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Desired amount of tiles *"
+                  label={businessContent.contact.fields.desiredTiles.label}
                   required
-                  placeholder="e.g. 50"
+                  placeholder={businessContent.contact.fields.desiredTiles.placeholder}
                   value={contactState.desiredTiles}
                   onChange={(e) => setContactState((s) => ({ ...s, desiredTiles: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Email *"
+                  label={businessContent.contact.fields.email.label}
                   type="email"
                   required
-                  placeholder="your@email.com"
+                  placeholder={businessContent.contact.fields.email.placeholder}
                   value={contactState.email}
                   onChange={(e) => setContactState((s) => ({ ...s, email: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Phone Number"
+                  label={businessContent.contact.fields.phone.label}
                   type="tel"
-                  placeholder="+1 234 567 8900"
+                  placeholder={businessContent.contact.fields.phone.placeholder}
                   value={contactState.phone}
                   onChange={(e) => setContactState((s) => ({ ...s, phone: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Textarea
-                  label="Additional information"
-                  placeholder="Tell us about your project or requirements"
+                  label={businessContent.contact.fields.additionalInfo.label}
+                  placeholder={businessContent.contact.fields.additionalInfo.placeholder}
                   value={contactState.additionalInfo}
                   onChange={(e) => setContactState((s) => ({ ...s, additionalInfo: e.target.value }))}
                   disabled={status === 'loading'}
@@ -455,7 +447,9 @@ export default function ForBusinessPage() {
                 />
                 {errorMessage && <p className="text-sm text-[#f83a3a]">{errorMessage}</p>}
                 <Button type="submit" variant="primary" size="lg" disabled={status === 'loading'}>
-                  {status === 'loading' ? 'Sending...' : 'Send message'}
+                  {status === 'loading'
+                    ? businessContent.contact.submit.submitLoading
+                    : businessContent.contact.submit.submitIdle}
                 </Button>
               </form>
             </ScrollReveal>

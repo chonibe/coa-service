@@ -56,7 +56,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
                   (window.location.href = `/collector/journey/${encodeURIComponent(artist.vendorName)}`)
                 }
               >
-                View Journey
+                Open series map
                 <ExternalLink className="h-4 w-4 ml-2" />
               </Button>
             </div>
@@ -66,7 +66,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
             {/* Series Progress */}
             {artist.seriesDetails.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold">Series Progress</h4>
+                <h4 className="text-sm font-semibold">Series progress</h4>
                 {artist.seriesDetails.map((series) => (
                   <div key={series.seriesId} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -87,7 +87,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    First Purchase
+                    First purchase
                   </div>
                   <p className="text-sm font-medium">
                     {format(new Date(artist.firstPurchaseDate), "MMM yyyy")}
@@ -98,7 +98,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <DollarSign className="h-3 w-3" />
-                    Total Spent
+                    Total spent
                   </div>
                   <p className="text-sm font-medium">${artist.totalSpent.toFixed(2)}</p>
                 </div>
@@ -107,7 +107,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
                 <div className="space-y-1 col-span-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3" />
-                    Completion Rate
+                    Completion rate
                   </div>
                   <Progress value={artist.completionRate} className="h-2" />
                 </div>
@@ -117,7 +117,7 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
             {/* Recent Purchases */}
             {artist.recentPurchases.length > 0 && (
               <div className="space-y-2 pt-4 border-t">
-                <h4 className="text-sm font-semibold">Recent Purchases</h4>
+                <h4 className="text-sm font-semibold">Recent purchases</h4>
                 <div className="space-y-2">
                   {artist.recentPurchases.slice(0, 3).map((purchase) => (
                     <div
@@ -139,6 +139,3 @@ export function ArtistsCollection({ artists }: ArtistsCollectionProps) {
     </div>
   )
 }
-
-
-

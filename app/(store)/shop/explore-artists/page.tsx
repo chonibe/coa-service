@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { getShopArtistsList } from '@/lib/shop/artists-list'
 import { orderArtistsForExplore } from '@/lib/shop/explore-artists-order'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
@@ -10,7 +10,8 @@ import { ExploreArtistsJsonLd } from '@/components/seo/ExploreArtistsJsonLd'
 
 const TITLE = 'Artist directory — street art & limited edition prints | Street Collector'
 const DESCRIPTION =
-  'Browse every Street Collector artist in one place: independent street art and urban art voices, limited edition prints, and profiles linking to each collection. Find your next piece for the lamp or wall.'
+  'Browse every Street Collector artist in one place: independent street art and urban art practices, limited edition prints, and profiles linking to each collection. Find a piece for the lamp or the wall.'
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),

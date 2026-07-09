@@ -4,8 +4,10 @@ import * as React from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 type NewsletterState =
   | { status: 'idle' }
@@ -159,4 +161,3 @@ export function FinalCta() {
     </section>
   )
 }
-

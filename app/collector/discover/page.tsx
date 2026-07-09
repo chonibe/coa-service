@@ -12,6 +12,9 @@ import { ArtworkCard } from "./components/artwork-card"
 import { FilterSidebar } from "./components/filter-sidebar"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from "@/components/ui"
+import { getCollectorPageContent } from "@/lib/content/site-content"
+
+const discoverContent = getCollectorPageContent('discover')
 function DiscoverContent() {
   const searchParams = useSearchParams()
   const [artworks, setArtworks] = useState<Artwork[]>([])
@@ -52,14 +55,14 @@ function DiscoverContent() {
   if (error) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 text-red-500">
-        <p>Unable to load marketplace: {error}</p>
+        <p>{discoverContent.error(error)}</p>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Discover Artworks</h1>
+      <h1 className="text-3xl font-bold mb-6">{discoverContent.hero.title}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="md:col-span-1">
@@ -73,10 +76,10 @@ function DiscoverContent() {
 
         <div className="md:col-span-3">
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Dropping Now</h2>
+            <h2 className="text-2xl font-semibold mb-4">{discoverContent.highlights.title}</h2>
             <Card>
               <CardContent className="py-6">
-                <p className="text-muted-foreground">Featured new artworks will appear here.</p>
+                <p className="text-muted-foreground">{discoverContent.highlights.empty}</p>
               </CardContent>
             </Card>
           </div>
@@ -89,16 +92,14 @@ function DiscoverContent() {
               : artworks.length > 0
                 ? artworks.map((artwork) => <ArtworkCard key={artwork.id} artwork={artwork} />)
                 : (
-                  <p className="col-span-full text-center text-muted-foreground">
-                    No artworks found matching your criteria.
-                  </p>
+                  <p className="col-span-full text-center text-muted-foreground">{discoverContent.emptyResults}</p>
                 )}
           </div>
 
           {pagination.total > pagination.limit && (
             <div className="mt-8 text-center">
               <Button variant="outline" disabled>
-                Load More
+                {discoverContent.loadMore}
               </Button>
             </div>
           )}
@@ -110,9 +111,8 @@ function DiscoverContent() {
 
 export default function CollectorDiscoverPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading…</div>}>
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">{discoverContent.loading}</div>}>
       <DiscoverContent />
     </Suspense>
   )
 }
-

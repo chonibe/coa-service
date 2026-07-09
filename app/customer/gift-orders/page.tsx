@@ -199,7 +199,7 @@ export default function GiftOrdersPage() {
             Gift Orders Tracking
           </h1>
           <p className="text-muted-foreground mt-1">
-            Track all your gift orders and notify recipients when packages are close
+            Track your gift orders and let recipients know when packages are close
           </p>
         </div>
         <Button onClick={fetchOrders} disabled={isLoading} variant="outline">
@@ -213,7 +213,7 @@ export default function GiftOrdersPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{statusCounts.total}</div>
-            <p className="text-xs text-muted-foreground">Total Orders</p>
+            <p className="text-xs text-muted-foreground">Total orders</p>
           </CardContent>
         </Card>
         <Card>
@@ -225,7 +225,7 @@ export default function GiftOrdersPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-yellow-600">{statusCounts.in_transit}</div>
-            <p className="text-xs text-muted-foreground">In Transit</p>
+            <p className="text-xs text-muted-foreground">In transit</p>
           </CardContent>
         </Card>
         <Card>
@@ -250,7 +250,7 @@ export default function GiftOrdersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search by recipient name, email, order ID, or tracking number..."
+                placeholder="Search by recipient name, email, order ID, or tracking number"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -656,4 +656,3 @@ export default function GiftOrdersPage() {
     </div>
   )
 }
-

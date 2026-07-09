@@ -228,7 +228,7 @@ export default function InspirationBoardEditor({
         {/* Story Input */}
         <Textarea
           id={`story-input-${blockId}`}
-          placeholder="Tell the story behind your inspirations..."
+          placeholder="Add a short note about these references..."
           value={story}
           onChange={(e) => handleStoryChange(e.target.value)}
           rows={2}
@@ -309,7 +309,7 @@ export default function InspirationBoardEditor({
         </Button>
         
         <p className="text-xs text-gray-400 mt-4">
-          Photos, textures, colors, references - anything that inspired you
+          Photos, textures, colors, references, or anything else connected to the work
         </p>
       </div>
 

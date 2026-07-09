@@ -18,19 +18,20 @@ import {
   MediaGrid,
 } from '@/components/sections'
 import { Spline3DViewer, URLParamModal, URLParamBanner } from '@/components/blocks'
-import { homepageContent } from '@/content/homepage'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { getCollection, getProduct, formatPrice, isOnSale, getDiscountPercentage, isStorefrontConfigured, getStorefrontConfigStatus } from '@/lib/shopify/storefront-client'
 import { getArtistImageByHandle } from '@/lib/shopify/artist-image'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Street Collector - One Lamp, Endless Rotation',
-  description: 'Browse limited edition artworks for the Street Lamp and build a collection you can swap over time.',
+  description: 'Browse limited edition artworks for the Street Lamp and build a collection you can rotate over time.',
   alternates: { canonical: '/shop/home' },
 }
 
 // Force dynamic rendering to avoid build-time API calls
 export const dynamic = 'force-dynamic'
+const homepageContent = getStorePageContent('home')
 
 export default async function ShopHomePage() {
   // Check if Storefront API is configured
@@ -208,7 +209,7 @@ export default async function ShopHomePage() {
               <p className="text-sm text-slate-500 mb-3">Preview artwork live on the 3D lamp</p>
               <Link href="/experience">
                 <Button variant="default" size="lg">
-                  Customize Your Lamp
+                  Preview the lamp
                 </Button>
               </Link>
             </div>

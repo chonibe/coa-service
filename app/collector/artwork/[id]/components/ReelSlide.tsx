@@ -144,16 +144,16 @@ export function ReelSlide({
             <Lock className="w-10 h-10 text-white" />
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">
-            {slide.title || "Exclusive Content"}
+            {slide.title || "Extra content"}
           </h3>
           <p className="text-white/70 mb-6">
-            Authenticate with NFC to unlock this content
+            Authenticate with NFC to open this content
           </p>
           <button
             onClick={onUnlockRequest}
             className="px-6 py-3 bg-white text-black font-medium rounded-full hover:bg-white/90 transition-colors"
           >
-            Unlock Now
+            Open with NFC
           </button>
         </div>
 

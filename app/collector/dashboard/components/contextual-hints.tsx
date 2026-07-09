@@ -47,14 +47,14 @@ export function ContextualHints({ totalPurchases, daysSinceSignup = 0, profile }
       {
         id: "first_purchase",
         condition: () => totalPurchases === 0 && daysSinceSignup <= 7,
-        message: "Browse the marketplace to find your first artwork",
-        action: { label: "Discover", href: "/collector/discover" },
+        message: "Browse available artworks and pick your first piece.",
+        action: { label: "Browse collection", href: "/collector/discover" },
       },
       {
         id: "complete_profile",
         condition: () => !profile?.avatar_url || !profile?.first_name,
-        message: "Complete your profile to unlock exclusive benefits",
-        action: { label: "Edit Profile", href: "/collector/profile" },
+        message: "Add a few profile details so your account is easier to manage later.",
+        action: { label: "Edit profile", href: "/collector/profile" },
       },
     ]
 

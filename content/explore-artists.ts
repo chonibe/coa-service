@@ -41,7 +41,7 @@ type ExploreArtistsContent = {
 export const exploreArtistsContent: ExploreArtistsContent = {
   hero: {
     eyebrow: 'The Artists',
-    ctaLabel: 'Start your collection',
+    ctaLabel: 'Browse collection',
   },
   philosophy: {
     eyebrow: 'Why the artists',
@@ -53,21 +53,21 @@ export const exploreArtistsContent: ExploreArtistsContent = {
     eyebrow: 'In the spotlight',
     rotateLabel: 'Changes weekly',
     title: 'In the spotlight.',
-    hook: 'Open the full profile, story, and works.',
+    hook: 'Open the full profile, bio, and works.',
     ctaLabel: 'Open full profile',
   },
   collection: {
     eyebrow: 'The Collection',
     subtitle:
-      'Tap a card for a quick preview, or open the full profile for story, press, and works.',
-    emptyHook: 'Open the profile for the story and editions.',
+      'Tap a card for a quick preview, or open the full profile for bio, press, and works.',
+    emptyHook: 'Open the profile for the bio and editions.',
   },
   finalCta: {
-    eyebrow: 'Ready when you are',
+    eyebrow: 'Take the next step',
     titleHtml: 'You&apos;ve met the artists.<br/>Now <em>collect their work.</em>',
     subtitle:
-      'Runs stay finite. Every edition is numbered. When a piece sells through here, it is gone from this shelf.',
-    primary: 'Start your collection',
+      'Runs stay finite. Every edition is numbered. When a piece sells through here, it leaves this shelf.',
+    primary: 'Browse collection',
     secondary: 'Browse all artists',
   },
   voices: {
@@ -83,13 +83,13 @@ export const exploreArtistsContent: ExploreArtistsContent = {
       },
       {
         quote:
-          '“Knowing someone in another city actually made this changes the way it sits in the room. It stops feeling generic immediately.”',
+          '“Knowing someone in another city actually made this piece change the way it sits in the room. It stopped feeling generic immediately.”',
         author: 'Sarah K.',
         location: 'London, UK',
       },
       {
         quote:
-          '“I bought the print because the artist story got to me first. By the time I came back to the image, it already had a place in the room.”',
+          '“I bought the print because the artist bio pulled me in first. By the time I came back to the image, it already had a place in the room.”',
         author: 'Lucas R.',
         location: 'Paris, France',
       },

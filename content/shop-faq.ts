@@ -25,7 +25,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'How Can I Track My Order?',
         answer:
-          'As soon as your order is packed and dispatched, you will receive a shipment confirmation email including your tracking number and a direct tracking link. Please note that tracking updates may take a few days to appear after dispatch. You can also track your parcel anytime under My Account → My Orders or via our Track Your Order page once you receive your tracking number.',
+          'As soon as your order is packed and dispatched, you will receive a shipment confirmation email including your tracking number and a direct tracking link. Please note that tracking updates may take a few days to appear after dispatch. You can also track your parcel anytime under My Account → My Orders or via our track your order page once you receive your tracking number.',
       },
       {
         question: 'Countries We Ship To',
@@ -70,7 +70,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Can I buy prints without buying The Street Lamp?',
         answer:
-          'Yes! Prints are sold separately from The Street Lamp. However, they are specifically designed to be displayed on The Street Lamp\'s illuminated frame. If you already own The Street Lamp, you can purchase additional artworks to build your collection. If you\'re new to Street Collector, we recommend our bundle option (Lamp + Artwork) for the complete experience.',
+          'Yes. Prints are sold separately from The Street Lamp and are made for its illuminated frame. If you already own the lamp, you can add more artworks anytime. If you are new to Street Collector, start with the Lamp + Artwork bundle.',
       },
       {
         question: 'What if the artwork sells out?',
@@ -100,7 +100,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Can I resell my print later?',
         answer:
-          'Yes! Because each print comes with a verified Certificate of Authenticity recorded on our ledger, you can resell it with full provenance documentation. Limited edition prints often appreciate in value, especially as artists gain recognition.',
+          'Yes. Each print comes with verified Certificate of Authenticity documentation recorded on our ledger, so you can pass it on with the provenance attached. Future value depends on the artist and the edition, so we do not make resale promises.',
       },
       {
         question: 'How do I change the artwork in my lamp?',
@@ -130,7 +130,7 @@ export const shopFaqGroups: FAQGroup[] = [
       {
         question: 'Can I mount the lamp on a wall?',
         answer:
-          'Yes. You can hang it in landscape using the built-in magnets on one side of the cover. If you want a portrait setup, there is an optional wall-mount accessory that screws into the frame. It also works well on a desk or shelf.',
+          'Yes. You can hang it in landscape using the built-in magnets on one side of the cover. If you want a portrait setup, there is an optional wall-mount accessory that screws into the frame. It also sits comfortably on a desk or shelf.',
       },
       {
         question: 'How long does it take to fully charge the lamp?',

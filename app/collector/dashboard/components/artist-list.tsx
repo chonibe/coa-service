@@ -47,7 +47,7 @@ export function ArtistList({ artists }: ArtistListProps) {
               (window.location.href = `/collector/journey/${encodeURIComponent(artist.vendorName)}`)
             }
           >
-            View journey
+            View series map
           </Button>
         </Card>
         </ScrollReveal>
@@ -55,4 +55,3 @@ export function ArtistList({ artists }: ArtistListProps) {
     </div>
   )
 }
-

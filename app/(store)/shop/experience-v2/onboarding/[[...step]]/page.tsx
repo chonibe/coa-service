@@ -44,7 +44,7 @@ export default async function ExperienceOnboardingPage({ searchParams }: Onboard
             href="/shop"
             className="inline-block px-6 py-2.5 bg-[#FFBA94] text-[#390000] rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Back to Shop
+            Back to shop
           </Link>
         </div>
       </div>

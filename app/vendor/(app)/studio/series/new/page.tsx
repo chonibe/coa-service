@@ -118,7 +118,7 @@ export default function CreateSeriesPage() {
           Create a Series
         </h1>
         <p className="text-white/60 text-sm font-body">
-          Curate your works into a journey.
+          Group works into one series.
         </p>
         <p className="mt-3 text-xs font-body text-white/45">
           Add a name (required), optional cover and description, choose an unlock style, then use{" "}

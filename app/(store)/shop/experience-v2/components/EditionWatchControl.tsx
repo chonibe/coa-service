@@ -43,8 +43,12 @@ export function EditionWatchControl({
   inline?: boolean
   chipOnly?: boolean
   className?: string
-  /** `well` — pill CTA + stronger dark surface (e.g. {@link ScarcityWatchRegion}) */
-  variant?: 'default' | 'well'
+  /**
+   * `well` — pill CTA + stronger dark surface (e.g. {@link ScarcityWatchRegion}).
+   * `plain` — no ring/background box; text-only affordance (e.g. experience-v3 hero, which
+   * wants this control to feel like part of the surrounding card rather than a bordered chip).
+   */
+  variant?: 'default' | 'well' | 'plain'
 }) {
   const { isAuthenticated, loading: authLoading } = useShopAuthContext()
   const [watching, setWatching] = useState<boolean | null>(null)
@@ -219,9 +223,9 @@ export function EditionWatchControl({
         onClick={() => void onWatchClick()}
         className={cn(
           'inline-flex items-center justify-center font-semibold uppercase transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#171515]',
-          variant === 'well'
-            ? 'min-h-10 rounded-full px-5 text-[11px] tracking-[0.08em] ring-1'
-            : 'min-h-9 rounded-md px-3 py-1.5 text-[10px] tracking-[0.07em] ring-1',
+          variant === 'well' && 'min-h-10 rounded-full px-5 text-[11px] tracking-[0.08em] ring-1',
+          variant === 'default' && 'min-h-9 rounded-md px-3 py-1.5 text-[10px] tracking-[0.07em] ring-1',
+          variant === 'plain' && 'min-h-8 px-0.5 py-1 text-[10px] tracking-[0.07em]',
           'disabled:pointer-events-none disabled:opacity-50',
           !watching &&
             variant === 'default' &&
@@ -229,8 +233,15 @@ export function EditionWatchControl({
           !watching &&
             variant === 'well' &&
             'bg-muted text-foreground ring-border hover:bg-accent dark:ring-experience-highlight/30 dark:hover:ring-experience-highlight/40',
+          !watching &&
+            variant === 'plain' &&
+            'text-muted-foreground hover:text-foreground',
           watching &&
-            'bg-experience-highlight-soft text-foreground ring-experience-highlight/40 hover:bg-experience-highlight-muted dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]'
+            variant !== 'plain' &&
+            'bg-experience-highlight-soft text-foreground ring-experience-highlight/40 hover:bg-experience-highlight-muted dark:bg-[#3d2a24] dark:text-[#FFD4BF] dark:ring-[#FFBA94]/50 dark:hover:bg-[#4a332c]',
+          watching &&
+            variant === 'plain' &&
+            'text-experience-highlight hover:text-experience-highlight/80 dark:text-[#FFD4BF]'
         )}
       >
         {busy ? '…' : label}

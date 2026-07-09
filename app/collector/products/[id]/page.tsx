@@ -11,6 +11,9 @@ import { Skeleton } from "@/components/ui"
 import { ProductApiResponse, ProductArtwork } from "@/types/collector"
 
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
+import { getCollectorPageContent } from "@/lib/content/site-content"
+
+const productDetailContent = getCollectorPageContent('productDetail')
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const [artwork, setArtwork] = useState<ProductArtwork | null>(null)
@@ -20,7 +23,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     if (!id) {
-      setError("Missing artwork id")
+      setError(productDetailContent.errors.missingArtworkId)
       setIsLoading(false)
       return
     }
@@ -31,7 +34,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         const res = await fetch(`/api/collector/products/${id}`)
         if (!res.ok) {
           const e = await res.json().catch(() => ({}))
-          throw new Error(e.message || "Failed to load product")
+          throw new Error(e.message || productDetailContent.errors.loadProduct)
         }
         const data: ProductApiResponse = await res.json()
         setArtwork(data.artwork)
@@ -103,7 +106,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         <div className="space-y-6">
           <h1 className="text-4xl font-bold leading-tight">{artwork.title}</h1>
           <Link href={`/collector/artists/${artwork.vendor.name}`} className="text-lg text-muted-foreground hover:underline">
-            By {artwork.vendor.name}
+            {productDetailContent.labels.byArtist(artwork.vendor.name)}
           </Link>
 
           <div className="flex items-baseline gap-2">
@@ -124,13 +127,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           {artwork.series && (
             <Card className="bg-muted/50 border-dashed">
               <CardHeader>
-                <CardTitle className="text-lg">Part of: {artwork.series.name} Series</CardTitle>
+                <CardTitle className="text-lg">{productDetailContent.labels.seriesCard(artwork.series.name)}</CardTitle>
                 <CardDescription>{artwork.series.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Badge variant="secondary">Series</Badge>
+                <Badge variant="secondary">{productDetailContent.labels.seriesBadge}</Badge>
                 <Button variant="link" className="px-0 ml-2" asChild>
-                  <Link href={`/collector/series/${artwork.series.id}`}>View Series</Link>
+                  <Link href={`/collector/series/${artwork.series.id}`}>{productDetailContent.labels.openSeries}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -144,7 +147,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               target="_blank"
               rel="noopener noreferrer"
             >
-              {primaryVariant?.available ? "View on Shopify" : "Sold Out"}
+              {primaryVariant?.available ? productDetailContent.labels.viewDetails : productDetailContent.labels.soldOut}
             </a>
           </Button>
         </div>
@@ -152,7 +155,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
       {artwork.relatedArtworks && artwork.relatedArtworks.length > 0 && (
         <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-6">More from this Series</h2>
+          <h2 className="text-2xl font-bold mb-6">{productDetailContent.labels.related}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {artwork.relatedArtworks.map((related) => (
               <Card key={related.id} className="overflow-hidden shadow-lg">
@@ -168,14 +171,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                       />
                     )}
                     {related.isLocked && (
-                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-white shadow-md">Locked</Badge>
+                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-white shadow-md">{productDetailContent.labels.locked}</Badge>
                     )}
                   </div>
                 </Link>
                 <CardContent className="p-4">
                   <h3 className="text-lg font-semibold line-clamp-2">{related.title}</h3>
                   {related.displayOrder !== undefined && (
-                    <p className="text-sm text-muted-foreground">Piece #{related.displayOrder + 1}</p>
+                    <p className="text-sm text-muted-foreground">{productDetailContent.labels.piece(related.displayOrder)}</p>
                   )}
                 </CardContent>
               </Card>
@@ -186,5 +189,3 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     </div>
   )
 }
-
-

@@ -80,7 +80,7 @@ export default function CollectorHiddenContentPage() {
   if (loading) {
     return (
       <div className="px-4 py-4 space-y-4">
-        <h1 className="text-lg font-heading font-semibold text-gray-900">Hidden Content</h1>
+        <h1 className="text-lg font-heading font-semibold text-gray-900">Extra content</h1>
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <ContentCard key={i} padding="md">
@@ -100,14 +100,14 @@ export default function CollectorHiddenContentPage() {
 
   return (
     <div className="px-4 py-4 space-y-6">
-      <h1 className="text-lg font-heading font-semibold text-gray-900">Hidden Content</h1>
+      <h1 className="text-lg font-heading font-semibold text-gray-900">Extra content</h1>
 
       {isEmpty ? (
         <div className="text-center py-16">
           <Lock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-400 font-body">No hidden content yet</p>
+          <p className="text-sm text-gray-400 font-body">No extra content yet</p>
           <p className="text-xs text-gray-400 font-body mt-1">
-            Hidden series and bonus content unlocked through your purchases will appear here.
+            Hidden series and extra content tied to your purchases will appear here.
           </p>
         </div>
       ) : (
@@ -118,7 +118,7 @@ export default function CollectorHiddenContentPage() {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
                 <h2 className="text-sm font-bold text-gray-900 font-body">
-                  Hidden Series ({data.hiddenSeries.length})
+                  Hidden series ({data.hiddenSeries.length})
                 </h2>
               </div>
 
@@ -182,7 +182,7 @@ export default function CollectorHiddenContentPage() {
               <div className="flex items-center gap-2">
                 <Gift className="w-4 h-4 text-blue-600" />
                 <h2 className="text-sm font-bold text-gray-900 font-body">
-                  Bonus Content ({data.bonusContent.length})
+                  Bonus content ({data.bonusContent.length})
                 </h2>
               </div>
 
@@ -218,12 +218,12 @@ export default function CollectorHiddenContentPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-impact-primary text-white text-[10px] font-bold"
                         >
-                          <ExternalLink className="w-3 h-3" /> Access Content
+                          <ExternalLink className="w-3 h-3" /> Open content
                         </a>
                       )}
                       {content.accessCode && (
                         <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-mono font-bold">
-                          Code: {content.accessCode}
+                          Access code: {content.accessCode}
                         </span>
                       )}
                     </div>

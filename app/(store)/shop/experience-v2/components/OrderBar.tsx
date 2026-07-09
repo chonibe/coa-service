@@ -10,7 +10,7 @@ import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { useExperienceOpenOrder, useExperienceOrder } from '../ExperienceOrderContext'
 import { trackBeginCheckout } from '@/lib/google-analytics'
-import { captureCheckoutError, tagSessionForReplay } from '@/lib/posthog'
+import { captureCheckoutError, captureFunnelEvent, FunnelEvents, getDeviceType, tagSessionForReplay } from '@/lib/posthog'
 import { storefrontProductToItem } from '@/lib/analytics-ecommerce'
 import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { CheckoutButton } from '@/components/shop/checkout/CheckoutButton'
@@ -164,10 +164,6 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
   const pathname = usePathname()
   const { lampArtworkVolume: lampVolumeDiscountEnabled } = useShopDiscountFlags()
 
-  useExperienceOpenOrder(() => {
-    setDrawerOpen(true)
-  })
-
   useEffect(() => {
     setOrderDrawerOpen(drawerOpen)
     return () => setOrderDrawerOpen(false)
@@ -252,6 +248,25 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       : 0
   const allAvailable = selectedArtworks.every((p) => p.availableForSale)
   const itemCount = selectedArtworks.length + lampQuantity
+
+  useEffect(() => {
+    if (!drawerOpen) return
+    captureFunnelEvent(FunnelEvents.order_bar_opened, {
+      surface: pathname?.includes('/experience-v3') || pathname === '/shop/experience' ? 'experience_v3' : 'experience_v2',
+      device_type: getDeviceType(),
+      item_count: itemCount,
+      artwork_count: artworkCount,
+      lamp_quantity: lampQuantity,
+      total_value: Math.round(total * 100) / 100,
+    })
+    captureFunnelEvent(FunnelEvents.checkout_step_viewed, {
+      step_name: 'order_bar',
+      surface: pathname?.includes('/experience-v3') || pathname === '/shop/experience' ? 'experience_v3' : 'experience_v2',
+      item_count: itemCount,
+      total_value: Math.round(total * 100) / 100,
+    })
+  }, [artworkCount, drawerOpen, itemCount, lampQuantity, pathname, total])
+
   const activeCartHoldCount = React.useMemo(() => {
     if (!cartEditionHolds) return 0
     const seen = new Set<string>()
@@ -381,6 +396,14 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     if (itemCount === 0 || !allAvailable) return
     setIsCheckingOut(true)
     try {
+      captureFunnelEvent(FunnelEvents.checkout_clicked, {
+        source: 'experience_order_bar',
+        surface: pathname?.includes('/experience-v3') || pathname === '/shop/experience' ? 'experience_v3' : 'experience_v2',
+        item_count: itemCount,
+        artwork_count: artworkCount,
+        lamp_quantity: lampQuantity,
+        total_value: Math.round(total * 100) / 100,
+      })
       const lineItems = buildLineItems().map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
@@ -430,7 +453,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       }
       throw new Error('No checkout URL returned')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong.'
+      const message = err instanceof Error ? err.message : 'Please try again.'
       setError(message)
       setIsCheckingOut(false)
       captureCheckoutError({ error_message: message, source: 'experience_order_bar' })
@@ -438,9 +461,11 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
     }
   }, [
     allAvailable,
+    artworkCount,
     buildGaProductItems,
     buildLineItems,
     itemCount,
+    lampQuantity,
     pathname,
     promoCode,
     total,
@@ -475,7 +500,7 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
       }
       if (data.url) window.location.href = data.url
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong.'
+      const message = err instanceof Error ? err.message : 'Please try again.'
       setError(message)
       captureCheckoutError({ error_message: message, source: 'order_bar_test' })
       tagSessionForReplay('checkout-error')
@@ -484,9 +509,37 @@ const OrderBarInner = forwardRef<OrderBarRef, OrderBarProps>(function OrderBarIn
 
   useImperativeHandle(ref, () => ({ testZeroOrder: handleTestZeroOrder }), [handleTestZeroOrder])
 
-  const handleClose = () => {
+  const orderBarSurface =
+    pathname?.includes('/experience-v3') || pathname === '/shop/experience' ? 'experience_v3' : 'experience_v2'
+
+  const handleClose = useCallback(() => {
+    captureFunnelEvent(FunnelEvents.order_bar_closed, {
+      surface: orderBarSurface,
+      item_count: itemCount,
+      artwork_count: artworkCount,
+      lamp_quantity: lampQuantity,
+      total_value: Math.round(total * 100) / 100,
+    })
     setDrawerOpen(false)
-  }
+  }, [orderBarSurface, itemCount, artworkCount, lampQuantity, total])
+
+  const handleToggleDrawer = useCallback(() => {
+    setDrawerOpen((open) => {
+      if (open) {
+        captureFunnelEvent(FunnelEvents.order_bar_closed, {
+          surface: orderBarSurface,
+          item_count: itemCount,
+          artwork_count: artworkCount,
+          lamp_quantity: lampQuantity,
+          total_value: Math.round(total * 100) / 100,
+        })
+        return false
+      }
+      return true
+    })
+  }, [orderBarSurface, itemCount, artworkCount, lampQuantity, total])
+
+  useExperienceOpenOrder(handleToggleDrawer)
 
   const handleArtworkSelect = useCallback(
     (product: ShopifyProduct) => {

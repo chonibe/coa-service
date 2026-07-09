@@ -49,7 +49,15 @@ export function ExperienceCartChip({
   className?: string
   variant?: 'light' | 'dark'
 }) {
-  const { total, itemCount, openOrderBar, orderBarProps, promoDiscount, priceBumpTrigger } = useExperienceOrder()
+  const {
+    total,
+    itemCount,
+    openOrderBar,
+    orderDrawerOpen,
+    orderBarProps,
+    promoDiscount,
+    priceBumpTrigger,
+  } = useExperienceOrder()
   const prevLampQuantity = useRef(0)
   const [hasExpanded, setHasExpanded] = useState(false)
   const lampQuantity = orderBarProps?.lampQuantity ?? 0
@@ -86,12 +94,18 @@ export function ExperienceCartChip({
       onClick={openOrderBar}
       data-testid="photo-styler-cta-button"
       aria-label={
-        formattedPrice
-          ? `View your collection – ${formattedPrice} (${itemCount} items)`
-          : `View your collection (${itemCount} items)`
+        orderDrawerOpen
+          ? formattedPrice
+            ? `Close collection – ${formattedPrice} (${itemCount} items)`
+            : `Close collection (${itemCount} items)`
+          : formattedPrice
+            ? `Browse collection – ${formattedPrice} (${itemCount} items)`
+            : `Browse collection (${itemCount} items)`
       }
+      aria-expanded={orderDrawerOpen}
       className={cn(
         'inline-flex items-center justify-center overflow-hidden rounded-md leading-none transition-colors hover:opacity-90 cursor-pointer text-sm font-medium bg-experience-cta hover:bg-experience-cta-hover text-white dark:text-neutral-900 self-center shrink-0 !min-h-0',
+        orderDrawerOpen && 'ring-2 ring-white/90 ring-offset-2 ring-offset-background',
         className
       )}
       initial={

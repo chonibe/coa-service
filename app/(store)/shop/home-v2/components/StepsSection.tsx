@@ -4,8 +4,10 @@ import type { CSSProperties } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export function StepsSection() {
   const { steps } = homeV2LandingContent
@@ -60,7 +62,7 @@ export function StepsSection() {
       aria-label="How it works"
     >
       <div
-        className={cn(styles.sectionHeader, styles.landingStagger)}
+        className={cn(styles.sectionHeader, styles.stepsHeader, styles.landingStagger)}
         style={{ '--stagger': 0 } as CSSProperties}
       >
         <div className={styles.eyebrow}>{steps.eyebrow}</div>
@@ -71,47 +73,15 @@ export function StepsSection() {
         </h2>
       </div>
 
-      <div
-        className={cn(styles.stepsTabs, styles.landingStagger)}
-        style={{ '--stagger': 1 } as CSSProperties}
-        role="tablist"
-        aria-label="Steps"
-      >
-        {steps.items.map((s, idx) => (
-          <button
-            key={s.tabTitle}
-            type="button"
-            id={`home-v2-step-tab-${idx}`}
-            role="tab"
-            aria-selected={idx === activeIndex}
-            aria-controls="home-v2-step-panel"
-            className={`${styles.stepTab} ${idx === activeIndex ? styles.stepTabActive : ''}`}
-            onClick={() => setActiveIndex(idx)}
-          >
-            <div className={styles.stepTabHeader}>
-              <span className={styles.stepNum}>{idx + 1}</span>
-              <span className={styles.stepTitle}>{s.tabTitle}</span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div
-        className={cn(styles.stepContent, styles.landingStagger)}
-        style={{ '--stagger': 2 } as CSSProperties}
-        role="tabpanel"
-        id="home-v2-step-panel"
-        aria-labelledby={`home-v2-step-tab-${activeIndex}`}
-      >
-        <div className={styles.stepVideoWrap}>
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            preload="none"
-            onEnded={onVideoEnded}
-          >
+      <div className={styles.stepsGrid}>
+        <div
+          className={cn(styles.stepsVideoWrap, styles.landingStagger)}
+          style={{ '--stagger': 1 } as CSSProperties}
+          id="home-v2-step-panel"
+          role="tabpanel"
+          aria-labelledby={`home-v2-step-tab-${activeIndex}`}
+        >
+          <video ref={videoRef} autoPlay muted playsInline preload="auto" onEnded={onVideoEnded}>
             <source src={active.videoUrl} type="video/mp4" />
           </video>
           <div className={styles.vidProgressWrap} aria-hidden>
@@ -119,25 +89,51 @@ export function StepsSection() {
           </div>
         </div>
 
-        <div className={styles.stepTextWrap}>
-          <h3 className={styles.stepBodyTitle}>
-            {active.bodyTitle}
-            {active.bodyTitleEmphasis ? (
-              <>
-                <br />
-                <em>{active.bodyTitleEmphasis}</em>
-              </>
-            ) : null}
-          </h3>
-          <p className={styles.stepBodyText}>{active.bodyText}</p>
-          {active.details.map((d) => (
-            <div className={styles.stepDetail} key={d.text}>
-              <div className={styles.stepDot} aria-hidden />
-              <span style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>
-                {d.text}
+        <div
+          className={cn(styles.stepsList, styles.landingStagger)}
+          style={{ '--stagger': 2 } as CSSProperties}
+        >
+          <div id="home-v2-step-slide" aria-live="polite">
+            <div
+              key={activeIndex}
+              className={styles.stepsSlide}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Step ${activeIndex + 1} of ${steps.items.length}`}
+            >
+              <span className={styles.stepsSlideNum}>{activeIndex + 1}</span>
+              <span className={styles.stepsSlideText}>
+                <span className={styles.stepsSlideTitle}>
+                  {active.bodyTitle}
+                  {active.bodyTitleEmphasis ? (
+                    <>
+                      {' '}
+                      <em>{active.bodyTitleEmphasis}</em>
+                    </>
+                  ) : null}
+                </span>
+                <span className={styles.stepsSlideSubtitle}>{active.bodyText}</span>
               </span>
             </div>
-          ))}
+          </div>
+
+          <div className={styles.stepsDots} role="tablist" aria-label="Steps">
+            {steps.items.map((s, idx) => (
+              <button
+                key={s.tabTitle}
+                type="button"
+                id={`home-v2-step-tab-${idx}`}
+                role="tab"
+                aria-selected={idx === activeIndex}
+                aria-controls="home-v2-step-panel home-v2-step-slide"
+                aria-label={`Show step ${idx + 1}: ${s.bodyTitle}`}
+                className={cn(styles.stepDotBtn, idx === activeIndex && styles.stepDotBtnActive)}
+                onClick={() => setActiveIndex(idx)}
+              >
+                <span className={styles.stepDotIndicator} aria-hidden />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </section>

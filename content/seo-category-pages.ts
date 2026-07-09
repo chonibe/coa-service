@@ -101,7 +101,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Editioned works from 100+ independent artists.',
       'Prints are designed for the Street Collector lamp and can also be collected as physical art.',
       'Artist profiles help collectors understand style, location, and practice.',
-      'New releases can be linked to artists, collections, and product pages for easy discovery.',
+      'New releases stay connected to artists, collections, and product pages so browsing does not lose context.',
     ],
     sections: [
       {
@@ -117,7 +117,7 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'How to choose your first print',
         body:
-          'Start with the artist before you start comparing thumbnails. Find a visual language you can imagine seeing often, read the profile, then check the edition size, availability, and documentation. The image should still win, but not alone.',
+          'Start with the artist before you start comparing thumbnails. Find work you can imagine living with, read the profile, then check the edition size, availability, and documentation. The image should still win, but not by itself.',
       },
     ],
     faqs: [
@@ -209,17 +209,17 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         question: 'What are urban art prints?',
         answer:
-          'Urban art prints are editioned artworks influenced by street culture, public art, illustration, graffiti, muralism, design, and contemporary visual culture.',
+          'Urban art prints are editioned artworks influenced by street culture, public art, illustration, graffiti, muralism, design, and contemporary city life.',
       },
       {
         question: 'Is urban art the same as street art?',
         answer:
-          'They overlap, but urban art is often broader. It can include studio work and illustration shaped by the energy, symbols, and visual language of the city.',
+          'They overlap, but urban art is often broader. It can include studio work and illustration shaped by the energy, symbols, and pace of the city.',
       },
       {
         question: 'Where should I start?',
         answer:
-          'Start with the artist directory, then explore prints by artists whose style, city, or story feels connected to your space.',
+          'Start with the artist directory, then explore prints by artists whose style, city, or body of work feels connected to your space.',
       },
     ],
     related: [
@@ -261,8 +261,8 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       'Street Collector makes art interchangeable without making it disposable. The lamp stays in the room, while the prints rotate as you collect new limited editions, revisit older favorites, or simply want the space to feel different.',
     proof: [
       'Swappable print system for one lamp and many artworks.',
-      'Limited edition releases support independent artists.',
-      'Designed for collectors who want rotation, discovery, and physical ownership.',
+      'Limited edition releases let you buy directly into independent artists\' work.',
+      'Made for collectors who want rotation, repeat viewing, and physical ownership.',
       'Works connect to artist pages and product pages for long-term context.',
     ],
     sections: [
@@ -274,12 +274,12 @@ export const seoCategoryPages: Record<string, SeoCategoryPage> = {
       {
         heading: 'A collection, not a single purchase',
         body:
-          'This works best when the first purchase is not the end of the story. One lamp can start with one print, then pick up new artists, cities, moods, or themes over time without asking for new hardware every time.',
+          'This works best when the first purchase is just the start. One lamp can begin with one print, then pick up new artists, cities, moods, or themes over time without asking for new hardware every time.',
       },
       {
         heading: 'Good for gifts and small spaces',
         body:
-          'The format especially suits smaller apartments, desks, shelves, and gifts for people who care about art but do not have infinite wall space. A single display can still carry a rotating collection with some actual range in it.',
+          'The format suits smaller apartments, desks, shelves, and gifts for people who care about art but do not have infinite wall space. A single display can still carry a rotating collection with real range.',
       },
     ],
     faqs: [

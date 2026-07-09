@@ -16,6 +16,7 @@ import {
   Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Profile Tab
@@ -64,29 +65,31 @@ interface ProfileData {
 const profileLinks = [
   {
     label: 'Certifications',
-    description: 'Manage your artwork certifications',
+    description: 'Review artwork certificates and verification status',
     href: '/collector/profile/certifications',
     icon: Shield,
   },
   {
-    label: 'Credits & Subscriptions',
-    description: 'View balance, earn, and redeem',
+    label: 'Credits',
+    description: 'Check your balance, membership, and credit activity',
     href: '/collector/profile/credits',
     icon: CreditCard,
   },
   {
-    label: 'Hidden Content',
-    description: 'Unlocked rewards and bonus content',
+    label: 'Extra content',
+    description: 'See the extra content tied to artworks you own',
     href: '/collector/profile/hidden-content',
     icon: Lock,
   },
   {
     label: 'Settings',
-    description: 'Account settings and preferences',
+    description: 'Update your account details and preferences',
     href: '/collector/profile/settings',
     icon: Settings,
   },
 ]
+
+const appProfileContent = getCollectorPageContent('appProfile')
 
 export default function CollectorProfilePage() {
   const [data, setData] = useState<ProfileData | null>(null)
@@ -108,7 +111,7 @@ export default function CollectorProfilePage() {
             : 100
 
           setData({
-            displayName: profile?.display_name || json.collectorIdentifier || 'Collector',
+            displayName: profile?.display_name || json.collectorIdentifier || appProfileContent.fallbackName,
             email: json.collectorIdentifier || '',
             level,
             xpProgress: Math.min(xpProgress, 100),
@@ -171,12 +174,12 @@ export default function CollectorProfilePage() {
 
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-heading font-semibold text-gray-900 tracking-tight truncate">
-              {data?.displayName || 'Collector'}
+              {data?.displayName || appProfileContent.fallbackName}
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-impact-primary/10 text-impact-primary text-xs font-bold">
                 <Star className="w-3 h-3" />
-                LVL {level}
+                {appProfileContent.levelBadge(level)}
               </span>
               <span className="text-xs text-gray-500 font-body">{stage}</span>
             </div>
@@ -194,7 +197,7 @@ export default function CollectorProfilePage() {
         <div className="flex items-center justify-center gap-2 mt-5 py-3 bg-yellow-50 rounded-impact-block-sm">
           <Gem className="w-4 h-4 text-impact-secondary-text" />
           <span className="text-sm font-bold text-gray-900 font-body">
-            {(data?.creditsBalance || 0).toLocaleString()} credits
+            {appProfileContent.credits.value(data?.creditsBalance || 0)}
           </span>
           <span className="text-xs text-gray-500 font-body">
             (${((data?.creditsBalance || 0) / 100).toFixed(2)} value)
@@ -204,10 +207,10 @@ export default function CollectorProfilePage() {
         {/* Stats grid */}
         <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100">
           {[
-            { label: 'Artworks', value: data?.stats.totalArtworks || 0 },
-            { label: 'Verified', value: data?.stats.authenticated || 0 },
-            { label: 'Artists', value: data?.stats.artists || 0 },
-            { label: 'Series', value: data?.stats.series || 0 },
+            { label: appProfileContent.stats.artworks, value: data?.stats.totalArtworks || 0 },
+            { label: appProfileContent.stats.verified, value: data?.stats.authenticated || 0 },
+            { label: appProfileContent.stats.artists, value: data?.stats.artists || 0 },
+            { label: appProfileContent.stats.series, value: data?.stats.series || 0 },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-lg font-semibold text-gray-900 font-body">{stat.value}</p>
@@ -230,9 +233,9 @@ export default function CollectorProfilePage() {
             >
               <Gift className={cn('w-5 h-5', proofProgress >= 100 ? 'text-impact-success' : 'text-impact-primary')} />
             </ProgressRing>
-            <p className="text-xs font-bold text-gray-900 font-body mt-2">Free Proof Print</p>
+            <p className="text-xs font-bold text-gray-900 font-body mt-2">Proof print reward</p>
             <p className="text-[10px] text-gray-500 font-body">
-              {proofProgress >= 100 ? 'Unlocked!' : `${Math.round(proofProgress)}% — spend $${(PROOF_PRINT_THRESHOLD_CREDITS / 10 - (data?.totalCreditsEarned || 0) / 10).toFixed(0)} more`}
+              {proofProgress >= 100 ? 'Ready to redeem' : `${Math.round(proofProgress)}% — spend $${(PROOF_PRINT_THRESHOLD_CREDITS / 10 - (data?.totalCreditsEarned || 0) / 10).toFixed(0)} more`}
             </p>
           </div>
         </ContentCard>
@@ -248,9 +251,9 @@ export default function CollectorProfilePage() {
             >
               <Sparkles className={cn('w-5 h-5', lampProgress >= 100 ? 'text-impact-success' : 'text-amber-500')} />
             </ProgressRing>
-            <p className="text-xs font-bold text-gray-900 font-body mt-2">Free Lamp</p>
+            <p className="text-xs font-bold text-gray-900 font-body mt-2">Lamp reward</p>
             <p className="text-[10px] text-gray-500 font-body">
-              {lampProgress >= 100 ? 'Unlocked!' : `${Math.round(lampProgress)}% — spend $${(LAMP_THRESHOLD_CREDITS / 10 - (data?.totalCreditsEarned || 0) / 10).toFixed(0)} more`}
+              {lampProgress >= 100 ? 'Ready to redeem' : `${Math.round(lampProgress)}% — spend $${(LAMP_THRESHOLD_CREDITS / 10 - (data?.totalCreditsEarned || 0) / 10).toFixed(0)} more`}
             </p>
           </div>
         </ContentCard>

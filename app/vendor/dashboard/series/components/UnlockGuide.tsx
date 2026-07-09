@@ -39,8 +39,7 @@ export function UnlockGuide({ onDismiss, showDismiss = true }: UnlockGuideProps)
                   Why Unlocks Matter
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Unlockable series turn art into a journey, and journeys create loyalty, repeat
-                  purchases, and cultural value.
+                  Unlockable series give collectors a reason to keep going and come back for the next piece.
                 </CardDescription>
               </div>
               {showDismiss && (
@@ -91,8 +90,7 @@ export function UnlockGuide({ onDismiss, showDismiss = true }: UnlockGuideProps)
                   <div>
                     <h4 className="font-medium mb-1">VIP Unlocks</h4>
                     <p className="text-sm text-muted-foreground">
-                      Reward loyalty and make owning earlier pieces matter. Build a hierarchy that
-                      keeps collectors inside the ecosystem.
+                      Reward loyalty and make earlier ownership matter. Give returning collectors something extra.
                     </p>
                   </div>
                 </div>
@@ -115,7 +113,7 @@ export function UnlockGuide({ onDismiss, showDismiss = true }: UnlockGuideProps)
                 ))}
               </div>
               <p className="text-sm text-muted-foreground mt-3">
-                They instantly recognize: "I unlock this by time / by owning / by completing."
+                They instantly recognize: "I unlock this by time, by owning, or by completing."
               </p>
               <p className="text-sm font-medium mt-2">No learning curve.</p>
             </div>
@@ -159,4 +157,3 @@ export function UnlockGuide({ onDismiss, showDismiss = true }: UnlockGuideProps)
     </AnimatePresence>
   )
 }
-

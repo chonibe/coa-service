@@ -1,16 +1,8 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
+import { ArtistProfilePageClient } from '@/app/(store)/shop/artists/[slug]/ArtistProfilePageClient'
 import type { ArtistProfileApiResponse } from '@/lib/shop/artist-profile-api'
-
-const ArtistProfilePageClient = dynamic(
-  () =>
-    import('@/app/(store)/shop/artists/[slug]/ArtistProfilePageClient').then((m) => ({
-      default: m.ArtistProfilePageClient,
-    })),
-  { ssr: false, loading: () => <ArtistProfileEmbeddedSkeleton /> }
-)
 
 function ArtistProfileEmbeddedSkeleton() {
   return (
@@ -38,15 +30,13 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
   const [phase, setPhase] = useState<'loading' | 'ok' | 'error'>('loading')
 
   useEffect(() => {
+    let cancelled = false
     setPhase('loading')
     setArtist(null)
-  }, [slug])
 
-  useEffect(() => {
-    let cancelled = false
     const q = vendor.trim() ? `?vendor=${encodeURIComponent(vendor)}` : ''
     fetch(`/api/shop/artists/${encodeURIComponent(slug)}${q}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('artist_fetch_failed'))))
       .then((data: ArtistProfileApiResponse) => {
         if (!cancelled) {
           setArtist(data)
@@ -58,6 +48,7 @@ export function ExperienceV3ArtistProfileSection({ slug, vendor }: ExperienceV3A
           setPhase('error')
         }
       })
+
     return () => {
       cancelled = true
     }

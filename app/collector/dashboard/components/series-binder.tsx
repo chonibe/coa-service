@@ -26,7 +26,7 @@ export function SeriesBinder({ series }: SeriesBinderProps) {
       <Card>
         <CardHeader>
           <CardTitle>Your series binder</CardTitle>
-          <CardDescription>Series you buy into will show up here.</CardDescription>
+          <CardDescription>Series connected to your purchases will show up here.</CardDescription>
         </CardHeader>
       </Card>
     )
@@ -73,4 +73,3 @@ export function SeriesBinder({ series }: SeriesBinderProps) {
     </div>
   )
 }
-

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
   if (!product) {
     return {
       title: 'Product | Street Collector',
-      description: 'Limited edition street art prints and the Street Collector lamp.',
+      description: 'Limited edition street art prints for the Street Collector lamp.',
     }
   }
 

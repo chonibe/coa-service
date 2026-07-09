@@ -32,7 +32,7 @@ function jsonWithOptionalSessionCookie(
  */
 export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const { holderKey } = await resolveCartEditionHoldHolderKey(cookieStore)
     const svc = createServiceClient()
     const holds = await listActiveCartEditionHoldsForHolder(svc, holderKey)
@@ -49,7 +49,7 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const { holderKey, setAnonymousSessionId } = await resolveCartEditionHoldHolderKey(cookieStore)
     const body = (await request.json().catch(() => ({}))) as {
       shopifyProductId?: string
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const { holderKey } = await resolveCartEditionHoldHolderKey(cookieStore)
     const body = (await request.json().catch(() => ({}))) as { shopifyProductId?: string }
     const svc = createServiceClient()

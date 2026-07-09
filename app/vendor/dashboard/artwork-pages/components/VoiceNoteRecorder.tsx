@@ -399,7 +399,7 @@ export default function VoiceNoteRecorder({
         
         <h4 className="text-lg font-semibold text-gray-900 mb-1">Record a Voice Note</h4>
         <p className="text-sm text-gray-600 mb-6">
-          Leave a personal message for your collectors
+          Record a short note about the work
         </p>
         
         <div className="flex items-center justify-center gap-2">
@@ -426,7 +426,7 @@ export default function VoiceNoteRecorder({
 
       {/* Quick tip */}
       <p className="text-xs text-center text-gray-400">
-        Tip: 1-3 minutes is ideal. Share your inspiration or a message to collectors.
+        Tip: 1-3 minutes is ideal. Talk about the work, the process, or anything collectors should hear.
       </p>
     </div>
   )

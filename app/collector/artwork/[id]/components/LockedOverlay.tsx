@@ -9,8 +9,8 @@ interface LockedOverlayProps {
 }
 
 export function LockedOverlay({ 
-  message = "Exclusive Content", 
-  submessage = "Pair your NFC tag to unlock" 
+  message = "Extra content", 
+  submessage = "Pair your NFC tag to open it" 
 }: LockedOverlayProps) {
   return (
     <motion.div

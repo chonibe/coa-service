@@ -13,12 +13,15 @@ import { MEMBERSHIP_TIERS, type MembershipTierId, getAllTiers } from '@/lib/memb
 import { Check, Star, Zap, Crown, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 const tierIcons = {
   collector: Star,
   curator: Zap,
   founding: Crown,
 }
+
+const membershipContent = getStorePageContent('membership')
 
 function MembershipContent() {
   const router = useRouter()
@@ -59,7 +62,7 @@ function MembershipContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create subscription')
+        throw new Error(data.error || membershipContent.notices.cancelled.body)
       }
 
       // Redirect to Stripe Checkout
@@ -67,7 +70,7 @@ function MembershipContent() {
         window.location.href = data.url
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || membershipContent.notices.cancelled.body)
       setIsSubscribing(false)
       setSelectedTier(null)
     }
@@ -79,22 +82,21 @@ function MembershipContent() {
       <section className="py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Join the Collector&apos;s Circle
+            {membershipContent.hero.title}
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Unlock exclusive benefits, earn credits that appreciate over time, 
-            and get priority access to limited editions.
+            {membershipContent.hero.subtitle}
           </p>
           
           {cancelled && (
             <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-              Checkout was cancelled. Select a tier below to try again.
+              {membershipContent.notices.cancelled.body}
             </div>
           )}
 
           {user?.isMember && (
             <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
-              You&apos;re already a {user.membershipTier} member!{' '}
+              {membershipContent.notices.alreadyMember.body}{' '}
               <button 
                 onClick={() => router.push('/collector/membership')}
                 className="underline font-medium"
@@ -144,7 +146,7 @@ function MembershipContent() {
 
                   {isCurrentTier && (
                     <div className="absolute -top-4 right-4 px-4 py-1 rounded-full text-sm font-semibold text-white bg-green-500">
-                      Current Plan
+                      {membershipContent.labels.currentPlan}
                     </div>
                   )}
 
@@ -169,10 +171,10 @@ function MembershipContent() {
                       <span className="text-4xl font-bold text-slate-900">
                         ${tier.priceMonthly}
                       </span>
-                      <span className="text-slate-500">/month</span>
+                      <span className="text-slate-500">{membershipContent.labels.priceSuffix}</span>
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
-                      {tier.monthlyCredits} credits/month (${tier.creditValueUsd} value)
+                      {membershipContent.labels.creditsPerMonth(tier.monthlyCredits, tier.creditValueUsd)}
                     </p>
                   </div>
 
@@ -204,18 +206,18 @@ function MembershipContent() {
                     {isSelected && isSubscribing ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Processing...
+                        {membershipContent.labels.processing}
                       </>
                     ) : isCurrentTier ? (
-                      'Current Plan'
+                      membershipContent.labels.currentPlanBadge
                     ) : user?.isMember ? (
                       <>
-                        Switch to {tier.name}
+                        {membershipContent.labels.switchToTier(tier.name)}
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                     ) : (
                       <>
-                        Get Started
+                        {membershipContent.finalCta.buttonLabel}
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                     )}
@@ -231,7 +233,7 @@ function MembershipContent() {
       <section className="py-16 px-4 bg-slate-50 mt-16">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-8">
-            Why Become a Member?
+            {membershipContent.benefits.title}
           </h2>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -240,11 +242,10 @@ function MembershipContent() {
                 <Star className="w-6 h-6 text-violet-600" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Credits That Grow
+                {membershipContent.benefits.items[0]?.title}
               </h3>
               <p className="text-slate-600">
-                Your subscription credits appreciate over time. 
-                Hold them longer, get more value.
+                {membershipContent.benefits.items[0]?.body}
               </p>
             </div>
             
@@ -253,11 +254,10 @@ function MembershipContent() {
                 <Zap className="w-6 h-6 text-amber-600" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Early Access
+                {membershipContent.benefits.items[1]?.title}
               </h3>
               <p className="text-slate-600">
-                Be first in line for limited edition drops 
-                and exclusive releases.
+                {membershipContent.benefits.items[1]?.body}
               </p>
             </div>
             
@@ -266,11 +266,10 @@ function MembershipContent() {
                 <Crown className="w-6 h-6 text-emerald-600" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Member Pricing
+                {membershipContent.benefits.items[2]?.title}
               </h3>
               <p className="text-slate-600">
-                Enjoy special pricing and promotions 
-                available only to members.
+                {membershipContent.benefits.items[2]?.body}
               </p>
             </div>
           </div>
@@ -281,42 +280,16 @@ function MembershipContent() {
       <section className="py-16 px-4">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-slate-900 mb-8 text-center">
-            Frequently Asked Questions
+            {membershipContent.faq.title}
           </h2>
           
           <div className="space-y-6">
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h3 className="font-semibold text-slate-900 mb-2">
-                How do credits work?
-              </h3>
-              <p className="text-slate-600">
-                Credits are deposited monthly and can be used towards any purchase. 
-                10 credits = $1 at checkout. Credits from your subscription appreciate 
-                over time - hold them longer for bonus value!
-              </p>
-            </div>
-            
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h3 className="font-semibold text-slate-900 mb-2">
-                Can I change my tier?
-              </h3>
-              <p className="text-slate-600">
-                Yes! You can upgrade or downgrade anytime. Upgrades are prorated and 
-                include a bonus credit top-up. Downgrades take effect at the next 
-                billing cycle.
-              </p>
-            </div>
-            
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h3 className="font-semibold text-slate-900 mb-2">
-                What happens to my credits if I cancel?
-              </h3>
-              <p className="text-slate-600">
-                Your credits remain in your account even after cancellation. 
-                You can use them anytime, though they won&apos;t appreciate without 
-                an active subscription.
-              </p>
-            </div>
+            {membershipContent.faq.items.map((item) => (
+              <div key={item.question} className="bg-card p-6 rounded-lg shadow">
+                <h3 className="font-semibold text-slate-900 mb-2">{item.question}</h3>
+                <p className="text-slate-600">{item.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -326,10 +299,10 @@ function MembershipContent() {
         <section className="py-16 px-4 bg-slate-900 text-white">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">
-              Ready to Start Collecting?
+              {membershipContent.finalCta.title}
             </h2>
             <p className="text-slate-300 mb-8 text-lg">
-              Join thousands of collectors and start building your collection today.
+              {membershipContent.finalCta.body}
             </p>
             <Button
               onClick={() => handleSubscribe('curator')}
@@ -339,11 +312,11 @@ function MembershipContent() {
               {isSubscribing ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
+                  {membershipContent.labels.processing}
                 </>
               ) : (
                 <>
-                  Start with Curator - Most Popular
+                  {membershipContent.finalCta.buttonLabel}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}

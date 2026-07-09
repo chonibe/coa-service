@@ -94,10 +94,10 @@ export function DiscoverySection({
       {/* Section Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          Discover More
+          More from this artist
         </h2>
         <p className="text-muted-foreground">
-          Your journey with {artistName} continues
+          More work from {artistName}
         </p>
       </div>
 
@@ -112,10 +112,10 @@ export function DiscoverySection({
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  You Unlocked Something Special!
+                  Access unlocked
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Collecting this artwork gave you access to:
+                  Collecting this artwork unlocked:
                 </p>
                 <div className="flex items-center gap-3">
                   {discoveryData.unlockedContent.thumbnailUrl && (
@@ -133,14 +133,14 @@ export function DiscoverySection({
                       {discoveryData.unlockedContent.name}
                     </p>
                     <Badge variant="secondary" className="mt-1">
-                      {discoveryData.unlockedContent.type === "series" && "Hidden Series"}
-                      {discoveryData.unlockedContent.type === "artwork" && "VIP Artwork"}
-                      {discoveryData.unlockedContent.type === "vip_series" && "VIP Series"}
+                      {discoveryData.unlockedContent.type === "series" && "Hidden series"}
+                      {discoveryData.unlockedContent.type === "artwork" && "Member artwork"}
+                      {discoveryData.unlockedContent.type === "vip_series" && "Member series"}
                     </Badge>
                   </div>
                   <Button asChild size="sm" className="flex-shrink-0">
                     <Link href={`/collector/${discoveryData.unlockedContent.type}/${discoveryData.unlockedContent.id}`}>
-                      View
+                      Open
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -265,10 +265,10 @@ export function DiscoverySection({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold mb-1">
-                  Something's Coming
+                  Next unlock
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Next unlock available soon
+                  This section opens soon.
                 </p>
                 <div className="flex items-center gap-3">
                   {discoveryData.countdown.artworkImgUrl && (
@@ -346,7 +346,7 @@ function CountdownTimer({ unlockAt }: { unlockAt: string }) {
       const diff = unlock - now
 
       if (diff <= 0) {
-        setTimeLeft("Unlocked!")
+        setTimeLeft("Unlocked")
         return
       }
 
@@ -374,7 +374,7 @@ function CountdownTimer({ unlockAt }: { unlockAt: string }) {
 
   return (
     <Badge variant="secondary" className="font-mono">
-      {timeLeft || "Calculating..."}
+      {timeLeft || "Calculating"}
     </Badge>
   )
 }

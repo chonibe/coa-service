@@ -56,31 +56,27 @@ export const experienceQuickAddFabSizeClass = 'h-7 w-7'
 /** Icon size paired with `experienceQuickAddFabSizeClass`. */
 export const experienceQuickAddFabIconClass = 'h-3 w-3'
 
-/**
- * Brand peach quick-add FAB — literal #FFBA94 tokens (same as ExperienceV3 add CTAs).
- * Do not use `bg-experience-highlight` here: `lib/` is outside Tailwind `content` paths.
- */
+/** Quick-add FAB — matches primary experience CTAs via `--experience-cta` (maroon light, peach dark). */
 export function getExperienceQuickAddFabClass(isInCart: boolean): string {
   return cn(
-    'flex items-center justify-center rounded-full border shadow-md transition-colors',
+    'flex items-center justify-center rounded-full shadow-md transition-colors',
     experienceQuickAddFabSizeClass,
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFBA94]/70',
-    isInCart
-      ? 'border-[#FFBA94]/35 bg-[#FFBA94] text-neutral-900 cursor-default shadow-black/25'
-      : 'border-[#FFBA94]/35 bg-[#FFBA94] text-neutral-900 hover:bg-[#ffc9a8] shadow-black/25'
+    'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-experience-cta/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+    isInCart ? 'cursor-default shadow-black/25' : 'shadow-black/25'
   )
 }
 
 /** Previewing on main stage but not in cart — inset only (no outer ring / offset). */
 export function getPickerCardPreviewChrome(isPreviewActive: boolean, isInCart: boolean): string {
   if (!isPreviewActive || isInCart) return ''
-  return 'ring-1 ring-inset ring-[#FFBA94]/50 dark:ring-[#FFBA94]/35'
+  return 'ring-1 ring-inset ring-experience-cta/50'
 }
 
 /** Strip: same as picker — thin ring unless merged pair (both in cart) uses row tint only. */
 export function getStripCardSelectionChrome(isInCart: boolean, suppressIndividualRing: boolean): string {
   if (!isInCart || suppressIndividualRing) return ''
-  return 'ring-1 ring-inset ring-[#FFBA94]/40 dark:ring-[#FFBA94]/30'
+  return 'ring-1 ring-inset ring-experience-cta/40'
 }
 
 export function getStripArtworkCardSurfaces(isMerged: boolean, isInCart: boolean): StripArtworkCardSurfaces {

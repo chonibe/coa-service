@@ -162,6 +162,7 @@ export function CheckoutLayout({
 
   const effectiveDiscount = discount + promoDiscount + earlyAccessDiscount
   const finalTotal = total - promoDiscount - earlyAccessDiscount
+  const lastTrackedOpenSection = React.useRef<string | null>(null)
 
   const discountLabelParts: string[] = []
   if (discount > 0) discountLabelParts.push(discountLabel || 'Credits')
@@ -174,6 +175,20 @@ export function CheckoutLayout({
     if (!validateAndOpenFirstIncomplete()) return
     await onCheckout()
   }
+
+  React.useEffect(() => {
+    if (!openSection) {
+      lastTrackedOpenSection.current = null
+      return
+    }
+    if (lastTrackedOpenSection.current === openSection) return
+    lastTrackedOpenSection.current = openSection
+    captureFunnelEvent(FunnelEvents.checkout_step_viewed, {
+      step_name: openSection,
+      total_value: Math.round(finalTotal * 100) / 100,
+      item_count: itemCount,
+    })
+  }, [finalTotal, itemCount, openSection])
 
   const addressDisplay = address
     ? `${address.addressLine1}${address.city ? `, ${address.city}` : ''}`

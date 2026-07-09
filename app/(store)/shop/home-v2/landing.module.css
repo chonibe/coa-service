@@ -28,10 +28,9 @@
 .heroH1,
 .sectionTitle,
 .lampItemTitle,
-.stepTitle,
-.stepBodyTitle,
+.stepsSlideTitle,
 .lampItemNum,
-.stepNum,
+.stepsSlideNum,
 .tVidQuote,
 .tImgQuote,
 .tQuote,
@@ -44,7 +43,6 @@
 
 .heroH1 em,
 .sectionTitle em,
-.stepBodyTitle em,
 .finalTitle em {
   font-style: italic;
   color: var(--peach);
@@ -57,7 +55,6 @@
 .navCta,
 .btnPrimary,
 .btnOutline,
-.stepTabHeader,
 .tVidName,
 .tImgName,
 .tAuthor,
@@ -496,122 +493,334 @@
   color: var(--white);
 }
 
-.stepsTabs {
+.stepsHeader {
+  padding-bottom: 32px;
+}
+
+/* Desktop: video (left) + numbered list (right), side by side. Collapses to a
+   single stacked column on mobile (see max-width: 960px). */
+.stepsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
   border-top: 1px solid var(--border);
 }
 
-.stepTab {
-  padding: 0;
-  cursor: pointer;
-  border-right: 1px solid var(--border);
+/* Primary/hero-scale visual: dominant viewport-height video, not a supporting strip. */
+.stepsVideoWrap {
   position: relative;
   overflow: hidden;
-  background: transparent;
-  text-align: left;
+  background: #000;
+  height: clamp(560px, 85vh, 880px);
+  height: clamp(560px, 85svh, 880px);
 }
 
-.stepTab:last-child {
-  border-right: none;
-}
-
-.stepTabHeader {
-  padding: 32px 40px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border-bottom: 2px solid transparent;
-  transition: border-color 0.3s;
-}
-
-.stepTabActive .stepTabHeader {
-  border-bottom-color: var(--experience-highlight);
-}
-
-.stepNum {
-  font-size: 40px;
-  font-weight: 400;
-  color: color-mix(in srgb, var(--experience-highlight) 20%, transparent);
-  line-height: 1;
-  transition: color 0.3s;
-}
-
-.stepTabActive .stepNum {
-  color: var(--peach);
-}
-
-.stepTitle {
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--experience-text-muted);
-  transition: color 0.3s;
-}
-
-.stepTabActive .stepTitle {
-  color: var(--white);
-}
-
-.stepContent {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 480px;
-}
-
-.stepVideoWrap {
-  position: relative;
-  overflow: hidden;
-  background: var(--card);
-}
-
-.stepVideoWrap video {
+.stepsVideoWrap video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.stepTextWrap {
-  padding: 60px 64px;
+/* Carousel: shows one step at a time (slide) + dot pagination, not a stacked list. */
+.stepsList {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--card);
+  gap: 40px;
+  padding: 56px;
+  border-left: 1px solid var(--border);
 }
 
-.stepBodyTitle {
-  font-size: clamp(24px, 3vw, 38px);
-  font-weight: 400;
-  line-height: 1.15;
-  margin-bottom: 20px;
+@keyframes stepsSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.stepBodyText {
-  font-size: 14px;
-  line-height: 1.85;
-  color: var(--muted);
-  margin-bottom: 28px;
-}
-
-.stepDetail {
+.stepsSlide {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 22px;
+  animation: stepsSlideIn 0.45s ease;
 }
 
-.stepDot {
-  width: 6px;
-  height: 6px;
-  background: var(--peach);
-  border-radius: 50%;
+.stepsSlideNum {
+  font-size: 56px;
+  font-weight: 400;
+  line-height: 1;
+  min-width: 60px;
   flex-shrink: 0;
-  margin-top: 7px;
+  color: var(--peach);
+}
+
+.stepsSlideText {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stepsSlideTitle {
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--white);
+}
+
+.stepsSlideTitle em {
+  font-style: italic;
+  color: var(--peach);
+}
+
+.stepsSlideSubtitle {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stepsDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepDotBtn {
+  display: flex;
+  align-items: center;
+  padding: 10px 4px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.stepDotIndicator {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--experience-highlight) 25%, transparent);
+  transition: background 0.3s, width 0.3s;
+}
+
+.stepDotBtnActive .stepDotIndicator {
+  width: 26px;
+  background: var(--peach);
 }
 
 .artistsSection {
   padding: 100px 0;
+}
+
+.bestSellersSection {
+  padding: 0 0 100px;
+}
+
+.bestSellersHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 72px 40px;
+}
+
+.bestSellersHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.bestSellersScrollControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bestSellersScrollBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.bestSellersScrollBtn:hover {
+  color: var(--white);
+  border-color: color-mix(in srgb, var(--peach) 45%, var(--border));
+  background: color-mix(in srgb, var(--card) 80%, var(--peach) 8%);
+}
+
+.bestSellersScroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding: 4px 72px 8px;
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-x;
+}
+
+.bestSellersScroll:active {
+  cursor: grabbing;
+}
+
+.bestSellersScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.bestSellersCard {
+  flex: 0 0 min(42vw, 200px);
+  width: min(42vw, 200px);
+  scroll-snap-align: start;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s ease;
+}
+
+.bestSellersCard:hover {
+  transform: translateY(-4px);
+}
+
+.bestSellersCardImage {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.bestSellersCardImg {
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.bestSellersCard:hover .bestSellersCardImg {
+  transform: scale(1.03);
+}
+
+.bestSellersCardPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bestSellersSoldOut {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.bestSellersCardTitleChip {
+  position: absolute;
+  inset-inline: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.bestSellersCardTitle {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px) saturate(140%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  line-clamp: 2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bestSellersCardMeta {
+  padding: 10px 4px 0;
+  text-align: center;
+}
+
+.bestSellersCardVendor {
+  margin: 0 0 2px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bestSellersCardPrice {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--peach);
+}
+
+.bestSellersEditionLine {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--peach) 12%);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+
+.bestSellersEditionIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  color: var(--peach);
+  opacity: 0.95;
+}
+
+.bestSellersEditionText {
+  font-family: var(--font-landing-mono), 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .artistsHeader {
@@ -689,7 +898,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(0.92) saturate(1.05);
 }
 
 @media (max-width: 960px) {
@@ -839,7 +1047,6 @@
   transition:
     transform 0.35s ease,
     filter 0.25s;
-  filter: brightness(0.92) saturate(0.95);
 }
 
 .artistBadge:hover .artistBadgeAvatar {
@@ -1474,11 +1681,9 @@
   .lampFeature {
     gap: 24px;
   }
-  .stepContent {
-    gap: 24px;
-  }
-  .stepTextWrap {
-    padding: 48px 28px;
+  .stepsList {
+    padding: 40px 32px;
+    gap: 32px;
   }
   .finalBg {
     grid-template-columns: repeat(5, 1fr);
@@ -1589,7 +1794,8 @@
   /* Center section headings + narrative copy (desktop stays left-aligned) */
   .sectionHeader,
   .lampHeader,
-  .artistsHeader {
+  .artistsHeader,
+  .bestSellersHeader {
     text-align: center;
   }
   .eyebrow {
@@ -1609,29 +1815,6 @@
   }
   .lampItemNum {
     min-width: unset;
-  }
-  .stepTabHeader {
-    justify-content: center;
-    flex-wrap: wrap;
-    text-align: center;
-    gap: 12px;
-  }
-  .stepTextWrap {
-    text-align: center;
-    align-items: center;
-  }
-  .stepBodyTitle,
-  .stepBodyText {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 36rem;
-  }
-  .stepDetail {
-    justify-content: center;
-    text-align: left;
-    max-width: 36rem;
-    margin-left: auto;
-    margin-right: auto;
   }
   .testimonialsHeader {
     flex-direction: column;
@@ -1701,25 +1884,62 @@
   .sectionHeader {
     padding: 72px 24px 40px;
   }
-  .stepsTabs {
+  .stepsHeader {
+    padding-bottom: 20px;
+  }
+  .stepsGrid {
     grid-template-columns: 1fr;
   }
-  .stepTab {
-    border-right: none;
+  .stepsVideoWrap {
+    height: clamp(320px, 55vh, 560px);
+    height: clamp(320px, 55svh, 560px);
     border-bottom: 1px solid var(--border);
   }
-  .stepContent {
-    grid-template-columns: 1fr;
+  .stepsList {
+    justify-content: flex-start;
+    border-left: none;
+    padding: 32px 24px 40px;
+    gap: 24px;
   }
-  .stepVideoWrap {
-    height: 56vw;
-    min-height: 240px;
+  .stepsSlideNum {
+    font-size: 40px;
+    min-width: 44px;
   }
-  .stepTextWrap {
-    padding: 40px 24px;
+  .stepsSlideSubtitle {
+    -webkit-line-clamp: 3;
   }
   .artistsHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 0 24px 40px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .bestSellersHeader {
+    flex-direction: column;
+    align-items: center;
+    padding: 0 24px 28px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .bestSellersHeader > div:first-child {
+    width: 100%;
+  }
+  .bestSellersHeaderActions {
+    width: 100%;
+    justify-content: center;
+  }
+  .bestSellersScrollControls {
+    display: none;
+  }
+  .bestSellersScroll {
+    padding-inline: 24px;
+    gap: 12px;
+  }
+  .bestSellersCard {
+    flex-basis: min(58vw, 220px);
+    width: min(58vw, 220px);
   }
   .artistsBadgesCarouselWrap {
     padding: 0 20px 28px;
@@ -1879,5 +2099,9 @@
 
   .faqA {
     transition: none;
+  }
+
+  .stepsSlide {
+    animation: none;
   }
 }

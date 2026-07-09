@@ -76,6 +76,7 @@ export function ShopUnifiedTopBar({
         'shrink-0 relative flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6',
         'bg-background border-b border-border safe-area-inset-top',
         position === 'fixed' && 'fixed top-0 left-0 right-0 z-[122]',
+        position === 'embedded' && 'sticky top-0 z-[122]',
         className
       )}
     >

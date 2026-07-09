@@ -12,7 +12,7 @@ interface FrostedOverlayProps {
 
 export function FrostedOverlay({
   message = "Tap to reveal",
-  submessage = "exclusive content",
+  submessage = "extra content",
   className,
 }: FrostedOverlayProps) {
   return (

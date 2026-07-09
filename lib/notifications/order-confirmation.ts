@@ -92,28 +92,28 @@ export function generateOrderConfirmationEmailHtml(data: {
           ${lineItemsHtml}
           
           <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
-            <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #374151;">Track Your Order</h3>
+            <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #374151;">Track your order</h3>
             <p style="margin: 0 0 16px 0; font-size: 14px; color: #6b7280;">
-              Click the button below to track your order in real-time. You'll see updates as your package moves through each stage of delivery.
+              Use the button below to follow your order as it moves through delivery.
             </p>
             <a href="${data.trackingUrl}" 
                style="display: inline-block; background-color: ${data.primaryColor}; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 14px;">
-              Track Your Order
+              Track your order
             </a>
           </div>
           
           <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
             <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #374151;">What's Next?</h4>
             <ul style="margin: 0; padding: 0 0 0 20px; color: #6b7280; font-size: 14px;">
-              <li style="margin-bottom: 8px;">We'll send you an email when your order ships</li>
-              <li style="margin-bottom: 8px;">You'll receive updates when it's out for delivery</li>
-              <li>A final confirmation when it's delivered</li>
+              <li style="margin-bottom: 8px;">We will email you when your order ships</li>
+              <li style="margin-bottom: 8px;">You will get updates when it is out for delivery</li>
+              <li>A final confirmation when it is delivered</li>
             </ul>
           </div>
           
           <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-              Questions about your order? Reply to this email and we'll help you out.
+              Questions about your order? Reply to this email and we will help.
             </p>
           </div>
         </div>

@@ -1,12 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import type { StreetLadderForScarcity } from '@/lib/shop/experience-street-ladder-display'
 import { ScarcityBadge } from '../../experience-v2/components/ScarcityBadge'
 import { EditionWatchControl } from '../../experience-v2/components/EditionWatchControl'
-import { getEditionStageCopy, getEditionStageKey } from '@/lib/shop/edition-stages'
 
 export type ExperienceV3EditionStripProps = {
   product: ShopifyProduct
@@ -24,26 +22,11 @@ export function ExperienceV3EditionStrip({
   product,
   editionSize,
   quantityAvailable,
-  streetLadder,
   editionNumberSold,
   totalEditions,
   artistName,
   className,
 }: ExperienceV3EditionStripProps) {
-  const stageLabel = useMemo(() => {
-    if (streetLadder?.stageLabel) return streetLadder.stageLabel
-    const stage = getEditionStageKey(editionNumberSold, totalEditions)
-    if (!stage) return null
-    const remaining = Math.max(0, totalEditions - editionNumberSold)
-    return getEditionStageCopy(stage, {
-      artist: artistName.trim() || 'this artist',
-      x: editionNumberSold,
-      n: Math.min(totalEditions, editionNumberSold + 1),
-      total: totalEditions,
-      remaining,
-    }).badge
-  }, [streetLadder?.stageLabel, editionNumberSold, totalEditions, artistName])
-
   const remainingCaption =
     editionSize > 0 && typeof quantityAvailable === 'number'
       ? `${quantityAvailable} of ${editionSize} remaining in this edition`
@@ -68,21 +51,11 @@ export function ExperienceV3EditionStrip({
         <div className="border-t border-border pt-2.5">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-center">
             {remainingCaption ? (
-              <span className="text-[11px] font-medium tabular-nums leading-snug text-muted-foreground">
+              <span className="text-xs font-medium tabular-nums leading-snug text-muted-foreground md:text-[13px]">
                 {remainingCaption}
               </span>
             ) : null}
-            {remainingCaption && stageLabel ? (
-              <span className="text-[10px] text-muted-foreground/50" aria-hidden>
-                ·
-              </span>
-            ) : null}
-            {stageLabel ? (
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                {stageLabel}
-              </span>
-            ) : null}
-            {(remainingCaption || stageLabel) ? (
+            {remainingCaption ? (
               <span className="text-[10px] text-muted-foreground/50" aria-hidden>
                 ·
               </span>
@@ -94,6 +67,7 @@ export function ExperienceV3EditionStrip({
               artistName={artistName}
               compact
               inline
+              variant="plain"
             />
           </div>
         </div>

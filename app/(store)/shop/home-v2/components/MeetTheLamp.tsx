@@ -4,8 +4,10 @@ import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export function MeetTheLamp() {
   const { meetLamp } = homeV2LandingContent

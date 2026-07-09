@@ -47,4 +47,17 @@ describe('buildExperienceRelatedArtworkSlider', () => {
     expect(items.some((i) => i.product.id === 'b1' && i.reason === 'similar_tags')).toBe(true)
     expect(items.some((i) => i.product.id === 'c1')).toBe(false)
   })
+
+  it('artistOnly excludes similar-tag picks from other vendors', () => {
+    const items = buildExperienceRelatedArtworkSlider({
+      current,
+      catalog: [current, sameArtist, similar, unrelated, lamp],
+      lampProductId: lamp.id,
+      artistVendor: 'Jane Doe',
+      artistOnly: true,
+      limit: 8,
+    })
+    expect(items.some((i) => i.product.id === 'b1')).toBe(false)
+    expect(items.some((i) => i.product.id === 'a2')).toBe(true)
+  })
 })

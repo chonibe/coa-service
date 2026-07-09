@@ -117,8 +117,8 @@ export function ProfileSection() {
         await fetchChangeHistory() // Refresh change history
 
         toast({
-          title: 'Success',
-          description: 'Profile updated successfully'
+          title: 'Saved',
+          description: 'Profile updated'
         })
       } else {
         toast({
@@ -222,22 +222,22 @@ export function ProfileSection() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LinkIcon className="h-5 w-5" />
-            Link Guest Purchases
+            Link guest purchases
           </CardTitle>
           <CardDescription>
-            If you've made purchases as a guest, enter the email address you used to link them to your account.
+            If you bought as a guest, enter that email address here to link those purchases to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label htmlFor="guest_email">Email Address</Label>
+              <Label htmlFor="guest_email">Email address</Label>
               <Input
                 id="guest_email"
                 type="email"
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="Enter email from guest purchase"
+                placeholder="Email used for guest checkout"
               />
             </div>
             <div className="flex items-end">
@@ -266,7 +266,7 @@ export function ProfileSection() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Profile Information
+                Profile details
               </CardTitle>
               <CardDescription>
                 Update your preferred name and contact information.
@@ -276,7 +276,7 @@ export function ProfileSection() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="first_name">First Name</Label>
+                  <Label htmlFor="first_name">First name</Label>
                   <Input
                     id="first_name"
                     value={formData.first_name}
@@ -285,7 +285,7 @@ export function ProfileSection() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="last_name">Last Name</Label>
+                  <Label htmlFor="last_name">Last name</Label>
                   <Input
                     id="last_name"
                     value={formData.last_name}
@@ -296,7 +296,7 @@ export function ProfileSection() {
               </div>
 
               <div>
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Email address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -307,7 +307,7 @@ export function ProfileSection() {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Phone number</Label>
                 <Input
                   id="phone"
                   value={formData.phone}

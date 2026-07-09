@@ -1,128 +1,196 @@
 'use client'
 
-import Image from 'next/image'
-import { Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
-import { getShopifyImageUrl } from '@/lib/shopify/image-url'
 import { capitalizeFirstLetter, cn, formatPriceCompact } from '@/lib/utils'
+import { getStorePageContent } from '@/lib/content/site-content'
 
-const BUNDLE_NAME = 'Street Lamp Display Bundle'
+const experienceV3Content = getStorePageContent('experienceV3')
+
+const bundleToggleTrackClass =
+  'inline-flex w-full items-center rounded-full bg-muted/90 p-0.5 ring-1 ring-border/60 sm:w-auto'
+const bundleToggleButtonBaseClass =
+  'rounded-full px-2.5 py-1 text-[11px] transition-all md:px-3 md:py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background'
+const bundleToggleButtonSelectedClass =
+  'bg-card font-semibold text-foreground shadow-inner ring-1 ring-black/[0.06] dark:bg-background dark:ring-white/10'
+const bundleToggleButtonUnselectedClass =
+  'font-medium text-muted-foreground hover:text-foreground/80'
+
+export type ExperienceV3BundleMode = 'withLamp' | 'artworkOnly'
 
 export type ExperienceV3LampBundleCardProps = {
   lamp: ShopifyProduct
   artwork: ShopifyProduct
   artworkUnitUsd: number
   lampUnitUsd: number
+  listPriceCompareAt?: string | null
   disabled?: boolean
   onAddWithLamp: () => void
   onArtworkOnly: () => void
+  /** Artist/vendor name for the previewed artwork — personalizes the bundle name/description. */
+  artistName: string
+  /**
+   * Controlled "Artwork only" (default/base) / "Add Street Lamp" (opt-in) toggle — lifted to the
+   * parent so it can also drive the live Spline visual it sits beside.
+   */
+  mode: ExperienceV3BundleMode
+  onModeChange: (mode: ExperienceV3BundleMode) => void
+  /** Edition ladder chip, e.g. "2 more · then $42" — shown under price (desktop bundle). */
+  nextStepChip?: string | null
+  /**
+   * `responsive` — hero meta lives in the mobile shell header; on small screens only toggle,
+   * price, and CTA show. `default` — full panel with tag, bundle name, and description.
+   */
+  layout?: 'default' | 'responsive'
 }
 
+/**
+ * Bundle offer copy panel — tag/heading/description, the "Artwork only" / "Add Street Lamp"
+ * toggle, price, and CTA. Rendered as the `sideContent` of `ExperienceV3SplineLampSection`, next
+ * to the live 3D lamp preview (no static product imagery of its own). Intentionally flat/plain —
+ * no card border, gradients, or motion — to sit naturally inside that section alongside the
+ * "Your Collection" heading style.
+ *
+ * The artwork is the default/base state when a lamp is already in the cart; otherwise bundle
+ * (lamp + artwork) is the default. The lamp is framed as the opt-in add-on when switching to
+ * artwork-only, not a symmetric A/B choice.
+ */
 export function ExperienceV3LampBundleCard({
   lamp,
   artwork,
   artworkUnitUsd,
   lampUnitUsd,
+  listPriceCompareAt = null,
   disabled = false,
   onAddWithLamp,
   onArtworkOnly,
+  artistName,
+  mode,
+  onModeChange,
+  nextStepChip = null,
+  layout = 'default',
 }: ExperienceV3LampBundleCardProps) {
-  const lampImg =
-    getShopifyImageUrl(lamp.featuredImage?.url ?? lamp.images?.edges?.[0]?.node?.url, 400) ??
-    lamp.featuredImage?.url ??
-    lamp.images?.edges?.[0]?.node?.url ??
-    null
+  const isBundleMode = mode === 'withLamp'
+  const isResponsive = layout === 'responsive'
 
-  const artImg =
-    getShopifyImageUrl(artwork.featuredImage?.url ?? artwork.images?.edges?.[0]?.node?.url, 400) ??
-    artwork.featuredImage?.url ??
-    artwork.images?.edges?.[0]?.node?.url ??
-    null
-
+  const bundleName = experienceV3Content.bundleCard.bundleName(artistName)
+  const lampTitle = capitalizeFirstLetter(lamp.title.trim())
   const artworkTitle = capitalizeFirstLetter(artwork.title.trim())
-  const artworkLabel =
-    artworkTitle.length > 26
-      ? `${artworkTitle.slice(0, 25)}…`
-      : artworkTitle || 'Your print'
 
   const bundleTotal = artworkUnitUsd + lampUnitUsd
+  const activePrice = isBundleMode ? bundleTotal : artworkUnitUsd
+  const activeCompareAt = isBundleMode ? listPriceCompareAt : null
+
+  const primaryLabel = isBundleMode
+    ? experienceV3Content.bundleCard.addBundle
+    : experienceV3Content.bundleCard.addArtwork
+
+  const handlePrimaryAction = isBundleMode ? onAddWithLamp : onArtworkOnly
+  const modeDescription = isBundleMode
+    ? experienceV3Content.bundleCard.descriptionWithLamp(artistName)
+    : experienceV3Content.bundleCard.descriptionArtworkOnly
+  const modeHint = isBundleMode
+    ? experienceV3Content.bundleCard.hintWithLamp
+    : experienceV3Content.bundleCard.hintArtworkOnly
+  const priceSuffix = isBundleMode
+    ? experienceV3Content.bundleCard.priceSuffixBundle
+    : experienceV3Content.bundleCard.priceSuffixArtwork
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-experience-surface/80 p-3.5">
-      <div className="space-y-1 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-experience-highlight/12 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-experience-highlight">
-            <Sparkles className="h-2.5 w-2.5" aria-hidden />
-            Bundle
+    <div
+      className={cn(
+        'flex flex-col justify-center gap-2 text-left md:gap-3',
+        !isResponsive && 'text-center md:text-left'
+      )}
+      aria-label={`${bundleName}: ${lampTitle} and ${artworkTitle}`}
+    >
+      {isResponsive ? (
+        <div className="hidden space-y-1 md:block">
+          <span className="inline-flex items-center gap-1.5 rounded bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-experience-highlight ring-1 ring-border">
+            <Sparkles className="h-3 w-3" aria-hidden />
+            {experienceV3Content.bundleCard.bundleTag}
           </span>
+          <h3 className="font-serif text-base font-semibold leading-snug text-foreground md:text-xl">{bundleName}</h3>
+          <p className="text-[12px] leading-snug text-muted-foreground">{modeDescription}</p>
         </div>
-        <h3 className="text-[14px] font-semibold leading-snug text-foreground">{BUNDLE_NAME}</h3>
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          Street Lamp + your selected print — everything to display this artwork at home.
+      ) : (
+        <div className="space-y-1">
+          <span className="inline-flex items-center gap-1.5 self-center rounded bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-experience-highlight ring-1 ring-border md:self-start">
+            <Sparkles className="h-3 w-3" aria-hidden />
+            {experienceV3Content.bundleCard.bundleTag}
+          </span>
+          <h3 className="font-serif text-base font-semibold leading-snug text-foreground md:text-xl">{bundleName}</h3>
+          <p className="text-[12px] leading-snug text-muted-foreground">{modeDescription}</p>
+        </div>
+      )}
+
+      <div className={cn('space-y-1', isResponsive ? 'md:space-y-1.5' : 'md:space-y-1.5')}>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {experienceV3Content.bundleCard.toggleLabel}
         </p>
-      </div>
-
-      <div
-        className="flex items-end justify-center gap-3 py-0.5"
-        aria-label={`${BUNDLE_NAME}: Street Lamp and ${artworkTitle}`}
-      >
-        <div className="flex w-[4.5rem] flex-col items-center gap-1.5">
-          <div className="relative h-12 w-9 shrink-0 overflow-hidden rounded-md bg-experience-surface-2 ring-1 ring-border">
-            {lampImg ? (
-              <Image src={lampImg} alt="" fill className="object-cover" sizes="36px" unoptimized />
-            ) : null}
-          </div>
-          <span className="max-w-full truncate text-center text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-            Street Lamp
-          </span>
-        </div>
-        <span className="mb-5 text-sm font-light text-muted-foreground/60" aria-hidden>
-          +
-        </span>
-        <div className="flex w-[4.5rem] flex-col items-center gap-1.5">
-          <div className="relative aspect-[14/20] h-12 w-9 shrink-0 overflow-hidden rounded-md bg-experience-surface-2 ring-1 ring-border">
-            {artImg ? (
-              <Image src={artImg} alt="" fill className="object-cover" sizes="36px" unoptimized />
-            ) : null}
-          </div>
-          <span
-            className="max-w-full truncate text-center text-[9px] font-medium text-muted-foreground"
-            title={artworkTitle}
+        <div
+          aria-label={experienceV3Content.bundleCard.toggleLabel}
+          className={bundleToggleTrackClass}
+          role="group"
+        >
+          <button
+            type="button"
+            aria-pressed={isBundleMode}
+            onClick={() => onModeChange('withLamp')}
+            className={cn(
+              bundleToggleButtonBaseClass,
+              isBundleMode ? bundleToggleButtonSelectedClass : bundleToggleButtonUnselectedClass
+            )}
           >
-            {artworkLabel}
-          </span>
+            {experienceV3Content.bundleCard.toggleAddLamp}
+          </button>
+          <button
+            type="button"
+            aria-pressed={!isBundleMode}
+            onClick={() => onModeChange('artworkOnly')}
+            className={cn(
+              bundleToggleButtonBaseClass,
+              !isBundleMode ? bundleToggleButtonSelectedClass : bundleToggleButtonUnselectedClass
+            )}
+          >
+            {experienceV3Content.bundleCard.artworkOnly}
+          </button>
         </div>
+        {modeHint ? (
+          <p className="hidden text-[11px] leading-snug text-muted-foreground md:block">{modeHint}</p>
+        ) : null}
       </div>
 
-      <div className="space-y-1.5">
+      <div className={cn('space-y-1.5', isResponsive ? 'md:space-y-2.5' : 'md:space-y-2.5')}>
+        {activePrice > 0 ? (
+          <p className="text-[12px] tabular-nums text-muted-foreground">
+            {activeCompareAt ? (
+              <>
+                <span className="line-through">{activeCompareAt}</span>
+                <span className="mx-1.5 font-semibold text-foreground">${formatPriceCompact(activePrice)}</span>
+              </>
+            ) : (
+              <span className="font-semibold text-foreground">${formatPriceCompact(activePrice)}</span>
+            )}
+            <span className="text-muted-foreground">{priceSuffix}</span>
+          </p>
+        ) : null}
+        {nextStepChip ? (
+          <p className="text-[10px] font-medium tabular-nums text-muted-foreground">{nextStepChip}</p>
+        ) : null}
         <button
           type="button"
           disabled={disabled}
-          onClick={onAddWithLamp}
+          onClick={handlePrimaryAction}
           className={cn(
-            'flex w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors',
+            'flex w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors active:scale-[0.98] md:w-auto',
             disabled
               ? 'cursor-not-allowed bg-muted text-muted-foreground'
               : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
           )}
         >
-          <span>Add {BUNDLE_NAME}</span>
-          {bundleTotal > 0 ? (
-            <>
-              <span className="opacity-60" aria-hidden>
-                ·
-              </span>
-              <span className="font-medium">${formatPriceCompact(bundleTotal)}</span>
-            </>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onArtworkOnly}
-          className="w-full py-1 text-center text-[11px] font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-40"
-        >
-          Artwork only
+          <span>{primaryLabel}</span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 
 export const dynamic = 'force-dynamic'
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 const TITLE = 'Blog — street art stories, drops & Street Collector updates'
 const DESCRIPTION =
   'Street art stories, artist notes, drop updates, and collector guidance from Street Collector.'
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),

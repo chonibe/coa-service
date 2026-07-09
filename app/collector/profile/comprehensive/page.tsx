@@ -125,7 +125,7 @@ export default function ComprehensiveProfilePage() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Collector Profile Overview</h1>
         <p className="text-xl text-gray-600">
-          Your complete collecting journey, editions, and activity history
+          Your record of editions, orders, and account activity
         </p>
       </div>
 
@@ -273,7 +273,7 @@ export default function ComprehensiveProfilePage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Total Spent</span>
+                    <span className="text-sm">Total spent</span>
                     <span className="text-sm font-medium">${statistics.totalSpent.toFixed(2)}</span>
                   </div>
                 </div>
@@ -612,5 +612,3 @@ export default function ComprehensiveProfilePage() {
     </div>
   )
 }
-
-

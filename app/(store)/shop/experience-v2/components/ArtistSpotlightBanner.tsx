@@ -239,7 +239,7 @@ export function ArtistSpotlightBanner({
                     'w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors',
                     featuredBundleOffer.disabled
                       ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
-                      : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                      : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
                   )}
                 >
                   Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}
@@ -346,7 +346,7 @@ export function ArtistSpotlightBanner({
                   ? 'cursor-not-allowed bg-neutral-200 text-neutral-500 dark:bg-[#3a3434] dark:text-[#8a8080]'
                   : spotlight.unlisted
                     ? 'bg-violet-600 text-white hover:bg-violet-500'
-                    : 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-[#FFBA94] dark:text-[#171515] dark:hover:bg-[#ffc8a8]'
+                    : 'bg-experience-cta text-white hover:bg-experience-cta-hover dark:text-neutral-900'
               )}
             >
               Get {featuredBundleOffer.vendorName} bundle — ${formatPriceCompact(featuredBundleOffer.bundleUsd)}

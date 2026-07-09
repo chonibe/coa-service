@@ -148,18 +148,6 @@ const LocalCartDrawerInner = React.forwardRef<HTMLDivElement, LocalCartDrawerPro
       return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, onClose])
 
-    // Prevent scroll when open
-    React.useEffect(() => {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
-      return () => {
-        document.body.style.overflow = ''
-      }
-    }, [isOpen])
-
     const safeItems = Array.isArray(items) ? items : []
     const isEmpty = safeItems.length === 0
 

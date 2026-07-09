@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { Container, SectionWrapper, Input, Textarea, Button } from '@/components/impact'
 import { ScrollReveal } from '@/components/blocks'
+import { getStorePageContent } from '@/lib/content/site-content'
+
+const submissionsContent = getStorePageContent('artistSubmissions')
 
 export default function ArtistSubmissionsPage() {
   const [formState, setFormState] = useState({
@@ -34,14 +37,14 @@ export default function ArtistSubmissionsPage() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setStatus('error')
-        setErrorMessage(data.error || 'Failed to submit')
+        setErrorMessage(data.error || submissionsContent.form.messages.errorFallback || '')
         return
       }
       setStatus('success')
       setFormState({ name: '', email: '', instagram: '', portfolio: '', message: '' })
     } catch {
       setStatus('error')
-      setErrorMessage('An unexpected error occurred. Please try again.')
+      setErrorMessage(submissionsContent.form.messages.errorFallback || '')
     }
   }
 
@@ -51,7 +54,7 @@ export default function ArtistSubmissionsPage() {
         <Container maxWidth="narrow" paddingX="gutter">
           <ScrollReveal animation="fadeUp" duration={0.8}>
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em] mb-8">
-              Would You Like to Be Featured in Our Next Edition?
+              {submissionsContent.hero.title}
             </h1>
           </ScrollReveal>
 
@@ -61,25 +64,25 @@ export default function ArtistSubmissionsPage() {
               prose-p:text-muted-foreground prose-p:leading-relaxed
               prose-ul:text-muted-foreground prose-li:my-1
             ">
-              <p className="mb-6">
-                We look for artists with a clear point of view and work that holds up beyond a single image. If your practice fits the Street Collector roster, send it through. We review both emerging and established artists.
-              </p>
+              {submissionsContent.intro.body.map((paragraph) => (
+                <p key={paragraph} className="mb-6">{paragraph}</p>
+              ))}
 
-              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">How to Get Involved</h2>
+              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">{submissionsContent.intro.howToTitle}</h2>
               <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li><strong>Submit your details:</strong> Send your portfolio and a short note about your work.</li>
-                <li><strong>Watch for open calls:</strong> Some editions and features are built through specific calls or competitions.</li>
-                <li><strong>If selected:</strong> We will reach out about fit, timing, and how the work would enter the collection.</li>
+                {submissionsContent.intro.howToSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
               </ol>
 
-              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">What We&apos;re Looking For</h2>
+              <h2 className="text-xl font-semibold text-foreground mt-8 mb-4">{submissionsContent.intro.lookingForTitle}</h2>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>A distinct visual language.</li>
-                <li>Work that still feels strong in edition form.</li>
-                <li>Artists with a real practice behind the images.</li>
+                {submissionsContent.intro.lookingForItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
               <p className="mt-6">
-                If the work feels right for the platform, we want to see it.
+                {submissionsContent.intro.closing}
               </p>
             </div>
           </ScrollReveal>
@@ -87,47 +90,47 @@ export default function ArtistSubmissionsPage() {
           <ScrollReveal animation="fadeUp" delay={0.2} duration={0.8}>
             {status === 'success' ? (
               <div className="rounded-xl bg-[#00a341]/10 border border-[#00a341]/30 p-8 text-center">
-                <p className="text-lg font-medium text-[#00a341] mb-2">Thank you for your submission!</p>
-                <p className="text-muted-foreground">We&apos;ll review it and get back to you if there&apos;s a fit.</p>
+                <p className="text-lg font-medium text-[#00a341] mb-2">{submissionsContent.form.messages.successTitle}</p>
+                <p className="text-muted-foreground">{submissionsContent.form.messages.successBody}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
                 <Input
-                  label="Name"
+                  label={submissionsContent.form.fields.name.label}
                   required
-                  placeholder="Your name"
+                  placeholder={submissionsContent.form.fields.name.placeholder}
                   value={formState.name}
                   onChange={(e) => setFormState((s) => ({ ...s, name: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="E-mail"
+                  label={submissionsContent.form.fields.email.label}
                   type="email"
                   required
-                  placeholder="your@email.com"
+                  placeholder={submissionsContent.form.fields.email.placeholder}
                   value={formState.email}
                   onChange={(e) => setFormState((s) => ({ ...s, email: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Instagram"
-                  placeholder="@yourhandle"
+                  label={submissionsContent.form.fields.instagram.label}
+                  placeholder={submissionsContent.form.fields.instagram.placeholder}
                   value={formState.instagram}
                   onChange={(e) => setFormState((s) => ({ ...s, instagram: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Input
-                  label="Portfolio site (if you have one)"
+                  label={submissionsContent.form.fields.portfolio.label}
                   type="url"
-                  placeholder="https://"
+                  placeholder={submissionsContent.form.fields.portfolio.placeholder}
                   value={formState.portfolio}
                   onChange={(e) => setFormState((s) => ({ ...s, portfolio: e.target.value }))}
                   disabled={status === 'loading'}
                 />
                 <Textarea
-                  label="Message"
+                  label={submissionsContent.form.fields.message.label}
                   required
-                  placeholder="Tell us about your journey, inspiration, and why your work belongs in The Street Lamp collection."
+                  placeholder={submissionsContent.form.fields.message.placeholder}
                   value={formState.message}
                   onChange={(e) => setFormState((s) => ({ ...s, message: e.target.value }))}
                   disabled={status === 'loading'}
@@ -142,7 +145,9 @@ export default function ArtistSubmissionsPage() {
                   size="lg"
                   disabled={status === 'loading'}
                 >
-                  {status === 'loading' ? 'Sending...' : 'Send message'}
+                  {status === 'loading'
+                    ? submissionsContent.form.messages.submitLoading
+                    : submissionsContent.form.messages.submitIdle}
                 </Button>
               </form>
             )}

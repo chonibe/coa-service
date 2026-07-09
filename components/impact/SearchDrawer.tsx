@@ -159,18 +159,11 @@ const SearchDrawer = React.forwardRef<HTMLDivElement, SearchDrawerProps>(
       return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, onClose])
 
-    // Prevent scroll when open
     React.useEffect(() => {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
+      if (!isOpen) {
         setQuery('')
         setResults({ products: [], collections: [] })
         setHasSearched(false)
-      }
-      return () => {
-        document.body.style.overflow = ''
       }
     }, [isOpen])
 

@@ -31,6 +31,9 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getStorePageContent } from '@/lib/content/site-content'
+
+const cartContent = getStorePageContent('cart')
 
 function CartContentInner() {
   const router = useRouter()
@@ -128,7 +131,7 @@ function CartContentInner() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout')
+        throw new Error(data.error || cartContent.header.cancelled)
       }
 
       // Track begin_checkout only after session is successfully created
@@ -150,7 +153,7 @@ function CartContentInner() {
         }
       }
     } catch (err: any) {
-      const message = err.message || 'Something went wrong'
+      const message = err.message || cartContent.header.cancelled
       setError(message)
       setIsCheckingOut(false)
       captureCheckoutError({ error_message: message, source: 'cart' })
@@ -162,10 +165,10 @@ function CartContentInner() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
         <ShoppingBag className="w-16 h-16 text-slate-300 mb-4" />
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Your cart is empty</h1>
-        <p className="text-slate-500 mb-8">Add some artwork to get started!</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">{cartContent.empty.title}</h1>
+        <p className="text-slate-500 mb-8">{cartContent.empty.body}</p>
         <Link href="/shop">
-          <Button>Continue Shopping</Button>
+          <Button>{cartContent.empty.ctaLabel}</Button>
         </Link>
       </div>
     )
@@ -173,11 +176,11 @@ function CartContentInner() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold text-slate-900 mb-8">{cartContent.header.title}</h1>
 
       {cancelled && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-          Checkout was cancelled. Your cart items are still here.
+          {cartContent.header.cancelled}
         </div>
       )}
 
@@ -234,7 +237,7 @@ function CartContentInner() {
                     type="button"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     className="qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
-                    aria-label="Decrease quantity"
+                aria-label={cartContent.actions.decreaseQuantity}
                   >
                     <Minus className="w-3 h-3" strokeWidth={2.25} />
                   </button>
@@ -246,7 +249,7 @@ function CartContentInner() {
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
                     className="qty-stepper-compact h-[22px] w-[22px] shrink-0 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
-                    aria-label="Increase quantity"
+                aria-label={cartContent.actions.increaseQuantity}
                   >
                     <Plus className="w-3 h-3" strokeWidth={2.25} />
                   </button>
@@ -262,7 +265,7 @@ function CartContentInner() {
                 type="button"
                 onClick={() => removeItem(item.id)}
                 className="p-2 text-slate-400 hover:text-red-500 shrink-0"
-                aria-label="Remove item"
+                aria-label={cartContent.actions.removeItem}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -273,7 +276,7 @@ function CartContentInner() {
             onClick={clearCart}
             className="text-sm text-slate-500 hover:text-red-500"
           >
-            Clear cart
+            {cartContent.actions.clearCart}
           </button>
         </div>
 
@@ -283,7 +286,7 @@ function CartContentInner() {
             <CheckoutLayout
               subtotal={subtotal}
               discount={creditsDiscount}
-              discountLabel="Credits"
+              discountLabel={cartContent.credits.discountLabel}
               shipping={0}
               total={total}
               onCheckout={handleCheckout}
@@ -299,10 +302,10 @@ function CartContentInner() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Coins className="w-4 h-4 text-amber-500" />
-                      <span className="text-sm font-medium text-slate-700">Use Credits</span>
+                      <span className="text-sm font-medium text-slate-700">{cartContent.credits.useCredits}</span>
                     </div>
                     <span className="text-sm text-slate-500">
-                      {availableCredits.toLocaleString()} available
+                      {cartContent.credits.available(availableCredits)}
                     </span>
                   </div>
                   <Slider
@@ -314,7 +317,7 @@ function CartContentInner() {
                   />
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">
-                      Using {creditsToUse.toLocaleString()} credits
+                      {cartContent.credits.using(creditsToUse)}
                     </span>
                     <span className="text-green-600 font-medium">
                       -${creditsDiscount.toFixed(2)}
@@ -322,7 +325,7 @@ function CartContentInner() {
                   </div>
                   {creditsToUse === 0 && maxCreditsForCart > 0 && (
                     <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-700">
-                      Use {maxCreditsForCart.toLocaleString()} credits to save ${(maxCreditsForCart * 0.10).toFixed(2)} on this order
+                      {cartContent.credits.savePrompt(maxCreditsForCart, maxCreditsForCart * 0.10)}
                     </div>
                   )}
                 </div>
@@ -330,14 +333,14 @@ function CartContentInner() {
               {availableCredits === 0 && (
                 <div className="py-4 border-b border-slate-100">
                   <div className="bg-amber-50 rounded-lg p-3">
-                    <p className="text-sm text-amber-800 font-medium mb-1">Earn credits with every purchase</p>
+                    <p className="text-sm text-amber-800 font-medium mb-1">{cartContent.credits.earnTitle}</p>
                     <p className="text-xs text-amber-700">
-                      You&apos;ll earn <strong>{Math.round(subtotal * 10).toLocaleString()} credits</strong> (${subtotal.toFixed(2)} value) from this order.
+                      {cartContent.credits.earnBody(Math.round(subtotal * 10), subtotal)}
                     </p>
                     {!user?.isMember && (
                       <Link href="/shop/membership">
                         <Button variant="link" className="text-amber-700 p-0 h-auto text-xs mt-1">
-                          Become a member for bonus credits
+                          {cartContent.credits.memberCta}
                         </Button>
                       </Link>
                     )}
@@ -348,13 +351,13 @@ function CartContentInner() {
 
             {total === 0 && creditsToUse > 0 && (
               <p className="text-xs text-center text-slate-500 mt-2">
-                Your entire order is covered by credits!
+                {cartContent.credits.fullyCovered}
               </p>
             )}
 
             <Link href="/shop" className="block mt-4">
               <Button variant="outline" className="w-full">
-                Continue Shopping
+                {cartContent.header.browseCta}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>

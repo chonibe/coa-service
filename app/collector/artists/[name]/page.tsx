@@ -12,6 +12,9 @@ import { ArtistApiResponse, ArtistArtwork, ArtistSeries } from "@/types/collecto
 import { ArtworkCard } from "@/app/collector/discover/components/artwork-card"
 
 import { Badge, Button, Card, CardContent } from "@/components/ui"
+import { getCollectorPageContent } from "@/lib/content/site-content"
+
+const artistProfileContent = getCollectorPageContent('artistProfile')
 export default function ArtistProfilePage({ params }: { params: { name: string } }) {
   const { name } = params
   const [data, setData] = useState<ArtistApiResponse | null>(null)
@@ -26,7 +29,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
         const res = await fetch(`/api/collector/artists/${name}`)
         if (!res.ok) {
           const e = await res.json().catch(() => ({}))
-          throw new Error(e.message || "Failed to load artist")
+          throw new Error(e.message || artistProfileContent.errors.loadArtist)
         }
         const payload: ArtistApiResponse = await res.json()
         setData(payload)
@@ -83,19 +86,19 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
         )}
         <div>
           <h1 className="text-4xl font-bold leading-tight mb-2">{artist.name}</h1>
-          <p className="text-lg text-muted-foreground">{artist.bio || "No bio available."}</p>
+          <p className="text-lg text-muted-foreground">{artist.bio || artistProfileContent.errors.noBio}</p>
           <div className="flex gap-4 mt-4">
             {artist.websiteUrl && (
               <Button variant="outline" size="sm" asChild>
                 <a href={artist.websiteUrl} target="_blank" rel="noopener noreferrer">
-                  Website
+                  {artistProfileContent.links.website}
                 </a>
               </Button>
             )}
             {artist.instagramHandle && (
               <Button variant="outline" size="sm" asChild>
                 <a href={`https://instagram.com/${artist.instagramHandle}`} target="_blank" rel="noopener noreferrer">
-                  Instagram
+                  {artistProfileContent.links.instagram}
                 </a>
               </Button>
             )}
@@ -107,7 +110,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
 
       {artworks.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-6">Published Artworks</h2>
+          <h2 className="text-3xl font-bold mb-6">{artistProfileContent.sections.artworks}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {artworks.map((art: ArtistArtwork) => (
               <ArtworkCard key={art.id} artwork={art} />
@@ -118,7 +121,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
 
       {publicSeries.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-6">Series Collections</h2>
+          <h2 className="text-3xl font-bold mb-6">{artistProfileContent.sections.series}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {publicSeries.map((s: ArtistSeries) => (
               <Card key={s.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -131,7 +134,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
                 </Link>
                 <CardContent className="p-4">
                   <h3 className="text-lg font-semibold line-clamp-2">{s.name}</h3>
-                  <p className="text-sm text-muted-foreground">{s.totalPieces} Pieces</p>
+                  <p className="text-sm text-muted-foreground">{artistProfileContent.sections.pieces(s.totalPieces)}</p>
                 </CardContent>
               </Card>
             ))}
@@ -141,9 +144,9 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
 
       {hiddenSeries.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-2">Hidden Gems</h2>
+          <h2 className="text-3xl font-bold mb-2">{artistProfileContent.sections.hiddenGems}</h2>
           <p className="text-muted-foreground mb-6">
-            Exclusive or VIP series. Learn how to access these collections.
+            {artistProfileContent.sections.hiddenBody}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {hiddenSeries.map((s: ArtistSeries) => (
@@ -153,12 +156,12 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
                     <Image src={s.teaserImageUrl} alt={s.name} fill className="object-cover blur-sm" sizes="(max-width: 768px) 100vw, 50vw" />
                   )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                    <Badge className="bg-yellow-500 text-white">Hidden Series</Badge>
+                    <Badge className="bg-yellow-500 text-white">{artistProfileContent.sections.hiddenBadge}</Badge>
                   </div>
                 </div>
                 <CardContent className="p-4">
                   <h3 className="text-lg font-semibold line-clamp-2">{s.name}</h3>
-                  <p className="text-sm text-muted-foreground">Exclusive content. Contact the artist to unlock.</p>
+                  <p className="text-sm text-muted-foreground">{artistProfileContent.sections.hiddenAccess}</p>
                 </CardContent>
               </Card>
             ))}
@@ -166,9 +169,7 @@ export default function ArtistProfilePage({ params }: { params: { name: string }
         </div>
       )}
 
-      {!artworks.length && !series.length && <p className="text-center text-muted-foreground">No published artworks or series yet.</p>}
+      {!artworks.length && !series.length && <p className="text-center text-muted-foreground">{artistProfileContent.sections.empty}</p>}
     </div>
   )
 }
-
-

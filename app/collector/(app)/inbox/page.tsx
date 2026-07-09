@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SubTabBar, type SubTab } from '@/components/app-shell'
 import { ActivityFeed, type ActivityEvent } from '@/components/app-shell'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Inbox Tab
@@ -13,9 +14,10 @@ import { ActivityFeed, type ActivityEvent } from '@/components/app-shell'
 // Sub-tabs: Activity / Notifications
 // ============================================================================
 
+const appInboxContent = getCollectorPageContent('appInbox')
 const inboxTabs: SubTab[] = [
-  { id: 'activity', label: 'Activity', href: '/collector/inbox' },
-  { id: 'notifications', label: 'Notifications', href: '/collector/inbox/notifications' },
+  { id: 'activity', label: appInboxContent.tabs.activity, href: '/collector/inbox' },
+  { id: 'notifications', label: appInboxContent.tabs.notifications, href: '/collector/inbox/notifications' },
 ]
 
 export default function CollectorInboxPage() {

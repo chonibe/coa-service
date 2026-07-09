@@ -139,7 +139,7 @@ export function generateProductDescription(data: ProductDescriptionData): string
 
 <p> </p>
 
-<p><span>Each Lamp Print is meticulously curated from talented artists, with a portion of the proceeds directly benefiting them. Your purchase not only brings a unique story into your home but also supports the local art community.</span></p>
+<p><span>Each Lamp Print is made with an independent artist, and part of every sale goes back to them. It is a direct way to live with the work while supporting the artist behind it.</span></p>
 
 <h3>Certificate of Authenticity</h3>
 
@@ -208,4 +208,3 @@ export function extractReleaseDate(metafields: any[]): string | null {
 
   return dateMetafield?.value || null
 }
-

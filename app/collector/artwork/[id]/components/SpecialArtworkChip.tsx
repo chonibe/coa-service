@@ -179,12 +179,12 @@ export function generateSpecialChips(artworkData: {
   if (artworkData.unlocks?.hiddenSeries) {
     chips.push({
       type: "unlocks_hidden",
-      label: "Unlocks Hidden Series",
+      label: "Opens hidden series",
     })
   } else if (artworkData.unlocks?.vipArtwork) {
     chips.push({
       type: "unlocks_hidden",
-      label: "Unlocks VIP Artwork",
+      label: "Opens member artwork",
     })
   }
 
@@ -192,7 +192,7 @@ export function generateSpecialChips(artworkData: {
   if (artworkData.unlocks?.vipSeries) {
     chips.push({
       type: "vip_access",
-      label: "VIP Access",
+      label: "Member access",
     })
   }
 

@@ -60,7 +60,7 @@ export const MEMBERSHIP_TIERS: Record<MembershipTierId, MembershipTier> = {
   collector: {
     id: 'collector',
     name: 'Collector',
-    description: 'Start your collecting journey with monthly credits',
+    description: 'Monthly credits for starting your collection',
     priceMonthly: 10,
     monthlyCredits: 100,
     creditValueUsd: 10, // $0.10 per credit
@@ -78,7 +78,7 @@ export const MEMBERSHIP_TIERS: Record<MembershipTierId, MembershipTier> = {
   curator: {
     id: 'curator',
     name: 'Curator',
-    description: 'Enhanced membership with bonus credits and perks',
+    description: 'More credits and extra member benefits',
     priceMonthly: 22,
     monthlyCredits: 280,
     creditValueUsd: 28, // ~27% bonus value
@@ -99,7 +99,7 @@ export const MEMBERSHIP_TIERS: Record<MembershipTierId, MembershipTier> = {
   founding: {
     id: 'founding',
     name: 'Founding Member',
-    description: 'Premium tier with maximum benefits and recognition',
+    description: 'Highest tier with the full member benefits set',
     priceMonthly: 50,
     monthlyCredits: 750,
     creditValueUsd: 75, // 50% bonus value

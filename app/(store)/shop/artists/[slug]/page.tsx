@@ -5,8 +5,10 @@ import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { buildArtistDescription, buildArtistOgTitle, buildArtistTitle } from '@/lib/seo/artist-meta'
 import { getCachedArtistProfile } from '@/lib/shop/cached-shop-data'
 import { ArtistProfileJsonLd } from '@/components/seo/ArtistProfileJsonLd'
-import { streetCollectorContent } from '@/content/street-collector'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { ArtistPageClient } from './ArtistPageClient'
+
+const streetCollectorContent = getStorePageContent('streetCollector')
 
 export const revalidate = 600
 

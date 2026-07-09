@@ -53,7 +53,7 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
       <Card>
         <CardHeader>
           <CardTitle>No artworks yet</CardTitle>
-          <CardDescription>When you purchase art, it will appear here.</CardDescription>
+          <CardDescription>Your artworks will appear here.</CardDescription>
         </CardHeader>
       </Card>
     )
@@ -197,4 +197,3 @@ export function ArtworkGrid({ items }: ArtworkGridProps) {
     </>
   )
 }
-

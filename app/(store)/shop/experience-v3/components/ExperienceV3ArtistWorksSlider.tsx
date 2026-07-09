@@ -89,6 +89,7 @@ export function ExperienceV3ArtistWorksSlider({
         artistBio: artistProfile?.bio,
         artistProducts: artistProfile?.products ?? [],
         limit: 18,
+        artistOnly: true,
       }),
     [currentProduct, catalog, lampProductId, artistVendor, artistProfile?.bio, artistProfile?.products]
   )
@@ -121,18 +122,12 @@ export function ExperienceV3ArtistWorksSlider({
       <div className="mx-auto w-full max-w-[min(100%,1200px)] px-3 md:px-6">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-experience-title/80">
-              Explore the collection
-            </p>
             <h2
               id="experience-v3-artist-works-heading"
-              className="mt-1 font-serif text-xl font-semibold text-foreground md:text-2xl"
+              className="font-serif text-xl font-semibold text-foreground md:text-2xl"
             >
               Works by {vendorLabel}
             </h2>
-            <p className="mt-1 max-w-lg text-[12px] leading-relaxed text-muted-foreground">
-              Start with your selection, then browse more from the artist and pieces with a similar feel.
-            </p>
           </div>
           <div className="hidden shrink-0 items-center gap-1.5 md:flex">
             <button
@@ -186,13 +181,15 @@ export function ExperienceV3ArtistWorksSlider({
                   type="button"
                   onClick={() => onPreview(product)}
                   className={cn(
-                    'block w-full overflow-hidden rounded-2xl border text-left transition-colors',
+                    /* Border on the button; overflow/radius only on the image clip layer so the
+                       selection border stays on top of the cover image (no flashy outer ring). */
+                    'block w-full rounded-2xl border text-left transition-colors',
                     isPreview
-                      ? 'border-experience-highlight/50 ring-1 ring-experience-highlight/30'
-                      : 'border-border hover:border-border/80'
+                      ? 'border-experience-highlight/70'
+                      : 'border-border/80 hover:border-border'
                   )}
                 >
-                  <div className="relative aspect-[14/20] w-full bg-experience-surface">
+                  <div className="relative aspect-[14/20] w-full overflow-hidden rounded-t-2xl bg-experience-surface">
                     {img ? (
                       <Image
                         src={img}
@@ -213,7 +210,7 @@ export function ExperienceV3ArtistWorksSlider({
                       </span>
                     ) : null}
                   </div>
-                  <div className="space-y-0.5 bg-experience-surface-2 px-2.5 py-2.5">
+                  <div className="space-y-0.5 overflow-hidden rounded-b-2xl bg-experience-surface-2 px-2.5 py-2.5">
                     <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
                       {displayTitle}
                     </p>

@@ -18,9 +18,9 @@ export default function ExperienceV2Layout({ children }: { children: ReactNode }
     <ExperienceOrderProvider>
       <ExperienceThemeProvider>
         <ExperienceAuthProvider>
-          <div className="fixed inset-0 z-[60] h-dvh max-h-dvh bg-background overflow-hidden flex flex-col">
+          <div className="relative z-[60] flex h-dvh min-h-dvh w-full flex-col overflow-hidden bg-background">
             <ExperienceSlideoutMenu />
-            <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">
+            <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
               {children}
             </div>
           </div>

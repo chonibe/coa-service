@@ -13,6 +13,9 @@ import { NextUnlock } from "./components/NextUnlock"
 import { MilestoneRewards } from "./components/MilestoneRewards"
 
 import { Button } from "@/components/ui"
+import { getCollectorPageContent } from "@/lib/content/site-content"
+
+const seriesDetailContent = getCollectorPageContent('seriesDetail')
 export default function SeriesDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const [series, setSeries] = useState<CollectorSeries | null>(null)
@@ -27,7 +30,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
         const res = await fetch(`/api/collector/series/${id}`)
         if (!res.ok) {
           const e = await res.json().catch(() => ({}))
-          throw new Error(e.message || "Failed to load series")
+          throw new Error(e.message || seriesDetailContent.errors.loadSeries)
         }
         const data: SeriesApiResponse = await res.json()
         setSeries(data.series)
@@ -68,7 +71,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
         <div className="text-center">
           <p className="text-destructive font-medium mb-4">Error: {error}</p>
           <Button variant="outline" asChild>
-            <Link href="/collector/dashboard">Back to Dashboard</Link>
+            <Link href="/collector/dashboard">{seriesDetailContent.errors.backToDashboard}</Link>
           </Button>
         </div>
       </div>
@@ -90,19 +93,19 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
     {
       threshold: Math.ceil(totalArtworks * 0.3),
       type: 'text',
-      title: 'Exclusive Text Block',
+      title: seriesDetailContent.milestones[0].title,
       isUnlocked: ownedArtworks >= Math.ceil(totalArtworks * 0.3)
     },
     {
       threshold: Math.ceil(totalArtworks * 0.6),
       type: 'image',
-      title: 'Behind-the-Scenes Photos',
+      title: seriesDetailContent.milestones[1].title,
       isUnlocked: ownedArtworks >= Math.ceil(totalArtworks * 0.6)
     },
     {
       threshold: totalArtworks,
       type: 'video',
-      title: 'Exclusive Artist Video',
+      title: seriesDetailContent.milestones[2].title,
       isUnlocked: ownedArtworks >= totalArtworks
     }
   ]
@@ -124,7 +127,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
               href={`/collector/artists/${series.vendor.name}`}
               className="text-xs text-muted-foreground hover:underline"
             >
-              by {series.vendor.name}
+              {seriesDetailContent.header.byArtist(series.vendor.name)}
             </Link>
           </div>
 
@@ -170,7 +173,7 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
         {/* Description (if exists) */}
         {series.description && (
           <div className="px-4 py-6 bg-muted/30 rounded-2xl">
-            <h3 className="text-sm font-semibold mb-2">About This Series</h3>
+            <h3 className="text-sm font-semibold mb-2">{seriesDetailContent.about}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {series.description}
             </p>
@@ -180,5 +183,3 @@ export default function SeriesDetailPage({ params }: { params: { id: string } })
     </div>
   )
 }
-
-

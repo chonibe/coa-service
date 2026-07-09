@@ -12,6 +12,7 @@ import {
   BellOff 
 } from "lucide-react"
 import { NotificationCard } from "./components/NotificationCard"
+import { getCollectorPageContent } from "@/lib/content/site-content"
 
 interface Notification {
   id: string
@@ -26,6 +27,8 @@ interface Notification {
   is_read: boolean
   created_at: string
 }
+
+const notificationsContent = getCollectorPageContent('notifications')
 
 /**
  * Notifications Page
@@ -65,7 +68,7 @@ export default function NotificationsPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch notifications')
+        throw new Error(data.error || notificationsContent.errorFallback)
       }
 
       setNotifications(data.notifications || [])
@@ -173,7 +176,7 @@ export default function NotificationsPage() {
           </button>
 
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            Notifications
+            {notificationsContent.title}
             {unreadCount > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-blue-500 text-white text-xs font-medium rounded-full">
                 {unreadCount}
@@ -224,7 +227,7 @@ export default function NotificationsPage() {
         {isLoading && (
           <div className="py-12 text-center">
             <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin mx-auto" />
-            <p className="text-sm text-zinc-500 mt-2">Loading notifications...</p>
+            <p className="text-sm text-zinc-500 mt-2">{notificationsContent.loading}</p>
           </div>
         )}
 
@@ -248,10 +251,10 @@ export default function NotificationsPage() {
               <BellOff className="w-8 h-8 text-zinc-400" />
             </div>
             <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-2">
-              No notifications
+              {notificationsContent.emptyTitle}
             </h3>
             <p className="text-sm text-zinc-500 max-w-xs mx-auto">
-              When artists reply to your posts or update their artworks, you'll see it here.
+              {notificationsContent.emptyBody}
             </p>
           </div>
         )}

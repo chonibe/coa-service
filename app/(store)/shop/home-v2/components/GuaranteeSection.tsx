@@ -3,8 +3,10 @@
 import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export function GuaranteeSection() {
   const reveal = useLandingScrollReveal({ mode: 'stagger', rootMargin: '0px 0px -15% 0px' })
@@ -27,4 +29,3 @@ export function GuaranteeSection() {
     </div>
   )
 }
-

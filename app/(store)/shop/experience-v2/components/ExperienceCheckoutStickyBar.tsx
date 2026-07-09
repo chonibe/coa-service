@@ -2,8 +2,9 @@
 
 import { Fragment, useMemo } from 'react'
 import Image from 'next/image'
-import { ChevronRight, Eye, LayoutGrid, Plus } from 'lucide-react'
+import { ChevronRight, Eye, Plus } from 'lucide-react'
 import { ExperienceOrderLampIcon } from './ExperienceOrderLampIcon'
+import { captureFunnelEvent, FunnelEvents, getDeviceType } from '@/lib/posthog'
 import { useExperienceOrder } from '../ExperienceOrderContext'
 import { useExperienceTheme } from '../ExperienceThemeContext'
 import { getShopifyImageUrl } from '@/lib/shopify/image-url'
@@ -266,7 +267,15 @@ export function ExperienceCheckoutStickyBar({
     ? selectedArtworks.some((product) => product.id === presentedArtwork.id)
     : false
   const showPresentedArtwork = Boolean(presentedArtwork && !presentedArtworkInCart)
-  const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection'
+  /**
+   * `hideCollectionStrip` docs promise it hides "the collection picker strip ... and the
+   * empty-collection CTA" — so this must also respect it. Without the `!hideCollectionStrip`
+   * guard, callers that hide the strip AND don't pass `onOpenPicker` (e.g. the experience v3
+   * Spline footer, which opens the picker from the header instead) would still flip into the
+   * "empty collection" branch below, whose CTA button silently renders `null` when there's no
+   * `onOpenPicker` — leaving the bar's bordered/background shell visible with nothing inside it.
+   */
+  const showEmptyCollectionCta = !hasArtworks && stripMode === 'collection' && !hideCollectionStrip
   /** Lamp in experience cart but user still needs to pick artwork(s). */
   const lampInCartNeedsArtwork = showEmptyCollectionCta && lampQuantity > 0
   const isCollectionButtonOnly = bottomBarVariant === 'collectionButtonOnly'
@@ -283,9 +292,9 @@ export function ExperienceCheckoutStickyBar({
   const finalTotal = Math.max(0, orderSubtotal - promoDiscount)
 
   const collectionOutlineButtonClass = cn(
-    'flex w-full shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-colors active:scale-95 outline-none sm:gap-2 sm:px-4 sm:py-3 sm:text-sm',
+    'flex w-full max-w-md mx-auto shrink-0 touch-manipulation items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition-colors active:scale-95 outline-none sm:text-sm',
     'focus-visible:ring-2 focus-visible:ring-offset-2',
-    'border-experience-cta/50 bg-transparent text-experience-cta hover:border-experience-cta/75 hover:bg-experience-cta/[0.08]',
+    'border-experience-cta/50 bg-card/95 text-foreground shadow-sm backdrop-blur-md hover:border-experience-cta/75 hover:bg-experience-cta/[0.06]',
     'focus-visible:ring-experience-cta focus-visible:ring-offset-background',
     collectionPickerOpen && 'ring-2 ring-experience-cta/70'
   )
@@ -319,6 +328,19 @@ export function ExperienceCheckoutStickyBar({
     'relative z-[3] flex w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform active:scale-[0.98] md:px-8',
     'bg-experience-cta text-white hover:bg-experience-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-experience-cta dark:text-neutral-900'
   )
+
+  const handleCheckoutPillClick = () => {
+    if (!orderDrawerOpen) {
+      captureFunnelEvent(FunnelEvents.checkout_step_viewed, {
+        step_name: 'collection_checkout_pill',
+        device_type: getDeviceType(),
+        artwork_count: selectedArtworks.length,
+        lamp_quantity: lampQuantity,
+        total_value: Math.round(finalTotal * 100) / 100,
+      })
+    }
+    openOrderBar()
+  }
 
   const slots = useMemo<Slot[]>(() => {
     const out: Slot[] = []
@@ -354,7 +376,7 @@ export function ExperienceCheckoutStickyBar({
           'fixed bottom-0 left-0 right-0 z-[52]',
           barPosition === 'fixed' && 'bg-transparent text-foreground',
           isCollectionButtonOnly &&
-            'border-t border-border bg-background/95 text-foreground backdrop-blur-md'
+            'border-0 bg-transparent text-foreground shadow-none backdrop-blur-none'
         )
 
   const barShellStyle =
@@ -381,12 +403,14 @@ export function ExperienceCheckoutStickyBar({
             onClick={handleCollectionClick}
             className={collectionOutlineButtonClass}
             aria-label={
-              collectionPickerOpen ? 'Close the collection picker' : 'Open the collection picker'
+              collectionPickerOpen ? 'Close the artwork picker' : 'Choose your art'
             }
             aria-expanded={collectionPickerOpen}
           >
-            <LayoutGrid className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-            The Collection
+            <span>Choose your Art</span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-experience-cta/15 text-experience-cta">
+              <Plus className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+            </span>
           </button>
         </div>
       </div>
@@ -530,12 +554,17 @@ export function ExperienceCheckoutStickyBar({
             {showCheckoutPill ? (
               <button
                 type="button"
-                onClick={openOrderBar}
+                onClick={handleCheckoutPillClick}
                 className={cn(checkoutPillClass, hideCheckoutOnDesktop && 'lg:hidden')}
-                aria-label={`Open your collection, total ${finalTotal.toFixed(2)} dollars`}
+                aria-label={
+                  orderDrawerOpen
+                    ? `Close checkout, total ${finalTotal.toFixed(2)} dollars`
+                    : `Open checkout, total ${finalTotal.toFixed(2)} dollars`
+                }
+                aria-expanded={orderDrawerOpen}
               >
                 <span className="whitespace-nowrap">
-                  Your Collection · ${formatPriceCompact(finalTotal)}
+                  Checkout · ${formatPriceCompact(finalTotal)}
                 </span>
                 <span aria-hidden className="text-base leading-none">
                   →

@@ -64,22 +64,22 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   const steps: Step[] = [
     {
       title: "Welcome",
-      description: "Welcome to your collection journey",
+      description: "A quick look at how your collector account works",
       icon: <Sparkles className="h-5 w-5" />,
     },
     {
       title: "Profile Setup",
-      description: "Tell us about yourself",
+      description: "Add the basic details you want on your account",
       icon: <Circle className="h-5 w-5" />,
     },
     {
       title: "Meet Your InkOGatchi",
-      description: "Your digital avatar companion",
+      description: "See how your account avatar changes over time",
       icon: <Gift className="h-5 w-5" />,
     },
     {
       title: "Discovery",
-      description: "Start exploring artworks",
+      description: "Start browsing artworks and building your collection",
       icon: <Eye className="h-5 w-5" />,
     },
   ]
@@ -350,11 +350,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                   <Card>
                     <CardHeader>
                       <Gift className="h-8 w-8 text-primary mb-2" />
-                      <CardTitle>Unlock Rewards</CardTitle>
+                      <CardTitle>Credits & rewards</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground">
-                        Earn credits and unlock exclusive perks
+                        Earn credits and use them on account perks over time
                       </p>
                     </CardContent>
                   </Card>
@@ -362,11 +362,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                   <Card>
                     <CardHeader>
                       <Eye className="h-8 w-8 text-primary mb-2" />
-                      <CardTitle>Exclusive Content</CardTitle>
+                      <CardTitle>Extra content</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground">
-                        Access hidden series and bonus content
+                        View hidden series and bonus content tied to what you own
                       </p>
                     </CardContent>
                   </Card>
@@ -378,7 +378,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
             {currentStep === 1 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base">Profile Information</Label>
+                  <Label className="text-base">Profile details</Label>
                   {autoSaveStatus === "saving" && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -395,7 +395,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="first_name">First Name</Label>
+                    <Label htmlFor="first_name">First name</Label>
                     <Input
                       id="first_name"
                       value={formData.first_name}
@@ -405,7 +405,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                     />
                   </div>
                   <div>
-                    <Label htmlFor="last_name">Last Name</Label>
+                    <Label htmlFor="last_name">Last name</Label>
                     <Input
                       id="last_name"
                       value={formData.last_name}
@@ -417,7 +417,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Label htmlFor="phone">Phone number (optional)</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -429,7 +429,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 </div>
 
                 <div>
-                  <Label htmlFor="bio">Bio (Optional)</Label>
+                  <Label htmlFor="bio">Bio (optional)</Label>
                   <Textarea
                     id="bio"
                     value={formData.bio}
@@ -460,32 +460,32 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                   <div className="inline-block p-6 rounded-full bg-primary/10 mb-4">
                     <Gift className="h-16 w-16 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-4">Meet Your InkOGatchi</h2>
+                  <h2 className="text-2xl font-bold mb-4">Meet your InkOGatchi</h2>
                   <p className="text-muted-foreground mb-6">
-                    Your digital avatar that evolves as you collect
+                    Your digital avatar changes as your collection grows.
                   </p>
                 </div>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>You Already Have 100 Credits! 🎉</CardTitle>
+                    <CardTitle>You already have 100 credits</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      As a welcome gift, you&apos;ve received 100 credits. Use them to customize your InkOGatchi avatar or save them for future purchases.
+                      We added 100 credits to your account. You can use them on InkOGatchi items now or save them for later.
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">Rookie Can (Level 1) - Your starting avatar</span>
+                        <span className="text-sm">Rookie Can (Level 1) is your starting avatar.</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">Earn credits by purchasing artworks</span>
+                        <span className="text-sm">Earn credits by purchasing artworks.</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">Evolve through stages: Rookie → Tagger → Artist → Legend</span>
+                        <span className="text-sm">It evolves through Rookie, Tagger, Artist, and Legend stages.</span>
                       </div>
                     </div>
                   </CardContent>
@@ -497,19 +497,19 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="text-center py-8">
-                  <h2 className="text-2xl font-bold mb-4">Your First Mission</h2>
+                  <h2 className="text-2xl font-bold mb-4">First Steps</h2>
                   <p className="text-muted-foreground mb-6">
-                    Start browsing the collection and see what pulls you in
+                    Browse the collection and see what pulls you in
                   </p>
                 </div>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Ready to Start Collecting?</CardTitle>
+                    <CardTitle>Ready to Browse?</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Browse original works, start your collection, and earn credits as you go. Every piece you pick moves you closer to member rewards.
+                      Browse original works, build credits as you go, and start shaping the account around what you collect.
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -522,7 +522,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                       </div>
                       <div className="flex items-center gap-2">
                         <ArrowRight className="h-4 w-4 text-primary" />
-                        <span className="text-sm">Track your collection and unlock series</span>
+                        <span className="text-sm">Track your collection and open related series over time</span>
                       </div>
                     </div>
                   </CardContent>
@@ -549,7 +549,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
               ) : (
                 <>
                   <Button variant="outline" onClick={handleSkip} disabled={isSubmitting}>
-                    Skip to Dashboard
+                    Skip to dashboard
                   </Button>
                   <Button onClick={handleComplete} disabled={isSubmitting}>
                     {isSubmitting ? (
@@ -559,7 +559,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                       </>
                     ) : (
                       <>
-                        Start Exploring
+                        Open dashboard
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </>
                     )}

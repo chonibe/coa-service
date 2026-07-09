@@ -135,7 +135,7 @@ export function PurchasesSection({ items, purchasesByArtist, purchasesBySeries, 
       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden p-12 text-center">
         <Award className="h-12 w-12 text-slate-200 mx-auto mb-4" />
         <CardTitle>No purchases yet</CardTitle>
-        <CardDescription>When you purchase art, it will appear here.</CardDescription>
+        <CardDescription>Your purchases will appear here.</CardDescription>
       </Card>
     )
   }
@@ -197,4 +197,3 @@ export function PurchasesSection({ items, purchasesByArtist, purchasesBySeries, 
     </div>
   )
 }
-

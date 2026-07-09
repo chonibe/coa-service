@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 type LazyTestimonialVideoProps = {
   src: string
@@ -120,7 +122,7 @@ export function TestimonialsSection() {
         {featuredImage ? (
           <aside className={styles.tmoFeaturedStory}>
             <h3 id="tmo-featured-quote-heading" className="sr-only">
-              Featured collector story — {featuredImage.author}
+              Featured collector note — {featuredImage.author}
             </h3>
             <figure className={styles.tmoFeaturedPhoto}>
               <Image

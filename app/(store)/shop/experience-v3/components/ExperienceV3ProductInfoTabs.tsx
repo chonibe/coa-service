@@ -7,6 +7,9 @@ import {
   experienceV3ArtworkInfoTabs,
   type ExperienceV3ProductInfoTab,
 } from '@/content/experience-v3-product-info'
+import { getStorePageContent } from '@/lib/content/site-content'
+
+const experienceV3Content = getStorePageContent('experienceV3')
 
 export function ExperienceV3ProductInfoTabs({ className }: { className?: string }) {
   const [activeId, setActiveId] = useState(experienceV3ArtworkInfoTabs[0]?.id ?? 'materials')
@@ -24,7 +27,7 @@ export function ExperienceV3ProductInfoTabs({ className }: { className?: string 
     >
       <div
         role="tablist"
-        aria-label="Product information"
+        aria-label={experienceV3Content.infoTabs.ariaLabel}
         className="touch-pan-x flex gap-0.5 overflow-x-auto border-b border-border px-2 pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {experienceV3ArtworkInfoTabs.map((tab) => (
@@ -42,7 +45,7 @@ export function ExperienceV3ProductInfoTabs({ className }: { className?: string 
           href="/shop/faq"
           className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
         >
-          Full FAQ
+          {experienceV3Content.infoTabs.faqCta}
         </Link>
       </p>
     </div>

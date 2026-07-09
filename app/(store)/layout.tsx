@@ -68,8 +68,10 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
   const isExperiencePage = pathname?.startsWith('/shop/experience') || pathname?.startsWith('/experience')
   const isLandingPage = pathname === '/'
   /** Pages that render their own unified shop top bar (no global BackBar). */
-  const hasOwnUnifiedTopBar =
-    pathname?.startsWith('/shop/explore-artists') ?? false
+  const hasOwnUnifiedTopBar = Boolean(
+    pathname?.startsWith('/shop/explore-artists') ||
+    pathname?.startsWith('/shop/experience')
+  )
   /** Full-bleed dark landing layouts (own nav); includes /shop/home-v2 and /shop/home-v2/gsap */
   const isHomeV2Page = pathname?.startsWith('/shop/home-v2')
   const isLandingOrStreetCollector =
@@ -171,7 +173,7 @@ function StoreLayoutInner({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      {!isHomeV2Page && (
+      {!isHomeV2Page && !isExperiencePage && (
         <Footer
           sections={footerSections}
           newsletterEnabled={false}

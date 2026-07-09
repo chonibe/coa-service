@@ -81,9 +81,9 @@ export default function ArtistNoteEditor({
               onChange={(e) => setContent(e.target.value)}
               placeholder="Dear Collector,
 
-When I set out to create this piece, I wanted to capture...
+I made this piece while thinking about...
 
-Write from the heart - this is your personal letter to those who collect your work."
+Use this space for a note about the work, how it came together, or what you want collectors to know."
               maxLength={2000}
               className="w-full min-h-[200px] bg-transparent border-0 focus:ring-0 resize-none font-serif text-lg text-gray-800 leading-relaxed placeholder:text-gray-400"
               style={{ fontFamily: 'Georgia, serif' }}
@@ -157,7 +157,7 @@ Write from the heart - this is your personal letter to those who collect your wo
         
         <h4 className="text-lg font-semibold text-gray-900 mb-1">Personal Note</h4>
         <p className="text-sm text-gray-600 mb-6">
-          Write a letter to your collectors
+          Write a note for the people collecting this work
         </p>
         
         {/* Quick-start textarea */}
@@ -172,7 +172,7 @@ I created this piece to..."
         />
         
         <p className="text-xs text-gray-400 mt-4">
-          Share your inspiration, process, or a heartfelt message
+          Share the process, context, or anything you want attached to the piece
         </p>
       </div>
 

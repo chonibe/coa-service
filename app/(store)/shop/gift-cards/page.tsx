@@ -90,7 +90,7 @@ function GiftCardsPageContent() {
       }
       throw new Error('No checkout URL returned')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : 'Please try again.')
     } finally {
       setIsCheckingOut(false)
     }
@@ -109,7 +109,7 @@ function GiftCardsPageContent() {
             Digital Gift Card
           </h1>
           <p className="text-neutral-600 dark:text-[#c4a0a0] mt-2 text-center">
-            Who&apos;s the lucky recipient?
+            Send credit for any artwork or lamp order.
           </p>
         </div>
 
@@ -292,7 +292,7 @@ function GiftCardsPageContent() {
               </>
             ) : (
               <>
-                Buy Gift Card — ${(amountCents / 100).toFixed(2)}
+                Buy gift card - ${(amountCents / 100).toFixed(2)}
                 <ChevronRight className="w-5 h-5 ml-2" />
               </>
             )}
@@ -322,9 +322,9 @@ function GiftCardsPageContent() {
         <div className="mt-10 p-4 rounded-lg bg-neutral-50 dark:bg-[#201c1c]/50">
           <h3 className="font-semibold text-neutral-900 dark:text-[#f0e8e8] mb-2">How it works</h3>
           <ol className="text-sm text-neutral-600 dark:text-[#c4a0a0] space-y-1 list-decimal list-inside">
-            <li>Complete checkout and we&apos;ll email the unique code {sendToday ? '' : 'on your chosen date'}
+            <li>Finish checkout and we will email the unique code {sendToday ? '' : 'on your chosen date'}
             </li>
-            <li>Recipient enters the code in &quot;Add Promo Code or Gift Card&quot; at checkout</li>
+            <li>The recipient enters the code in &quot;Add Promo Code or Gift Card&quot; at checkout</li>
           </ol>
         </div>
       </section>

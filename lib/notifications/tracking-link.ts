@@ -54,15 +54,15 @@ export const STAGE_MESSAGES: Record<number, {
   // Track status 112 = Out for Delivery
   112: {
     emoji: '🏃',
-    headline: 'Out for Delivery Today!',
+    headline: 'Out for delivery today',
     subject: 'Out for delivery today',
-    description: 'Exciting news! Your package is out for delivery and should arrive today.',
+    description: 'Your package is out for delivery and should arrive today.',
     badgeColor: '#f59e0b',
   },
   // Track status 121 = Delivered
   121: {
     emoji: '✅',
-    headline: 'Your Package Has Been Delivered!',
+    headline: 'Your package has been delivered',
     subject: 'Your package has been delivered',
     description: 'Your package has arrived! We hope you love it.',
     badgeColor: '#22c55e',
@@ -70,7 +70,7 @@ export const STAGE_MESSAGES: Record<number, {
   // Track status 131 = Alert
   131: {
     emoji: '⚠️',
-    headline: 'Delivery Alert - Action May Be Required',
+    headline: 'Delivery alert',
     subject: 'Delivery alert - action may be required',
     description: 'There\'s an update about your delivery that may require your attention.',
     badgeColor: '#ef4444',
@@ -238,7 +238,7 @@ export function generateTrackingUpdateEmailHtml(data: {
           <div style="text-align: center; margin-top: 32px;">
             <a href="${data.trackingUrl}" 
                style="display: inline-block; background-color: ${data.primaryColor}; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">
-              Track Your Order
+              Track your order
             </a>
           </div>
           
@@ -306,4 +306,3 @@ export async function sendTrackingUpdateEmail(payload: TrackingEmailPayload) {
     html,
   })
 }
-

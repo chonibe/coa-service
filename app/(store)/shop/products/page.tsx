@@ -22,17 +22,19 @@ import { ShopFilters } from '../components/ShopFilters'
 import { ProductCardItem } from '../components/ProductCardItem'
 import { cn } from '@/lib/utils'
 import { ProductListingJsonLd } from '@/components/seo/ProductListingJsonLd'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 export const metadata: Metadata = {
   metadataBase: getCanonicalSiteOrigin(),
   title: 'Street art prints & limited editions | Shop | Street Collector',
   description:
-    'Browse limited edition street art prints and artworks for the Street Collector lamp.',
+    'Browse limited edition street art prints and artworks made for the Street Collector lamp.',
   alternates: { canonical: '/shop/products' },
 }
 
 // Force dynamic rendering to avoid build-time API calls
 export const dynamic = 'force-dynamic'
+const productsContent = getStorePageContent('products')
 
 // =============================================================================
 // TYPES
@@ -76,7 +78,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   // Fetch products with error handling
   let products: ShopifyProduct[] = []
   let hasNextPage = false
-  let title = 'All Artworks'
+  let title = productsContent.header.defaultTitle
   let collectionImage: string | null = null
   let collectionDescription: string | null = null
   let collections: { handle: string; title: string }[] = []
@@ -161,20 +163,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </svg>
               </div>
               <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-foreground tracking-[-0.02em] mb-4">
-                Shop Unavailable
+                {productsContent.error.title}
               </h1>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Unable to load products from the store. This may be due to a configuration issue with the Shopify Storefront API.
+                {productsContent.error.body}
               </p>
               <p className="text-sm text-[#f83a3a] mb-6 font-mono bg-[#f83a3a]/5 py-2 px-4 rounded-lg inline-block">
                 {apiError}
               </p>
               <div className="flex items-center justify-center gap-4">
                 <Link href="/shop/home">
-                  <Button variant="primary">Go Home</Button>
+                  <Button variant="primary">{productsContent.error.goHome}</Button>
                 </Link>
                 <Link href="/shop/products">
-                  <Button variant="outline">Try Again</Button>
+                  <Button variant="outline">{productsContent.error.tryAgain}</Button>
                 </Link>
               </div>
             </div>
@@ -214,7 +216,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <Container maxWidth="default">
             <div className="text-center py-4 sm:py-8">
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-2">
-                Products
+                {productsContent.header.eyebrow}
               </p>
               <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-[-0.02em]">
                 {title}
@@ -235,7 +237,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Back to all artworks
+              {productsContent.header.backToAll}
             </Link>
           </Container>
         </SectionWrapper>
@@ -259,10 +261,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <Container maxWidth="default">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-heading text-lg font-semibold text-foreground tracking-[-0.01em]">
-                Browse by Series
+                {productsContent.series.title}
               </h3>
               <Link href="/shop/series" className="text-sm font-medium text-experience-highlight hover:underline">
-                View all series
+                {productsContent.series.viewAll}
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
@@ -290,7 +292,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       )}
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-1">{series.name}</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">{series.total_artworks} artworks</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{series.total_artworks} {productsContent.series.artworksSuffix}</p>
                   </div>
                 </Link>
               ))}
@@ -313,20 +315,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </svg>
               </div>
               <h2 className="font-heading text-2xl font-semibold text-foreground mb-2">
-                No products found
+                {productsContent.empty.title}
               </h2>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Try adjusting your filters or search terms
+                {productsContent.empty.body}
               </p>
               <Link href="/shop/products">
-                <Button variant="primary">View All Artworks</Button>
+                <Button variant="primary">{productsContent.empty.ctaLabel}</Button>
               </Link>
             </div>
           ) : (
             <>
               {/* Product count */}
               <div className="mb-6 text-sm text-muted-foreground">
-                Showing {products.length} {products.length === 1 ? 'product' : 'products'}
+                {productsContent.counts.showing(products.length)}
               </div>
               
               {/* Product grid: 2 cols on mobile, 3 on desktop (matching live site) */}
@@ -358,19 +360,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <span className="hidden sm:inline">Previous</span>
+                      <span className="hidden sm:inline">{productsContent.counts.previous}</span>
                     </Link>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-full cursor-not-allowed">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <span className="hidden sm:inline">Previous</span>
+                      <span className="hidden sm:inline">{productsContent.counts.previous}</span>
                     </span>
                   )}
                   
                   <span className="text-sm text-muted-foreground px-2">
-                    Page {currentPage}
+                    {productsContent.counts.page(currentPage)}
                   </span>
                   
                   {hasNextPage ? (
@@ -382,14 +384,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       }).toString()}`}
                       className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-foreground border border-border rounded-full hover:border-foreground/40 transition-colors"
                     >
-                      <span className="hidden sm:inline">Next</span>
+                      <span className="hidden sm:inline">{productsContent.counts.next}</span>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </Link>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-4 sm:px-6 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-full cursor-not-allowed">
-                      <span className="hidden sm:inline">Next</span>
+                      <span className="hidden sm:inline">{productsContent.counts.next}</span>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>

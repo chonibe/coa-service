@@ -11,6 +11,7 @@ import {
 } from '@/components/impact'
 import { getProxiedImageUrl } from '@/lib/proxy-cdn-url'
 import { artistPortraitCoverStyle } from '@/lib/shopify/artist-collection-image'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 /**
  * Artists Listing Page
@@ -25,6 +26,8 @@ interface Artist {
   image?: string
   imageObjectPosition?: string
 }
+
+const artistsContent = getStorePageContent('artists')
 
 export default function ArtistsPage() {
   const [artists, setArtists] = useState<Artist[]>([])
@@ -75,8 +78,8 @@ export default function ArtistsPage() {
       <SectionWrapper spacing="lg" background="default">
         <Container maxWidth="default">
           <SectionHeader
-            title="Our Artists"
-            subtitle="Meet the artists behind the limited editions"
+            title={artistsContent.hero.title}
+            subtitle={artistsContent.hero.subtitle}
             alignment="center"
           />
           
@@ -114,7 +117,7 @@ export default function ArtistsPage() {
                 
                 {/* Artwork Count */}
                 <p className="text-sm text-muted-foreground mt-1">
-                  {artist.productCount} {artist.productCount === 1 ? 'artwork' : 'artworks'}
+                  {artist.productCount} {artist.productCount === 1 ? artistsContent.counts.artwork : artistsContent.counts.artworks}
                 </p>
               </Link>
             ))}
@@ -122,7 +125,7 @@ export default function ArtistsPage() {
           
           {artists.length === 0 && !loading && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No artists found</p>
+              <p className="text-muted-foreground">{artistsContent.counts.empty}</p>
             </div>
           )}
         </Container>

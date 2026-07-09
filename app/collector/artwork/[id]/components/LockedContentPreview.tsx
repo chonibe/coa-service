@@ -68,7 +68,7 @@ const LockedContentPreview: React.FC<LockedContentPreviewProps> = ({ contentBloc
 
       {/* Heading */}
       <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-        Exclusive Content Awaits
+        More content is waiting
       </h3>
 
       {/* Count */}
@@ -76,7 +76,7 @@ const LockedContentPreview: React.FC<LockedContentPreviewProps> = ({ contentBloc
         <span className="text-indigo-600 font-bold text-lg">
           {contentBlocks.length}
         </span>{" "}
-        {contentBlocks.length === 1 ? "piece" : "pieces"} of exclusive content
+        {contentBlocks.length === 1 ? "piece" : "pieces"} of extra content
       </p>
 
       {/* Content Type Icons */}
@@ -109,7 +109,7 @@ const LockedContentPreview: React.FC<LockedContentPreviewProps> = ({ contentBloc
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-white/95 backdrop-blur-sm px-5 py-2.5 rounded-full border border-gray-200 shadow-md">
             <p className="text-gray-700 font-medium text-sm">
-              Authenticate to unlock
+              Authenticate to open
             </p>
           </div>
         </div>

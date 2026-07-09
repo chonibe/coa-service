@@ -387,10 +387,10 @@ export default function SlidesPage() {
                   Create First Slide
                 </Button>
                 <ul className="text-sm text-muted-foreground mt-6 space-y-1">
-                  <li>• The story behind the piece</li>
+                  <li>• Context around the piece</li>
                   <li>• Your creative process</li>
                   <li>• Close-up details</li>
-                  <li>• A personal message to collectors</li>
+                  <li>• A note for collectors</li>
                 </ul>
               </CardContent>
             </Card>

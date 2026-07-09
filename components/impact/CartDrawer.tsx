@@ -106,18 +106,6 @@ const CartDrawer = React.forwardRef<HTMLDivElement, CartDrawerProps>(
       return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, onClose])
 
-    // Prevent scroll when open
-    React.useEffect(() => {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
-      return () => {
-        document.body.style.overflow = ''
-      }
-    }, [isOpen])
-
     const lines = (cart?.lines?.edges ?? []).map((edge) => edge.node)
     const isEmpty = lines.length === 0
 

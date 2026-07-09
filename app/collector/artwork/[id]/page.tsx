@@ -170,8 +170,8 @@ export default function CollectorArtworkPage() {
           }
           if (response.status === 403) {
             if (previewMode) {
-              throw new Error(
-                "This artwork belongs to another collector. Ask them to sign in to unlock the authenticated experience.",
+            throw new Error(
+                "This artwork belongs to another collector. Ask them to sign in to open the authenticated view.",
               )
             }
             throw new Error("You don't have access to this artwork. Please make sure you're logged in with the correct account.")
@@ -367,7 +367,7 @@ export default function CollectorArtworkPage() {
         <div className="flex gap-2 mt-4">
           <Button onClick={() => router.push("/collector/dashboard")} variant="default">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to dashboard
           </Button>
           <Button 
             onClick={() => window.location.reload()} 
@@ -555,9 +555,9 @@ export default function CollectorArtworkPage() {
         {/* Shared Story Timeline */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">The Story</h2>
+            <h2 className="text-2xl font-bold">Shared Posts</h2>
             <Badge variant="outline" className="text-xs">
-              Shared Experience
+              Collector posts
             </Badge>
           </div>
           <SharedStoryTimeline

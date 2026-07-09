@@ -102,7 +102,7 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
         toast({ title: 'Purchase failed', description: data.error, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Something went wrong', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Please try again.', variant: 'destructive' })
     } finally {
       setIsUpdating(false)
     }
@@ -144,7 +144,7 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
               Ink-O-Gatchi
               <Badge variant="outline" className="text-primary font-bold">LVL {level}</Badge>
             </CardTitle>
-            <CardDescription>Customize your collectible cans</CardDescription>
+            <CardDescription>Customize the avatar tied to your collector account.</CardDescription>
           </div>
           <div className="flex gap-2">
             <Dialog>
@@ -291,7 +291,7 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">Experience Points</span>
+                <span className="font-medium">Experience points</span>
                 <span className="text-muted-foreground">{xpInfo.xpIntoLevel} / {xpInfo.xpRequiredForNextLevel} XP</span>
               </div>
               <Progress value={xpInfo.progress} className="h-3" />
@@ -299,11 +299,11 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-background/60 p-3 rounded-xl border border-primary/10">
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Ink Credits</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Ink credits</p>
                 <p className="text-xl font-black text-primary">{xpInfo.totalCredits || 0}</p>
               </div>
               <div className="bg-background/60 p-3 rounded-xl border border-primary/10">
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Total Earned</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Total earned</p>
                 <p className="text-xl font-black text-muted-foreground">{xpInfo.totalCreditsEarned || 0}</p>
               </div>
             </div>
@@ -312,9 +312,9 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
               <Button size="sm" className="w-full justify-between group" onClick={() => (window.location.href = '/collector/perks')}>
                 <span className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-amber-500" />
-                  Redeem Rewards
+                  Redeem rewards
                 </span>
-                <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity uppercase font-bold">New Perks Available</span>
+                <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity uppercase font-bold">New rewards available</span>
               </Button>
             </div>
           </div>
@@ -323,4 +323,3 @@ export function InkOGatchiWidget({ userId, email }: InkOGatchiWidgetProps) {
     </Card>
   )
 }
-

@@ -203,6 +203,13 @@ interface Spline3DPreviewProps {
   parentScrollMode?: "contain" | "isolate"
   /** Reel `overflow-y` container — required for reliable scroll when `parentScrollMode="contain"` (native wheel often never reaches it over canvas). */
   reelScrollContainerRef?: RefObject<HTMLElement | null>
+  /**
+   * Extra CSS zoom applied to the rendered canvas in `minimal` mode only, via `transform: scale()` —
+   * purely visual crop/zoom of the existing render, does NOT touch canvas/container box size or the
+   * Spline scene's own camera. Defaults to 1 (no change) so every other `minimal` consumer is
+   * unaffected unless it opts in.
+   */
+  minimalZoomScale?: number
 }
 
 export function Spline3DPreview({ 
@@ -241,6 +248,7 @@ export function Spline3DPreview({
   cameraFeedCssBackdrop = null,
   rotateToSide = null,
   rotateTrigger = 0,
+  minimalZoomScale = 1,
   onFrontSideSettled,
   previewQuarterTurns = 0,
   parentScrollMode = "isolate",
@@ -2975,7 +2983,7 @@ export function Spline3DPreview({
             backgroundColor: cameraFeedMode ? (cameraFeedCssBackdrop ?? 'transparent') : shellHex,
             pointerEvents: 'none',
             touchAction: 'none',
-            transform: `translateY(-3%) rotate(${normalizedTurns * 90}deg)`,
+            transform: `translateY(-3%) rotate(${normalizedTurns * 90}deg) scale(${minimalZoomScale})`,
             transformOrigin: "50% 50%",
             transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}

@@ -342,7 +342,7 @@ export default function CollectorProfilePage() {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                When friends sign up with your link, you both get 500 bonus credits!
+                When friends sign up with your link, you both get 500 credits.
               </p>
             </CardContent>
           </Card>

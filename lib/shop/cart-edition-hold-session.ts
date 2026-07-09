@@ -5,9 +5,10 @@ import { createClient as createRouteClient } from '@/lib/supabase-server'
 import { CART_EDITION_HOLD_SESSION_COOKIE } from '@/lib/shop/cart-edition-hold-config'
 
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30
+type CookieStore = Awaited<ReturnType<typeof cookies>>
 
 export async function getCartEditionHoldSessionUserId(
-  cookieStore: ReturnType<typeof cookies>
+  cookieStore: CookieStore
 ): Promise<string | null> {
   const supabase = createRouteClient(cookieStore)
   const {
@@ -28,7 +29,7 @@ export function holderKeyForAnonymousSession(sessionId: string): string {
 
 /** Resolve holder key from auth session or anonymous cookie. */
 export async function resolveCartEditionHoldHolderKey(
-  cookieStore: ReturnType<typeof cookies>
+  cookieStore: CookieStore
 ): Promise<{ holderKey: string; setAnonymousSessionId?: string }> {
   const userId = await getCartEditionHoldSessionUserId(cookieStore)
   if (userId) {

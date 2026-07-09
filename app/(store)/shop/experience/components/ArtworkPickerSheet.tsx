@@ -566,18 +566,6 @@ export function ArtworkPickerSheet({
     return () => observer.disconnect()
   }, [isOpen, onLoadMore, hasMore])
 
-  useEffect(() => {
-    if (presentation === 'pushPanel' && isDesktopRail) return
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen, presentation, isDesktopRail])
-
   const rows = useMemo(() => buildArtworkRowsByArtist(products), [products])
 
   const cardSelectHandler = useCallback(

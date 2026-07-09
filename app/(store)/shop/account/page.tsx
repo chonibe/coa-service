@@ -22,6 +22,7 @@ import { useShopAuthContext } from '@/lib/shop/ShopAuthContext'
 import { AuthSlideupMenu } from '@/components/shop/auth/AuthSlideupMenu'
 import { AddressModal } from '@/components/shop/checkout'
 import type { CheckoutAddress } from '@/lib/shop/CheckoutContext'
+import { getStorePageContent } from '@/lib/content/site-content'
 
 /**
  * Shop Account Page
@@ -35,6 +36,7 @@ const SHOP_EXPERIENCE_HREF = '/shop/experience'
 
 /** Customer support inbox (matches login/help copy). */
 const SHOP_SUPPORT_EMAIL = 'support@thestreetcollector.com'
+const accountContent = getStorePageContent('account')
 
 interface Order {
   id: string
@@ -505,18 +507,18 @@ export default function AccountPage() {
                     </svg>
                   </div>
                   <h1 className="font-heading text-2xl font-semibold text-foreground mb-2">
-                    Sign in to your account
+                    {accountContent.signedOut.hero.title}
                   </h1>
                   <p className="text-muted-foreground mb-6">
-                    Access your order history and manage your profile.
+                    {accountContent.signedOut.hero.subtitle}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button variant="primary" size="lg" onClick={() => setAuthOpen(true)}>
-                      Sign In
+                      {accountContent.signedOut.primaryCta}
                     </Button>
                     <Link href={SHOP_EXPERIENCE_HREF}>
-                      <Button variant="outline" size="lg">
-                        Continue Shopping
+                    <Button variant="outline" size="lg">
+                        {accountContent.signedOut.secondaryCta}
                       </Button>
                     </Link>
                   </div>
@@ -549,7 +551,7 @@ export default function AccountPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
               <h1 className="font-heading text-impact-h2 xl:text-impact-h2-lg font-semibold text-foreground tracking-[-0.02em]">
-                My Account
+                {accountContent.header.title}
               </h1>
               {profile?.email && (
                 <p className="text-muted-foreground mt-1">{profile.email}</p>
@@ -566,7 +568,7 @@ export default function AccountPage() {
               )}
               <Link href={SHOP_EXPERIENCE_HREF}>
                 <Button variant="outline" size="sm">
-                  Continue Shopping
+                  {accountContent.header.secondaryCta}
                 </Button>
               </Link>
               <Button
@@ -581,7 +583,7 @@ export default function AccountPage() {
                   }
                 }}
               >
-                Logout
+                {accountContent.header.logout}
               </Button>
             </div>
           </div>
@@ -597,7 +599,7 @@ export default function AccountPage() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Order History
+              {accountContent.tabs.orders}
             </button>
             <button
               type="button"
@@ -608,7 +610,7 @@ export default function AccountPage() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Profile
+              {accountContent.tabs.profile}
             </button>
           </div>
 
@@ -632,13 +634,13 @@ export default function AccountPage() {
                       </svg>
                     </div>
                     <h2 className="font-heading text-xl font-semibold text-card-foreground mb-2">
-                      No orders yet
+                      {accountContent.orders.empty.title}
                     </h2>
                     <p className="text-muted-foreground mb-6">
-                      When you make a purchase, your orders will appear here.
+                      {accountContent.orders.empty.body}
                     </p>
                     <Link href={SHOP_EXPERIENCE_HREF}>
-                      <Button variant="primary">Start Shopping</Button>
+                      <Button variant="primary">{accountContent.orders.cta}</Button>
                     </Link>
                   </div>
                 </Card>
@@ -743,7 +745,7 @@ export default function AccountPage() {
                     {order.shippingAddress && (
                       <div className="pt-4 border-t border-border">
                         <p className="text-sm font-medium text-foreground mb-1">
-                          Shipping Address
+                          {accountContent.orders.shippingAddressTitle}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {order.shippingAddress.name}<br />
@@ -763,7 +765,7 @@ export default function AccountPage() {
                       onClick={() => fetchOrders(orders.length, true)}
                       disabled={loadMoreLoading}
                     >
-                      {loadMoreLoading ? 'Loading...' : 'Load more orders'}
+                      {loadMoreLoading ? accountContent.orders.loadingMore : accountContent.orders.loadMore}
                     </Button>
                   </div>
                 )}
@@ -776,7 +778,7 @@ export default function AccountPage() {
           {activeTab === 'profile' && profile && (
             <div className="space-y-6">
               <Card variant="default" padding="lg" className="bg-card text-card-foreground">
-                <CardHeader title="Profile Information" />
+                <CardHeader title={accountContent.profile.title} />
                 <CardContent className="mt-6">
                   <form
                     key={`${profile.email}-${profile.firstName ?? ''}-${profile.lastName ?? ''}-${profile.phone ?? ''}`}
@@ -784,34 +786,34 @@ export default function AccountPage() {
                     className="space-y-6 max-w-md"
                   >
                     <Input
-                      label="Email"
+                      label={accountContent.profile.fields.email.label}
                       type="email"
                       value={profile.email}
                       disabled
-                      hint="Email cannot be changed"
+                      hint={accountContent.profile.fields.email.hint}
                     />
                     
                     <div className="grid grid-cols-2 gap-4">
                       <Input
-                        label="First Name"
+                        label={accountContent.profile.fields.firstName.label}
                         name="firstName"
                         defaultValue={profile.firstName || ''}
-                        placeholder="Enter first name"
+                        placeholder={accountContent.profile.fields.firstName.placeholder}
                       />
                       <Input
-                        label="Last Name"
+                        label={accountContent.profile.fields.lastName.label}
                         name="lastName"
                         defaultValue={profile.lastName || ''}
-                        placeholder="Enter last name"
+                        placeholder={accountContent.profile.fields.lastName.placeholder}
                       />
                     </div>
 
                     <Input
-                      label="Phone"
+                      label={accountContent.profile.fields.phone.label}
                       name="phone"
                       type="tel"
                       defaultValue={profile.phone || ''}
-                      placeholder="Enter phone number"
+                      placeholder={accountContent.profile.fields.phone.placeholder}
                     />
 
                     <div className="flex gap-3">
@@ -820,7 +822,7 @@ export default function AccountPage() {
                         variant="primary"
                         loading={profileLoading}
                       >
-                        Save Changes
+                        {accountContent.profile.submit}
                       </Button>
                     </div>
                   </form>
@@ -829,10 +831,10 @@ export default function AccountPage() {
 
               {/* Addresses Section - multiple saved addresses */}
               <Card variant="default" padding="lg" className="bg-card text-card-foreground">
-                <CardHeader title="Saved Addresses" />
+                <CardHeader title={accountContent.profile.addresses.title} />
                 <CardContent className="mt-6">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Add and manage your addresses. They will appear at checkout so you can choose quickly.
+                    {accountContent.profile.addresses.body}
                   </p>
                   <div className="space-y-4">
                     {(savedAddresses?.addresses ?? []).map(({ id, address: addr }) => (
@@ -858,7 +860,7 @@ export default function AccountPage() {
                             }}
                             disabled={addressesLoading}
                           >
-                            Edit
+                            {accountContent.profile.addresses.edit}
                           </Button>
                           <Button
                             variant="outline"
@@ -867,7 +869,7 @@ export default function AccountPage() {
                             disabled={addressesLoading}
                             className="border-destructive/30 text-destructive hover:bg-destructive/10"
                           >
-                            Delete
+                            {accountContent.profile.addresses.delete}
                           </Button>
                         </div>
                       </div>
@@ -881,7 +883,7 @@ export default function AccountPage() {
                       }}
                       disabled={addressesLoading}
                     >
-                      Add Address
+                      {accountContent.profile.addresses.add}
                     </Button>
                   </div>
                 </CardContent>

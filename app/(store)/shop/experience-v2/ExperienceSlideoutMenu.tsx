@@ -14,6 +14,7 @@ import { useExperienceOrder } from './ExperienceOrderContext'
 import { useExperienceTheme } from './ExperienceThemeContext'
 import { useExperienceAuthContext } from './ExperienceAuthContext'
 import { cn } from '@/lib/utils'
+import { shopUnifiedTopBarSpacerHeightClass } from '@/lib/shop/shop-unified-top-bar-layout'
 
 const ONBOARDING_PATH_PREFIX = '/shop/experience-v2/onboarding'
 const CANONICAL_EXPERIENCE_PATH = '/shop/experience'
@@ -90,6 +91,7 @@ export function ExperienceSlideoutMenu() {
   return (
     <>
       <ShopUnifiedTopBar
+        position="fixed"
         centerContent={headerCenterContent}
         headerTrailingContent={headerTrailingContent}
         rightSlot={rightSlot}
@@ -124,6 +126,7 @@ export function ExperienceSlideoutMenu() {
           chooseYourArtIcon: isExperienceV3 ? LayoutGrid : undefined,
         }}
       />
+      <div className={cn(shopUnifiedTopBarSpacerHeightClass, 'shrink-0')} aria-hidden />
 
       {!isOnOnboarding && SHOW_SHIPPING_PROMO && (
         <div

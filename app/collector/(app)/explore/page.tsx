@@ -8,6 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCollectorPageContent } from '@/lib/content/site-content'
 
 // ============================================================================
 // Collector Explore Tab — Phase 1.4
@@ -18,9 +19,10 @@ import { cn } from '@/lib/utils'
 // Old source: app/collector/discover/page.tsx
 // ============================================================================
 
+const appExploreContent = getCollectorPageContent('appExplore')
 const exploreTabs: SubTab[] = [
-  { id: 'discover', label: 'Discover', href: '/collector/explore' },
-  { id: 'following', label: 'Following', href: '/collector/explore/following' },
+  { id: 'discover', label: appExploreContent.tabs.discover, href: '/collector/explore' },
+  { id: 'following', label: appExploreContent.tabs.following, href: '/collector/explore/following' },
 ]
 
 interface MarketplaceProduct {
@@ -92,7 +94,7 @@ function ExploreContent() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search artworks, artists, series..."
+            placeholder={appExploreContent.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-impact-block-sm text-sm font-body text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-impact-primary/20"
@@ -111,7 +113,7 @@ function ExploreContent() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
-              All Artists
+              {appExploreContent.allArtists}
             </button>
             {artists.map((artist) => (
               <button
@@ -144,7 +146,7 @@ function ExploreContent() {
         ) : products.length === 0 ? (
           <div className="text-center py-16">
             <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-400 font-body">No artworks found</p>
+            <p className="text-sm text-gray-400 font-body">{appExploreContent.empty}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -170,7 +172,7 @@ function ExploreContent() {
                   )}
                   {product.isNew && (
                     <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-bold">
-                      New
+                      {appExploreContent.newBadge}
                     </span>
                   )}
                 </div>
@@ -189,7 +191,7 @@ function ExploreContent() {
                   <span className="text-xs font-bold text-gray-900 font-body">
                     {product.price != null
                       ? `${product.currency} ${product.price.toFixed(2)}`
-                      : 'Price TBA'}
+                      : appExploreContent.priceTba}
                   </span>
                 </div>
               </Link>
@@ -206,7 +208,7 @@ export default function CollectorExplorePage() {
     <Suspense
       fallback={
         <div className="px-4 py-8 text-center text-sm text-gray-400 font-body">
-          Loading...
+          {appExploreContent.loading}
         </div>
       }
     >

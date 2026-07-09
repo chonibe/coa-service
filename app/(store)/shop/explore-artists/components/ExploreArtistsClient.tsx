@@ -10,7 +10,7 @@ import { artistPortraitCoverStyle } from '@/lib/shopify/artist-collection-image'
 import landingStyles from '../../home-v2/landing.module.css'
 import exploreStyles from '../explore-artists.module.css'
 import { useLandingScrollReveal } from '../../home-v2/hooks/useLandingScrollReveal'
-import { exploreArtistsContent } from '@/content/explore-artists'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { MobileStickyCta } from '@/components/shop/MobileStickyCta'
 import { ShopUnifiedTopBar } from '@/components/shop/navigation/ShopUnifiedTopBar'
 import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollectionCartChip'
@@ -22,6 +22,8 @@ import {
   formatTrustStatWithSuffix,
   resolveTrustStatCount,
 } from '@/lib/shop/trust-stat-placeholders'
+
+const exploreArtistsContent = getStorePageContent('exploreArtists')
 function shortBio(s: string | undefined, max = 220): string | undefined {
   if (!s) return undefined
   const t = s.trim().replace(/\s+/g, ' ')
@@ -205,7 +207,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
             <p className={exploreStyles.heroDesc}>
               {formatTrustStatWithSuffix(artists.length, TRUST_STAT_PLACEHOLDERS.artists)} independent artists across{' '}
               {formatTrustStatWithSuffix(null, TRUST_STAT_PLACEHOLDERS.countries)} countries. Each name here ties to
-              real street or studio practice, not a stock library. Open a profile for the story and every edition we
+              real street or studio practice, not a stock library. Open a profile for the bio and every edition we
               carry.
             </p>
             <div className={exploreStyles.heroStats}>
@@ -275,7 +277,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
             className={cn(exploreStyles.filterBtn, filter === 'withBio' && exploreStyles.filterBtnActive)}
             onClick={() => setFilter('withBio')}
           >
-            With a story <span className="sr-only">({withBioCount})</span>
+            With a bio <span className="sr-only">({withBioCount})</span>
           </button>
         </div>
 
@@ -313,7 +315,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
                 <div className={exploreStyles.featuredMeta}>{spotlightMeta || 'Street Collector · Limited editions'}</div>
                 <h3 className={exploreStyles.featuredName}>{spotlight.name}</h3>
                 <p className={exploreStyles.featuredHook}>
-                  Open the full profile, story, and works.
+                  Open the full profile, bio, and works.
                 </p>
                 {spotlightBio ? <p className={exploreStyles.featuredBio}>{spotlightBio}</p> : null}
                 {spotlightPullQuote ? (
@@ -348,7 +350,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
               </h2>
             </div>
             <p className={exploreStyles.artistsHeaderNote}>
-              Open any card to go straight into the full artist profile with story, press, and works.
+              Open any card to go straight into the full artist profile with bio, press, and works.
             </p>
           </div>
 
@@ -514,7 +516,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
 
         <section className={exploreStyles.finalCta} aria-label="Final CTA">
           <div className={exploreStyles.philosophyEyebrow} style={{ marginBottom: 24 }}>
-            Ready when you are
+            {exploreArtistsContent.finalCta.eyebrow}
           </div>
           <h2 className={exploreStyles.finalTitle}>
             You&apos;ve met the artists.
@@ -526,7 +528,7 @@ export function ExploreArtistsClient({ artists, experienceUrl, requestedArtistSl
           </p>
           <div className={exploreStyles.finalBtns}>
             <Link href={experienceUrl} className={landingStyles.btnPrimary} style={{ marginBottom: 0 }}>
-              Start your collection
+              Browse collection
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>

@@ -58,6 +58,7 @@ const SHOP_ROUTE_RESERVED_HANDLES = new Set([
   'gift-cards',
   'home',
   'home-v2',
+  'home-v3',
   'membership',
   'osmo-demo',
   'pages',
@@ -330,6 +331,11 @@ export async function middleware(request: NextRequest) {
   // /explore-artists → /shop/explore-artists (artist directory)
   if (pathname === '/explore-artists' || pathname === '/explore-artists/') {
     return NextResponse.redirect(new URL(`/shop/explore-artists${search}`, request.url), 308)
+  }
+
+  // /home-v3 → /shop/home-v3 (standalone concept landing)
+  if (pathname === '/home-v3' || pathname === '/home-v3/') {
+    return NextResponse.redirect(new URL(`/shop/home-v3${search}`, request.url), 308)
   }
 
   if (pathname === '/shop/artists' || pathname === '/shop/artists/') {

@@ -4,8 +4,10 @@ import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import styles from '../landing.module.css'
-import { homeV2LandingContent } from '@/content/home-v2-landing'
+import { getStorePageContent } from '@/lib/content/site-content'
 import { useLandingScrollReveal } from '../hooks/useLandingScrollReveal'
+
+const homeV2LandingContent = getStorePageContent('homeV2')
 
 export function FaqSectionLanding() {
   const { faq } = homeV2LandingContent
@@ -64,4 +66,3 @@ export function FaqSectionLanding() {
     </section>
   )
 }
-

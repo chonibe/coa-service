@@ -7,7 +7,7 @@ import {
   Container,
   SectionWrapper,
 } from '@/components/impact'
-import { streetCollectorContent } from '@/content/street-collector'
+import { getStorePageContent } from '@/lib/content/site-content'
 import {
   getCollection,
   getCollectionWithListProducts,
@@ -23,6 +23,8 @@ import {
   streetCollectorCtaLgClass,
   streetCollectorCtaStickyClass,
 } from '@/lib/shop/street-collector-cta'
+
+const streetCollectorContent = getStorePageContent('streetCollector')
 
 const DesktopTopBar = dynamic(
   () => import('./DesktopTopBar').then((m) => ({ default: m.DesktopTopBar }))

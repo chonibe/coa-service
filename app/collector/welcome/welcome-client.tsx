@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { OnboardingWizard } from "../components/onboarding-wizard"
 import { captureFunnelEvent, FunnelEvents, setUserProperty } from "@/lib/posthog"
+import { getCollectorPageContent } from "@/lib/content/site-content"
 
 interface WelcomeClientProps {
   /** Email from claim token (guest purchaser) */
@@ -14,6 +15,8 @@ interface WelcomeClientProps {
   /** Whether a stub profile already exists */
   profileExists?: boolean
 }
+
+const welcomeContent = getCollectorPageContent('welcome')
 
 export function WelcomeClient({ claimEmail, claimPurchaseId, profileExists }: WelcomeClientProps) {
   const router = useRouter()
@@ -53,13 +56,13 @@ function ClaimFlow({ claimEmail, profileExists }: { claimEmail: string; profileE
           <span className="text-3xl">&#x1F3A8;</span>
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-3">
-          Claim Your Collection
+          {welcomeContent.claim.title}
         </h1>
         <p className="text-slate-600 mb-2">
-          We sent a magic link to <strong>{claimEmail}</strong>.
+          {welcomeContent.claim.sentToPrefix} <strong>{claimEmail}</strong>{welcomeContent.claim.sentToSuffix}
         </p>
         <p className="text-sm text-slate-500 mb-6">
-          Check your inbox and click the link to sign in. Your purchases and credits will be linked automatically.
+          {welcomeContent.claim.body}
         </p>
         <div className="space-y-3">
           <Link
@@ -67,19 +70,19 @@ function ClaimFlow({ claimEmail, profileExists }: { claimEmail: string; profileE
             className="block w-full bg-slate-900 text-white rounded-lg py-3 px-6 font-semibold hover:bg-slate-800 transition-colors"
             onClick={() => captureFunnelEvent(FunnelEvents.collector_claim_google_clicked, {})}
           >
-            Sign in with Google Instead
+            {welcomeContent.claim.primaryCta}
           </Link>
           <Link
             href="/shop"
             className="block w-full text-slate-600 hover:text-slate-900 py-2 text-sm"
             onClick={() => captureFunnelEvent(FunnelEvents.collector_claim_continue_shopping, {})}
           >
-            Continue Shopping
+            {welcomeContent.claim.secondaryCta}
           </Link>
         </div>
         {profileExists && (
           <p className="text-xs text-emerald-600 mt-4">
-            Your collection profile is ready and waiting for you.
+            {welcomeContent.claim.profileReady}
           </p>
         )}
       </div>

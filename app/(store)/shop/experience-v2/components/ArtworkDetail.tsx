@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, useId } from 'react'
 import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from 'framer-motion'
-import { Check, ChevronDown, ChevronLeft, ImageIcon, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, Gem, ImageIcon, Package, Shield, RotateCcw, Lamp, Ruler, Cable, Plug, BookOpen, Magnet, List, Scale, Box, Sun, Battery, Zap, Gift, ShoppingBag, Globe, X } from 'lucide-react'
 import type { ShopifyProduct } from '@/lib/shopify/storefront-client'
 import { cn, formatPriceCompact } from '@/lib/utils'
 import { EXPERIENCE_JOURNEY_CTA_HIGHLIGHT_CLASS } from '@/lib/shop/experience-journey-next-action'
@@ -349,6 +349,15 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
     }
     return null
   }, [product, quantityAvailable, isLampOrBundleProduct])
+  const reserveEditionLabel = useMemo(() => {
+    if (isLampOrBundleProduct || !editionMetricsForWatch) return null
+    const nextEditionNumber = Math.min(
+      editionMetricsForWatch.totalEditions,
+      editionMetricsForWatch.editionNumberSold + 1
+    )
+    if (nextEditionNumber < 1) return null
+    return `Reserving #${nextEditionNumber}/${editionMetricsForWatch.totalEditions}`
+  }, [editionMetricsForWatch, isLampOrBundleProduct])
   const editionArtistName = (
     artistData?.name ||
     spotlightDataOverride?.vendorName ||
@@ -1211,6 +1220,24 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
 
                   {/* Fixed bar at bottom of right panel — add button (+ lamp scarcity) */}
                   <div className="flex-shrink-0 border-t border-border bg-card pt-3 pb-5 space-y-3">
+                    {!isLampOrBundleProduct ? (
+                      <div className="space-y-1">
+                        {reserveEditionLabel ? (
+                          <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-neutral-50/80 dark:bg-[#201c1c]/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 dark:text-[#d4b8b8]">
+                            <Gem className="h-3 w-3 text-experience-highlight" aria-hidden />
+                            <span>{reserveEditionLabel}</span>
+                          </div>
+                        ) : null}
+                        {detailHeaderArtistLine ? (
+                          <p className="text-[11px] font-medium text-neutral-500 dark:text-[#c4a0a0]">
+                            {detailHeaderArtistLine}
+                          </p>
+                        ) : null}
+                        <h3 className="text-sm font-semibold tracking-tight text-experience-title">
+                          {product.title}
+                        </h3>
+                      </div>
+                    ) : null}
                     {isLampOrBundleProduct && !hideScarcityBar && (
                       <ScarcityBadge
                         quantityAvailable={quantityAvailable}
@@ -1676,6 +1703,12 @@ export function ArtworkDetail({ product, isSelected, onToggleSelect, onClose, is
               )}
               <div className="space-y-2 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center min-w-0 w-full">
+                  {reserveEditionLabel ? (
+                    <div className="mb-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-neutral-50/80 dark:bg-[#201c1c]/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 dark:text-[#d4b8b8]">
+                      <Gem className="h-3 w-3 shrink-0 text-experience-highlight" aria-hidden />
+                      <span className="truncate">{reserveEditionLabel}</span>
+                    </div>
+                  ) : null}
                   {detailHeaderArtistLine ? (
                     <p className="text-xs font-medium text-neutral-500 dark:text-[#c4a0a0] uppercase tracking-wider">
                       {detailHeaderArtistLine}

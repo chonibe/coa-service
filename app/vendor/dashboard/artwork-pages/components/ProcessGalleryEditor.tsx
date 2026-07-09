@@ -280,7 +280,7 @@ export default function ProcessGalleryEditor({
         {/* Introduction (Collapsible) */}
         <div className="space-y-2">
           <Textarea
-            placeholder="Tell the story behind these images..."
+            placeholder="Add a short note about these images..."
             value={intro}
             onChange={(e) => handleIntroChange(e.target.value)}
             rows={2}
@@ -313,7 +313,7 @@ export default function ProcessGalleryEditor({
         
         <h4 className="text-lg font-semibold text-gray-900 mb-1">Behind the Scenes</h4>
         <p className="text-sm text-gray-600 mb-6">
-          Show collectors how this piece came to life
+          Show sketches, drafts, or process images for this piece
         </p>
         
         <Button 
