@@ -6,6 +6,7 @@ import { getStorePageContent } from '@/lib/content/site-content'
 import { getCanonicalSiteOrigin } from '@/lib/seo/site-url'
 import { ShopCollectionCartChip } from '@/components/shop/navigation/ShopCollectionCartChip'
 import styles from './home-v3.module.css'
+import { HomeV3HeroVideo } from './HomeV3HeroVideo'
 
 const content = getStorePageContent('homeV2')
 
@@ -110,28 +111,14 @@ export default function HomeV3Page() {
       <main>
         <section className={styles.hero}>
           <div className={styles.heroMedia}>
-            <video
-              autoPlay
-              muted
-              defaultMuted
-              loop
-              playsInline
-              preload="metadata"
-              poster={'videoPosterUrl' in hero ? (hero as { videoPosterUrl?: string }).videoPosterUrl : undefined}
-              onLoadedMetadata={(e) => {
-                const el = e.currentTarget
-                el.muted = true
-                el.defaultMuted = true
-                el.volume = 0
-              }}
-              onPlay={(e) => {
-                const el = e.currentTarget
-                el.muted = true
-                el.volume = 0
-              }}
-            >
-              <source src={hero.videoUrl} type="video/mp4" />
-            </video>
+            <HomeV3HeroVideo
+              src={hero.videoUrl}
+              poster={
+                'videoPosterUrl' in hero
+                  ? (hero as { videoPosterUrl?: string }).videoPosterUrl
+                  : undefined
+              }
+            />
           </div>
 
           <div className={styles.heroCopy}>
